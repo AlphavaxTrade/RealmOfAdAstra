@@ -19,7 +19,6 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
 
   it('Pasif iyileşme süresi tam 24 saat (86400 saniye / 1440 dakika) olmalı', () => {
     assert.strictEqual(GAME_CONFIG.SOLDIER_PASSIVE_HEAL.FULL_HEAL_SECONDS, 86400, 'Tam iyileşme 86400 saniye (24 saat) olmalı');
-    assert.strictEqual(GAME_CONFIG.SOLDIER_HEAL_DURATION_MINUTES, 1440, 'Dakika cinsinden 1440 dakika olmalı');
   });
 
   it('Yaralı şampiyonun kalan süresi 24 saat formülüyle hesaplanmalı', () => {

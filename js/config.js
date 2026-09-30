@@ -2,7 +2,6 @@
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
   GAME_VERSION: '1.28.0',
-  EPOCH_DURATION_SECONDS: 24 * 3600, // 24 Saatlik Günlük Havuz
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -15,17 +14,7 @@ export const GAME_CONFIG = {
   STAMINA_COST_PER_LEVEL: 8,
   STAMINA_NATURAL_REGEN_INTERVAL: 150,
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
-  WHEAT_REFILL_RATIO: 0.21,           // 1 Stamina = Dk başı buğday (15) * %21 = 3.15 Buğday
   WHEAT_PER_STAMINA: 3.15,            // 1 Stamina doldurmak için gereken buğday miktarı (Fix 3.15)
-
-  // ⚔️ ZİNDAN SAVAŞI STAMİNA MEKANİĞİ
-  // Formül: Asker Sayısı × (BASE_PER_SOLDIER + Zindan Seviyesi × LEVEL_SCALING_PER_SOLDIER)
-  // Dengeli RPG Modeli: Asker Başına 5 Stamina + Canavar Seviyesi Başına 1 Stamina
-  // Örn: Lv.1'de 2 asker = 12 Stamina; Lv.9 Ara Boss'ta 8 asker = 112 Stamina; Lv.18 Büyük Boss'ta 15 asker = 345 Stamina
-  DUNGEON_COMBAT_STAMINA: {
-    BASE_PER_SOLDIER: 5,
-    LEVEL_SCALING_PER_SOLDIER: 1
-  },
 
   // %13 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %78 Hazine
   TOKEN_BURN_RATE: 0.13,
@@ -35,15 +24,9 @@ export const GAME_CONFIG = {
   TOKEN_REWARD_POOL_RATE: 0.78,
 
   // 🏛️ EVRENSEL TEMEL GELİR (UBI) & SEVİYE STAKE HAVUZU PARAMETRELERİ
-  // Havuzdaki para anında tükenmez; 3 ayda (12 haftada) dağıtılacak eğriyle her hafta 1/12'si açılır.
-  // Balina Sömürüsü Koruması: W(L) = 1 + sqrt(L-1)*0.75 dengeli modeli ve max %5 tek çekim tavanı devrededir.
+  // Oran: UBI_POOL_RATE (yukarıda). Dağıtım kuralları: js/economy/ubi.js
   UBI_CONFIG: {
-    POOL_RATE: 0.06,
-    AMORTIZATION_WEEKS: 12,              // 3 Ayda dağıtım takvimi (haftalık 1/12 bütçe)
-    LEVEL_WEIGHT_EXPONENT: 0.65,         // Dengeli üssel katsayı (Lv 81 için aşırı balina sübvansiyonunu önler)
-    BASE_WEIGHT_DIVISOR: 100,            // Pay tabanı
     MAX_SINGLE_CLAIM_SHARE: 0.05,        // 🛡️ TEK ÇEKİM TAVANI: Tek bir kullanıcı haftalık havuzun %5'inden fazlasını çekemez!
-    BASE_REALM_ACTIVE_WEIGHT: 12500,     // Krallık aktif ağırlık pay tabanı
     INITIAL_SEED_POOL: 2400000,          // (v1.25'te kullanılmıyor: UBI yalnızca harcamaların %6'sından beslenir)
     MIN_LEVEL: 3,                        // v1.25: Haftalık temel gelir 3. seviyeden itibaren
     // Tarayıcı sürümünde dünya tek oyuncudur; sunucuya geçince hak sahiplerinin gerçek ağırlık toplamı kullanılır
@@ -92,35 +75,6 @@ export const GAME_CONFIG = {
     { id: 'first_level_up',     icon: '⭐', title: 'Seviye 2\'ye ulaş',          desc: 'Deneyim barını doldur ve ilk seviyeni atla.',                 rewardAda: 300 },
     { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 400 }
   ],
-  TAVERN_BOOSTS: {
-    short: {
-      id: 'short',
-      name: '⚡ Kısa Darbe İksiri',
-      multiplier: 1.5,
-      durationHours: 2,
-      maxExpeditions: 8,
-      costAdAstra: 4500,
-      desc: '2 saat boyunca kaynak seferlerine 1.50x hız ve verim kazandırır.'
-    },
-    standard: {
-      id: 'standard',
-      name: '⚡ Standart Sefer İksiri',
-      multiplier: 1.75,
-      durationHours: 6,
-      maxExpeditions: 20,
-      costAdAstra: 15000,
-      desc: '6 saat boyunca kaynak seferlerine 1.75x hız ve verim kazandırır.'
-    },
-    long: {
-      id: 'long',
-      name: '⚡ Büyük Sefer İksiri (Balina)',
-      multiplier: 2.0,
-      durationHours: 24,
-      maxExpeditions: 60,
-      costAdAstra: 45000,
-      desc: '24 saat boyunca kaynak seferlerine 2.00x hız ve verim kazandırır.'
-    }
-  },
   // 🏰 ZİNDAN ORDU YORULMASI & STAMİNA MALİYETİ MATRİSİ
   // Her kat için asker başına harcanan stamina: Taban (5) + Canavar Seviyesi (Level)
   DUNGEON_STAMINA_COST_PER_SOLDIER: {
@@ -218,21 +172,8 @@ export const GAME_CONFIG = {
     }
   },
 
-  // =========================================================================
-  // 📈 DEEPSEEK-R1 10 YILLIK TEÇHİZAT YÜKSELTME MATRİKSİ (LV.1 -> LV.10)
-  // =========================================================================
+  // Teçhizat en fazla 10. seviyeye yükseltilir (maliyet: EQUIPMENT_RECIPES ve gameState)
   EQUIPMENT_MAX_LEVEL: 10,
-  EQUIPMENT_UPGRADE_TIERS: {
-    2: { iron: 20, wood: 15, fragments: 0, adAstra: 50 },
-    3: { iron: 35, wood: 25, fragments: 0, adAstra: 100 },
-    4: { iron: 50, wood: 40, fragments: 5, adAstra: 250 },
-    5: { iron: 75, wood: 55, fragments: 10, adAstra: 500 },
-    6: { iron: 110, wood: 80, fragments: 15, adAstra: 850 },
-    7: { iron: 160, wood: 115, fragments: 25, adAstra: 1350 },
-    8: { iron: 230, wood: 160, fragments: 35, adAstra: 2100 },
-    9: { iron: 320, wood: 225, fragments: 50, adAstra: 3200 },
-    10: { iron: 450, wood: 300, fragments: 80, adAstra: 5000 }
-  },
 
   // ═══════════════════════════════════════════════════════════════════════
   // AMM FİYAT KORİDORU — v2: ARTIK GERÇEKTEN UYGULANIYOR (F-04)
@@ -261,25 +202,14 @@ export const GAME_CONFIG = {
   AMM_RAW_DEPTH_WEEKS: 80,
   // Hammadde Yakım Ücreti: Alınan ve satılan tüm hammaddelerden (odun, demir, buğday vb.) %2.00 kesilir ve anında yakılır
   AMM_RESOURCE_FEE_RATE: 0.02,
-  AMM_FEE_BURN_SHARE: 0.5,
-  // Fiyat koridoru dışına çıkan işlemler reddedilir; hazine buyback devreye girer
-  AMM_MAX_SLIPPAGE_PER_TX: 0.12,
 
-  // Karakter Seviye Atlama Maliyetleri (Level Up Requirements)
+  // Karakter seviyesi tavanı (seviye atlama bedeli: gameState.getNextLevelRequirement)
   MAX_PLAYER_LEVEL: 81,
-  LEVEL_UP_REQUIREMENTS: {
-    2: { xp: 100, wood: 30, iron: 20, wheat: 40, adAstra: 25, durationHours: 1.5 },
-    3: { xp: 250, wood: 60, iron: 45, wheat: 80, adAstra: 50, durationHours: 2.0 },
-    4: { xp: 500, wood: 120, iron: 90, wheat: 150, adAstra: 100, durationHours: 2.5 },
-    5: { xp: 900, wood: 200, iron: 160, wheat: 260, adAstra: 200, durationHours: 3.0 },
-    6: { xp: 1500, wood: 350, iron: 280, wheat: 450, adAstra: 350, durationHours: 3.5 }
-  },
 
   // =========================================================================
   // SOLDIER & MILITARY SYSTEM (TEK TİP ADASTRA ŞAMPİYONU)
   // =========================================================================
   // Tek bir asker türü: AdAstra Şampiyonu. Level 1'de fix 100 HP ve fix 25 ATK.
-  SOLDIER_PRICE: 5000,                // 1. askerin başlangıç fiyatı: 5.000 ADA
   SOLDIER_COST_BASE: 5000,            // Taban maliyet: 5.000 ADA (1. asker)
   SOLDIER_COST_EXPONENT: 2.0364522367650437, // Kademeli artış üssü (1. asker: 5.000 ADA, 18. asker: 1.800.000 ADA)
   SOLDIER_18_TARGET_COST: 1800000,    // 18. asker maliyeti: 1.8 Milyon ADA
@@ -288,9 +218,6 @@ export const GAME_CONFIG = {
   SOLDIER_BASE_ATK: 25,               // Fix Level 1 ATK
   SOLDIER_HP_PER_LEVEL: 25,           // Her seviye atlayışta +25 HP
   SOLDIER_ATK_PER_LEVEL: 6,           // Her seviye atlayışta +6 ATK
-  SOLDIER_HEAL_DURATION_MINUTES: 1440, // 24 Saat (1440 dk)
-  SOLDIER_HEAL_TICK_MINUTES: 24,
-  SOLDIER_HEAL_HP_PER_TICK: 1.667,
 
   // 24 Saatlik Otomatik Asker Doyurma (Pasif İyileşme) Kuralı:
   // 24 saat (1440 dk / 86400 sn) içinde asker kendi kendini otomatik iyileştirirken:
@@ -298,9 +225,7 @@ export const GAME_CONFIG = {
   SOLDIER_PASSIVE_HEAL: {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
     wheatPerHp: 0.30,             // 24 saatte 1 HP başına 0.30 Buğday
-    WHEAT_PER_HP: 0.30,           // Geriye dönük uyumluluk
-    adaPerHp: 0.10,               // 24 saatte 1 HP başına 0.10 ADA
-    ADA_PER_HP: 0.10
+    adaPerHp: 0.10                // 24 saatte 1 HP başına 0.10 ADA
   },
 
   // Hızlı Asker Doyurma (Instant / Fast Heal) Kuralı:
@@ -312,27 +237,11 @@ export const GAME_CONFIG = {
   },
 
   // =========================================================================
-  // KRALLIK DEMİRCİSİ YENİ CRAFT, UPGRADE VE DAYANIKLILIK MATEMATİĞİ
-  // =========================================================================
-  // 1 ATK = 18 dk Odun (324) + 18 dk Demir (216) + AMM DEX ADA + 1 Parça
-  // 1 HP  = 21 dk Odun (378) + 21 dk Demir (252) + AMM DEX ADA + 1 Parça
-  // Upgrade: Hammadde +%18, Parça 2 katı (1 -> 2 -> 4 -> 8 -> 16)
-  // Dayanıklılık: 13/13 (Zindan zaferinde -1). Sıfırlanınca yenileme: Toplam üretimin %10'u
-  EQUIPMENT_RULES: {
-    maxDurability: 13,
-    durabilityLossPerVictory: 1,
-    baseMinutesPerAtk: 18,
-    baseMinutesPerHp: 21,
-    upgradeResourceMultiplier: 1.18, // %18 kaynak artışı
-    upgradeFragmentMultiplier: 2.0,  // Parça 2 katına çıkar
-    zeroDurabilityRestoreRatio: 0.10 // Sıfırlanınca %10 üretim maliyeti
-  },
-
-  // =========================================================================
-  // =========================================================================
   // SİLO / DEPO KAPASİTE & YÜKSELTMELERİ (İSTİFÇİLİK ÖNLEME MODELİ)
+  // gameState.getWarehouseCapacity bu değerleri okur.
   // Maksimum Seviye: 18
-  // Başlangıç (Lv 1): 1080 Odun, 720 Demir, 900 Buğday
+  // Başlangıç (Lv 1): 1080 Odun, 720 Demir, 1800 Buğday
+  // Ara seviyeler: başlangıçtan maksimuma eşit oranlı (üssel) büyüme
   // Maksimum (Lv 18): Haftalık havuz tavanının %50'si (90k Odun, 65k Demir, 245k Buğday)
   // Yükseltme Şartı: Tüm depolar %80 dolu olmak zorunda
   // Yükseltme Maliyeti: Mevcut kapasitenin yarısı (%50) + Anlık DEX Pazar ADA karşılığı
@@ -351,42 +260,9 @@ export const GAME_CONFIG = {
       wheat: 245000,
       fragments: 2500
     },
+    fragmentsPerLevel: 140,     // Parça kapasitesi ara seviyelerde doğrusal artar (Lv 18'de maxCapacities)
     fillRequirementRatio: 0.80, // %80 Doluluk Şartı
     costRatio: 0.50             // %50 Kapasite Maliyeti
-  },
-
-  // =========================================================================
-  // EQUIPMENT DURABILITY & REPAIR
-  // =========================================================================
-  EQUIPMENT: {
-    maxDurability: 100,
-    durabilityLossPerBattle: 15,
-    repairCosts: {
-      durabilityPerPoint: { iron: 1, wood: 0.5 }
-    }
-  },
-  MAX_EQUIPMENT_REPAIRS: 18,
-
-  // =========================================================================
-  // AUTOMATION BOTS
-  // =========================================================================
-  AUTOMATION_BOTS: {
-    auto_soldier_heal: {
-      id: 'auto_soldier_heal',
-      name: '24 Saatlik Otomatik Asker İyileştirmesi',
-      icon: '⚕️',
-      durationSeconds: 24 * 3600,
-      costAdAstra: 150,
-      desc: 'Askerleri otomatik olarak iyileştirir, uçurumda kalmaz.'
-    },
-    auto_expedition_claim: {
-      id: 'auto_expedition_claim',
-      name: '24 Saatlik Otomatik Sefer Toplama',
-      icon: '🤖',
-      durationSeconds: 24 * 3600,
-      costAdAstra: 100,
-      desc: 'Seferler bittiğinde otomatik olarak kaynakları toplar.'
-    }
   },
 
   // Kışla Asker Tipleri (Barracks Troops)
@@ -580,23 +456,10 @@ export const GAME_CONFIG = {
     MAX_AOE_TARGETS: 4,
     FRONTLINE_COVER: 0.85,      // Ön saf ayaktayken %85 ön safa, %15 arka safa sızma koruması
     RAGE_AFTER_ROUND: 12,       // 12. turdan sonra düşman her tur güçlenir
-    RAGE_PER_ROUND: 0.18,
-    // Yenilgi bedeli: ölüm yok ama "yaralı" durumu var
-    WOUNDED_RECOVERY_HOURS: 6,
-    FIELD_HOSPITAL_ADA_PER_HP: 2.2
+    RAGE_PER_ROUND: 0.18
   },
 
-  DEFAULT_SOLDIER_STATS: {
-    name: 'AdAstra Şampiyonu',
-    icon: '⚔️',
-    baseHp: 100,
-    baseAtk: 25,
-    baseArmor: 10,
-    baseSpeed: 10,
-    baseCrit: 0.05,
-    basePen: 5
-  },
-
+  // ⏳ HENÜZ OYUNA BAĞLI DEĞİL (tasarım taslağı, bkz. docs/GELISTIRME_ONERILERI.md §12)
   // Haftalık rotasyonlu kat etkileri — aynı zindan her hafta farklı oynanır
   DUNGEON_MODIFIERS: [
     { id: 'lava', name: 'Kaynayan Zemin', desc: 'Her tur tüm birimler 18 yanma hasarı alır.', kind: 'dot', magnitude: 18 },
@@ -621,19 +484,11 @@ export const GAME_CONFIG = {
     GATE_FEE_RATE: 0.20,
     // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ADA öder → kasa matematiksel olarak boşalamaz.
     DAILY_BUDGET_RATE: 0.01,
-    RUN_STAMINA_COST: 15,
-    ROOMS_PER_RUN: 3,                 // 2 normal oda + 1 kat muhafızı
-    FIRST_CLEAR_MULTIPLIER: 1.0,      // ilk temizlemede tam ödül
-    REPEAT_MULTIPLIER: 0.15,          // tekrarlarda %15
-    // Odalar arası iyileşme YOK — kaynak yönetimi savaşın parçası
-    INTER_ROOM_HEAL: 0,
-    // Ganimet oranları (v1'de ölü koddaydı, artık canlı savaş yoluna bağlı)
-    FRAGMENT_DROP_BASE: 0.35,
-    FRAGMENT_DROP_PER_LEVEL: 0.012,
-    BOX_DROP_BASE: 0.02,
-    BOX_DROP_PER_LEVEL: 0.004,
-    BOSS_DROP_MULTIPLIER: 2.5,
-    FIRST_CLEAR_GUARANTEED_FRAGMENTS: 3
+    // Zafer ödülü (gameState.getDungeonBaseReward): seviye × taban; Lv.9 ve Lv.18 bosslarında × çarpan.
+    // Canavar bilgileri (can, saldırı, asker XP'si) js/bestiary.js'te.
+    REWARD_ADA_PER_LEVEL: 90,
+    REWARD_XP_PER_LEVEL: 200,
+    MAJOR_BOSS_REWARD_MULT: 3
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -645,14 +500,14 @@ export const GAME_CONFIG = {
     DAILY_MATCH_CAP: 10,
     STARTING_RATING: 1000,
     K_FACTOR: 32,
-    // Rakip artık oyuncudan türetilmez; puana göre NPC kadro havuzundan seçilir
-    OPPONENT_POWER_TOLERANCE: 0.18,
+    // Ligler (gameState.getColosseumTier), yüksekten düşüğe. rewardMult: maç ödülü çarpanı.
+    // weeklyAda / weeklyKeys: ⏳ haftalık lig ödülü — HENÜZ DAĞITILMIYOR (tasarım taslağı).
     LEAGUES: [
-      { id: 'bronze',   name: 'Bronz Lig',        icon: '🥉', minRating: 0,    weeklyAda: 400,   weeklyKeys: 1 },
-      { id: 'silver',   name: 'Gümüş Lig',        icon: '🥈', minRating: 1100, weeklyAda: 1200,  weeklyKeys: 2 },
-      { id: 'gold',     name: 'Altın Lig',        icon: '🥇', minRating: 1300, weeklyAda: 3500,  weeklyKeys: 3 },
-      { id: 'diamond',  name: 'Elmas Lig',        icon: '💎', minRating: 1550, weeklyAda: 9000,  weeklyKeys: 5 },
-      { id: 'champion', name: 'Şampiyonlar Ligi', icon: '👑', minRating: 1800, weeklyAda: 25000, weeklyKeys: 8 }
+      { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800, weeklyAda: 25000, weeklyKeys: 8 },
+      { id: 'diamond',  name: '💎 Elmas Gladyatör',   color: '#38bdf8', rewardMult: 1.6, minRating: 1500, weeklyAda: 9000,  weeklyKeys: 5 },
+      { id: 'gold',     name: '🥇 Altın Gladyatör',   color: '#eab308', rewardMult: 1.3, minRating: 1300, weeklyAda: 3500,  weeklyKeys: 3 },
+      { id: 'silver',   name: '🥈 Gümüş Gladyatör',   color: '#94a3b8', rewardMult: 1.1, minRating: 1150, weeklyAda: 1200,  weeklyKeys: 2 },
+      { id: 'bronze',   name: '🥉 Bronz Gladyatör',   color: '#b45309', rewardMult: 1.0, minRating: 0,    weeklyAda: 400,   weeklyKeys: 1 }
     ]
   },
 
@@ -663,18 +518,10 @@ export const GAME_CONFIG = {
     BATTLE_DAY_UTC: 0,          // 0 = Pazar
     BATTLE_HOUR_UTC: 15,        // 15:00 UTC = 18:00 TSİ
     BASE_HP: 1000000,
-    HP_GROWTH_ON_SURVIVE: 1.25, // öldürülemezse boss güçlenir, havuz devreder
     WEEKLY_DISTRIBUTION_RATE: 0.10, // Kasa ne kadar olursa olsun haftalık World Boss etkinliğinde kasanın sadece %10'u o haftaki etkinlikte dağıtılır
-    SEED_VAULT_ADA: 8000000,
-    // Stake edilen ordu Pazar'a kadar zindanda ve arenada KULLANILAMAZ
-    LOCK_UNTIL_BATTLE: true,
-    // Skill Çeşitliliği Katkısı: Ordudaki her farklı rol (Tank, AoE, Şifa, Kırıcı, Kontrol) için hasar bonusu
+    // Skill Çeşitliliği Katkısı: ilk rolden sonraki her farklı rol (Tank, AoE, Şifa, Kırıcı, Kontrol) için hasar bonusu
     SKILL_DIVERSITY_BONUS_PER_ROLE: 0.06,
-    MAX_SKILL_DIVERSITY_BONUS: 0.30,
-    PHASES: [
-      { atPct: 0.66, name: 'Kanatlar Açılıyor', text: 'Behemoth arka safı hedeflemeye başladı!' },
-      { atPct: 0.33, name: 'Kıyamet Öfkesi',    text: 'Boss çıldırdı — hasarı ve hızı arttı!' }
-    ]
+    MAX_SKILL_DIVERSITY_BONUS: 0.50
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -695,8 +542,10 @@ export const GAME_CONFIG = {
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 🎲 EKİPMAN EKLENTİLERİ (AFFIX) — aynı kılıç artık iki oyuncuda aynı değil
+  // ⏳ HENÜZ OYUNA BAĞLI DEĞİL — gelecek sistemlerin tasarım taslakları
+  // (eşya eklentileri, sezon, prestij; bkz. docs/GELISTIRME_ONERILERI.md §12-13)
   // ═══════════════════════════════════════════════════════════════════════
+  // 🎲 EKİPMAN EKLENTİLERİ (AFFIX) — aynı kılıç iki oyuncuda aynı olmaz
   EQUIPMENT_AFFIXES: [
     { id: 'sharp',    name: 'Keskin',     icon: '🗡️', stat: 'atk',       tiers: [4, 9, 16],       weight: 22 },
     { id: 'sturdy',   name: 'Sağlam',     icon: '🛡️', stat: 'armor',     tiers: [6, 13, 24],      weight: 22 },

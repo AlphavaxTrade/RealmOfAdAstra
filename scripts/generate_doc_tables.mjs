@@ -90,13 +90,13 @@ for (let l = 1; l <= 10; l++) {
 }
 
 // 6. DUNGEON 18 LEVELS
-let dungeonMd = `| Kat | Zindan Seviyesi | Canavar Adı | İkon | Element | Sınıfı | Özel Yetenekler | Türü / Unvanı |
-| :---: | :---: | :--- | :---: | :---: | :---: | :--- | :--- |
+let dungeonMd = `| Kat | Zindan Seviyesi | Canavar Adı | İkon | Can | Saldırı | Asker XP | Özel Yetenekler | Türü / Unvanı |
+| :---: | :---: | :--- | :---: | ---: | ---: | ---: | :--- | :--- |
 `;
 DUNGEON_LEVELS.forEach(d => {
   const abilities = d.abilities && d.abilities.length > 0 ? d.abilities.join(', ') : 'Temel Vuruş';
   const typeLabel = d.isBoss ? `🔥 **${d.bossLabel || 'BOSS'}** (+%100 Ganimet)` : (d.isFloorGuard ? '🛡️ Kat Muhafızı' : '⚔️ Normal Yaratık');
-  dungeonMd += `| Kat ${d.floor} | **Seviye ${d.level}** | ${d.name} | ${d.icon} | ${d.element.toUpperCase()} | ${d.cls} | ${abilities} | ${typeLabel} |\n`;
+  dungeonMd += `| Kat ${d.floor} | **Seviye ${d.level}** | ${d.name} | ${d.icon} | ${d.hp.toLocaleString('tr-TR')} | ${d.atk.toLocaleString('tr-TR')} | ${d.rewardXp.toLocaleString('tr-TR')} | ${abilities} | ${typeLabel} |\n`;
 });
 
 // Output everything to a generated markdown file

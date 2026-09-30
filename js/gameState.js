@@ -722,7 +722,7 @@ export class GameStateManager {
   getDungeonStaminaCost(monsterLevel = 1, soldierCount = 1) {
     const numSoldiers = Number(soldierCount);
     if (isNaN(numSoldiers) || numSoldiers <= 0) return 0;
-    const cfg = GAME_CONFIG.DUNGEON_STAMINA_COST_PER_SOLDIER || GAME_CONFIG.DUNGEON_COMBAT_STAMINA || { BASE_PER_SOLDIER: 5 };
+    const cfg = GAME_CONFIG.DUNGEON_STAMINA_COST_PER_SOLDIER;
     const perSoldierCost = (cfg[monsterLevel] != null)
       ? cfg[monsterLevel]
       : ((cfg.BASE_PER_SOLDIER || 5) + (Number(monsterLevel) || 1));
@@ -2791,20 +2791,17 @@ export class GameStateManager {
   //   - Demir: 65.000 (130k haftalık havuz limitinin %50'si)
   //   - Buğday: 245.000 (490k haftalık havuz limitinin %50'si)
   getWarehouseCapacity(level = this.state.warehouseLevel) {
-    const lvl = Math.max(1, Math.min(18, level));
-    if (lvl === 18) {
-      return { wood: 90000, iron: 65000, wheat: 245000, fragments: 2500 };
-    }
+    const { baseLevels: maxLevel, initialCapacities: min, maxCapacities: max, fragmentsPerLevel } = GAME_CONFIG.WAREHOUSE;
+    const lvl = Math.max(1, Math.min(maxLevel, level));
+    if (lvl === maxLevel) return { ...max };
     const step = lvl - 1;
-    const rWood = Math.pow(90000 / 1080, 1 / 17);
-    const rIron = Math.pow(65000 / 720, 1 / 17);
-    const rWheat = Math.pow(245000 / 1800, 1 / 17);
+    const grow = res => Math.round(min[res] * Math.pow(Math.pow(max[res] / min[res], 1 / (maxLevel - 1)), step));
 
     return {
-      wood: Math.round(1080 * Math.pow(rWood, step)),
-      iron: Math.round(720 * Math.pow(rIron, step)),
-      wheat: Math.round(1800 * Math.pow(rWheat, step)),
-      fragments: Math.round(100 + step * 140)
+      wood: grow('wood'),
+      iron: grow('iron'),
+      wheat: grow('wheat'),
+      fragments: Math.round(min.fragments + step * fragmentsPerLevel)
     };
   }
 
@@ -5323,8 +5320,8 @@ export class GameStateManager {
         weeklyDistributionRate: (GAME_CONFIG.WORLD_BOSS && GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE) || 0.10,
         weeklyDistributionPool: Math.round(((typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('worldBoss')) : 8000000) * 0.10),
         weeklyAdaPool: (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('worldBoss')) : 8000000,
-        bossHp: 1000000,
-        maxBossHp: 1000000,
+        bossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
+        maxBossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         bossAtk: 500000,
         stakedArmyCount: 0,
         totalStakedAtk: 0,
@@ -5562,7 +5559,7 @@ export class GameStateManager {
 
     // 2. Kullanıcının Hak Edişleri & Payları
     const userBossDamage = boss.userDamage || 0;
-    const maxBossHp = boss.maxBossHp || 1000000;
+    const maxBossHp = boss.maxBossHp || GAME_CONFIG.WORLD_BOSS.BASE_HP;
     const userBossRewardEstimate = Math.floor((userBossDamage / maxBossHp) * worldBossPool);
 
     const userStakedArmyCount = boss.userStakedSoldiersCount || 0;
@@ -6107,7 +6104,9 @@ export class GameStateManager {
   getDungeonBaseReward(level, isBoss = false) {
     const lvl = Math.max(1, Math.min(18, Number(level) || 1));
     const major = isBoss || lvl === 9 || lvl === 18;
-    return { ada: Math.floor(90 * lvl * (major ? 3 : 1)), xp: Math.floor(200 * lvl * (major ? 3 : 1)), isMajorBoss: major };
+    const { REWARD_ADA_PER_LEVEL, REWARD_XP_PER_LEVEL, MAJOR_BOSS_REWARD_MULT } = GAME_CONFIG.DUNGEON;
+    const mult = major ? MAJOR_BOSS_REWARD_MULT : 1;
+    return { ada: Math.floor(REWARD_ADA_PER_LEVEL * lvl * mult), xp: Math.floor(REWARD_XP_PER_LEVEL * lvl * mult), isMajorBoss: major };
   }
 
   getDungeonGateFee(level, isBoss = false) {
@@ -6429,8 +6428,8 @@ export class GameStateManager {
         name: 'Kadim Kıyamet Behemoth\'u (WORLD BOSS)',
         icon: '🌋',
         weeklyAdaPool: (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('worldBoss')) : 8000000,
-        bossHp: 1000000,
-        maxBossHp: 1000000,
+        bossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
+        maxBossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         bossAtk: 500000,
         stakedArmyCount: 0,
         totalStakedAtk: 0,
@@ -6972,8 +6971,9 @@ export class GameStateManager {
     });
 
     const uniqueRoles = roles.size;
-    // Her farklı taktiksel rol için %6 hasar çarpanı bonusu (örn. 5 farklı rol = 1.24x hasar!)
-    const diversityMultiplier = Math.min(1.50, 1.0 + Math.max(0, uniqueRoles - 1) * 0.06);
+    // İlk rolden sonraki her farklı taktiksel rol için %6 hasar bonusu (örn. 5 farklı rol = 1.24x hasar)
+    const { SKILL_DIVERSITY_BONUS_PER_ROLE, MAX_SKILL_DIVERSITY_BONUS } = GAME_CONFIG.WORLD_BOSS;
+    const diversityMultiplier = Math.min(1.0 + MAX_SKILL_DIVERSITY_BONUS, 1.0 + Math.max(0, uniqueRoles - 1) * SKILL_DIVERSITY_BONUS_PER_ROLE);
 
     return {
       uniqueRoles,
@@ -6984,11 +6984,9 @@ export class GameStateManager {
 
   // 🏆 Kolezyum Sabit Lig Kademeleri (Bronz / Gümüş / Altın / Elmas / Şampiyon)
   getColosseumTier(rating = (this.state.colosseumStats?.rating || 1000)) {
-    if (rating >= 1800) return { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800 };
-    if (rating >= 1500) return { id: 'diamond', name: '💎 Elmas Gladyatör', color: '#38bdf8', rewardMult: 1.6, minRating: 1500 };
-    if (rating >= 1300) return { id: 'gold', name: '🥇 Altın Gladyatör', color: '#eab308', rewardMult: 1.3, minRating: 1300 };
-    if (rating >= 1150) return { id: 'silver', name: '🥈 Gümüş Gladyatör', color: '#94a3b8', rewardMult: 1.1, minRating: 1150 };
-    return { id: 'bronze', name: '🥉 Bronz Gladyatör', color: '#b45309', rewardMult: 1.0, minRating: 0 };
+    const leagues = GAME_CONFIG.COLOSSEUM.LEAGUES;
+    const t = leagues.find(l => rating >= l.minRating) || leagues[leagues.length - 1];
+    return { id: t.id, name: t.name, color: t.color, rewardMult: t.rewardMult, minRating: t.minRating };
   }
 
   // =========================================================================

@@ -5524,7 +5524,7 @@ function openPreBattleModal(monster) {
   const staminaCheck = { canEnter: terms.staminaOk, shortfall: terms.staminaShortfall };
   const curStamina = Math.floor(state.stamina || 0);
   const maxStamina = gameState.getMaxStamina();
-  const perSoldierCost = 5 + Number(monster.level);
+  const perSoldierCost = gameState.getDungeonStaminaCost(monster.level, 1);
 
   const staminaInfoCardHtml = `
     <div class="prebattle-stamina-card" style="margin-top:10px; padding:10px 12px; background:${staminaCheck.canEnter ? 'rgba(56,189,248,0.08)' : 'rgba(239,68,68,0.12)'}; border:1px solid ${staminaCheck.canEnter ? 'rgba(56,189,248,0.3)' : 'rgba(239,68,68,0.45)'}; border-radius:10px;">

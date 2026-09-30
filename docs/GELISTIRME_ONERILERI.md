@@ -19,6 +19,8 @@
 | Sayfa yenileyerek yenilgiden kaçma (§6, P1) | ✅ Zindan sonucu `settleDungeonBattle` ile animasyondan önce kaydedilir |
 | Günlük sayaçların bilgisayar saatine bağlı olması (§6, P1) | ✅ Günlük zindan/kolezyum hakları ve günlük geri alım güvenilir saati kullanır. Çevrimdışı telafi ve bot süreleri hâlâ bilgisayar saatine bağlı (sunucu gerektirir) |
 | CI (§9, P1) | ✅ `.github/workflows/ci.yml`: sözdizimi kontrolü, testler ve derleme |
+| Tek canavar tablosu (§9, P1) | ✅ `js/bestiary.js` tek kaynak: harita sahnesi ve savaş aynı tablodan okur. Hiç çağrılmayan formüllü canavar üretimi (`buildRun`, `buildMonster`, `expectedSquad`, `getWeeklyModifier`, `buildWorldBoss`) ve sahnedeki kullanılmayan `rewardAdAstra` kaldırıldı. Zindan ADA/XP ödül formülünün sabitleri `DUNGEON.REWARD_*` ayarlarına taşındı |
+| Config tek doğruluk kaynağı (§9, P1) | ✅ Silo kapasiteleri, kolezyum lig sınırları, World Boss canı ve rol çeşitliliği bonusu artık yalnızca `config.js`'ten okunuyor. Config'deki yanlış değerler, oyunun zaten kullandığı değerlere eşitlendi (gümüş 1150, elmas 1500, çeşitlilik tavanı +%50). Kullanılmayan ~45 anahtar silindi; gelecek sistem taslakları (`DUNGEON_MODIFIERS`, `EQUIPMENT_AFFIXES`, `AFFIX_RARITY`, `SEASON`, `PRESTIGE`, lig haftalık ödülleri) "henüz bağlı değil" notuyla bırakıldı. Davranış değişmedi: 18 canavar, 18 silo seviyesi, lig sınırları ve zindan ödülleri önce/sonra birebir karşılaştırıldı |
 
 ### Denetimden sonra bulunan yeni sorunlar
 
@@ -333,7 +335,7 @@ Bugün kabul edilebilir düzeyde. En büyük kazanç, Phaser'ı npm'den pakete a
 | **P0** | E3: piyangonun ödeme gücü ve adaleti | Kullanıcının kuralı — **karar kullanıcıda** |
 | **P0** | Bozuk kayıtta veri kaybı (yedek alma ve kurtarma) | ✅ v1.28 |
 | **P1** | Phaser'ı pakete almak (CDN bağımlılığı, SRI eksikliği) | ✅ v1.28 |
-| **P1** | Tek canavar tablosu; config'i tek doğruluk kaynağı yapmak; kullanılmayan anahtarları temizlemek | Güvenli yeniden düzenleme |
+| **P1** | Tek canavar tablosu; config'i tek doğruluk kaynağı yapmak; kullanılmayan anahtarları temizlemek | ✅ |
 | **P1** | G1 zindan giriş duvarı · G4 ve G5 savaş ödüllerinin dengesi | Denge — **onay gerekli** |
 | **P1** | E4: bot yenileme koruması | Oyuncuyu korur — **onay gerekli** |
 | **P1** | Günlük sayaçları "güvenilir saate" bağlamak; sayfa yenileyerek yenilgiden kaçmayı kapatmak | ✅ v1.28 |
