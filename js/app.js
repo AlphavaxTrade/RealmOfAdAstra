@@ -240,7 +240,11 @@ function renderTopBar() {
   dom.adAstraBalance.innerText = compactBalance
     ? state.adAstraBalance.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 })
     : fullBalance;
-  if (dom.adAstraBalance.parentElement) dom.adAstraBalance.parentElement.title = `$ADASTRA bakiyen: ${fullBalance}`;
+  if (dom.adAstraBalance.parentElement) {
+    const lk = gameState.getLockedBalanceInfo();
+    const f2 = v => v.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
+    dom.adAstraBalance.parentElement.title = `$ADASTRA bakiyen: ${fullBalance}\n🔓 Serbest: ${f2(lk.free)} · 🔒 Kilitli: ${f2(lk.locked)}`;
+  }
 
   const siloCap = gameState.getWarehouseCapacity();
   const fmtRes = (v) => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
@@ -3586,7 +3590,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                 <span class="card-badge" style="background:#ec4899; color:#fff; border:none; font-weight:800;">RTP ~%${Math.round(wheelRewards.reduce((s, r) => s + ((r.weight / (wheelRewards.reduce((ws, wi) => ws + (wi.weight || 0), 0) || 10000)) * (r.valAda || 0)), 0))} • Kasa Garantili</span>
               </div>
               <div style="font-size: 0.85rem; color: #cbd5e1; margin-top:2px;">
-                100 ADA veya 100 ADA'ya denk gelen hammadde ile çevirebilir, ya da piyango biletini çark hakkına dönüştürebilirsin!
+                ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA veya bu tutara denk gelen hammadde ile çevirebilir, ya da piyango biletini çark hakkına dönüştürebilirsin!
               </div>
             </div>
             <div id="carnival-shards-badge" style="font-size:0.82rem; color:#fde047; background:rgba(0,0,0,0.4); padding:6px 14px; border-radius:8px; border:1px solid rgba(250,204,21,0.3); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, border-color 0.2s ease;">
@@ -3641,12 +3645,12 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         <!-- 4 Farklı Ödeme Yöntemi ile Çarkı Çevir Butonları -->
         <div class="clean-card" style="border-color: #ec4899; background: #120914;">
           <div style="font-size:0.88rem; font-weight:800; color:#f472b6; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>🪙 Çarkı Çevirme Seçenekleri (100 ADA Eşdeğeri):</span>
+            <span>🪙 Çarkı Çevirme Seçenekleri (${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA Eşdeğeri):</span>
             <span style="font-size:0.75rem; color:#fde047;">Hammadde anında yakılarak sistemden silinir!</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
             <button class="btn-clean btn-spin-wheel" data-pay="ada" style="background:#7c3aed; border-color:#a78bfa; font-weight:800; padding:10px;">
-              🟣 100 ADA İle Çevir
+              🟣 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA İle Çevir
             </button>
             <button class="btn-clean btn-spin-wheel" data-pay="wheat" style="background:#854d0e; border-color:#fde047; font-weight:800; padding:10px;">
               🌾 ${costWheat} Buğday İle Çevir
@@ -3749,7 +3753,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             <label for="lottery-ticket-count" class="lottery-buy-label">Bilet adedi</label>
             <input type="number" id="lottery-ticket-count" class="lottery-buy-input" value="${Math.min(1, lot.canBuy) || 1}" min="1" max="${Math.max(1, lot.canBuy)}" ${lot.canBuy > 0 ? '' : 'disabled'} />
             <button id="btn-buy-lottery-action" class="btn-clean btn-gold" ${lot.canBuy > 0 ? '' : 'disabled'}>
-              ${lot.canBuy > 0 ? `🎟️ Bilet al (100 ADA/adet) · en fazla ${lot.canBuy}` : '🚫 Şu an bilet alamazsın'}
+              ${lot.canBuy > 0 ? `🎟️ Bilet al (${gameState.getLotteryRules().ticketPrice.toLocaleString('tr-TR')} ADA/adet) · en fazla ${lot.canBuy}` : '🚫 Şu an bilet alamazsın'}
             </button>
           </div>
           ${blockedBy ? `<div class="pe-note pe-warn">${blockedBy}</div>` : ''}
@@ -3806,8 +3810,27 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             </span>
           </div>
           <div class="clean-desc" style="color: #cbd5e1; font-size: 0.85rem; line-height: 1.5; margin-top: 6px;">
-            Karnaval harcamaları dahil, oyundan kazanılan ve harcanan tüm AdAstra'lar matematiksel bir anayasa ile yönetilir: Her harcamanın <strong>%13'ü kalıcı yakılır</strong>, <strong>%6'sı Evrensel Temel Gelir'e (UBI)</strong>, <strong>%3'ü Geliştirici/Team payına</strong>, kalan <strong>%78'i ise 5 ana Krallık hazine kasasına</strong> (Zindan %25, AMM DEX %18, World Boss %15, Kolezyum %10, Karnaval %10) aktarılarak oyunculara geri dağıtılır.
+            Karnaval harcamaları dahil, oyundan kazanılan ve harcanan tüm AdAstra'lar matematiksel bir anayasa ile yönetilir: Her harcamadan <strong>%${eData.burnRatePct} kalıcı yakım</strong>, <strong>%${eData.ubiRatePct} Evrensel Temel Gelir (UBI)</strong> ve <strong>%${eData.creatorRatePct} Geliştirici/Team payı</strong> ayrılır; kalan <strong>%${eData.treasuryRatePct} ${eData.pools.length} Krallık hazine kasasına</strong> (${eData.pools.map(p => p.name + ' %' + String(p.sharePct).replace('.', ',')).join(', ')}) aktarılarak oyunculara geri dağıtılır.
           </div>
+
+          ${(() => {
+            const lk = gameState.getLockedBalanceInfo();
+            const ct = gameState.getContributionInfo();
+            const mult = gameState.getAdaPriceMultiplier();
+            const f = v => Math.floor(v).toLocaleString('tr-TR');
+            return `
+          <div style="background: #111827; padding: 12px 14px; border-radius: 8px; border: 1px solid #334155; margin-top: 12px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.88rem; font-weight: 800;">
+              <span style="color: #4ade80;">🔓 Serbest: ${f(lk.free)} ADA</span>
+              <span style="color: #fbbf24;">🔒 Kilitli: ${f(lk.locked)} ADA</span>
+              <span style="color: #38bdf8;">🏅 Katkı puanı (bu hafta): ${f(ct.week)}</span>
+              <span style="color: #c084fc;">💱 Fiyat çarpanı: ×${mult.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}</span>
+            </div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
+              Oyundan kazandığın ADA'nın %20'si serbest, %80'i kilitli başlar. Kilitli ADA'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. İleride çekim yalnız serbest kısımdan yapılacak; ortak haftalık çekim hakkından payını katkı puanın belirleyecek.
+            </div>
+          </div>`;
+          })()}
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 14px;">
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
@@ -3926,53 +3949,28 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             Karnaval çarkı ve piyangosu dahil, oyunda harcanan her <strong>100 $ADASTRA</strong>'nın anlık akış oranları:
           </div>
 
-          <!-- Dağılım Çubuğu (%100 Tam Kırılım) -->
+          <!-- Dağılım Çubuğu (%100 Tam Kırılım) — oranlar ayarlardan (GAME_CONFIG) okunur -->
+          ${(() => {
+            const shortName = { dungeon: 'Zindan', ammBuyback: 'Pazar Geri Alım', worldBoss: 'World Boss', arena: 'Kolezyum', carnival: 'Karnaval', quest: 'Görev' };
+            const slices = [
+              { label: '🔥 Yakım', title: 'Kalıcı Yakım', pct: eData.burnRatePct, color: '#ef4444', text: '#fca5a5' },
+              { label: '🤝 UBI', title: 'Evrensel Temel Gelir - UBI', pct: eData.ubiRatePct, color: '#a855f7', text: '#d8b4fe' },
+              { label: '🛠️ Team', title: 'Team / Geliştirici Payı', pct: eData.creatorRatePct, color: '#64748b', text: '#cbd5e1' },
+              ...eData.pools.map(p => ({ label: p.icon + ' ' + (shortName[p.id] || p.name), title: p.name, pct: p.sharePct, color: p.color, text: '#e2e8f0' }))
+            ];
+            const fmtPct = v => '%' + String(v).replace('.', ',');
+            return `
           <div style="height: 20px; width: 100%; border-radius: 10px; overflow: hidden; display: flex; margin-top: 10px; border: 1.5px solid rgba(255,255,255,0.25); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
-            <div style="width: 13%; background: #ef4444;" title="Kalıcı Yakım (%13)"></div>
-            <div style="width: 6%; background: #a855f7;" title="Evrensel Temel Gelir - UBI (%6)"></div>
-            <div style="width: 3%; background: #64748b;" title="Team / Geliştirici Payı (%3)"></div>
-            <div style="width: 25%; background: #06b6d4;" title="Zindan Ganimeti (%25)"></div>
-            <div style="width: 18%; background: #38bdf8;" title="AMM DEX Likidite & Buyback (%18)"></div>
-            <div style="width: 15%; background: #f87171;" title="World Boss Akın Havuzu (%15)"></div>
-            <div style="width: 10%; background: #f59e0b;" title="Kolezyum Gladyatör (%10)"></div>
-            <div style="width: 10%; background: #ec4899;" title="Karnaval & Çark Kasası (%10)"></div>
+            ${slices.map(s => `<div style="width: ${s.pct}%; background: ${s.color};" title="${s.title} (${fmtPct(s.pct)})"></div>`).join('')}
           </div>
-
-          <!-- 8 Dilimin Tam Listesi -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px; margin-top: 12px; font-size: 0.8rem;">
-            <div style="background: rgba(239,68,68,0.12); border: 1px solid #ef4444; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:2px; flex-shrink:0;"></span>
-              <span>🔥 Yakım: <strong style="color:#fca5a5;">%13</strong></span>
-            </div>
-            <div style="background: rgba(168,85,247,0.12); border: 1px solid #a855f7; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#a855f7; border-radius:2px; flex-shrink:0;"></span>
-              <span>🤝 UBI: <strong style="color:#d8b4fe;">%6</strong></span>
-            </div>
-            <div style="background: rgba(100,116,139,0.15); border: 1px solid #64748b; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#64748b; border-radius:2px; flex-shrink:0;"></span>
-              <span>🛠️ Team: <strong style="color:#cbd5e1;">%3</strong></span>
-            </div>
-            <div style="background: rgba(6,182,212,0.12); border: 1px solid #06b6d4; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#06b6d4; border-radius:2px; flex-shrink:0;"></span>
-              <span>🏰 Zindan: <strong style="color:#67e8f9;">%25</strong></span>
-            </div>
-            <div style="background: rgba(56,189,248,0.12); border: 1px solid #38bdf8; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#38bdf8; border-radius:2px; flex-shrink:0;"></span>
-              <span>🤖 AMM DEX: <strong style="color:#7dd3fc;">%18</strong></span>
-            </div>
-            <div style="background: rgba(248,113,113,0.12); border: 1px solid #f87171; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#f87171; border-radius:2px; flex-shrink:0;"></span>
-              <span>🌋 World Boss: <strong style="color:#fca5a5;">%15</strong></span>
-            </div>
-            <div style="background: rgba(245,158,11,0.12); border: 1px solid #f59e0b; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#f59e0b; border-radius:2px; flex-shrink:0;"></span>
-              <span>🏟️ Kolezyum: <strong style="color:#fde047;">%10</strong></span>
-            </div>
-            <div style="background: rgba(236,72,153,0.12); border: 1px solid #ec4899; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-block; width:10px; height:10px; background:#ec4899; border-radius:2px; flex-shrink:0;"></span>
-              <span>🎪 Karnaval: <strong style="color:#f472b6;">%10</strong></span>
-            </div>
-          </div>
+            ${slices.map(s => `
+            <div style="background: ${s.color}1f; border: 1px solid ${s.color}; border-radius: 6px; padding: 6px 8px; display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-block; width:10px; height:10px; background:${s.color}; border-radius:2px; flex-shrink:0;"></span>
+              <span>${s.label}: <strong style="color:${s.text};">${fmtPct(s.pct)}</strong></span>
+            </div>`).join('')}
+          </div>`;
+          })()}
         </div>
 
         <!-- 4. İLGİLİ HAVUZLARDA NE KADAR ÖDÜL VAR? (CANLI HAVUZ KARTLARI) -->
@@ -3991,7 +3989,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                     <div style="font-weight: 800; font-size: 1.05rem; color: #fff; display:flex; align-items:center; gap:8px;">
                       <span>${pool.name}</span>
                       <span class="card-badge" style="background:${pool.color}; color:#000; font-weight:900; font-size:0.75rem;">
-                        Gelir Payı: %${pool.sharePct}
+                        Gelir Payı: %${String(pool.sharePct).replace('.', ',')}
                       </span>
                     </div>
                     <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px; max-width: 520px; line-height: 1.3;">
@@ -5268,6 +5266,10 @@ function openTreasuryVaultModal() {
         openCollectionModal();
       } else if (act === 'parliament') {
         showToast('🏛️ AdAstra Meclisi: Topluluk oylamaları ve NFT pazar indirimleri aktiftir.', 'info');
+      } else if (act === 'quests') {
+        closeModal();
+        guideExpanded = true;
+        renderGuideWidget();
       }
     });
   });
@@ -7600,6 +7602,10 @@ function initAppEvents() {
         openCarnivalModal('wheel');
       } else if (act === 'lottery') {
         openCarnivalModal('lottery');
+      } else if (act === 'quests') {
+        closeModal();
+        guideExpanded = true;
+        renderGuideWidget();
       }
       return;
     }
@@ -8741,6 +8747,7 @@ function tickPlayerGuide(now) {
   if (now - lastGuideTick < 2000) return;
   lastGuideTick = now;
   try { gameState.processScheduledLottery(); } catch (e) { console.warn('Piyango takvimi:', e); }
+  try { gameState.processEconomyTick(); } catch (e) { console.warn('Ekonomi döngüsü:', e); }
   gameState.checkOnboardingProgress();
   renderGuideWidget();
   if (gameState.state.offlineReport && !isAnyModalOpen()) openOfflineReportModal();

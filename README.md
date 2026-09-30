@@ -44,7 +44,7 @@ Geliştirme sunucusunda sağ alttaki **🧪 Test Menüsü** (veya `T`) açılır
 | **Zindan** | 6 kat, 18 seviye, boss fazları. Her girişte stamina harcanır. Günün 1. girişinde silah aşınmaz; 2.–5. giriş harçsız ödüllü (silah aşınır); 6. girişten itibaren kapı harcı veya antrenman. |
 | **Kolezyum** | 1v1 ELO, lig kademeleri; maç başına 1 anahtar + stamina, günde 10 maç. |
 | **Piyango** | 100 ADA bilet, haftada tek kazanan (ödediğinin 2 katı). Hesap başına haftada en fazla 100 bilet alınır; kazanmayan biletler yanmaz, kazanana kadar sonraki haftalara devreder. |
-| **Hazine** | Harcanan her ADA: %13 yakım · %6 haftalık temel gelir (UBI) · %3 yapımcı payı · %78 hazine kasaları. Ödüller basılmaz, kasadan ödenir. |
+| **Hazine** | Harcanan her ADA: %5 yakım · %6 haftalık temel gelir (UBI) · %3 yapımcı payı · %86 hazine kasaları (zindan, kolezyum, dünya bossu, pazar geri alım, görev, karnaval). Ödüller basılmaz, kasadan ödenir. Kazancın %80'i kilitli başlar; harcadıkça ve oynadıkça açılır. |
 | **Taverna botu** | 24 saatlik otomatik sefer, tamir ve satış. |
 
 Tüm sınırlar oyunda **📊 Kotalar** panelinden (üst bar, yan panel veya `K` kısayolu) izlenir.

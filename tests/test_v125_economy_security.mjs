@@ -208,17 +208,17 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ok('Eski bot paketleri kapalı, seviye bonusu +%1,5/seviye');
 }
 
-// 13) Yeni oyuncu rehberi ödülü hazineden çekilir, bir kez alınır
+// 13) Yeni oyuncu rehberi ödülü Görev kasasından çekilir, bir kez alınır
 {
   const gs = fresh();
   gs.startExpedition('wood');
   gs.checkOnboardingProgress();
-  const dungeonBefore = treasury.getPool('dungeon');
+  const questBefore = treasury.getPool('quest');
   const adaBefore = gs.state.adAstraBalance;
   const r1 = gs.claimOnboardingReward('first_expedition');
   assert.ok(r1.success && r1.granted > 0);
   assert.equal(gs.state.adAstraBalance - adaBefore, r1.granted);
-  assert.ok(Math.abs((dungeonBefore - treasury.getPool('dungeon')) - r1.granted) < 1e-6, 'Ödül zindan kasasından düşmeli');
+  assert.ok(Math.abs((questBefore - treasury.getPool('quest')) - r1.granted) < 1e-6, 'Ödül görev kasasından düşmeli');
   assert.equal(gs.claimOnboardingReward('first_expedition').success, false, 'Ödül ikinci kez alınamamalı');
   ok('Rehber: ödül hazineden, tek sefer');
 }

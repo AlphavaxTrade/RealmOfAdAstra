@@ -5,14 +5,14 @@ import { globalPool } from '../js/globalPool.js';
 import { GAME_CONFIG } from '../js/config.js';
 import { shareOf, openWeek } from '../js/economy/ubi.js';
 
-test('Evrensel Temel Gelir (UBI) & %3 Yapımcı Telifi & %13 Yakım Testi', async (t) => {
+test('Evrensel Temel Gelir (UBI) & %3 Yapımcı Telifi & %5 Yakım Testi', async (t) => {
   gameState.vanillaReset();
 
-  await t.test('[1/6] Tokenomics Oranları Doğrulaması: %13 Yakım, %3 Yapımcı, %6 UBI, %78 Hazine', () => {
-    assert.equal(GAME_CONFIG.TOKEN_BURN_RATE, 0.13, 'Yakım oranı %13 olmalı');
+  await t.test('[1/6] Tokenomics Oranları Doğrulaması: %5 Yakım, %3 Yapımcı, %6 UBI, %86 Hazine', () => {
+    assert.equal(GAME_CONFIG.TOKEN_BURN_RATE, 0.05, 'Yakım oranı %5 olmalı');
     assert.equal(GAME_CONFIG.CREATOR_ROYALTY_RATE, 0.03, 'Yapımcı telif oranı %3 olmalı');
     assert.equal(GAME_CONFIG.UBI_POOL_RATE, 0.06, 'UBI havuz oranı %6 olmalı');
-    assert.equal(GAME_CONFIG.TOKEN_REWARD_POOL_RATE, 0.78, 'Hazine ödül oranı %78 olmalı');
+    assert.equal(GAME_CONFIG.TOKEN_REWARD_POOL_RATE, 0.86, 'Hazine ödül oranı %86 olmalı');
     assert.equal(
       GAME_CONFIG.CREATOR_WALLET_ADDRESS,
       '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C',
@@ -28,12 +28,12 @@ test('Evrensel Temel Gelir (UBI) & %3 Yapımcı Telifi & %13 Yakım Testi', asyn
 
     const res = globalPool.recordTokenSpend(spendAmount);
 
-    assert.equal(res.burned, 1300, '%13 yani 1.300 ADA yakılmalı');
+    assert.equal(res.burned, 500, '%5 yani 500 ADA yakılmalı');
     assert.equal(res.creatorRoyalty, 300, '%3 yani 300 ADA yapımcı cüzdanına tahsis edilmeli');
     assert.equal(res.ubiShare, 600, '%6 yani 600 ADA UBI havuzuna eklenmeli');
-    assert.equal(res.treasuryShare, 7800, '%78 yani 7.800 ADA hazineye gitmeli');
+    assert.equal(res.treasuryShare, 8600, '%86 yani 8.600 ADA hazineye gitmeli');
 
-    assert.equal(globalPool.state.totalBurned, initialBurned + 1300);
+    assert.equal(globalPool.state.totalBurned, initialBurned + 500);
     assert.equal(globalPool.state.creatorRoyaltyTotal, initialCreator + 300);
     assert.equal(globalPool.state.ubiPool, initialUbi + 600);
   });

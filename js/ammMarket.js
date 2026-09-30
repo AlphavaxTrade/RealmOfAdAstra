@@ -3,7 +3,7 @@
 // AMM DEX Dinamik Havuz Mimarisi:
 //  • Rezervler AMM_CORRIDORS hedef fiyatlarından türetilir (YASA 3: kıt olan pahalıdır).
 //  • Derinlik, haftalık küresel kotanın fiyatı ~%7 hareket ettireceği şekilde seçilir.
-//  • %2.00 Market Harcı alınır: %78 Hazine, %13 Kalıcı Yakım, %6 UBI, %3 Telif.
+//  • %2.00 Market Harcı alınır: %86 Hazine, %5 Kalıcı Yakım, %6 UBI, %3 Telif.
 //  • %2.00 Hammadde Yakımı alınır: Alınan/satılan kaynaktan anında yakılıp total arzdan silinir.
 //  • Fiyat koridoru UYGULANIR: taban altına inen satış reddedilir, tavan aşımı engellenir.
 // ============================================================================
@@ -369,13 +369,13 @@ export class AMMMarketEngine {
     pool.adAstraReserve -= gross;
 
     // %2 Market Komisyonu: Doğrudan Ekosistem Token Harcama & Hazine Dağıtım Motoruna aktarılır:
-    // (%78 Hazine 5 Ödül Kasası + %13 Kalıcı Yakım + %6 UBI Temel Gelir + %3 Yapımcı)
+    // (%86 Hazine 6 Ödül Kasası + %5 Kalıcı Yakım + %6 UBI Temel Gelir + %3 Yapımcı)
     let spendResult = null;
     if (fee > 0 && typeof globalPool !== 'undefined' && typeof globalPool.recordTokenSpend === 'function') {
       spendResult = globalPool.recordTokenSpend(fee);
     }
 
-    const burned = spendResult ? spendResult.burned : (fee * 0.13);
+    const burned = spendResult ? spendResult.burned : (fee * (GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05));
     this.feeStats.collected += fee;
     this.feeStats.burned += burned;
     this.savePools();
@@ -431,7 +431,7 @@ export class AMMMarketEngine {
       spendResult = globalPool.recordTokenSpend(fee);
     }
 
-    const burned = spendResult ? spendResult.burned : (fee * 0.13);
+    const burned = spendResult ? spendResult.burned : (fee * (GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05));
     this.feeStats.collected += fee;
     this.feeStats.burned += burned;
     this.savePools();

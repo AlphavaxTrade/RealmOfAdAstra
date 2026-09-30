@@ -38,8 +38,8 @@ graph TD
     Army -->|Zindan & Boss Savaşları| Loot[🟣 $ADASTRA / 🧩 Parça / 📦 Pandora / 🗝️ Anahtar]
     Res -->|Silo / Tamir / Dövme / Stamina| BurnRes[🔥 Evrensel Hammadde Yakımı - Arzdan Kalıcı Silinme]
     Loot -->|AMM DEX Alış / Satış| AMM[💱 %2 Havuz Harcı + %2 Hammadde Yakımı]
-    AMM -->|%13 Kalıcı Yakım| BurnToken[🔥 Token Yakımı]
-    AMM -->|%78 Hazine / %6 UBI / %3 Telif| Treasury[🏛️ Krallık Kasası & UBI Havuzu]
+    AMM -->|%5 Kalıcı Yakım| BurnToken[🔥 Token Yakımı]
+    AMM -->|%86 Hazine / %6 UBI / %3 Telif| Treasury[🏛️ Krallık Kasası & UBI Havuzu]
 ```
 
 ### Temel Prensipler:
@@ -58,18 +58,24 @@ Oyunda bir token harcandığında (AMM harçları, seviye atlama, bot kâr ortak
 
 | Havuz / Fon Adı | Pay | Görevi ve Kullanım Amacı |
 | :--- | :---: | :--- |
-| **🔥 Kalıcı Token Yakımı (Burn)** | **%13** | Geri dönüşsüz kara delik adresine gönderilir; arzı sürekli daraltır. |
-| **🏛️ Krallık Hazine Kasaları** | **%78** | Zindan, Arena, Dünya Bossu, DEX Geri Alım ve Karnaval havuzlarını besler. |
+| **🔥 Kalıcı Token Yakımı (Burn)** | **%5** | Geri dönüşsüz kara delik adresine gönderilir; arzı sürekli daraltır. |
+| **🏛️ Krallık Hazine Kasaları** | **%86** | Zindan, Kolezyum, Dünya Bossu, Pazar Geri Alım, Görev ve Karnaval kasalarını besler. |
 | **🤝 Evrensel Temel Gelir (UBI)** | **%6** | Oyuncu seviyesine göre ($W(L) = 1 + \sqrt{L-1} \times 0.75$) haftalık pasif gelir; tek çekim tavanı havuzun %5'idir. |
 | **🎨 Yapımcı & Geliştirici Telifi** | **%3** | Protokol geliştirme cüzdanına aktarılır (`0x58DBCF66bdd7BfA9da98aDba1965b3794321087C`). |
 
-### 🏛️ Hazine Kasaları Dağılım Matrisi (%78 Hazine İçi Kırılım):
-- **🏰 Zindan Ganimet Kasası (%25):** 6 Kat ve 18 Seviyeli zindan canavarlarını ve bosslarını yenenlere dağıtılır.
-- **💱 AMM DEX Likidite & Buyback Rezervi (%18):** Avalanche C-Chain üzerindeki piyasa taban fiyatını desteklemek ve DEX likiditesini güçlendirmek için kullanılır.
-- **🌋 Dünya Bossu Kasası (%15):** Haftalık ordusunu Dünya Bossuna stake eden oyuncuların verdiği hasara göre dağıtılır.
-- **⚔️ Kolezyum Gladyatör Arenası (%10):** Gladyatör ligi şampiyonlarına haftalık ödül olarak verilir (Askeri koruma devrededir, permadeath yoktur).
-- **🎡 Karnaval & Şans Çarkı Kasası (%10):** 15 potansiyel ödüllü şans çarkında çıkan doğrudan token ikramiyelerinin emisyon kasasıdır.
-*(Hazine İçi Toplam: %25 + %18 + %15 + %10 + %10 = %78 Krallık Hazinesi | Genel Harcama Dağılımı: %13 Yakım + %6 UBI + %3 Team + %78 Hazine = %100)*
+### 🏛️ Hazine Kasaları Dağılım Matrisi (%86 hazine girişinin kırılımı — v1.29, 30 Eylül 2026):
+- **🏰 Zindan Ganimet Kasası (hazinenin %30'u = harcamanın %25,8'i):** 6 Kat ve 18 Seviyeli zindan canavarlarını ve bosslarını yenenlere dağıtılır.
+- **⚔️ Kolezyum Gladyatör Arenası (%15 = %12,9):** Gladyatör ligi şampiyonlarına haftalık ödül olarak verilir (Askeri koruma devrededir, permadeath yoktur).
+- **🌋 Dünya Bossu Kasası (%15 = %12,9):** Haftalık ordusunu Dünya Bossuna stake eden oyuncuların verdiği hasara göre dağıtılır.
+- **💱 Pazar Geri Alım Rezervi (%15 = %12,9):** Oyun içi pazarda taban fiyatı desteklemek için dipteki hammaddeleri geri alır ve yakar.
+- **📜 Görev & Ücretsiz Oyuncu Kasası (%21 = %18,1):** Görev ödülleri; sunucu aşamasında ücretsiz oyunculara her ay piyasa değerinin %1'i (kişi başı en fazla 100$).
+- **🎡 Karnaval & Şans Çarkı Kasası (%4 = %3,4):** Şans çarkında çıkan doğrudan token ikramiyelerinin kasasıdır.
+*(Genel Harcama Dağılımı: %5 Yakım + %6 UBI + %3 Team + %86 Hazine = %100. Yakım %13'ten %5'e indirildi: token modelinde yatırımcının 3 yılda geri aldığı pay %63'ten %77'ye çıktı; yakımın ağırlığı sunucu aşamasında çekim ücretine ve fiyat savunmasına kayacak.)*
+
+### 🔒 Kilitli Bakiye, 🏅 Katkı Puanı ve 💱 ADA Fiyat Çarpanı (v1.29)
+- **Kilitli bakiye:** Oyundan kazanılan ADA'nın %20'si serbest, %80'i kilitli başlar. Kilitli ADA oyunda harcanabilir; harcamada önce kilitli kısım kullanılır ve harcananın %20'si kadar ek kilit açılır. Ayrıca herkese haftada %1, her gün oyuna girene haftada ek %1,4 açılır. Çekim (sunucu aşaması) yalnız serbest kısımdan yapılır.
+- **Katkı puanı:** Oyunda harcanan her ADA 1 puan; yakılan hammaddenin ve pazara net satılan hammaddenin ADA değeri 0,5 puan. Aynı hammaddeyi alıp satmak puan getirmez. Sunucu aşamasında ortak haftalık çekim hakkı bu puana göre paylaşılacak.
+- **ADA fiyat çarpanı:** Sabit ADA fiyatları (asker, iyileşme, bilet, çark, Genesis NFT) ve ödülleri (zindan, görev, kolezyum tavanı) tek bir çarpanla ölçeklenir. Çarpan haftada en fazla %5 değişir. Şimdilik hedef elle girilir; sunucu aşamasında Arena'daki gerçek fiyattan hesaplanacak. Pazar fiyatından hesaplanan bedeller (teçhizat, silo, seviye) zaten kendiliğinden ayarlanır.
 
 ---
 
@@ -100,7 +106,7 @@ Oyun içi hammadde takası, Uniswap v2 / Pangolin mimarisindeki **Sabit Çarpım
 
 $$x \cdot y = k$$
 
-- **İşlem Harcı:** Tüm alım ve satımlarda **%2.00 AMM Harcı** kesilir. Kesilen harç doğrudan Krallık Hazinesine aktarılır, %13'ü yakılır ve %6'sı UBI havuzuna eklenir.
+- **İşlem Harcı:** Tüm alım ve satımlarda **%2.00 AMM Harcı** kesilir. Kesilen harç doğrudan Krallık Hazinesine aktarılır, %5'i yakılır ve %6'sı UBI havuzuna eklenir.
 - **Dinamik Fiyatlandırma:** Hammadde satıldığında havuzdaki hammadde artar, ADA azalır $\to$ Fiyat düşer. Hammadde alındığında tersi gerçekleşir $\to$ Fiyat yükselir.
 - **🤖 Saniyelik Canlı Maliyet Botu (`tickUpgradeCostBot`):**
   Silo yükseltme, seviye atlama ve teçhizat üretiminde gereken hammaddelerin **AMM DEX pazarındaki o anki toplam $ADASTRA değeri** anlık hesaplanır. Bot her saniye fiyat değişimlerini dinler ve arayüzü canlı borsa verisi gibi günceller.

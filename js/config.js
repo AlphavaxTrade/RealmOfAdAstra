@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.28.0',
+  GAME_VERSION: '1.29.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -16,12 +16,41 @@ export const GAME_CONFIG = {
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
   WHEAT_PER_STAMINA: 3.15,            // 1 Stamina doldurmak için gereken buğday miktarı (Fix 3.15)
 
-  // %13 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %78 Hazine
-  TOKEN_BURN_RATE: 0.13,
+  // Ekonomi kararı (30 Eylül 2026, token modeli: scripts/model/token_economy_model.mjs):
+  // %5 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %86 Hazine.
+  // Yakım %13'ten %5'e indi: yatırımcının harcaması daha az erir; yakımın ağırlığı ileride
+  // çekim ücretine ve fiyat savunmasına kayar (sunucu aşaması).
+  TOKEN_BURN_RATE: 0.05,
   CREATOR_ROYALTY_RATE: 0.03,
   CREATOR_WALLET_ADDRESS: '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C',
   UBI_POOL_RATE: 0.06,
-  TOKEN_REWARD_POOL_RATE: 0.78,
+  TOKEN_REWARD_POOL_RATE: 0.86,
+
+  // 🔒 KİLİTLİ BAKİYE — kazanılan ADA'nın çoğu kilitli başlar; oyunda harcanabilir ama çekilemez.
+  // Harcadıkça, oynadıkça ve zamanla açılır. Çekim (sunucu aşaması) yalnız serbest kısımdan yapılır.
+  LOCKED_BALANCE: {
+    FREE_SHARE: 0.20,               // kazancın serbest kısmı (kalanı kilitli)
+    UNLOCK_ON_SPEND: 0.20,          // harcamada önce kilitli kısım kullanılır, üstüne harcananın %20'si kadar kilit açılır
+    WEEKLY_UNLOCK_BASE: 0.01,       // herkese: kilitli bakiyenin haftada %1'i
+    WEEKLY_UNLOCK_ACTIVE: 0.014     // oyuna girilen günler için ek (her gün giren için haftada toplam %1,4)
+  },
+
+  // 🏅 KATKI PUANI — ileride ortak haftalık çekim havuzundan pay bu puana göre dağıtılır (sunucu aşaması)
+  CONTRIBUTION: {
+    ADA_SPEND_WEIGHT: 1.0,          // oyunda harcanan (yakılan/kasaya giden) her ADA
+    RESOURCE_BURN_WEIGHT: 0.5,      // harcanan/yakılan hammaddenin pazar değeri (ADA)
+    RESOURCE_SALE_WEIGHT: 0.5       // pazara net hammadde satışı (aynı hammaddeyi alıp satmak puan getirmez)
+  },
+
+  // 💱 ADA FİYAT ÇARPANI — oyundaki sabit ADA fiyatları ve ödülleri bu çarpanla ölçeklenir.
+  // ADASTRA'nın dolar değeri düşünce çarpan artar (oyuna girişin dolar maliyeti korunur), değerlenince
+  // yavaş yavaş azalır. Şimdilik hedef elle girilir; sunucu aşamasında Arena fiyatından hesaplanır.
+  ADA_PRICE_MULTIPLIER: {
+    DEFAULT: 1,
+    MAX_WEEKLY_STEP: 0.05,          // çarpan haftada en fazla %5 değişir
+    MIN: 0.05,
+    MAX: 20
+  },
 
   // 🏛️ EVRENSEL TEMEL GELİR (UBI) & SEVİYE STAKE HAVUZU PARAMETRELERİ
   // Oran: UBI_POOL_RATE (yukarıda). Dağıtım kuralları: js/economy/ubi.js
@@ -527,17 +556,20 @@ export const GAME_CONFIG = {
   // ═══════════════════════════════════════════════════════════════════════
   // 🏦 HAZİNE DEFTERİ — YASA 1: ödül basılmaz, transfer edilir (F-05)
   // ═══════════════════════════════════════════════════════════════════════
-  // %13 Ebedi Yakım, %6 UBI, %3 Team Payı, Kalan %78'lik Gelirin 5 Ana Havuza Dağıtımı (Toplam 40 Milyon ADA Başlangıç Hazine Dağılımı):
-  // %25 Zindan (10M ADA), %18 AMM DEX (7.2M ADA), %15 World Boss (6M ADA), %10 Kolezyum (4M ADA), %10 Karnaval (4M ADA)
-  TREASURY_ALLOCATION: { dungeon: 25 / 78, ammBuyback: 18 / 78, worldBoss: 15 / 78, arena: 10 / 78, carnival: 10 / 78 },
+  // %5 Yakım, %6 UBI, %3 Team Payı; kalan %86'lık hazine girişinin 6 kasaya dağılımı (hazine payının yüzdesi):
+  // Zindan %30, Kolezyum %15, World Boss %15, Pazar geri alımı %15, Görev & ücretsiz oyuncu %21, Karnaval %4
+  TREASURY_ALLOCATION: { dungeon: 0.30, arena: 0.15, worldBoss: 0.15, ammBuyback: 0.15, quest: 0.21, carnival: 0.04 },
   TREASURY_POOL_NAMES: {
     dungeon: 'Zindan Ganimet Kasası',
     ammBuyback: 'AMM DEX & Likidite Rezervi',
     worldBoss: 'World Boss Ödül Havuzu',
     arena: 'Kolezyum Şampiyonluk Havuzu',
-    carnival: 'Sirk & Karnaval Ödül Havuzu'
+    carnival: 'Sirk & Karnaval Ödül Havuzu',
+    quest: 'Görev & Ücretsiz Oyuncu Kasası'
   },
-  TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7200000, worldBoss: 6000000, arena: 4000000, carnival: 4000000 },
+  TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7200000, worldBoss: 6000000, arena: 4000000, carnival: 4000000, quest: 8000000 },
+  // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
+  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100 },
   TREASURY_MIN_PAYOUT_RATIO: 0.15,   // havuz boşalsa bile ödül tamamen sıfırlanmaz
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
 
@@ -958,6 +990,18 @@ export const GAME_CONFIG = {
         'Günlük zindan ve kolezyum hakları ile günlük hazine geri alımı bilgisayar saatine değil, sunucu saatiyle düzeltilmiş saate bağlandı; bilgisayar saatini ileri almak hakları yenilemez.',
         'Oyun motoru (Phaser) artık oyunla birlikte paketlenir; dış bir siteye (CDN) erişilemediğinde oyunun hiç açılmaması sorunu giderildi.',
         'Test menüsü düğmeleri iki kez çalışıyordu (+6 saat ileri sarma 12 saat sarıyordu); düzeltildi.'
+      ]
+    },
+    {
+      version: 'v1.29',
+      title: '🔒 Yeni Ekonomi 1. Aşama: Kilitli Bakiye, Katkı Puanı, Görev Kasası & Fiyat Çarpanı',
+      date: '30 Eylül 2026',
+      changes: [
+        'Harcama dağılımı yenilendi: her harcamanın %5\'i yakılır (önceden %13), %6\'sı haftalık temel gelire, %3\'ü yapımcı payına, %86\'sı hazine kasalarına gider. Daha az yakım, oyuncuya geri dönen payı artırır.',
+        'Yeni Görev & Ücretsiz Oyuncu Kasası: hazine girişinin %21\'i buraya ayrılır. Görev ödülleri artık buradan ödenir; ileride ücretsiz oyunculara aylık pay da buradan dağıtılacak. Kasa payları: Zindan %30, Kolezyum %15, Dünya Bossu %15, Pazar Geri Alım %15, Görev %21, Karnaval %4.',
+        'Kilitli bakiye: oyundan kazandığın ADA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ADA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Hazine panelinde ve bakiyenin üzerine gelince serbest/kilitli miktarı görünür.',
+        'Katkı puanı: oyunda harcadığın her ADA, yaktığın ve pazara sattığın hammadde puan kazandırır. İleride haftalık çekim hakkından payını bu puan belirleyecek.',
+        'ADA fiyat çarpanı: asker, iyileşme, bilet, çark ve Genesis NFT fiyatları ile zindan ve görev ödülleri tek bir çarpana bağlandı. ADASTRA\'nın değeri değişince çarpan haftada en fazla %5 değişerek oyunun dolar maliyetini dengeler (şimdilik ×1).'
       ]
     }
   ],

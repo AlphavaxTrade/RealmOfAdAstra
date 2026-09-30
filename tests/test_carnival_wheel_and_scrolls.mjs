@@ -174,15 +174,21 @@ assert.equal(gs.state.inventory.scroll_heal, 1, '1 parşömen düşmeli');
 console.log('\n[6/6] Krallık Hazinesi & Havuz Dağılımı ve Canlı Ödüller Test Ediliyor...');
 const ecoSummary = gs.getEconomyAndPoolsSummary();
 assert(ecoSummary, 'Hazine ve havuz özeti oluşturulmalı');
-assert.equal(ecoSummary.burnRatePct, 13, 'Kalıcı yakım oranı %13 olmalı');
+assert.equal(ecoSummary.burnRatePct, 5, 'Kalıcı yakım oranı %5 olmalı');
 assert.equal(ecoSummary.ubiRatePct, 6, 'UBI havuz payı %6 olmalı');
 assert.equal(ecoSummary.creatorRatePct, 3, 'Yapımcı / Team payı %3 olmalı');
-assert.equal(ecoSummary.allocations.dungeon, 25 / 78, 'Zindan havuz payı %25 (25/78) olmalı');
-assert.equal(ecoSummary.allocations.ammBuyback, 18 / 78, 'AMM DEX havuz payı %18 (18/78) olmalı');
-assert.equal(ecoSummary.allocations.worldBoss, 15 / 78, 'World Boss havuz payı %15 (15/78) olmalı');
-assert.equal(ecoSummary.allocations.arena, 10 / 78, 'Kolezyum havuz payı %10 (10/78) olmalı');
-assert.equal(ecoSummary.allocations.carnival, 10 / 78, 'Karnaval havuz payı %10 (10/78) olmalı');
-assert(ecoSummary.pools.length === 5, '5 ana hazine havuzu listelenmeli');
+assert.equal(ecoSummary.treasuryRatePct, 86, 'Hazine payı %86 olmalı');
+// Kasa payları hazine girişinin yüzdesi (toplam 1)
+assert.equal(ecoSummary.allocations.dungeon, 0.30, 'Zindan: hazine payının %30u');
+assert.equal(ecoSummary.allocations.arena, 0.15, 'Kolezyum: hazine payının %15i');
+assert.equal(ecoSummary.allocations.worldBoss, 0.15, 'World Boss: hazine payının %15i');
+assert.equal(ecoSummary.allocations.ammBuyback, 0.15, 'Pazar geri alımı: hazine payının %15i');
+assert.equal(ecoSummary.allocations.quest, 0.21, 'Görev & ücretsiz oyuncu: hazine payının %21i');
+assert.equal(ecoSummary.allocations.carnival, 0.04, 'Karnaval: hazine payının %4ü');
+assert(Math.abs(Object.values(ecoSummary.allocations).reduce((s, v) => s + v, 0) - 1) < 1e-9, 'Kasa payları toplamı 1 olmalı');
+assert(ecoSummary.pools.length === 6, '6 ana hazine havuzu listelenmeli');
+const pctSum = ecoSummary.burnRatePct + ecoSummary.ubiRatePct + ecoSummary.creatorRatePct + ecoSummary.pools.reduce((s, p) => s + p.sharePct, 0);
+assert(Math.abs(pctSum - 100) < 0.2, 'Dağılım çubuğu toplamı %100 olmalı (' + pctSum + ')');
 
 ecoSummary.pools.forEach(p => {
   assert(p.balance >= 0, `${p.name} bakiyesi pozitif olmalı`);

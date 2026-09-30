@@ -22,18 +22,18 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
     assert.equal(Math.round(toplamPay * 100), 100, 'Tüm 6 varlığın ağırlıkları toplamı tam %100 (1.00) olmalı');
   });
 
-  await t.test('2. Oyundaki Tüm Harcamalardan AMM Havuzuna %18 Akış Doğrulaması', () => {
+  await t.test('2. Oyundaki Tüm Harcamalardan AMM Havuzuna %12,9 Akış Doğrulaması', () => {
     const initialAmmPool = treasury.getPool('ammBuyback') || 0;
     const testSpend = 10000; // 10.000 ADA harcama yapıldığında
 
-    // globalPool.recordTokenSpend: %78 Hazineye aktarılır, %78'in 18/78'i AMM Havuzuna gider (= %18 net)
+    // globalPool.recordTokenSpend: %86 Hazineye aktarılır, bunun %15'i AMM Havuzuna gider (= %12,9 net)
     globalPool.recordTokenSpend(testSpend);
 
     const newAmmPool = treasury.getPool('ammBuyback') || 0;
     const gained = newAmmPool - initialAmmPool;
-    const expectedAmmInflow = testSpend * 0.18; // 1.800 ADA
+    const expectedAmmInflow = testSpend * 0.86 * 0.15; // 1.290 ADA
 
-    assert.ok(Math.abs(gained - expectedAmmInflow) < 0.1, `Harcamanın tam %18'i (${expectedAmmInflow} ADA) AMM Kasasına akmalı. Gerçekleşen: ${gained}`);
+    assert.ok(Math.abs(gained - expectedAmmInflow) < 0.1, `Harcamanın tam %12,9'u (${expectedAmmInflow} ADA) AMM Kasasına akmalı. Gerçekleşen: ${gained}`);
   });
 
   await t.test('3. Fiyat Başlangıç Seviyesindeyken Müdahale = 0 ADA (Cephane Koruması)', () => {

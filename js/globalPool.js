@@ -182,7 +182,7 @@ export class GlobalResourceManager {
       maxSupply: MAX_SUPPLY,
       contractAddress: CONTRACT_ADDRESS,
       totalSpent: prevState ? (prevState.totalSpent || 0) : 0,
-      totalBurned: prevState ? (prevState.totalBurned || 0) : 0, // %13 Kalıcı Yakım
+      totalBurned: prevState ? (prevState.totalBurned || 0) : 0, // Kalıcı yakım (TOKEN_BURN_RATE)
       creatorRoyaltyTotal: prevState ? (prevState.creatorRoyaltyTotal || 0) : 0, // %3 Yapımcı Telifi
       creatorWallet: GAME_CONFIG.CREATOR_WALLET_ADDRESS || '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C',
       // %6 Evrensel Temel Gelir: bu hafta birikenler + bu hafta dağıtılan kasa
@@ -192,7 +192,7 @@ export class GlobalResourceManager {
       ubiClaimPotAtOpen: ubiPot,
       ubiPool: ubiPot,
       ubiWeeklyDistributed: prevState ? prevState.ubiWeeklyDistributed || 0 : 0,
-      totalTreasury: prevState ? prevState.totalTreasury || 40000000 : 40000000, // %78 Hazine
+      totalTreasury: prevState ? prevState.totalTreasury || 40000000 : 40000000, // Hazine (TOKEN_REWARD_POOL_RATE)
       treasury: prevState ? prevState.treasury || {
         dungeon: 14000000,      // %35 Zindan & Boss Zaferleri
         ammBuyback: 6000000,    // %15 AMM DEX Likidite Geri Alımı
@@ -295,18 +295,18 @@ export class GlobalResourceManager {
   }
 
   // 🪙 TOKEN HARCANDIĞINDA:
-  // %13 KALICI YAKIM + %3 YAPIMCI TELİFİ + %6 EVRENSEL TEMEL GELİR (UBI) + %78 HAZİNE DEFTERİNE GİRİŞ = %100!
+  // %5 KALICI YAKIM + %3 YAPIMCI TELİFİ + %6 EVRENSEL TEMEL GELİR (UBI) + %86 HAZİNE DEFTERİNE GİRİŞ = %100!
   recordTokenSpend(adAstraAmount) {
     if (isNaN(adAstraAmount) || adAstraAmount <= 0) return { burned: 0, creatorRoyalty: 0, ubiShare: 0, treasuryShare: 0 };
 
-    const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.13;           // %13 Kalıcı Yakım
+    const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;           // %5 Kalıcı Yakım
     const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;   // %3 Yapımcı Cüzdanı (0x58DBCF66bdd7BfA9da98aDba1965b3794321087C)
     const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;              // %6 Evrensel Temel Gelir Havuzu
-    const treasuryRate = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.78;// %78 Hazine Havuzları
+    const treasuryRate = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;// %86 Hazine Havuzları
 
     this.state.totalSpent = (this.state.totalSpent || 0) + adAstraAmount;
 
-    // 1. %13 Kalıcı Yakım
+    // 1. Kalıcı Yakım
     const burned = adAstraAmount * burnRate;
     this.state.totalBurned = (this.state.totalBurned || 0) + burned;
 
@@ -320,7 +320,7 @@ export class GlobalResourceManager {
     this.state.ubiWeekAccrued = (this.state.ubiWeekAccrued || 0) + ubiShare;
     this.state.ubiPool = (this.state.ubiClaimPot || 0) + this.state.ubiWeekAccrued;
 
-    // 4. %78 Hazine Girişi
+    // 4. Hazine Girişi
     const treasuryShare = adAstraAmount * treasuryRate;
     this.state.totalTreasury = (this.state.totalTreasury || 0) + treasuryShare;
 
@@ -334,7 +334,8 @@ export class GlobalResourceManager {
       ammBuyback: treasury.getPool('ammBuyback'),
       arena: treasury.getPool('arena'),
       worldBoss: treasury.getPool('worldBoss'),
-      carnival: treasury.getPool('carnival')
+      carnival: treasury.getPool('carnival'),
+      quest: treasury.getPool('quest')
     };
 
     this.saveState();

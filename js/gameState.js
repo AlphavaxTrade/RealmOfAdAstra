@@ -126,7 +126,14 @@ export class GameStateManager {
       botActiveUntil: parsed.botActiveUntil || 0,
       redeemCodes: Array.isArray(parsed.redeemCodes) ? parsed.redeemCodes : [],
       burnedResources: parsed.burnedResources || { wood: 0, iron: 0, wheat: 0 },
-      carnivalBurnedResources: parsed.carnivalBurnedResources || { wood: 0, iron: 0, wheat: 0 }
+      carnivalBurnedResources: parsed.carnivalBurnedResources || { wood: 0, iron: 0, wheat: 0 },
+      // Kilitli bakiye eski kayıtlarda yoktu: mevcut bakiye serbest sayılır
+      lockedAda: Math.max(0, Number(parsed.lockedAda) || 0),
+      lockUnlock: parsed.lockUnlock || null,
+      contribution: parsed.contribution || null,
+      adaPriceMultiplier: Number(parsed.adaPriceMultiplier) > 0 ? Number(parsed.adaPriceMultiplier) : (GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1),
+      adaPriceMultiplierTarget: parsed.adaPriceMultiplierTarget ?? null,
+      adaPriceMultiplierEpoch: parsed.adaPriceMultiplierEpoch ?? null
     };
   }
 
@@ -293,6 +300,9 @@ export class GameStateManager {
     } catch (e) {
       console.warn('globalPool recordResourceBurn error:', e);
     }
+    // Katkı puanı: yakılan hammaddenin pazar değeri
+    const unitPrice = (ammMarket && typeof ammMarket.getPrice === 'function') ? Number(ammMarket.getPrice(resourceKey)) : 0;
+    if (isFinite(unitPrice) && unitPrice > 0) this._addContribution(qty * unitPrice * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
     return qty;
   }
 
@@ -300,6 +310,143 @@ export class GameStateManager {
     if (wood > 0) this.burnResource('wood', wood);
     if (iron > 0) this.burnResource('iron', iron);
     if (wheat > 0) this.burnResource('wheat', wheat);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 🔒 KİLİTLİ BAKİYE · 🏅 KATKI PUANI · 💱 ADA FİYAT ÇARPANI (ekonomi kararı 30 Eylül 2026)
+  // adAstraBalance toplam bakiyedir ve oyunda tamamı harcanabilir. lockedAda bunun kilitli kısmıdır;
+  // çekim (sunucu aşaması) yalnız serbest kısımdan yapılır. Katkı puanı, ortak haftalık çekim
+  // havuzundan payı belirleyecek (sunucu aşaması); şimdilik yalnız biriktirilir.
+  // ═══════════════════════════════════════════════════════════════════════
+  getLockedBalanceInfo() {
+    const total = Math.max(0, Number(this.state.adAstraBalance) || 0);
+    const locked = Math.min(total, Math.max(0, Number(this.state.lockedAda) || 0));
+    return { total, locked, free: total - locked };
+  }
+
+  // Oyundan kazanılan ADA: FREE_SHARE serbest, kalanı kilitli. saleOf: pazara satılan hammadde (katkı puanı)
+  _onAdaEarned(amount, { saleOf = null } = {}) {
+    const v = Number(amount) || 0;
+    if (!(v > 0)) return;
+    const L = GAME_CONFIG.LOCKED_BALANCE || {};
+    this.state.lockedAda = (Number(this.state.lockedAda) || 0) + v * (1 - (L.FREE_SHARE ?? 0.2));
+    if (saleOf) {
+      // Aynı hammaddeyi pazardan alıp geri satmak puan getirmez: önce alım tutarı düşülür
+      const credit = this._contribution().buyCredit;
+      const fromCredit = Math.min(credit[saleOf] || 0, v);
+      credit[saleOf] = (credit[saleOf] || 0) - fromCredit;
+      this._addContribution((v - fromCredit) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5));
+    }
+  }
+
+  // Oyunda harcanan ADA: önce kilitli kısım kullanılır, üstüne harcananın UNLOCK_ON_SPEND'i kadar kilit açılır.
+  // boughtResource: pazardan hammadde alımı — puan vermez, aynı hammaddenin sonraki satışından düşülür.
+  _onAdaSpent(amount, { boughtResource = null } = {}) {
+    const v = Number(amount) || 0;
+    if (!(v > 0)) return;
+    const L = GAME_CONFIG.LOCKED_BALANCE || {};
+    let locked = Math.max(0, Number(this.state.lockedAda) || 0);
+    locked -= Math.min(locked, v);
+    locked -= Math.min(locked, v * (L.UNLOCK_ON_SPEND ?? 0.2));
+    this.state.lockedAda = Math.min(locked, Math.max(0, Number(this.state.adAstraBalance) || 0));
+    if (boughtResource) {
+      const credit = this._contribution().buyCredit;
+      credit[boughtResource] = (credit[boughtResource] || 0) + v;
+    } else {
+      this._addContribution(v * (GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
+    }
+  }
+
+  // Zamanla kilit açılması: herkese haftada %1 (geçen süreye oranlı), oyuna girilen her gün ek pay (haftada %1,4)
+  processLockedUnlock() {
+    const L = GAME_CONFIG.LOCKED_BALANCE || {};
+    const now = this._calendarNow();
+    const ls = this.state.lockUnlock || (this.state.lockUnlock = { lastAt: now, activeDay: null });
+    let locked = Math.max(0, Number(this.state.lockedAda) || 0);
+    const days = Math.max(0, (now - (ls.lastAt || now)) / 86400000);
+    if (days >= 1 / 24) {
+      locked *= Math.pow(1 - (L.WEEKLY_UNLOCK_BASE ?? 0.01), days / 7);
+      ls.lastAt = now;
+    }
+    const today = new Date(now + 3 * 3600 * 1000).toISOString().slice(0, 10);
+    if (ls.activeDay !== today) {
+      locked *= 1 - (L.WEEKLY_UNLOCK_ACTIVE ?? 0.014) / 7;
+      ls.activeDay = today;
+    }
+    this.state.lockedAda = Math.min(locked, Math.max(0, Number(this.state.adAstraBalance) || 0));
+  }
+
+  _contribution() {
+    const epochId = (globalPool && globalPool.state && globalPool.state.epochId) || 1;
+    let c = this.state.contribution;
+    if (!c || typeof c !== 'object') c = this.state.contribution = { total: 0, week: 0, lastWeek: 0, epochId, buyCredit: {} };
+    if (!c.buyCredit) c.buyCredit = {};
+    if (c.epochId !== epochId) {
+      c.lastWeek = c.epochId === epochId - 1 ? c.week : 0;
+      c.week = 0;
+      c.epochId = epochId;
+    }
+    return c;
+  }
+
+  _addContribution(points) {
+    const p = Number(points) || 0;
+    if (!(p > 0)) return;
+    const c = this._contribution();
+    c.total += p;
+    c.week += p;
+  }
+
+  getContributionInfo() {
+    const c = this._contribution();
+    return { total: Math.round(c.total), week: Math.round(c.week), lastWeek: Math.round(c.lastWeek || 0) };
+  }
+
+  // 💱 Sabit ADA fiyatları ve ödülleri çarpanla ölçeklenir (bkz. GAME_CONFIG.ADA_PRICE_MULTIPLIER)
+  getAdaPriceMultiplier() {
+    const m = Number(this.state.adaPriceMultiplier);
+    return isFinite(m) && m > 0 ? m : (GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1);
+  }
+
+  adaPrice(base) {
+    return Math.round((Number(base) || 0) * this.getAdaPriceMultiplier());
+  }
+
+  getAdaPriceMultiplierTarget() {
+    const cfg = GAME_CONFIG.ADA_PRICE_MULTIPLIER || {};
+    const t = Number(this.state.adaPriceMultiplierTarget ?? cfg.TARGET ?? cfg.DEFAULT ?? 1);
+    return Math.max(cfg.MIN ?? 0.05, Math.min(cfg.MAX ?? 20, isFinite(t) && t > 0 ? t : 1));
+  }
+
+  setAdaPriceMultiplierTarget(target) {
+    const t = Number(target);
+    if (!(isFinite(t) && t > 0)) return { success: false, message: 'Geçersiz çarpan.' };
+    this.state.adaPriceMultiplierTarget = t;
+    this.saveState();
+    return { success: true, target: this.getAdaPriceMultiplierTarget() };
+  }
+
+  // Her yeni haftada (Pazartesi 00:01 TSİ) çarpan hedefe doğru en fazla MAX_WEEKLY_STEP kadar ilerler
+  processPriceMultiplierWeek() {
+    const epochId = (globalPool && globalPool.state && globalPool.state.epochId) || 1;
+    if (this.state.adaPriceMultiplierEpoch == null) { this.state.adaPriceMultiplierEpoch = epochId; return false; }
+    if (epochId <= this.state.adaPriceMultiplierEpoch) return false;
+    const weeks = epochId - this.state.adaPriceMultiplierEpoch;
+    this.state.adaPriceMultiplierEpoch = epochId;
+    const step = GAME_CONFIG.ADA_PRICE_MULTIPLIER?.MAX_WEEKLY_STEP ?? 0.05;
+    const target = this.getAdaPriceMultiplierTarget();
+    let m = this.getAdaPriceMultiplier();
+    for (let i = 0; i < weeks && m !== target; i++) {
+      m = Math.max(m * (1 - step), Math.min(m * (1 + step), target));
+    }
+    this.state.adaPriceMultiplier = Math.round(m * 10000) / 10000;
+    return true;
+  }
+
+  // Arayüz döngüsünden (2 saniyede bir) çağrılır
+  processEconomyTick() {
+    this.processLockedUnlock();
+    if (this.processPriceMultiplierWeek()) this.saveState();
   }
 
   // 🎪 Karnaval Çarkında Anında Yakılan Hammaddeler Sayacı
@@ -319,14 +466,14 @@ export class GameStateManager {
     const n = Math.max(1, index);
     const base = GAME_CONFIG.SOLDIER_COST_BASE || 5000;
     if (n === 1) {
-      return base;
+      return this.adaPrice(base);
     }
     if (n === 18 && GAME_CONFIG.SOLDIER_18_TARGET_COST) {
-      return GAME_CONFIG.SOLDIER_18_TARGET_COST;
+      return this.adaPrice(GAME_CONFIG.SOLDIER_18_TARGET_COST);
     }
     const exponent = (GAME_CONFIG.SOLDIER_COST_EXPONENT != null) ? GAME_CONFIG.SOLDIER_COST_EXPONENT : 2.0364522367650437;
     const rawCost = base * Math.pow(n, exponent);
-    return Math.round(rawCost / 50) * 50;
+    return this.adaPrice(Math.round(rawCost / 50) * 50);
   }
 
   buySoldierUnit() {
@@ -343,6 +490,7 @@ export class GameStateManager {
       return { success: false, message: `Yetersiz $ADASTRA! ${newIdx}. asker için ${cost.toLocaleString()} ADA gerekir.` };
     }
     this.state.adAstraBalance -= cost;
+    this._onAdaSpent(cost);
     // v1'de bu satır YOKTU: 18 askerlik 324.000 ADA'lık harcama ne yakılıyor
     // ne hazineye giriyordu — muhasebe dışı bir delikti (F-06).
     globalPool.recordTokenSpend(cost);
@@ -445,13 +593,13 @@ export class GameStateManager {
 
     // 24 Saatlik Otomatik Pasif İyileşme Oranları (1 HP = 0.30 Buğday + 0.10 ADA)
     const passiveWheatRate = passiveCfg.wheatPerHp != null ? passiveCfg.wheatPerHp : 0.30;
-    const passiveAdaRate = passiveCfg.adaPerHp != null ? passiveCfg.adaPerHp : 0.10;
+    const passiveAdaRate = (passiveCfg.adaPerHp != null ? passiveCfg.adaPerHp : 0.10) * this.getAdaPriceMultiplier();
     const passiveWheatNeeded = Math.round(missingHp * passiveWheatRate * 100) / 100;
     const passiveAdaCost = Math.round(missingHp * passiveAdaRate * 100) / 100;
 
     // Hızlı Doldurma Oranları (24 Saatlik Formülün 10 Katı: 1 HP = 3 Buğday + 1 ADA)
     const fastWheatRate = fastCfg.wheatPerHp != null ? fastCfg.wheatPerHp : 3.0;
-    const fastAdaRate = fastCfg.adAstraPerHp != null ? fastCfg.adAstraPerHp : 1.0;
+    const fastAdaRate = (fastCfg.adAstraPerHp != null ? fastCfg.adAstraPerHp : 1.0) * this.getAdaPriceMultiplier();
     const wheatNeeded = Math.round(missingHp * fastWheatRate * 100) / 100;
     const adaCost = Math.round(missingHp * fastAdaRate * 100) / 100;
 
@@ -552,6 +700,7 @@ export class GameStateManager {
         this.state.inventory.wheat = Math.max(0, Math.round((curW - wheatCost) * 100) / 100);
         this.burnResource('wheat', wheatCost);
         this.state.adAstraBalance = Math.max(0, Math.round((curA - adaCost) * 100) / 100);
+        this._onAdaSpent(curA - this.state.adAstraBalance);
         soldier.hp = Math.min(maxHp, Math.round((currentHp + hpGain) * 100) / 100);
         changed = true;
       }
@@ -589,10 +738,11 @@ export class GameStateManager {
     inv.wheat -= info.wheatNeeded;
     this.burnResource('wheat', info.wheatNeeded);
     this.state.adAstraBalance -= info.adaCost;
+    this._onAdaSpent(info.adaCost);
     soldier.hp = soldier.maxHp || 100;
 
     // 🔥 Hazine Muhasebesi ve Deflasyonist Yakım Entegrasyonu
-    // Hızlı doyurulan askerin harcanan ADA bedeli: %22 kalıcı yakılır, %78 hazine havuzlarına aktarılır
+    // Hızlı doyurulan askerin harcanan ADA bedeli: bir kısmı kalıcı yakılır, çoğu hazine havuzlarına aktarılır (bkz. recordTokenSpend)
     if (info.adaCost > 0) {
       globalPool.recordTokenSpend(info.adaCost);
     }
@@ -602,7 +752,7 @@ export class GameStateManager {
 
     return {
       success: true,
-      message: `⚡ ${soldier.name} anında tam cana kavuştu! (-${info.wheatNeeded} 🌾 Buğday, -${info.adaCost} 🟣 ADA • 🔥 %13 Yakıldı)`
+      message: `⚡ ${soldier.name} anında tam cana kavuştu! (-${info.wheatNeeded} 🌾 Buğday, -${info.adaCost} 🟣 ADA • 🔥 %${Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100)} Yakıldı)`
     };
   }
 
@@ -1497,6 +1647,7 @@ export class GameStateManager {
 
     if (totalEarned > 0) {
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + totalEarned;
+      for (const [k, v] of Object.entries(soldBreakdown)) this._onAdaEarned(v.earned, { saleOf: k });
       this.saveState();
 
       const actionMsg = `⚖️ Bot Oto-Finansman: Alet onarımı / tamir için gereken ADA açığı giderildi. Depodan eşit miktarda (${toSell.wood} Odun, ${toSell.iron} Demir, ${toSell.wheat} Buğday) satılarak pazardan +${totalEarned.toFixed(1)} $ADASTRA elde edildi.`;
@@ -1643,6 +1794,7 @@ export class GameStateManager {
         if (buyRes && buyRes.success) {
           curAda = curAda - buyRes.cost;
           this.state.adAstraBalance = curAda;
+          this._onAdaSpent(buyRes.cost, { boughtResource: node });
           inv[node] = (Number(inv[node]) || 0) + buyRes.resourceReceived;
           totalSpentAda += buyRes.cost;
           boughtBreakdown[node] = {
@@ -2030,6 +2182,7 @@ export class GameStateManager {
           soldQty = sellQty;
           adaGained = Number(r.adAstraReceived) || 0;
           this.state.adAstraBalance = (this.state.adAstraBalance || 0) + adaGained;
+          this._onAdaEarned(adaGained, { saleOf: resourceKey });
         }
       }
     }
@@ -2329,6 +2482,7 @@ export class GameStateManager {
     if (res.success) {
       this.state.lastClaimedUbiEpoch = res.epochId;
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.amount;
+      this._onAdaEarned(res.amount);
       this.state.totalUbiEarned = (this.state.totalUbiEarned || 0) + res.amount;
       sound.playLevelUp();
       this.saveState();
@@ -2556,6 +2710,7 @@ export class GameStateManager {
     inv.wheat -= req.wheat;
     this.burnResources({ wood: req.wood, iron: req.iron, wheat: req.wheat });
     this.state.adAstraBalance -= req.adAstra;
+    this._onAdaSpent(req.adAstra);
     globalPool.recordTokenSpend(req.adAstra);
 
     this.state.currentXp -= req.xp;
@@ -2583,12 +2738,14 @@ export class GameStateManager {
     const troop = GAME_CONFIG.TROOP_TYPES[troopId];
     if (!troop) return { success: false, message: 'Geçersiz asker!' };
 
-    if (this.state.adAstraBalance < troop.costAdAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${troop.costAdAstra} $ADASTRA gerekli)` };
+    const troopCost = this.adaPrice(troop.costAdAstra);
+    if (this.state.adAstraBalance < troopCost) {
+      return { success: false, message: `Yetersiz AdAstra! (${troopCost} $ADASTRA gerekli)` };
     }
 
-    this.state.adAstraBalance -= troop.costAdAstra;
-    globalPool.recordTokenSpend(troop.costAdAstra);
+    this.state.adAstraBalance -= troopCost;
+    this._onAdaSpent(troopCost);
+    globalPool.recordTokenSpend(troopCost);
 
     this.state.army[troopId] = (this.state.army[troopId] || 0) + 1;
     sound.playLevelUp();
@@ -2618,12 +2775,14 @@ export class GameStateManager {
     const buffConfig = GAME_CONFIG.TAVERN_BUFFS[buffId];
     if (!buffConfig) return { success: false, message: 'Geçersiz güçlendirme!' };
 
-    if (this.state.adAstraBalance < buffConfig.costAdAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${buffConfig.costAdAstra} $ADASTRA gerekli)` };
+    const buffCost = this.adaPrice(buffConfig.costAdAstra);
+    if (this.state.adAstraBalance < buffCost) {
+      return { success: false, message: `Yetersiz AdAstra! (${buffCost} $ADASTRA gerekli)` };
     }
 
-    this.state.adAstraBalance -= buffConfig.costAdAstra;
-    globalPool.recordTokenSpend(buffConfig.costAdAstra);
+    this.state.adAstraBalance -= buffCost;
+    this._onAdaSpent(buffCost);
+    globalPool.recordTokenSpend(buffCost);
 
     const now = this._now();
     const currentExpire = (this.state.activeBuffs[buffId] && this.state.activeBuffs[buffId].expiresAt > now)
@@ -2756,6 +2915,7 @@ export class GameStateManager {
     inv.iron -= cost.ironCost;
     this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
     this.state.adAstraBalance -= cost.adAstraCost;
+    this._onAdaSpent(cost.adAstraCost);
     globalPool.recordTokenSpend(cost.adAstraCost);
 
     const maxDur = (this.state.tools[toolId]?.maxDurability != null) ? this.state.tools[toolId].maxDurability : (GAME_CONFIG.TOOLS[toolId]?.maxDurability || 4320);
@@ -2772,6 +2932,7 @@ export class GameStateManager {
 
   faucetAdAstra(amount = 100) {
     this.state.adAstraBalance += amount;
+    this._onAdaEarned(amount);
     sound.playLevelUp();
     this.saveState();
     return this.state.adAstraBalance;
@@ -2918,6 +3079,7 @@ export class GameStateManager {
     inv.wheat -= cost.wheat;
     this.burnResources({ wood: cost.wood, iron: cost.iron, wheat: cost.wheat });
     this.state.adAstraBalance -= cost.adAstra;
+    this._onAdaSpent(cost.adAstra);
     globalPool.recordTokenSpend(cost.adAstra);
 
     this.state.warehouseLevel += 1;
@@ -3155,6 +3317,7 @@ export class GameStateManager {
     inv.wood -= cost.wood;
     this.burnResources({ wood: cost.wood, iron: cost.iron });
     this.state.adAstraBalance -= cost.adAstra;
+    this._onAdaSpent(cost.adAstra);
     globalPool.recordTokenSpend(cost.adAstra);
 
     const item = {
@@ -3257,6 +3420,7 @@ export class GameStateManager {
     inv.wood -= cost.woodCost;
     this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
     this.state.adAstraBalance -= cost.adAstraCost;
+    this._onAdaSpent(cost.adAstraCost);
     globalPool.recordTokenSpend(cost.adAstraCost);
 
     const item = cost.item;
@@ -3341,6 +3505,7 @@ export class GameStateManager {
     this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
     if (cost.fragCost > 0) inv.fragments = (inv.fragments || 0) - cost.fragCost;
     this.state.adAstraBalance -= cost.adaCost;
+    this._onAdaSpent(cost.adaCost);
     globalPool.recordTokenSpend(cost.adaCost);
 
     const maxDur = item.maxDurability || 13;
@@ -3632,6 +3797,7 @@ export class GameStateManager {
     inv.wood -= totalWood;
     this.burnResources({ wood: totalWood, iron: totalIron });
     this.state.adAstraBalance -= totalAda;
+    this._onAdaSpent(totalAda);
     globalPool.recordTokenSpend(totalAda);
 
     toRepair.forEach(({ item }) => {
@@ -3849,6 +4015,7 @@ export class GameStateManager {
 
     if (!useFree) {
       this.state.adAstraBalance -= cost;
+      this._onAdaSpent(cost);
       globalPool.recordTokenSpend(cost);
     }
 
@@ -4024,6 +4191,7 @@ export class GameStateManager {
             if (sellRes && sellRes.success) {
               this.state.inventory[nodeId] = Math.max(0, (this.state.inventory[nodeId] || 0) - amountToSell);
               this.state.adAstraBalance = (this.state.adAstraBalance || 0) + (sellRes.adAstraReceived || 0);
+              this._onAdaEarned(sellRes.adAstraReceived || 0, { saleOf: nodeId });
               this.state.lastBotSiloAction = {
                 timestamp: Date.now(),
                 nodeId,
@@ -4070,6 +4238,7 @@ export class GameStateManager {
           if (sellRes && sellRes.success) {
             this.state.inventory[nodeId] = Math.max(0, (this.state.inventory[nodeId] || 0) - amountToSell);
             this.state.adAstraBalance = (this.state.adAstraBalance || 0) + (sellRes.adAstraReceived || 0);
+            this._onAdaEarned(sellRes.adAstraReceived || 0, { saleOf: nodeId });
             this.state.lastBotSiloAction = {
               timestamp: Date.now(),
               nodeId,
@@ -4107,6 +4276,7 @@ export class GameStateManager {
         if (sellRes && sellRes.success) {
           this.state.inventory[nodeId] = Math.max(0, (this.state.inventory[nodeId] || 0) - amountToSell);
           this.state.adAstraBalance = (this.state.adAstraBalance || 0) + (sellRes.adAstraReceived || 0);
+          this._onAdaEarned(sellRes.adAstraReceived || 0, { saleOf: nodeId });
           this.state.lastBotSiloAction = {
             timestamp: Date.now(),
             nodeId,
@@ -4200,6 +4370,7 @@ export class GameStateManager {
                   this.state.inventory[node] = Math.max(0, (this.state.inventory[node] || 0) - amountToSell);
                   const earned = sellRes.adAstraReceived || 0;
                   this.state.adAstraBalance = (this.state.adAstraBalance || 0) + earned;
+                  this._onAdaEarned(earned, { saleOf: node });
                   totalSoldAda += earned;
                   adaDeficit = Math.max(0, adaDeficit - earned);
                 }
@@ -4269,8 +4440,13 @@ export class GameStateManager {
     return { open: bal >= minBal, balance: bal, minBalance: minBal };
   }
 
+  // Çark bedeli (ADA fiyat çarpanıyla)
+  getWheelCostAda() {
+    return this.adaPrice(GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100);
+  }
+
   spinCarnivalWheel(paymentMethod = 'ada') {
-    const costAda = GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100;
+    const costAda = this.getWheelCostAda();
     const inv = this.state.inventory;
 
     // v1.25: Kasa en büyük ödülü karşılayamıyorsa çark geçici olarak kapalı
@@ -4286,6 +4462,7 @@ export class GameStateManager {
         return { success: false, message: `Yetersiz $ADASTRA! Çark çevirmek için ${costAda} ADA gereklidir.` };
       }
       this.state.adAstraBalance -= costAda;
+      this._onAdaSpent(costAda);
       globalPool.recordTokenSpend(costAda);
     } else if (paymentMethod === 'ticket') {
       if ((this.state.lotteryTickets || 0) < 1) {
@@ -4335,15 +4512,17 @@ export class GameStateManager {
     const payAdaFallback = (valueAda, label) => {
       const paid = this._drawCarnival(valueAda);
       this.state.adAstraBalance += paid;
+      this._onAdaEarned(paid);
       rewardSummaryText = `${label} yerine ${paid.toLocaleString('tr-TR')} $ADASTRA (pazarda şu an alınamadı; 🏛️ Karnaval Hazinesinden)`;
     };
 
     if (selectedReward.type === 'ada') {
       // 🏛️ KARNAVAL HAZİNESİNDEN ADA ÖDÜLÜ: Havadan basılmaz, doğrudan Karnaval Hazine Kasasından karşılanır!
-      const rewardAmount = selectedReward.amount || 0;
+      const rewardAmount = this.adaPrice(selectedReward.amount || 0);
       const adaToPay = this._drawCarnival(rewardAmount);
 
       this.state.adAstraBalance += adaToPay;
+      this._onAdaEarned(adaToPay);
       rewardSummaryText = `${adaToPay.toLocaleString('tr-TR')} $ADASTRA (🏛️ Karnaval Hazinesinden Karşılandı)`;
 
     } else if (selectedReward.key === 'fragments' || (selectedReward.type === 'resource' && selectedReward.key === 'fragments')) {
@@ -4565,7 +4744,7 @@ export class GameStateManager {
   // ── 🎟️ HAFTALIK PİYANGO (v1.25 kuralları: js/economy/lottery.js) ─────────────
   getLotteryRules() {
     const L = GAME_CONFIG.CARNIVAL?.LOTTERY || {};
-    return { ticketPrice: L.TICKET_COST_ADA || 100, winnerMultiplier: L.WINNER_MULTIPLIER || 2, amortiShare: L.AMORTI_SHARE ?? 0.02 };
+    return { ticketPrice: this.adaPrice(L.TICKET_COST_ADA || 100), winnerMultiplier: L.WINNER_MULTIPLIER || 2, amortiShare: L.AMORTI_SHARE ?? 0.02 };
   }
 
   // Tarayıcı sürümünde diğer oyuncular temsili bilet sahipleriyle canlandırılır (sunucuda gerçek oyuncular)
@@ -4633,6 +4812,7 @@ export class GameStateManager {
 
     if (this.state.lotteryTicketsPaid == null) this.state.lotteryTicketsPaid = (this.state.lotteryTickets || 0) * rules.ticketPrice;
     this.state.adAstraBalance -= cost;
+    this._onAdaSpent(cost);
     this.state.lotteryTickets = (this.state.lotteryTickets || 0) + count;
     this.state.lotteryTicketsPaid += cost;
     this.state.lotteryBoughtThisWeek = bought + count;
@@ -4768,6 +4948,7 @@ export class GameStateManager {
     this.state.lotteryPendingPayout = 0;
     this.state.lotteryLockedTickets = 0; // kazanan biletler ödül çekilirken yanar
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + pending;
+    this._onAdaEarned(pending);
     sound.playLevelUp();
     this.saveState();
     return {
@@ -4817,6 +4998,7 @@ export class GameStateManager {
     }
     const budgetCapped = adAstraGained < base.ada;
     this.state.adAstraBalance += adAstraGained;
+    this._onAdaEarned(adAstraGained);
 
     let fragmentsGained = 0;
     const accountLevel = this.state.level || 1;
@@ -4969,12 +5151,13 @@ export class GameStateManager {
       return { success: false, message: `Tüm koleksiyonu tamamlamalısın! (${discoveredCount}/${required} Eser)` };
     }
 
-    const cost = GAME_CONFIG.GENESIS_NFT.adAstraCost;
+    const cost = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
     if (this.state.adAstraBalance < cost) {
       return { success: false, message: `Yetersiz AdAstra! (${cost} $ADASTRA gerekli)` };
     }
 
     this.state.adAstraBalance -= cost;
+    this._onAdaSpent(cost);
     globalPool.recordTokenSpend(cost);
     this.state.genesisNftMinted = true;
 
@@ -5010,12 +5193,14 @@ export class GameStateManager {
 
   addDevAdAstra(amount) {
     this.state.adAstraBalance = Math.max(0, (this.state.adAstraBalance || 0) + amount);
+    this.state.lockedAda = Math.min(Number(this.state.lockedAda) || 0, this.state.adAstraBalance);
     this.saveState();
     return this.state.adAstraBalance;
   }
 
   setDevAdAstra(exactAmount) {
     this.state.adAstraBalance = Math.max(0, exactAmount);
+    this.state.lockedAda = Math.min(Number(this.state.lockedAda) || 0, this.state.adAstraBalance);
     this.saveState();
     return this.state.adAstraBalance;
   }
@@ -5281,6 +5466,12 @@ export class GameStateManager {
       tavernaBotActive: false,
       redeemCodes: [],
       burnedResources: { wood: 0, iron: 0, wheat: 0 },
+      lockedAda: 0,
+      lockUnlock: null,
+      contribution: null,
+      adaPriceMultiplier: GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1,
+      adaPriceMultiplierTarget: null,
+      adaPriceMultiplierEpoch: (globalPool && globalPool.state && globalPool.state.epochId) || 1,
       lastClaimedUbiEpoch: 0,
       totalUbiEarned: 0,
       lastAutoWarehouseUpgradeTime: 0,
@@ -5399,15 +5590,10 @@ export class GameStateManager {
     const state = this.state;
     const boss = this.getWorldBossInfo();
 
-    const alloc = GAME_CONFIG.TREASURY_ALLOCATION || {
-      dungeon: 25 / 78,
-      ammBuyback: 18 / 78,
-      worldBoss: 15 / 78,
-      arena: 10 / 78,
-      carnival: 10 / 78
-    };
+    // Kasa payları hazine girişinin yüzdesidir (toplam 1); sharePct = hazine payı içindeki yüzde
+    const alloc = GAME_CONFIG.TREASURY_ALLOCATION;
 
-    const burnRate = GAME_CONFIG.TOKEN_BURN_RATE || 0.13;
+    const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
     const ubiRate = GAME_CONFIG.UBI_POOL_RATE || 0.06;
     const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE || 0.03;
     const lotteryPool = state.lotteryPool != null ? state.lotteryPool : 20000000;
@@ -5428,7 +5614,7 @@ export class GameStateManager {
         name: 'Zindan Ganimet Kasası',
         icon: '🏰',
         color: '#06b6d4',
-        sharePct: 25,
+        sharePct: Math.round((alloc.dungeon || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
         balance: Math.round(treasury.getPool('dungeon')),
         target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.dungeon || 10000000,
         health: treasury.getPoolHealth('dungeon'),
@@ -5444,7 +5630,7 @@ export class GameStateManager {
         name: 'AMM DEX Likidite & Buyback',
         icon: '🤖',
         color: '#38bdf8',
-        sharePct: 18,
+        sharePct: Math.round((alloc.ammBuyback || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
         balance: Math.round(treasury.getPool('ammBuyback')),
         target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.ammBuyback || 7200000,
         health: treasury.getPoolHealth('ammBuyback'),
@@ -5460,7 +5646,7 @@ export class GameStateManager {
         name: 'Dünya Bossu (World Boss) Akın Havuzu',
         icon: '🌋',
         color: '#ef4444',
-        sharePct: 15,
+        sharePct: Math.round((alloc.worldBoss || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
         balance: Math.round(treasury.getPool('worldBoss')),
         target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.worldBoss || 6000000,
         health: treasury.getPoolHealth('worldBoss'),
@@ -5476,7 +5662,7 @@ export class GameStateManager {
         name: 'Kolezyum Gladyatör Havuzu',
         icon: '🏟️',
         color: '#f59e0b',
-        sharePct: 10,
+        sharePct: Math.round((alloc.arena || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
         balance: Math.round(treasury.getPool('arena')),
         target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.arena || 4000000,
         health: treasury.getPoolHealth('arena'),
@@ -5492,7 +5678,7 @@ export class GameStateManager {
         name: 'Krallık Karnavalı & Şans Kasası',
         icon: '🎪',
         color: '#ec4899',
-        sharePct: 10,
+        sharePct: Math.round((alloc.carnival || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
         balance: Math.round(treasury.getPool('carnival')),
         target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.carnival || 4000000,
         health: treasury.getPoolHealth('carnival'),
@@ -5502,6 +5688,22 @@ export class GameStateManager {
         howToEarn: 'Karnavalda 100 ADA, hammadde veya biletle şans çarkını çevir.',
         actionType: 'carnival_wheel',
         actionText: '🎡 Şans Çarkı'
+      },
+      {
+        id: 'quest',
+        name: 'Görev & Ücretsiz Oyuncu Kasası',
+        icon: '📜',
+        color: '#22c55e',
+        sharePct: Math.round((alloc.quest || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
+        balance: Math.round(treasury.getPool('quest')),
+        target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.quest || 8000000,
+        health: treasury.getPoolHealth('quest'),
+        inflow: Math.round(treasury.state?.inflow?.quest || 0),
+        outflow: Math.round(treasury.state?.outflow?.quest || 0),
+        description: 'Görev ödülleri bu kasadan ödenir. Sunucu aşamasında ücretsiz oyunculara her ay piyasa değerinin %1\'i (kişi başı en fazla 100$) de buradan dağıtılacak.',
+        howToEarn: 'Başlangıç görevlerini tamamla ve ödülünü al.',
+        actionType: 'quests',
+        actionText: '📜 Görevler'
       }
     ];
 
@@ -5511,7 +5713,7 @@ export class GameStateManager {
       burnRatePct: Math.round(burnRate * 100),
       ubiRatePct: Math.round(ubiRate * 100),
       creatorRatePct: Math.round(creatorRate * 100),
-      treasuryRatePct: 78,
+      treasuryRatePct: Math.round((GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 100),
       allocations: alloc,
       pools,
       totalPoolsBalance,
@@ -5554,8 +5756,9 @@ export class GameStateManager {
     const burnedNftPool = 42500 + ((state.genesisNftMinted ? 1 : 0) * 18000);
     const totalAmmLiquidityAda = (typeof ammMarket !== 'undefined' && ammMarket.getTotalAdAstraLiquidity) ? ammMarket.getTotalAdAstraLiquidity() : 40000000;
     const lotteryPoolAda = Math.round(state.lotteryPool || 20000000);
+    const questPool = (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('quest')) : 8000000;
 
-    const totalVaultAda = worldBossPool + colosseumPool + dungeonLootVault + carnivalPool + ammBuybackPool + parliamentStakingPool + ubiPool + totalAmmLiquidityAda;
+    const totalVaultAda = worldBossPool + colosseumPool + dungeonLootVault + carnivalPool + ammBuybackPool + parliamentStakingPool + ubiPool + questPool + totalAmmLiquidityAda;
 
     // 2. Kullanıcının Hak Edişleri & Payları
     const userBossDamage = boss.userDamage || 0;
@@ -5660,6 +5863,19 @@ export class GameStateManager {
           statusBadge: '🎪 Aktif Şenlik',
           actionType: 'carnival',
           actionText: '🎪 Karnavala Git'
+        },
+        {
+          id: 'quest_pool',
+          name: 'Görev & Ücretsiz Oyuncu Kasası',
+          icon: '📜',
+          color: '#22c55e',
+          totalPoolAda: questPool,
+          description: 'Görev ödülleri bu kasadan ödenir. Sunucu aşamasında ücretsiz oyunculara her ay piyasa değerinin %1\'i (kişi başı en fazla 100$) de buradan dağıtılacak.',
+          userShareText: `Katkı puanın (bu hafta): ${this.getContributionInfo().week.toLocaleString('tr-TR')}`,
+          userClaimableAda: 0,
+          statusBadge: '📜 Görevler',
+          actionType: 'quests',
+          actionText: '📜 Görevler'
         },
         {
           id: 'nft_burn',
@@ -6106,7 +6322,7 @@ export class GameStateManager {
     const major = isBoss || lvl === 9 || lvl === 18;
     const { REWARD_ADA_PER_LEVEL, REWARD_XP_PER_LEVEL, MAJOR_BOSS_REWARD_MULT } = GAME_CONFIG.DUNGEON;
     const mult = major ? MAJOR_BOSS_REWARD_MULT : 1;
-    return { ada: Math.floor(REWARD_ADA_PER_LEVEL * lvl * mult), xp: Math.floor(REWARD_XP_PER_LEVEL * lvl * mult), isMajorBoss: major };
+    return { ada: this.adaPrice(Math.floor(REWARD_ADA_PER_LEVEL * lvl * mult)), xp: Math.floor(REWARD_XP_PER_LEVEL * lvl * mult), isMajorBoss: major };
   }
 
   getDungeonGateFee(level, isBoss = false) {
@@ -6180,6 +6396,7 @@ export class GameStateManager {
     }
     if (payFee) {
       this.state.adAstraBalance -= terms.fee;
+      this._onAdaSpent(terms.fee);
       if (treasury && treasury.depositTo) treasury.depositTo('dungeon', terms.fee);
       c.dungeonPaidEntries = (c.dungeonPaidEntries || 0) + 1;
       this.saveState();
@@ -6371,11 +6588,12 @@ export class GameStateManager {
       // Hazine Arena Kasasından Ödül — v1.25: ödül kasadan gerçekten çekilir (eskiden kasadan düşülmeden
       // bakiyeye ekleniyordu; kolezyum her zaferde yoktan ADA basıyordu)
       const arenaPool = (typeof treasury !== 'undefined' && treasury.getPool) ? treasury.getPool('arena') : 0;
-      const baseReward = Math.min(2500, Math.round(arenaPool * 0.0002));
+      const baseReward = Math.min(this.adaPrice(2500), Math.round(arenaPool * 0.0002));
       const requested = Math.round(baseReward * tier.rewardMult);
       const draw = (typeof treasury !== 'undefined' && treasury.withdraw) ? treasury.withdraw('arena', requested) : { granted: 0 };
       rewardAda = Math.floor(draw.granted || 0);
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + rewardAda;
+      this._onAdaEarned(rewardAda);
       if (this.state.colosseumStats) this.state.colosseumStats.totalAdaWon = (this.state.colosseumStats.totalAdaWon || 0) + rewardAda;
 
       if (Math.random() < 0.25) {
@@ -6617,6 +6835,7 @@ export class GameStateManager {
     }
 
     this.state.adAstraBalance += claimable;
+    this._onAdaEarned(claimable);
     boss.totalClaimedAda = (boss.totalClaimedAda || 0) + claimable;
     boss.claimableRewardAda = 0;
 
@@ -6665,8 +6884,9 @@ export class GameStateManager {
       };
     }
 
-    // Cezayı tahsil et (%22 kalıcı yakım + %78 hazineye giriş)
+    // Cezayı tahsil et (harcama bölünüşü: yakım + UBI + telif + hazine)
     this.state.adAstraBalance -= penaltyAda;
+    this._onAdaSpent(penaltyAda);
     globalPool.recordTokenSpend(penaltyAda);
 
     const soldiersCount = boss.userStakedSoldiersCount || 0;
@@ -6745,6 +6965,7 @@ export class GameStateManager {
     }
 
     this.state.adAstraBalance -= listing.priceAda;
+    this._onAdaSpent(listing.priceAda);
     globalPool.recordTokenSpend(listing.priceAda);
 
     // Keşfedildi olarak işaretle
@@ -7137,6 +7358,7 @@ export class GameStateManager {
     const ob = this.state.onboarding || {};
     const quests = (GAME_CONFIG.ONBOARDING_QUESTS || []).map(q => ({
       ...q,
+      rewardAda: this.adaPrice(q.rewardAda || 0),
       done: !!(ob[q.id] && ob[q.id].done),
       claimed: !!(ob[q.id] && ob[q.id].claimed)
     }));
@@ -7153,7 +7375,7 @@ export class GameStateManager {
     };
   }
 
-  // Ödül Zindan Ganimet Kasası'ndan çekilir (basılmaz); kasa boşsa ödül küçülür
+  // Ödül Görev & Ücretsiz Oyuncu Kasası'ndan çekilir (basılmaz); kasa boşsa ödül küçülür
   claimOnboardingReward(questId) {
     const q = (GAME_CONFIG.ONBOARDING_QUESTS || []).find(x => x.id === questId);
     if (!q) return { success: false, message: 'Görev bulunamadı.' };
@@ -7163,11 +7385,12 @@ export class GameStateManager {
     if (entry.claimed) return { success: false, message: 'Bu görevin ödülünü zaten aldın.' };
     let granted = 0;
     if ((q.rewardAda || 0) > 0 && treasury && treasury.withdraw) {
-      const draw = treasury.withdraw('dungeon', q.rewardAda);
+      const draw = treasury.withdraw('quest', this.adaPrice(q.rewardAda));
       granted = Math.floor(draw.granted || 0);
     }
     entry.claimed = true;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
+    this._onAdaEarned(granted);
     sound.playLevelUp();
     this.saveState();
     return { success: true, granted, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} $ADASTRA (Krallık Hazinesinden)` };
@@ -7191,6 +7414,8 @@ export class GameStateManager {
     else if (resKey === 'keys') this.state.arenaKeys -= amount;
     else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - amount;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.adAstraReceived;
+    if (['wood', 'iron', 'wheat'].includes(resKey)) this._onAdaEarned(res.adAstraReceived, { saleOf: resKey });
+    else this._onAdaEarned(res.adAstraReceived);
     this.saveState();
     return { ...res, qty: amount };
   }
@@ -7213,6 +7438,7 @@ export class GameStateManager {
     const res = ammMarket.executeBuyAmount(resKey, amount);
     if (!res.success) return res;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) - res.cost;
+    this._onAdaSpent(res.cost, { boughtResource: resKey });
     if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + res.resourceReceived;
     else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + res.resourceReceived;
     else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + res.resourceReceived;

@@ -11,7 +11,7 @@
 import { GAME_CONFIG } from './config.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
-const POOL_IDS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'carnival'];
+const POOL_IDS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'carnival', 'quest'];
 
 export class TreasuryLedger {
   constructor() {
@@ -21,13 +21,14 @@ export class TreasuryLedger {
 
   load() {
     const seed = () => ({
-      pools: { dungeon: 14000000, arena: 8000000, worldBoss: 8000000, ammBuyback: 6000000, carnival: 4000000 },
+      // Görev kasası 30 Eylül 2026'da eklendi (görev ödülleri + ücretsiz oyuncu havuzu); eski kayıtlara tohumuyla eklenir
+      pools: { dungeon: 14000000, arena: 8000000, worldBoss: 8000000, ammBuyback: 6000000, carnival: 4000000, quest: 8000000 },
       lifetimeDeposited: 0,
       lifetimeWithdrawn: 0,
       lifetimeBurned: 0,
       // Havuz bazında toplam giriş/çıkış — çözünürlük oranı (solvency) için
-      inflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0 },
-      outflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0 },
+      inflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0, quest: 0 },
+      outflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0, quest: 0 },
       // Ödül ölçekleme geçmişi (panelde gösterilir)
       lastScaleFactor: 1
     });
@@ -56,7 +57,7 @@ export class TreasuryLedger {
   }
 
   // ---------------------------------------------------------------------
-  // GİRİŞ: Oyuncu harcaması hazineye akar (%22 yakım hariç)
+  // GİRİŞ: Oyuncu harcamasının hazine payı (yakım, UBI ve telif dışındaki kısım) kasalara bölünür
   // ---------------------------------------------------------------------
   deposit(treasuryShare) {
     const amount = Number(treasuryShare);

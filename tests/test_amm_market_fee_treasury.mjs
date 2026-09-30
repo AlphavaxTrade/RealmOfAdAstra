@@ -62,8 +62,8 @@ console.log(`Satış Sonrası Toplam Yakılan: ${afterTotalBurned.toLocaleString
 
 assert(Math.abs(spentIncrease - expectedFee) < 0.01, 'Harcanan token miktarı tam alınan fee kadar artmalı');
 assert(treasuryIncrease > 0, 'Toplam kilitli hazine kasasında ARTIŞ OLMALI!');
-assert(Math.abs(treasuryIncrease - (expectedFee * 0.78)) < 0.05, 'Hazine kasaları fee nin tam %78 i kadar büyümeli');
-assert(Math.abs(burnedIncrease - (expectedFee * 0.13)) < 0.05, 'Yakım havuzu fee nin %13 ü kadar büyümeli');
+assert(Math.abs(treasuryIncrease - (expectedFee * 0.86)) < 0.05, 'Hazine kasaları fee nin tam %86 sı kadar büyümeli');
+assert(Math.abs(burnedIncrease - (expectedFee * 0.05)) < 0.05, 'Yakım havuzu fee nin %5 i kadar büyümeli');
 assert(Math.abs(ubiIncrease - (expectedFee * 0.06)) < 0.05, 'UBI havuzu fee nin %6 sı kadar büyümeli');
 console.log('✅ [3/5] Hazine kasaları, Yakım ve UBI artışları anayasa oranlarıyla %100 doğrulandı.');
 
