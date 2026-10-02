@@ -14,7 +14,7 @@ import { PVP_RULES, explainLoss, weeklyRewards, ranking } from '../js/economy/pv
 const short = a => a.slice(0, 6) + '…' + a.slice(-4);
 const clone = o => JSON.parse(JSON.stringify(o));
 
-export function createArena({ db, engine, clock = () => Date.now() }) {
+export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty = false }) {
   const E = engine;
   const get = () => {
     const a = db.kvJson('world:arena', null) || {};
@@ -49,12 +49,18 @@ export function createArena({ db, engine, clock = () => Date.now() }) {
       const name = `${team.name} (${short(me)})`;
       const q = A.queues[mode];
       const oi = q.findIndex(x => x.address !== me);
-      if (oi < 0) {
+      if (oi < 0 && botWhenEmpty) {
+        // 🧪 Deneme sunucusu: sırada kimse yoksa antrenman botu (gücü senin takımının %85-115'i)
+        const k = 0.85 + Math.random() * 0.3;
+        q.push({ address: '0xbot', name: '🤖 Antrenman Botu', units: team.units.map(u => ({ ...u, name: '🤖 ' + u.name, atk: Math.round(u.atk * k), maxHp: Math.round(u.maxHp * k), hp: Math.round(u.maxHp * k) })), at: clock() });
+      }
+      const oi2 = q.findIndex(x => x.address !== me);
+      if (oi2 < 0) {
         q.push({ address: me, name, units: team.units, at: clock() });
         gs.state.pvpQueue = { mode, indices: team.indices, at: clock() };
         return { success: true, queued: true, message: `⏳ Sıraya girdin (${mode}). İlk gelen rakiple maçın otomatik oynanacak; sonucu bildirim olarak alacaksın. Askerlerin maça kadar kilitli.` };
       }
-      opp = q.splice(oi, 1)[0];
+      opp = q.splice(oi2, 1)[0];
       const allies = clone(team.units).map((u, i) => ({ ...u, uid: 'a' + i }));
       const enemies = clone(opp.units).map((u, i) => ({ ...u, uid: 'b' + i, sourceIndex: -1 }));
       const seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
@@ -68,6 +74,7 @@ export function createArena({ db, engine, clock = () => Date.now() }) {
       if (w === 'a') { ra.points += pts; ra.wins++; rb.losses++; }
       else if (w === 'b') { rb.points += pts; rb.wins++; ra.losses++; }
       else { ra.draws++; rb.draws++; }
+      delete A.table['0xbot'];                         // bot sıralamaya girmez, ödül almaz
       const mineUnits = clone(team.units).map((u, i) => ({ ...u, uid: 'a' + i }));
       const theirUnits = clone(opp.units).map((u, i) => ({ ...u, uid: 'b' + i, sourceIndex: -1 }));
       match = { id, mode, at: clock(), seed, a: { address: me, name, units: mineUnits }, b: { address: opp.address, name: opp.name, units: theirUnits }, result: w, points: pts, sim };
@@ -82,7 +89,7 @@ export function createArena({ db, engine, clock = () => Date.now() }) {
       };
     });
     if (out.result && out.result.success) {
-      if (opp && match) {
+      if (opp && match && opp.address !== '0xbot') {
         const theyWon = match.result === 'b';
         E.mutatePlayer(opp.address, gs => {
           gs.state.pvpQueue = null;

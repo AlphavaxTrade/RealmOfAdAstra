@@ -107,6 +107,15 @@ export const ACTIONS = {
   mintGenesisNft: A([])
 };
 
+// 🧪 Yalnız DENEME sunucusunda (TEST_MODE=1) açılan test menüsü işlemleri. Gerçek sunucuda hep kapalı.
+export const DEV_ACTIONS = ['cheatAddResources', 'setDevResource', 'addDevResource', 'setDevLevel', 'setDevAdAstra', 'addDevAdAstra',
+  'cheatSetDungeonProgress', 'setDungeonProgress', 'unlockAllDevArtifacts', 'repairAllDevTools', 'refillDevStamina', 'healAllDevSoldiers',
+  'completeAllExpeditionsNow', 'cheatUnlockAllArtifacts', 'cheatRefillStamina', 'cheatMaxEquipAllSoldiers', 'cheatLevelUpPlayer',
+  'cheatFinishAllExpeditions', 'addArenaKey', 'activateTavernBuff', 'executeSundayAutoWorldBossBattle', 'fastForwardTime'];
+const devArgOk = v => v == null || ['number', 'string', 'boolean'].includes(typeof v) ||
+  (Array.isArray(v) && v.length <= 20 && v.every(x => ['number', 'string', 'boolean'].includes(typeof x))) ||
+  (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 && Object.values(v).every(x => x == null || ['number', 'string', 'boolean'].includes(typeof x)));
+
 // Tarayıcı modu işareti: bu işlemler sunucuya gönderilir ama sonucu yerelde de hesaplanabilir
 export const RANDOM_ACTIONS = Object.keys(ACTIONS).filter(k => ACTIONS[k].random);
 
@@ -132,7 +141,12 @@ export function validateArgs(name, args) {
   return null;
 }
 
-export function runAction(gs, name, args, cfg) {
+export function runAction(gs, name, args, cfg, { testMode = false } = {}) {
+  if (testMode && DEV_ACTIONS.includes(name)) {
+    if (!Array.isArray(args) || args.length > 8 || !args.every(devArgOk)) return { success: false, message: 'Geçersiz test argümanı', rejected: true };
+    const r = gs[name](...args.map(v => (v === null ? undefined : v)));
+    return r === undefined ? { success: true } : r;
+  }
   const err = validateArgs(name, args);
   if (err) return { success: false, message: err, rejected: true };
   const spec = specOf(name);

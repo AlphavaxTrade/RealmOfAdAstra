@@ -93,7 +93,7 @@ export function createApp({ db, engine, world, arena = null, chain, cfg, clock =
   }
 
   const routes = {
-    'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode }),
+    'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode }),
 
     'POST /api/auth/nonce': async (req) => {
       const { address } = await readBody(req);

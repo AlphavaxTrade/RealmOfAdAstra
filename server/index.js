@@ -23,9 +23,10 @@ if (fs.existsSync(envFile)) {
 
 const cfg = loadConfig();
 const db = openDb(cfg.dbFile);
-const engine = await createEngine(db);
+const engine = await createEngine(db, { testMode: cfg.testMode });
 const chain = cfg.chainEnabled ? createChain(cfg) : null;
-const arena = createArena({ db, engine });
+const arena = createArena({ db, engine, botWhenEmpty: cfg.testMode });
+if (cfg.testMode) console.warn('🧪 DENEME MODU: test menüsü ve bot rakip açık. Gerçek sunucuda TEST_MODE kullanmayın!');
 const world = createWorld({ db, engine, chain, arena, cfg });
 const { ethers } = await import('ethers');
 const app = createApp({ db, engine, world, arena, chain, cfg, verifyLogin: (m, s) => ethers.verifyMessage(m, s).toLowerCase() });

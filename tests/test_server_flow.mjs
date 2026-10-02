@@ -97,7 +97,10 @@ try {
   assert.equal((await call('GET', '/api/state')).status, 401, 'Girişsiz istek reddedilir');
   const s0 = await call('GET', '/api/state', null, tA);
   assert.equal(s0.status, 200);
-  assert.equal(s0.body.player.adAstraBalance, 250, 'Başlangıç ADA\'sı görev kasasından');
+  assert.equal(s0.body.player.adAstraBalance, 0, 'Yeni hesap 0 ADA ile başlar');
+  assert.equal(s0.body.player.inventory.wood, 0, 'Yeni hesap 0 kaynakla başlar');
+  engine.mutatePlayer(alice.address.toLowerCase(), gs => { gs.state.adAstraBalance = 250; });
+  engine.mutatePlayer(bob.address.toLowerCase(), gs => { gs.state.adAstraBalance = 250; });
   ok('Cüzdan imzasıyla giriş; sahte imza ve girişsiz istek reddediliyor');
 
   // Oyun işlemleri ve hile denemeleri

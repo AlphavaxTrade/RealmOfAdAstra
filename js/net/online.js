@@ -8,7 +8,7 @@
 //  • Pazar, hazine ve haftalık kota bütün oyuncular için ortaktır ve sunucudan gelir.
 // Sunucu yoksa (bilgisayardaki deneme modu) hiçbir şey değişmez: oyun eskisi gibi tarayıcıda çalışır.
 // ============================================================================
-import { ACTIONS } from '../../server/actions.js';
+import { ACTIONS, DEV_ACTIONS } from '../../server/actions.js';
 
 const SESSION_KEY = 'adastra_session_v1';
 // Zamanla ilerleyen işler: tarayıcıda yalnız görüntü için çalışır, sunucuya gönderilmez (sunucu kendisi işler)
@@ -131,6 +131,21 @@ function installProxies() {
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
         if (!(r && r.success === false)) send(name, cleanArgs(a, spec));
+        return r;
+      };
+    }
+  }
+  // 🧪 Deneme sunucusu: test menüsü işlemleri de sunucuya gider
+  if (online.health && online.health.testMode) {
+    for (const name of DEV_ACTIONS) {
+      const orig = gs[name];
+      if (typeof orig !== 'function') continue;
+      gs[name] = function (...a) {
+        if (depth > 0) return orig.apply(gs, a);
+        depth++;
+        let r;
+        try { r = orig.apply(gs, a); } finally { depth--; }
+        send(name, a.map(v => (v === undefined ? null : v)));
         return r;
       };
     }

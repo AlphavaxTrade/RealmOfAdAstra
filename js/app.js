@@ -9088,7 +9088,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       host.addEventListener('click', () => openWalletPanel());
     }
   }
-  if (!DEV_TOOLS || isOnline) {
+  const showDevTools = isOnline ? !!(online.health && online.health.testMode) : DEV_TOOLS;
+  if (!showDevTools) {
     ['btn-dev-panel-toggle', 'btn-open-test-menu', 'dev-modal'].forEach(id => document.getElementById(id)?.remove());
   }
   initPlayerGuide();

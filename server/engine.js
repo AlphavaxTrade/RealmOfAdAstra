@@ -41,7 +41,7 @@ function installShims(db) {
 export const SYSTEM = 'system';
 export const playerKey = address => 'player:' + String(address).toLowerCase();
 
-export async function createEngine(db, { clock = () => Date.now() } = {}) {
+export async function createEngine(db, { clock = () => Date.now(), testMode = false } = {}) {
   installShims(db);
   const { GAME_CONFIG } = await import('../js/config.js');
   const { gameState: gs } = await import('../js/gameState.js');
@@ -111,12 +111,12 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
       // Yeni oyuncu: başlangıç profili; piyango ve kasa bilgileri dünyadan gelir
       gs.state.lastSeenAt = clock();
       gs.state.lastLotteryDrawEpoch = globalPool.state.epochId;
-      // Başlangıç ADA'sı yoktan basılmaz: Görev kasasından ödenir (kasa boşsa küçülür)
-      const want = Number(GAME_CONFIG.STARTING_PROFILE?.adAstraBalance) || 0;
-      const granted = want > 0 ? Math.floor(treasury.withdraw('quest', want).granted || 0) : 0;
-      gs.state.adAstraBalance = granted;
+      // Kullanıcı kararı (2 Ekim 2026): yeni hesap 0 ADA ve 0 kaynakla başlar
+      gs.state.adAstraBalance = 0;
       gs.state.lockedAda = 0;
-      gs._onAdaEarned(granted);
+      gs.state.inventory = { ...gs.state.inventory, wood: 0, iron: 0, wheat: 0, fragments: 0 };
+      gs.state.lockedBoxes = 0;
+      gs.state.arenaKeys = 0;
     }
     applyWorldOverrides();
   }
@@ -196,7 +196,7 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
     ammMarket.feeStats = ammMarket.loadFeeStats();
   }
 
-  const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG);
+  const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG, { testMode });
 
-  return { lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
+  return { testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
 }
