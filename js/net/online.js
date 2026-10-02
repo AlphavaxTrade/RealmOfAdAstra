@@ -76,7 +76,7 @@ function apply(payload) {
 }
 
 async function sync() {
-  if (!online.active || online.pending > 0) return;
+  if (!online.active || !token || online.pending > 0) return;
   try { apply(await api('GET', '/api/state')); }
   catch (err) { if (err.status === 401) return relogin(); }
 }
@@ -107,6 +107,8 @@ function send(name, args, { wait = false } = {}) {
   return job;
 }
 
+const GUEST_FAIL = { success: false, message: '🔐 Bu işlem için önce cüzdanını bağla.' };
+
 function installProxies() {
   const gs = ctx.gameState;
   let depth = 0;
@@ -122,11 +124,13 @@ function installProxies() {
       // Sonucu sunucu belirler: tarayıcı hesaplamaz, bekler (çağıran "await" kullanır)
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
+        if (!token) { requireLogin(); return Promise.resolve(GUEST_FAIL); }
         return send(name, cleanArgs(a, spec), { wait: true });
       };
     } else {
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
+        if (!token) { requireLogin(); return GUEST_FAIL; }
         depth++;
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
@@ -142,6 +146,7 @@ function installProxies() {
       if (typeof orig !== 'function') continue;
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
+        if (!token) { requireLogin(); return GUEST_FAIL; }
         depth++;
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
@@ -176,12 +181,14 @@ function loginFlow() {
       const el = overlay(`
         <div style="font-size:2.2rem;">👑</div>
         <div style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 4px;">Realm of Astra</div>
-        <div style="font-size:0.88rem;color:#cbd5e1;line-height:1.5;margin-bottom:16px;">Oyuna cüzdanınla gir. Şifre yok: cüzdanın yalnızca bir giriş mesajı imzalar, hiçbir işlem ya da ücret onaylamaz.</div>
+        <div style="font-size:0.88rem;color:#cbd5e1;line-height:1.5;margin-bottom:16px;">Oynamak için cüzdanını bağla. Şifre yok: cüzdanın yalnızca bir giriş mesajı imzalar, hiçbir işlem ya da ücret onaylamaz.</div>
         ${hasWallet
           ? `<button id="online-login-btn" ${busy ? 'disabled' : ''} style="width:100%;padding:12px;border-radius:10px;border:1px solid #c084fc;background:#7c3aed;color:#fff;font-weight:900;font-size:1rem;cursor:pointer;">${busy ? '⏳ Cüzdan onayı bekleniyor…' : '🦊 Cüzdanla Giriş Yap'}</button>`
           : `<div style="font-size:0.9rem;color:#fca5a5;">Bu tarayıcıda cüzdan bulunamadı. <strong>Core</strong> ya da <strong>MetaMask</strong> eklentisini kurup sayfayı yenile.</div>`}
-        ${msg ? `<div style="margin-top:12px;font-size:0.85rem;color:#fca5a5;">${msg}</div>` : ''}`);
+        ${msg ? `<div style="margin-top:12px;font-size:0.85rem;color:#fca5a5;">${msg}</div>` : ''}
+        <button id="online-login-later" style="margin-top:12px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;">Şimdilik gezmeye devam et</button>`);
       el.querySelector('#online-login-btn')?.addEventListener('click', go);
+      el.querySelector('#online-login-later')?.addEventListener('click', () => { closeOverlay(); resolve(false); });
     };
     async function go() {
       draw('', true);
@@ -196,7 +203,7 @@ function loginFlow() {
         online.address = v.address;
         try { localStorage.setItem(SESSION_KEY, JSON.stringify({ token, address: v.address })); } catch { /* özel pencere */ }
         closeOverlay();
-        resolve();
+        resolve(true);
       } catch (err) {
         draw(err && err.code === 4001 ? 'İmza reddedildi. Girmek için imzayı onaylaman gerekiyor.' : (err.message || 'Giriş yapılamadı'));
       }
@@ -205,11 +212,26 @@ function loginFlow() {
   });
 }
 
+// Cüzdan bağlı değilse giriş penceresini açar; bağlanınca kayıt sunucudan yüklenir. Döner: bağlandı mı
+let loginPromise = null;
+export function requireLogin() {
+  if (token) return Promise.resolve(true);
+  if (loginPromise) return loginPromise;
+  loginPromise = loginFlow().then(async okd => {
+    if (okd) {
+      try { apply(await api('GET', '/api/state')); ctx.toast('✅ Cüzdan bağlandı, kaydın yüklendi.', 'success'); }
+      catch (err) { ctx.toast(err.message, 'error'); }
+    }
+    return !!okd;
+  }).finally(() => { loginPromise = null; });
+  return loginPromise;
+}
+export const isLoggedIn = () => !!token;
+
 async function relogin() {
   token = null;
   try { localStorage.removeItem(SESSION_KEY); } catch { /* yok */ }
-  await loginFlow();
-  await sync();
+  await requireLogin();
 }
 
 export function logout() {
@@ -220,6 +242,7 @@ export function logout() {
 // ── Cüzdan ekranı: yatırma ve çekim ────────────────────────────────────
 export async function openWalletPanel() {
   if (!online.active) return;
+  if (!token && !(await requireLogin())) return;
   const el = overlay('<div style="padding:20px;">⏳ Yükleniyor…</div>');
   let w;
   try { w = await api('GET', '/api/wallet'); } catch (err) { el.innerHTML = ''; ctx.toast(err.message, 'error'); closeOverlay(); return; }
@@ -308,11 +331,8 @@ export async function startOnline(context) {
   if (token) {
     try { payload = await api('GET', '/api/state'); } catch { token = null; }
   }
-  if (!token) {
-    await loginFlow();
-    payload = await api('GET', '/api/state');
-  }
-  apply(payload);
+  // Cüzdan bağlı değilse giriş istenmez: herkes gezebilir, işlem yapmak isteyince sorulur
+  if (token && payload) apply(payload);
   installProxies();
   setInterval(sync, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });

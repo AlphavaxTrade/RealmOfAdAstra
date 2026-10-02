@@ -12,7 +12,7 @@ import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleAre
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
-import { startOnline, openWalletPanel, online, pvp } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -4780,6 +4780,13 @@ async function renderPvpPanel() {
       <div class="clean-desc">Bu bölüm oyun sunucudan açıldığında çalışır: askerini kilitleyip "Maç ara"ya basarsın, sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır. 1v1 zaferi 1, 3v3 zaferi 3 puan; haftalık ilk 10 ödül alır.</div>`;
     return;
   }
+  if (!isLoggedIn()) {
+    el.innerHTML = `<div class="card-title">🌐 Gerçek Rakipler</div>
+      <div class="clean-desc">Gerçek oyunculara karşı maç yapmak için cüzdanını bağla.</div>
+      <button id="pvp-login" class="btn-clean btn-gold" style="margin-top:8px;">🔐 Cüzdanı Bağla</button>`;
+    el.querySelector('#pvp-login').addEventListener('click', async () => { if (await requireLogin()) renderPvpPanel(); });
+    return;
+  }
   let st;
   try { st = await pvp.status(); } catch (err) { el.innerHTML = `<div class="clean-desc" style="color:#fca5a5;">${err.message}</div>`; return; }
   const soldiers = gameState.state.soldierUnits || [];
@@ -9062,7 +9069,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     isOnline = await startOnline({
       gameState, ammMarket, treasury, globalPool,
       toast: (m, t) => showToast(m, t),
-      onApplied: () => { try { renderTopBar(); } catch (e) { /* ilk açılış */ } }
+      onApplied: () => {
+        try { renderTopBar(); } catch (e) { /* ilk açılış */ }
+        const wb = document.getElementById('btn-online-wallet');
+        if (wb) wb.textContent = isLoggedIn() ? '🏦' : '🔐 Bağlan';
+      }
     });
   } catch (e) {
     console.warn('Çevrimiçi mod başlatılamadı:', e);
@@ -9079,7 +9090,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       const btn = document.createElement('button');
       btn.id = 'btn-online-wallet';
       btn.type = 'button';
-      btn.textContent = '🏦';
+      btn.textContent = isLoggedIn() ? '🏦' : '🔐 Bağlan';
       btn.title = 'Cüzdanım: yatırma ve çekim';
       btn.style.cssText = 'margin-left:6px;background:#1d4ed8;border:1px solid #60a5fa;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85rem;';
       btn.addEventListener('click', (e) => { e.stopPropagation(); openWalletPanel(); });
