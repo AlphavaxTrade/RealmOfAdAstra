@@ -11,6 +11,8 @@ import { createUnit, simulateBattle, DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '
 import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleArena.js';
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
+import { treasury } from './treasury.js';
+import { startOnline, openWalletPanel, online } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -3324,7 +3326,7 @@ function initCarnivalWheelCanvas() {
   canvas.style.transform = `rotate(${window.carnivalWheelCurrentDeg}deg)`;
 }
 
-function spinCarnivalWheelAnimated(payMethod) {
+async function spinCarnivalWheelAnimated(payMethod) {
   if (window.carnivalWheelIsSpinning) return;
 
   const canvas = document.getElementById('carnival-wheel-canvas');
@@ -3333,7 +3335,7 @@ function spinCarnivalWheelAnimated(payMethod) {
   const resBox = document.getElementById('carnival-wheel-result');
 
   // Önce gameState çağrısı ile kaynak kontrolü ve ödül tespiti yapılır
-  const res = gameState.spinCarnivalWheel(payMethod);
+  const res = await gameState.spinCarnivalWheel(payMethod);
   if (!res.success) {
     showToast(res.message, 'error');
     return;
@@ -4650,7 +4652,7 @@ function openColosseumModal() {
   // 1v1 Kolezyuma Çık Butonu (Canlı Savaş Arenası Entegrasyonu)
   const duelBtn = document.getElementById('btn-start-1v1-duel');
   if (duelBtn) {
-    duelBtn.addEventListener('click', () => {
+    duelBtn.addEventListener('click', async () => {
       const champ = (gameState.state.soldierUnits || [])[selectedColosseumChampionIdx];
       if (!champ) {
         showToast('Kolezyuma çıkacak bir şampiyon bulunamadı!', 'error');
@@ -4661,7 +4663,7 @@ function openColosseumModal() {
         return;
       }
 
-      const res = gameState.executeColosseum1v1Match(selectedColosseumChampionIdx);
+      const res = await gameState.executeColosseum1v1Match(selectedColosseumChampionIdx);
       if (!res.success) {
         showToast(res.message, 'error');
         return;
@@ -5852,7 +5854,7 @@ function openPreBattleModal(monster) {
   displayModal();
 }
 
-function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } = {}) {
+async function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } = {}) {
   const state = gameState.state;
   const soldiers = state.soldierUnits || [];
 
@@ -5866,7 +5868,7 @@ function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } =
   // Savaş öncesi askerlerin canı canlandırma için saklanır (sonuç işlendikten sonra değişir).
   const hpBefore = selectedIndices.map(idx => (soldiers[idx] ? soldiers[idx].hp : null));
   const monsterHpBefore = gameState.getMonsterCurrentHp(monster.level, monster.hp);
-  const fight = gameState.fightDungeon(monster.level, selectedIndices, { payGateFee });
+  const fight = await gameState.fightDungeon(monster.level, selectedIndices, { payGateFee });
   if (!fight.success) {
     showToast(fight.message, 'error');
     openPreBattleModal(monster);
@@ -6530,7 +6532,7 @@ function initAppEvents() {
     showToast(message, type);
   });
 
-  dom.modalBody.addEventListener('click', (e) => {
+  dom.modalBody.addEventListener('click', async (e) => {
     // 1-Click: Tüm Seferleri Topla & Yeniden Başlat
     const exp1ClickBtn = e.target.closest('.btn-1click-claim-restart-exp');
     if (exp1ClickBtn) {
@@ -7106,7 +7108,7 @@ function initAppEvents() {
           break;
         case 'open_1_box':
           if ((gameState.state.lockedBoxes || 0) <= 0) gameState.state.lockedBoxes = 1;
-          const ob1 = gameState.unboxMysteryBox();
+          const ob1 = await gameState.unboxMysteryBox();
           toastMsg = ob1.message;
           break;
         case 'open_10_boxes':
@@ -7264,7 +7266,7 @@ function initAppEvents() {
     const equipCraftBtn = e.target.closest('.btn-craft-equipment');
     if (equipCraftBtn) {
       const slotKey = equipCraftBtn.dataset.slot;
-      const res = gameState.craftEquipment(slotKey);
+      const res = await gameState.craftEquipment(slotKey);
       if (res.success) {
         showToast(res.message, 'success');
         sound.playLevelUp();
@@ -7826,7 +7828,7 @@ function initAppEvents() {
         showToast('🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar yalnızca Kolezyum derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir)', 'error');
         return;
       }
-      const res = gameState.unboxMysteryBox();
+      const res = await gameState.unboxMysteryBox();
       if (res.success) {
         gameState.saveState();
         lastBoxResult = res;
@@ -8925,12 +8927,41 @@ export function renderTopAnnouncementTicker() {
   container.innerHTML = singleContent + singleContent;
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  // 🌐 Oyun bir Realm of Astra sunucusundan açıldıysa çevrimiçi mod: cüzdanla giriş, kayıt sunucuda.
+  // Sunucu yoksa (bilgisayardaki deneme modu) oyun eskisi gibi tarayıcıda çalışır.
+  let isOnline = false;
+  try {
+    isOnline = await startOnline({
+      gameState, ammMarket, treasury, globalPool,
+      toast: (m, t) => showToast(m, t),
+      onApplied: () => { try { renderTopBar(); } catch (e) { /* ilk açılış */ } }
+    });
+  } catch (e) {
+    console.warn('Çevrimiçi mod başlatılamadı:', e);
+  }
   renderTopAnnouncementTicker();
   initPhaser();
   initAppEvents();
   initDevPanelEvents();
-  if (!DEV_TOOLS) {
+  if (isOnline) {
+    // Cüzdan düğmesi (yatırma / çekim) bakiyenin yanında; bakiyeye tıklamak da açar
+    const balEl = document.getElementById('adastra-balance');
+    const host = balEl && balEl.parentElement;
+    if (host) {
+      const btn = document.createElement('button');
+      btn.id = 'btn-online-wallet';
+      btn.type = 'button';
+      btn.textContent = '🏦';
+      btn.title = 'Cüzdanım: yatırma ve çekim';
+      btn.style.cssText = 'margin-left:6px;background:#1d4ed8;border:1px solid #60a5fa;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85rem;';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); openWalletPanel(); });
+      host.appendChild(btn);
+      host.style.cursor = 'pointer';
+      host.addEventListener('click', () => openWalletPanel());
+    }
+  }
+  if (!DEV_TOOLS || isOnline) {
     ['btn-dev-panel-toggle', 'btn-open-test-menu', 'dev-modal'].forEach(id => document.getElementById(id)?.remove());
   }
   initPlayerGuide();

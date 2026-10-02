@@ -107,8 +107,13 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
       gs.checkOnboardingProgress();
       gs.updateBotPauseState();
       const result = fn(gs);
+      // Bildirimler ve "sen yokken olanlar" raporu oyuncuya bir kez teslim edilir, kayıttan silinir
+      const notices = Array.isArray(gs.state.pendingNotices) ? gs.state.pendingNotices : [];
+      const offlineReport = gs.state.offlineReport || null;
+      gs.state.pendingNotices = [];
+      gs.state.offlineReport = null;
       gs.saveState();
-      return { result, state: gs.state };
+      return { result, state: { ...gs.state, pendingNotices: notices, offlineReport } };
     } finally {
       current = null;
     }
