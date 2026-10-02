@@ -125,7 +125,11 @@ function installProxies() {
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
         if (!token) { requireLogin(); return Promise.resolve(GUEST_FAIL); }
-        return send(name, cleanArgs(a, spec), { wait: true });
+        const args = cleanArgs(a, spec);
+        return send(name, args, { wait: true }).then(r => {
+          if (r && r.success === false && INSUFFICIENT_RE.test(r.message || '') && online.health?.payments?.enabled) { startPayment(name, args); return PAY_STARTED; }
+          return r;
+        });
       };
     } else {
       gs[name] = function (...a) {
@@ -135,6 +139,7 @@ function installProxies() {
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
         if (!(r && r.success === false)) send(name, cleanArgs(a, spec));
+        else if (INSUFFICIENT_RE.test(r.message || '') && online.health?.payments?.enabled) { startPayment(name, cleanArgs(a, spec)); return PAY_STARTED; }
         return r;
       };
     }
@@ -428,6 +433,116 @@ async function handleEmailLinks() {
         requireLogin('login');
       } catch (err) { el.querySelector('#rs-msg').textContent = err.message; }
     };
+  }
+}
+
+// ── 💳 Cüzdandan ödeme (kazanılmış bakiye yetmeyince) ─────────────────
+const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ADA)\b/i;
+const PAY_STARTED = { success: false, message: '💳 Bakiyen bu işleme yetmedi — cüzdandan ödeme penceresi açıldı.' };
+const pad32 = h => String(h).toLowerCase().replace(/^0x/, '').padStart(64, '0');
+const toHexQ = n => '0x' + BigInt(n).toString(16);
+const sleepMs = ms => new Promise(r => setTimeout(r, ms));
+let paying = false;
+
+async function waitReceipt(hash, maxMs = 120000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < maxMs) {
+    const rc = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] }).catch(() => null);
+    if (rc) { if (rc.status !== '0x1') throw new Error('İşlem zincirde başarısız oldu.'); return rc; }
+    await sleepMs(2000);
+  }
+  throw new Error('İşlemin onayı gecikti. Biraz sonra Hesabım ekranından kontrol et.');
+}
+
+async function ensureChain(chainId) {
+  const want = '0x' + Number(chainId).toString(16);
+  const cur = await window.ethereum.request({ method: 'eth_chainId' });
+  if (String(cur).toLowerCase() === want) return;
+  try {
+    await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: want }] });
+  } catch (e) {
+    if (e && e.code === 4902 && Number(chainId) === 43114) {
+      await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: want, chainName: 'Avalanche C-Chain', nativeCurrency: { name: 'AVAX', symbol: 'AVAX', decimals: 18 }, rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'], blockExplorerUrls: ['https://snowtrace.io'] }] });
+    } else throw e;
+  }
+}
+
+async function payOnChain(q, setStep) {
+  if (!window.ethereum) throw new Error('Bu tarayıcıda cüzdan bulunamadı. Core ya da MetaMask eklentisini kur.');
+  const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+  const from = String(accs && accs[0] || '').toLowerCase();
+  if (from !== String(q.wallet).toLowerCase()) throw new Error(`Cüzdanında hesabına bağlı adresi seç: ${short(q.wallet)}`);
+  setStep('Avalanche ağına geçiliyor…');
+  await ensureChain(q.chainId);
+  const amountWei = BigInt(q.amountAda) * 10n ** 18n;
+  const allowanceHex = await window.ethereum.request({ method: 'eth_call', params: [{ to: q.token, data: '0xdd62ed3e' + pad32(from) + pad32(q.contract) }, 'latest'] });
+  if (BigInt(allowanceHex || '0x0') < amountWei) {
+    setStep('İlk seferlik izin: cüzdanında "izin ver" onayını ver…');
+    const ah = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from, to: q.token, data: '0x095ea7b3' + pad32(q.contract) + 'f'.repeat(64) }] });
+    setStep('İzin onaylanıyor…');
+    await waitReceipt(ah);
+  }
+  const gasPrice = BigInt(await window.ethereum.request({ method: 'eth_gasPrice' }));
+  const maxFee = gasPrice * 3n / 2n;
+  const value = maxFee * BigInt(q.feeGas);                       // komisyon: ağ ücreti kadar (en yüksek fiyatla)
+  setStep('Cüzdanında ödemeyi onayla…');
+  const hash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from, to: q.contract, value: toHexQ(value), maxFeePerGas: toHexQ(maxFee), data: '0x8e6bee97' + pad32(amountWei.toString(16)) + pad32(q.ref) }] });
+  setStep('Ödeme zincirde onaylanıyor…');
+  await waitReceipt(hash);
+  return hash;
+}
+
+async function confirmPayment(ref, txHash) {
+  for (let i = 0; i < 10; i++) {
+    try { return await api('POST', '/api/pay/confirm', { ref, txHash }); }
+    catch (err) { if (err.status !== 409) throw err; await sleepMs(3000); }
+  }
+  throw new Error('Ödeme zincirde görünmedi. Birkaç dakika sonra tekrar dene.');
+}
+
+async function startPayment(name, args) {
+  if (paying) return;
+  paying = true;
+  try {
+    let q;
+    try { q = await api('POST', '/api/pay/quote', { name, args }); } catch (err) { ctx.toast(err.message, 'error'); return; }
+    if (!q.needPayment) { if (q.message) ctx.toast(q.message, 'info'); return; }
+    await new Promise(resolve => {
+      const draw = (step = '', errMsg = '') => {
+        const noWallet = !q.wallet && !q.simulated;
+        const el = overlay(`
+          <div style="font-size:2rem;">💳</div>
+          <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">Cüzdandan Öde</div>
+          <div style="font-size:0.86rem;color:#cbd5e1;line-height:1.55;text-align:left;">
+            Bu işlem <strong>${fmt(q.cost)} ADA</strong> tutuyor; oyunda kazandığın bakiye <strong>${fmt(q.balance)} ADA</strong>.
+            Kalan <strong style="color:#fde047;">${fmt(q.amountAda)} ADA</strong> cüzdanından ödenecek.
+            <div style="margin-top:6px;color:#94a3b8;font-size:0.8rem;">Avalanche ağ ücreti ve aynı tutarda küçük bir oyun komisyonu (AVAX) alınır. Ödediğin ADA'dan işlemden artan kısım oyun bakiyende kalır.</div>
+          </div>
+          ${noWallet ? `<div style="${boxCss};color:#fbbf24;">Cüzdandan ödeme için önce hesabına bir cüzdan bağla.</div><button id="py-acc" style="${btnCss('#4c1d95', '#a78bfa')}">🔗 Hesabım → Cüzdan bağla</button>` : ''}
+          ${q.simulated ? `<button id="py-sim" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: ödemeyi taklit et</button>` : ''}
+          ${!noWallet && !q.simulated ? `<button id="py-go" ${step ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${step ? '⏳ ' + esc(step) : '🦊 Cüzdanla Öde'}</button>` : ''}
+          ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+          <button id="py-cancel" style="${linkCss}">Vazgeç</button>`);
+        el.querySelector('#py-cancel').onclick = () => { closeOverlay(); resolve(); };
+        el.querySelector('#py-acc')?.addEventListener('click', () => { resolve(); openWalletPanel(); });
+        const finish = async txHash => {
+          const r = await confirmPayment(q.ref, txHash);
+          apply(r);
+          closeOverlay();
+          const res = r.result || {};
+          ctx.toast(res.success === false ? `Ödemen alındı (${fmt(r.paid)} ADA bakiyende) ama işlem yapılamadı: ${res.message}` : `✅ Ödeme alındı. ${res.message || ''}`, res.success === false ? 'info' : 'success');
+          resolve();
+        };
+        el.querySelector('#py-sim')?.addEventListener('click', async () => { try { await finish('test'); } catch (err) { draw('', err.message); } });
+        el.querySelector('#py-go')?.addEventListener('click', async () => {
+          try { const h = await payOnChain(q, s => draw(s)); draw('Oyun sunucusu ödemeyi doğruluyor…'); await finish(h); }
+          catch (err) { draw('', err && err.code === 4001 ? 'Cüzdanda reddedildi.' : err.message); }
+        });
+      };
+      draw();
+    });
+  } finally {
+    paying = false;
   }
 }
 
