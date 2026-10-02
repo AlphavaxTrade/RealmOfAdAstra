@@ -4440,6 +4440,16 @@ export class GameStateManager {
     return { open: bal >= minBal, balance: bal, minBalance: minBal };
   }
 
+  // 🎪 Karnaval coşkusu: günde bir kez +10 stamina (önceden sınırsızdı; bedava stamina açığıydı)
+  carnivalCheer() {
+    const c = this.getDailyCounters();
+    if (c.carnivalCheer) return { success: false, message: '🎪 Bugün karnaval coşkusuna zaten katıldın. Yarın yine gel!' };
+    c.carnivalCheer = 1;
+    this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + 10);
+    this.saveState();
+    return { success: true, message: '🎪 Karnaval coşkusuna katıldın! +10 ⚡ Moral Staminası kazandın!' };
+  }
+
   // Çark bedeli (ADA fiyat çarpanıyla)
   getWheelCostAda() {
     return this.adaPrice(GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100);
@@ -6410,6 +6420,31 @@ export class GameStateManager {
   // aşınması, ödül ve deneyim ya da canavarın kalan canı. Arena yalnızca bu sonucu oynatır.
   // Önceden sonuç animasyon bittikten sonra işleniyordu; yenilgi sırasında sayfa yenilenirse
   // can kaybı, aşınma ve canavarın kalan canı hiç yazılmıyordu.
+  // ⚔️ Zindan savaşı tek adımda: giriş (stamina, günlük hak, kapı harcı) → savaş (combat.js) → sonuç.
+  // Canavar yalnız seviyeden, oyunun kendi tablosundan kurulur; oyuncunun gönderdiği can/saldırı kullanılmaz.
+  // Sunucu modunda bu işlem sunucuda çalışır, tarayıcı yalnız dönen savaş kaydını canlandırır.
+  fightDungeon(level, selectedIndices, { payGateFee = false } = {}) {
+    const lvl = Math.max(1, Math.min(18, Math.floor(Number(level) || 1)));
+    const currentLevel = this.state.dungeonProgress || 1;
+    if (lvl > currentLevel) {
+      return { success: false, message: `🔒 Şu an Seviye ${currentLevel}'desiniz! Seviye ${lvl} için önce önceki bölümleri tamamlamalısınız.` };
+    }
+    const soldiers = this.state.soldierUnits || [];
+    const indices = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))]
+      .filter(i => Number.isInteger(i) && soldiers[i]);
+    if (!indices.length) return { success: false, message: 'Savaşa katılacak geçerli bir asker bulunamadı!' };
+    const monster = getDungeonEntry(lvl);
+    const isBoss = !!(monster.isBoss || lvl === 9 || lvl === 18);
+    const entry = this.beginDungeonEntry(lvl, isBoss, { payGateFee: !!payGateFee, soldierCount: indices.length });
+    if (!entry.success) return { ...entry, success: false };
+    const setup = this.buildDungeonBattleUnits(monster, indices);
+    const seed = (Math.floor(Math.random() * 0xffffffff) ^ Math.imul(lvl, 2654435761)) >>> 0;
+    const sim = simulateBattle({ allies: setup.allies, enemies: setup.enemies, seed, bossPhases: setup.bossPhases });
+    this.state.lastBattle = { seed, monsterLevel: lvl, victory: !!sim.victory, rounds: sim.roundCount, at: Date.now() };
+    const outcome = this.settleDungeonBattle(monster, indices, sim, entry);
+    return { success: true, level: lvl, monster, selectedIndices: indices, entry, sim, seed, outcome };
+  }
+
   settleDungeonBattle(monster, selectedIndices, sim, entry) {
     const soldiers = this.state.soldierUnits || [];
     const allies = Array.isArray(sim.allies) ? sim.allies : [];

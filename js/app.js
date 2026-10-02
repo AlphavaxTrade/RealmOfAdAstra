@@ -5856,33 +5856,25 @@ function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } =
   const state = gameState.state;
   const soldiers = state.soldierUnits || [];
 
-  // Giriş: stamina (günün ilk girişinde alınmaz), günlük sayaç ve kapı harcı tek yerde işlenir
-  const isBossEntry = !!(monster.isBoss || monster.level === 9 || monster.level === 18);
-  const entry = gameState.beginDungeonEntry(monster.level, isBossEntry, { payGateFee, soldierCount: selectedIndices.length });
-  if (!entry.success) {
-    showToast(entry.message, 'error');
-    openPreBattleModal(monster);
-    return;
-  }
-  const staminaCost = entry.staminaCost;
-  renderTopBar();
-
   const arena = getBattleArena();
   if (!arena) {
     showToast('Savaş arenası başlatılamadı!', 'error');
     return;
   }
 
-  // ⚔️ Tek savaş motoru: sonucu combat.js hesaplar, arena yalnızca kaydı canlandırır
-  const battleSetup = gameState.buildDungeonBattleUnits(monster, selectedIndices);
-  const battleSeed = (Date.now() ^ Math.imul(monster.level, 2654435761)) >>> 0;
-  const sim = simulateBattle({
-    allies: battleSetup.allies,
-    enemies: battleSetup.enemies,
-    seed: battleSeed,
-    bossPhases: battleSetup.bossPhases
-  });
-  gameState.state.lastBattle = { seed: battleSeed, monsterLevel: monster.level, victory: !!sim.victory, rounds: sim.roundCount, at: Date.now() };
+  // ⚔️ Giriş + savaş + sonuç tek adımda (gameState.fightDungeon); arena yalnızca dönen kaydı canlandırır.
+  // Savaş öncesi askerlerin canı canlandırma için saklanır (sonuç işlendikten sonra değişir).
+  const hpBefore = selectedIndices.map(idx => (soldiers[idx] ? soldiers[idx].hp : null));
+  const monsterHpBefore = gameState.getMonsterCurrentHp(monster.level, monster.hp);
+  const fight = gameState.fightDungeon(monster.level, selectedIndices, { payGateFee });
+  if (!fight.success) {
+    showToast(fight.message, 'error');
+    openPreBattleModal(monster);
+    return;
+  }
+  const { entry, sim, outcome } = fight;
+  const staminaCost = entry.staminaCost;
+  renderTopBar();
 
   // 1. Müttefik Asker Birimleri Oluşturma (Tek Tip Asker + Skill Loadout + Mevzi)
   const arenaAllies = selectedIndices
@@ -5890,13 +5882,14 @@ function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } =
     .map((idx, i) => {
       const stats = gameState.getSoldierFullStats(idx) || { totalAtk: 25, totalMaxHp: 100 };
       const sol = soldiers[idx];
+      const hp0 = hpBefore[selectedIndices.indexOf(idx)];
       return {
         uid: 'a' + i,
         name: sol.name,
         icon: sol.icon || '⚔️',
         avatar: sol.avatar || 'assets/soldier_avatar.jpg',
         sourceIndex: idx,
-        hp: sol.hp != null ? sol.hp : stats.totalMaxHp,
+        hp: hp0 != null ? hp0 : stats.totalMaxHp,
         maxHp: stats.totalMaxHp,
         atk: stats.totalAtk,
         row: sol.row || 'front',
@@ -5909,10 +5902,8 @@ function executeMonsterBattle(monster, selectedIndices, { payGateFee = false } =
     return;
   }
 
-  // Sonuç animasyondan ÖNCE işlenip kaydedilir; arena yalnızca oynatır (sayfa yenileme hilesi kapalı)
-  const outcome = gameState.settleDungeonBattle(monster, selectedIndices, sim, entry);
-
-  let eCurHp = gameState.getMonsterCurrentHp(monster.level, monster.hp);
+  // Sonuç animasyondan ÖNCE işlendi ve kaydedildi; arena yalnızca oynatır (sayfa yenileme hilesi kapalı)
+  let eCurHp = monsterHpBefore;
   const isBossMonster = !!(monster.isBoss || monster.level === 9 || monster.level === 18);
 
   // 2. Canavar Birimi ve Boss Fazları
@@ -7612,10 +7603,9 @@ function initAppEvents() {
 
     // Karnaval Moral Bonusu
     if (e.target.closest('#btn-carnival-cheer')) {
-      gameState.state.stamina = Math.min(gameState.getMaxStamina(), (gameState.state.stamina || 0) + 10);
-      gameState.saveState();
-      sound.playLevelUp();
-      showToast('🎪 Karnaval coşkusuna katıldın! +10 ⚡ Moral Staminası kazandın!', 'success');
+      const cheer = gameState.carnivalCheer();
+      if (cheer.success) sound.playLevelUp();
+      showToast(cheer.message, cheer.success ? 'success' : 'info');
       closeModal();
       renderTopBar();
       return;

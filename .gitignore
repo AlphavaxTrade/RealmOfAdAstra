@@ -43,3 +43,10 @@ Thumbs.db
 test-results/
 playwright-report/
 coverage/
+
+# Sunucu: gizli ayarlar ve kayıt dosyası
+server/.env
+data/
+*.db
+*.db-wal
+*.db-shm

@@ -18,6 +18,7 @@
     "esbuild@0.21.5": true
   },
   "dependencies": {
+    "ethers": "^6.17.0",
     "phaser": "^3.80.1"
   }
 }
