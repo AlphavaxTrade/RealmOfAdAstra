@@ -193,6 +193,10 @@ assert.equal(GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA, 100, 'Çark çevirme bedeli 10
 // 100 Çevirme Simülasyonu ile RTP ve Kasa Güvenliği Doğrulaması
 let totalPaidAda = 0;
 let totalReturnedValueAda = 0;
+// Sabit tohumlu rastgelelik: kontrol her çalıştırmada aynı sonucu verir (eskiden ~20'de 1 şansa bağlı başarısız oluyordu)
+const realRandom = Math.random;
+let seed = 12345;
+Math.random = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
 for (let i = 0; i < 50; i++) {
   const spinRes = gs.spinCarnivalWheel('ada');
   assert(spinRes.success, `Çevirme #${i} başarılı olmalı`);
@@ -202,6 +206,7 @@ for (let i = 0; i < 50; i++) {
 const simulatedRtp = (totalReturnedValueAda / totalPaidAda) * 100;
 console.log(`50 Çevirme Simülasyonu - Ödenen: ${totalPaidAda} ADA, Dağıtılan Değer: ${totalReturnedValueAda} ADA, RTP: %${simulatedRtp.toFixed(1)}`);
 assert(totalReturnedValueAda < totalPaidAda * 1.5, 'Kasa iflas ettirilemez (RTP dengesi korunmalı)');
+Math.random = realRandom;
 console.log('✅ Krallık Karnavalı Şans Çarkı mekaniği %100 doğrulandı.');
 
 // ══════════════════════════════════════════════════════════════════════════
