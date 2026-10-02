@@ -90,24 +90,66 @@ export function createChain(cfg) {
   }
 
   let sendQueue = Promise.resolve();
-  // ADASTRA gönderimi (sırayla; aynı anda iki işlem nonce çakışması yaratmasın)
-  function sendAda(to, amountAda) {
+  const erc20 = new ethers.Interface(ERC20_ABI);
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  // ADASTRA gönderimi — ÇİFT ÖDEME OLMAYACAK şekilde:
+  //  1. İşlem önce imzalanır; kimliği (hash), ham hali ve sıra numarası (nonce) onSigned ile KAYDA yazılır.
+  //  2. Sonra zincire gönderilir. Aynı imzalı işlemi tekrar göndermek zararsızdır (zincir bir kez işler);
+  //     bağlantı hatasında yedek bağlantıdan AYNI işlem yeniden gönderilir, asla yeni işlem yazılmaz.
+  //  3. Onay beklenir; gelmezse kayıt "gönderiliyor" kalır ve checkPayout() ile zincirden sonuçlandırılır.
+  function sendAda(to, amountAda, onSigned = () => {}) {
     if (!wallet) return Promise.reject(new Error('Oyun cüzdanı anahtarı tanımlı değil (GAME_WALLET_PRIVATE_KEY)'));
-    const job = sendQueue.then(() => withProvider(async p => {
-      const token = new ethers.Contract(cfg.tokenAddress, ERC20_ABI, wallet.connect(p));
+    const job = sendQueue.then(async () => {
       const value = ethers.parseUnits(Number(amountAda).toFixed(6), 18);
-      const tx = await token.transfer(to, value);
-      const rc = await tx.wait(1, 120000);
-      if (!rc || rc.status !== 1) throw new Error('İşlem zincirde başarısız: ' + tx.hash);
-      return tx.hash;
-    }));
+      const data = erc20.encodeFunctionData('transfer', [to, value]);
+      const req = await withProvider(p => wallet.connect(p).populateTransaction({ to: cfg.tokenAddress, data, chainId: cfg.chainId }));
+      const raw = await wallet.signTransaction(req);
+      const hash = ethers.keccak256(raw);
+      onSigned({ hash, raw, nonce: Number(req.nonce) });
+      await broadcast(raw);
+      for (let i = 0; i < 40; i++) {                         // ~2 dakika onay bekle
+        const rc = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
+        if (rc) {
+          if (rc.status !== 1) { const e = new Error('İşlem zincirde başarısız: ' + hash); e.txHash = hash; e.reverted = true; throw e; }
+          return hash;
+        }
+        await sleep(3000);
+      }
+      const e = new Error('Onay zaman aşımı: ' + hash); e.txHash = hash; throw e;
+    });
     sendQueue = job.catch(() => {});
     return job;
+  }
+
+  // Aynı imzalı işlemi bağlantılara gönder; "zaten biliniyor" yanıtları sorun değil
+  async function broadcast(raw) {
+    let lastErr = null;
+    for (const p of providers) {
+      try { await p.broadcastTransaction(raw); return; }
+      catch (e) { lastErr = e; if (/already known|nonce too low|known transaction/i.test(String(e.message))) return; }
+    }
+    if (lastErr) throw lastErr;
+  }
+
+  // "Gönderiliyor" kalmış bir ödemenin zincirdeki durumu: 'sent' | 'failed' (tekrar gönderilebilir) | 'waiting'
+  async function checkPayout({ hash, raw, nonce }) {
+    const rc = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
+    if (rc) return rc.status === 1 ? 'sent' : 'failed';
+    const used = await withProvider(p => p.getTransactionCount(wallet.address, 'latest'));
+    if (Number.isInteger(nonce) && used > nonce) {
+      // Sıra numarası kullanılmış: son bir kez daha bak (yarış durumunda yeni işlenmiş olabilir)
+      const rc2 = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
+      if (rc2) return rc2.status === 1 ? 'sent' : 'failed';
+      return 'failed';
+    }
+    if (raw) await broadcast(raw).catch(() => {});                    // düşmüş olabilir: aynı işlemi yeniden yay
+    return 'waiting';
   }
 
   function verifyLogin(message, signature) {
     return ethers.verifyMessage(message, signature).toLowerCase();
   }
 
-  return { readMarket, latestBlock, scanDeposits, sendAda, verifyLogin, gameWallet, canSend: !!wallet };
+  return { readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

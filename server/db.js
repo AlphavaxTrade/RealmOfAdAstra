@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS deposits (
 CREATE TABLE IF NOT EXISTS payouts (
   id INTEGER PRIMARY KEY AUTOINCREMENT, epoch INTEGER NOT NULL, kind TEXT NOT NULL, address TEXT NOT NULL,
   amount REAL NOT NULL, status TEXT NOT NULL DEFAULT 'pending', tx_hash TEXT, error TEXT,
-  created_at INTEGER NOT NULL, sent_at INTEGER
+  created_at INTEGER NOT NULL, sent_at INTEGER, raw_tx TEXT, tx_nonce INTEGER
 );
 CREATE TABLE IF NOT EXISTS withdraw_log (
   epoch INTEGER NOT NULL, address TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (epoch, address)
@@ -37,6 +37,8 @@ export function openDb(file) {
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
   db.exec(SCHEMA);
+  // Eski kayıt dosyaları için ek sütunlar
+  for (const col of ['raw_tx TEXT', 'tx_nonce INTEGER']) { try { db.exec('ALTER TABLE payouts ADD COLUMN ' + col); } catch { /* zaten var */ } }
   const q = {};
   const prep = (name, sql) => { q[name] = db.prepare(sql); };
   prep('kvGet', 'SELECT value FROM kv WHERE key = ?');
@@ -62,9 +64,14 @@ export function openDb(file) {
   prep('depositsOf', 'SELECT * FROM deposits WHERE address = ? ORDER BY block DESC LIMIT 50');
   prep('payoutAdd', 'INSERT INTO payouts (epoch, kind, address, amount, created_at) VALUES (?, ?, ?, ?, ?)');
   prep('payoutsPending', "SELECT * FROM payouts WHERE status = 'pending' ORDER BY id");
-  prep('payoutsOf', 'SELECT * FROM payouts WHERE address = ? ORDER BY id DESC LIMIT 50');
-  prep('payoutsRecent', 'SELECT * FROM payouts ORDER BY id DESC LIMIT ?');
+  prep('payoutsOf', 'SELECT id, epoch, kind, amount, status, tx_hash, created_at, sent_at FROM payouts WHERE address = ? ORDER BY id DESC LIMIT 50');
+  prep('payoutsRecent', 'SELECT id, epoch, kind, address, amount, status, tx_hash, error, created_at, sent_at FROM payouts ORDER BY id DESC LIMIT ?');
   prep('payoutMark', 'UPDATE payouts SET status = ?, tx_hash = ?, error = ?, sent_at = ? WHERE id = ?');
+  prep('payoutSigned', "UPDATE payouts SET status = 'sending', tx_hash = ?, raw_tx = ?, tx_nonce = ? WHERE id = ?");
+  prep('payoutsSending', "SELECT * FROM payouts WHERE status = 'sending' ORDER BY id");
+  prep('payoutGet', 'SELECT * FROM payouts WHERE id = ?');
+  prep('payoutSetStatus', 'UPDATE payouts SET status = ?, error = ? WHERE id = ?');
+  prep('noncesPurge', 'DELETE FROM nonces WHERE expires < ?');
   prep('payoutsSentSince', "SELECT COALESCE(SUM(amount), 0) AS total FROM payouts WHERE status = 'sent' AND sent_at >= ?");
   prep('withdrawLogSet', 'INSERT INTO withdraw_log (epoch, address, data) VALUES (?, ?, ?) ON CONFLICT(epoch, address) DO UPDATE SET data = excluded.data');
   prep('withdrawLogOf', 'SELECT * FROM withdraw_log WHERE address = ? ORDER BY epoch DESC LIMIT 20');

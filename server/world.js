@@ -391,18 +391,40 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
           continue;
         }
         db.q.payoutMark.run('sending', null, null, clock(), p.id);
+        if (p.kind === 'withdraw') sentWithdraw += p.amount;
         try {
-          const hash = await chain.sendAda(p.address, p.amount);
+          const hash = await chain.sendAda(p.address, p.amount, s => db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id));
           db.q.payoutMark.run('sent', hash, null, clock(), p.id);
-          if (p.kind === 'withdraw') sentWithdraw += p.amount;
           out.sent++;
         } catch (err) {
-          db.q.payoutMark.run('pending', null, String(err.shortMessage || err.message).slice(0, 300), null, p.id);
+          const msg = String(err.shortMessage || err.message).slice(0, 300);
+          const row = db.q.payoutGet.get(p.id);
+          if (row && row.tx_hash && !err.reverted) {
+            // İmzalandı, gönderilmiş olabilir: TEKRAR GÖNDERİLMEZ; reconcilePayouts() zincirden sonuçlandırır
+            db.q.payoutSetStatus.run('sending', 'Onay bekleniyor: ' + msg, p.id);
+          } else {
+            db.q.payoutMark.run('pending', null, msg, null, p.id);
+            if (p.kind === 'withdraw') sentWithdraw -= p.amount;
+          }
           out.failed++;
         }
       }
     } finally {
       paying = false;
+    }
+    return out;
+  }
+
+  // "Gönderiliyor" kalmış ödemeleri zincirden sonuçlandır: işlendiyse 'sent', hiç işlenmeyecekse yeniden sıraya
+  async function reconcilePayouts() {
+    if (!chain || !chain.canSend) return { skipped: true };
+    const out = { sent: 0, retry: 0, waiting: 0, unknown: 0 };
+    for (const r of db.q.payoutsSending.all()) {
+      if (!r.tx_hash) { out.unknown++; continue; }        // imza kaydı yok: yönetici kontrol eder
+      const st = await chain.checkPayout({ hash: r.tx_hash, raw: r.raw_tx, nonce: r.tx_nonce }).catch(() => 'waiting');
+      if (st === 'sent') { db.q.payoutMark.run('sent', r.tx_hash, null, clock(), r.id); out.sent++; }
+      else if (st === 'failed') { db.q.payoutMark.run('pending', null, 'Önceki gönderim zincirde işlenmedi; yeniden denenecek', null, r.id); out.retry++; }
+      else out.waiting++;
     }
     return out;
   }
@@ -439,7 +461,11 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
       if (chain && now - last.market >= 3600000) { last.market = now; await snapshotMarket().catch(err => log.warn('Piyasa:', err.message)); }
       if (chain && now - last.deposits >= 120000) { last.deposits = now; await scanDeposits().catch(err => log.warn('Yatırma tarama:', err.message)); }
       if (now - last.live >= 600000) { last.live = now; refreshLive(); }
-      if (now - last.payouts >= 300000) { last.payouts = now; await processPayouts().catch(err => log.warn('Ödeme:', err.message)); }
+      if (now - last.payouts >= 300000) {
+        last.payouts = now;
+        await reconcilePayouts().catch(err => log.warn('Ödeme kontrolü:', err.message));
+        await processPayouts().catch(err => log.warn('Ödeme:', err.message));
+      }
       // Günlük pazar geri alımı (dünya işi; sistem hesabıyla)
       E.withPlayer(SYSTEM, gs => gs.checkDailyAutonomousBuyback());
     } finally {
@@ -449,5 +475,5 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
 
   function setPaused(paused) { setEcon({ paused: !!paused }); db.event(paused ? 'pause' : 'resume'); return { paused: !!paused }; }
 
-  return { runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }
