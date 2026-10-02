@@ -12,6 +12,7 @@ import { createApp } from './app.js';
 import { createArena } from './arena.js';
 import { createMailer } from './mailer.js';
 import { createAccounts } from './accounts.js';
+import { createPayments } from './payments.js';
 
 // server/.env varsa oku (KEY=değer satırları; ortamda zaten tanımlı olanlar ezilmez)
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -33,7 +34,9 @@ const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethe
 const arena = createArena({ db, engine, botWhenEmpty: cfg.testMode });
 if (cfg.testMode) console.warn('🧪 DENEME MODU: test menüsü ve bot rakip açık. Gerçek sunucuda TEST_MODE kullanmayın!');
 const world = createWorld({ db, engine, chain, arena, accounts, cfg });
-const app = createApp({ db, engine, world, accounts, arena, chain, cfg });
+const payments = createPayments({ db, engine, accounts, chain, cfg });
+const app = createApp({ db, engine, world, accounts, payments, arena, chain, cfg });
+if (!cfg.paymentsContract) console.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) console.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');
 
 if (!cfg.adminToken) console.warn('⚠️  ADMIN_TOKEN tanımlı değil: yönetici paneli kapalı.');

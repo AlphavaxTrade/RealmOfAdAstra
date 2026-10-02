@@ -198,5 +198,30 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
 
   const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG, { testMode });
 
-  return { testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
+  // Bir işlemin ADA tutarını ölçer: işlem bol bakiyeyle "deneme" olarak çalıştırılır, sonra HER ŞEY geri alınır
+  // (veritabanı + bellekteki dünya). Döner: { succeeds, spent, balance, message }
+  const ROLLBACK = Symbol('geri-al');
+  function quoteCost(address, name, args) {
+    let out = null;
+    try {
+      db.tx(() => {
+        withPlayer(address, g => {
+          const BIG = 1e12;
+          const real = Math.max(0, Number(g.state.adAstraBalance) || 0);
+          g.state.adAstraBalance = real + BIG;
+          const r = runActionFor(g, name, args) || {};
+          const after = Number(g.state.adAstraBalance) || 0;
+          out = { succeeds: r.success !== false && !r.rejected, spent: Math.max(0, real + BIG - after), balance: real, message: r.message || '' };
+        });
+        throw ROLLBACK;
+      });
+    } catch (e) {
+      if (e !== ROLLBACK) throw e;
+    } finally {
+      reloadWorld();
+    }
+    return out;
+  }
+
+  return { quoteCost, testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
 }

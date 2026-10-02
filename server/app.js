@@ -37,7 +37,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/verify',
   'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
@@ -114,7 +114,7 @@ export function createApp({ db, engine, world, accounts, arena = null, chain, cf
   }
 
   const routes = {
-    'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode }),
+    'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode, payments: payments ? payments.info() : null }),
 
     // ── Hesap ────────────────────────────────────────────────────────────
     'POST /api/account/register': async (req) => {
@@ -209,6 +209,23 @@ export function createApp({ db, engine, world, accounts, arena = null, chain, cf
     'POST /api/withdraw/cancel': (req, me) => {
       try { return db.tx(() => world.cancelWithdraw(me)); }
       catch (err) { E.reloadWorld(); log.error(err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+
+    // 💳 Cüzdandan ödeme (kazanılmış bakiye yetmeyince)
+    'POST /api/pay/quote': async (req, me) => {
+      if (!payments) return [404, { error: 'Kapalı' }];
+      const { name, args } = await readBody(req);
+      try {
+        const r = payments.quote(me, name, Array.isArray(args) ? args : []);
+        return r.ok ? r : [400, { error: r.error }];
+      } catch (err) { E.reloadWorld(); log.error('Ödeme teklifi', err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+    'POST /api/pay/confirm': async (req, me) => {
+      if (!payments) return [404, { error: 'Kapalı' }];
+      const { ref, txHash } = await readBody(req);
+      const r = await payments.confirm(me, ref, txHash);
+      if (!r.ok) return [r.retry ? 409 : 400, { error: r.error, retry: !!r.retry }];
+      return { paid: r.paid, result: r.result, ...playerPayload(me, r.state) };
     },
 
     // ⚔️ Kolezyum — gerçek rakipler

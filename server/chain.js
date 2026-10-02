@@ -151,5 +151,23 @@ export function createChain(cfg) {
     return ethers.verifyMessage(message, signature).toLowerCase();
   }
 
-  return { readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  // Ödeme sözleşmesi (RealmPayments) işlemini doğrular: başarılı mı, kim ödedi, referans, miktar
+  const payIface = new ethers.Interface(['event Paid(address indexed payer, bytes32 indexed ref, uint256 amount, uint256 fee)']);
+  async function verifyPayment(txHash) {
+    const rc = await withProvider(p => p.getTransactionReceipt(txHash));
+    if (!rc) return null;
+    if (rc.status !== 1) throw new Error('İşlem zincirde başarısız');
+    const contract = String(cfg.paymentsContract || '').toLowerCase();
+    for (const l of rc.logs) {
+      if (l.address.toLowerCase() !== contract) continue;
+      let ev = null;
+      try { ev = payIface.parseLog(l); } catch { ev = null; }
+      if (ev && ev.name === 'Paid') {
+        return { contract, payer: ev.args.payer.toLowerCase(), ref: ev.args.ref, amount: toAda(ev.args.amount), fee: Number(ethers.formatEther(ev.args.fee)), block: rc.blockNumber };
+      }
+    }
+    throw new Error('Bu işlemde ödeme bulunamadı');
+  }
+
+  return { verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

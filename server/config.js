@@ -11,7 +11,7 @@ export function loadConfig(env = process.env) {
     distDir: env.DIST_DIR || './dist',
     // Zincir
     chainEnabled: env.CHAIN_ENABLED !== '0',
-    chainId: 43114,
+    chainId: num('CHAIN_ID', 43114),                               // 43114 Avalanche, 43113 Fuji deneme ağı
     rpcUrls: (env.RPC_URLS || 'https://api.avax.network/ext/bc/C/rpc,https://avalanche-c-chain-rpc.publicnode.com,https://rpc.ankr.com/avalanche').split(',').filter(Boolean),
     tokenAddress: env.TOKEN_ADDRESS || '0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0',
     tokenManager: env.TOKEN_MANAGER || '0x8315f1eb449Dd4B779495C3A0b05e5d194446c6e',
@@ -31,6 +31,8 @@ export function loadConfig(env = process.env) {
     smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
     mailFrom: env.MAIL_FROM || 'Realm of Astra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
+    paymentsContract: (env.PAYMENTS_CONTRACT || '').trim(),        // RealmPayments sözleşmesinin adresi (boşsa cüzdandan ödeme kapalı)
+    payFeeGas: num('PAY_FEE_GAS', 100000),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
     rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
     publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5)        // giriş/kayıt sayfaları (IP başına)
