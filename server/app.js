@@ -12,6 +12,7 @@
 //  POST /api/admin/pause  {paused}       çekim ve ödemeleri durdur/başlat         (ADMIN_TOKEN)
 //  POST /api/admin/payouts/run           bekleyen ödemeleri şimdi gönder          (ADMIN_TOKEN)
 //  POST /api/admin/weekly/run            haftalık hesaplaşmayı elle çalıştır (test) (ADMIN_TOKEN)
+//  GET  /admin                           yönetici paneli sayfası (şifre sayfada sorulur)
 // Diğer tüm adresler: oyunun derlenmiş dosyaları (dist/).
 // ============================================================================
 import http from 'node:http';
@@ -192,6 +193,11 @@ export function createApp({ db, engine, world, chain, cfg, clock = () => Date.no
   async function handle(req, res) {
     const url = new URL(req.url, 'http://x');
     const key = `${req.method} ${url.pathname}`;
+    if (url.pathname === '/admin' || url.pathname === '/admin/') {
+      const html = fs.readFileSync(new URL('./admin.html', import.meta.url), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY' });
+      return res.end(html);
+    }
     if (!url.pathname.startsWith('/api/')) return serveStatic(req, res);
     const route = routes[key];
     if (!route) return send(res, 404, { error: 'Bulunamadı' });

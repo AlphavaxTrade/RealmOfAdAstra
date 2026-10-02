@@ -1,0 +1,14 @@
+# Realm of Astra — tek komutla çalıştırma:  docker compose up -d --build
+# Ayarlar server/.env dosyasından okunur (örnek: server/.env.example)
+services:
+  realm:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - server/.env
+    environment:
+      - DB_FILE=/data/realm.db        # kayıt dosyası kalıcı klasörde (yeniden kurulumda silinmez)
+    volumes:
+      - ./data:/data

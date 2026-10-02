@@ -1,0 +1,13 @@
+node_modules
+dist
+data
+logs
+.git
+server/.env
+*.db
+*.db-wal
+*.db-shm
+CLAUDE.local.md
+HANDOVER_SUMMARY.md
+docs/DENETIM_RAPORU_2026-09-29.md
+docs/EKONOMI_TASARIM_TASLAGI.md

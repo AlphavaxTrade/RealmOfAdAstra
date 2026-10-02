@@ -311,6 +311,9 @@ export function createWorld({ db, engine, chain = null, cfg, clock = () => Date.
   }
 
   async function runWeekly(closedEpoch) {
+    // Her hafta yalnız bir kez hesaplaşılır (çift ödeme olmaz)
+    if (!(closedEpoch >= 1)) return { skipped: 'no-closed-week', epoch: closedEpoch };
+    if (Number(econ().epochSettled) >= closedEpoch) return { skipped: 'already-settled', epoch: closedEpoch };
     let market = null;
     try { market = await snapshotMarket(); } catch (err) { log.warn('Piyasa okunamadı, son kayıt kullanılıyor:', err.message); }
     market = market || econ().market || null;
