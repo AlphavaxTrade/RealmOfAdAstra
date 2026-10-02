@@ -30,7 +30,7 @@ export function createApp({ db, engine, world, chain, cfg, clock = () => Date.no
   const E = engine;
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
-  // Basit hız sınırı: oturum başına saniyede en fazla 15 istek
+  // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
   const rate = new Map();
   function limited(key) {
     const now = clock();
@@ -39,7 +39,7 @@ export function createApp({ db, engine, world, chain, cfg, clock = () => Date.no
     r.n++;
     rate.set(key, r);
     if (rate.size > 50000) rate.clear();
-    return r.n > 15;
+    return r.n > (cfg.rateLimitPerSec || 15);
   }
 
   function send(res, code, obj) {

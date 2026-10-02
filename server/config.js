@@ -26,6 +26,7 @@ export function loadConfig(env = process.env) {
     minWithdrawAda: num('MIN_WITHDRAW_ADA', 1000),
     depositStartBlock: num('DEPOSIT_START_BLOCK', 0),              // 0: sunucu ilk açıldığı bloktan başlar
     launchPriceUsd: num('LAUNCH_PRICE_USD', 0),                    // 0: ilk okunan fiyat açılış fiyatı sayılır
-    sessionDays: num('SESSION_DAYS', 30)
+    sessionDays: num('SESSION_DAYS', 30),
+    rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15)
   };
 }

@@ -13,6 +13,7 @@
 // ============================================================================
 import { allocateWithdrawals, brakeState, faucetWeekly, nextMultiplier, withdrawCapTokens, WEEKLY_RULES } from './economy.js';
 import { SYSTEM } from './engine.js';
+import { runDraw } from '../js/economy/lottery.js';
 
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
@@ -259,6 +260,45 @@ export function createWorld({ db, engine, chain = null, cfg, clock = () => Date.
       gp.saveState();
       summary.burn = { total: burn, spend: burnedDelta, fee: alloc.totals.feeBurn, defense };
       summary.creator = creatorDelta;
+
+      // 7) Ortak piyango çekilişi: bütün oyuncuların biletleri arasından TEK kazanan (şans = bilet / toplam).
+      // Kazanan biletlerine ödediğinin 2 katını alır; kasa yetmezse kalan biletlere amorti dağıtılır (js/economy/lottery.js).
+      const LC = E.GAME_CONFIG.CARNIVAL?.LOTTERY || {};
+      const rules = { ticketPrice: Math.round((LC.TICKET_COST_ADA || 100) * (Number(e.priceMultiplier) || 1)), winnerMultiplier: LC.WINNER_MULTIPLIER || 2, amortiShare: LC.AMORTI_SHARE ?? 0.02 };
+      const holders = [];
+      for (const p of players) {
+        const st = states.get(p.address);
+        const t = Number(st && st.lotteryTickets) || 0;
+        if (t > 0) holders.push({ id: p.address, tickets: t, paid: st.lotteryTicketsPaid != null ? Number(st.lotteryTicketsPaid) : t * rules.ticketPrice });
+      }
+      const L = E.lottery();
+      const draw = runDraw({ pool: L.pool, amortiPool: L.amortiPool, holders }, Math.random, rules);
+      if (draw.drawn) {
+        for (const h of draw.holders) {
+          const mine = draw.payouts.filter(x => x.id === h.id);
+          const prize = mine.find(x => x.kind === 'prize');
+          const amorti = mine.find(x => x.kind === 'amorti');
+          const before = holders.find(x => x.id === h.id)?.tickets || 0;
+          E.mutatePlayer(h.id, gs => {
+            gs.state.lotteryTickets = h.tickets;
+            gs.state.lotteryTicketsPaid = h.paid;
+            if (prize) {
+              gs.state.lotteryPendingPayout = (Number(gs.state.lotteryPendingPayout) || 0) + prize.amount;
+              gs.state.lotteryLockedTickets = (Number(gs.state.lotteryLockedTickets) || 0) + (prize.ticketsLocked || 0);
+            }
+            if (amorti) gs.state.lotteryPendingPayout = (Number(gs.state.lotteryPendingPayout) || 0) + amorti.amount;
+            gs.state.lastLotteryResult = { at: now, userWon: !!prize, wonAmount: prize ? prize.amount : 0, amorti: amorti ? amorti.amount : 0, poolDepleted: !!draw.poolDepleted, epochId: closedEpoch };
+            gs.pushNotice(prize
+              ? `👑 Piyango sana çıktı! ${fmt(prize.amount)} ADA kazandın. Karnaval → Piyango'dan çek; kazanan biletlerin çekerken yanar.`
+              : draw.poolDepleted
+                ? `🎲 Piyango kasası bitti: kalan biletlere amorti dağıtıldı${amorti ? ` (sana +${fmt(amorti.amount)} ADA)` : ''}. Biletler kapandı.`
+                : `🎲 Haftalık çekiliş yapıldı, bu hafta sana çıkmadı. ${before} biletin yanmadı, sonraki haftaya devretti.`,
+              prize ? 'success' : 'info');
+          });
+        }
+        E.setLottery({ pool: draw.pool, amortiPool: draw.amortiPool, totalTickets: draw.holders.reduce((t, h) => t + (h.tickets || 0), 0) });
+        summary.lottery = { winner: draw.winnerId, prize: draw.prize, poolDepleted: !!draw.poolDepleted, totalTickets: draw.totalTickets, players: holders.length };
+      }
 
       setEcon({
         epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap,

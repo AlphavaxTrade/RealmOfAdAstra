@@ -97,6 +97,10 @@ export const ACTIONS = {
   unboxMysteryBox: A([], { random: true }),
   useScroll: A(['str', 'str?']),
   carnivalCheer: A([]),
+  // Ortak piyango (kasa ve toplam bilet sunucuda ortak; çekiliş haftalık hesaplaşmada)
+  buyLotteryTickets: A(['int']),
+  claimWinnerLotteryPayout: A([]),
+  useLotteryTicketForWheel: A([], { random: true }),
   // Görevler, temel gelir, koleksiyon
   claimOnboardingReward: A(['str']),
   claimWeeklyUbi: A([]),

@@ -66,12 +66,39 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
   let quietSave = false;           // mutatePlayer sırasında motorun kendi kaydı kapalı (son görülme değişmesin)
   gs.saveState = (orig => function () { if (current && !quietSave) return orig.call(this); })(gs.saveState);
 
+  // 🎟️ Ortak piyango: kasa, amorti kasası ve toplam bilet herkes için tek (world:lottery).
+  // Oyuncunun kendi biletleri kendi kaydında kalır; işlemden sonra farklar ortak kayda işlenir.
+  const lotterySeed = () => Number(GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA) || 0;
+  const lottery = () => db.kvJson('world:lottery', null) || { pool: lotterySeed(), amortiPool: 0, totalTickets: 0 };
+  const setLottery = L => db.kvSetJson('world:lottery', L);
+  let lotBefore = null;
+  // Temsili "diğer oyuncular" yok: gerçek oyuncuların biletleri sayılır
+  gs.getLotterySimHolders = () => [{ id: 'others', tickets: Math.max(0, (lottery().totalTickets || 0) - (Number(gs.state.lotteryTickets) || 0)), paid: 0 }];
+  gs.simulateOtherLotteryBuyers = () => {};
+  // Oyuncu başına çekiliş yok (çekiliş haftalık hesaplaşmada bütün oyuncular arasında yapılır)
+  gs.processScheduledLottery = () => null;
+
   function applyWorldOverrides() {
     const w = world();
     const m = Number(w.priceMultiplier) > 0 ? Number(w.priceMultiplier) : 1;
     gs.state.adaPriceMultiplier = m;
     gs.state.adaPriceMultiplierTarget = m;
     gs.state.adaPriceMultiplierEpoch = globalPool.state.epochId;
+    const L = lottery();
+    gs.state.lotteryPool = L.pool;
+    gs.state.lotteryAmortiPool = L.amortiPool;
+    gs.state.lotterySimHolders = null;
+    lotBefore = { pool: L.pool, amortiPool: L.amortiPool, tickets: Number(gs.state.lotteryTickets) || 0 };
+  }
+
+  function mergeLottery() {
+    if (!lotBefore) return;
+    const L = lottery();
+    L.pool += (Number(gs.state.lotteryPool) || 0) - lotBefore.pool;
+    L.amortiPool += (Number(gs.state.lotteryAmortiPool) || 0) - lotBefore.amortiPool;
+    L.totalTickets = Math.max(0, (L.totalTickets || 0) + (Number(gs.state.lotteryTickets) || 0) - lotBefore.tickets);
+    setLottery(L);
+    lotBefore = null;
   }
 
   function load(address) {
@@ -107,6 +134,7 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
       gs.checkOnboardingProgress();
       gs.updateBotPauseState();
       const result = fn(gs);
+      mergeLottery();
       // Bildirimler ve "sen yokken olanlar" raporu oyuncuya bir kez teslim edilir, kayıttan silinir
       const notices = Array.isArray(gs.state.pendingNotices) ? gs.state.pendingNotices : [];
       const offlineReport = gs.state.offlineReport || null;
@@ -150,6 +178,7 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
     quietSave = true;
     try {
       const r = fn(gs);
+      mergeLottery();
       globalThis.localStorage.setItem(key, JSON.stringify(gs.state));
       return r;
     } finally {
@@ -169,5 +198,5 @@ export async function createEngine(db, { clock = () => Date.now() } = {}) {
 
   const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG);
 
-  return { runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
+  return { lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
 }

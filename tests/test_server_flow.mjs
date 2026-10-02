@@ -57,7 +57,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
 }
 
 // ── 2) Uçtan uca ─────────────────────────────────────────────────────────
-const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test', serveDist: false, payoutMode: 'auto', weeklySendCapAda: 5e7, minWithdrawAda: 100 };
+const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
 const db = openDb(':memory:');
 const engine = await createEngine(db);
 const GAME_WALLET = '0x' + '11'.repeat(20);
@@ -144,7 +144,19 @@ try {
   assert.equal(spendPending.body.success, false, 'Çekime ayrılan ADA tekrar kullanılamaz');
   ok('Çekim talebi serbest bakiyeden ayrılıyor, fazlası reddediliyor');
 
+  // Ortak piyango: iki oyuncu bilet alır; kasa ve toplam bilet ortak
+  const poolBefore = engine.lottery().pool;
+  const lA = await call('POST', '/api/action', { name: 'buyLotteryTickets', args: [1] }, tA);
+  assert.ok(lA.body.result.success, lA.body.result.message);
+  const lB = await call('POST', '/api/action', { name: 'buyLotteryTickets', args: [3] }, tB);
+  assert.ok(lB.body.result.success, lB.body.result.message);
+  assert.equal(engine.lottery().totalTickets, 4, 'Ortak toplam bilet 4');
+  assert.ok(engine.lottery().pool > poolBefore, 'Bilet parası ortak kasaya girdi');
+  assert.equal(lB.body.player.lotteryPool, engine.lottery().pool, 'Oyuncu ortak kasayı görüyor');
+  ok('Ortak piyango: biletler ve kasa bütün oyuncular için tek');
+
   // Haftalık hesaplaşma: hafta değişir
+  const aliceBeforeWeek = (await call('GET', '/api/state', null, tA)).body.player.adAstraBalance;
   await world.tick();                                      // ilk tur: hafta kaydı
   const epochBefore = engine.globalPool.state.epochId;
   engine.globalPool.state.epochEndTime = Date.now() - 1000;
@@ -167,7 +179,7 @@ try {
   // Ücretsiz oyuncu havuzu Alice'e (hiç yatırma yapmamış, bu hafta oynamış)
   assert.equal(summary.faucet.players, 1, 'Yalnız Alice ücretsiz oyuncu');
   const aAfter = (await call('GET', '/api/state', null, tA)).body.player;
-  assert.ok(summary.faucet.perPlayer > 0 && aAfter.adAstraBalance >= 250 - 1 + summary.faucet.perPlayer - 1, 'Alice ücretsiz havuz payını aldı');
+  assert.ok(summary.faucet.perPlayer > 0 && aAfter.adAstraBalance >= aliceBeforeWeek + summary.faucet.perPlayer - 1, 'Alice ücretsiz havuz payını aldı');
   // Yakım ve yapımcı payı zincire
   const burnTx = sent.find(s => s.to === cfg.deadAddress);
   const creatorTx = sent.find(s => s.to === engine.GAME_CONFIG.CREATOR_WALLET_ADDRESS);
@@ -175,6 +187,21 @@ try {
   assert.ok(creatorTx && creatorTx.amount > 0, 'Yapımcı payı 0x58DB… cüzdanına gönderildi');
   assert.equal(creatorTx.to, '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C');
   ok('Ücretsiz oyuncu payı, yakım ve yapımcı payı dağıtıldı');
+
+  // Piyango çekilişi: tek kazanan, ödülünü çeker
+  const lot = summary.lottery;
+  const addrs = { [alice.address.toLowerCase()]: tA, [bob.address.toLowerCase()]: tB };
+  assert.ok(lot && addrs[lot.winner], 'Kazanan gerçek oyunculardan biri');
+  const winTok = addrs[lot.winner];
+  const loseTok = winTok === tA ? tB : tA;
+  const winSt = (await call('GET', '/api/state', null, winTok)).body.player;
+  const loseSt = (await call('GET', '/api/state', null, loseTok)).body.player;
+  assert.ok(winSt.lotteryPendingPayout > 0 && winSt.lotteryTickets === 0, 'Kazananın ödülü bekliyor, biletleri kilitlendi');
+  assert.ok(!(loseSt.lotteryPendingPayout > 0) && loseSt.lotteryTickets > 0, 'Kaybedenin biletleri sonraki haftaya devretti');
+  const claim = await call('POST', '/api/action', { name: 'claimWinnerLotteryPayout', args: [] }, winTok);
+  assert.ok(claim.body.result.success, claim.body.result.message);
+  assert.ok(near(claim.body.player.adAstraBalance - winSt.adAstraBalance, winSt.lotteryPendingPayout, 0.01), 'Ödül bakiyeye geçti');
+  ok('Haftalık ortak çekiliş: tek kazanan, kaybedenin biletleri devrediyor, ödül çekiliyor');
 
   // Tekrar çalıştırma çift ödeme yapmaz
   const nSent = sent.length;
