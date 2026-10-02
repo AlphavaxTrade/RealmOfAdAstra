@@ -50,3 +50,6 @@ data/
 *.db
 *.db-wal
 *.db-shm
+
+# Sözleşme derleme çıktısı
+contracts/build/
