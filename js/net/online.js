@@ -107,7 +107,7 @@ function send(name, args, { wait = false } = {}) {
   return job;
 }
 
-const GUEST_FAIL = { success: false, message: '🔐 Bu işlem için önce cüzdanını bağla.' };
+const GUEST_FAIL = { success: false, message: '🔐 Bu işlem için önce giriş yap ya da hesap aç.' };
 
 function installProxies() {
   const gs = ctx.gameState;
@@ -173,53 +173,95 @@ function overlay(html) {
 const closeOverlay = () => document.getElementById('online-overlay')?.remove();
 
 const toHex = s => '0x' + Array.from(new TextEncoder().encode(s)).map(b => b.toString(16).padStart(2, '0')).join('');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const inputCss = 'width:100%;padding:10px;border-radius:8px;border:1px solid #475569;background:#0b1220;color:#fff;margin-top:8px;font-size:0.95rem;box-sizing:border-box;';
+const btnCss = (bg, border) => `width:100%;padding:11px;border-radius:10px;border:1px solid ${border};background:${bg};color:#fff;font-weight:900;font-size:1rem;cursor:pointer;margin-top:10px;`;
+const linkCss = 'background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin:10px 6px 0;';
+const boxCss = 'text-align:left;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;';
+const isTest = () => !!(online.health && online.health.testMode);
 
-function loginFlow() {
+function saveSession(t, playerId) {
+  token = t;
+  online.playerId = playerId;
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ token: t, playerId })); } catch { /* özel pencere */ }
+}
+const tokenFromLink = (url, kind) => { const m = new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(String(url || '')); return m && m[1]; };
+
+// 🛡️ Kale Kapısı: cüzdan değiştirirken 48 saat beklemenin oyunlaştırılmış açıklaması (kullanıcı isteği)
+export const KALE_KAPISI = `🛡️ <strong>Kale Kapısı Kuralı.</strong> Hazinene giden yolu değiştirmek istedin! Krallığın muhafızları önce sana bir haberci (e-posta) yollayacak ve hazine kapısı <strong>48 saat</strong> mühürlü kalacak. Neden mi? Bir hain senin kılığına girip hazineni kaçırmaya kalkarsa, bu 48 saat içinde haberciyi görür ve kapıyı ona kapatırsın. Bu bekleme seni korumak için: gerçek kral sensin ve kimse hazinene senden önce dokunamaz. 👑`;
+
+// Giriş / Kayıt / Şifremi unuttum. Döner: giriş yapıldı mı
+function loginFlow(startMode = 'login') {
   return new Promise(resolve => {
-    const draw = (msg = '', busy = false) => {
-      const hasWallet = typeof window !== 'undefined' && window.ethereum;
+    let mode = startMode, email = '', msg = '', isErr = true, extra = '';
+    const titles = { login: 'Krallığa Dön', register: 'Krallığa Katıl', forgot: 'Şifremi Unuttum' };
+    const intro = {
+      login: 'E-posta ve şifrenle giriş yap.',
+      register: 'E-posta ve şifrenle hesabını aç. Cüzdanın kaybolsa bile krallığın ve hazinen hesabınla birlikte kalır.',
+      forgot: 'E-postanı yaz; şifreni yenilemen için bir bağlantı gönderelim.'
+    };
+    const go_ = { login: '🗝️ Giriş Yap', register: '🏰 Hesap Aç', forgot: '📧 Bağlantı Gönder' };
+    const draw = (busy = false) => {
       const el = overlay(`
         <div style="font-size:2.2rem;">👑</div>
-        <div style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 4px;">Realm of Astra</div>
-        <div style="font-size:0.88rem;color:#cbd5e1;line-height:1.5;margin-bottom:16px;">Oynamak için cüzdanını bağla. Şifre yok: cüzdanın yalnızca bir giriş mesajı imzalar, hiçbir işlem ya da ücret onaylamaz.</div>
-        ${hasWallet
-          ? `<button id="online-login-btn" ${busy ? 'disabled' : ''} style="width:100%;padding:12px;border-radius:10px;border:1px solid #c084fc;background:#7c3aed;color:#fff;font-weight:900;font-size:1rem;cursor:pointer;">${busy ? '⏳ Cüzdan onayı bekleniyor…' : '🦊 Cüzdanla Giriş Yap'}</button>`
-          : `<div style="font-size:0.9rem;color:#fca5a5;">Bu tarayıcıda cüzdan bulunamadı. <strong>Core</strong> ya da <strong>MetaMask</strong> eklentisini kurup sayfayı yenile.</div>`}
-        ${msg ? `<div style="margin-top:12px;font-size:0.85rem;color:#fca5a5;">${msg}</div>` : ''}
-        <button id="online-login-later" style="margin-top:12px;background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;">Şimdilik gezmeye devam et</button>`);
-      el.querySelector('#online-login-btn')?.addEventListener('click', go);
-      el.querySelector('#online-login-later')?.addEventListener('click', () => { closeOverlay(); resolve(false); });
+        <div style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 2px;">${titles[mode]}</div>
+        <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">${intro[mode]}</div>
+        <input id="ol-email" type="email" autocomplete="email" placeholder="E-posta" value="${esc(email)}" style="${inputCss}">
+        ${mode !== 'forgot' ? `<input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
+        <button id="ol-go" ${busy ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${busy ? '⏳ Bekle…' : go_[mode]}</button>
+        ${msg ? `<div style="margin-top:10px;font-size:0.85rem;color:${isErr ? '#fca5a5' : '#86efac'};">${esc(msg)}</div>` : ''}
+        ${extra}
+        <div>
+          ${mode !== 'login' ? `<button class="ol-mode" data-m="login" style="${linkCss}">Giriş yap</button>` : ''}
+          ${mode !== 'register' ? `<button class="ol-mode" data-m="register" style="${linkCss}">Hesap aç</button>` : ''}
+          ${mode !== 'forgot' ? `<button class="ol-mode" data-m="forgot" style="${linkCss}">Şifremi unuttum</button>` : ''}
+        </div>
+        <button id="ol-later" style="${linkCss}">Şimdilik gezmeye devam et</button>`);
+      el.querySelectorAll('.ol-mode').forEach(b => b.addEventListener('click', () => { email = el.querySelector('#ol-email').value; mode = b.dataset.m; msg = ''; extra = ''; draw(); }));
+      el.querySelector('#ol-later').addEventListener('click', () => { closeOverlay(); resolve(false); });
+      el.querySelector('#ol-go').addEventListener('click', go);
+      el.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+      el.querySelector('#ol-dev-reset')?.addEventListener('click', () => { location.href = el.querySelector('#ol-dev-reset').dataset.href; });
     };
     async function go() {
-      draw('', true);
+      const el = document.getElementById('online-overlay');
+      email = el.querySelector('#ol-email').value.trim();
+      const password = el.querySelector('#ol-pass') ? el.querySelector('#ol-pass').value : '';
+      draw(true);
       try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const address = String(accounts && accounts[0] || '').toLowerCase();
-        if (!address) throw new Error('Cüzdan adresi alınamadı');
-        const { message } = await api('POST', '/api/auth/nonce', { address });
-        const signature = await window.ethereum.request({ method: 'personal_sign', params: [toHex(message), address] });
-        const v = await api('POST', '/api/auth/verify', { address, signature });
-        token = v.token;
-        online.address = v.address;
-        try { localStorage.setItem(SESSION_KEY, JSON.stringify({ token, address: v.address })); } catch { /* özel pencere */ }
+        if (mode === 'forgot') {
+          const r = await api('POST', '/api/account/forgot', { email });
+          msg = r.message; isErr = false;
+          extra = r.devLink ? `<button id="ol-dev-reset" data-href="${esc(r.devLink)}" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: sıfırlama bağlantısını aç</button>` : '';
+          return draw();
+        }
+        const r = await api('POST', mode === 'register' ? '/api/account/register' : '/api/account/login', { email, password });
+        saveSession(r.token, r.playerId);
+        if (mode === 'register') {
+          // Deneme sunucusunda gerçek e-posta yok: doğrulama kendiliğinden yapılır
+          const t = tokenFromLink(r.devLink, 'verify');
+          if (t) { await api('POST', '/api/account/verify', { token: t }).catch(() => {}); ctx.toast('🧪 Deneme modu: e-postan kendiliğinden doğrulandı.', 'success'); }
+          else ctx.toast('📧 E-postana bir doğrulama bağlantısı gönderdik. Çekim ve cüzdan bağlama için e-postanı doğrula.', 'success');
+        }
         closeOverlay();
         resolve(true);
       } catch (err) {
-        draw(err && err.code === 4001 ? 'İmza reddedildi. Girmek için imzayı onaylaman gerekiyor.' : (err.message || 'Giriş yapılamadı'));
+        msg = err.message || 'Bir şeyler ters gitti'; isErr = true;
+        draw();
       }
     }
     draw();
   });
 }
 
-// Cüzdan bağlı değilse giriş penceresini açar; bağlanınca kayıt sunucudan yüklenir. Döner: bağlandı mı
+// Giriş yapılmamışsa giriş penceresini açar; giriş yapılınca kayıt sunucudan yüklenir. Döner: giriş yapıldı mı
 let loginPromise = null;
-export function requireLogin() {
+export function requireLogin(startMode = 'login') {
   if (token) return Promise.resolve(true);
   if (loginPromise) return loginPromise;
-  loginPromise = loginFlow().then(async okd => {
+  loginPromise = loginFlow(startMode).then(async okd => {
     if (okd) {
-      try { apply(await api('GET', '/api/state')); ctx.toast('✅ Cüzdan bağlandı, kaydın yüklendi.', 'success'); }
+      try { apply(await api('GET', '/api/state')); ctx.toast('✅ Hoş geldin! Krallığın yüklendi.', 'success'); }
       catch (err) { ctx.toast(err.message, 'error'); }
     }
     return !!okd;
@@ -234,42 +276,88 @@ async function relogin() {
   await requireLogin();
 }
 
-export function logout() {
+export async function logout() {
+  try { await api('POST', '/api/account/logout'); } catch { /* zaten kapalı */ }
   try { localStorage.removeItem(SESSION_KEY); } catch { /* yok */ }
   location.reload();
 }
 
-// ── Cüzdan ekranı: yatırma ve çekim ────────────────────────────────────
+// Bağlı cüzdan: Core/MetaMask ile imza → e-posta onayı (değişiklikte 48 saat)
+async function linkWalletFlow() {
+  if (!window.ethereum) { ctx.toast('Bu tarayıcıda cüzdan bulunamadı. Core ya da MetaMask eklentisini kur.', 'error'); return; }
+  try {
+    const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    const address = String(accs && accs[0] || '').toLowerCase();
+    if (!address) throw new Error('Cüzdan adresi alınamadı');
+    const { message } = await api('POST', '/api/account/wallet/nonce', { address });
+    const signature = await window.ethereum.request({ method: 'personal_sign', params: [toHex(message), address] });
+    const r = await api('POST', '/api/account/wallet/link', { signature });
+    const t = tokenFromLink(r.devLink, 'wallet');
+    overlay(`
+      <div style="font-size:2rem;">${r.change ? '🛡️' : '📧'}</div>
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${r.change ? 'Haberci yola çıktı!' : 'Son bir adım!'}</div>
+      <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.55;text-align:left;">
+        E-postana bir onay bağlantısı gönderdik. ${r.change ? 'Onayladıktan sonra yeni cüzdanın <strong>48 saat</strong> içinde etkinleşecek; o zamana kadar ödemelerin eski cüzdanına gider.' : 'Onayladığın anda cüzdanın bağlanacak.'}
+        ${r.change ? `<div style="${boxCss}">${KALE_KAPISI}</div>` : ''}
+      </div>
+      ${t ? `<button id="lw-dev" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: e-postadaki onayı şimdi ver</button>` : ''}
+      <button id="lw-ok" style="${btnCss('#7c3aed', '#c084fc')}">Tamam</button>`);
+    document.getElementById('lw-ok').onclick = () => openWalletPanel();
+    if (t) document.getElementById('lw-dev').onclick = async () => { await confirmWalletLink(t); openWalletPanel(); };
+  } catch (err) {
+    ctx.toast(err && err.code === 4001 ? 'İmza reddedildi.' : err.message, 'error');
+  }
+}
+
+async function confirmWalletLink(t) {
+  try {
+    const r = await api('POST', '/api/account/wallet/confirm', { token: t });
+    if (r.immediate) ctx.toast('✅ Cüzdanın hesabına bağlandı!', 'success');
+    else ctx.toast(`🛡️ Onaylandı. Yeni cüzdanın ${new Date(r.activeAt).toLocaleString('tr-TR')} tarihinde etkinleşecek.`, 'success');
+  } catch (err) { ctx.toast(err.message, 'error'); }
+}
+
+// ── Hesap ve cüzdan ekranı ─────────────────────────────────────────────
 export async function openWalletPanel() {
   if (!online.active) return;
   if (!token && !(await requireLogin())) return;
   const el = overlay('<div style="padding:20px;">⏳ Yükleniyor…</div>');
   let w;
   try { w = await api('GET', '/api/wallet'); } catch (err) { el.innerHTML = ''; ctx.toast(err.message, 'error'); closeOverlay(); return; }
+  const acc = w.account || {};
   const wd = w.withdraw;
   const snow = h => `https://snowtrace.io/tx/${h}`;
   const statusTr = { pending: '⏳ sırada', sending: '📤 gönderiliyor', sent: '✅ gönderildi' };
   const next = wd.nextSettlementAt ? new Date(wd.nextSettlementAt).toLocaleString('tr-TR', { weekday: 'long', hour: '2-digit', minute: '2-digit' }) : 'Pazartesi 00:01';
+  const pendingLine = acc.pendingWallet
+    ? (acc.pendingConfirmed
+      ? `<div style="margin-top:6px;color:#fbbf24;">🛡️ Yeni cüzdan <strong>${short(acc.pendingWallet)}</strong> ${new Date(acc.pendingActiveAt).toLocaleString('tr-TR')} tarihinde etkinleşecek.</div>`
+      : `<div style="margin-top:6px;color:#fbbf24;">📧 <strong>${short(acc.pendingWallet)}</strong> için e-posta onayı bekleniyor.</div>`)
+      + `<button id="wp-wcancel" style="margin-top:6px;padding:5px 10px;border-radius:6px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;cursor:pointer;font-size:0.78rem;">✋ Bu ben değilim — değişikliği iptal et</button>`
+    : '';
   overlay(`
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">🏦 Cüzdanım</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">🏦 Hesabım</div>
       <button id="wp-close" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
     </div>
-    <div style="font-size:0.8rem;color:#94a3b8;text-align:left;">Giriş: <strong style="color:#e2e8f0;">${short(online.address)}</strong> · <a href="#" id="wp-logout" style="color:#f87171;">çıkış</a></div>
-    <div style="display:flex;gap:8px;justify-content:space-between;margin:12px 0;font-size:0.85rem;font-weight:800;">
+    <div style="font-size:0.8rem;color:#94a3b8;text-align:left;">📧 <strong style="color:#e2e8f0;">${esc(acc.email)}</strong>
+      ${acc.verified ? '<span style="color:#4ade80;">✓ doğrulandı</span>' : '<span style="color:#fbbf24;">doğrulanmadı</span> · <a href="#" id="wp-resend" style="color:#93c5fd;">bağlantıyı yeniden gönder</a>'}
+      · <a href="#" id="wp-logout" style="color:#f87171;">çıkış</a></div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin:12px 0 4px;font-size:0.85rem;font-weight:800;">
       <span style="color:#4ade80;">🔓 Serbest<br>${fmt(wd.free)}</span>
       <span style="color:#fbbf24;">🔒 Kilitli<br>${fmt(wd.locked)}</span>
       <span style="color:#38bdf8;">🏦 Çekimde<br>${fmt(wd.pending)}</span>
     </div>
-    <div style="text-align:left;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-bottom:10px;">
-      <div style="font-weight:800;color:#a7f3d0;margin-bottom:4px;">💰 Yatırma</div>
-      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Kendi cüzdanından (<strong>${short(online.address)}</strong>) aşağıdaki oyun cüzdanına ADASTRA gönder. Birkaç dakika içinde <strong>serbest bakiyene</strong> eklenir. Başka bir cüzdandan gönderilen ADA sana yazılmaz.</div>
-      <div style="margin-top:6px;font-family:monospace;font-size:0.78rem;word-break:break-all;color:#fde68a;">${w.gameWallet || 'Oyun cüzdanı henüz tanımlı değil'}</div>
-      ${w.gameWallet ? '<button id="wp-copy" style="margin-top:6px;padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">📋 Adresi kopyala</button>' : ''}
+    <div style="${boxCss}">
+      <div style="font-weight:800;color:#c4b5fd;margin-bottom:4px;">🦊 Bağlı Cüzdan</div>
+      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">${acc.wallet ? `Ödemelerin ve çekimlerin <strong style="font-family:monospace;">${short(acc.wallet)}</strong> cüzdanına gider.` : 'Henüz cüzdan bağlamadın. Çekim ve cüzdandan ödeme için Core ya da MetaMask cüzdanını bağla.'}</div>
+      ${pendingLine}
+      <button id="wp-link" style="margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid #a78bfa;background:#4c1d95;color:#fff;font-weight:800;cursor:pointer;">${acc.wallet ? '🔁 Cüzdanı değiştir' : '🔗 Cüzdan bağla'}</button>
+      ${acc.wallet ? `<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${KALE_KAPISI}</div>` : ''}
     </div>
-    <div style="text-align:left;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;">
-      <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Çekim</div>
-      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Yalnız serbest bakiyeden çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ADA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
+    <div style="${boxCss}">
+      <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
+      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ADA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ADA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
       ${wd.paused ? '<div style="margin-top:6px;color:#fca5a5;font-size:0.82rem;">Çekimler şu an bakımda.</div>' : `
       <div style="display:flex;gap:6px;margin-top:8px;">
         <input id="wp-amount" type="number" min="${wd.minWithdraw}" placeholder="En az ${fmt(wd.minWithdraw)} ADA" style="flex:1;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
@@ -279,12 +367,25 @@ export async function openWalletPanel() {
     </div>
     ${wd.payouts && wd.payouts.length ? `<div style="text-align:left;margin-top:10px;font-size:0.78rem;color:#cbd5e1;max-height:140px;overflow:auto;">
       <div style="font-weight:800;margin-bottom:4px;">Son gönderimler</div>
-      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ADA · ${statusTr[p.status] || p.status}${p.tx_hash ? ` · <a href="${snow(p.tx_hash)}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
+      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ADA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
     </div>` : ''}`);
   const $ = id => document.getElementById(id);
   $('wp-close').onclick = closeOverlay;
   $('wp-logout').onclick = e => { e.preventDefault(); logout(); };
-  if ($('wp-copy')) $('wp-copy').onclick = () => { navigator.clipboard?.writeText(w.gameWallet); ctx.toast('Oyun cüzdanı adresi kopyalandı', 'success'); };
+  if ($('wp-resend')) $('wp-resend').onclick = async e => {
+    e.preventDefault();
+    try {
+      const r = await api('POST', '/api/account/resend');
+      const t = tokenFromLink(r.devLink, 'verify');
+      if (t) { await api('POST', '/api/account/verify', { token: t }); ctx.toast('🧪 Deneme modu: e-postan doğrulandı.', 'success'); openWalletPanel(); }
+      else ctx.toast('📧 Doğrulama bağlantısı yeniden gönderildi.', 'success');
+    } catch (err) { ctx.toast(err.message, 'error'); }
+  };
+  $('wp-link').onclick = () => linkWalletFlow();
+  if ($('wp-wcancel')) $('wp-wcancel').onclick = async () => {
+    try { await api('POST', '/api/account/wallet/cancel'); ctx.toast('✋ Cüzdan değişikliği iptal edildi. Şifreni değiştirmeyi unutma!', 'success'); openWalletPanel(); }
+    catch (err) { ctx.toast(err.message, 'error'); }
+  };
   if ($('wp-withdraw')) $('wp-withdraw').onclick = async () => {
     try {
       const r = await api('POST', '/api/withdraw', { amount: Number($('wp-amount').value) });
@@ -297,6 +398,37 @@ export async function openWalletPanel() {
     try { const r = await api('POST', '/api/withdraw/cancel'); ctx.toast(r.message, r.success ? 'success' : 'error'); await sync(); openWalletPanel(); }
     catch (err) { ctx.toast(err.message, 'error'); }
   };
+}
+
+// E-postadaki bağlantılar (?verify= / ?reset= / ?wallet=) oyunda açılınca
+async function handleEmailLinks() {
+  const p = new URLSearchParams(location.search);
+  const clean = () => { try { history.replaceState(null, '', location.pathname); } catch { /* yok */ } };
+  if (p.get('verify')) {
+    clean();
+    try { await api('POST', '/api/account/verify', { token: p.get('verify') }); ctx.toast('✅ E-postan doğrulandı. Krallığa hoş geldin!', 'success'); }
+    catch (err) { ctx.toast(err.message, 'error'); }
+  } else if (p.get('wallet')) {
+    clean();
+    await confirmWalletLink(p.get('wallet'));
+  } else if (p.get('reset')) {
+    clean();
+    const t = p.get('reset');
+    const el = overlay(`
+      <div style="font-size:2rem;">🗝️</div>
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Yeni Şifre</div>
+      <input id="rs-pass" type="password" autocomplete="new-password" placeholder="Yeni şifre (en az 8 karakter)" style="${inputCss}">
+      <button id="rs-go" style="${btnCss('#7c3aed', '#c084fc')}">Şifreyi Kaydet</button>
+      <div id="rs-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>`);
+    el.querySelector('#rs-go').onclick = async () => {
+      try {
+        await api('POST', '/api/account/reset', { token: t, password: el.querySelector('#rs-pass').value });
+        closeOverlay();
+        ctx.toast('✅ Şifren yenilendi. Şimdi giriş yap.', 'success');
+        requireLogin('login');
+      } catch (err) { el.querySelector('#rs-msg').textContent = err.message; }
+    };
+  }
 }
 
 // ── Kolezyum: gerçek rakipler ───────────────────────────────────────────
@@ -325,15 +457,16 @@ export async function startOnline(context) {
   online.health = health;
   try {
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if (saved && saved.token) { token = saved.token; online.address = saved.address; }
+    if (saved && saved.token) { token = saved.token; online.playerId = saved.playerId; }
   } catch { /* özel pencere */ }
   let payload = null;
   if (token) {
     try { payload = await api('GET', '/api/state'); } catch { token = null; }
   }
-  // Cüzdan bağlı değilse giriş istenmez: herkes gezebilir, işlem yapmak isteyince sorulur
+  // Giriş yapılmamışsa giriş istenmez: herkes gezebilir, işlem yapmak isteyince sorulur
   if (token && payload) apply(payload);
   installProxies();
+  handleEmailLinks();
   setInterval(sync, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
   return true;

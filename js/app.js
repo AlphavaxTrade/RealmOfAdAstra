@@ -4782,8 +4782,8 @@ async function renderPvpPanel() {
   }
   if (!isLoggedIn()) {
     el.innerHTML = `<div class="card-title">🌐 Gerçek Rakipler</div>
-      <div class="clean-desc">Gerçek oyunculara karşı maç yapmak için cüzdanını bağla.</div>
-      <button id="pvp-login" class="btn-clean btn-gold" style="margin-top:8px;">🔐 Cüzdanı Bağla</button>`;
+      <div class="clean-desc">Gerçek oyunculara karşı maç yapmak için giriş yap ya da hesap aç.</div>
+      <button id="pvp-login" class="btn-clean btn-gold" style="margin-top:8px;">🔐 Giriş Yap</button>`;
     el.querySelector('#pvp-login').addEventListener('click', async () => { if (await requireLogin()) renderPvpPanel(); });
     return;
   }
@@ -9072,7 +9072,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       onApplied: () => {
         try { renderTopBar(); } catch (e) { /* ilk açılış */ }
         const wb = document.getElementById('btn-online-wallet');
-        if (wb) wb.textContent = isLoggedIn() ? '🏦' : '🔐 Bağlan';
+        if (wb) wb.textContent = isLoggedIn() ? '🏦' : '🔐 Giriş';
       }
     });
   } catch (e) {
@@ -9090,8 +9090,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       const btn = document.createElement('button');
       btn.id = 'btn-online-wallet';
       btn.type = 'button';
-      btn.textContent = isLoggedIn() ? '🏦' : '🔐 Bağlan';
-      btn.title = 'Cüzdanım: yatırma ve çekim';
+      btn.textContent = isLoggedIn() ? '🏦' : '🔐 Giriş';
+      btn.title = 'Hesabım: giriş, cüzdan ve çekim';
       btn.style.cssText = 'margin-left:6px;background:#1d4ed8;border:1px solid #60a5fa;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85rem;';
       btn.addEventListener('click', (e) => { e.stopPropagation(); openWalletPanel(); });
       host.appendChild(btn);

@@ -11,7 +11,7 @@
 import { simulateBattle } from '../js/combat.js';
 import { PVP_RULES, explainLoss, weeklyRewards, ranking } from '../js/economy/pvp.js';
 
-const short = a => a.slice(0, 6) + '…' + a.slice(-4);
+const short = a => (String(a).startsWith('acc:') ? '#' + String(a).slice(4) : String(a).slice(0, 6) + '…' + String(a).slice(-4));
 const clone = o => JSON.parse(JSON.stringify(o));
 
 export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty = false }) {

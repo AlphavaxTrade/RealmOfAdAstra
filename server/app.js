@@ -1,8 +1,18 @@
 // Realm of Astra sunucusu — HTTP uç noktaları (ek kütüphane yok; Node'un kendi http modülü)
 // ============================================================================
 //  GET  /api/health                      sunucu ayakta mı
-//  POST /api/auth/nonce   {address}      giriş için imzalanacak mesaj
-//  POST /api/auth/verify  {address, signature}  → {token}
+//  POST /api/account/register {email, password}   kayıt → {token}
+//  POST /api/account/login    {email, password}   giriş → {token}
+//  POST /api/account/verify   {token}             e-posta doğrulama (e-postadaki bağlantı)
+//  POST /api/account/forgot   {email}             şifre sıfırlama e-postası
+//  POST /api/account/reset    {token, password}   yeni şifre
+//  POST /api/account/wallet/confirm {token}       cüzdan bağlama onayı (e-postadaki bağlantı)
+//  GET  /api/account/me                           hesap + bağlı cüzdan durumu           (giriş gerekli)
+//  POST /api/account/resend                       doğrulama e-postasını yeniden gönder  (giriş gerekli)
+//  POST /api/account/wallet/nonce {address}       cüzdana imzalatılacak mesaj           (giriş gerekli)
+//  POST /api/account/wallet/link  {signature}     imza → e-posta onayı istenir          (giriş gerekli)
+//  POST /api/account/wallet/cancel                bekleyen cüzdan değişikliğini iptal   (giriş gerekli)
+//  POST /api/account/logout                       bu cihazdan çıkış                     (giriş gerekli)
 //  GET  /api/state                       oyuncu kaydı + dünya görüntüsü           (giriş gerekli)
 //  POST /api/action       {name, args}   oyun işlemi (beyaz liste, server/actions.js) (giriş gerekli)
 //  GET  /api/wallet                      yatırma adresi, çekim durumu, geçmiş    (giriş gerekli)
@@ -24,23 +34,34 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.woff2': 'font/woff2' };
 
-export const loginMessage = (address, nonce) =>
-  `Realm of Astra girişi\n\nCüzdan: ${address}\nKod: ${nonce}\n\nBu imza yalnızca giriş içindir; hiçbir işlem ya da ücret onaylamaz.`;
+const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/verify',
+  'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, arena = null, chain, cfg, clock = () => Date.now(), verifyLogin, log = console }) {
+export function createApp({ db, engine, world, accounts, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
   // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
   const rate = new Map();
-  function limited(key) {
+  function limited(key, max = cfg.rateLimitPerSec || 15) {
     const now = clock();
     const r = rate.get(key) || { t: now, n: 0 };
     if (now - r.t > 1000) { r.t = now; r.n = 0; }
     r.n++;
     rate.set(key, r);
     if (rate.size > 50000) rate.clear();
-    return r.n > (cfg.rateLimitPerSec || 15);
+    return r.n > max;
+  }
+
+  // Sunucunun önünde HTTPS katmanı (Caddy/Nginx) varsa gerçek ziyaretçi adresi X-Forwarded-For'dadır
+  const clientIp = req => (cfg.trustProxy ? String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() : '') || req.socket.remoteAddress || '';
+
+  function newSession(playerId) {
+    const token = crypto.randomBytes(32).toString('hex');
+    db.q.sessionAdd.run(token, playerId, clock() + cfg.sessionDays * 86400000);
+    db.q.sessionsPurge.run(clock());
+    db.q.playerSeen.run(clock(), playerId);
+    return token;
   }
 
   function send(res, code, obj) {
@@ -95,32 +116,63 @@ export function createApp({ db, engine, world, arena = null, chain, cfg, clock =
   const routes = {
     'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode }),
 
-    'POST /api/auth/nonce': async (req) => {
-      const { address } = await readBody(req);
-      if (!isAddr(address)) return [400, { error: 'Geçersiz cüzdan adresi' }];
-      const a = address.toLowerCase();
-      const nonce = crypto.randomBytes(16).toString('hex');
-      db.q.nonceSet.run(a, nonce, clock() + 10 * 60000);
-      return { message: loginMessage(a, nonce) };
+    // ── Hesap ────────────────────────────────────────────────────────────
+    'POST /api/account/register': async (req) => {
+      const { email, password } = await readBody(req);
+      const r = await accounts.register(email, password);
+      if (!r.ok) return [400, { error: r.error }];
+      return { token: newSession(r.playerId), playerId: r.playerId, devLink: r.devLink };
     },
-
-    'POST /api/auth/verify': async (req) => {
-      const { address, signature } = await readBody(req);
-      if (!isAddr(address) || typeof signature !== 'string' || signature.length > 200) return [400, { error: 'Eksik bilgi' }];
-      const a = address.toLowerCase();
-      const n = db.q.nonceGet.get(a);
-      if (!n || n.expires < clock()) return [401, { error: 'Giriş kodunun süresi doldu, tekrar dene' }];
-      let signer = '';
-      try { signer = verifyLogin(loginMessage(a, n.nonce), signature); } catch { signer = ''; }
-      if (signer !== a) return [401, { error: 'İmza doğrulanamadı' }];
-      db.q.nonceDel.run(a);
-      const token = crypto.randomBytes(32).toString('hex');
-      db.q.playerAdd.run(a, clock(), clock());
-      db.q.sessionAdd.run(token, a, clock() + cfg.sessionDays * 86400000);
-      db.q.sessionsPurge.run(clock());
-      world.creditDeposits(a);
-      db.event('login', a);
-      return { token, address: a };
+    'POST /api/account/login': async (req) => {
+      const { email, password } = await readBody(req);
+      const r = accounts.login(email, password, clientIp(req));
+      if (!r.ok) return [401, { error: r.error }];
+      db.event('login', r.playerId);
+      return { token: newSession(r.playerId), playerId: r.playerId };
+    },
+    'POST /api/account/verify': async (req) => {
+      const { token } = await readBody(req);
+      const r = accounts.verifyEmail(token);
+      return r.ok ? { ok: true } : [400, { error: r.error }];
+    },
+    'POST /api/account/resend': async (req, me) => {
+      const r = await accounts.resendVerify(me);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/forgot': async (req) => {
+      const { email } = await readBody(req);
+      return accounts.forgot(email);
+    },
+    'POST /api/account/reset': async (req) => {
+      const { token, password } = await readBody(req);
+      const r = accounts.reset(token, password);
+      return r.ok ? { ok: true } : [400, { error: r.error }];
+    },
+    'GET /api/account/me': (req, me) => accounts.me(me) || [404, { error: 'Hesap yok' }],
+    'POST /api/account/wallet/nonce': async (req, me) => {
+      const { address } = await readBody(req);
+      const r = accounts.walletNonce(me, address);
+      return r.ok ? { message: r.message } : [400, { error: r.error }];
+    },
+    'POST /api/account/wallet/link': async (req, me) => {
+      const { signature } = await readBody(req);
+      if (typeof signature !== 'string' || signature.length > 200) return [400, { error: 'Eksik imza' }];
+      const r = await accounts.walletLink(me, signature);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/wallet/confirm': async (req) => {
+      const { token } = await readBody(req);
+      const r = accounts.walletConfirm(token);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/wallet/cancel': (req, me) => {
+      const r = accounts.walletCancel(me);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/logout': (req) => {
+      const h = req.headers.authorization || '';
+      db.raw.prepare('DELETE FROM sessions WHERE token = ?').run(h.slice(7).trim());
+      return { ok: true };
     },
 
     'GET /api/state': (req, me) => {
@@ -139,6 +191,7 @@ export function createApp({ db, engine, world, arena = null, chain, cfg, clock =
     },
 
     'GET /api/wallet': (req, me) => ({
+      account: accounts.me(me),
       gameWallet: chain ? chain.gameWallet : null,
       tokenAddress: cfg.tokenAddress,
       deposits: db.q.depositsOf.all(me),
@@ -147,6 +200,8 @@ export function createApp({ db, engine, world, arena = null, chain, cfg, clock =
 
     'POST /api/withdraw': async (req, me) => {
       const { amount } = await readBody(req);
+      if (!accounts.isVerified(me)) return { success: false, message: 'Çekim için önce e-posta adresini doğrula.' };
+      if (!accounts.activeWallet(me)) return { success: false, message: 'Çekim için önce hesabına bir cüzdan bağla.' };
       try { return db.tx(() => world.requestWithdraw(me, amount)); }
       catch (err) { E.reloadWorld(); log.error(err); return [500, { error: 'Sunucu hatası' }]; }
     },
@@ -229,12 +284,13 @@ export function createApp({ db, engine, world, arena = null, chain, cfg, clock =
       let me = null;
       if (key.startsWith('GET /api/admin') || key.startsWith('POST /api/admin')) {
         if (!isAdmin(req)) return send(res, 401, { error: 'Yönetici yetkisi gerekli' });
-      } else if (!['GET /api/health', 'POST /api/auth/nonce', 'POST /api/auth/verify'].includes(key)) {
+      } else if (!PUBLIC_ROUTES.includes(key)) {
         me = auth(req);
         if (!me) return send(res, 401, { error: 'Giriş gerekli' });
       }
-      const ip = req.socket.remoteAddress || '';
+      const ip = clientIp(req);
       if (limited(me || ip)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
+      if (PUBLIC_ROUTES.includes(key) && key !== 'GET /api/health' && limited('pub:' + ip, cfg.publicRateLimitPerSec || 5)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       const out = await route(req, me);
       if (Array.isArray(out)) return send(res, out[0], out[1]);
       return send(res, 200, out);

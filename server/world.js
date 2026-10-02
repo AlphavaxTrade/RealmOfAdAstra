@@ -18,7 +18,7 @@ import { runDraw } from '../js/economy/lottery.js';
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
 
-export function createWorld({ db, engine, chain = null, arena = null, cfg, clock = () => Date.now(), log = console }) {
+export function createWorld({ db, engine, chain = null, arena = null, accounts = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const econ = () => db.kvJson('world:economy', {});
   const setEcon = patch => { const next = { ...econ(), ...patch }; db.kvSetJson('world:economy', next); return next; };
@@ -127,22 +127,27 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
     return creditDeposits();
   }
 
-  // Kayıtlı oyuncuların yatırmalarını bakiyelerine işler (serbest bakiye; kilit yok)
+  // Ödeme adresi: hesaplı oyuncuda bağlı cüzdan, eski (cüzdanla giriş) kayıtlarda kimliğin kendisi
+  const walletOf = id => (accounts && String(id).startsWith('acc:') ? accounts.activeWallet(id) : id);
+  const playerOfWallet = addr => (accounts ? accounts.playerOfWallet(addr) : (db.q.playerGet.get(addr) ? addr : null));
+
+  // Bağlı cüzdandan gelen yatırmaları o hesabın bakiyesine işler (serbest bakiye; kilit yok)
   function creditDeposits(address = null) {
     const rows = address ? db.q.depositsUncredited.all(address) : db.q.depositsUncreditedAll.all();
     let n = 0;
     for (const d of rows) {
-      if (!db.q.playerGet.get(d.address)) continue;
+      const pid = playerOfWallet(d.address);
+      if (!pid) continue;
       atomic(() => {
-        E.mutatePlayer(d.address, gs => {
+        E.mutatePlayer(pid, gs => {
           gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + d.amount;
           gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + d.amount;
           gs.pushNotice(`💰 Yatırman geldi: +${fmt(d.amount)} ADA (serbest bakiye)`, 'success');
         });
         db.q.depositCredit.run(clock(), d.tx_hash, d.log_index);
-        db.q.playerAddDeposit.run(d.amount, d.address);
+        db.q.playerAddDeposit.run(d.amount, pid);
       });
-      db.event('deposit', d.address, { amount: d.amount, tx: d.tx_hash });
+      db.event('deposit', pid, { amount: d.amount, tx: d.tx_hash });
       n++;
     }
     return n;
@@ -171,7 +176,17 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
         if (!st) continue;
         states.set(p.address, st);
         const score = weekScore(st, closedEpoch);
-        const requested = Number(st.pendingWithdrawAda) || 0;
+        let requested = Number(st.pendingWithdrawAda) || 0;
+        if (requested > 0 && !walletOf(p.address)) {
+          // Ödeme gidecek cüzdan yok: talep bakiyeye iade edilir
+          E.mutatePlayer(p.address, gs => {
+            gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + requested;
+            gs.state.pendingWithdrawAda = 0;
+            gs.pushNotice('🏦 Çekim talebin bakiyene iade edildi: hesabına bağlı bir cüzdan yok.', 'info');
+          });
+          db.q.playerSetPending.run(0, p.address);
+          requested = 0;
+        }
         if (score > 0 || requested > 0) rows.push({ id: p.address, requested, score });
       }
       const cap = currentCap(market);
@@ -187,7 +202,8 @@ export function createWorld({ db, engine, chain = null, arena = null, cfg, clock
         });
         db.q.playerSetPending.run(0, r.id);
         if (r.total > 0) db.q.playerAddWithdrawn.run(r.total, r.id);
-        queuePayout(closedEpoch, 'withdraw', r.id, r.net);
+        // Ödeme hesabın ETKİN cüzdanına (48 saati dolmamış değişiklik etkin değildir)
+        queuePayout(closedEpoch, 'withdraw', walletOf(r.id), r.net);
         db.q.withdrawLogSet.run(closedEpoch, r.id, JSON.stringify(r));
       }
       for (const rp of alloc.rentPayouts) {

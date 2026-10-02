@@ -27,7 +27,12 @@ export function loadConfig(env = process.env) {
     depositStartBlock: num('DEPOSIT_START_BLOCK', 0),              // 0: sunucu ilk açıldığı bloktan başlar
     launchPriceUsd: num('LAUNCH_PRICE_USD', 0),                    // 0: ilk okunan fiyat açılış fiyatı sayılır
     sessionDays: num('SESSION_DAYS', 30),
+    publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080)}`).trim(),   // e-postadaki bağlantılar bu adrese gider
+    smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
+    mailFrom: env.MAIL_FROM || 'Realm of Astra <no-reply@localhost>',
+    trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
-    rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15)
+    rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
+    publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5)        // giriş/kayıt sayfaları (IP başına)
   };
 }

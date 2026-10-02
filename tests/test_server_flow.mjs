@@ -1,5 +1,5 @@
 // Sunucu (2. aşama) — uçtan uca akış, sahte zincirle (gerçek para hareket etmez)
-// Giriş (cüzdan imzası) → oyun işlemleri → hile denemeleri reddedilir → yatırma → çekim talebi →
+// Hesap (e-posta/şifre, doğrulama, cüzdan bağlama + 48 saat kuralı) → oyun işlemleri → hile denemeleri reddedilir → yatırma → çekim talebi →
 // haftalık hesaplaşma (çekim havuzu, ücret, hak kirası, ücretsiz havuz, yakım, yapımcı payı) → ödeme gönderimi
 import assert from 'node:assert/strict';
 import { ethers } from 'ethers';
@@ -8,6 +8,8 @@ import { createEngine } from '../server/engine.js';
 import { createWorld } from '../server/world.js';
 import { createApp } from '../server/app.js';
 import { loadConfig } from '../server/config.js';
+import { createMailer } from '../server/mailer.js';
+import { createAccounts } from '../server/accounts.js';
 import { allocateWithdrawals, withdrawCapTokens, brakeState, faucetWeekly, nextMultiplier } from '../server/economy.js';
 
 let passed = 0;
@@ -57,7 +59,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
 }
 
 // ── 2) Uçtan uca ─────────────────────────────────────────────────────────
-const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
+const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, publicRateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
 const db = openDb(':memory:');
 const engine = await createEngine(db);
 const GAME_WALLET = '0x' + '11'.repeat(20);
@@ -70,8 +72,13 @@ const chain = {
   async scanDeposits() { const l = depositLogs; depositLogs = []; return l; },
   async sendAda(to, amount) { sent.push({ to, amount }); return '0xhash' + sent.length; }
 };
-const world = createWorld({ db, engine, chain, cfg, log: { warn() {}, error() {} } });
-const app = createApp({ db, engine, world, chain, cfg, verifyLogin: (m, s) => ethers.verifyMessage(m, s).toLowerCase(), log: { error() {} } });
+let now = Date.now();
+const clock = () => now;
+const mailer = createMailer({ db, cfg, log: { log() {} } });
+const accounts = createAccounts({ db, cfg, mailer, clock, verifyMessage: (m, s) => ethers.verifyMessage(m, s) });
+const world = createWorld({ db, engine, chain, accounts, cfg, log: { warn() {}, error() {} } });
+const app = createApp({ db, engine, world, accounts, chain, cfg, log: { error() {} } });
+const lastLink = kind => { const m = db.kvJson('dev:outbox', [])[0]; const r = new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(m ? m.text : ''); return r && r[1]; };
 const server = app.server().listen(0);
 await new Promise(r => server.once('listening', r));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -79,29 +86,64 @@ const call = async (method, p, body, token) => {
   const res = await fetch(base + p, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: res.status, body: await res.json() };
 };
-async function login(wallet) {
-  const n = await call('POST', '/api/auth/nonce', { address: wallet.address });
-  const signature = await wallet.signMessage(n.body.message);
-  const v = await call('POST', '/api/auth/verify', { address: wallet.address, signature });
-  assert.equal(v.status, 200, JSON.stringify(v.body));
-  return v.body.token;
+async function register(email) {
+  const r = await call('POST', '/api/account/register', { email, password: 'gizli-sifre-123' });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+  assert.equal(v.status, 200, 'E-posta doğrulandı');
+  return { token: r.body.token, pid: r.body.playerId };
+}
+async function linkWallet(token, wallet) {
+  const n = await call('POST', '/api/account/wallet/nonce', { address: wallet.address }, token);
+  const l = await call('POST', '/api/account/wallet/link', { signature: await wallet.signMessage(n.body.message) }, token);
+  assert.equal(l.status, 200, JSON.stringify(l.body));
+  const c = await call('POST', '/api/account/wallet/confirm', { token: lastLink('wallet') });
+  assert.equal(c.status, 200, JSON.stringify(c.body));
+  return c.body;
 }
 
 try {
-  // Giriş
-  const alice = ethers.Wallet.createRandom(), bob = ethers.Wallet.createRandom(), eve = ethers.Wallet.createRandom();
-  const n = await call('POST', '/api/auth/nonce', { address: eve.address });
-  const forged = await bob.signMessage(n.body.message);
-  assert.equal((await call('POST', '/api/auth/verify', { address: eve.address, signature: forged })).status, 401, 'Başkasının imzası geçmez');
-  const tA = await login(alice), tB = await login(bob);
+  // Hesap: kayıt, hatalı bilgiler, giriş, kilit, şifre sıfırlama
+  const alice = ethers.Wallet.createRandom(), bob = ethers.Wallet.createRandom(), bob2 = ethers.Wallet.createRandom(), eve = ethers.Wallet.createRandom();
+  assert.equal((await call('POST', '/api/account/register', { email: 'bozuk', password: 'gizli-sifre-123' })).status, 400, 'Geçersiz e-posta');
+  assert.equal((await call('POST', '/api/account/register', { email: 'k@s.com', password: 'kisa' })).status, 400, 'Kısa şifre');
+  const { token: tA, pid: pidA } = await register('alice@ornek.com');
+  const { token: tB, pid: pidB } = await register('bob@ornek.com');
+  assert.equal((await call('POST', '/api/account/register', { email: 'ALICE@ornek.com', password: 'gizli-sifre-123' })).status, 400, 'Aynı e-postayla ikinci hesap açılmaz');
+  assert.equal((await call('POST', '/api/account/login', { email: 'alice@ornek.com', password: 'yanlis-sifre' })).status, 401, 'Yanlış şifre');
+  assert.equal((await call('POST', '/api/account/login', { email: 'alice@ornek.com', password: 'gizli-sifre-123' })).status, 200, 'Doğru şifre');
+  for (let i = 0; i < 10; i++) await call('POST', '/api/account/login', { email: 'eve@ornek.com', password: 'tahmin' + i });
+  const lockedLogin = await call('POST', '/api/account/login', { email: 'eve@ornek.com', password: 'tahmin' });
+  assert.ok(/15 dakika/.test(lockedLogin.body.error), '10 hatalı denemeden sonra kilit');
+  const fg = await call('POST', '/api/account/forgot', { email: 'yok@ornek.com' });
+  assert.equal(fg.status, 200, 'Olmayan e-posta için de aynı yanıt (hesap varlığı ele verilmez)');
+  await call('POST', '/api/account/forgot', { email: 'bob@ornek.com' });
+  const rs = await call('POST', '/api/account/reset', { token: lastLink('reset'), password: 'yeni-sifre-456' });
+  assert.equal(rs.status, 200);
+  assert.equal((await call('GET', '/api/account/me', null, tB)).status, 401, 'Şifre sıfırlanınca eski oturumlar kapanır');
+  const relog = await call('POST', '/api/account/login', { email: 'bob@ornek.com', password: 'yeni-sifre-456' });
+  const tB2 = relog.body.token;
+  ok('Hesap: kayıt, doğrulama, hatalı girişler, kilit, şifre sıfırlama');
+
+  // Cüzdan bağlama: sahte imza reddedilir; ilk bağlama e-posta onayıyla hemen; değişiklik 48 saat bekler
+  const nn = await call('POST', '/api/account/wallet/nonce', { address: eve.address }, tB2);
+  const forged = await call('POST', '/api/account/wallet/link', { signature: await bob.signMessage(nn.body.message) }, tB2);
+  assert.equal(forged.status, 400, 'Başka cüzdanın imzası geçmez');
+  const first = await linkWallet(tB2, bob);
+  assert.equal(first.immediate, true, 'İlk cüzdan onaydan hemen sonra etkin');
+  assert.equal((await call('GET', '/api/account/me', null, tB2)).body.wallet, bob.address.toLowerCase());
+  const n2 = await call('POST', '/api/account/wallet/nonce', { address: bob.address }, tA);
+  const dup = await call('POST', '/api/account/wallet/link', { signature: await bob.signMessage(n2.body.message) }, tA);
+  assert.equal(dup.status, 400, 'Bir cüzdan iki hesaba bağlanamaz');
+  ok('Cüzdan bağlama: imza kanıtı, e-posta onayı, tek hesap kuralı');
   assert.equal((await call('GET', '/api/state')).status, 401, 'Girişsiz istek reddedilir');
   const s0 = await call('GET', '/api/state', null, tA);
   assert.equal(s0.status, 200);
   assert.equal(s0.body.player.adAstraBalance, 0, 'Yeni hesap 0 ADA ile başlar');
   assert.equal(s0.body.player.inventory.wood, 0, 'Yeni hesap 0 kaynakla başlar');
-  engine.mutatePlayer(alice.address.toLowerCase(), gs => { gs.state.adAstraBalance = 250; });
-  engine.mutatePlayer(bob.address.toLowerCase(), gs => { gs.state.adAstraBalance = 250; });
-  ok('Cüzdan imzasıyla giriş; sahte imza ve girişsiz istek reddediliyor');
+  engine.mutatePlayer(pidA, gs => { gs.state.adAstraBalance = 250; });
+  engine.mutatePlayer(pidB, gs => { gs.state.adAstraBalance = 250; });
+  ok('Girişsiz istek reddediliyor; yeni hesap 0 ADA ve 0 kaynakla başlıyor');
 
   // Oyun işlemleri ve hile denemeleri
   const ex = await call('POST', '/api/action', { name: 'startExpedition', args: ['wood'] }, tA);
@@ -123,35 +165,43 @@ try {
   ok('Beyaz liste: hile/test düğmeleri, bedava bot, geçersiz bilgi ve sahte eşya reddediliyor');
 
   // Yatırma (Bob yatırır; Alice ücretsiz oyuncu kalır)
-  const bobStart = (await call('GET', '/api/state', null, tB)).body.player.adAstraBalance;
+  const bobStart = (await call('GET', '/api/state', null, tB2)).body.player.adAstraBalance;
   depositLogs = [{ txHash: '0xdep1', logIndex: 0, from: bob.address.toLowerCase(), amount: 50000, block: 900 }];
   await world.scanDeposits();
-  const sB = await call('GET', '/api/state', null, tB);
+  const sB = await call('GET', '/api/state', null, tB2);
   assert.equal(sB.body.player.adAstraBalance, bobStart + 50000);
   assert.ok(sB.body.player.lockedAda < 250, 'Yatırılan ADA serbest (kilitsiz)');
   await world.scanDeposits();
-  assert.equal((await call('GET', '/api/state', null, tB)).body.player.adAstraBalance, bobStart + 50000, 'Aynı yatırma iki kez işlenmez');
+  assert.equal((await call('GET', '/api/state', null, tB2)).body.player.adAstraBalance, bobStart + 50000, 'Aynı yatırma iki kez işlenmez');
   ok('Yatırma zincirden bulunup bir kez, serbest bakiye olarak işleniyor');
 
   // Katkı puanı: Bob harcar (asker alır), Alice az harcar
-  const buy = await call('POST', '/api/action', { name: 'buySoldierUnit', args: [] }, tB);
+  const buy = await call('POST', '/api/action', { name: 'buySoldierUnit', args: [] }, tB2);
   assert.ok(buy.body.result.success, buy.body.result.message);
   // Çekim talebi
-  const tooMuch = await call('POST', '/api/withdraw', { amount: 1e9 }, tB);
+  const tooMuch = await call('POST', '/api/withdraw', { amount: 1e9 }, tB2);
   assert.equal(tooMuch.body.success, false, 'Serbest bakiyeden fazlası istenemez');
-  const wreq = await call('POST', '/api/withdraw', { amount: 30000 }, tB);
+  const wreq = await call('POST', '/api/withdraw', { amount: 30000 }, tB2);
   assert.ok(wreq.body.success, wreq.body.message);
-  const afterReq = (await call('GET', '/api/state', null, tB)).body.player;
+  const afterReq = (await call('GET', '/api/state', null, tB2)).body.player;
   assert.equal(afterReq.pendingWithdrawAda, 30000);
-  const spendPending = await call('POST', '/api/withdraw', { amount: afterReq.adAstraBalance + 1 }, tB);
+  const spendPending = await call('POST', '/api/withdraw', { amount: afterReq.adAstraBalance + 1 }, tB2);
   assert.equal(spendPending.body.success, false, 'Çekime ayrılan ADA tekrar kullanılamaz');
   ok('Çekim talebi serbest bakiyeden ayrılıyor, fazlası reddediliyor');
+
+  const noWallet = await call('POST', '/api/withdraw', { amount: 100 }, tA);
+  assert.equal(noWallet.body.success, false, 'Cüzdanı bağlı olmayan çekim talebi veremez');
+  // Bob cüzdanını değiştirmek ister: onaydan sonra 48 saat eski cüzdan geçerli
+  const ch = await linkWallet(tB2, bob2);
+  assert.ok(ch.activeAt - Date.now() > 47 * 3600000, 'Değişiklik 48 saat sonra etkin');
+  assert.equal(accounts.activeWallet(pidB), bob.address.toLowerCase(), 'Bu sürede ödemeler eski cüzdana');
+  ok('Cüzdan değişikliği: 48 saat bekleme, ödemeler o sürede eski cüzdana; cüzdansız çekim yok');
 
   // Ortak piyango: iki oyuncu bilet alır; kasa ve toplam bilet ortak
   const poolBefore = engine.lottery().pool;
   const lA = await call('POST', '/api/action', { name: 'buyLotteryTickets', args: [1] }, tA);
   assert.ok(lA.body.result.success, lA.body.result.message);
-  const lB = await call('POST', '/api/action', { name: 'buyLotteryTickets', args: [3] }, tB);
+  const lB = await call('POST', '/api/action', { name: 'buyLotteryTickets', args: [3] }, tB2);
   assert.ok(lB.body.result.success, lB.body.result.message);
   assert.equal(engine.lottery().totalTickets, 4, 'Ortak toplam bilet 4');
   assert.ok(engine.lottery().pool > poolBefore, 'Bilet parası ortak kasaya girdi');
@@ -168,13 +218,13 @@ try {
   assert.equal(engine.globalPool.state.epochId, epochBefore + 1, 'Yeni hafta açıldı');
   const summary = world.econ().lastWeekly;
   assert.ok(summary && summary.epoch === epochBefore, 'Kapanan hafta hesaplaşıldı');
-  const wB = await call('GET', '/api/wallet', null, tB);
+  const wB = await call('GET', '/api/wallet', null, tB2);
   const hist = wB.body.withdraw.history[0];
   assert.ok(hist && hist.total > 0, 'Bob\'un çekimi karşılandı');
   assert.ok(near(hist.net, hist.total - hist.fee - hist.rent, 1e-6));
   const payB = sent.find(s => s.to.toLowerCase() === bob.address.toLowerCase());
   assert.ok(payB && near(payB.amount, Math.floor(hist.net * 100) / 100, 0.01), 'Net tutar Bob\'un cüzdanına gönderildi');
-  const bAfter = (await call('GET', '/api/state', null, tB)).body.player;
+  const bAfter = (await call('GET', '/api/state', null, tB2)).body.player;
   assert.equal(bAfter.pendingWithdrawAda, 0);
   assert.ok(near(bAfter.withdrawnAda, hist.total));
   ok('Haftalık hesaplaşma: çekim havuzdan karşılanıp zincire gönderildi, ücret ve kira düşüldü');
@@ -193,10 +243,10 @@ try {
 
   // Piyango çekilişi: tek kazanan, ödülünü çeker
   const lot = summary.lottery;
-  const addrs = { [alice.address.toLowerCase()]: tA, [bob.address.toLowerCase()]: tB };
+  const addrs = { [pidA]: tA, [pidB]: tB2 };
   assert.ok(lot && addrs[lot.winner], 'Kazanan gerçek oyunculardan biri');
   const winTok = addrs[lot.winner];
-  const loseTok = winTok === tA ? tB : tA;
+  const loseTok = winTok === tA ? tB2 : tA;
   const winSt = (await call('GET', '/api/state', null, winTok)).body.player;
   const loseSt = (await call('GET', '/api/state', null, loseTok)).body.player;
   assert.ok(winSt.lotteryPendingPayout > 0 && winSt.lotteryTickets === 0, 'Kazananın ödülü bekliyor, biletleri kilitlendi');
@@ -222,6 +272,12 @@ try {
   assert.equal(st.status, 200);
   assert.ok(st.body.players.total >= 2);
   ok('Çift ödeme yok; durdurma anahtarı ve yönetici yetkisi çalışıyor');
+
+  // 48 saat dolunca yeni cüzdan etkinleşir
+  now += 49 * 3600000;
+  assert.equal(accounts.activeWallet(pidB), bob2.address.toLowerCase(), '48 saat sonra yeni cüzdan etkin');
+  assert.equal((await call('GET', '/api/account/me', null, tB2)).body.pendingWallet, null);
+  ok('48 saat sonra yeni cüzdan etkinleşiyor');
 } finally {
   server.close();
 }
