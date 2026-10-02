@@ -37,7 +37,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/verify',
   'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
@@ -209,6 +209,26 @@ export function createApp({ db, engine, world, accounts, payments = null, arena 
     'POST /api/withdraw/cancel': (req, me) => {
       try { return db.tx(() => world.cancelWithdraw(me)); }
       catch (err) { E.reloadWorld(); log.error(err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+
+    // 🏦 Oyun Kasası
+    'GET /api/kasa': (req, me) => (kasa ? kasa.status(me) : { enabled: false }),
+    'POST /api/kasa/refresh': async (req, me) => {
+      if (!kasa || !kasa.enabled) return { enabled: false };
+      try { await kasa.refresh(me); } catch (err) { return [503, { error: 'Zincir bakiyesi okunamadı, birazdan tekrar dene.' }]; }
+      return kasa.status(me);
+    },
+    'POST /api/kasa/withdraw': async (req, me) => {
+      if (!kasa) return [404, { error: 'Kapalı' }];
+      const { asset, amount } = await readBody(req);
+      const r = kasa.withdraw(me, asset, amount);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/kasa/test-deposit': async (req, me) => {
+      if (!kasa || !cfg.testMode) return [404, { error: 'Yalnız deneme sunucusunda' }];
+      const { ada, avax } = await readBody(req);
+      const r = kasa.simulateDeposit(me, Math.min(1e7, Number(ada) || 0), Math.min(10, Number(avax) || 0));
+      return r.ok ? kasa.status(me) : [400, { error: r.error }];
     },
 
     // 💳 Cüzdandan ödeme (kazanılmış bakiye yetmeyince)

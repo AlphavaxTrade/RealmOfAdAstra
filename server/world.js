@@ -18,7 +18,7 @@ import { runDraw } from '../js/economy/lottery.js';
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
 
-export function createWorld({ db, engine, chain = null, arena = null, accounts = null, cfg, clock = () => Date.now(), log = console }) {
+export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const econ = () => db.kvJson('world:economy', {});
   const setEcon = patch => { const next = { ...econ(), ...patch }; db.kvSetJson('world:economy', next); return next; };
@@ -477,6 +477,13 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       if (chain && now - last.market >= 3600000) { last.market = now; await snapshotMarket().catch(err => log.warn('Piyasa:', err.message)); }
       if (chain && now - last.deposits >= 120000) { last.deposits = now; await scanDeposits().catch(err => log.warn('Yatırma tarama:', err.message)); }
       if (now - last.live >= 600000) { last.live = now; refreshLive(); }
+      if (kasa && now - (last.kasaRefresh || 0) >= 120000) { last.kasaRefresh = now; await kasa.refreshActive().catch(err => log.warn('Kasa bakiyeleri:', err.message)); }
+      if (kasa && now - (last.kasaSettle || 0) >= 3600000) { last.kasaSettle = now; kasa.queueSettlements(); }
+      if (kasa && now - (last.kasaOps || 0) >= 300000) {
+        last.kasaOps = now;
+        await kasa.reconcileOps().catch(err => log.warn('Kasa kontrolü:', err.message));
+        await kasa.processOps().catch(err => log.warn('Kasa işlemleri:', err.message));
+      }
       if (now - last.payouts >= 300000) {
         last.payouts = now;
         await reconcilePayouts().catch(err => log.warn('Ödeme kontrolü:', err.message));

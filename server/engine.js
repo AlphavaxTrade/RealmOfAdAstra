@@ -63,6 +63,8 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
   };
 
   let current = null;              // şu an yüklü oyuncunun adresi
+  let kasa = null;                 // Oyun Kasası (server/kasa.js): oyuncu yokken çalışan işler için
+  const setKasa = k => { kasa = k; };
   let quietSave = false;           // mutatePlayer sırasında motorun kendi kaydı kapalı (son görülme değişmesin)
   gs.saveState = (orig => function () { if (current && !quietSave) return orig.call(this); })(gs.saveState);
 
@@ -126,6 +128,10 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     load(address);
     try {
       globalPool.checkEpochExpiration();
+      // 🏦 Oyuncu yokken çalışan işler (pasif iyileşme, bot, botun pazar işleri, alet onarımı) önce oyunda kazanılmış
+      // bakiyeyi, yetmezse Oyun Kasası'nı kullanır. Kasa en alttaki katmandır: harcama önce kazanılmış bakiyeden düşer.
+      const kasaAvail = kasa && current !== SYSTEM ? Math.max(0, kasa.available(current)) : 0;
+      if (kasaAvail > 0) gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + kasaAvail;
       const last = Number(gs.state.lastSeenAt) || clock();
       const gapSec = (clock() - last) / 1000;
       if (gapSec >= 1) gs.processOfflineProgress(gapSec, last);
@@ -133,6 +139,14 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       gs.processLockedUnlock();
       gs.checkOnboardingProgress();
       gs.updateBotPauseState();
+      if (kasaAvail > 0) {
+        const total = Number(gs.state.adAstraBalance) || 0;
+        const used = total >= kasaAvail ? 0 : kasaAvail - total;
+        gs.state.adAstraBalance = Math.max(0, total - kasaAvail);
+        gs.state.lockedAda = Math.min(Number(gs.state.lockedAda) || 0, gs.state.adAstraBalance);
+        if (used > 0) kasa.consume(current, used);
+      }
+      // Tıklamalı işlemler yalnız kazanılmış bakiyeyi kullanır (yetmezse cüzdandan ödeme; kasa kullanılmaz)
       const result = fn(gs);
       mergeLottery();
       // Bildirimler ve "sen yokken olanlar" raporu oyuncuya bir kez teslim edilir, kayıttan silinir
@@ -223,5 +237,5 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     return out;
   }
 
-  return { quoteCost, testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
+  return { setKasa, quoteCost, testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
 }

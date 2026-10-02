@@ -89,7 +89,6 @@ export function createChain(cfg) {
     return out;
   }
 
-  let sendQueue = Promise.resolve();
   const erc20 = new ethers.Interface(ERC20_ABI);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -100,11 +99,19 @@ export function createChain(cfg) {
   //  3. Onay beklenir; gelmezse kayıt "gönderiliyor" kalır ve checkPayout() ile zincirden sonuçlandırılır.
   function sendAda(to, amountAda, onSigned = () => {}) {
     if (!wallet) return Promise.reject(new Error('Oyun cüzdanı anahtarı tanımlı değil (GAME_WALLET_PRIVATE_KEY)'));
-    const job = sendQueue.then(async () => {
-      const value = ethers.parseUnits(Number(amountAda).toFixed(6), 18);
-      const data = erc20.encodeFunctionData('transfer', [to, value]);
-      const req = await withProvider(p => wallet.connect(p).populateTransaction({ to: cfg.tokenAddress, data, chainId: cfg.chainId }));
-      const raw = await wallet.signTransaction(req);
+    const value = ethers.parseUnits(Number(amountAda).toFixed(6), 18);
+    return sendTx(wallet, { to: cfg.tokenAddress, data: erc20.encodeFunctionData('transfer', [to, value]) }, onSigned);
+  }
+
+  // Herhangi bir cüzdandan (oyun cüzdanı ya da oyuncu kasası) aynı güvenli akışla işlem: imzala → kaydet → yay → bekle.
+  // Aynı cüzdanın işlemleri sırayla gider (sıra numarası çakışmasın).
+  const queues = new Map();
+  function sendTx(signer, fields, onSigned = () => {}) {
+    const key = signer.address.toLowerCase();
+    const prev = queues.get(key) || Promise.resolve();
+    const job = prev.then(async () => {
+      const req = await withProvider(p => signer.connect(p).populateTransaction({ ...fields, chainId: cfg.chainId }));
+      const raw = await signer.signTransaction(req);
       const hash = ethers.keccak256(raw);
       onSigned({ hash, raw, nonce: Number(req.nonce) });
       await broadcast(raw);
@@ -118,7 +125,7 @@ export function createChain(cfg) {
       }
       const e = new Error('Onay zaman aşımı: ' + hash); e.txHash = hash; throw e;
     });
-    sendQueue = job.catch(() => {});
+    queues.set(key, job.catch(() => {}));
     return job;
   }
 
@@ -133,10 +140,10 @@ export function createChain(cfg) {
   }
 
   // "Gönderiliyor" kalmış bir ödemenin zincirdeki durumu: 'sent' | 'failed' (tekrar gönderilebilir) | 'waiting'
-  async function checkPayout({ hash, raw, nonce }) {
+  async function checkPayout({ hash, raw, nonce, from = null }) {
     const rc = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
     if (rc) return rc.status === 1 ? 'sent' : 'failed';
-    const used = await withProvider(p => p.getTransactionCount(wallet.address, 'latest'));
+    const used = await withProvider(p => p.getTransactionCount(from || wallet.address, 'latest'));
     if (Number.isInteger(nonce) && used > nonce) {
       // Sıra numarası kullanılmış: son bir kez daha bak (yarış durumunda yeni işlenmiş olabilir)
       const rc2 = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
@@ -169,5 +176,17 @@ export function createChain(cfg) {
     throw new Error('Bu işlemde ödeme bulunamadı');
   }
 
-  return { verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  // Bir adresin ADASTRA ve AVAX bakiyesi
+  async function balances(address) {
+    return withProvider(async p => {
+      const token = new ethers.Contract(cfg.tokenAddress, ERC20_ABI, p);
+      const [a, v] = await Promise.all([token.balanceOf(address), p.getBalance(address)]);
+      return { ada: toAda(a), avax: Number(ethers.formatEther(v)), at: Date.now() };
+    });
+  }
+  async function gasPrice() {
+    return withProvider(async p => (await p.getFeeData()).gasPrice);
+  }
+
+  return { sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

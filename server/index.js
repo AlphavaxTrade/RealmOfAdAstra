@@ -13,6 +13,7 @@ import { createArena } from './arena.js';
 import { createMailer } from './mailer.js';
 import { createAccounts } from './accounts.js';
 import { createPayments } from './payments.js';
+import { createKasa } from './kasa.js';
 
 // server/.env varsa oku (KEY=değer satırları; ortamda zaten tanımlı olanlar ezilmez)
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -33,9 +34,13 @@ const mailer = createMailer({ db, cfg });
 const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethers.verifyMessage(m, s) });
 const arena = createArena({ db, engine, botWhenEmpty: cfg.testMode });
 if (cfg.testMode) console.warn('🧪 DENEME MODU: test menüsü ve bot rakip açık. Gerçek sunucuda TEST_MODE kullanmayın!');
-const world = createWorld({ db, engine, chain, arena, accounts, cfg });
+const kasa = createKasa({ db, chain, accounts, cfg });
+engine.setKasa(kasa);
+if (!kasa.enabled) console.warn('🏦 Oyun Kasası kapalı (KASA_MASTER_KEY ve PAYMENTS_CONTRACT gerekli).');
+else if (kasa.simulated) console.warn('🏦 Deneme modu: Oyun Kasası taklit (zincire bağlı değil; gerçek ADA yatırılamaz).');
+const world = createWorld({ db, engine, chain, arena, accounts, kasa, cfg });
 const payments = createPayments({ db, engine, accounts, chain, cfg });
-const app = createApp({ db, engine, world, accounts, payments, arena, chain, cfg });
+const app = createApp({ db, engine, world, accounts, payments, kasa, arena, chain, cfg });
 if (!cfg.paymentsContract) console.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) console.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');
 
