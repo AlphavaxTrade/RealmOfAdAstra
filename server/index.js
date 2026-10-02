@@ -9,6 +9,7 @@ import { createEngine } from './engine.js';
 import { createChain } from './chain.js';
 import { createWorld } from './world.js';
 import { createApp } from './app.js';
+import { createArena } from './arena.js';
 
 // server/.env varsa oku (KEY=değer satırları; ortamda zaten tanımlı olanlar ezilmez)
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -24,9 +25,10 @@ const cfg = loadConfig();
 const db = openDb(cfg.dbFile);
 const engine = await createEngine(db);
 const chain = cfg.chainEnabled ? createChain(cfg) : null;
-const world = createWorld({ db, engine, chain, cfg });
+const arena = createArena({ db, engine });
+const world = createWorld({ db, engine, chain, arena, cfg });
 const { ethers } = await import('ethers');
-const app = createApp({ db, engine, world, chain, cfg, verifyLogin: (m, s) => ethers.verifyMessage(m, s).toLowerCase() });
+const app = createApp({ db, engine, world, arena, chain, cfg, verifyLogin: (m, s) => ethers.verifyMessage(m, s).toLowerCase() });
 
 if (!cfg.adminToken) console.warn('⚠️  ADMIN_TOKEN tanımlı değil: yönetici paneli kapalı.');
 if (chain && !chain.canSend) console.warn('⚠️  GAME_WALLET_PRIVATE_KEY yok: çekimler yönetici onayı bekler (PAYOUT_MODE=manual).');

@@ -261,6 +261,22 @@ export async function openWalletPanel() {
   };
 }
 
+// ── Kolezyum: gerçek rakipler ───────────────────────────────────────────
+export const pvp = {
+  status: () => api('GET', '/api/pvp/status'),
+  match: id => api('GET', '/api/pvp/match?id=' + encodeURIComponent(id)),
+  async queue(mode, indices) {
+    const r = await api('POST', '/api/pvp/queue', { mode, indices });
+    apply(r);
+    return r.result;
+  },
+  async leave() {
+    const r = await api('POST', '/api/pvp/leave');
+    apply(r);
+    return r.result;
+  }
+};
+
 // ── Başlat ──────────────────────────────────────────────────────────────
 // Sunucu varsa girişi yapar, kaydı yükler ve true döner; yoksa false (deneme modu).
 export async function startOnline(context) {

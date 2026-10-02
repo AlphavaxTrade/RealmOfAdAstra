@@ -18,7 +18,7 @@ import { runDraw } from '../js/economy/lottery.js';
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
 
-export function createWorld({ db, engine, chain = null, cfg, clock = () => Date.now(), log = console }) {
+export function createWorld({ db, engine, chain = null, arena = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const econ = () => db.kvJson('world:economy', {});
   const setEcon = patch => { const next = { ...econ(), ...patch }; db.kvSetJson('world:economy', next); return next; };
@@ -299,6 +299,9 @@ export function createWorld({ db, engine, chain = null, cfg, clock = () => Date.
         E.setLottery({ pool: draw.pool, amortiPool: draw.amortiPool, totalTickets: draw.holders.reduce((t, h) => t + (h.tickets || 0), 0) });
         summary.lottery = { winner: draw.winnerId, prize: draw.prize, poolDepleted: !!draw.poolDepleted, totalTickets: draw.totalTickets, players: holders.length };
       }
+
+      // 8) Kolezyum (gerçek rakipler) haftalık sıralama ödülleri: ilk 10, Kolezyum kasasından
+      if (arena) summary.pvp = arena.settleWeek(closedEpoch);
 
       setEcon({
         epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap,

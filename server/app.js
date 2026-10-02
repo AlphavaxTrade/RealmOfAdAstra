@@ -27,7 +27,7 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
 export const loginMessage = (address, nonce) =>
   `Realm of Astra girişi\n\nCüzdan: ${address}\nKod: ${nonce}\n\nBu imza yalnızca giriş içindir; hiçbir işlem ya da ücret onaylamaz.`;
 
-export function createApp({ db, engine, world, chain, cfg, clock = () => Date.now(), verifyLogin, log = console }) {
+export function createApp({ db, engine, world, arena = null, chain, cfg, clock = () => Date.now(), verifyLogin, log = console }) {
   const E = engine;
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
@@ -154,6 +154,30 @@ export function createApp({ db, engine, world, chain, cfg, clock = () => Date.no
     'POST /api/withdraw/cancel': (req, me) => {
       try { return db.tx(() => world.cancelWithdraw(me)); }
       catch (err) { E.reloadWorld(); log.error(err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+
+    // ⚔️ Kolezyum — gerçek rakipler
+    'POST /api/pvp/queue': async (req, me) => {
+      const { mode, indices } = await readBody(req);
+      if (!arena) return [404, { error: 'Kapalı' }];
+      if (!['1v1', '3v3'].includes(mode) || !Array.isArray(indices) || indices.length > 3 || !indices.every(i => Number.isInteger(i) && i >= 0 && i < 64)) return [400, { error: 'Geçersiz seçim' }];
+      try {
+        const out = db.tx(() => { const o = arena.queue(me, mode, indices); db.q.playerSeen.run(clock(), me); return o; });
+        return { result: out.result, ...playerPayload(me, out.state) };
+      } catch (err) { E.reloadWorld(); log.error('PvP', err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+    'POST /api/pvp/leave': (req, me) => {
+      if (!arena) return [404, { error: 'Kapalı' }];
+      try {
+        const out = db.tx(() => arena.leave(me));
+        return { result: out.result, ...playerPayload(me, out.state) };
+      } catch (err) { E.reloadWorld(); log.error('PvP', err); return [500, { error: 'Sunucu hatası' }]; }
+    },
+    'GET /api/pvp/status': (req, me) => (arena ? arena.status(me) : [404, { error: 'Kapalı' }]),
+    'GET /api/pvp/match': (req) => {
+      const id = Number(new URL(req.url, 'http://x').searchParams.get('id'));
+      const m = arena && Number.isInteger(id) ? arena.getMatch(id) : null;
+      return m || [404, { error: 'Maç bulunamadı' }];
     },
 
     'GET /api/admin/status': () => {

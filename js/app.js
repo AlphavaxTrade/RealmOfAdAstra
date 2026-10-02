@@ -12,7 +12,7 @@ import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleAre
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
-import { startOnline, openWalletPanel, online } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -4402,12 +4402,16 @@ function openColosseumModal() {
     <div class="phase2-tab-row">
       <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">⚔️ 1v1 Gladyatör Düellosu</button>
       <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">🏆 Haftalık Liderlik Tablosu</button>
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">🌐 Gerçek Rakipler</button>
     </div>
   `;
 
   let contentHtml = '';
 
-  if (colosseumActiveTab === 'leaderboard') {
+  if (colosseumActiveTab === 'pvp') {
+    // 🌐 GERÇEK RAKİPLER (sunucu): içerik renderPvpPanel() ile doldurulur
+    contentHtml = `<div id="pvp-panel" class="clean-card" style="border-color:#38bdf8;background:#0b1220;min-height:120px;">⏳ Yükleniyor…</div>`;
+  } else if (colosseumActiveTab === 'leaderboard') {
     // 🏆 HAFTALIK SIRALAMA & ÖDÜLLER
     contentHtml = `
       <div class="clean-card" style="border-color: #f59e0b; background: #1c140c;">
@@ -4649,6 +4653,8 @@ function openColosseumModal() {
     });
   }
 
+  if (colosseumActiveTab === 'pvp') renderPvpPanel();
+
   // 1v1 Kolezyuma Çık Butonu (Canlı Savaş Arenası Entegrasyonu)
   const duelBtn = document.getElementById('btn-start-1v1-duel');
   if (duelBtn) {
@@ -4729,6 +4735,127 @@ function openColosseumModal() {
       });
     });
   }
+}
+
+// =========================================================================
+// 4.6b KOLEZYUM — GERÇEK RAKİPLER (sunucuda eşleşme; js/economy/pvp.js, server/arena.js)
+// =========================================================================
+let pvpMode = '1v1';
+let pvpSelected = null;
+
+function pvpUnitView(u, side) {
+  return {
+    uid: u.uid, name: u.name, icon: u.icon || (side === 'ally' ? '⚔️' : '🥷'),
+    avatar: side === 'ally' ? 'assets/soldier_avatar.jpg' : 'assets/gladiator_rival.jpg',
+    hp: u.maxHp, maxHp: u.maxHp, atk: u.atk,
+    skills: Array.isArray(u.skills) && u.skills.length ? u.skills : ['shieldWall'],
+    row: u.row || 'front'
+  };
+}
+
+function playPvpReplay({ allies, enemies, sim, title, resultText, why }) {
+  const arena = getBattleArena();
+  if (!arena) return;
+  closeModal();
+  openBattleArenaModal();
+  arena.startBattle({
+    mode: 'colosseum',
+    context: title,
+    rank: 'Gerçek rakip · tekrar',
+    allies: allies.map(u => pvpUnitView(u, 'ally')),
+    enemies: enemies.map(u => pvpUnitView(u, 'enemy')),
+    loot: why && why.length ? why.map(t => '💡 ' + t) : [],
+    replay: sim,
+    onComplete: () => {
+      if (resultText) showToast(resultText, resultText.startsWith('🏆') ? 'success' : 'info');
+    }
+  });
+}
+
+async function renderPvpPanel() {
+  const el = document.getElementById('pvp-panel');
+  if (!el) return;
+  if (!online.active) {
+    el.innerHTML = `<div class="card-title">🌐 Gerçek Rakipler</div>
+      <div class="clean-desc">Bu bölüm oyun sunucudan açıldığında çalışır: askerini kilitleyip "Maç ara"ya basarsın, sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır. 1v1 zaferi 1, 3v3 zaferi 3 puan; haftalık ilk 10 ödül alır.</div>`;
+    return;
+  }
+  let st;
+  try { st = await pvp.status(); } catch (err) { el.innerHTML = `<div class="clean-desc" style="color:#fca5a5;">${err.message}</div>`; return; }
+  const soldiers = gameState.state.soldierUnits || [];
+  const size = pvpMode === '3v3' ? 3 : 1;
+  if (!Array.isArray(pvpSelected) || pvpSelected.some(i => !soldiers[i])) pvpSelected = soldiers.length ? [Math.min(selectedColosseumChampionIdx || 0, soldiers.length - 1)] : [];
+  const fmtN = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
+  const resIcon = { win: '🏆', loss: '💀', draw: '🤝' };
+  const q = st.queue;
+  const soldierList = soldiers.map((s, i) => {
+    const f = gameState.getSoldierFullStats(i) || { totalAtk: 0, totalMaxHp: 0 };
+    const on = pvpSelected.includes(i);
+    return `<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid ${on ? '#38bdf8' : '#334155'};border-radius:6px;cursor:pointer;font-size:0.8rem;">
+      <input type="checkbox" class="pvp-pick" data-idx="${i}" ${on ? 'checked' : ''} ${q ? 'disabled' : ''}>
+      ${s.icon || '⚔️'} ${s.name} · Sv ${s.level || 1} · ⚔️${fmtN(f.totalAtk)} ❤️${fmtN(f.totalMaxHp)}</label>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="card-title-row"><div class="card-title">🌐 Gerçek Rakipler</div><span class="card-badge" style="color:#38bdf8;">Sırada bekleyen: 1v1 ${st.waiting['1v1']} · 3v3 ${st.waiting['3v3']}</span></div>
+    <div class="clean-desc">Askerini kilitle, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <strong>1 puan</strong>, 3v3 zaferi <strong>3 puan</strong>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${Math.round(st.rules.weeklyPoolShare * 100)}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade).</div>
+    ${q ? `<div style="margin:10px 0;padding:10px;border:1px dashed #38bdf8;border-radius:8px;">⏳ <strong>${q.mode}</strong> için sıradasın · ${Math.max(1, Math.round((Date.now() - q.at) / 60000))} dakikadır bekliyorsun. Rakip gelince maç kendiliğinden oynanır, bildirim alırsın.
+        <button id="pvp-leave" class="btn-clean btn-clean-outline" style="width:auto;margin-left:8px;padding:5px 10px;">↩️ Sıradan çık</button></div>`
+      : `<div style="display:flex;gap:6px;margin:10px 0;">
+        <button class="btn-clean ${pvpMode === '1v1' ? 'btn-gold' : 'btn-clean-outline'} pvp-mode" data-mode="1v1" style="width:auto;padding:6px 12px;">1v1 (1 asker)</button>
+        <button class="btn-clean ${pvpMode === '3v3' ? 'btn-gold' : 'btn-clean-outline'} pvp-mode" data-mode="3v3" style="width:auto;padding:6px 12px;">3v3 (3 asker)</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;">${soldierList || '<div class="clean-desc">Önce Kışla\'dan asker al.</div>'}</div>
+      <button id="pvp-queue" class="btn-clean btn-gold" style="margin-top:10px;" ${pvpSelected.length === size ? '' : 'disabled'}>⚔️ Maç Ara (${pvpMode}) — ${pvpSelected.length}/${size} asker seçili</button>`}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px;">
+      <div>
+        <div style="font-weight:800;color:#fde047;margin-bottom:4px;">🏆 Bu haftanın ilk 10'u</div>
+        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${r.name}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ADA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
+        ${st.mine ? `<div class="clean-desc" style="margin-top:4px;">Senin sıran: <strong>${st.mine.rank}.</strong> · ${st.mine.points} puan · ${st.mine.wins} galibiyet / ${st.mine.losses} mağlubiyet</div>` : ''}
+      </div>
+      <div>
+        <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">📜 Son maçların</div>
+        ${st.matches.length ? st.matches.map(m => `<div style="border-bottom:1px solid #1e293b;padding:4px 0;font-size:0.8rem;">
+          ${resIcon[m.result] || ''} <strong>${m.mode}</strong> · ${m.opponent} · ${m.points ? '+' + m.points + ' puan' : ''}
+          <button class="btn-clean btn-clean-outline pvp-watch" data-id="${m.id}" style="width:auto;padding:2px 8px;font-size:0.75rem;margin-left:4px;">▶️ İzle</button>
+          ${m.why ? `<div style="color:#fca5a5;margin-top:2px;">Neden kaybettin: ${m.why.join(' ')}</div>` : ''}
+        </div>`).join('') : '<div class="clean-desc">Henüz maçın yok.</div>'}
+      </div>
+    </div>`;
+
+  el.querySelectorAll('.pvp-mode').forEach(b => b.addEventListener('click', () => {
+    pvpMode = b.dataset.mode;
+    const need = pvpMode === '3v3' ? 3 : 1;
+    pvpSelected = pvpSelected.slice(0, need);
+    renderPvpPanel();
+  }));
+  el.querySelectorAll('.pvp-pick').forEach(c => c.addEventListener('change', () => {
+    const i = Number(c.dataset.idx);
+    const need = pvpMode === '3v3' ? 3 : 1;
+    if (c.checked) { pvpSelected = need === 1 ? [i] : [...pvpSelected.filter(x => x !== i), i].slice(-need); }
+    else pvpSelected = pvpSelected.filter(x => x !== i);
+    renderPvpPanel();
+  }));
+  el.querySelector('#pvp-leave')?.addEventListener('click', async () => {
+    try { const r = await pvp.leave(); showToast(r.message, r.success ? 'success' : 'error'); } catch (err) { showToast(err.message, 'error'); }
+    renderTopBar();
+    renderPvpPanel();
+  });
+  el.querySelector('#pvp-queue')?.addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    let r;
+    try { r = await pvp.queue(pvpMode, pvpSelected); } catch (err) { showToast(err.message, 'error'); renderPvpPanel(); return; }
+    renderTopBar();
+    if (!r.success) { showToast(r.message, 'error'); renderPvpPanel(); return; }
+    if (r.queued) { showToast(r.message, 'success'); renderPvpPanel(); return; }
+    playPvpReplay({ allies: r.allies, enemies: r.enemies, sim: r.sim, title: `Gerçek rakip · <strong>${r.opponentName}</strong> (${r.mode})`, resultText: r.message, why: r.why });
+  });
+  el.querySelectorAll('.pvp-watch').forEach(b => b.addEventListener('click', async () => {
+    try {
+      const m = await pvp.match(b.dataset.id);
+      const rec = st.matches.find(x => String(x.id) === String(b.dataset.id));
+      playPvpReplay({ allies: m.a.units, enemies: m.b.units, sim: m.sim, title: `Tekrar · <strong>${m.a.name}</strong> vs <strong>${m.b.name}</strong> (${m.mode})`, resultText: '', why: rec && rec.why });
+    } catch (err) { showToast(err.message, 'error'); }
+  }));
 }
 
 // =========================================================================

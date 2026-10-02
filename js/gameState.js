@@ -8,6 +8,7 @@ import { createUnit, simulateBattle, predictBattle, DEFAULT_BOSS_PHASES } from '
 import { getDungeonEntry } from './bestiary.js';
 import { splitTicketPayment, runDraw, winChance as lotteryWinChance } from './economy/lottery.js';
 import { levelWeight as ubiLevelWeight } from './economy/ubi.js';
+import { PVP_RULES } from './economy/pvp.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
 export class GameStateManager {
@@ -6420,6 +6421,45 @@ export class GameStateManager {
   // aşınması, ödül ve deneyim ya da canavarın kalan canı. Arena yalnızca bu sonucu oynatır.
   // Önceden sonuç animasyon bittikten sonra işleniyordu; yenilgi sırasında sayfa yenilenirse
   // can kaybı, aşınma ve canavarın kalan canı hiç yazılmıyordu.
+  // ⚔️ KOLEZYUM — GERÇEK RAKİPLER (PvP). Eşleşme ve maç sunucuda (server/arena.js); burada oyuncunun kendi kısmı.
+  isSoldierPvpLocked(idx) {
+    const q = this.state.pvpQueue;
+    return !!(q && Array.isArray(q.indices) && q.indices.includes(Number(idx)));
+  }
+
+  // Maça çıkacak takımın görüntüsü (tam canla; maç askerin canını azaltmaz)
+  buildPvpTeam(mode, selectedIndices) {
+    const rule = PVP_RULES.modes[mode];
+    if (!rule) return { success: false, message: 'Geçersiz maç türü.' };
+    if (this.state.pvpQueue) return { success: false, message: 'Zaten maç arıyorsun.' };
+    if (this.isArmyStakedInWorldBoss()) return { success: false, message: '🔒 Ordun World Boss savaşına kilitli. Önce kilidi aç.' };
+    const soldiers = this.state.soldierUnits || [];
+    const indices = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))].filter(i => Number.isInteger(i) && soldiers[i]);
+    if (indices.length !== rule.size) return { success: false, message: `${mode} maçı için ${rule.size} asker seçmelisin.` };
+    const units = this.buildDungeonBattleUnits(getDungeonEntry(1), indices).allies.map(u => ({ ...u, hp: u.maxHp }));
+    return { success: true, mode, indices, units: JSON.parse(JSON.stringify(units)), name: soldiers[indices[0]].name };
+  }
+
+  // Giriş bedeli: bot maçıyla aynı (anahtar + stamina + günlük hak)
+  payPvpEntry() {
+    const st = this.getColosseumEntryStatus();
+    if (st.blockReason) return { success: false, message: '⛔ ' + st.blockReason };
+    const cfg = GAME_CONFIG.COLOSSEUM;
+    this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
+    this.state.stamina -= cfg.ENTRY_STAMINA_COST;
+    this.getDailyCounters().arenaMatches += 1;
+    return { success: true };
+  }
+
+  // Sıradan çıkınca bedel iade edilir
+  refundPvpEntry() {
+    const cfg = GAME_CONFIG.COLOSSEUM;
+    this.state.arenaKeys = (this.state.arenaKeys || 0) + cfg.ENTRY_KEY_COST;
+    this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + cfg.ENTRY_STAMINA_COST);
+    const c = this.getDailyCounters();
+    c.arenaMatches = Math.max(0, (c.arenaMatches || 0) - 1);
+  }
+
   // ⚔️ Zindan savaşı tek adımda: giriş (stamina, günlük hak, kapı harcı) → savaş (combat.js) → sonuç.
   // Canavar yalnız seviyeden, oyunun kendi tablosundan kurulur; oyuncunun gönderdiği can/saldırı kullanılmaz.
   // Sunucu modunda bu işlem sunucuda çalışır, tarayıcı yalnız dönen savaş kaydını canlandırır.
@@ -6433,6 +6473,9 @@ export class GameStateManager {
     const indices = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))]
       .filter(i => Number.isInteger(i) && soldiers[i]);
     if (!indices.length) return { success: false, message: 'Savaşa katılacak geçerli bir asker bulunamadı!' };
+    if (indices.some(i => this.isSoldierPvpLocked(i))) {
+      return { success: false, message: '🔒 Seçtiğin askerlerden biri Kolezyumda maç arıyor. Önce sıradan çık ya da başka asker seç.' };
+    }
     const monster = getDungeonEntry(lvl);
     const isBoss = !!(monster.isBoss || lvl === 9 || lvl === 18);
     const entry = this.beginDungeonEntry(lvl, isBoss, { payGateFee: !!payGateFee, soldierCount: indices.length });
@@ -6519,6 +6562,9 @@ export class GameStateManager {
     const champion = soldiers[championIndex];
     if (!champion) {
       return { success: false, message: 'Kolezyum arenasına çıkacak geçerli bir şampiyon askerin yok!' };
+    }
+    if (this.isSoldierPvpLocked(championIndex)) {
+      return { success: false, message: '🔒 Bu asker gerçek rakiplere karşı maç arıyor. Önce sıradan çık.' };
     }
 
     if ((champion.hp || 0) <= 15) {
@@ -6742,6 +6788,9 @@ export class GameStateManager {
     const soldiers = this.state.soldierUnits || [];
     if (soldiers.length === 0) {
       return { success: false, message: 'World Boss savaşına kilitlemek için ordunuzda asker bulunmalıdır!' };
+    }
+    if (this.state.pvpQueue) {
+      return { success: false, message: '🔒 Askerlerinden biri Kolezyumda maç arıyor. Önce sıradan çık.' };
     }
 
     let userAtk = 0;
