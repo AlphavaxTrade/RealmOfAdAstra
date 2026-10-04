@@ -165,7 +165,8 @@ function installProxies() {
 }
 
 // ── Giriş ───────────────────────────────────────────────────────────────
-function overlay(html) {
+// dismissable: pencerenin dışına tıklayınca ya da Esc ile kapanır (yalnız bilgi panelleri; giriş/ödeme akışlarında kapalı)
+function overlay(html, { dismissable = false } = {}) {
   let el = document.getElementById('online-overlay');
   if (!el) {
     el = document.createElement('div');
@@ -173,10 +174,13 @@ function overlay(html) {
     el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,16,0.92);padding:16px;';
     document.body.appendChild(el);
   }
+  el.onclick = dismissable ? (e => { if (e.target === el) closeOverlay(); }) : null;
+  el.dataset.dismissable = dismissable ? '1' : '';
   el.innerHTML = `<div style="max-width:420px;width:100%;max-height:92vh;overflow-y:auto;box-sizing:border-box;background:#111827;border:1px solid #a855f7;border-radius:14px;padding:22px;color:#e2e8f0;font-family:inherit;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">${html}</div>`;
   return el;
 }
 const closeOverlay = () => document.getElementById('online-overlay')?.remove();
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('online-overlay')?.dataset.dismissable === '1') closeOverlay(); });
 
 const toHex = s => '0x' + Array.from(new TextEncoder().encode(s)).map(b => b.toString(16).padStart(2, '0')).join('');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -235,6 +239,33 @@ async function withCode(call, title) {
     }
   }
   throw new Error('Çok fazla deneme.');
+}
+
+// 🔒 Kilitli ADA paneli: nasıl açılır, yarın ve bu hafta ne kadarı açılacak
+function lockPanelHtml() {
+  const gs = ctx && ctx.gameState;
+  if (!gs || !gs.getLockedUnlockForecast) return '';
+  const f = gs.getLockedUnlockForecast();
+  const f0 = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
+  const pct = v => String(Math.round(v * 10) / 10).replace('.', ',');
+  if (!(f.locked > 0)) return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;">🔓 Kilitli ADA'n yok. Oyundan kazandığın her ADA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir.</div>`;
+  return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;line-height:1.55;">
+    <div style="font-weight:800;color:#fbbf24;margin-bottom:6px;">🔒 Kilitli ${f0(f.locked)} ADA nasıl açılır?</div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
+      <span>📅 Yarın (oyuna girersen)</span><strong style="color:#4ade80;">+${f0(f.tomorrowActive)} ADA</strong>
+      <span style="color:#94a3b8;">Yarın (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.tomorrowIdle)} ADA</span>
+      <span>🗓️ 7 gün (her gün girersen)</span><strong style="color:#4ade80;">+${f0(f.weekActive)} ADA</strong>
+      <span style="color:#94a3b8;">7 gün (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.weekIdle)} ADA</span>
+      <span>⚒️ Oyunda 1.000 ADA harcarsan</span><strong style="color:#4ade80;">+${f0(f.per1000Free)} ADA serbest kalır</strong>
+    </div>
+    <div style="margin-top:8px;color:#94a3b8;">
+      Kilit üç yolla açılır:<br>
+      • <strong style="color:#e2e8f0;">Harcayarak (en hızlısı):</strong> oyunda harcadığında önce kilitli ADA kullanılır, üstüne harcadığının %${f.spendBonusPct}'si kadar daha kilit açılır.<br>
+      • <strong style="color:#e2e8f0;">Her gün girerek:</strong> oyuna girdiğin her gün kilitlinin küçük bir kısmı açılır (her gün girene haftada toplam %${pct(f.weeklyActivePct)}).${f.loggedToday ? ' Bugünkü payını aldın ✅' : ''}<br>
+      • <strong style="color:#e2e8f0;">Zamanla:</strong> girmesen de haftada %${pct(f.weeklyBasePct)} kendiliğinden açılır.<br>
+      Oyundan kazandığın her ADA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir. Kilitli ADA'yı oyunda harcayabilirsin; çekim yalnız serbest kısımdan yapılır.
+    </div>
+  </div>`;
 }
 
 function twoFactorSection(acc) {
@@ -473,6 +504,7 @@ async function confirmWalletLink(t) {
 }
 
 // ── Hesap ve cüzdan ekranı ─────────────────────────────────────────────
+let lockOpen = false;
 export async function openWalletPanel() {
   if (!online.active) return;
   if (!token && !(await requireLogin())) return;
@@ -500,9 +532,10 @@ export async function openWalletPanel() {
       · <a href="#" id="wp-logout" style="color:#f87171;">çıkış</a></div>
     <div style="display:flex;gap:8px;justify-content:space-between;margin:12px 0 4px;font-size:0.85rem;font-weight:800;">
       <span style="color:#4ade80;">🔓 Serbest<br>${fmt(wd.free)}</span>
-      <span style="color:#fbbf24;">🔒 Kilitli<br>${fmt(wd.locked)}</span>
+      <button type="button" id="wp-lock-toggle" title="Kilitli ADA nasıl açılır? Tıkla" style="background:none;border:0;color:#fbbf24;font:inherit;font-weight:800;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">🔒 Kilitli ⓘ<br>${fmt(wd.locked)}</button>
       <span style="color:#38bdf8;">🏦 Çekimde<br>${fmt(wd.pending)}</span>
     </div>
+    <div id="wp-lock-panel" style="display:${lockOpen ? 'block' : 'none'};">${lockPanelHtml()}</div>
     <div style="${boxCss}">
       <div style="font-weight:800;color:#c4b5fd;margin-bottom:4px;">🦊 Bağlı Cüzdan</div>
       <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">${acc.wallet ? `Ödemelerin ve çekimlerin <strong style="font-family:monospace;">${short(acc.wallet)}</strong> cüzdanına gider.` : 'Henüz cüzdan bağlamadın. Çekim ve cüzdandan ödeme için Core ya da MetaMask cüzdanını bağla.'}</div>
@@ -525,9 +558,10 @@ export async function openWalletPanel() {
     ${wd.payouts && wd.payouts.length ? `<div style="text-align:left;margin-top:10px;font-size:0.78rem;color:#cbd5e1;max-height:140px;overflow:auto;">
       <div style="font-weight:800;margin-bottom:4px;">Son gönderimler</div>
       ${wd.payouts.map(p => `<div>${fmt(p.amount)} ADA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
-    </div>` : ''}`);
+    </div>` : ''}`, { dismissable: true });
   const $ = id => document.getElementById(id);
   $('wp-close').onclick = closeOverlay;
+  $('wp-lock-toggle').onclick = () => { lockOpen = !lockOpen; $('wp-lock-panel').style.display = lockOpen ? 'block' : 'none'; };
   $('wp-logout').onclick = e => { e.preventDefault(); logout(); };
   if ($('wp-resend')) $('wp-resend').onclick = async e => {
     e.preventDefault();

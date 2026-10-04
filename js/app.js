@@ -2145,6 +2145,10 @@ function openTownZoneModal(zoneId, zoneName) {
               <button class="btn-clean btn-clean-outline btn-amm-confirm-sell" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem; border-color: #facc15; color: #fde047;">
                 🔴 ONAYLA & SAT
               </button>
+              ${typeof (gameState.state.inventory || {})[resKey] === 'number' ? `
+              <button class="btn-clean btn-amm-sell-all" data-res="${resKey}" ${Math.floor(gameState.state.inventory[resKey] || 0) > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #facc15; color: #fde047;" title="Silodaki bütün ${pool.name} tek seferde satılır">
+                Hepsini sat (${Math.floor(gameState.state.inventory[resKey] || 0).toLocaleString('tr-TR')} adet)
+              </button>` : ''}
             </div>
           </div>
         </div>
@@ -6758,6 +6762,31 @@ function initAppEvents() {
       sound.playLevelUp();
       renderTopBar();
       openTestMenuModal();
+      return;
+    }
+
+    // AMM Pazar: Silodaki bütün hammaddeyi tek tuşla sat (taban fiyat sınırına kadar)
+    const ammSellAllBtn = e.target.closest('.btn-amm-sell-all');
+    if (ammSellAllBtn) {
+      const resKey = ammSellAllBtn.dataset.res;
+      const have = Math.floor((gameState.state.inventory || {})[resKey] || 0);
+      if (have <= 0) { showToast('Siloda satılacak hammadde yok.', 'info'); return; }
+      const maxSell = ammMarket.getMaxSellBeforeFloor ? ammMarket.getMaxSellBeforeFloor(resKey) : Infinity;
+      const qty = Math.min(have, Number.isFinite(maxSell) ? Math.floor(maxSell) : have);
+      if (qty <= 0) { showToast('Pazar fiyatı en alt sınırda; hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.', 'error'); return; }
+      const est = ammMarket.getEstimatedAdAstraForSell ? ammMarket.getEstimatedAdAstraForSell(resKey, qty) : 0;
+      const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
+      const partNote = qty < have ? `\n\nPazar fiyatı en alt sınıra inmesin diye şimdilik ${qty.toLocaleString('tr-TR')} adedi satılabilir; kalan ${(have - qty).toLocaleString('tr-TR')} adet siloda kalır.` : '';
+      if (!confirm(`${qty.toLocaleString('tr-TR')} ${name} satılsın mı?\nTahmini kazanç: ~${Math.floor(est).toLocaleString('tr-TR')} ADA (%2 harç sonrası).${partNote}`)) return;
+      const res = await gameState.marketSell(resKey, qty);
+      if (res && res.success) {
+        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName || name} satıldı: +${Number(res.adAstraReceived || 0).toFixed(2)} ADA${qty < have ? ` (${(have - qty).toLocaleString('tr-TR')} adet taban fiyat sınırı yüzünden siloda kaldı)` : ''}`, 'success');
+        sound.playLevelUp();
+        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
+      } else {
+        showToast((res && res.message) || 'Satış yapılamadı.', 'error');
+      }
+      renderTopBar();
       return;
     }
 

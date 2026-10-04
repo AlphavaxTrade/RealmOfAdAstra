@@ -332,6 +332,28 @@ export class GameStateManager {
     return { total, locked, free: total - locked };
   }
 
+  // 🔓 Kilit açılma tahmini (panel için): kurallar processLockedUnlock ve _onAdaSpent ile aynı
+  getLockedUnlockForecast() {
+    const L = GAME_CONFIG.LOCKED_BALANCE || {};
+    const { locked, free, total } = this.getLockedBalanceInfo();
+    const base = L.WEEKLY_UNLOCK_BASE ?? 0.01, active = L.WEEKLY_UNLOCK_ACTIVE ?? 0.014, spend = L.UNLOCK_ON_SPEND ?? 0.2;
+    const dayBase = 1 - Math.pow(1 - base, 1 / 7);          // zamanla (oyuna girmesen de) günlük
+    const dayActive = active / 7;                            // o gün oyuna girersen ek
+    const tomorrowActive = locked * (1 - (1 - dayBase) * (1 - dayActive));
+    const tomorrowIdle = locked * dayBase;
+    const weekActive = locked * (1 - (1 - base) * Math.pow(1 - dayActive, 7));
+    const weekIdle = locked * base;
+    const today = new Date(this._calendarNow() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+    const loggedToday = !!(this.state.lockUnlock && this.state.lockUnlock.activeDay === today);
+    return {
+      locked, free, total, freeSharePct: Math.round((L.FREE_SHARE ?? 0.2) * 100), spendBonusPct: Math.round(spend * 100),
+      weeklyBasePct: base * 100, weeklyActivePct: active * 100,
+      tomorrowActive, tomorrowIdle, weekActive, weekIdle, loggedToday,
+      // 1.000 ADA harcarsan: harcanan kilitliden düşer, üstüne harcananın %20'si serbest kalır
+      per1000Free: Math.min(Math.max(0, locked - 1000), 1000 * spend)
+    };
+  }
+
   // Oyundan kazanılan ADA: FREE_SHARE serbest, kalanı kilitli. saleOf: pazara satılan hammadde (katkı puanı)
   _onAdaEarned(amount, { saleOf = null } = {}) {
     const v = Number(amount) || 0;
