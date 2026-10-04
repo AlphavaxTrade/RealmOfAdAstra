@@ -37,19 +37,27 @@ E.withPlayer(P, () => null);
   ok('İsimler temizleniyor (asker, diziliş, eski kayıttaki isimler Kolezyumda)');
 }
 
-// 2) Çark hammaddeyle çevrilince yoktan ADA kaydı oluşmaz
+// 2) Çark hammaddeyle çevrilince yoktan ADA kaydı oluşmaz. Ödemenin yarısı pazarda satılır (4 Ekim kararı):
+//    Karnaval kasasına giren ADA pazar havuzundan çıkan gerçek ADA'dır; tek "harcama" kaydı pazarın satış komisyonudur.
 {
   const gp = E.globalPool.state;
-  const spentBefore = gp.totalSpent || 0, burnBefore = gp.totalBurned || 0, creatorBefore = gp.creatorRoyaltyTotal || 0;
+  const spentBefore = gp.totalSpent || 0;
   E.mutatePlayer(P, gs => { gs.state.inventory.wheat = 1e6; gs.state.warehouseLevel = 18; });
-  const r = E.act(P, 'spinCarnivalWheel', ['wheat']);
+  const ammBefore = E.ammMarket.pools.wheat.adAstraReserve;
+  const carnBefore = E.treasury.getPool('carnival');
+  const rnd = Math.random;
+  Math.random = () => 0.99;                       // ödül: çark bileti parçası (pazara dokunmaz)
+  let r;
+  try { r = E.act(P, 'spinCarnivalWheel', ['wheat']); } finally { Math.random = rnd; }
   assert.ok(r.result.success, 'Çark gerçekten çevrildi: ' + r.result.message);
-  {
-    assert.equal(gp.totalSpent || 0, spentBefore, 'Harcama kaydı oluşmadı');
-    assert.equal(gp.totalBurned || 0, burnBefore, 'Yoktan yakım kaydı yok (zincire gerçek yakım gitmez)');
-    assert.equal(gp.creatorRoyaltyTotal || 0, creatorBefore, 'Yoktan yapımcı payı yok');
-  }
-  ok('Çark hammaddeyle çevrilince yoktan para oluşmuyor');
+  const bi = r.result.burnedInfo;
+  const fee = (E.globalPool.state.totalSpent || 0) - spentBefore;
+  const ammDrop = ammBefore - E.ammMarket.pools.wheat.adAstraReserve;
+  assert.ok(bi.soldQty > 0 && bi.carnivalIn > 0, 'Yarısı satılıp Karnaval kasasına girdi');
+  assert.ok(Math.abs(E.treasury.getPool('carnival') - carnBefore - bi.carnivalIn - fee * 0.86 * 0.04) < 1e-6, 'Karnaval kasası satış geliri kadar arttı');
+  assert.ok(Math.abs(ammDrop - bi.carnivalIn - fee) < 1e-6, 'Kasaya giren ADA + komisyon = pazardan çıkan ADA (yoktan para yok)');
+  assert.ok(fee > 0 && fee < 0.05 * bi.carnivalIn, 'Tek harcama kaydı pazarın küçük satış komisyonu (100 ADA değil)');
+  ok('Çark hammaddeyle çevrilince yoktan para oluşmuyor (satılan yarının ADA\'sı pazardan gelir)');
 }
 
 // 3) Serbest metin yerine yalnız oyunun tanımladığı değerler

@@ -9,7 +9,7 @@ import { createWorld } from '../server/world.js';
 import { createApp } from '../server/app.js';
 import { loadConfig } from '../server/config.js';
 import { createMailer } from '../server/mailer.js';
-import { createAccounts } from '../server/accounts.js';
+import { createAccounts, totpCode } from '../server/accounts.js';
 import { allocateWithdrawals, withdrawCapTokens, brakeState, faucetWeekly, nextMultiplier } from '../server/economy.js';
 
 let passed = 0;
@@ -89,9 +89,11 @@ const call = async (method, p, body, token) => {
 async function register(email) {
   const r = await call('POST', '/api/account/register', { email, password: 'gizli-sifre-123' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.ok(!r.body.token && !r.body.playerId, 'Kayıtta oturum açılmaz (e-posta onayıyla girilir)');
   const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
   assert.equal(v.status, 200, 'E-posta doğrulandı');
-  return { token: r.body.token, pid: r.body.playerId };
+  assert.ok(v.body.token, 'Onay bağlantısı oyuncuyu oyuna sokar');
+  return { token: v.body.token, pid: v.body.playerId };
 }
 async function linkWallet(token, wallet) {
   const n = await call('POST', '/api/account/wallet/nonce', { address: wallet.address }, token);
@@ -109,7 +111,24 @@ try {
   assert.equal((await call('POST', '/api/account/register', { email: 'k@s.com', password: 'kisa' })).status, 400, 'Kısa şifre');
   const { token: tA, pid: pidA } = await register('alice@ornek.com');
   const { token: tB, pid: pidB } = await register('bob@ornek.com');
-  assert.equal((await call('POST', '/api/account/register', { email: 'ALICE@ornek.com', password: 'gizli-sifre-123' })).status, 400, 'Aynı e-postayla ikinci hesap açılmaz');
+  // Kayıt ekranı e-postanın kayıtlı olup olmadığını ele vermez: aynı yanıt, yeni hesap açılmaz, sahibine uyarı gider
+  const accCount = () => db.raw.prepare('SELECT COUNT(*) AS n FROM accounts').get().n;
+  const nBefore = accCount();
+  const dupReg = await call('POST', '/api/account/register', { email: 'ALICE@ornek.com', password: 'baska-sifre-999' });
+  const fresh = await call('POST', '/api/account/register', { email: 'yeni@ornek.com', password: 'gizli-sifre-123' });
+  assert.equal(dupReg.status, 200);
+  assert.deepEqual(Object.keys(dupReg.body).sort(), Object.keys(fresh.body).sort(), 'Var olan ve yeni e-postaya aynı yanıt');
+  assert.equal(dupReg.body.message, fresh.body.message);
+  assert.equal(accCount(), nBefore + 1, 'Aynı e-postayla ikinci hesap açılmadı');
+  assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'alice@ornek.com' && /zaten bir hesab/.test(m.subject)), 'Hesap sahibine "zaten hesabın var" e-postası gitti');
+  // Doğrulanmamış hesap şifreyle giremez ve yanıt yanlış şifreyle aynıdır
+  const unv = await call('POST', '/api/account/login', { email: 'yeni@ornek.com', password: 'gizli-sifre-123' });
+  const wrong = await call('POST', '/api/account/login', { email: 'yeni@ornek.com', password: 'yanlis-sifre-0' });
+  assert.equal(unv.status, 401);
+  assert.equal(unv.body.error, wrong.body.error, 'Doğrulanmamış hesap ile yanlış şifre aynı yanıtı alır');
+  const rv = await call('POST', '/api/account/resend', { email: 'yeni@ornek.com' });
+  const rvNone = await call('POST', '/api/account/resend', { email: 'hic-yok@ornek.com' });
+  assert.equal(rv.body.message, rvNone.body.message, 'Yeniden gönderme de hesap varlığını ele vermez');
   assert.equal((await call('POST', '/api/account/login', { email: 'alice@ornek.com', password: 'yanlis-sifre' })).status, 401, 'Yanlış şifre');
   assert.equal((await call('POST', '/api/account/login', { email: 'alice@ornek.com', password: 'gizli-sifre-123' })).status, 200, 'Doğru şifre');
   for (let i = 0; i < 10; i++) await call('POST', '/api/account/login', { email: 'eve@ornek.com', password: 'tahmin' + i });
@@ -124,6 +143,58 @@ try {
   const relog = await call('POST', '/api/account/login', { email: 'bob@ornek.com', password: 'yeni-sifre-456' });
   const tB2 = relog.body.token;
   ok('Hesap: kayıt, doğrulama, hatalı girişler, kilit, şifre sıfırlama');
+  ok('Kayıt ekranı e-postanın kayıtlı olup olmadığını ele vermiyor; doğrulanmamış hesap giremiyor');
+
+  // 🛡️ İki adımlı doğrulama (Muhafız Mührü)
+  {
+    const { token: tC } = await register('carol@ornek.com');
+    const step = () => Math.floor(now / 30000);
+    const su = await call('POST', '/api/account/2fa/setup', null, tC);
+    assert.equal(su.status, 200);
+    assert.ok(/^otpauth:\/\/totp\//.test(su.body.uri) && su.body.qr.startsWith('data:image/svg+xml;base64,'), 'Kare kod ve uygulama bağlantısı');
+    assert.equal((await call('POST', '/api/account/2fa/enable', { code: '000000' }, tC)).status, 400, 'Yanlış kodla açılmaz');
+    const en = await call('POST', '/api/account/2fa/enable', { code: totpCode(su.body.secret, step()) }, tC);
+    assert.equal(en.status, 200, JSON.stringify(en.body));
+    assert.equal(en.body.backupCodes.length, 10, '10 yedek kod');
+    assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'carol@ornek.com' && /AÇILDI/.test(m.subject)), 'Açılınca e-posta bildirimi');
+    assert.equal((await call('GET', '/api/account/me', null, tC)).body.twoFactor, true);
+    // Giriş: şifre doğru → kod istenir; aynı kod ikinci kez kullanılamaz
+    const l1 = await call('POST', '/api/account/login', { email: 'carol@ornek.com', password: 'gizli-sifre-123' });
+    assert.ok(l1.body.need2fa && l1.body.ticket && !l1.body.token, 'Şifre tek başına yetmez');
+    assert.equal((await call('POST', '/api/account/login2fa', { ticket: l1.body.ticket, code: totpCode(su.body.secret, step()) })).status, 401, 'Az önce kullanılan kod tekrar kullanılamaz');
+    now += 30000;
+    const l2 = await call('POST', '/api/account/login2fa', { ticket: l1.body.ticket, code: totpCode(su.body.secret, step()) });
+    assert.equal(l2.status, 200, JSON.stringify(l2.body));
+    const tC2 = l2.body.token;
+    // Yedek kod bir kez geçer
+    const l3 = await call('POST', '/api/account/login', { email: 'carol@ornek.com', password: 'gizli-sifre-123' });
+    assert.equal((await call('POST', '/api/account/login2fa', { ticket: l3.body.ticket, code: en.body.backupCodes[0] })).status, 200, 'Yedek kodla giriş');
+    const l4 = await call('POST', '/api/account/login', { email: 'carol@ornek.com', password: 'gizli-sifre-123' });
+    assert.equal((await call('POST', '/api/account/login2fa', { ticket: l4.body.ticket, code: en.body.backupCodes[0] })).status, 401, 'Aynı yedek kod ikinci kez geçmez');
+    // Para ve cüzdan işlemleri kod ister
+    const wNo = await call('POST', '/api/withdraw', { amount: 100 }, tC2);
+    assert.ok(wNo.status === 403 && wNo.body.need2fa, 'Çekim kod ister');
+    const cw = ethers.Wallet.createRandom();
+    const cn = await call('POST', '/api/account/wallet/nonce', { address: cw.address }, tC2);
+    const sig = await cw.signMessage(cn.body.message);
+    const lNo = await call('POST', '/api/account/wallet/link', { signature: sig }, tC2);
+    assert.ok(lNo.status === 403 && lNo.body.need2fa, 'Cüzdan bağlama kod ister');
+    now += 30000;
+    const lOk = await call('POST', '/api/account/wallet/link', { signature: sig, code: totpCode(su.body.secret, step()) }, tC2);
+    assert.equal(lOk.status, 200, 'Kodla cüzdan bağlama: ' + JSON.stringify(lOk.body));
+    // 5 yanlış koddan sonra kilit
+    for (let i = 0; i < 5; i++) await call('POST', '/api/withdraw', { amount: 100, code: '11111' + i }, tC2);
+    now += 30000;
+    const lockd = await call('POST', '/api/withdraw', { amount: 100, code: totpCode(su.body.secret, step()) }, tC2);
+    assert.ok(/15 dakika/.test(lockd.body.error), '5 yanlış koddan sonra 15 dakika kilit');
+    now += 16 * 60000;
+    // Kapatma da kod ister
+    assert.equal((await call('POST', '/api/account/2fa/disable', {}, tC2)).status, 403);
+    const off = await call('POST', '/api/account/2fa/disable', { code: totpCode(su.body.secret, step()) }, tC2);
+    assert.equal(off.status, 200, JSON.stringify(off.body));
+    assert.equal((await call('GET', '/api/account/me', null, tC2)).body.twoFactor, false);
+    ok('Muhafız Mührü: kare kod, giriş kodu, tekrar kullanım engeli, yedek kodlar, para/cüzdan işlemleri, kilit, kapatma');
+  }
 
   // Cüzdan bağlama: sahte imza reddedilir; ilk bağlama e-posta onayıyla hemen; değişiklik 48 saat bekler
   const nn = await call('POST', '/api/account/wallet/nonce', { address: eve.address }, tB2);
@@ -230,7 +301,7 @@ try {
   ok('Haftalık hesaplaşma: çekim havuzdan karşılanıp zincire gönderildi, ücret ve kira düşüldü');
 
   // Ücretsiz oyuncu havuzu Alice'e (hiç yatırma yapmamış, bu hafta oynamış)
-  assert.equal(summary.faucet.players, 1, 'Yalnız Alice ücretsiz oyuncu');
+  assert.equal(summary.faucet.players, 2, 'Ücretsiz oyuncular: Alice ve Carol (doğrulanmış, hiç yatırmamış); Bob yatırdı, yeni@ doğrulanmadı');
   const aAfter = (await call('GET', '/api/state', null, tA)).body.player;
   assert.ok(summary.faucet.perPlayer > 0 && aAfter.adAstraBalance >= aliceBeforeWeek + summary.faucet.perPlayer - 1, 'Alice ücretsiz havuz payını aldı');
   // Yakım ve yapımcı payı zincire

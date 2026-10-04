@@ -94,69 +94,29 @@ for (let i = 0; i < 50; i++) {
 assert(droppedScrolls > 0, '50 Boss zaferinde en az bir parşömen düşmeli (%40 şans)');
 console.log(`✅ Boss zaferlerinde parşömen düşme mekaniği doğrulandı (${droppedScrolls}/50 düşüş).`);
 
-// Test 5: Karnaval Çarkında Demir, Odun ve Buğdayların Anında Yakılması & Sistemden Silinmesi
-console.log('\n[5/6] Karnaval Çarkında Demir, Odun ve Buğdayların Yakılması Test Ediliyor...');
+// Test 5: Karnaval Çarkı hammaddeyle (kullanıcı kararı 4 Ekim 2026): ödenen hammaddenin YARISI yakılır,
+// YARISI pazarda satılır ve gelen ADA Karnaval kasasına girer.
+console.log('\n[5/6] Karnaval Çarkında hammadde ödemesi: yarısı yakılır, yarısı satılıp Karnaval kasasına...');
 gs.state.warehouseLevel = 18;
-gs.state.inventory.wood = 5000;
-gs.state.inventory.iron = 5000;
-gs.state.inventory.wheat = 5000;
-
-const initialWoodReserve = ammMarket.pools.wood?.resourceReserve || 0;
-const initialIronReserve = ammMarket.pools.iron?.resourceReserve || 0;
-const initialWheatReserve = ammMarket.pools.wheat?.resourceReserve || 0;
-
-// Odun ile çevir
-const preWood = gs.state.inventory.wood;
-const woodPrice = ammMarket.getPrice('wood') || 1.0;
-const expectedWoodCost = Math.ceil(100 / woodPrice);
-const spinWoodRes = gs.spinCarnivalWheel('wood');
-assert(spinWoodRes.success, 'Odun ile çark çevirme başarılı olmalı');
-assert(spinWoodRes.burnedInfo, 'burnedInfo dönmeli');
-assert.equal(spinWoodRes.burnedInfo.resource, 'wood');
-assert.equal(spinWoodRes.burnedInfo.amount, expectedWoodCost);
-let wonWood = 0;
-if (spinWoodRes.slice?.type === 'resource' && spinWoodRes.slice?.key === 'wood') {
-  wonWood = spinWoodRes.slice.amount;
-} else if (spinWoodRes.slice?.type === 'amm_raw' && spinWoodRes.slice?.key === 'wood') {
-  wonWood = Math.round(spinWoodRes.slice.adaVal / (ammMarket.getPrice('wood') || 1.0));
+for (const res of ['wood', 'iron', 'wheat']) {
+  gs.state.inventory[res] = 5000;
+  const price = ammMarket.getPrice(res) || 1.0;
+  const cost = Math.ceil(100 / price);
+  const burnedBefore = (gs.state.burnedResources && gs.state.burnedResources[res]) || 0;
+  const r = gs.spinCarnivalWheel(res);
+  assert(r.success, res + ' ile çark çevirme başarılı olmalı');
+  const bi = r.burnedInfo;
+  assert(bi && bi.resource === res, 'burnedInfo dönmeli');
+  assert.equal(bi.amount + bi.soldQty, cost, 'Yakılan + satılan = ödenen hammadde');
+  assert.equal(bi.soldQty, Math.floor(cost / 2), 'Yarısı pazarda satıldı');
+  assert(bi.carnivalIn > 0, 'Satıştan gelen ADA Karnaval kasasına girdi');
+  assert.equal(gs.state.burnedResources[res] - burnedBefore, bi.amount, 'Kalan yarı yakıldı');
+  let won = 0;
+  if (r.slice?.type === 'amm_raw' && r.slice?.key === res) won = Math.round(r.slice.adaVal / (ammMarket.getPrice(res) || 1.0));
+  assert(gs.state.inventory[res] >= 5000 - cost, 'Envanterden ödeme düştü');
+  if (!won) assert.equal(gs.state.inventory[res], 5000 - cost, 'Envanterden tam ödeme düştü');
 }
-assert.equal(gs.state.inventory.wood, preWood - expectedWoodCost + wonWood, 'Envanterden odun tam düşmeli');
-assert(ammMarket.pools.wood.resourceReserve <= initialWoodReserve, 'AMM havuz rezervine ASLA harcanan odun eklenmemeli, yanmalı');
-assert.equal(gs.state.burnedResources.wood, expectedWoodCost, 'burnedResources.wood kaydedilmeli');
-
-// Demir ile çevir
-const preIron = gs.state.inventory.iron;
-const ironPrice = ammMarket.getPrice('iron') || 1.0;
-const expectedIronCost = Math.ceil(100 / ironPrice);
-const spinIronRes = gs.spinCarnivalWheel('iron');
-assert(spinIronRes.success, 'Demir ile çark çevirme başarılı olmalı');
-let wonIron = 0;
-if (spinIronRes.slice?.type === 'resource' && spinIronRes.slice?.key === 'iron') {
-  wonIron = spinIronRes.slice.amount;
-} else if (spinIronRes.slice?.type === 'amm_raw' && spinIronRes.slice?.key === 'iron') {
-  wonIron = Math.round(spinIronRes.slice.adaVal / (ammMarket.getPrice('iron') || 1.0));
-}
-assert(gs.state.inventory.iron >= preIron - expectedIronCost, 'Envanterden demir tam düşmeli');
-assert(ammMarket.pools.iron.resourceReserve <= initialIronReserve, 'AMM havuz rezervine ASLA harcanan demir eklenmemeli, yanmalı');
-assert.equal(gs.state.burnedResources.iron, expectedIronCost, 'burnedResources.iron kaydedilmeli');
-
-// Buğday ile çevir
-const preWheat = gs.state.inventory.wheat;
-const wheatPrice = ammMarket.getPrice('wheat') || 1.0;
-const expectedWheatCost = Math.ceil(100 / wheatPrice);
-const spinWheatRes = gs.spinCarnivalWheel('wheat');
-assert(spinWheatRes.success, 'Buğday ile çark çevirme başarılı olmalı');
-let wonWheat = 0;
-if (spinWheatRes.slice?.type === 'resource' && spinWheatRes.slice?.key === 'wheat') {
-  wonWheat = spinWheatRes.slice.amount;
-} else if (spinWheatRes.slice?.type === 'amm_raw' && spinWheatRes.slice?.key === 'wheat') {
-  wonWheat = Math.round(spinWheatRes.slice.adaVal / (ammMarket.getPrice('wheat') || 1.0));
-}
-assert(gs.state.inventory.wheat >= preWheat - expectedWheatCost, 'Envanterden buğday tam düşmeli');
-assert(ammMarket.pools.wheat.resourceReserve <= initialWheatReserve, 'AMM havuz rezervine ASLA harcanan buğday eklenmemeli, yanmalı');
-assert.equal(gs.state.burnedResources.wheat, expectedWheatCost, 'burnedResources.wheat kaydedilmeli');
-
-console.log('✅ Karnaval çarkında harcanan odun, demir ve buğdayların anında yakılarak yok edildiği %100 doğrulandı.');
+console.log('✅ Hammaddeyle çark: yarısı yakıldı, yarısı satılıp Karnaval kasasına girdi.');
 
 // Test 5.1: SoldierUnits üzerinde spesifik Asker ID ile Ordu İyileştirme Parşömeni
 gs.state.soldierUnits = [
@@ -198,9 +158,9 @@ ecoSummary.pools.forEach(p => {
 
 assert(ecoSummary.lottery.lotteryPool >= 20000000, 'Piyango kasası 20.000.000+ ADA olmalı');
 assert(ecoSummary.lottery.winnerShare >= 200, 'Piyango kazanan payı 2x bilet çarpanı kuralına göre hesaplanmalı');
-assert(ecoSummary.burnedResources.wood >= expectedWoodCost, 'Yakılan odun özette görünmeli');
-assert(ecoSummary.burnedResources.iron >= expectedIronCost, 'Yakılan demir özette görünmeli');
-assert(ecoSummary.burnedResources.wheat >= expectedWheatCost, 'Yakılan buğday özette görünmeli');
+assert(ecoSummary.burnedResources.wood > 0, 'Yakılan odun özette görünmeli');
+assert(ecoSummary.burnedResources.iron > 0, 'Yakılan demir özette görünmeli');
+assert(ecoSummary.burnedResources.wheat > 0, 'Yakılan buğday özette görünmeli');
 
 console.log('✅ Hazine gelir dağılımı, havuz ödül bakiyeleri ve piyango telemetrisi %100 doğrulandı.');
 

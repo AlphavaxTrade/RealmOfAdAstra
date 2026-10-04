@@ -34,29 +34,7 @@
       </div>
     </div>
   </div>
-  <script>
-    // Failsafe: Loading screen her durumda 3 saniyede kapanır (JS modül hatasından bağımsız)
-    (function() {
-      var fill = document.getElementById('loading-bar-fill');
-      var pct = document.getElementById('loading-percentage');
-      var screen = document.getElementById('loading-screen');
-      var p = 0;
-      var iv = setInterval(function() {
-        p += Math.floor(Math.random() * 12) + 8;
-        if (p >= 95) { p = 95; clearInterval(iv); }
-        if (fill) fill.style.width = p + '%';
-        if (pct) pct.innerText = '%' + p;
-      }, 80);
-      setTimeout(function() {
-        clearInterval(iv);
-        if (fill) fill.style.width = '100%';
-        if (pct) pct.innerText = '%100';
-        setTimeout(function() {
-          if (screen) { screen.style.opacity = '0'; setTimeout(function(){ screen.style.display = 'none'; }, 500); }
-        }, 300);
-      }, 2500);
-    })();
-  </script>
+  <script src="/boot.js"></script>
 
   <!-- ============================================================
        0. TOP ANNOUNCEMENT & RISK WARNING TICKER (KAYAN DUYURU PANELI)

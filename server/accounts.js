@@ -7,8 +7,16 @@
 //    bekler: şifre çalınsa bile hırsız kazancı hemen kendi cüzdanına çekemez; gerçek sahip bu sürede iptal eder.
 //  • Oyuncu kimliği "acc:<numara>"; oyun kaydı, sıralama ve ödemeler bu kimlikle tutulur. Ödemeler her zaman
 //    hesabın ETKİN cüzdanına gider.
+// Güvenlik (4 Ekim 2026):
+//  • Kayıt ekranı bir e-postanın kayıtlı olup olmadığını ELE VERMEZ: her durumda "e-postana bağlantı gönderdik" der.
+//    Adres zaten kayıtlıysa o adrese "zaten hesabın var / şifreni sıfırla" e-postası gider. Bu yüzden yeni oyuncu
+//    e-postasındaki bağlantıya tıklayınca oyuna girer; doğrulanmamış hesap şifreyle giriş yapamaz (aynı hata yanıtı).
+//  • İki adımlı doğrulama (isteğe bağlı): telefondaki doğrulama uygulamasının 6 haneli kodu (TOTP, RFC 6238).
+//    Açıksa kod; girişte, cüzdan bağlarken/değiştirirken, çekimde, kasadan çekimde ve kapatırken istenir.
+//    Telefon kaybına karşı 10 tek kullanımlık yedek kod verilir. Şifre/iki adımlı doğrulama değişince e-posta gider.
 // ============================================================================
 import crypto from 'node:crypto';
+import QRCode from 'qrcode';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS accounts (
@@ -28,6 +36,36 @@ CREATE TABLE IF NOT EXISTS email_tokens (
 );
 CREATE TABLE IF NOT EXISTS wallet_nonces (account_id INTEGER PRIMARY KEY, address TEXT NOT NULL, message TEXT NOT NULL, expires INTEGER NOT NULL);
 `;
+
+const MIGRATIONS = ['totp_secret TEXT', 'totp_pending TEXT', 'totp_enabled INTEGER NOT NULL DEFAULT 0', 'totp_step INTEGER NOT NULL DEFAULT 0', 'backup_codes TEXT'];
+
+// ── TOTP (doğrulama uygulaması kodları) ─────────────────────────────────────
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+export function base32(buf) {
+  let bits = 0, val = 0, out = '';
+  for (const b of buf) { val = (val << 8) | b; bits += 8; while (bits >= 5) { out += B32[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+  if (bits > 0) out += B32[(val << (5 - bits)) & 31];
+  return out;
+}
+function unbase32(s) {
+  let bits = 0, val = 0; const out = [];
+  for (const ch of String(s).replace(/=+$/, '').toUpperCase()) {
+    const i = B32.indexOf(ch); if (i < 0) continue;
+    val = (val << 5) | i; bits += 5;
+    if (bits >= 8) { out.push((val >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  return Buffer.from(out);
+}
+export function totpCode(secretB32, step) {
+  const msg = Buffer.alloc(8);
+  msg.writeBigUInt64BE(BigInt(step));
+  const h = crypto.createHmac('sha1', unbase32(secretB32)).update(msg).digest();
+  const o = h[h.length - 1] & 15;
+  const n = ((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
+  return String(n % 1e6).padStart(6, '0');
+}
+const sha = s => crypto.createHash('sha256').update(s).digest('hex');
+const normCode = c => String(c || '').toLowerCase().replace(/[\s-]/g, '');
 
 export const WALLET_CHANGE_DELAY_MS = 48 * 3600 * 1000;
 export const playerIdOf = accountId => 'acc:' + accountId;
@@ -51,6 +89,7 @@ const DUMMY_HASH = hashPassword('zamanlama-esitleme-icin');
 
 export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), verifyMessage }) {
   db.raw.exec(SCHEMA);
+  for (const col of MIGRATIONS) { try { db.raw.exec('ALTER TABLE accounts ADD COLUMN ' + col); } catch { /* sütun zaten var */ } }
   const q = {
     byEmail: db.raw.prepare('SELECT * FROM accounts WHERE email = ?'),
     byId: db.raw.prepare('SELECT * FROM accounts WHERE id = ?'),
@@ -68,7 +107,12 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     nonceSet: db.raw.prepare('INSERT INTO wallet_nonces (account_id, address, message, expires) VALUES (?, ?, ?, ?) ON CONFLICT(account_id) DO UPDATE SET address = excluded.address, message = excluded.message, expires = excluded.expires'),
     nonceGet: db.raw.prepare('SELECT * FROM wallet_nonces WHERE account_id = ?'),
     nonceDel: db.raw.prepare('DELETE FROM wallet_nonces WHERE account_id = ?'),
-    sessionsOf: db.raw.prepare('DELETE FROM sessions WHERE address = ?')
+    sessionsOf: db.raw.prepare('DELETE FROM sessions WHERE address = ?'),
+    totpPending: db.raw.prepare('UPDATE accounts SET totp_pending = ? WHERE id = ?'),
+    totpOn: db.raw.prepare('UPDATE accounts SET totp_secret = totp_pending, totp_pending = NULL, totp_enabled = 1, totp_step = ?, backup_codes = ? WHERE id = ?'),
+    totpOff: db.raw.prepare('UPDATE accounts SET totp_secret = NULL, totp_pending = NULL, totp_enabled = 0, totp_step = 0, backup_codes = NULL WHERE id = ?'),
+    totpStep: db.raw.prepare('UPDATE accounts SET totp_step = ? WHERE id = ?'),
+    backupSet: db.raw.prepare('UPDATE accounts SET backup_codes = ? WHERE id = ?')
   };
   const link = (param, token) => `${cfg.publicUrl.replace(/\/$/, '')}/?${param}=${token}`;
   const newToken = (accountId, kind, ttlMs, data = null) => {
@@ -104,19 +148,135 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return acc;
   }
 
+  // Aynı adrese kısa sürede tekrar tekrar e-posta gitmesin (kayıt / yeniden gönderme kötüye kullanılmasın)
+  const mailedAt = new Map();
+  const mayMail = (key, gapMs = 10 * 60000) => {
+    const now = clock(); const t = mailedAt.get(key) || 0;
+    if (now - t < gapMs) return false;
+    mailedAt.set(key, now); if (mailedAt.size > 100000) mailedAt.clear();
+    return true;
+  };
+  const SENT_MSG = '📧 E-postana bir bağlantı gönderdik. Oyuna girmek için gelen kutundaki bağlantıya tıkla (gereksiz / spam klasörüne de bak).';
+
+  // Her durumda AYNI yanıt: e-postanın kayıtlı olup olmadığı anlaşılmaz
   async function register(email, password) {
     const e = String(email || '').trim().toLowerCase();
     if (!EMAIL_RE.test(e) || e.length > 254) return { ok: false, error: 'Geçerli bir e-posta adresi yaz.' };
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
-    if (q.byEmail.get(e)) return { ok: false, error: 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı ya da şifreni sıfırlamayı dene.' };
-    const r = q.insert.run(e, hashPassword(password), clock());
+    const pass = hashPassword(password);                   // var olan hesapta da aynı süre geçsin
+    const old = q.byEmail.get(e);
+    if (old) {
+      let extra = {};
+      if (mayMail('reg:' + old.id)) {
+        q.tokensDelKind.run(old.id, 'reset');
+        const url = link('reset', newToken(old.id, 'reset', 3600000));
+        let verifyPart = '';
+        if (!old.email_verified) {
+          q.tokensDelKind.run(old.id, 'verify');
+          verifyPart = `\n\nHesabını henüz doğrulamadıysan bu bağlantıyla doğrulayabilirsin:\n${link('verify', newToken(old.id, 'verify', 7 * 86400000))}`;
+        }
+        await mailer.send({ to: e, subject: 'Realm of Astra — bu e-postayla zaten bir hesabın var',
+          text: `Biri (büyük ihtimalle sen) bu e-postayla yeniden kayıt olmayı denedi. Bu e-postayla zaten bir hesabın var. 👑\n\nŞifreni hatırlıyorsan oyuna giriş yapman yeterli. Unuttuysan bu bağlantıyla yeni şifre belirle (1 saat geçerli):\n${url}${verifyPart}\n\nBunu sen yapmadıysan bu e-postayı yok say; hesabında hiçbir şey değişmedi.` });
+        extra = devLink(url);
+      }
+      db.event('register-existing', playerIdOf(old.id));
+      return { ok: true, sent: true, message: SENT_MSG, ...extra };
+    }
+    const r = q.insert.run(e, pass, clock());
     const id = Number(r.lastInsertRowid);
     db.q.playerAdd.run(playerIdOf(id), clock(), clock());
     const t = newToken(id, 'verify', 7 * 86400000);
     const url = link('verify', t);
-    await mailer.send({ to: e, subject: 'Realm of Astra — e-postanı doğrula', text: `Krallığa hoş geldin! 👑\n\nHesabını doğrulamak için bu bağlantıya tıkla:\n${url}\n\nBu hesabı sen açmadıysan bu e-postayı yok sayabilirsin.` });
+    await mailer.send({ to: e, subject: 'Realm of Astra — e-postanı doğrula ve krallığa gir', text: `Krallığa hoş geldin! 👑\n\nHesabını doğrulayıp oyuna girmek için bu bağlantıya tıkla:\n${url}\n\nBu hesabı sen açmadıysan bu e-postayı yok sayabilirsin.` });
     db.event('register', playerIdOf(id));
-    return { ok: true, playerId: playerIdOf(id), ...devLink(url) };
+    return { ok: true, sent: true, message: SENT_MSG, ...devLink(url), playerId: playerIdOf(id) };   // playerId yalnız sunucu içi (yanıta konmaz)
+  }
+
+  // ── İki adımlı doğrulama ────────────────────────────────────────────────
+  const tfaFails = new Map();
+  const tfaLocked = id => { const f = tfaFails.get(id); return !!(f && clock() - f.t < 15 * 60000 && f.n >= 5); };
+  const tfaFail = id => { const now = clock(); let f = tfaFails.get(id); if (!f || now - f.t >= 15 * 60000) f = { t: now, n: 0 }; f.n++; tfaFails.set(id, f); if (tfaFails.size > 100000) tfaFails.clear(); };
+  const stepNow = () => Math.floor(clock() / 30000);
+  // Kod doğruysa kullanılan adımı döndürür (aynı kod ikinci kez kullanılamaz)
+  function matchTotp(secret, code, lastStep = 0) {
+    const c = normCode(code);
+    if (!/^\d{6}$/.test(c) || !secret) return 0;
+    for (const w of [0, -1, 1]) {
+      const s = stepNow() + w;
+      if (s > lastStep && crypto.timingSafeEqual(Buffer.from(totpCode(secret, s)), Buffer.from(c))) return s;
+    }
+    return 0;
+  }
+
+  // İki adımlı doğrulama açıksa kod (ya da yedek kod) şart; kapalıysa her zaman geçer
+  function check2fa(playerId, code) {
+    const acc = q.byId.get(accountIdOf(playerId));
+    if (!acc || !acc.totp_enabled) return { ok: true };
+    if (code == null || code === '') return { ok: false, need2fa: true, error: '🛡️ İki adımlı doğrulama kodunu yaz.' };
+    if (tfaLocked(acc.id)) return { ok: false, need2fa: true, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
+    const s = matchTotp(acc.totp_secret, code, acc.totp_step);
+    if (s) { q.totpStep.run(s, acc.id); tfaFails.delete(acc.id); return { ok: true }; }
+    const list = JSON.parse(acc.backup_codes || '[]');
+    const h = sha(normCode(code));
+    const i = list.indexOf(h);
+    if (i >= 0 && normCode(code).length >= 8) {
+      list.splice(i, 1);
+      q.backupSet.run(JSON.stringify(list), acc.id);
+      tfaFails.delete(acc.id);
+      db.event('2fa-backup-used', playerId, { left: list.length });
+      return { ok: true, usedBackup: true, backupLeft: list.length };
+    }
+    tfaFail(acc.id);
+    return { ok: false, need2fa: true, error: 'Kod hatalı ya da süresi geçmiş.' };
+  }
+
+  async function totpSetup(playerId) {
+    const acc = q.byId.get(accountIdOf(playerId));
+    if (!acc) return { ok: false, error: 'Hesap yok' };
+    if (acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama zaten açık.' };
+    const secret = base32(crypto.randomBytes(20));
+    q.totpPending.run(secret, acc.id);
+    const uri = `otpauth://totp/${encodeURIComponent('Realm of Astra:' + acc.email)}?secret=${secret}&issuer=${encodeURIComponent('Realm of Astra')}&digits=6&period=30`;
+    const svg = await QRCode.toString(uri, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
+    return { ok: true, secret, uri, qr: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64') };
+  }
+
+  async function totpEnable(playerId, code) {
+    const acc = q.byId.get(accountIdOf(playerId));
+    if (!acc || !acc.totp_pending) return { ok: false, error: 'Önce kurulumu başlat.' };
+    if (tfaLocked(acc.id)) return { ok: false, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
+    const s = matchTotp(acc.totp_pending, code, 0);
+    if (!s) { tfaFail(acc.id); return { ok: false, error: 'Kod tutmadı. Uygulamadaki güncel 6 haneli kodu yaz.' }; }
+    const codes = Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
+    q.totpOn.run(s, JSON.stringify(codes.map(c => sha(normCode(c)))), acc.id);
+    db.event('2fa-on', playerId);
+    await mailer.send({ to: acc.email, subject: 'Realm of Astra — iki adımlı doğrulama AÇILDI', text: 'Hesabında iki adımlı doğrulama açıldı. 🛡️ Artık girişte telefonundaki koda da ihtiyaç olacak.\n\nBunu sen yapmadıysan hemen şifreni sıfırla ve bize yaz.' }).catch(() => {});
+    return { ok: true, backupCodes: codes };
+  }
+
+  async function totpDisable(playerId, code) {
+    const acc = q.byId.get(accountIdOf(playerId));
+    if (!acc || !acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama zaten kapalı.' };
+    const g = check2fa(playerId, code);
+    if (!g.ok) return g;
+    q.totpOff.run(acc.id);
+    db.event('2fa-off', playerId);
+    await mailer.send({ to: acc.email, subject: 'Realm of Astra — iki adımlı doğrulama KAPATILDI', text: 'Hesabında iki adımlı doğrulama kapatıldı.\n\nBunu sen yapmadıysan hemen şifreni sıfırla, ardından iki adımlı doğrulamayı yeniden aç.' }).catch(() => {});
+    return { ok: true };
+  }
+
+  // Şifre doğru + iki adımlı doğrulama açık: kısa ömürlü giriş bileti (5 dakika, en çok 5 deneme)
+  const tickets = new Map();
+  function login2fa(ticket, code) {
+    const t = typeof ticket === 'string' ? tickets.get(ticket) : null;
+    if (!t || t.exp < clock()) { if (t) tickets.delete(ticket); return { ok: false, error: 'Giriş süresi doldu, baştan giriş yap.' }; }
+    const g = check2fa(t.playerId, code);
+    if (!g.ok) {
+      if (++t.tries >= 5) tickets.delete(ticket);
+      return { ok: false, error: g.error };
+    }
+    tickets.delete(ticket);
+    return { ok: true, playerId: t.playerId, backupLeft: g.backupLeft };
   }
 
   function login(email, password, ip = '') {
@@ -124,8 +284,17 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (locked('e:' + e) || locked('i:' + ip)) return { ok: false, error: 'Çok fazla hatalı deneme. 15 dakika sonra tekrar dene.' };
     const acc = q.byEmail.get(e);
     const good = acc ? checkPassword(String(password || ''), acc.pass_hash) : (checkPassword('x', DUMMY_HASH), false);
-    if (!good) { noteFail('e:' + e); noteFail('i:' + ip); return { ok: false, error: 'E-posta ya da şifre hatalı.' }; }
+    // Doğrulanmamış hesap da AYNI yanıtı alır (e-postanın kayıtlı olup olmadığı anlaşılmasın)
+    const BAD = 'E-posta ya da şifre hatalı. Yeni kayıt olduysan önce e-postandaki bağlantıya tıkla.';
+    if (!good) { noteFail('e:' + e); noteFail('i:' + ip); return { ok: false, error: BAD }; }
+    if (!acc.email_verified) return { ok: false, error: BAD };
     fails.delete('e:' + e);
+    if (acc.totp_enabled) {
+      const ticket = crypto.randomBytes(24).toString('hex');
+      tickets.set(ticket, { playerId: playerIdOf(acc.id), exp: clock() + 5 * 60000, tries: 0 });
+      if (tickets.size > 50000) for (const [k, v] of tickets) if (v.exp < clock()) tickets.delete(k);
+      return { ok: true, need2fa: true, ticket };
+    }
     return { ok: true, playerId: playerIdOf(acc.id) };
   }
 
@@ -133,17 +302,23 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const t = takeToken(token, 'verify');
     if (!t) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
     q.setVerified.run(t.account_id);
-    return { ok: true, playerId: playerIdOf(t.account_id) };
+    const acc = q.byId.get(t.account_id);
+    // Bağlantı oyuncuyu doğrudan oyuna sokar; iki adımlı doğrulama açıksa (eski hesap) yine kodla giriş gerekir
+    return { ok: true, playerId: playerIdOf(t.account_id), canLogin: !(acc && acc.totp_enabled) };
   }
 
-  async function resendVerify(playerId) {
-    const acc = q.byId.get(accountIdOf(playerId));
-    if (!acc) return { ok: false, error: 'Hesap yok' };
-    if (acc.email_verified) return { ok: true, already: true };
-    q.tokensDelKind.run(acc.id, 'verify');
-    const url = link('verify', newToken(acc.id, 'verify', 7 * 86400000));
-    await mailer.send({ to: acc.email, subject: 'Realm of Astra — e-postanı doğrula', text: `Hesabını doğrulamak için:\n${url}` });
-    return { ok: true, ...devLink(url) };
+  // Doğrulama e-postasını yeniden gönder (e-postayla; yanıt her zaman aynı)
+  async function resendVerify(email) {
+    const e = String(email || '').trim().toLowerCase();
+    const acc = EMAIL_RE.test(e) ? q.byEmail.get(e) : null;
+    let extra = {};
+    if (acc && !acc.email_verified && mayMail('rv:' + acc.id, 2 * 60000)) {
+      q.tokensDelKind.run(acc.id, 'verify');
+      const url = link('verify', newToken(acc.id, 'verify', 7 * 86400000));
+      await mailer.send({ to: acc.email, subject: 'Realm of Astra — e-postanı doğrula', text: `Hesabını doğrulayıp oyuna girmek için:\n${url}` });
+      extra = devLink(url);
+    }
+    return { ok: true, message: 'Bu e-posta ile doğrulanmamış bir hesap varsa bağlantı yeniden gönderildi.', ...extra };
   }
 
   // Kullanıcı varlığını ele vermemek için her zaman aynı yanıt
@@ -151,7 +326,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const e = String(email || '').trim().toLowerCase();
     const acc = q.byEmail.get(e);
     let extra = {};
-    if (acc) {
+    if (acc && mayMail('fg:' + acc.id, 60000)) {
       q.tokensDelKind.run(acc.id, 'reset');
       const url = link('reset', newToken(acc.id, 'reset', 3600000));
       await mailer.send({ to: e, subject: 'Realm of Astra — şifre sıfırlama', text: `Şifreni sıfırlamak için bu bağlantıya tıkla (1 saat geçerli):\n${url}\n\nBunu sen istemediysen bu e-postayı yok say; şifren değişmez.` });
@@ -160,7 +335,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return { ok: true, message: 'Bu e-posta ile bir hesap varsa sıfırlama bağlantısı gönderildi.', ...extra };
   }
 
-  function reset(token, newPassword) {
+  async function reset(token, newPassword) {
     if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
     const t = takeToken(token, 'reset');
     if (!t) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
@@ -168,7 +343,9 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     q.setVerified.run(t.account_id);                       // e-postayı açabildiyse e-posta onun
     q.sessionsOf.run(playerIdOf(t.account_id));            // bütün cihazlardan çıkış
     db.event('password-reset', playerIdOf(t.account_id));
-    return { ok: true };
+    const acc = q.byId.get(t.account_id);
+    if (acc) await mailer.send({ to: acc.email, subject: 'Realm of Astra — şifren değişti', text: 'Hesabının şifresi az önce değiştirildi ve bütün cihazlardan çıkış yapıldı. 🛡️\n\nBunu sen yapmadıysan hemen "Şifremi unuttum" ile yeni şifre belirle.' }).catch(() => {});
+    return { ok: true, twoFactor: !!(acc && acc.totp_enabled) };
   }
 
   function me(playerId) {
@@ -177,7 +354,8 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return {
       email: acc.email, verified: !!acc.email_verified, wallet: acc.wallet || null,
       pendingWallet: acc.pending_wallet || null, pendingConfirmed: !!acc.pending_confirmed,
-      pendingActiveAt: acc.pending_active_at || null, walletChangeDelayHours: WALLET_CHANGE_DELAY_MS / 3600000
+      pendingActiveAt: acc.pending_active_at || null, walletChangeDelayHours: WALLET_CHANGE_DELAY_MS / 3600000,
+      twoFactor: !!acc.totp_enabled, backupLeft: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').length : 0
     };
   }
 
@@ -264,5 +442,5 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return r ? playerIdOf(r.id) : null;
   }
 
-  return { playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
+  return { check2fa, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
 }

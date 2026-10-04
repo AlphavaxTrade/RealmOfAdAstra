@@ -40,6 +40,18 @@ export function loadConfig(env = process.env) {
     kasaMasterKey: (env.KASA_MASTER_KEY || '').trim(),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
     kasaMinAvax: num('KASA_MIN_AVAX', 0.003),                      // kasada en az bu kadar AVAX yoksa kasa kullanılmaz (aktarım ücreti)
     kasaMinSettle: num('KASA_MIN_SETTLE', 50),                     // bu kadar birikince (ya da 24 saatte bir) kasadan oyuna aktarım
+    // Kasa üst sınırı: kasada "günlük ortalama harcama × bu kadar gün"den fazlası birikirse fazlası oyuncunun bağlı
+    // cüzdanına otomatik geri gönderilir (sunucu ele geçirilse bile kasalarda az para olsun). Yeni oyuncu için alt sınır
+    // KASA_CAP_FLOOR_ADA (fiyat çarpanıyla ölçeklenir).
+    kasaCapDays: num('KASA_CAP_DAYS', 30),
+    kasaCapFloorAda: num('KASA_CAP_FLOOR_ADA', 20000),
+    // Sıcak / soğuk cüzdan: oyun cüzdanında yalnız HOT_WALLET_WEEKS haftalık ihtiyaç kadar ADA durur; fazlası günde bir
+    // RESERVE_WALLET adresine (donanım cüzdanı, ör. Ledger) gönderilir. Sunucu yalnız ADRESİ bilir, anahtarını asla.
+    reserveWallet: (env.RESERVE_WALLET || '').trim(),
+    hotWalletWeeks: num('HOT_WALLET_WEEKS', 1),
+    hotWalletMinAda: num('HOT_WALLET_MIN_ADA', 0),                 // geçmiş yokken (ilk haftalar) oyun cüzdanında kalacak en az ADA
+    contractOwner: (env.CONTRACT_OWNER || '').trim(),              // ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı)
+    adminEmail: (env.ADMIN_EMAIL || '').trim(),                    // uyarı e-postaları (oyun cüzdanı azaldı vb.)
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
     rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
     ipRateLimitPerSec: num('IP_RATE_LIMIT_PER_SEC', 40),            // IP başına tüm istekler (kimlik denetiminden önce)

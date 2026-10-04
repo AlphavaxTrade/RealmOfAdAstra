@@ -10,6 +10,8 @@
 //    cüzdanına çekebilir. Kazanılmış ADA kasaya aktarılamaz (kesintiden kaçış yolu yok).
 //  • Gizli anahtarlar KASA_MASTER_KEY ile şifreli saklanır (AES-256-GCM). Sunucu ele geçirilirse kasalar risk
 //    altındadır; bu yüzden oyuncuya kasada az para tutması öğütlenir ("Sandık Tavsiyesi").
+//  • Üst sınır (kullanıcı kararı 4 Ekim 2026): kasada "günlük ortalama harcama × 30 gün"den (yeni oyuncu için en az
+//    KASA_CAP_FLOOR_ADA) fazlası birikirse fazlası saatte bir oyuncunun bağlı cüzdanına kendiliğinden geri gönderilir.
 //  • DENEME SUNUCUSUNDA (TEST_MODE) kasa zincire bağlanmaz: bakiyeler taklittir, gerçek ADA yatırılamaz.
 // ============================================================================
 import crypto from 'node:crypto';
@@ -32,7 +34,7 @@ const ERC20 = new ethers.Interface(['function approve(address,uint256) returns (
 const PAY = new ethers.Interface(['function pay(uint256 amount, bytes32 ref) payable']);
 const dayKey = t => new Date(t + 3 * 3600000).toISOString().slice(0, 10);   // TSİ günü
 
-export function createKasa({ db, chain = null, accounts = null, cfg, clock = () => Date.now(), log = console }) {
+export function createKasa({ db, chain = null, accounts = null, cfg, clock = () => Date.now(), log = console, priceMultiplier = () => 1, notify = null }) {
   db.raw.exec(SCHEMA);
   const simulated = !!cfg.testMode;
   let master = null;
@@ -57,7 +59,9 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     opsOpen: db.raw.prepare("SELECT * FROM kasa_ops WHERE status = 'pending' ORDER BY id"),
     opsSending: db.raw.prepare("SELECT * FROM kasa_ops WHERE status = 'sending' ORDER BY id"),
     opsOf: db.raw.prepare('SELECT id, kind, amount, status, tx_hash, error, created, done_at FROM kasa_ops WHERE player = ? ORDER BY id DESC LIMIT 10'),
-    inflight: db.raw.prepare("SELECT COALESCE(SUM(amount), 0) AS t FROM kasa_ops WHERE player = ? AND kind IN ('settle', 'withdraw_ada') AND status IN ('pending', 'sending')"),
+    inflight: db.raw.prepare("SELECT COALESCE(SUM(amount), 0) AS t FROM kasa_ops WHERE player = ? AND kind IN ('settle', 'withdraw_ada', 'return_ada') AND status IN ('pending', 'sending')"),
+    returnOpen: db.raw.prepare("SELECT 1 FROM kasa_ops WHERE player = ? AND kind = 'return_ada' AND status IN ('pending', 'sending') LIMIT 1"),
+    withBalance: db.raw.prepare('SELECT * FROM kasa WHERE ada > 0'),
     inflightAvax: db.raw.prepare("SELECT COALESCE(SUM(amount), 0) AS t FROM kasa_ops WHERE player = ? AND kind = 'withdraw_avax' AND status IN ('pending', 'sending')"),
     opSigned: db.raw.prepare("UPDATE kasa_ops SET status = 'sending', tx_hash = ?, raw_tx = ?, tx_nonce = ? WHERE id = ?"),
     opDone: db.raw.prepare("UPDATE kasa_ops SET status = ?, error = ?, done_at = ? WHERE id = ?"),
@@ -147,9 +151,41 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     return { ok: true, message: `🏦 ${v} ${asset} kasandan ${to.slice(0, 6)}…${to.slice(-4)} cüzdanına gönderiliyor.` };
   }
 
+  // Kasa üst sınırı: son 14 günün günlük ortalama harcaması × KASA_CAP_DAYS; en az alt sınır (fiyat çarpanıyla)
+  function capOf(playerId, row = q.get.get(playerId)) {
+    if (!row) return 0;
+    const usage = q.usageSince.all(playerId, dayKey(clock() - 14 * 86400000));
+    const span = Math.max(1, Math.min(14, (clock() - row.created) / 86400000));
+    const perDay = usage.reduce((s, u) => s + u.ada, 0) / span;
+    const floor = (Number(cfg.kasaCapFloorAda) || 0) * (Number(priceMultiplier()) || 1);
+    return Math.max(perDay * (Number(cfg.kasaCapDays) || 30), floor);
+  }
+
+  // Saatlik: sınırı aşan kasaların fazlasını bağlı cüzdana geri gönder (küçük kırıntılar için işlem açılmaz)
+  function enforceCaps() {
+    if (!enabled || !(cfg.kasaCapDays > 0)) return 0;
+    let n = 0;
+    for (const row of q.withBalance.all()) {
+      if (q.returnOpen.get(row.player)) continue;
+      const free = row.ada - row.pending - q.inflight.get(row.player).t;
+      const cap = capOf(row.player, row);
+      const excess = Math.floor((free - cap) * 100) / 100;
+      if (!(excess >= Math.max(1, cap * 0.05))) continue;
+      if (!simulated && row.avax < cfg.kasaMinAvax) continue;
+      const to = accounts ? accounts.activeWallet(row.player) : null;
+      if (!to) continue;                                  // bağlı cüzdan yok: panel uyarır, para kasada kalır
+      q.opAdd.run(row.player, 'return_ada', excess, clock());
+      db.event('kasa-return', row.player, { amount: excess, cap, to });
+      if (notify) try { notify(row.player, `🛡️ Oyun Kasan üst sınırı (${Math.floor(cap).toLocaleString('tr-TR')} ADA) aştı: fazla ${Math.floor(excess).toLocaleString('tr-TR')} ADA güvenliğin için cüzdanına geri gönderiliyor.`); } catch { /* bildirim olmasa da olur */ }
+      n++;
+    }
+    return n;
+  }
+
   function status(playerId) {
     if (!enabled) return { enabled: false };
     const row = ensure(playerId);
+    const cap = capOf(playerId, row);
     const since = dayKey(clock() - 3 * 86400000);
     const usage = q.usageSince.all(playerId, since);
     const today = usage.find(u => u.day === dayKey(clock()))?.ada || 0;
@@ -160,7 +196,8 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
       enabled: true, simulated, address: row.address, ada: row.ada, avax: row.avax, pending: row.pending,
       available: avail, minAvax: cfg.kasaMinAvax, avaxLow: !simulated && row.avax < cfg.kasaMinAvax,
       usageToday: today, usagePerDay: avg, daysLeft: avg > 0 ? avail / avg : null,
-      balanceAt: row.bal_at, ops: q.opsOf.all(playerId)
+      balanceAt: row.bal_at, ops: q.opsOf.all(playerId), cap, capDays: cfg.kasaCapDays,
+      overCap: row.ada - row.pending > cap * 1.05, hasWallet: !!(accounts && accounts.activeWallet(playerId))
     };
   }
 
@@ -200,7 +237,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
           } else {
             const to = accounts ? accounts.activeWallet(op.player) : null;
             if (!to) { q.opDone.run('failed', 'Bağlı cüzdan yok', clock(), op.id); continue; }
-            fields = op.kind === 'withdraw_ada'
+            fields = op.kind === 'withdraw_ada' || op.kind === 'return_ada'
               ? { to: cfg.tokenAddress, data: ERC20.encodeFunctionData('transfer', [to, ethers.parseUnits(op.amount.toFixed(6), 18)]) }
               : { to, value: ethers.parseEther(op.amount.toFixed(9)) };
           }
@@ -262,5 +299,5 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
 
   const isKasaAddress = addr => !!db.raw.prepare('SELECT 1 FROM kasa WHERE address = ?').get(String(addr || '').toLowerCase());
 
-  return { isKasaAddress, enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, queueSettlements, refreshActive };
+  return { capOf, enforceCaps, isKasaAddress, enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, queueSettlements, refreshActive };
 }

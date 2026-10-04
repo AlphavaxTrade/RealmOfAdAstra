@@ -1,6 +1,6 @@
 {
   "name": "realm-of-astra",
-  "version": "1.29.0",
+  "version": "1.30.0",
   "description": "Realm of Astra - Web3 GameFi RPG on Avalanche",
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
   "dependencies": {
     "ethers": "^6.17.0",
     "nodemailer": "^6.10.1",
-    "phaser": "^3.80.1"
+    "phaser": "^3.80.1",
+    "qrcode": "^1.5.4"
   }
 }

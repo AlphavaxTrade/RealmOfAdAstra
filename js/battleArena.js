@@ -253,7 +253,7 @@ export class AdAstraBattleArena {
       el.innerHTML = `
         <div class="shield-ring ${u.shieldPts > 0 ? 'show' : ''}" id="aa-shield-${u.id}"></div>
         <div class="icon-badge">
-          <img src="${avatarSrc}" class="unit-avatar-img" alt="${u.name}" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='block';" />
+          <img src="${avatarSrc}" class="unit-avatar-img" alt="${u.name}" data-fb="next" />
           <span class="avatar-fallback" style="display:none; font-size:1.4rem;">${fallbackIcon}</span>
         </div>
         <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${Math.round(pct * 100)}%"></div></div>
@@ -288,7 +288,7 @@ export class AdAstraBattleArena {
         c.className = 'queue-chip' + (i === 0 ? ' next' : '') + (u.side === 'ally' ? ' chip-ally' : ' chip-enemy');
         const avatarSrc = getUnitAvatar(u);
         c.innerHTML = `
-          <img src="${avatarSrc}" class="queue-avatar-img" alt="${u.name}" onerror="this.style.display='none'; this.parentElement.textContent='${u.icon || (u.side === 'ally' ? '⚔️' : '💀')}';" />
+          <img src="${avatarSrc}" class="queue-avatar-img" alt="${u.name}" data-fb="text:${u.icon || (u.side === 'ally' ? '⚔️' : '💀')}" />
         `;
         c.title = `${u.name} (Atk: ${u.atk}, HP: ${u.hp}/${u.maxHp})`;
         queueTrack.appendChild(c);

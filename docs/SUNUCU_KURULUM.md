@@ -90,8 +90,8 @@ Oyuncular cüzdandan ödeme yaptığında ADASTRA bu sözleşme üzerinden oyun 
 
 ```bash
 DEPLOY_RPC=https://api.avax-test.network/ext/bc/C/rpc \
-DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<komisyon cüzdanı> \
-DEPLOY_MOCK_TOKEN=1 node contracts/deploy.mjs
+DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<Ledger adresi> \
+OWNER_ADDRESS=0x<Ledger adresi> DEPLOY_MOCK_TOKEN=1 node contracts/deploy.mjs
 ```
 
 Çıktıdaki ayarları deneme sunucusunun `server/.env` dosyasına yaz, oyunu baştan sona dene.
@@ -100,11 +100,26 @@ DEPLOY_MOCK_TOKEN=1 node contracts/deploy.mjs
 
 ```bash
 DEPLOY_RPC=https://api.avax.network/ext/bc/C/rpc \
-DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<komisyon cüzdanı> \
-TOKEN_ADDRESS=0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0 CONFIRM_MAINNET=1 node contracts/deploy.mjs
+DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<Ledger adresi> \
+OWNER_ADDRESS=0x<Ledger adresi> TOKEN_ADDRESS=0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0 CONFIRM_MAINNET=1 node contracts/deploy.mjs
 ```
 
-Çıktıdaki `PAYMENTS_CONTRACT` adresini gerçek sunucunun `server/.env` dosyasına yaz ve `docker compose up -d --build` ile yeniden başlat. Yükleyen cüzdan sözleşmenin sahibi olur; anahtarını güvenle sakla.
+Çıktıdaki `PAYMENTS_CONTRACT` ve `CONTRACT_OWNER` ayarlarını gerçek sunucunun `server/.env` dosyasına yaz ve `docker compose up -d --build` ile yeniden başlat.
+
+### Sözleşme sahibi donanım cüzdanında (Ledger)
+
+- `DEPLOYER_PRIVATE_KEY` yalnız yükleme için açılmış **geçici** bir cüzdandır (içinde yükleme ücreti kadar AVAX olsun). Gerçek ağda `OWNER_ADDRESS` zorunludur.
+- Yükleme biter bitmez sahiplik Ledger adresine devredilir. Devri tamamlamak için: Ledger'ı MetaMask ya da Core'a bağla → yönetici panelini (`/admin`) aç → **"👑 Sözleşme sahipliğini kabul et"** → Ledger ekranında onayla. Panelde "Sözleşme sahibi: ✅ donanım cüzdanı" görünmeli.
+- Bundan sonra geçici yükleme cüzdanı hiçbir şeye yetkili değildir. Acil durumda ödemeleri **"⛔ Cüzdan ödemelerini durdur"** düğmesiyle (yine Ledger onayıyla) durdurabilirsin.
+
+## 7. Sıcak / soğuk cüzdan
+
+Oyun cüzdanının anahtarı sunucuda durur; sunucu ele geçirilirse içindeki para risk altındadır. Bu yüzden:
+
+1. `server/.env` içine `RESERVE_WALLET=0x<Ledger adresi>` ve `ADMIN_EMAIL=<e-postan>` yaz.
+2. Sunucu günde bir oyun cüzdanına bakar: **bir haftalık ihtiyaç** (son 4 haftanın en yüksek gönderimi ya da bu haftaki çekim talepleri) üstündeki ADA'yı kendiliğinden Ledger adresine gönderir. Sunucu Ledger'ın anahtarını hiç bilmez; oradan para çekemez.
+3. Oyun cüzdanı ihtiyacın altına düşerse yönetici panelinde ve e-postanda "yedek cüzdandan şu kadar ADA gönder" uyarısı çıkar. Paneldeki **"📥 Yedek cüzdandan oyun cüzdanına gönder"** düğmesiyle Ledger'dan tek onayla gönderirsin.
+4. Oyuncuların Oyun Kasaları da sınırlıdır: kasada ~30 günlük harcamadan fazlası birikirse fazlası oyuncunun kendi cüzdanına kendiliğinden döner.
 
 ## Oyun nasıl işliyor? (kısa)
 

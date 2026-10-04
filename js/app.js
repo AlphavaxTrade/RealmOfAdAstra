@@ -5694,7 +5694,7 @@ function openPreBattleModal(monster) {
     <div class="prebattle-enemy-card">
       <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px;">
         <div style="width:58px; height:58px; border-radius:50%; overflow:hidden; border:2.5px solid rgba(239,68,68,0.75); flex-shrink:0; box-shadow:0 0 16px rgba(239,68,68,0.45); display:flex; align-items:center; justify-content:center; background:#1a1224;">
-          <img src="${monsterAvatarSrc}" alt="${monster.name}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" />
+          <img src="${monsterAvatarSrc}" alt="${monster.name}" style="width:100%; height:100%; object-fit:cover; display:block;" data-fb="next" />
           <span style="font-size:2rem; display:none;">${monster.icon || '💀'}</span>
         </div>
         <div>
@@ -5818,7 +5818,7 @@ function openPreBattleModal(monster) {
                 <label style="display:flex; align-items:center; gap:10px; flex:1; cursor:pointer; margin:0;">
                   <input type="checkbox" class="prebattle-sol-check" data-idx="${idx}" ${isChecked ? 'checked' : ''}>
                   <div style="width:34px; height:34px; border-radius:50%; overflow:hidden; border:1.5px solid rgba(232,185,78,0.75); flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#1a1224; box-shadow:0 0 10px rgba(232,185,78,0.3);">
-                    <img src="${sol.avatar || 'assets/soldier_avatar.jpg'}" alt="${sol.name}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';" />
+                    <img src="${sol.avatar || 'assets/soldier_avatar.jpg'}" alt="${sol.name}" style="width:100%; height:100%; object-fit:cover; display:block;" data-fb="next" />
                     <span style="font-size:0.95rem; display:none;">${sol.icon || '⚔️'}</span>
                   </div>
                   <div style="flex:1;">

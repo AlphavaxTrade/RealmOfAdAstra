@@ -47,11 +47,14 @@ const mailer = createMailer({ db, cfg });
 const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethers.verifyMessage(m, s) });
 const arena = createArena({ db, engine, botWhenEmpty: cfg.testMode });
 if (cfg.testMode) console.warn('🧪 DENEME MODU: test menüsü ve bot rakip açık. Gerçek sunucuda TEST_MODE kullanmayın!');
-const kasa = createKasa({ db, chain, accounts, cfg });
+const kasa = createKasa({ db, chain, accounts, cfg,
+  priceMultiplier: () => Number(db.kvJson('world:economy', {}).priceMultiplier) || 1,
+  notify: (pid, msg) => engine.mutatePlayer(pid, gs => gs.pushNotice(msg, 'info')) });
 engine.setKasa(kasa);
 if (!kasa.enabled) console.warn('🏦 Oyun Kasası kapalı (KASA_MASTER_KEY ve PAYMENTS_CONTRACT gerekli).');
 else if (kasa.simulated) console.warn('🏦 Deneme modu: Oyun Kasası taklit (zincire bağlı değil; gerçek ADA yatırılamaz).');
-const world = createWorld({ db, engine, chain, arena, accounts, kasa, cfg });
+const world = createWorld({ db, engine, chain, arena, accounts, kasa, mailer, cfg });
+if (cfg.chainEnabled && !cfg.testMode && !/^0x[0-9a-fA-F]{40}$/.test(cfg.reserveWallet)) console.warn('🧊 RESERVE_WALLET yok: oyun cüzdanındaki fazla ADA yedek (donanım) cüzdana aktarılmaz. Önerilir!');
 const payments = createPayments({ db, engine, accounts, chain, kasa, cfg });
 const app = createApp({ db, engine, world, accounts, payments, kasa, arena, chain, cfg });
 if (!cfg.paymentsContract) console.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');

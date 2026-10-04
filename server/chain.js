@@ -221,5 +221,16 @@ export function createChain(cfg) {
     return out;
   }
 
-  return { scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  // Ödeme sözleşmesinin yönetim bilgisi (sahibi donanım cüzdanında mı?)
+  async function readPaymentsAdmin() {
+    if (!cfg.paymentsContract) return null;
+    return withProvider(async p => {
+      const c = new ethers.Contract(cfg.paymentsContract, ['function owner() view returns (address)', 'function pendingOwner() view returns (address)',
+        'function paused() view returns (bool)', 'function treasury() view returns (address)', 'function feeReceiver() view returns (address)'], p);
+      const [owner, pendingOwner, paused, treasury, feeReceiver] = await Promise.all([c.owner(), c.pendingOwner(), c.paused(), c.treasury(), c.feeReceiver()]);
+      return { owner: owner.toLowerCase(), pendingOwner: pendingOwner.toLowerCase(), paused, treasury: treasury.toLowerCase(), feeReceiver: feeReceiver.toLowerCase(), at: Date.now() };
+    });
+  }
+
+  return { readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

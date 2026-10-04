@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.29.0',
+  GAME_VERSION: '1.30.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -1002,6 +1002,19 @@ export const GAME_CONFIG = {
         'Kilitli bakiye: oyundan kazandığın ADA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ADA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Hazine panelinde ve bakiyenin üzerine gelince serbest/kilitli miktarı görünür.',
         'Katkı puanı: oyunda harcadığın her ADA, yaktığın ve pazara sattığın hammadde puan kazandırır. İleride haftalık çekim hakkından payını bu puan belirleyecek.',
         'ADA fiyat çarpanı: asker, iyileşme, bilet, çark ve Genesis NFT fiyatları ile zindan ve görev ödülleri tek bir çarpana bağlandı. ADASTRA\'nın değeri değişince çarpan haftada en fazla %5 değişerek oyunun dolar maliyetini dengeler (şimdilik ×1).'
+      ]
+    },
+    {
+      version: 'v1.30',
+      title: '🛡️ Muhafız Mührü & Krallık Güvenliği',
+      date: '4 Ekim 2026',
+      changes: [
+        'Muhafız Mührü (isteğe bağlı iki adımlı doğrulama): telefonundaki doğrulama uygulamasının 6 haneli kodu girişte, cüzdan bağlarken, çekimde ve kasadan çekimde istenir. Telefon kaybına karşı 10 yedek kod verilir. Hesabım → Muhafız Mührü.',
+        'Kayıt artık e-postandaki onay bağlantısıyla tamamlanır; bağlantıya tıklayınca doğrudan oyuna girersin. Kayıt ekranı bir e-postanın kayıtlı olup olmadığını kimseye göstermez.',
+        'Şifren değişince ya da Muhafız Mührü takılıp kaldırılınca e-postana bildirim gelir.',
+        'Oyun Kasası üst sınırı: kasanda yaklaşık 30 günlük harcamandan fazlası birikirse fazlası güvenliğin için kendi cüzdanına kendiliğinden geri gönderilir.',
+        'Karnaval Çarkı hammaddeyle çevrilince ödenen hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ADA Karnaval kasasına girer (ödüller bu kasadan ödenir).',
+        'Tarayıcı koruması açıldı: oyun sayfasında yalnız oyunun kendi kodu çalışabilir.'
       ]
     }
   ],

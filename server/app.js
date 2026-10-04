@@ -41,11 +41,14 @@ const SEC_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
 };
-const ADMIN_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+const ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+// Oyun sayfası: yalnız kendi dosyalarımız çalışır; dışarıdan kod yüklenemez, sayfaya sokulan kod çalışmaz,
+// veriler yalnız kendi sunucumuza gönderilebilir (Google yazı tipleri hariç). Cüzdan eklentileri (Core/MetaMask) etkilenmez.
+const GAME_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 const userError = msg => Object.assign(new Error(msg), { userError: true });
 
-const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/verify',
-  'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
+const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
+  'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
 export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
@@ -145,23 +148,48 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const { email, password } = await readBody(req);
       const r = await accounts.register(email, password);
       if (!r.ok) return [400, { error: r.error }];
-      return { token: newSession(r.playerId), playerId: r.playerId, devLink: r.devLink };
+      // Oturum AÇILMAZ: e-posta kayıtlı olsun olmasın yanıt aynıdır; oyuncu e-postadaki bağlantıyla girer
+      return { ok: true, sent: true, message: r.message, devLink: r.devLink };
     },
     'POST /api/account/login': async (req) => {
       const { email, password } = await readBody(req);
       const r = accounts.login(email, password, clientIp(req));
       if (!r.ok) return [401, { error: r.error }];
+      if (r.need2fa) return { need2fa: true, ticket: r.ticket };
       db.event('login', r.playerId);
       return { token: newSession(r.playerId), playerId: r.playerId };
+    },
+    'POST /api/account/login2fa': async (req) => {
+      const { ticket, code } = await readBody(req);
+      const r = accounts.login2fa(ticket, code);
+      if (!r.ok) return [401, { error: r.error }];
+      db.event('login', r.playerId, { twoFactor: true });
+      return { token: newSession(r.playerId), playerId: r.playerId, backupLeft: r.backupLeft };
     },
     'POST /api/account/verify': async (req) => {
       const { token } = await readBody(req);
       const r = accounts.verifyEmail(token);
-      return r.ok ? { ok: true } : [400, { error: r.error }];
+      if (!r.ok) return [400, { error: r.error }];
+      return r.canLogin ? { ok: true, token: newSession(r.playerId), playerId: r.playerId } : { ok: true };
     },
-    'POST /api/account/resend': async (req, me) => {
-      const r = await accounts.resendVerify(me);
+    'POST /api/account/resend': async (req) => {
+      const { email } = await readBody(req);
+      return accounts.resendVerify(email);
+    },
+    // 🛡️ İki adımlı doğrulama (isteğe bağlı)
+    'POST /api/account/2fa/setup': async (req, me) => {
+      const r = await accounts.totpSetup(me);
       return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/2fa/enable': async (req, me) => {
+      const { code } = await readBody(req);
+      const r = await accounts.totpEnable(me, code);
+      return r.ok ? r : [400, { error: r.error }];
+    },
+    'POST /api/account/2fa/disable': async (req, me) => {
+      const { code } = await readBody(req);
+      const r = await accounts.totpDisable(me, code);
+      return r.ok ? r : [r.need2fa ? 403 : 400, { error: r.error, need2fa: !!r.need2fa }];
     },
     'POST /api/account/forgot': async (req) => {
       const { email } = await readBody(req);
@@ -169,8 +197,8 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     },
     'POST /api/account/reset': async (req) => {
       const { token, password } = await readBody(req);
-      const r = accounts.reset(token, password);
-      return r.ok ? { ok: true } : [400, { error: r.error }];
+      const r = await accounts.reset(token, password);
+      return r.ok ? { ok: true, twoFactor: r.twoFactor } : [400, { error: r.error }];
     },
     'GET /api/account/me': (req, me) => accounts.me(me) || [404, { error: 'Hesap yok' }],
     'POST /api/account/wallet/nonce': async (req, me) => {
@@ -179,8 +207,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       return r.ok ? { message: r.message } : [400, { error: r.error }];
     },
     'POST /api/account/wallet/link': async (req, me) => {
-      const { signature } = await readBody(req);
+      const { signature, code } = await readBody(req);
       if (typeof signature !== 'string' || signature.length > 200) return [400, { error: 'Eksik imza' }];
+      const g = accounts.check2fa(me, code);
+      if (!g.ok) return [403, { error: g.error, need2fa: true }];
       const r = await accounts.walletLink(me, signature);
       return r.ok ? r : [400, { error: r.error }];
     },
@@ -223,8 +253,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     }),
 
     'POST /api/withdraw': async (req, me) => {
-      const { amount } = await readBody(req);
+      const { amount, code } = await readBody(req);
       if (!accounts.isVerified(me)) return { success: false, message: 'Çekim için önce e-posta adresini doğrula.' };
+      const g = accounts.check2fa(me, code);
+      if (!g.ok) return [403, { error: g.error, need2fa: true }];
       if (!accounts.activeWallet(me)) return { success: false, message: 'Çekim için önce hesabına bir cüzdan bağla.' };
       try { return db.tx(() => world.requestWithdraw(me, amount)); }
       catch (err) { E.reloadWorld(); log.error(err); return [500, { error: 'Sunucu hatası' }]; }
@@ -244,7 +276,9 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     },
     'POST /api/kasa/withdraw': async (req, me) => {
       if (!kasa) return [404, { error: 'Kapalı' }];
-      const { asset, amount } = await readBody(req);
+      const { asset, amount, code } = await readBody(req);
+      const g = accounts.check2fa(me, code);
+      if (!g.ok) return [403, { error: g.error, need2fa: true }];
       const r = kasa.withdraw(me, asset, amount);
       return r.ok ? r : [400, { error: r.error }];
     },
@@ -308,13 +342,17 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
           depositors: players.filter(p => p.deposited_ada > 0).length,
           pendingWithdraw: players.reduce((s, p) => s + (p.pending_withdraw || 0), 0) },
         treasury: E.treasury.state.pools,
+        chainId: cfg.chainId, tokenAddress: cfg.tokenAddress, paymentsContract: cfg.paymentsContract || null,
+        reserveWallet: cfg.reserveWallet || null, contractOwner: cfg.contractOwner || null,
+        hotWallet: e.hotWallet || null, hotNeed: world.hotWalletNeed ? world.hotWalletNeed() : null,
         payouts: db.q.payoutsRecent.all(50),
         events: db.q.eventsRecent.all(50)
       };
     },
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
-    'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1)
+    'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),
+    'POST /api/admin/hotwallet/check': async () => (world.checkHotWallet ? (await world.checkHotWallet()) || { skipped: 'zincir yok' } : { skipped: true })
   };
 
   function serveStatic(req, res, pathname) {
@@ -330,7 +368,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     const ext = path.extname(file).toLowerCase();
     const s = fs.createReadStream(file);
     s.on('error', () => { if (!res.headersSent) res.writeHead(500, SEC_HEADERS); res.end(); });
-    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400', ...(ext === '.html' ? { 'Content-Security-Policy': GAME_CSP } : {}) });
     s.pipe(res);
   }
 
@@ -347,6 +385,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const html = fs.readFileSync(new URL('./admin.html', import.meta.url), 'utf8');
       res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': ADMIN_CSP });
       return res.end(html);
+    }
+    if (url.pathname === '/admin.js') {
+      const code = fs.readFileSync(new URL('./admin.js', import.meta.url), 'utf8');
+      res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' });
+      return res.end(code);
     }
     if (!url.pathname.startsWith('/api/')) return serveStatic(req, res, url.pathname);
     // IP başına genel sınır: kimlik denetiminden ÖNCE (yanlış şifre/anahtar denemeleri de sayılır)

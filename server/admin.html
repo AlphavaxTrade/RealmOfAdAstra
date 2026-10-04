@@ -25,6 +25,7 @@
   .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
   .scroll { overflow-x:auto; }
   a { color:#93c5fd; }
+  input.narrow { max-width: 220px; }
 </style>
 </head>
 <body>
@@ -44,6 +45,18 @@
       <button id="logout">Çıkış</button>
     </div>
     <div class="grid" id="cards"></div>
+    <h3>🧊 Yedek cüzdan (Ledger) işlemleri</h3>
+    <div class="card">
+      <div class="k">Bu düğmeler tarayıcındaki cüzdanla (Ledger'a bağlı MetaMask / Core) çalışır. Sunucu bu cüzdanın anahtarını hiç görmez.</div>
+      <div class="row">
+        <button id="ownAccept" class="go">👑 Sözleşme sahipliğini kabul et</button>
+        <button id="cPause" class="danger">⛔ Cüzdan ödemelerini durdur (sözleşme)</button>
+        <button id="cResume">▶️ Cüzdan ödemelerini aç (sözleşme)</button>
+        <button id="hotCheck">🔎 Oyun cüzdanını şimdi denetle</button>
+      </div>
+      <div class="row"><input id="topAmt" type="number" min="1" placeholder="ADA miktarı" class="narrow"><button id="topUp" class="go">📥 Yedek cüzdandan oyun cüzdanına gönder</button></div>
+      <div id="ledgerMsg" class="k"></div>
+    </div>
     <h3>Son haftalık hesaplaşma</h3>
     <div class="card scroll"><pre id="weekly" style="margin:0;white-space:pre-wrap;font-size:0.78rem;"></pre></div>
     <h3>Ödemeler (son 50)</h3>
@@ -52,53 +65,6 @@
     <div class="card scroll"><table id="events"></table></div>
   </div>
 </main>
-<script>
-const $ = id => document.getElementById(id);
-const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
-let token = sessionStorage.getItem('adm') || '';
-async function api(method, path, body) {
-  const r = await fetch(path, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: body ? JSON.stringify(body) : undefined });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
-  return j;
-}
-const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const card = (k, v, cls = '') => `<div class="card"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div></div>`;
-async function load() {
-  const s = await api('GET', '/api/admin/status');
-  $('login').hidden = true; $('app').hidden = false;
-  const m = s.market || {};
-  const pools = Object.entries(s.treasury || {}).map(([k, v]) => `${esc(k)}: ${fmt(v)}`).join('<br>');
-  $('cards').innerHTML = [
-    card('Durum', s.paused ? '⏸️ DURDURULDU' : '✅ Çalışıyor', s.paused ? 'bad' : 'ok'),
-    card('Ödeme modu', s.payoutMode === 'auto' ? (s.canSend ? 'Otomatik' : 'Otomatik (anahtar yok!)') : 'Yönetici onayı', s.payoutMode === 'auto' && !s.canSend ? 'bad' : ''),
-    card('Oyun cüzdanı', s.gameWallet ? `<a href="https://snowtrace.io/address/${esc(s.gameWallet)}" target="_blank" rel="noopener">${esc(s.gameWallet.slice(0, 8))}…</a>` : '—'),
-    card('Cüzdandaki ADA', m.walletAda != null ? fmt(m.walletAda) : '—'),
-    card('ADASTRA fiyatı (1M)', m.priceUsd ? '$' + (m.priceUsd * 1e6).toFixed(3) : '—'),
-    card('Piyasa değeri', m.mcapUsd ? '$' + fmt(m.mcapUsd) : '—'),
-    card('Fren', s.brake && s.brake.on ? '🔴 AÇIK' : '🟢 kapalı', s.brake && s.brake.on ? 'bad' : 'ok'),
-    card('Fiyat çarpanı', '×' + (s.priceMultiplier || 1)),
-    card('Bu haftaki çekim sınırı', fmt(s.weeklyCap) + ' ADA'),
-    card('Oyuncular', `${fmt(s.players.total)} (bu hafta ${fmt(s.players.activeWeek)}, yatıran ${fmt(s.players.depositors)})`),
-    card('Bekleyen çekim talepleri', fmt(s.players.pendingWithdraw) + ' ADA'),
-    card('Sonraki hafta', s.nextWeekAt ? new Date(s.nextWeekAt).toLocaleString('tr-TR') : '—'),
-    `<div class="card"><div class="k">Hazine kasaları</div><div style="font-size:0.8rem;margin-top:4px;">${pools}</div></div>`
-  ].join('');
-  $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
-  const st = { pending: '⏳ sırada', sending: '⚠️ gönderiliyordu (kontrol et)', sent: '✅ gönderildi' };
-  $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ADA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
-    s.payouts.map(p => `<tr><td>${p.id}</td><td>${p.epoch}</td><td>${esc(p.kind)}</td><td>${esc(p.address.slice(0, 10))}…</td><td>${fmt(p.amount)}</td><td>${st[p.status] || esc(p.status)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">görüntüle</a>` : ''}</td><td class="bad">${esc(p.error || '')}</td></tr>`).join('');
-  $('events').innerHTML = '<tr><th>Zaman</th><th>Tür</th><th>Adres</th><th>Bilgi</th></tr>' +
-    s.events.map(e => `<tr><td>${new Date(e.at).toLocaleString('tr-TR')}</td><td>${esc(e.type)}</td><td>${esc((e.address || '').slice(0, 10))}</td><td>${esc((e.data || '').slice(0, 160))}</td></tr>`).join('');
-}
-async function act(fn) { try { await fn(); await load(); } catch (e) { alert(e.message); } }
-$('enter').onclick = async () => { token = $('tok').value.trim(); try { await load(); sessionStorage.setItem('adm', token); } catch (e) { $('lerr').textContent = e.message; } };
-$('refresh').onclick = () => act(async () => {});
-$('pause').onclick = () => confirm('Çekim talepleri ve zincir ödemeleri durdurulsun mu?') && act(() => api('POST', '/api/admin/pause', { paused: true }));
-$('resume').onclick = () => act(() => api('POST', '/api/admin/pause', { paused: false }));
-$('pay').onclick = () => confirm('Bekleyen ödemeler şimdi zincire gönderilsin mi?') && act(async () => { const r = await api('POST', '/api/admin/payouts/run'); alert('Sonuç: ' + JSON.stringify(r)); });
-$('logout').onclick = () => { sessionStorage.removeItem('adm'); location.reload(); };
-if (token) load().catch(() => { token = ''; });
-</script>
+<script src="/admin.js"></script>
 </body>
 </html>

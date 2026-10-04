@@ -4499,9 +4499,20 @@ export class GameStateManager {
         return { success: false, message: `Yetersiz ${resNameTr}! 100 ADA değerinde hammadde için ${requiredAmount} adet gereklidir.` };
       }
       inv[paymentMethod] -= requiredAmount;
-      // 🔥 HAMMADDE ANINDA YAKILIR VE KARNAVAL YAKIM SAYACINA YAZILIR
-      this.recordCarnivalResourceBurn(paymentMethod, requiredAmount);
-      burnedInfo = { resource: paymentMethod, resourceNameTr: resNameTr, amount: requiredAmount, fromPayment: true };
+      // Kullanıcı kararı (4 Ekim 2026): ödenen hammaddenin YARISI yakılır, YARISI pazarda satılır ve gelen ADA
+      // Karnaval kasasına girer (ödüller bu kasadan ödenir). Pazar fiyatı tabandaysa satılamayan kısım da yakılır.
+      const toSell = Math.min(Math.floor(requiredAmount / 2), ammMarket.getMaxSellBeforeFloor(paymentMethod));
+      let soldQty = 0, carnivalIn = 0;
+      if (toSell > 0) {
+        const sale = ammMarket.executeSell(paymentMethod, toSell);
+        if (sale && sale.success && sale.adAstraReceived > 0) {
+          soldQty = toSell;
+          carnivalIn = treasury.depositTo ? treasury.depositTo('carnival', sale.adAstraReceived) : 0;
+        }
+      }
+      const burnQty = requiredAmount - soldQty;
+      this.recordCarnivalResourceBurn(paymentMethod, burnQty);
+      burnedInfo = { resource: paymentMethod, resourceNameTr: resNameTr, amount: burnQty, soldQty, carnivalIn, fromPayment: true };
       // Güvenlik (4 Ekim 2026): burada eskiden recordTokenSpend(100 ADA) çağrılıyordu. Ortada ADA yokken hazineye,
       // yakıma ve yapımcı payına para yazıyordu (yoktan para); sunucuda bunun yakım/yapımcı kısmı gerçek ADASTRA olarak
       // zincire gönderilirdi. Hammadde yukarıda zaten yakılıyor; ADA kaydı yapılmaz.
@@ -4697,7 +4708,7 @@ export class GameStateManager {
       message: buybackInfo
         ? `🎉 Çarktan kazandın: ${rewardSummaryText}! (🏛️ Karnaval Hazine Kasasından ${buybackInfo.adaSpent.toLocaleString('tr-TR')} ADA ile AMM DEX pazarından buyback yapılıp teslim edildi)`
         : burnedInfo
-        ? `🔥 ${burnedInfo.amount.toLocaleString('tr-TR')} ${burnedInfo.resourceNameTr} anında yakıldı ve sistemden silindi! Çarktan kazandın: ${rewardSummaryText}`
+        ? `🔥 ${burnedInfo.amount.toLocaleString('tr-TR')} ${burnedInfo.resourceNameTr} yakıldı${burnedInfo.soldQty > 0 ? `, ${burnedInfo.soldQty.toLocaleString('tr-TR')} adedi pazarda satılıp Karnaval kasasına ${Math.floor(burnedInfo.carnivalIn).toLocaleString('tr-TR')} ADA kazandırdı` : ''}! Çarktan kazandın: ${rewardSummaryText}`
         : `🎉 Tebrikler! Çarktan kazandın: ${rewardSummaryText}`
     };
   }

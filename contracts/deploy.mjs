@@ -3,9 +3,12 @@
 // Önce Fuji deneme ağında (bedava) denenir, sonra gerçek ağa yüklenir. Kullanım (ayarlar ortam değişkeninden):
 //
 //   DEPLOY_RPC=https://api.avax-test.network/ext/bc/C/rpc      (Fuji)  |  https://api.avax.network/ext/bc/C/rpc (gerçek ağ)
-//   DEPLOYER_PRIVATE_KEY=0x...          yükleme ücretini ödeyecek cüzdan (sözleşmenin SAHİBİ olur)
+//   DEPLOYER_PRIVATE_KEY=0x...          yükleme ücretini ödeyecek GEÇİCİ cüzdan (yalnız yükleme için; içinde az AVAX olsun)
+//   OWNER_ADDRESS=0x...                 sözleşmenin KALICI sahibi: donanım cüzdanı (Ledger) adresi. Yükleme biter bitmez
+//                                       sahiplik bu adrese devredilir; Ledger ile "kabul et" denince devir tamamlanır
+//                                       (yönetici panelindeki "Sözleşme sahipliğini kabul et" düğmesi). Gerçek ağda ZORUNLU.
 //   TREASURY=0x...                      ADASTRA'nın gideceği oyun cüzdanı (sunucudaki GAME_WALLET adresi)
-//   FEE_RECEIVER=0x...                  AVAX komisyonunun gideceği cüzdan
+//   FEE_RECEIVER=0x...                  AVAX komisyonunun gideceği cüzdan (önerilen: donanım cüzdanı / yedek cüzdan)
 //   TOKEN_ADDRESS=0x...                 ADASTRA (gerçek ağda 0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0)
 //   FEE_GAS=100000                      komisyon = gaz fiyatı × bu (sunucudaki PAY_FEE_GAS ile aynı olmalı)
 //   DEPLOY_MOCK_TOKEN=1                 yalnız Fuji: deneme için sahte ADASTRA da yükler (TOKEN_ADDRESS gerekmez)
@@ -35,6 +38,10 @@ if (mainnet && env.DEPLOY_MOCK_TOKEN === '1') { console.error('❌ Sahte token g
 
 const wallet = new ethers.Wallet(need('DEPLOYER_PRIVATE_KEY'), provider);
 const treasury = need('TREASURY'), feeReceiver = need('FEE_RECEIVER');
+const ownerAddress = (env.OWNER_ADDRESS || '').trim();
+if (mainnet && !ownerAddress) { console.error('❌ Gerçek ağda OWNER_ADDRESS (donanım cüzdanı adresi) zorunlu: sözleşme sahibi sıcak bir anahtarda kalmamalı.'); process.exit(1); }
+if (ownerAddress && !isAddr(ownerAddress)) { console.error('❌ OWNER_ADDRESS geçerli bir adres değil'); process.exit(1); }
+if (ownerAddress && ownerAddress.toLowerCase() === treasury.toLowerCase()) { console.error('❌ OWNER_ADDRESS oyun cüzdanıyla (TREASURY) aynı olamaz: oyun cüzdanının anahtarı sunucuda durur.'); process.exit(1); }
 const feeGas = BigInt(env.FEE_GAS || 100000);
 for (const [k, v] of [['TREASURY', treasury], ['FEE_RECEIVER', feeReceiver]]) if (!isAddr(v)) { console.error(`❌ ${k} geçerli bir adres değil`); process.exit(1); }
 
@@ -63,7 +70,18 @@ const [t2, tr2, fr2, fg2, own] = await Promise.all([pay.token(), pay.treasury(),
 const okk = t2.toLowerCase() === token.toLowerCase() && tr2.toLowerCase() === treasury.toLowerCase() && fr2.toLowerCase() === feeReceiver.toLowerCase() && fg2 === feeGas;
 console.log(okk ? '✅ Ayarlar doğrulandı' : '❌ Ayarlar beklenenle uyuşmuyor!');
 
-const out = { network: mainnet ? 'avalanche' : 'fuji', chainId: Number(chainId), address, token, treasury, feeReceiver, feeGas: Number(feeGas), owner: own, at: new Date().toISOString(), tx: pay.deploymentTransaction().hash };
+// Sahipliği donanım cüzdanına devret (iki adımlı: Ledger "kabul et" diyene kadar eski sahip yetkili kalır)
+let pendingOwner = null;
+if (ownerAddress && ownerAddress.toLowerCase() !== wallet.address.toLowerCase()) {
+  const t = await pay.transferOwnership(ownerAddress);
+  await t.wait();
+  pendingOwner = (await pay.pendingOwner()).toLowerCase();
+  console.log(pendingOwner === ownerAddress.toLowerCase()
+    ? `👑 Sahiplik devri başlatıldı → ${ownerAddress}. Şimdi Ledger ile "acceptOwnership" (yönetici paneli: "Sözleşme sahipliğini kabul et") yap.`
+    : '❌ Sahiplik devri doğrulanamadı!');
+}
+
+const out = { network: mainnet ? 'avalanche' : 'fuji', chainId: Number(chainId), address, token, treasury, feeReceiver, feeGas: Number(feeGas), owner: own, pendingOwner, at: new Date().toISOString(), tx: pay.deploymentTransaction().hash };
 fs.mkdirSync(path.join(here, 'deployments'), { recursive: true });
 fs.writeFileSync(path.join(here, 'deployments', `${out.network}.json`), JSON.stringify(out, null, 2));
-console.log(`\n✅ RealmPayments: ${address}\nSunucu ayarı:  PAYMENTS_CONTRACT=${address}   PAY_FEE_GAS=${feeGas}${mainnet ? '' : '   CHAIN_ID=43113   TOKEN_ADDRESS=' + token}`);
+console.log(`\n✅ RealmPayments: ${address}\nSunucu ayarı:  PAYMENTS_CONTRACT=${address}   PAY_FEE_GAS=${feeGas}${ownerAddress ? '   CONTRACT_OWNER=' + ownerAddress : ''}${mainnet ? '' : '   CHAIN_ID=43113   TOKEN_ADDRESS=' + token}`);

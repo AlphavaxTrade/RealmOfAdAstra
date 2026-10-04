@@ -37,6 +37,7 @@ async function api(method, path, body) {
   if (!res.ok) {
     const err = new Error((data && data.error) || `Sunucu yanıtı: ${res.status}`);
     err.status = res.status;
+    err.need2fa = !!(data && data.need2fa);
     throw err;
   }
   return data;
@@ -198,6 +199,93 @@ export const KALE_KAPISI = `🛡️ <strong>Kale Kapısı Kuralı.</strong> Hazi
 // 💰 Sandık Tavsiyesi: Oyun Kasası'nda az para tutmanın oyunlaştırılmış açıklaması (kullanıcı isteği)
 export const SANDIK_TAVSIYESI = `💰 <strong>Sandık Tavsiyesi.</strong> Oyun Kasan, krallığının günlük işleri (iyileşme, bot, onarım) için taşıdığın küçük bir kese. Muhafızlarımız onu gece gündüz bekler ama en sağlam kale senin kendi cüzdanındır. Kesende yalnızca birkaç günlük harcamalık altın tut, biriken servetini kendi cüzdanına taşı. Unutma: bir kralın en güvendiği kasa, anahtarı kendi cebinde olandır. 🗝️`;
 
+// 🛡️ Muhafız Mührü: iki adımlı doğrulamanın oyunlaştırılmış açıklaması
+export const MUHAFIZ_MUHRU = `🛡️ <strong>Muhafız Mührü.</strong> Şifren kale kapısının anahtarı; ama anahtarlar kopyalanabilir. Muhafız Mührü'nü takarsan kapıda bir muhafız daha durur: içeri girmek, cüzdan değiştirmek ya da hazineden altın çıkarmak için telefonundaki doğrulama uygulamasının o anki <strong>6 haneli kodu</strong> da gerekir. Kod her 30 saniyede değişir; şifreni çalan biri bile telefonun olmadan kapıdan geçemez. 📱`;
+
+// İki adımlı doğrulama kodu sor (iptal → null)
+function askCode(title = 'Muhafız Mührü', errMsg = '') {
+  return new Promise(resolve => {
+    const el = overlay(`
+      <div style="font-size:2rem;">🛡️</div>
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${esc(title)}</div>
+      <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">Telefonundaki doğrulama uygulamasındaki <strong>6 haneli kodu</strong> yaz. Telefonun yanında değilse yedek kodlarından birini de yazabilirsin.</div>
+      <input id="ac-code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="123456" style="${inputCss};text-align:center;font-size:1.3rem;letter-spacing:4px;">
+      <button id="ac-go" style="${btnCss('#7c3aed', '#c084fc')}">Onayla</button>
+      ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+      <button id="ac-cancel" style="${linkCss}">Vazgeç</button>`);
+    const inp = el.querySelector('#ac-code');
+    setTimeout(() => inp.focus(), 30);
+    const done = v => { closeOverlay(); resolve(v); };
+    el.querySelector('#ac-go').onclick = () => done(inp.value.trim());
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') done(inp.value.trim()); });
+    el.querySelector('#ac-cancel').onclick = () => done(null);
+  });
+}
+
+// Mühür açıksa sunucu kod ister (403 + need2fa): kodu sorup aynı isteği tekrarlar. İptal → hata
+async function withCode(call, title) {
+  let code, errMsg = '';
+  for (let i = 0; i < 6; i++) {
+    try { return await call(code); }
+    catch (err) {
+      if (!err.need2fa) throw err;
+      if (code !== undefined) errMsg = err.message;
+      code = await askCode(title, errMsg);
+      if (code == null) throw new Error('İşlem iptal edildi.');
+    }
+  }
+  throw new Error('Çok fazla deneme.');
+}
+
+function twoFactorSection(acc) {
+  return `<div style="${boxCss}">
+    <div style="font-weight:800;color:#86efac;margin-bottom:4px;">🛡️ Muhafız Mührü (iki adımlı doğrulama) · ${acc.twoFactor ? '<span style="color:#4ade80;">AÇIK ✓</span>' : '<span style="color:#fbbf24;">kapalı</span>'}</div>
+    <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">${MUHAFIZ_MUHRU}</div>
+    ${acc.twoFactor
+      ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:6px;">Kalan yedek kod: <strong>${acc.backupLeft}</strong>${acc.backupLeft <= 3 ? ' <span style="color:#fbbf24;">(azaldı: mührü kapatıp yeniden açarak yeni kodlar al)</span>' : ''}</div>
+         <button id="tf-off" style="margin-top:8px;padding:6px 12px;border-radius:8px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;font-weight:800;cursor:pointer;">Mührü kaldır</button>`
+      : `<button id="tf-on" style="margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid #4ade80;background:#14532d;color:#fff;font-weight:800;cursor:pointer;">🛡️ Mührü tak (önerilir)</button>`}
+  </div>`;
+}
+
+// Mührü takma: kare kod → uygulamadaki kod → yedek kodlar
+async function enable2faFlow() {
+  let s;
+  try { s = await api('POST', '/api/account/2fa/setup'); } catch (err) { ctx.toast(err.message, 'error'); return; }
+  const draw = (errMsg = '') => {
+    const el = overlay(`
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">🛡️ Muhafız Mührü'nü tak</div>
+      <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">
+        <strong>1.</strong> Telefonuna bir doğrulama uygulaması kur (Google Authenticator, Microsoft Authenticator ya da Authy; hepsi ücretsiz).<br>
+        <strong>2.</strong> Uygulamada "+" → "QR kodu tara" ile aşağıdaki kareyi tara. (Telefondaysan "Uygulamada aç"a dokun.)<br>
+        <strong>3.</strong> Uygulamanın gösterdiği 6 haneli kodu aşağıya yaz.
+      </div>
+      <img src="${s.qr}" alt="QR" style="width:190px;height:190px;background:#fff;border-radius:10px;padding:6px;margin:10px auto 4px;display:block;">
+      <a href="${esc(s.uri)}" style="color:#93c5fd;font-size:0.82rem;">📱 Uygulamada aç</a>
+      <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Elle girmek için gizli anahtar:<br><span style="font-family:monospace;color:#fde68a;word-break:break-all;">${esc(s.secret)}</span></div>
+      <input id="tf-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 haneli kod" style="${inputCss};text-align:center;font-size:1.2rem;letter-spacing:4px;">
+      <button id="tf-go" style="${btnCss('#15803d', '#4ade80')}">Mührü tak</button>
+      ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+      <button id="tf-cancel" style="${linkCss}">Vazgeç</button>`);
+    el.querySelector('#tf-cancel').onclick = () => openWalletPanel();
+    el.querySelector('#tf-go').onclick = async () => {
+      try {
+        const r = await api('POST', '/api/account/2fa/enable', { code: el.querySelector('#tf-code').value.trim() });
+        const el2 = overlay(`
+          <div style="font-size:2rem;">📜</div>
+          <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Mühür takıldı! Yedek kodların</div>
+          <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">Telefonunu kaybedersen bu kodlarla girersin. Her kod <strong>bir kez</strong> kullanılır. Bir kâğıda yaz ya da güvenli bir yere kaydet: <strong>bu kodları bir daha gösteremeyiz.</strong></div>
+          <div style="font-family:monospace;font-size:1rem;color:#fde68a;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">${r.backupCodes.map(c => `<span>${esc(c)}</span>`).join('')}</div>
+          <button id="tf-copy" style="${btnCss('#334155', '#64748b')}">📋 Kodları kopyala</button>
+          <button id="tf-done" style="${btnCss('#7c3aed', '#c084fc')}">Yazdım, tamam</button>`);
+        el2.querySelector('#tf-copy').onclick = () => { navigator.clipboard?.writeText(r.backupCodes.join('\n')); ctx.toast('Yedek kodlar kopyalandı', 'success'); };
+        el2.querySelector('#tf-done').onclick = () => { ctx.toast('🛡️ Muhafız Mührü takıldı!', 'success'); openWalletPanel(); };
+      } catch (err) { draw(err.message); }
+    };
+  };
+  draw();
+}
+
 function kasaSection(k) {
   if (!k || !k.enabled) return `<div style="${boxCss}"><div style="font-weight:800;color:#fde68a;">🏦 Oyun Kasası</div><div style="font-size:0.8rem;color:#94a3b8;">Oyun Kasası henüz açılmadı.</div></div>`;
   const days = k.daysLeft == null ? null : k.daysLeft;
@@ -222,13 +310,14 @@ function kasaSection(k) {
     </div>
     ${k.avaxLow ? `<div style="color:#fca5a5;font-size:0.8rem;">⚠️ Kasada işlem ücreti için AVAX kalmadı (en az ${k.minAvax}). Kasa şu an kullanılmıyor; biraz AVAX gönder.</div>` : ''}
     <div style="font-size:0.8rem;color:#cbd5e1;margin-top:4px;">📅 ${left}</div>
+    ${k.cap ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">🛡️ Kasa üst sınırı: <strong>${fmt(k.cap)} ADA</strong> (yaklaşık ${k.capDays} günlük harcaman). Fazlası güvenliğin için kendiliğinden bağlı cüzdanına geri gönderilir.${k.overCap && !k.hasWallet ? ' <span style="color:#fbbf24;">Kasan sınırın üstünde ama bağlı cüzdanın yok: geri gönderim için cüzdan bağla.</span>' : ''}</div>` : ''}
     <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Kazandığın bakiye ve kasan bitince: pasif iyileşme durur · bot ücreti yenilenemez, bot durur · botun pazar alımları durur · aletler onarılamaz.</div>
     <div style="display:flex;gap:6px;margin-top:8px;">
       <input id="ks-amount" type="number" min="0" placeholder="Miktar" style="flex:1;padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
       <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option>ADA</option><option>AVAX</option></select>
       <button id="ks-withdraw" style="padding:7px 10px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Kasadan çek</button>
     </div>
-    ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ADA çekimi', withdraw_avax: '🏧 AVAX çekimi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
+    ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ADA çekimi', withdraw_avax: '🏧 AVAX çekimi', return_ada: '↩️ fazlanın iadesi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
     <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${SANDIK_TAVSIYESI}</div>
   </div>`;
 }
@@ -237,20 +326,21 @@ function kasaSection(k) {
 function loginFlow(startMode = 'login') {
   return new Promise(resolve => {
     let mode = startMode, email = '', msg = '', isErr = true, extra = '';
-    const titles = { login: 'Krallığa Dön', register: 'Krallığa Katıl', forgot: 'Şifremi Unuttum' };
+    const titles = { login: 'Krallığa Dön', register: 'Krallığa Katıl', forgot: 'Şifremi Unuttum', resend: 'Onay Bağlantısı' };
     const intro = {
       login: 'E-posta ve şifrenle giriş yap.',
       register: 'E-posta ve şifrenle hesabını aç. Cüzdanın kaybolsa bile krallığın ve hazinen hesabınla birlikte kalır.',
-      forgot: 'E-postanı yaz; şifreni yenilemen için bir bağlantı gönderelim.'
+      forgot: 'E-postanı yaz; şifreni yenilemen için bir bağlantı gönderelim.',
+      resend: 'Kayıt olduğun e-postayı yaz; onay bağlantısını yeniden gönderelim.'
     };
-    const go_ = { login: '🗝️ Giriş Yap', register: '🏰 Hesap Aç', forgot: '📧 Bağlantı Gönder' };
+    const go_ = { login: '🗝️ Giriş Yap', register: '🏰 Hesap Aç', forgot: '📧 Bağlantı Gönder', resend: '📧 Yeniden Gönder' };
     const draw = (busy = false) => {
       const el = overlay(`
         <div style="font-size:2.2rem;">👑</div>
         <div style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 2px;">${titles[mode]}</div>
         <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">${intro[mode]}</div>
         <input id="ol-email" type="email" autocomplete="email" placeholder="E-posta" value="${esc(email)}" style="${inputCss}">
-        ${mode !== 'forgot' ? `<input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
+        ${mode !== 'forgot' && mode !== 'resend' ? `<input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
         <button id="ol-go" ${busy ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${busy ? '⏳ Bekle…' : go_[mode]}</button>
         ${msg ? `<div style="margin-top:10px;font-size:0.85rem;color:${isErr ? '#fca5a5' : '#86efac'};">${esc(msg)}</div>` : ''}
         ${extra}
@@ -258,6 +348,7 @@ function loginFlow(startMode = 'login') {
           ${mode !== 'login' ? `<button class="ol-mode" data-m="login" style="${linkCss}">Giriş yap</button>` : ''}
           ${mode !== 'register' ? `<button class="ol-mode" data-m="register" style="${linkCss}">Hesap aç</button>` : ''}
           ${mode !== 'forgot' ? `<button class="ol-mode" data-m="forgot" style="${linkCss}">Şifremi unuttum</button>` : ''}
+          ${mode === 'login' || mode === 'register' ? `<button class="ol-mode" data-m="resend" style="${linkCss}">Onay e-postası gelmedi</button>` : ''}
         </div>
         <button id="ol-later" style="${linkCss}">Şimdilik gezmeye devam et</button>`);
       el.querySelectorAll('.ol-mode').forEach(b => b.addEventListener('click', () => { email = el.querySelector('#ol-email').value; mode = b.dataset.m; msg = ''; extra = ''; draw(); }));
@@ -265,6 +356,12 @@ function loginFlow(startMode = 'login') {
       el.querySelector('#ol-go').addEventListener('click', go);
       el.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
       el.querySelector('#ol-dev-reset')?.addEventListener('click', () => { location.href = el.querySelector('#ol-dev-reset').dataset.href; });
+      el.querySelector('#ol-dev-verify')?.addEventListener('click', async () => {
+        try {
+          const r = await api('POST', '/api/account/verify', { token: el.querySelector('#ol-dev-verify').dataset.t });
+          if (r.token) { saveSession(r.token, r.playerId); ctx.toast('🧪 Deneme modu: e-posta onayı verildi.', 'success'); closeOverlay(); resolve(true); }
+        } catch (err) { msg = err.message; isErr = true; extra = ''; draw(); }
+      });
     };
     async function go() {
       const el = document.getElementById('online-overlay');
@@ -272,20 +369,35 @@ function loginFlow(startMode = 'login') {
       const password = el.querySelector('#ol-pass') ? el.querySelector('#ol-pass').value : '';
       draw(true);
       try {
-        if (mode === 'forgot') {
-          const r = await api('POST', '/api/account/forgot', { email });
-          msg = r.message; isErr = false;
-          extra = r.devLink ? `<button id="ol-dev-reset" data-href="${esc(r.devLink)}" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: sıfırlama bağlantısını aç</button>` : '';
+        // Deneme sunucusunda gerçek e-posta yok: bağlantı düğme olarak gösterilir
+        const devBtns = r => {
+          const v = tokenFromLink(r.devLink, 'verify');
+          if (v) return `<button id="ol-dev-verify" data-t="${esc(v)}" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: e-postadaki onaya tıkla</button>`;
+          return r.devLink ? `<button id="ol-dev-reset" data-href="${esc(r.devLink)}" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: e-postadaki bağlantıyı aç</button>` : '';
+        };
+        if (mode === 'forgot' || mode === 'resend') {
+          const r = await api('POST', mode === 'forgot' ? '/api/account/forgot' : '/api/account/resend', { email });
+          msg = r.message; isErr = false; extra = devBtns(r);
           return draw();
         }
-        const r = await api('POST', mode === 'register' ? '/api/account/register' : '/api/account/login', { email, password });
-        saveSession(r.token, r.playerId);
         if (mode === 'register') {
-          // Deneme sunucusunda gerçek e-posta yok: doğrulama kendiliğinden yapılır
-          const t = tokenFromLink(r.devLink, 'verify');
-          if (t) { await api('POST', '/api/account/verify', { token: t }).catch(() => {}); ctx.toast('🧪 Deneme modu: e-postan kendiliğinden doğrulandı.', 'success'); }
-          else ctx.toast('📧 E-postana bir doğrulama bağlantısı gönderdik. Çekim ve cüzdan bağlama için e-postanı doğrula.', 'success');
+          // Kayıtta oturum açılmaz: oyuncu e-postasındaki bağlantıyla girer (e-postanın kayıtlı olup olmadığı belli olmaz)
+          const r = await api('POST', '/api/account/register', { email, password });
+          msg = r.message; isErr = false; extra = devBtns(r);
+          return draw();
         }
+        let r = await api('POST', '/api/account/login', { email, password });
+        if (r.need2fa) {
+          let errMsg = '';
+          for (;;) {
+            const code = await askCode('Muhafız Mührü — giriş', errMsg);
+            if (code == null) { msg = 'Giriş iptal edildi.'; isErr = true; return draw(); }
+            try { r = await api('POST', '/api/account/login2fa', { ticket: r.ticket, code }); break; }
+            catch (err) { if (/süresi doldu/i.test(err.message)) { msg = err.message; isErr = true; return draw(); } errMsg = err.message; }
+          }
+          if (r.backupLeft != null) ctx.toast(`🛡️ Yedek kodla girdin. Kalan yedek kod: ${r.backupLeft}`, 'info');
+        }
+        saveSession(r.token, r.playerId);
         closeOverlay();
         resolve(true);
       } catch (err) {
@@ -334,7 +446,7 @@ async function linkWalletFlow() {
     if (!address) throw new Error('Cüzdan adresi alınamadı');
     const { message } = await api('POST', '/api/account/wallet/nonce', { address });
     const signature = await window.ethereum.request({ method: 'personal_sign', params: [toHex(message), address] });
-    const r = await api('POST', '/api/account/wallet/link', { signature });
+    const r = await withCode(code => api('POST', '/api/account/wallet/link', { signature, code }), 'Muhafız Mührü — cüzdan bağlama');
     const t = tokenFromLink(r.devLink, 'wallet');
     overlay(`
       <div style="font-size:2rem;">${r.change ? '🛡️' : '📧'}</div>
@@ -398,6 +510,7 @@ export async function openWalletPanel() {
       <button id="wp-link" style="margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid #a78bfa;background:#4c1d95;color:#fff;font-weight:800;cursor:pointer;">${acc.wallet ? '🔁 Cüzdanı değiştir' : '🔗 Cüzdan bağla'}</button>
       ${acc.wallet ? `<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${KALE_KAPISI}</div>` : ''}
     </div>
+    ${twoFactorSection(acc)}
     ${kasaSection(k)}
     <div style="${boxCss}">
       <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
@@ -419,19 +532,27 @@ export async function openWalletPanel() {
   if ($('wp-resend')) $('wp-resend').onclick = async e => {
     e.preventDefault();
     try {
-      const r = await api('POST', '/api/account/resend');
+      const r = await api('POST', '/api/account/resend', { email: acc.email });
       const t = tokenFromLink(r.devLink, 'verify');
       if (t) { await api('POST', '/api/account/verify', { token: t }); ctx.toast('🧪 Deneme modu: e-postan doğrulandı.', 'success'); openWalletPanel(); }
       else ctx.toast('📧 Doğrulama bağlantısı yeniden gönderildi.', 'success');
     } catch (err) { ctx.toast(err.message, 'error'); }
   };
   $('wp-link').onclick = () => linkWalletFlow();
+  if ($('tf-on')) $('tf-on').onclick = () => enable2faFlow();
+  if ($('tf-off')) $('tf-off').onclick = async () => {
+    if (!confirm('Muhafız Mührü kaldırılsın mı? Hesabın yalnız şifreyle korunur.')) return;
+    try { await withCode(code => api('POST', '/api/account/2fa/disable', { code }), 'Mührü kaldır'); ctx.toast('Muhafız Mührü kaldırıldı.', 'info'); }
+    catch (err) { ctx.toast(err.message, 'error'); }
+    openWalletPanel();
+  };
   if ($('ks-copy')) $('ks-copy').onclick = () => { navigator.clipboard?.writeText(k.address); ctx.toast('Kasa adresi kopyalandı', 'success'); };
   if ($('ks-refresh')) $('ks-refresh').onclick = async () => { try { await api('POST', '/api/kasa/refresh'); ctx.toast('🔄 Kasa bakiyesi güncellendi', 'success'); openWalletPanel(); } catch (err) { ctx.toast(err.message, 'error'); } };
   if ($('ks-test')) $('ks-test').onclick = async () => { try { await api('POST', '/api/kasa/test-deposit', { ada: 10000, avax: 0.1 }); ctx.toast('🧪 Kasaya deneme parası eklendi', 'success'); openWalletPanel(); } catch (err) { ctx.toast(err.message, 'error'); } };
   if ($('ks-withdraw')) $('ks-withdraw').onclick = async () => {
-    try { const r = await api('POST', '/api/kasa/withdraw', { asset: $('ks-asset').value, amount: Number($('ks-amount').value) }); ctx.toast(r.message, 'success'); setTimeout(openWalletPanel, 800); }
-    catch (err) { ctx.toast(err.message, 'error'); }
+    const asset = $('ks-asset').value, amount = Number($('ks-amount').value);
+    try { const r = await withCode(code => api('POST', '/api/kasa/withdraw', { asset, amount, code }), 'Muhafız Mührü — kasadan çekim'); ctx.toast(r.message, 'success'); setTimeout(openWalletPanel, 800); }
+    catch (err) { ctx.toast(err.message, 'error'); openWalletPanel(); }
   };
   if ($('wp-wcancel')) $('wp-wcancel').onclick = async () => {
     try { await api('POST', '/api/account/wallet/cancel'); ctx.toast('✋ Cüzdan değişikliği iptal edildi. Şifreni değiştirmeyi unutma!', 'success'); openWalletPanel(); }
@@ -439,11 +560,12 @@ export async function openWalletPanel() {
   };
   if ($('wp-withdraw')) $('wp-withdraw').onclick = async () => {
     try {
-      const r = await api('POST', '/api/withdraw', { amount: Number($('wp-amount').value) });
+      const amount = Number($('wp-amount').value);
+      const r = await withCode(code => api('POST', '/api/withdraw', { amount, code }), 'Muhafız Mührü — çekim');
       ctx.toast(r.message, r.success ? 'success' : 'error');
       await sync();
-      if (r.success) openWalletPanel();
-    } catch (err) { ctx.toast(err.message, 'error'); }
+      openWalletPanel();
+    } catch (err) { ctx.toast(err.message, 'error'); openWalletPanel(); }
   };
   if ($('wp-cancel')) $('wp-cancel').onclick = async () => {
     try { const r = await api('POST', '/api/withdraw/cancel'); ctx.toast(r.message, r.success ? 'success' : 'error'); await sync(); openWalletPanel(); }
@@ -457,8 +579,17 @@ async function handleEmailLinks() {
   const clean = () => { try { history.replaceState(null, '', location.pathname); } catch { /* yok */ } };
   if (p.get('verify')) {
     clean();
-    try { await api('POST', '/api/account/verify', { token: p.get('verify') }); ctx.toast('✅ E-postan doğrulandı. Krallığa hoş geldin!', 'success'); }
-    catch (err) { ctx.toast(err.message, 'error'); }
+    try {
+      const r = await api('POST', '/api/account/verify', { token: p.get('verify') });
+      if (r.token) {
+        saveSession(r.token, r.playerId);
+        apply(await api('GET', '/api/state'));
+        ctx.toast('✅ E-postan doğrulandı. Krallığa hoş geldin! 👑', 'success');
+      } else {
+        ctx.toast('✅ E-postan doğrulandı. Şimdi giriş yap.', 'success');
+        requireLogin('login');
+      }
+    } catch (err) { ctx.toast(err.message, 'error'); }
   } else if (p.get('wallet')) {
     clean();
     await confirmWalletLink(p.get('wallet'));
@@ -473,9 +604,9 @@ async function handleEmailLinks() {
       <div id="rs-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>`);
     el.querySelector('#rs-go').onclick = async () => {
       try {
-        await api('POST', '/api/account/reset', { token: t, password: el.querySelector('#rs-pass').value });
+        const r = await api('POST', '/api/account/reset', { token: t, password: el.querySelector('#rs-pass').value });
         closeOverlay();
-        ctx.toast('✅ Şifren yenilendi. Şimdi giriş yap.', 'success');
+        ctx.toast(r.twoFactor ? '✅ Şifren yenilendi. Girişte Muhafız Mührü kodun da istenecek.' : '✅ Şifren yenilendi. Şimdi giriş yap.', 'success');
         requireLogin('login');
       } catch (err) { el.querySelector('#rs-msg').textContent = err.message; }
     };
