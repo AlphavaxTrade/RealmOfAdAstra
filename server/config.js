@@ -25,6 +25,10 @@ export function loadConfig(env = process.env) {
     weeklySendCapAda: num('WEEKLY_SEND_CAP_ADA', 100_000_000),   // güvenlik: bir haftada oyunculara gidebilecek en fazla ADA
     minWithdrawAda: num('MIN_WITHDRAW_ADA', 1000),
     depositStartBlock: num('DEPOSIT_START_BLOCK', 0),              // 0: sunucu ilk açıldığı bloktan başlar
+    // Eski düzen: oyun cüzdanına doğrudan gönderilen ADASTRA'yı bakiyeye yaz. Yeni düzende KAPALI: ödemeler sözleşmeden,
+    // otomatik işler Oyun Kasası'ndan yapılır. (Açılırsa sözleşme ödemeleri ayrıca yatırma sayılmasın diye süzülür.)
+    legacyDeposits: env.LEGACY_DEPOSITS === '1',
+    treasuryAddress: (env.TREASURY_ADDRESS || '').trim(),          // sözleşmedeki hazine adresi (boşsa oyun cüzdanı)
     launchPriceUsd: num('LAUNCH_PRICE_USD', 0),                    // 0: ilk okunan fiyat açılış fiyatı sayılır
     sessionDays: num('SESSION_DAYS', 30),
     publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080)}`).trim(),   // e-postadaki bağlantılar bu adrese gider

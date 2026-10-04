@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS pay_quotes (
 const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ADA)\b/i;
 export const isInsufficientAda = msg => INSUFFICIENT_RE.test(String(msg || ''));
 
-export function createPayments({ db, engine, accounts, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, clock = () => Date.now(), log = console }) {
   db.raw.exec(SCHEMA);
   const q = {
     add: db.raw.prepare('INSERT INTO pay_quotes (ref, player, name, args, amount, created, expires) VALUES (?, ?, ?, ?, ?, ?, ?)'),
@@ -126,10 +126,13 @@ export function createPayments({ db, engine, accounts, chain, cfg, clock = () =>
     const logs = await chain.scanPaid(from, to);
     let n = 0;
     for (const l of logs) {
+      if (kasa && kasa.isKasaAddress && kasa.isKasaAddress(l.payer)) continue;   // Oyun Kasası'nın saatlik aktarımı
       const row = q.get.get(l.ref);
       if (!row) { db.event('payment-unmatched', null, l); continue; }
       if (row.status !== 'open') continue;
       if (q.used.get(l.txHash)) continue;
+      // Ödeme gerçekten oyun cüzdanına gitmiş mi (aynı denetim)
+      try { await chain.verifyPayment(l.txHash); } catch (e) { db.event('payment-rejected', row.player, { ref: l.ref, tx: l.txHash, reason: e.message }); continue; }
       try {
         db.tx(() => {
           if (Number(q.credit.run(l.txHash, l.amount, row.ref).changes) !== 1) return;

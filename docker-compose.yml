@@ -5,7 +5,9 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      # Yalnız aynı makinedeki HTTPS katmanına (Caddy/Nginx) açık; dışarıdan doğrudan erişilemez.
+      # (Böylece ziyaretçi adres bilgisini sahteleyip hız sınırlarını atlatamaz; TRUST_PROXY=1 ile birlikte kullan.)
+      - "127.0.0.1:8080:8080"
     env_file:
       - server/.env
     environment:

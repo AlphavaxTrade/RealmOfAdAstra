@@ -84,6 +84,9 @@ export function createChain(cfg) {
       const logs = await withProvider(p => p.getLogs({ address: cfg.tokenAddress, topics: [topic, null, toTopic], fromBlock: b, toBlock: e }));
       for (const l of logs) {
         const ev = iface.parseLog(l);
+        // Ödeme sözleşmesi üzerinden gelen aktarım yatırma DEĞİLDİR (o, ödeme olarak ayrıca işlenir): çift yazmayı önle
+        const tx = await withProvider(p => p.getTransaction(l.transactionHash)).catch(() => null);
+        if (!tx || String(tx.to || '').toLowerCase() !== String(cfg.tokenAddress).toLowerCase()) continue;
         out.push({ txHash: l.transactionHash, logIndex: l.index, from: ev.args.from.toLowerCase(), amount: toAda(ev.args.value), block: l.blockNumber });
       }
     }
@@ -171,7 +174,19 @@ export function createChain(cfg) {
       let ev = null;
       try { ev = payIface.parseLog(l); } catch { ev = null; }
       if (ev && ev.name === 'Paid') {
-        return { contract, payer: ev.args.payer.toLowerCase(), ref: ev.args.ref, amount: toAda(ev.args.amount), fee: Number(ethers.formatEther(ev.args.fee)), block: rc.blockNumber };
+        const payer = ev.args.payer.toLowerCase();
+        // Ek güvence: aynı işlemde ADASTRA gerçekten BİZİM oyun cüzdanımıza, ödenen miktarda aktarılmış mı?
+        // (Sözleşme sahibinin anahtarı çalınıp hazine adresi değiştirilirse sunucu boşuna bakiye yazmasın.)
+        const treasury = String(cfg.treasuryAddress || gameWallet || '').toLowerCase();
+        const erc = new ethers.Interface(ERC20_ABI);
+        const moved = rc.logs.some(t => {
+          if (t.address.toLowerCase() !== String(cfg.tokenAddress).toLowerCase()) return false;
+          let tr = null;
+          try { tr = erc.parseLog(t); } catch { tr = null; }
+          return tr && tr.name === 'Transfer' && tr.args.from.toLowerCase() === payer && (!treasury || tr.args.to.toLowerCase() === treasury) && tr.args.value >= ev.args.amount;
+        });
+        if (!moved) throw new Error('Ödeme oyun cüzdanına gitmemiş');
+        return { contract, payer, ref: ev.args.ref, amount: toAda(ev.args.amount), fee: Number(ethers.formatEther(ev.args.fee)), block: rc.blockNumber };
       }
     }
     throw new Error('Bu işlemde ödeme bulunamadı');

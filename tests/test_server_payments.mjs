@@ -32,7 +32,8 @@ try {
   }
 
   const cfg = { ...loadConfig({}), dbFile: ':memory:', rpcUrls: [`http://127.0.0.1:${PORT}`], chainId: 43114,
-    tokenAddress: await token.getAddress(), paymentsContract: (await pay.getAddress()).toLowerCase(), payFeeGas: 100000 };
+    tokenAddress: await token.getAddress(), paymentsContract: (await pay.getAddress()).toLowerCase(), payFeeGas: 100000,
+    treasuryAddress: (await treasury.getAddress()).toLowerCase(), legacyDeposits: false };
   const db = openDb(':memory:');
   const E = await createEngine(db);
   const chain = createChain(cfg);
@@ -112,6 +113,32 @@ try {
   assert.equal(late.ok, false, 'Sonradan onay ikinci kez para eklemez');
   assert.equal(await payments.scanPaid(), 0, 'Tarama aynı ödemeyi iki kez eklemez');
   ok('Kurtarma: bildirilmemiş ödeme zincirden bulunup bir kez bakiyeye eklendi');
+
+  // 5c) Sözleşme sahibinin anahtarı çalınıp hazine adresi değiştirilirse: ödeme oyun cüzdanına gitmez → sunucu kabul etmez
+  const attackerAddr = '0x' + '66'.repeat(20);
+  await (await pay.connect(owner).setConfig(attackerAddr, await feeRx.getAddress(), FEE_GAS)).wait();
+  E.mutatePlayer(pid, gs => { gs.state.adAstraBalance = 0; gs.state.lockedAda = 0; });
+  const qtA = payments.quote(pid, 'buySoldierUnit', []);
+  assert.ok(qtA.needPayment, 'Ödeme gerekiyor');
+  const balA = E.readPlayer(pid).adAstraBalance;
+  const tA = await pay.connect(playerW).pay(ethers.parseUnits(String(qtA.amountAda), 18), qtA.ref, { value: gasPrice * FEE_GAS, gasPrice });
+  await tA.wait();
+  const rA = await payments.confirm(pid, qtA.ref, tA.hash);
+  assert.equal(rA.ok, false, 'Hazine adresi değiştirilmiş ödeme kabul edilmez');
+  db.kvSet('chain:payBlock', 1);
+  await payments.scanPaid();
+  assert.equal(E.readPlayer(pid).adAstraBalance, balA, 'Kurtarma taraması da bu ödemeyi bakiyeye yazmaz');
+  await (await pay.connect(owner).setConfig(await treasury.getAddress(), await feeRx.getAddress(), FEE_GAS)).wait();
+  ok('Hazine adresi değiştirilirse ödeme kabul edilmiyor (sözleşme sahibi anahtarı çalınsa bile)');
+
+  // 5d) Çift yazma koruması: eski "oyun cüzdanına yatırma" taraması açılsa bile sözleşme ödemeleri yatırma sayılmaz
+  const direct = await token.connect(playerW).transfer(await treasury.getAddress(), ethers.parseUnits('7', 18));
+  await direct.wait();
+  const legacyChain = createChain({ ...cfg, gameWalletAddress: (await treasury.getAddress()).toLowerCase() });
+  const deps = await legacyChain.scanDeposits(1, await provider.getBlockNumber());
+  assert.ok(deps.some(d => d.txHash === direct.hash && Math.abs(d.amount - 7) < 1e-9), 'Doğrudan gönderim görülür');
+  assert.ok(!deps.some(d => d.txHash === payTx.hash || d.txHash === tR.hash), 'Sözleşme ödemeleri yatırma olarak sayılmaz (çift yazma yok)');
+  ok('Çift yazma koruması: sözleşme ödemeleri ayrıca yatırma sayılmıyor');
 
   // 6) Bakiye yetiyorsa teklif ödeme istemez
   E.mutatePlayer(pid, gs => { gs.state.adAstraBalance = 1e7; });

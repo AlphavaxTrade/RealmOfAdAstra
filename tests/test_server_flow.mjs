@@ -59,7 +59,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
 }
 
 // ── 2) Uçtan uca ─────────────────────────────────────────────────────────
-const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test-anahtari-uzun-1234567890', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, publicRateLimitPerSec: 1000, ipRateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
+const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test-anahtari-uzun-1234567890', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, publicRateLimitPerSec: 1000, ipRateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100, legacyDeposits: true };
 const db = openDb(':memory:');
 const engine = await createEngine(db);
 const GAME_WALLET = '0x' + '11'.repeat(20);

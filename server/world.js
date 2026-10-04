@@ -112,7 +112,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
 
   // ── Yatırma ─────────────────────────────────────────────────────────────
   async function scanDeposits() {
-    if (!chain || !chain.gameWallet) return 0;
+    if (!chain || !chain.gameWallet || !cfg.legacyDeposits) return 0;
     const latest = (await chain.latestBlock()) - 2;                      // 2 blok onay
     let from = Number(db.kvGet('chain:depositBlock')) || 0;
     if (!from) from = cfg.depositStartBlock > 0 ? cfg.depositStartBlock : latest;

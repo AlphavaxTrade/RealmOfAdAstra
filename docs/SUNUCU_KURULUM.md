@@ -52,7 +52,7 @@ docker compose up -d --build
 docker compose logs -f        # "Realm of Astra sunucusu çalışıyor" satırını gör
 ```
 
-Oyun `http://SUNUCU:8080` adresinde açılır. Kayıtlar sunucudaki `data/realm.db` dosyasındadır; bu dosyayı **ve `KASA_MASTER_KEY`'i** düzenli yedekle.
+Sunucu yalnız aynı makineden erişilebilir (`127.0.0.1:8080`); oyuna dışarıdan 4. adımdaki HTTPS adresinden girilir. Çalıştığını görmek için: `curl http://127.0.0.1:8080/api/health`. Kayıtlar sunucudaki `data/realm.db` dosyasındadır; bu dosyayı **ve `KASA_MASTER_KEY`'i** düzenli yedekle.
 
 ## 4. HTTPS (Caddy örneği)
 

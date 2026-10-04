@@ -52,7 +52,7 @@ engine.setKasa(kasa);
 if (!kasa.enabled) console.warn('🏦 Oyun Kasası kapalı (KASA_MASTER_KEY ve PAYMENTS_CONTRACT gerekli).');
 else if (kasa.simulated) console.warn('🏦 Deneme modu: Oyun Kasası taklit (zincire bağlı değil; gerçek ADA yatırılamaz).');
 const world = createWorld({ db, engine, chain, arena, accounts, kasa, cfg });
-const payments = createPayments({ db, engine, accounts, chain, cfg });
+const payments = createPayments({ db, engine, accounts, chain, kasa, cfg });
 const app = createApp({ db, engine, world, accounts, payments, kasa, arena, chain, cfg });
 if (!cfg.paymentsContract) console.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) console.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');

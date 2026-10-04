@@ -260,5 +260,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     for (const row of q.active.all(clock() - 86400000, limit)) await refresh(row.player).catch(() => {});
   }
 
-  return { enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, queueSettlements, refreshActive };
+  const isKasaAddress = addr => !!db.raw.prepare('SELECT 1 FROM kasa WHERE address = ?').get(String(addr || '').toLowerCase());
+
+  return { isKasaAddress, enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, queueSettlements, refreshActive };
 }
