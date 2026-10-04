@@ -12,6 +12,7 @@ import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleAre
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
+import { createBarracksUI } from './ui/barracks.js';
 import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
@@ -121,6 +122,18 @@ const dom = {
   loadingPercentage: document.getElementById('loading-percentage'),
   loadingQuote: document.getElementById('loading-quote')
 };
+
+// 🛡️ Kışla arayüzü (Ordu + Cephanelik)
+const barracksUI = createBarracksUI({
+  gameState, GAME_CONFIG, PLAYER_SKILLS,
+  showToast: (...a) => showToast(...a),
+  renderTopBar: () => renderTopBar(),
+  reopen: (o) => openBarracksModal(o || {}),
+  getSelected: () => selectedSoldierIndex, setSelected: (i) => { selectedSoldierIndex = i; },
+  getTab: () => barracksActiveTab, setTab: (t) => { barracksActiveTab = t; },
+  getEditing: () => editingSoldierNameIndex, setEditing: (i) => { editingSoldierNameIndex = i; },
+  openScrapReport: (r) => openScrapReportModal(r)
+});
 
 // Modal Visibility Helper - Checks if ANY modal is currently open
 function isAnyModalOpen() {
@@ -2505,561 +2518,9 @@ function openTownZoneModal(zoneId, zoneName) {
 // =========================================================================
 // 4.5 PHASE 2: ASKERİ KIŞLA (18 KİŞİLİK ORDU & AKILLI SİLAH DEPOSU)
 // =========================================================================
+// Kışla (Ordu + Cephanelik): yeni arayüz js/ui/barracks.js içinde (4 Ekim 2026)
 function renderBarracksHtml() {
-  const state = gameState.state;
-  let pendingBannerHtml = '';
-
-  const tabsHtml = `
-    <div class="phase2-tab-row">
-      <button class="phase2-tab-btn barracks-tab-btn ${barracksActiveTab === 'army' ? 'active' : ''}" data-tab="army">🛡️ Ordu Yönetimi</button>
-      <button class="phase2-tab-btn barracks-tab-btn ${barracksActiveTab === 'armory' ? 'active' : ''}" data-tab="armory">📦 Akıllı Silah Deposu</button>
-    </div>
-  `;
-
-  let contentHtml = '';
-
-  if (barracksActiveTab === 'armory') {
-    // Smart Armory Tab View
-    const soldiers = state.soldierUnits || [];
-    const playerEquip = state.equipment || {};
-    const unassignedItems = [];
-    ['weapon', 'helmet', 'armor', 'legs', 'boots'].forEach(slot => {
-      if (playerEquip && playerEquip[slot]) {
-        unassignedItems.push({ slot, source: 'kingdom', ...playerEquip[slot] });
-      }
-    });
-    (state.armoryInventory || []).forEach((item, armIdx) => {
-      if (item) {
-        unassignedItems.push({ slot: item.slot, source: 'armory', armoryIndex: armIdx, ...item });
-      }
-    });
-
-    contentHtml = `
-      <div class="clean-card" style="margin-bottom:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-          <div>
-            <div class="card-title">⚔️ Akıllı Silah Dağıtım & Donatım Hub'ı</div>
-            <div class="clean-desc">Tüm dövülmüş eşyaları tek tıkla orduna dağıt veya tüm teçhizatları tek tıkla sök!</div>
-          </div>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-clean btn-clean-green btn-smart-auto-equip" style="width:auto; padding:8px 14px; font-size:0.8rem;" title="En yüksek seviyeli ve sağlam teçhizatları orduna dağıtır">
-              ⚡ En İyi Eşyaları Otomatik Kuşan
-            </button>
-            <button class="btn-clean btn-clean-gold btn-smart-unequip-all" style="width:auto; padding:8px 14px; font-size:0.8rem;" title="Tüm askerlerin teçhizatlarını söküp boşta havuza aktarır">
-              🔄 Tüm Eşyaları Sök
-            </button>
-            <button class="btn-clean btn-clean-blue btn-smart-repair-all-equip" style="width:auto; padding:8px 14px; font-size:0.8rem;" title="Krallıktaki ve askerlerdeki tüm teçhizatları tek tıkla onarır">
-              🔨 Tümünü Onar
-            </button>
-            <button class="btn-clean btn-smart-scrap-low-tier" style="width:auto; padding:8px 14px; font-size:0.8rem; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5;" title="Boştaki Seviye 1 fazlalık eşyaları hurdaya çevirip parça kazanır">
-              ♻️ Düşükleri Hurdaya Çevir
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="armory-layout">
-        <div class="armory-inv-panel">
-          <div style="font-weight:800; font-size:0.9rem; color:#fde047; margin-bottom:8px;">
-            📦 Boşta Kalan Dövülmüş Eşyalar (${unassignedItems.length})
-          </div>
-          ${unassignedItems.map(item => `
-            <div class="armory-equip-item">
-              <span style="font-size:1.2rem;">${item.slot === 'weapon' ? '🗡️' : (item.slot === 'helmet' ? '🪖' : (item.slot === 'armor' ? '🛡️' : (item.slot === 'legs' ? '👖' : '👢')))}</span>
-              <div style="flex:1;">
-                <div style="font-weight:700; color:#fff;">${item.name || item.slot}</div>
-                <div style="font-size:0.75rem; color:#94a3b8;">
-                  ${item.atkBonus ? `+${item.atkBonus} ATK ` : ''}${item.hpBonus ? `+${item.hpBonus} HP` : ''} • Dayanıklılık: ${item.durability || 100}%
-                </div>
-              </div>
-              <span class="rarity-tag ${(item.rarity || 'rare').toLowerCase()}">${item.rarity || 'RARE'}</span>
-            </div>
-          `).join('') || '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:0.8rem;">Envanterde boş eşya yok. Maden Ocağındaki ⚒️ Demirci sekmesinde yeni eşyalar dövebilirsin!</div>'}
-        </div>
-
-        <div class="armory-soldiers-panel">
-          <div style="font-weight:800; font-size:0.9rem; color:#4ade80; margin-bottom:8px;">
-            🛡️ Ordu Donatım Durumu
-          </div>
-          ${soldiers.map((sol, idx) => {
-            const stats = gameState.getSoldierFullStats(idx);
-            const setBonus = gameState.getSoldierSetBonus(idx);
-            const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-            const filledSlots = slots.filter(s => sol.equipment && sol.equipment[s]).length;
-
-            return `
-              <div class="armory-soldier-mini ${selectedSoldierIndex === idx ? 'selected' : ''}" data-soldier-idx="${idx}">
-                <span style="font-size:1.1rem;">${sol.icon || '⚔️'}</span>
-                <div style="flex:1;">
-                  <div style="font-weight:700; color:#fff;">#${idx + 1} ${sol.name}</div>
-                  <div style="font-size:0.72rem; color:#94a3b8;">
-                    ⚔️ ${stats?.totalAtk || 20} ATK • ❤️ ${sol.hp || 100}/${stats?.totalMaxHp || 100} HP
-                    ${setBonus ? `<span style="color:#c084fc; font-weight:700;"> • ✨ ${setBonus.name}</span>` : ''}
-                  </div>
-                </div>
-                <div class="armory-slots-mini" title="${filledSlots}/5 Yuva Dolu">
-                  ${slots.map(s => `<div class="armory-slot-dot ${sol.equipment && sol.equipment[s] ? 'filled' : ''}"></div>`).join('')}
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `;
-  } else {
-    // Default Tab: 🛡️ Ordu Yönetimi (army)
-    const soldiers = state.soldierUnits || [];
-    const maxSoldiers = GAME_CONFIG.MAX_SOLDIERS ?? Infinity;
-    const nextSoldierCost = gameState.getSoldierCost(soldiers.length + 1);
-    const canBuy = (maxSoldiers === Infinity || soldiers.length < maxSoldiers) && state.adAstraBalance >= nextSoldierCost;
-
-    if (soldiers.length === 0) {
-      contentHtml = `
-        <div class="clean-card" style="border-color: #38bdf8;">
-          <div class="card-title">🛡️ Ordu Yönetimi</div>
-          <div class="clean-desc">Henüz hiç askerin yok. İlk askerini satın alarak orduna başla! Sınırsız asker alarak ordunu büyütebilirsin.</div>
-        </div>
-        <div class="clean-card" style="background: #0c1117; border-color: #30a46c; text-align: center;">
-          <div style="font-weight: 800; font-size: 1rem; margin-bottom: 10px; color: #94a3b8;">⚔️ Roster Boş</div>
-          <button id="btn-buy-soldier-unit" class="btn-clean btn-clean-green" ${canBuy ? '' : 'disabled'}>
-            ➕ Yeni Asker Satın Al (${nextSoldierCost.toLocaleString('tr-TR')} ADA)
-          </button>
-        </div>
-      `;
-    } else {
-      const actualSelectedIndex = soldiers[selectedSoldierIndex] ? selectedSoldierIndex : 0;
-      const selectedSoldier = soldiers[actualSelectedIndex];
-      const soldierStats = gameState.getSoldierFullStats(actualSelectedIndex) || { totalAtk: 20, totalMaxHp: 100, bonusAtk: 0, bonusHp: 0 };
-      const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-      const slotNames = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı', legs: 'Pantolon', boots: 'Ayakkabı' };
-      const slotIcons = { weapon: '🗡️', helmet: '🪖', armor: '🛡️', legs: '👖', boots: '👢' };
-
-      const totalSoldiers = soldiers.length;
-      let totalArmyAtk = 0;
-      let totalArmyHp = 0;
-      let totalEquippedSlots = 0;
-      soldiers.forEach((_, i) => {
-        const sStats = gameState.getSoldierFullStats(i);
-        if (sStats) {
-          totalArmyAtk += sStats.totalAtk;
-          totalArmyHp += sStats.totalMaxHp;
-        }
-        slots.forEach(slot => {
-          if (soldiers[i]?.equipment && soldiers[i]?.equipment[slot]) totalEquippedSlots++;
-        });
-      });
-
-
-
-      const isHealBlocked = gameState.isArmyPassiveHealBlocked ? gameState.isArmyPassiveHealBlocked() : false;
-      const alertBannerHtml = isHealBlocked ? `
-        <div class="soldier-heal-blocked-alert" style="background: linear-gradient(90deg, rgba(153, 27, 27, 0.92) 0%, rgba(185, 28, 28, 0.98) 50%, rgba(153, 27, 27, 0.92) 100%); border: 1.5px solid #ef4444; border-radius: 12px; padding: 12px 18px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45);">
-          <span style="font-size: 1.9rem;">🚨</span>
-          <div>
-            <div style="font-size: 0.96rem; font-weight: 900; color: #ffffff; letter-spacing: 0.5px; text-shadow: 0 1px 4px rgba(0,0,0,0.8);">
-              HESABINIZDA YETERİ KADAR $ADASTRA VEYA BUĞDAY YOK! ASKERLERİN İYİLEŞMESİ DURDURULDU.
-            </div>
-            <div style="font-size: 0.82rem; color: #fee2e2; margin-top: 2px;">
-              Şampiyonların 24 saatlik pasif can yenilenmesini devam ettirebilmek için ambarınıza buğday ekleyin ve cüzdanınızda $ADASTRA bulundurun.
-            </div>
-          </div>
-        </div>
-      ` : '';
-
-      const overviewHudHtml = `
-        <div class="barracks-overview-hud">
-          <div class="barracks-hud-pill">
-            <span class="hud-pill-icon">👥</span>
-            <div>
-              <div class="hud-pill-label">Toplam Ordu</div>
-              <div class="hud-pill-val" style="color: #38bdf8;">${totalSoldiers} Asker</div>
-            </div>
-          </div>
-          <div class="barracks-hud-pill">
-            <span class="hud-pill-icon">⚔️</span>
-            <div>
-              <div class="hud-pill-label">Saldırı Gücü</div>
-              <div class="hud-pill-val" style="color: #f87171;">${totalArmyAtk.toLocaleString()} ATK</div>
-            </div>
-          </div>
-          <div class="barracks-hud-pill">
-            <span class="hud-pill-icon">❤️</span>
-            <div>
-              <div class="hud-pill-label">Dayanıklılık / HP</div>
-              <div class="hud-pill-val" style="color: #4ade80;">${totalArmyHp.toLocaleString()} HP</div>
-            </div>
-          </div>
-          <div class="barracks-hud-pill">
-            <span class="hud-pill-icon">🛡️</span>
-            <div>
-              <div class="hud-pill-label">Kuşanılmış Yuva</div>
-              <div class="hud-pill-val" style="color: #fde047;">${totalEquippedSlots}/${totalSoldiers * 5} Dolu</div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const quickActionsHtml = `
-        <div class="clean-card" style="border-left: 5px solid #22c55e; margin-bottom: 12px; padding: 14px 18px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <div style="font-size: 1.15rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 8px;">
-                <span>👑 TEK DOKUNUŞLA ORDUMU HAZIRLA</span>
-                <span class="card-badge" style="background: #22c55e; color: #000; border: none; font-weight: 900;">TAVSİYE EDİLEN</span>
-              </div>
-              <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 2px;">
-                Tek bir tuşla tüm yaralı askerlerini doyurur, envanterindeki en güçlü silah ve zırhları orduna paylaştırır.
-              </div>
-            </div>
-            <div>
-              <button id="btn-master-prep-army" class="btn-clean" style="width: auto; background: #16a34a; border-color: #4ade80; color: #fff; font-size: 1rem; font-weight: 900; padding: 12px 24px; box-shadow: 0 4px 14px rgba(22,163,74,0.4);">
-                ⚔️ TEK TIKLA HAZIRLA
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="barracks-quick-actions" style="margin-bottom: 12px;">
-          <button class="btn-clean btn-smart-auto-equip" style="width: auto; padding: 8px 14px; font-size: 0.85rem; background: #2563eb; border-color: #60a5fa;">
-            ⚡ En İyileri Dağıt
-          </button>
-          <button class="btn-clean btn-smart-heal-all" style="width: auto; padding: 8px 14px; font-size: 0.85rem; background: #d97706; border-color: #f59e0b;">
-            🌾 Tümünü Doyur
-          </button>
-          ${(state.inventory.scroll_heal || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_heal" style="width: auto; padding: 8px 14px; font-size: 0.85rem; font-weight: 800;" title="Ordu İyileştirme Parşömeni Kullan (+10 Can)">
-              📜 Parşömen Kullan (${state.inventory.scroll_heal} Adet)
-            </button>
-          ` : ''}
-          <button class="btn-clean btn-smart-unequip-all" style="width: auto; padding: 8px 14px; font-size: 0.85rem; background: #334155; border-color: #64748b;">
-            🔄 Eşyaları Sök
-          </button>
-          ${(maxSoldiers === Infinity || soldiers.length < maxSoldiers) ? `
-            <button id="btn-buy-soldier-unit" class="btn-clean" style="width: auto; padding: 8px 14px; font-size: 0.85rem; background: #7c3aed; border-color: #a78bfa;" ${canBuy ? '' : 'disabled'}>
-              ➕ Yeni Asker Satın Al (${nextSoldierCost.toLocaleString('tr-TR')} ADA)
-            </button>
-          ` : `
-            <span style="font-size: 0.85rem; color: #4ade80; font-weight: 800; align-self: center; background: rgba(34,197,94,0.15); padding: 6px 12px; border-radius: 8px; border: 1px solid #22c55e;">
-              🛡️ Kadro Tam Dolu (${soldiers.length}/${maxSoldiers})
-            </span>
-          `}
-        </div>
-      `;
-
-      const rosterHtml = `
-        <div class="soldier-roster-grid">
-          ${soldiers.map((s, idx) => {
-            const eqCount = Object.values(s.equipment || {}).filter(Boolean).length;
-            const isAct = idx === actualSelectedIndex;
-            const rarity = eqCount >= 5 ? 'rarity-legendary' : eqCount >= 3 ? 'rarity-epic' : eqCount >= 1 ? 'rarity-rare' : 'rarity-common';
-            const heal = gameState.getSoldierHealInfo(idx) || { hp: s.hp, maxHp: s.maxHp, hpPct: 100, isFull: true, isPaused: false };
-            const hpBarColor = heal.hpPct <= 25 ? '#ef4444' : heal.hpPct <= 60 ? '#f97316' : '#4ade80';
-
-
-            return `
-              <div class="soldier-roster-card ${rarity} ${isAct ? 'active' : ''} btn-select-soldier-card" data-soldier-idx="${idx}">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 1.25rem;">⚔️</span>
-                  <span class="soldier-element-tag" style="color: #c084fc; background: rgba(168,85,247,0.15); border: 1px solid #a855f7;">
-                    👑 AdAstra Şampiyonu
-                  </span>
-                </div>
-                <div style="font-size: 0.85rem; font-weight: 800; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px;">
-                  #${idx + 1} ${s.name}
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94a3b8;">
-                  <span>Lv.${s.level || 1} Şampiyon</span>
-                  <span style="color: #fde047; font-weight: 700;">${eqCount}/5 Yuva</span>
-                </div>
-                <!-- 5 Yuva Mini Göstergesi -->
-                <div class="soldier-slot-dots">
-                  ${slots.map(sl => `<div class="slot-dot ${s.equipment && s.equipment[sl] ? 'filled' : ''}" title="${slotNames[sl]}"></div>`).join('')}
-                </div>
-                <div class="soldier-hp-track">
-                  <div class="soldier-hp-fill" style="width: ${heal.hpPct}%; background: ${hpBarColor};"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1px;">
-                  <span style="font-size: 0.68rem; font-weight: 800; color: ${hpBarColor};">${heal.hp}/${heal.maxHp} HP</span>
-                  ${heal.isFull
-                    ? `<span style="font-size: 0.62rem; color: #4ade80; font-weight: 700;">✅ Tam Can</span>`
-                    : heal.isPaused
-                      ? `<span class="soldier-heal-badge-warning" style="background: rgba(220,38,38,0.35); border: 1px solid #ef4444; color: #fca5a5; font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 4px;">⛔ İyileşme Durdu</span>`
-                      : `<span style="font-size: 0.62rem; color: #94a3b8;">⏳ İyileşiyor</span>`
-                  }
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-
-      const equipmentSlotsHtml = slots.map(slot => {
-        const equippedItem = (selectedSoldier.equipment || {})[slot];
-        // Önce krallık ana yuvası, yoksa cephanelikteki boşta duran bu slota ait eşyayı bul
-        let inventoryItem = (state.equipment || {})[slot];
-        let armoryIdx = null;
-        if (!inventoryItem && Array.isArray(state.armoryInventory)) {
-          const armoryMatchIdx = state.armoryInventory.findIndex(e => e && e.slot === slot);
-          if (armoryMatchIdx !== -1) {
-            inventoryItem = state.armoryInventory[armoryMatchIdx];
-            armoryIdx = armoryMatchIdx;
-          }
-        }
-
-        if (equippedItem) {
-          const eqLevel = equippedItem.level || 1;
-          const eqRarity = eqLevel >= 5 ? 'rarity-legendary' : eqLevel >= 3 ? 'rarity-epic' : eqLevel >= 2 ? 'rarity-rare' : '';
-          const maxDur = equippedItem.maxDurability || 13;
-          const curDur = equippedItem.durability != null ? equippedItem.durability : maxDur;
-          const durPct = Math.round((curDur / maxDur) * 100);
-          const durColor = curDur <= 3 ? '#ef4444' : curDur <= 7 ? '#f97316' : '#4ade80';
-          const repCost = gameState.calculateEquipmentRepairCost(slot, actualSelectedIndex);
-
-          return `
-            <div class="soldier-slot-item equipped ${eqRarity}">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-weight: 800; font-size: 0.92rem; color: #fff; display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 1.25rem;">${equippedItem.icon}</span>
-                  <span>${equippedItem.name}</span>
-                </div>
-                <span class="card-badge" style="color: ${durColor}; border-color: ${durColor};">🛡️ ${curDur}/${maxDur} (%${durPct})</span>
-              </div>
-              <div style="font-size: 0.78rem; color: #fde047; margin: 3px 0;">
-                ${slotNames[slot]} • Seviye ${equippedItem.level || 1} (+${equippedItem.atkBonus || 0} ATK, +${equippedItem.hpBonus || 0} HP)
-              </div>
-              <div class="equip-durability-track" style="margin-bottom: 4px;">
-                <div class="equip-durability-fill" style="width: ${durPct}%; background: ${durColor};"></div>
-              </div>
-              <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center; margin-top: 4px; flex-wrap: wrap;">
-                ${curDur < maxDur ? `
-                  <button class="btn-clean btn-clean-gold btn-soldier-repair-slot" data-soldier-idx="${actualSelectedIndex}" data-slot="${slot}" style="padding: 5px 12px; font-size: 0.75rem; width: auto;">
-                    🔧 Onar (${repCost.ironCost}⛏️ + ${repCost.woodCost}🌲)
-                  </button>
-                ` : ''}
-                <button class="btn-clean btn-clean-red btn-soldier-unequip-slot" data-soldier-idx="${actualSelectedIndex}" data-slot="${slot}" style="padding: 5px 10px; font-size: 0.75rem; width: auto;">
-                  ✕ ÇIKAR
-                </button>
-              </div>
-            </div>
-          `;
-        } else {
-          return `
-            <div class="soldier-slot-item">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-weight: 700; font-size: 0.88rem; color: #94a3b8; display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 1.1rem;">${slotIcons[slot]}</span>
-                  <span>${slotNames[slot]} Yuvası</span>
-                </div>
-                <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">BOŞ</span>
-              </div>
-              ${inventoryItem ? `
-                <button class="btn-clean btn-clean-green ${armoryIdx !== null ? 'btn-armory-direct-equip' : 'btn-soldier-equip-slot'}" 
-                  data-soldier-idx="${actualSelectedIndex}" 
-                  data-slot="${slot}"
-                  ${armoryIdx !== null ? `data-source="armory" data-armory-idx="${armoryIdx}"` : ''}
-                  style="padding: 7px; font-size: 0.78rem; margin-top: 6px;">
-                  ➕ ${inventoryItem.icon} ${inventoryItem.name} (Lv.${inventoryItem.level || 1}) Kuşan
-                </button>
-              ` : `
-                <div style="font-size: 0.72rem; color: #64748b; text-align: center; padding: 6px; background: rgba(0,0,0,0.25); border-radius: 6px; margin-top: 4px;">
-                  Demirci sekmesinden dövülmeli
-                </div>
-              `}
-            </div>
-          `;
-        }
-      }).join('');
-
-
-
-      contentHtml = `
-        ${alertBannerHtml}
-        ${overviewHudHtml}
-        ${quickActionsHtml}
-
-        ${(() => {
-          const combatPresets = gameState.getCombatPresets();
-          const activePresetId = combatPresets?.activePresetId || 1;
-          const curPresetObj = combatPresets?.presets?.[activePresetId] || { name: `Taktik ${activePresetId}` };
-          return `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.7); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px; flex-wrap:wrap; gap:6px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.8rem; font-weight:800; color:#38bdf8;">🎯 Taktiksel Savaş Preseti:</span>
-                <div style="display:flex; gap:4px;">
-                  ${[1, 2, 3].map(pid => {
-                    const p = combatPresets.presets?.[pid] || { name: `Taktik ${pid}` };
-                    const isActive = pid === activePresetId;
-                    return `
-                      <button type="button" class="btn-clean btn-barracks-preset ${isActive ? 'btn-clean-gold' : 'btn-clean-outline'}" data-preset="${pid}" style="padding:4px 9px; font-size:0.75rem; font-weight:800; width:auto; border-radius:6px;" title="${p.name}">
-                        ${pid === 1 ? '🛡️' : pid === 2 ? '⚔️' : '🏹'} P${pid}: ${p.name}
-                      </button>
-                    `;
-                  }).join('')}
-                </div>
-              </div>
-              <button type="button" id="btn-save-barracks-preset" class="btn-clean btn-clean-sm" style="padding:4px 10px; font-size:0.75rem; width:auto; background:rgba(34,197,94,0.18); border:1px solid #22c55e; color:#4ade80; font-weight:700;" title="Mevcut ordu dizilimini P${activePresetId}'e kaydet">
-                💾 P${activePresetId}'e Kaydet
-              </button>
-            </div>
-          `;
-        })()}
-
-        <div class="clean-card" style="border-color: #38bdf8; margin-bottom: 12px;">
-          <div class="card-title-row">
-            <div class="card-title">🛡️ Ordu Kadrosu (Asker Seç & Donat)</div>
-            <span class="card-badge" style="color: #38bdf8;">${maxSoldiers === Infinity ? `${soldiers.length} Asker` : `${soldiers.length}/${maxSoldiers} Asker`}</span>
-          </div>
-          <div class="clean-desc">Aşağıdaki askerlerden birine tıkla; Demirci'de dövdüğün 5 parça teçhizatı (Silah, Miğfer, Zırh, Pantolon, Bot) doğrudan o askerin envanterine kuşandır!</div>
-          ${rosterHtml}
-        </div>
-
-        <div class="soldier-sheet-card">
-          <div class="soldier-sheet-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <div style="font-size: 1.8rem; background: rgba(0,0,0,0.4); border-radius: 10px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1.5px solid #ca8a04;">
-                ⚔️
-              </div>
-              <div>
-                ${editingSoldierNameIndex === actualSelectedIndex ? `
-                  <div class="soldier-rename-box" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 2px;">
-                    <input type="text" id="input-soldier-rename" data-soldier-idx="${actualSelectedIndex}" maxlength="24" value="${selectedSoldier.name}" placeholder="Asker Adı..." style="background: rgba(0,0,0,0.6); border: 1.5px solid #fde047; border-radius: 6px; color: #fff; font-weight: 800; font-size: 0.95rem; padding: 4px 10px; outline: none; width: 180px; box-shadow: 0 0 10px rgba(253,224,71,0.25);" />
-                    <button class="btn-clean btn-save-soldier-name" data-soldier-idx="${actualSelectedIndex}" style="width: auto; background: #16a34a; border-color: #4ade80; color: #fff; font-size: 0.78rem; font-weight: 800; padding: 5px 10px; border-radius: 6px; cursor: pointer;" title="İsmi Kaydet">
-                      💾 Kaydet
-                    </button>
-                    <button class="btn-clean btn-cancel-soldier-name" style="width: auto; background: rgba(239,68,68,0.25); border: 1px solid #ef4444; color: #fca5a5; font-size: 0.78rem; font-weight: 700; padding: 5px 8px; border-radius: 6px; cursor: pointer;" title="İptal">
-                      ✕
-                    </button>
-                  </div>
-                ` : `
-                  <div style="font-size: 1.15rem; font-weight: 900; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="btn-trigger-rename" data-soldier-idx="${actualSelectedIndex}" title="İsmi değiştirmek için tıkla" style="cursor: pointer; border-bottom: 1px dashed rgba(253,224,71,0.4); transition: all 0.2s;">
-                      ${selectedSoldier.name}
-                    </span>
-                    <button class="btn-clean btn-trigger-rename" data-soldier-idx="${actualSelectedIndex}" title="Askerin İsmini Değiştir" style="width: auto; background: rgba(253,224,71,0.12); border: 1px solid rgba(253,224,71,0.4); border-radius: 6px; color: #fde047; cursor: pointer; padding: 2px 7px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
-                      ✏️ <span style="font-size: 0.72rem; font-weight: 700;">İsim Değiştir</span>
-                    </button>
-                    <span class="soldier-element-tag" style="color: #c084fc; background: rgba(168,85,247,0.15); border: 1px solid #a855f7;">
-                      👑 AdAstra Şampiyonu
-                    </span>
-                  </div>
-                `}
-                <div style="font-size: 0.8rem; color: #fde047; margin-top: 2px;">
-                  Seviye ${selectedSoldier.level || 1} • AdAstra Şampiyonu • 5 Parça Teçhizat Envanteri
-                </div>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-              <button class="btn-clean btn-toggle-soldier-row" data-soldier-idx="${actualSelectedIndex}" style="padding: 6px 12px; font-size: 0.8rem; font-weight: 800; background: ${selectedSoldier.row === 'back' ? 'rgba(56,189,248,0.2)' : 'rgba(245,158,11,0.2)'}; border: 1.5px solid ${selectedSoldier.row === 'back' ? '#38bdf8' : '#f59e0b'}; color: ${selectedSoldier.row === 'back' ? '#38bdf8' : '#fde047'}; cursor: pointer;">
-                ${selectedSoldier.row === 'back' ? '🏹 Arka Saf (Tıkla: Öne Al)' : '🛡️ Ön Saf (Tıkla: Arkaya Al)'}
-              </button>
-              <span class="card-badge" style="color: #ef4444; font-size: 0.82rem; padding: 4px 10px;">⚔️ ${soldierStats.totalAtk} Toplam ATK</span>
-              <span class="card-badge" style="color: #22c55e; font-size: 0.82rem; padding: 4px 10px;">❤️ ${soldierStats.totalMaxHp} Toplam HP</span>
-            </div>
-          </div>
-
-          <!-- ⚡ AKTİF SKILL LOADOUT (YETENEK YÜKÜ) -->
-          <div class="soldier-skills-panel" style="background: rgba(15,23,42,0.7); border: 1px solid rgba(168,85,247,0.35); border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <div style="font-weight: 800; font-size: 0.86rem; color: #c084fc; display: flex; align-items: center; gap: 6px;">
-                <span>⚡ Taktiksel Yetenek Yükü (Skill Loadout)</span>
-                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: normal;">(Max 3 Aktif + 1 Pasif)</span>
-              </div>
-            </div>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              ${(selectedSoldier.skills || ['shieldWall']).map(skId => {
-                const sk = PLAYER_SKILLS[skId] || { name: skId, icon: '⚡', role: 'Genel', desc: '' };
-                const roleColors = {
-                  'Tank': '#f59e0b',
-                  'AoE': '#ef4444',
-                  'Şifa': '#34d399',
-                  'Kırıcı': '#eab308',
-                  'Kontrol': '#a855f7',
-                  'Öfke': '#f97316',
-                  'Hayatta Kalma': '#38bdf8'
-                };
-                const badgeColor = roleColors[sk.role] || '#94a3b8';
-                return `
-                  <div style="flex: 1; min-width: 180px; background: rgba(30,41,59,0.8); border: 1px solid ${badgeColor}; border-radius: 8px; padding: 6px 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                      <span style="font-weight: 800; font-size: 0.8rem; color: #fff;">${sk.icon} ${sk.name}</span>
-                      <span style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.4); color: ${badgeColor}; font-weight: 700;">${sk.role}</span>
-                    </div>
-                    <div style="font-size: 0.7rem; color: #cbd5e1; line-height: 1.3;">${sk.desc}</div>
-                    ${sk.cooldown ? `<div style="font-size: 0.65rem; color: #94a3b8; margin-top: 3px;">⏳ Bekleme: ${sk.cooldown} Tur</div>` : ''}
-                  </div>
-                `;
-              }).join('')}
-            </div>
-            <div style="font-size: 0.7rem; color: #64748b; margin-top: 6px;">
-              💡 <em>Seviye İlerlemesi: Lv.10, Lv.25, Lv.45 ve Lv.65'te yeni yeteneklerin kilitleri otomatik açılır.</em>
-            </div>
-          </div>
-
-          ${(() => {
-            const setBonus = gameState.getSoldierSetBonus(actualSelectedIndex);
-            if (!setBonus) return '';
-            return `
-          <div class="set-badge-banner">
-            <span style="position:relative;z-index:1;">✨ SET BONUSU: ${setBonus.name} — ${setBonus.desc}</span>
-          </div>`;
-          })()}
-
-          ${(() => {
-            const heal = gameState.getSoldierHealInfo(actualSelectedIndex);
-            if (!heal) return '';
-            const hpColor = heal.hpPct <= 25 ? '#ef4444' : heal.hpPct <= 60 ? '#f97316' : '#4ade80';
-            const hh = Math.floor(heal.secondsRemaining / 3600);
-            const mm = Math.floor((heal.secondsRemaining % 3600) / 60);
-
-            return `
-          <div class="soldier-heal-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-              <span style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1;">❤️ Can Barı</span>
-              <span style="font-weight: 800; font-size: 0.9rem; color: ${hpColor};">${heal.hp} / ${heal.maxHp} HP</span>
-            </div>
-            <div class="soldier-hp-track soldier-hp-track-large">
-              <div class="soldier-hp-fill" style="width: ${heal.hpPct}%; background: ${hpColor};"></div>
-            </div>
-
-            <div class="soldier-heal-status-row">
-              <span style="color: ${heal.isFull ? '#4ade80' : '#f97316'};">
-                ${heal.isFull ? '✅ Tamamen İyileşti' : `⏳ Otomatik Tam Can (24 Saat): ${hh}s ${mm}dk`}
-              </span>
-              <span style="color: #94a3b8;">🌾 24s Pasif Maliyet: ${heal.passiveWheatNeeded} 🌾 + ${heal.passiveAdaCost} 🟣 ADA</span>
-            </div>
-
-            ${heal.isPaused ? `
-              <div class="soldier-heal-badge-warning-full" style="background: linear-gradient(90deg, rgba(153,27,27,0.88) 0%, rgba(185,28,28,0.95) 100%); border: 1.5px solid #ef4444; color: #ffffff; font-weight: 800; padding: 10px 14px; border-radius: 8px; font-size: 0.84rem; margin-top: 8px; display: flex; align-items: center; gap: 10px; box-shadow: 0 3px 12px rgba(239,68,68,0.35); animation: pulseRedAlert 2s infinite ease-in-out;">
-                <span style="font-size: 1.3rem;">🚨</span>
-                <span>Hesabınızda yeteri kadar $ADASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.</span>
-              </div>
-            ` : ''}
-
-            <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
-              <button class="btn-clean btn-clean-purple btn-soldier-instant-heal" data-soldier-idx="${actualSelectedIndex}" style="flex: 1; min-width: 180px;" ${heal.isFull ? 'disabled' : ''}>
-                ${heal.isFull ? '✅ Zaten Tam Can' : `⚡ Anında Hızlı Doyur (${heal.wheatNeeded} 🌾 + ${heal.adaCost} 🟣 ADA)`}
-              </button>
-              ${(state.inventory.scroll_heal || 0) > 0 ? `
-                <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_heal" data-target-id="${selectedSoldier.id || actualSelectedIndex}" style="width: auto; padding: 8px 14px; font-weight: 800;" ${heal.isFull ? 'disabled' : ''} title="Bu Şampiyona +10 Can Kazandır">
-                  📜 Parşömen Kullan (${state.inventory.scroll_heal} Adet)
-                </button>
-              ` : ''}
-            </div>
-          </div>`;
-          })()}
-
-          <div style="font-size: 0.88rem; font-weight: 800; color: #fde047; margin: 4px 0 2px 2px; display: flex; align-items: center; gap: 6px;">
-            <span>🎯 5 Parça Teçhizat Yuvası</span>
-            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">(Silah, Miğfer, Gövde Zırhı, Pantolon, Bot)</span>
-          </div>
-          <div class="soldier-slots-grid">
-            ${equipmentSlotsHtml}
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  return `${pendingBannerHtml}${tabsHtml}${contentHtml}`;
+  return barracksUI.render();
 }
 
 // =========================================================================
@@ -4127,39 +3588,25 @@ function openChangelogModal() {
   displayModal();
 }
 
-function openBarracksModal() {
+function openBarracksModal(opts = {}) {
   if (!featureGate('barracks')) return;
-  if (barracksActiveTab === 'battlefield') barracksActiveTab = 'army';
-  dom.modalTitle.innerHTML = `<span>⚔️</span> <span>ASKERİ KIŞLA & TALİM KAMPI</span>`;
+  if (!['army', 'armory'].includes(barracksActiveTab)) barracksActiveTab = 'army';
+  // Yeniden çizimde kaydırma yeri korunur (uzun listelerde başa atlamasın)
+  const sameModal = dom.modalBody.querySelector('.bk');
+  const bodyTop = sameModal ? dom.modalBody.scrollTop : 0;
+  const rosterTop = sameModal ? (dom.modalBody.querySelector('#bk-roster-list')?.scrollTop || 0) : 0;
+  dom.modalTitle.innerHTML = `<span>⚔️</span> <span>Kışla</span>`;
   dom.modalBody.innerHTML = renderBarracksHtml();
+  barracksUI.install(dom.modalBody);
   displayModal();
-
-  const renameInput = document.getElementById('input-soldier-rename');
-  if (renameInput) {
-    setTimeout(() => {
-      renameInput.focus();
-      renameInput.select();
-    }, 50);
-
-    renameInput.addEventListener('keydown', (ke) => {
-      if (ke.key === 'Enter') {
-        ke.preventDefault();
-        const sIdx = parseInt(renameInput.dataset.soldierIdx, 10);
-        const res = gameState.renameSoldierUnit(sIdx, renameInput.value);
-        if (res.success) {
-          showToast(res.message, 'success');
-          editingSoldierNameIndex = null;
-          openBarracksModal();
-        } else {
-          showToast(res.message, 'error');
-        }
-      } else if (ke.key === 'Escape') {
-        ke.preventDefault();
-        editingSoldierNameIndex = null;
-        openBarracksModal();
-      }
-    });
+  if (sameModal) {
+    dom.modalBody.scrollTop = bodyTop;
+    const r = dom.modalBody.querySelector('#bk-roster-list');
+    if (r) r.scrollTop = rosterTop;
   }
+  if (opts.scrollTo) dom.modalBody.querySelector(opts.scrollTo)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  const renameInput = document.getElementById('input-soldier-rename');
+  if (renameInput) setTimeout(() => { renameInput.focus(); renameInput.select(); }, 50);
 }
 
 function openBattlefieldModal() {
@@ -4372,13 +3819,13 @@ function openBattlefieldModal() {
 function refreshBarracksLiveUI(deltaSeconds) {
   if (!dom.rpgModal || !dom.rpgModal.classList.contains('active')) return;
   if (barracksActiveTab !== 'army') return;
-  if (!document.querySelector('.soldier-roster-grid')) return;
+  if (!dom.modalBody.querySelector('.bk')) return;
 
   barracksLiveRefreshAccumulator += deltaSeconds;
   if (barracksLiveRefreshAccumulator < 1.5) return;
   barracksLiveRefreshAccumulator = 0;
 
-  dom.modalBody.innerHTML = renderBarracksHtml();
+  barracksUI.liveUpdate(dom.modalBody);
 }
 
 // =========================================================================
