@@ -283,6 +283,11 @@ try {
   const aliceBeforeWeek = (await call('GET', '/api/state', null, tA)).body.player.adAstraBalance;
   await world.tick();                                      // ilk tur: hafta kaydı
   const epochBefore = engine.globalPool.state.epochId;
+  // Ücretsiz pay şartları (4 Ekim 2026): en az 3. seviye + haftalık katkı eşiği. Alice sağlar, Carol'ın katkısı yetmez.
+  const carolPid = 'acc:' + db.raw.prepare("SELECT id FROM accounts WHERE email = 'carol@ornek.com'").get().id;
+  for (const [pid, week] of [[pidA, 300], [carolPid, 50]]) {
+    engine.mutatePlayer(pid, gs => { gs.state.level = 3; gs.state.contribution = { total: week, week, lastWeek: 0, epochId: epochBefore, buyCredit: {} }; });
+  }
   engine.globalPool.state.epochEndTime = Date.now() - 1000;
   engine.globalPool.saveState();
   await world.tick();
@@ -301,9 +306,9 @@ try {
   ok('Haftalık hesaplaşma: çekim havuzdan karşılanıp zincire gönderildi, ücret ve kira düşüldü');
 
   // Ücretsiz oyuncu havuzu Alice'e (hiç yatırma yapmamış, bu hafta oynamış)
-  assert.equal(summary.faucet.players, 2, 'Ücretsiz oyuncular: Alice ve Carol (doğrulanmış, hiç yatırmamış); Bob yatırdı, yeni@ doğrulanmadı');
+  assert.equal(summary.faucet.players, 1, 'Ücretsiz oyuncu yalnız Alice (Carol katkı eşiğinin altında; Bob yatırdı; yeni@ doğrulanmadı)');
   const aAfter = (await call('GET', '/api/state', null, tA)).body.player;
-  assert.ok(summary.faucet.perPlayer > 0 && aAfter.adAstraBalance >= aliceBeforeWeek + summary.faucet.perPlayer - 1, 'Alice ücretsiz havuz payını aldı');
+  assert.ok(summary.faucet.perPlayer > 0 && aAfter.adAstraBalance >= aliceBeforeWeek + summary.faucet.perPlayer - 1 && aAfter.faucetStreak.weeks === 1, 'Alice ücretsiz havuz payını aldı, serisi başladı');
   // Yakım ve yapımcı payı zincire
   const burnTx = sent.find(s => s.to === cfg.deadAddress);
   const creatorTx = sent.find(s => s.to === engine.GAME_CONFIG.CREATOR_WALLET_ADDRESS);

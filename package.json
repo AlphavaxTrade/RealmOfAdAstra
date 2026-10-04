@@ -1,6 +1,6 @@
 {
   "name": "realm-of-astra",
-  "version": "1.30.0",
+  "version": "1.31.0",
   "description": "Realm of Astra - Web3 GameFi RPG on Avalanche",
   "type": "module",
   "scripts": {

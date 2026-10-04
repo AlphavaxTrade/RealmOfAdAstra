@@ -14,6 +14,7 @@
 import { allocateWithdrawals, brakeState, faucetWeekly, nextMultiplier, withdrawCapTokens, WEEKLY_RULES } from './economy.js';
 import { SYSTEM } from './engine.js';
 import { runDraw } from '../js/economy/lottery.js';
+import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../js/economy/faucet.js';
 
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
@@ -232,29 +233,51 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       summary.defenseBurn = defense;
 
       // 3) Ücretsiz oyuncu havuzu: hiç yatırma yapmamış ve bu hafta oynamış oyuncular
-      // Ücretsiz oyuncu: hiç para koymamış, bu hafta oynamış ve (hesaplı oyuncuda) e-postasını doğrulamış.
-      // Doğrulama şartı: toplu açılan sahte hesapların havuzu sulandırmasını zorlaştırır.
-      const free = players.filter(p => !(p.deposited_ada > 0) && p.last_seen >= now - 7 * DAY &&
-        (!accounts || !String(p.address).startsWith('acc:') || accounts.isVerified(p.address)));
-      const f = faucetWeekly({ mcapUsd: market?.mcapUsd || 0, priceUsd: market?.priceUsd || 0, freePlayers: free.length, questPool: T.getPool('quest') });
-      if (f.perPlayer > 0) {
-        T.state.pools.quest -= f.totalAda;
-        T.state.outflow.quest = (Number(T.state.outflow.quest) || 0) + f.totalAda;
-        T.state.lifetimeWithdrawn = (Number(T.state.lifetimeWithdrawn) || 0) + f.totalAda;
-        for (const p of free) {
-          E.mutatePlayer(p.address, gs => {
-            gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + f.perPlayer;
-            gs._onAdaEarned(f.perPlayer);
-            gs.pushNotice(`🎁 Ücretsiz oyuncu payın: +${fmt(f.perPlayer)} ADA (Görev kasasından)`, 'success');
-          });
-        }
+      // Ücretsiz oyuncu: hiç para koymamış, bu hafta oynamış, (hesaplı oyuncuda) e-postasını doğrulamış, en az 3. seviye ve
+      // o hafta yeterli katkı puanı toplamış. Pay eşit değil: katkı^1,5 × sadakat serisi (sahte hesaplara karşı;
+      // ayrıntı js/economy/faucet.js). Pay tamamen kilitli gelir.
+      const FP = { ...FAUCET_DEFAULTS, ...(E.GAME_CONFIG.FREE_PLAYER_POOL || {}) };
+      const mult = Number(e.priceMultiplier) || 1;
+      const free = [];
+      for (const p of players) {
+        if (p.deposited_ada > 0 || p.last_seen < now - 7 * DAY) continue;
+        if (accounts && String(p.address).startsWith('acc:') && !accounts.isVerified(p.address)) continue;
+        const st = states.get(p.address) || E.readPlayer(p.address);
+        if (!st) continue;
+        const contribution = weekScore(st, closedEpoch);
+        if (!qualifies({ level: st.level, contribution, priceMultiplier: mult }, FP)) continue;
+        const streak = nextStreak(st.faucetStreak, closedEpoch);
+        free.push({ id: p.address, contribution, streak, weight: weightOf({ contribution, priceMultiplier: mult, streakWeeks: streak.weeks }, FP) });
       }
+      // Kişi başı tavan kendi ağırlığıyla ölçeklenir: havuzun üst sınırı = tavanların toplamı (yan hesap havuzu şişiremez)
+      const fracs = free.map(x => capFraction(x.weight, FP));
+      const f = faucetWeekly({ mcapUsd: market?.mcapUsd || 0, priceUsd: market?.priceUsd || 0, freePlayers: fracs.reduce((s, v) => s + v, 0), questPool: T.getPool('quest') });
+      const capFull = market?.priceUsd > 0 ? WEEKLY_RULES.faucetMaxUsdPerPlayer / WEEKLY_RULES.weeksPerMonth / market.priceUsd : 0;
+      const shares = f.totalAda > 0 ? distribute(f.totalAda, free.map(x => x.weight), fracs.map(v => v * capFull)) : free.map(() => 0);
+      const paidTotal = shares.reduce((s, v) => s + v, 0);
+      if (paidTotal > 0) {
+        T.state.pools.quest -= paidTotal;
+        T.state.outflow.quest = (Number(T.state.outflow.quest) || 0) + paidTotal;
+        T.state.lifetimeWithdrawn = (Number(T.state.lifetimeWithdrawn) || 0) + paidTotal;
+      }
+      free.forEach((x, i) => {
+        const amt = shares[i];
+        E.mutatePlayer(x.id, gs => {
+          gs.state.faucetStreak = x.streak;
+          if (!(amt > 0)) return;
+          gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + amt;
+          if (FP.LOCKED !== false) gs.state.lockedAda = Math.min(gs.state.adAstraBalance, (Number(gs.state.lockedAda) || 0) + amt);
+          else gs._onAdaEarned(amt);
+          gs.pushNotice(`🎁 Ücretsiz oyuncu payın: +${fmt(amt)} ADA (kilitli; oyunda harcadıkça çözülür). Sadakat serin: ${x.streak.weeks} hafta.`, 'success');
+        });
+      });
       T.save();
-      summary.faucet = { players: free.length, perPlayer: f.perPlayer, totalAda: f.totalAda, usdPerPlayerMonth: f.usdPerPlayerMonth };
+      const paidCount = shares.filter(v => v > 0).length;
+      summary.faucet = { players: free.length, perPlayer: paidCount ? Math.floor(paidTotal / paidCount * 100) / 100 : 0, maxShare: Math.max(0, ...shares), totalAda: paidTotal, usdPerPlayerMonth: f.usdPerPlayerMonth };
 
       // 4) Fiyat çarpanı (kasa ömrü = hazine / aylık ücretsiz havuz)
       const pools = Object.values(T.state.pools).reduce((s, v) => s + (Number(v) || 0), 0);
-      const monthlyFaucet = f.totalAda * WEEKLY_RULES.weeksPerMonth;
+      const monthlyFaucet = paidTotal * WEEKLY_RULES.weeksPerMonth;
       const runwayMonths = monthlyFaucet > 0 ? pools / monthlyFaucet : 999;
       const priceMultiplier = nextMultiplier({ current: Number(e.priceMultiplier) || 1, priceUsd: market?.priceUsd, launchPriceUsd: e.launchPriceUsd, runwayMonths });
       summary.priceMultiplier = priceMultiplier;
@@ -325,7 +348,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       setEcon({
         epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap,
         settled: { burned: Number(gp.state.totalBurned) || 0, creator: Number(gp.state.creatorRoyaltyTotal) || 0 },
-        faucetPerPlayer: f.perPlayer, lastWeekly: summary
+        faucetPerPlayer: summary.faucet.perPlayer, lastWeekly: summary
       });
       db.event('weekly', null, summary);
       // Kayıt şişmesin: 90 günden eski olaylar ve en son 5.000 dışındaki maç kayıtları silinir

@@ -75,24 +75,73 @@ E.withPlayer(P, () => null);
   ok('Güçlendirme, alet, parşömen, sıra, çark ödemesi, görev ve eşya konumu yalnız geçerli değerlerle');
 }
 
-// 4) Ücretsiz oyuncu payı: e-postasını doğrulamamış hesap almaz
+// 4) Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026): doğrulanmış e-posta + en az 3. seviye + haftalık katkı
+//    eşiği; pay katkı^1,5 × sadakat serisi; kilitli gelir. Emeğini yan hesaplara bölen daha az alır.
 {
   const cfg = { ...loadConfig({}), dbFile: ':memory:' };
   const mailer = createMailer({ db, cfg, log: { log() {} } });
   const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethers.verifyMessage(m, s) });
-  const v = await accounts.register('dogru@ornek.com', 'gizli-sifre-123');
-  const link = /verify=([a-f0-9]+)/.exec(db.kvJson('dev:outbox', [])[0].text)[1];
-  accounts.verifyEmail(link);
-  const u = await accounts.register('sahte@ornek.com', 'gizli-sifre-123');
-  for (const p of [v.playerId, u.playerId]) E.withPlayer(p, () => null);
+  const ep = E.globalPool.state.epochId + 10;   // önceki haftaları olan bir dünya
+  const mk = async (email, { verify = true, level = 3, week = 0, streak = null } = {}) => {
+    const r = await accounts.register(email, 'gizli-sifre-123');
+    if (verify) accounts.verifyEmail(/verify=([a-f0-9]+)/.exec(db.kvJson('dev:outbox', [])[0].text)[1]);
+    E.withPlayer(r.playerId, () => null);
+    E.mutatePlayer(r.playerId, gs => {
+      gs.state.level = level; gs.state.adAstraBalance = 0; gs.state.lockedAda = 0;
+      gs.state.contribution = { total: week, week, lastWeek: 0, epochId: ep, buyCredit: {} };
+      if (streak) gs.state.faucetStreak = streak;
+    });
+    return r.playerId;
+  };
+  // Tek hesapta 600 puan, 10 haftalık serisi olan sadık oyuncu
+  const loyal = await mk('sadik@ornek.com', { week: 600, streak: { weeks: 10, lastEpoch: ep - 1 } });
+  // Aynı emeği 3 yeni hesaba bölen oyuncu (200'er puan)
+  const split = [await mk('yan1@ornek.com', { week: 200 }), await mk('yan2@ornek.com', { week: 200 }), await mk('yan3@ornek.com', { week: 200 })];
+  const unverified = await mk('sahte@ornek.com', { verify: false, week: 600 });
+  const lowLevel = await mk('dusuk@ornek.com', { level: 2, week: 600 });
+  const lazy = await mk('tembel@ornek.com', { week: 50 });
+  // Seri kaçırılmış: 8 haftalık seri, 2 hafta ara → 8/4 = 2, bu hafta +1 = 3
+  const gap = await mk('ara@ornek.com', { week: 200, streak: { weeks: 8, lastEpoch: ep - 3 } });
   const world = createWorld({ db, engine: E, accounts, cfg, log: { warn() {}, error() {} } });
-  const market = { priceUsd: 2e-7, mcapUsd: 20000, graduated: false, curveSupply: 2e9 };
-  const s = world.settleWeek(E.globalPool.state.epochId, market);
-  const vb = E.readPlayer(v.playerId).adAstraBalance, ub = E.readPlayer(u.playerId).adAstraBalance;
-  assert.ok(vb > 0, 'Doğrulanmış hesap ücretsiz payı aldı');
-  assert.equal(ub, 0, 'Doğrulanmamış hesap almadı');
-  assert.ok(s.faucet.players >= 1);
-  ok('Ücretsiz oyuncu payı yalnız e-postası doğrulanmış hesaplara');
+  const market = { priceUsd: 2e-7, mcapUsd: 2e7, graduated: false, curveSupply: 2e9 };
+  const s = world.settleWeek(ep, market);
+  const bal = p => E.readPlayer(p).adAstraBalance;
+  for (const p of [unverified, lowLevel, lazy]) assert.equal(bal(p), 0, 'Şartı sağlamayan almaz (doğrulanmamış / düşük seviye / az katkı)');
+  const one = bal(loyal), three = split.reduce((t, p) => t + bal(p), 0);
+  assert.ok(one > 0 && three > 0);
+  assert.ok(Math.abs(three / one - 0.2887) < 0.01, `3 yan hesabın toplamı tek sadık hesabın ~%29'u (${(three / one * 100).toFixed(1)}%)`);
+  assert.equal(E.readPlayer(loyal).faucetStreak.weeks, 11, 'Seri ilerledi');
+  assert.equal(E.readPlayer(gap).faucetStreak.weeks, 3, 'Kaçırılan her hafta seriyi yarıya indirir');
+  assert.ok(Math.abs(E.readPlayer(loyal).lockedAda - one) < 1e-6, 'Pay tamamen kilitli');
+  assert.equal(s.faucet.players, 5, '5 hesap şartları sağladı (sadık, 3 yan hesap, seri kaçıran)');
+  ok('Ücretsiz oyuncu payı: şartlar, katkıyla hızlı büyüyen pay, sadakat serisi, kilitli pay (yan hesaplar ~%29 alır)');
+}
+
+// 6) Çark: ADA bedelinin %80'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
+{
+  const ep = E.globalPool.state.epochId;
+  E.mutatePlayer(P, gs => { gs.state.adAstraBalance = 1e6; gs.state.inventory.wood = 1e6; gs.state.warehouseLevel = 18; });
+  const rnd = Math.random;
+  Math.random = () => 0.99;                       // ödül: bilet parçası (kasaya maliyetsiz)
+  try {
+    const c0 = E.treasury.getPool('carnival');
+    const cost = E.gs.getWheelCostAda ? 100 : 100;
+    assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
+    const gain = E.treasury.getPool('carnival') - c0;
+    assert.ok(Math.abs(gain - (cost * 0.8 + cost * 0.2 * 0.86 * 0.04)) < 1e-6, `ADA çevirmesinde kasaya 80 + payın %3,44'ü girdi (${gain})`);
+    // Bilet: satın alınmış biletin piyango kasasındaki 98 ADA'sı Karnaval kasasına
+    assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
+    const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');
+    assert.ok(E.act(P, 'spinCarnivalWheel', ['ticket']).result.success);
+    assert.ok(Math.abs(E.treasury.getPool('carnival') - c1 - 98) < 1e-6, 'Biletin 98 ADA\'sı Karnaval kasasına geçti');
+    assert.ok(Math.abs(l0 - E.lottery().pool - 98) < 1e-6, 'Ortak piyango kasasından düştü');
+    // Hammadde: günde 3
+    let okN = 0, last = null;
+    for (let i = 0; i < 4; i++) { last = E.act(P, 'spinCarnivalWheel', ['wood']).result; if (last.success) okN++; }
+    assert.equal(okN, 3 - (E.readPlayer(P).dailyCounters.wheelResourceSpins - okN), 'Hammaddeyle günde en çok 3 çevirme');
+    assert.ok(!last.success && /günlük sınır/.test(last.message), 'Dördüncü çevirme reddedildi');
+  } finally { Math.random = rnd; }
+  ok('Çark: ADA bedelinin %80\'i Karnaval kasasına, bilet parası kasaya, hammaddeyle günde 3 çevirme');
 }
 
 // 5) Sunucu açılış kilitleri: deneme modu gerçek anahtarla ya da deneme kayıt dosyası gerçek sunucuda açılmaz

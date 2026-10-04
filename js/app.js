@@ -3092,15 +3092,25 @@ function getResourceNameTr(key) {
   return map[String(key).toLowerCase()] || (window.gameState?.getResourceNameTr ? window.gameState.getResourceNameTr(key) : key);
 }
 
+// Çarkın dürüst ortalama dönüşü: bot hariç; 3 bilet parçası = 1 bedava çevirme hesaba katılır
+function wheelReturnStats(wheelRewards) {
+  const W = wheelRewards.reduce((s, r) => s + (r.weight || 0), 0) || 10000;
+  const shard = wheelRewards.filter(r => r.type === 'ticket_shard').reduce((s, r) => s + r.weight / W, 0);
+  const base = wheelRewards.filter(r => r.type !== 'ticket_shard' && r.type !== 'bot_free').reduce((s, r) => s + (r.weight / W) * (r.valAda || 0), 0);
+  const rtp = base / (1 - shard / 3) / (GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100) * 100;
+  const back = wheelRewards.filter(r => (r.valAda || 0) >= 100 && r.type !== 'bot_free').reduce((s, r) => s + r.weight / W, 0) * 100;
+  return { rtp: Math.round(rtp), back: Math.round(back) };
+}
+
 const WHEEL_SHORT_LABELS = {
-  'frag_1': '1 Parça',
+  'ada_5000': '5K ADA 💎',
   'frag_10': '10 Parça',
   'raw_1000_wood': '1K Odun',
   'raw_1000_iron': '1K Demir',
   'raw_1000_wheat': '1K Buğday',
-  'raw_50_wood': '50 Odun',
-  'raw_50_iron': '50 Demir',
-  'raw_50_wheat': '50 Buğday',
+  'raw_100_wood': '100 Odun',
+  'raw_100_iron': '100 Demir',
+  'raw_100_wheat': '100 Buğday',
   'free_bot_24h': '24s Bot',
   'ada_200': '200 ADA',
   'ada_1000': '1K ADA 👑',
@@ -3589,7 +3599,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             <div>
               <div style="font-size: 1.1rem; font-weight: 900; color: #fff; display:flex; align-items:center; gap:8px;">
                 <span>🎡 15 Potansiyel Ödüllü Krallık Çarkı</span>
-                <span class="card-badge" style="background:#ec4899; color:#fff; border:none; font-weight:800;">RTP ~%${Math.round(wheelRewards.reduce((s, r) => s + ((r.weight / (wheelRewards.reduce((ws, wi) => ws + (wi.weight || 0), 0) || 10000)) * (r.valAda || 0)), 0))} • Kasa Garantili</span>
+                <span class="card-badge" style="background:#ec4899; color:#fff; border:none; font-weight:800;">Ortalama dönüş ~%${wheelReturnStats(wheelRewards).rtp} • Kasa Garantili</span>
               </div>
               <div style="font-size: 0.85rem; color: #cbd5e1; margin-top:2px;">
                 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA veya bu tutara denk gelen hammadde ile çevirebilir, ya da piyango biletini çark hakkına dönüştürebilirsin!
@@ -3648,19 +3658,19 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         <div class="clean-card" style="border-color: #ec4899; background: #120914;">
           <div style="font-size:0.88rem; font-weight:800; color:#f472b6; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <span>🪙 Çarkı Çevirme Seçenekleri (${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA Eşdeğeri):</span>
-            <span style="font-size:0.75rem; color:#fde047;">Hammadde anında yakılarak sistemden silinir!</span>
+            <span style="font-size:0.75rem; color:#fde047;">Hammaddenin yarısı yakılır, yarısı satılıp Karnaval kasasına girer · bugün hammaddeyle kalan: ${gameState.getWheelResourceSpinsLeft()}/${GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3}</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
             <button class="btn-clean btn-spin-wheel" data-pay="ada" style="background:#7c3aed; border-color:#a78bfa; font-weight:800; padding:10px;">
               🟣 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA İle Çevir
             </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="wheat" style="background:#854d0e; border-color:#fde047; font-weight:800; padding:10px;">
+            <button class="btn-clean btn-spin-wheel" data-pay="wheat" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#854d0e; border-color:#fde047; font-weight:800; padding:10px;">
               🌾 ${costWheat} Buğday İle Çevir
             </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="iron" style="background:#0369a1; border-color:#38bdf8; font-weight:800; padding:10px;">
+            <button class="btn-clean btn-spin-wheel" data-pay="iron" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#0369a1; border-color:#38bdf8; font-weight:800; padding:10px;">
               ⛏️ ${costIron} Demir İle Çevir
             </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="wood" style="background:#14532d; border-color:#4ade80; font-weight:800; padding:10px;">
+            <button class="btn-clean btn-spin-wheel" data-pay="wood" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#14532d; border-color:#4ade80; font-weight:800; padding:10px;">
               🌲 ${costWood} Odun İle Çevir
             </button>
             <button id="btn-spin-wheel-ticket" class="btn-clean btn-spin-wheel" data-pay="ticket" ${myTickets > 0 ? '' : 'disabled'} style="background:#db2777; border-color:#f472b6; font-weight:800; padding:10px;">
@@ -3673,7 +3683,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         <div class="clean-card" style="border-color: rgba(255,255,255,0.1); background: rgba(10,10,18,0.6); padding:12px;">
           <div style="font-size:0.85rem; font-weight:800; color:#cbd5e1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <span>📋 Çarktaki 15 Dilim Ödül Tablosu:</span>
-            <span style="font-size:0.75rem; color:#facc15;">RTP ~%${Math.round(wheelRewards.reduce((s, r) => s + ((r.weight / (wheelRewards.reduce((ws, wi) => ws + (wi.weight || 0), 0) || 10000)) * (r.valAda || 0)), 0))}</span>
+            <span style="font-size:0.75rem; color:#facc15;">${(() => { const w = wheelReturnStats(wheelRewards); return `Ortalama dönüş ~%${w.rtp} · bedelini geri alma ~%${w.back}`; })()}</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px;">
             ${(() => {
@@ -3828,6 +3838,17 @@ function renderCarnivalHtml(activeTab = 'wheel') {
               <span style="color: #38bdf8;">🏅 Katkı puanı (bu hafta): ${f(ct.week)}</span>
               <span style="color: #c084fc;">💱 Fiyat çarpanı: ×${mult.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}</span>
             </div>
+            ${(() => {
+              const fp = gameState.getFreePlayerPoolInfo();
+              const m = ok => (ok ? '✅' : '❌');
+              if (fp.deposited) return '<div style="font-size: 0.78rem; color: #94a3b8; margin-top: 8px;">🎁 Ücretsiz oyuncu payı: hesabına para yatırdığın için bu havuz senin için değil (kazandığın ödüller devam eder).</div>';
+              return `<div style="margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #0b1220; border: 1px dashed #334155; font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+                <div style="font-weight: 800; color: #86efac;">🎁 Haftalık ücretsiz oyuncu payı</div>
+                ${m(fp.levelOk)} En az ${fp.minLevel}. seviye (sen: ${fp.level}) · ${m(fp.contributionOk)} Bu hafta en az ${fp.needContribution.toLocaleString('tr-TR')} katkı puanı (sen: ${fp.weekContribution.toLocaleString('tr-TR')}) · 📧 e-postan doğrulanmış olmalı<br>
+                🔥 Sadakat serin: <strong>${fp.streakWeeks} hafta</strong> → bu haftaki çarpanın <strong>×${fp.streakMultiplier.toLocaleString('tr-TR', { maximumFractionDigits: 1 })}</strong> (en çok ×${fp.streakMax}; kaçırılan hafta seriyi yarıya indirir)<br>
+                <span style="color: #94a3b8;">Pay, katkın arttıkça hızla büyür: emeğini tek hesapta toplayan, yan hesaplara bölenden çok daha fazla alır. Pay ${fp.locked ? 'kilitli gelir; oyunda harcadıkça çözülür' : 'her kazanç gibi gelir'}.</span>
+              </div>`;
+            })()}
             <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
               Oyundan kazandığın ADA'nın %20'si serbest, %80'i kilitli başlar. Kilitli ADA'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. İleride çekim yalnız serbest kısımdan yapılacak; ortak haftalık çekim hakkından payını katkı puanın belirleyecek.
             </div>

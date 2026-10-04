@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.30.0',
+  GAME_VERSION: '1.31.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -569,7 +569,11 @@ export const GAME_CONFIG = {
   },
   TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7200000, worldBoss: 6000000, arena: 4000000, carnival: 4000000, quest: 8000000 },
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
-  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100 },
+  // Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026 — ayrıntı js/economy/faucet.js): en az MIN_LEVEL seviye ve o hafta
+  // en az MIN_WEEKLY_CONTRIBUTION katkı puanı (× fiyat çarpanı); pay = katkı^WEIGHT_EXP × sadakat serisi (haftada +STREAK_STEP,
+  // en çok STREAK_MAX; kaçırılan hafta seriyi yarıya indirir); kişi başı tavan da ağırlıkla ölçeklenir (tam tavan için
+  // FULL_CONTRIBUTION katkı + en yüksek seri); pay tamamen kilitli gelir.
+  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 100, FULL_CONTRIBUTION: 1000, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true },
   TREASURY_MIN_PAYOUT_RATIO: 0.15,   // havuz boşalsa bile ödül tamamen sıfırlanmaz
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
 
@@ -620,25 +624,31 @@ export const GAME_CONFIG = {
   CARNIVAL: {
     WHEEL_COST_ADA: 100, // 100 ADA veya dengi hammadde veya 1 Piyango Bileti
     // Karnaval kasasında en az bu kadar ADA yoksa çark geçici olarak kapanır (ödüller asla yoktan ödenmez)
-    WHEEL_MIN_CARNIVAL_BALANCE: 5000,
-    // 15 Potansiyel Ödül — Oyuncuya ortalama geri dönüş ~%67 (kasa kârı ~%33, hazineye akar).
-    // v1.25: Eski "24 saatlik ücretsiz bot" %0,6 ihtimalle çıkıyordu; botun gerçek değeri ~46.000 ADA
-    // olduğu için 100 ADA'lık çevirme ortalamada 300+ ADA geri veriyordu. Artık %0,02'lik nadir ikramiye.
+    WHEEL_MIN_CARNIVAL_BALANCE: 20000,
+    // Kullanıcı kararı (4 Ekim 2026): ADA ile çevrilen çarkın bedelinin %80'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
+    // kasadan ödenir; eskiden yalnız %3,4'ü giriyordu ve kasa her çevirmede ~50 ADA eriyordu). Kalan %20 her harcama gibi
+    // dağıtılır (yakım, yapımcı payı, temel gelir, hazine kasaları).
+    WHEEL_CARNIVAL_SHARE: 0.80,
+    // Hammadde oyunda bedava toplandığı için hammaddeyle çevirme günde en çok bu kadar (kasa bu yoldan erimesin)
+    WHEEL_RESOURCE_DAILY_LIMIT: 3,
+    // 15 ödül (4 Ekim 2026 çalışması). Oyuncuya ortalama dönüş ~%81 (bot dahil ~%91; 3 bilet parçası = 1 bedava çevirme
+    // hesaba katılarak). Çevirmelerin ~%31'inde en az bedel geri alınır, ~%10'unda kârla çıkılır; en büyük ödül 50×.
+    // Kurallar korunur: bot < %1, teçhizat parçası < %1, anahtar < %0,1, coin analiz kuponu < %1, parşömen yok.
     WHEEL_REWARDS: [
-      { id: 'frag_1',        name: '1 Teçhizat Parçası',              icon: '🧩', type: 'resource', key: 'fragments', amount: 1,    valAda: 45,   weight: 60 },
+      { id: 'ada_5000',      name: '💎 5.000 $ADASTRA BÜYÜK İKRAMİYE',  icon: '💎', type: 'ada',      amount: 5000,                   valAda: 5000, weight: 6 },
       { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 450,  weight: 20 },
-      { id: 'raw_1000_wood', name: '1.000 ADA Değerinde Odun',        icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 1000, valAda: 1000, weight: 15 },
-      { id: 'raw_1000_iron', name: '1.000 ADA Değerinde Demir',       icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 1000, valAda: 1000, weight: 15 },
-      { id: 'raw_1000_wheat',name: '1.000 ADA Değerinde Buğday',      icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 1000, valAda: 1000, weight: 15 },
-      { id: 'raw_50_wood',   name: 'Amorti: 50 ADA Değerinde Odun',   icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 50,   valAda: 50,   weight: 1320 },
-      { id: 'raw_50_iron',   name: 'Amorti: 50 ADA Değerinde Demir',  icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 50,   valAda: 50,   weight: 1320 },
-      { id: 'raw_50_wheat',  name: 'Amorti: 50 ADA Değerinde Buğday', icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 50,   valAda: 50,   weight: 1320 },
+      { id: 'raw_1000_wood', name: '1.000 ADA Değerinde Odun',        icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 1000, valAda: 1000, weight: 30 },
+      { id: 'raw_1000_iron', name: '1.000 ADA Değerinde Demir',       icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 1000, valAda: 1000, weight: 30 },
+      { id: 'raw_1000_wheat',name: '1.000 ADA Değerinde Buğday',      icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 1000, valAda: 1000, weight: 30 },
+      { id: 'raw_100_wood',  name: 'Bedelin Geri: 100 ADA Değerinde Odun',   icon: '🌲', type: 'amm_raw', key: 'wood',  adaVal: 100, valAda: 100, weight: 700 },
+      { id: 'raw_100_iron',  name: 'Bedelin Geri: 100 ADA Değerinde Demir',  icon: '⛏️', type: 'amm_raw', key: 'iron',  adaVal: 100, valAda: 100, weight: 700 },
+      { id: 'raw_100_wheat', name: 'Bedelin Geri: 100 ADA Değerinde Buğday', icon: '🌾', type: 'amm_raw', key: 'wheat', adaVal: 100, valAda: 100, weight: 700 },
       { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 46000, weight: 2 },
-      { id: 'ada_200',       name: '200 $ADASTRA Nakit Ödül',         icon: '🟣', type: 'ada',      amount: 200,                    valAda: 200,  weight: 475 },
-      { id: 'ada_1000',      name: '🏆 1.000 $ADASTRA BÜYÜK İKRAMİYE',icon: '👑', type: 'ada',      amount: 1000,                   valAda: 1000, weight: 10 },
-      { id: 'ada_50',        name: '50 $ADASTRA Ödül',                icon: '🟣', type: 'ada',      amount: 50,                     valAda: 50,   weight: 2058 },
+      { id: 'ada_200',       name: '200 $ADASTRA Nakit Ödül (2×)',    icon: '🟣', type: 'ada',      amount: 200,                    valAda: 200,  weight: 800 },
+      { id: 'ada_1000',      name: '👑 1.000 $ADASTRA İKRAMİYE (10×)',icon: '👑', type: 'ada',      amount: 1000,                   valAda: 1000, weight: 50 },
+      { id: 'ada_50',        name: '50 $ADASTRA Teselli Ödülü',       icon: '🟣', type: 'ada',      amount: 50,                     valAda: 50,   weight: 2900 },
       { id: 'box_key',       name: '1 Pandora Kutusu Anahtarı',       icon: '🔑', type: 'key',      amount: 1,                      valAda: 1000, weight: 8 },
-      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 33.3, weight: 3312 },
+      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 33.3, weight: 3974 },
       // v1.25: Kupon kodu kaydedilir; trade sitesi (AlphavaxTrade) bu kodları henüz tanımadığı için ekranda
       // "site bağlantısı kurulunca kullanılabilir" diye açıkça belirtilir (eskiden geçerli bir kodmuş gibi gösteriliyordu).
       { id: 'coin_analysis_code', name: 'AlphAvax Vercel App Özel Coin Analiz Bileti', icon: '🎫', type: 'analysis_code', amount: 1, valAda: 0, weight: 50 }
@@ -1015,6 +1025,18 @@ export const GAME_CONFIG = {
         'Oyun Kasası üst sınırı: kasanda yaklaşık 30 günlük harcamandan fazlası birikirse fazlası güvenliğin için kendi cüzdanına kendiliğinden geri gönderilir.',
         'Karnaval Çarkı hammaddeyle çevrilince ödenen hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ADA Karnaval kasasına girer (ödüller bu kasadan ödenir).',
         'Tarayıcı koruması açıldı: oyun sayfasında yalnız oyunun kendi kodu çalışabilir.'
+      ]
+    },
+    {
+      version: 'v1.31',
+      title: '🎡 Yeni Şans Çarkı & Adil Ücretsiz Oyuncu Payı',
+      date: '4 Ekim 2026',
+      changes: [
+        `Şans Çarkı yenilendi: oyuncuya ortalama dönüş %63'ten ~%81'e çıktı (bot hariç). Çevirmelerin ~%31'inde en az bedelini geri alırsın, ~%10'unda kârla çıkarsın. Yeni 💎 5.000 ADA Büyük İkramiye (50×).`,
+        `Çark artık kendi kendini besliyor: ADA ile çevirmenin %80'i doğrudan Karnaval kasasına girer, kasa erimez ve çark kapanmaz.`,
+        `Piyango biletiyle çevirince biletin piyango kasasındaki payı Karnaval kasasına geçer.`,
+        `Hammaddeyle çevirme günde 3 hak (hammadde oyunda bedava toplandığı için kasa korunur).`,
+        `Haftalık ücretsiz oyuncu payı adil hale geldi: en az 3. seviye ve haftada yeterli katkı puanı gerekir; pay katkın arttıkça hızla büyür ve her hafta üst üste katılınca sadakat serisiyle 2 katına kadar çıkar. Emeğini tek hesapta toplayan, yan hesaplara bölenden çok daha fazla kazanır. Pay kilitli gelir; oyunda harcadıkça çözülür. Şartlarını Hazine panelinde görebilirsin.`
       ]
     }
   ],

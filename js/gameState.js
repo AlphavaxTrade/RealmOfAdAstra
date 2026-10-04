@@ -7,6 +7,7 @@ import { treasury } from './treasury.js';
 import { createUnit, simulateBattle, predictBattle, DEFAULT_BOSS_PHASES } from './combat.js';
 import { getDungeonEntry } from './bestiary.js';
 import { splitTicketPayment, runDraw, winChance as lotteryWinChance } from './economy/lottery.js';
+import { decayedStreak, streakMultiplier, minContribution, FAUCET_DEFAULTS } from './economy/faucet.js';
 import { levelWeight as ubiLevelWeight } from './economy/ubi.js';
 import { PVP_RULES } from './economy/pvp.js';
 
@@ -4457,6 +4458,31 @@ export class GameStateManager {
     return { success: true, message: '🎪 Karnaval coşkusuna katıldın! +10 ⚡ Moral Staminası kazandın!' };
   }
 
+  // Hammaddeyle bugün kalan çevirme hakkı
+  getWheelResourceSpinsLeft() {
+    const lim = GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3;
+    return Math.max(0, lim - (this.getDailyCounters().wheelResourceSpins || 0));
+  }
+
+  // 🎁 Ücretsiz oyuncu payı: şartlar ve sadakat serisi (panel için; dağıtım sunucuda, haftalık)
+  getFreePlayerPoolInfo() {
+    const FP = { ...FAUCET_DEFAULTS, ...(GAME_CONFIG.FREE_PLAYER_POOL || {}) };
+    const mult = this.getAdaPriceMultiplier();
+    const ep = (globalPool && globalPool.state && globalPool.state.epochId) || 1;
+    const level = Number(this.state.level) || 1;
+    const week = this.getContributionInfo().week;
+    const need = Math.ceil(minContribution(mult, FP));
+    const streakNow = decayedStreak(this.state.faucetStreak, ep);
+    const ifQualify = (this.state.faucetStreak && this.state.faucetStreak.lastEpoch === ep) ? streakNow : streakNow + 1;
+    return {
+      deposited: (Number(this.state.depositedAda) || 0) > 0,
+      minLevel: FP.MIN_LEVEL, level, levelOk: level >= FP.MIN_LEVEL,
+      needContribution: need, weekContribution: week, contributionOk: week >= need,
+      streakWeeks: streakNow, streakMultiplier: streakMultiplier(Math.max(1, ifQualify), FP), streakMax: FP.STREAK_MAX,
+      locked: FP.LOCKED !== false
+    };
+  }
+
   // Çark bedeli (ADA fiyat çarpanıyla)
   getWheelCostAda() {
     return this.adaPrice(GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100);
@@ -4480,18 +4506,30 @@ export class GameStateManager {
       }
       this.state.adAstraBalance -= costAda;
       this._onAdaSpent(costAda);
-      globalPool.recordTokenSpend(costAda);
+      // Bedelin %80'i doğrudan Karnaval kasasına (ödüller buradan ödenir), %20'si her harcama gibi dağıtılır
+      const share = Math.max(0, Math.min(1, GAME_CONFIG.CARNIVAL?.WHEEL_CARNIVAL_SHARE ?? 0.8));
+      if (share > 0 && treasury.depositTo) treasury.depositTo('carnival', costAda * share);
+      globalPool.recordTokenSpend(costAda * (1 - share));
     } else if (paymentMethod === 'ticket') {
       if ((this.state.lotteryTickets || 0) < 1) {
         return { success: false, message: 'Çark çevirmek için en az 1 Piyango Biletine sahip olmalısın!' };
       }
       // Yakılan biletin ödenen bedeli de piyango ödül hesabından düşer (bilet başına ortalama)
       const tk = this.state.lotteryTickets || 0;
+      const avgPaid = this.state.lotteryTicketsPaid != null && tk > 0 ? this.state.lotteryTicketsPaid / tk : 0;
       if (this.state.lotteryTicketsPaid != null && tk > 0) {
-        this.state.lotteryTicketsPaid = Math.max(0, this.state.lotteryTicketsPaid - this.state.lotteryTicketsPaid / tk);
+        this.state.lotteryTicketsPaid = Math.max(0, this.state.lotteryTicketsPaid - avgPaid);
       }
+      // Satın alınmış biletin piyango kasasındaki payı Karnaval kasasına geçer (ödülü artık çark öder)
+      const moved = Math.min(avgPaid * (1 - (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02)), Math.max(0, Number(this.state.lotteryPool) || 0));
+      if (moved > 0 && treasury.depositTo) { this.state.lotteryPool -= moved; treasury.depositTo('carnival', moved); }
       this.state.lotteryTickets -= 1;
     } else if (['wood', 'iron', 'wheat'].includes(paymentMethod)) {
+      const resLimit = GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3;
+      const dcRes = this.getDailyCounters();
+      if ((dcRes.wheelResourceSpins || 0) >= resLimit) {
+        return { success: false, message: `🎪 Bugün hammaddeyle ${resLimit} kez çevirdin (günlük sınır). Yarın yine gel ya da ADA / biletle çevir.` };
+      }
       const price = ammMarket.getPrice(paymentMethod) || 1.0;
       const requiredAmount = Math.ceil(costAda / price);
       const resNameTr = this.getResourceNameTr(paymentMethod);
@@ -4499,6 +4537,7 @@ export class GameStateManager {
         return { success: false, message: `Yetersiz ${resNameTr}! 100 ADA değerinde hammadde için ${requiredAmount} adet gereklidir.` };
       }
       inv[paymentMethod] -= requiredAmount;
+      dcRes.wheelResourceSpins = (dcRes.wheelResourceSpins || 0) + 1;
       // Kullanıcı kararı (4 Ekim 2026): ödenen hammaddenin YARISI yakılır, YARISI pazarda satılır ve gelen ADA
       // Karnaval kasasına girer (ödüller bu kasadan ödenir). Pazar fiyatı tabandaysa satılamayan kısım da yakılır.
       const toSell = Math.min(Math.floor(requiredAmount / 2), ammMarket.getMaxSellBeforeFloor(paymentMethod));
