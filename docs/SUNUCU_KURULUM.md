@@ -5,7 +5,8 @@ Bu belge, oyunu bir sunucuda çevrimiçi (gerçek ADASTRA ile) çalıştırmak i
 ## Ne gerekiyor?
 
 - Linux bir sunucu (en az 1 işlemci, 1 GB bellek yeterli) ve üzerinde **Docker**.
-- Bir alan adı ve HTTPS. Cüzdanla giriş HTTPS ister. Önüne Caddy ya da Nginx konabilir; aşağıda Caddy örneği var.
+- Bir alan adı ve HTTPS. Cüzdan bağlama ve ödemeler HTTPS ister. Önüne Caddy ya da Nginx konabilir; aşağıda Caddy örneği var.
+- **E-posta gönderim servisi** (doğrulama, şifre sıfırlama, cüzdan onayı mailleri için): SMTP bilgisi veren herhangi bir servis olur. Ücretsiz katmanı olanlar var.
 - **Oyun cüzdanı:** Yalnızca bu oyun için açılmış yeni bir Avalanche cüzdanı.
   - İçinde oyunun ihtiyacı kadar ADASTRA (başlangıç: 200 milyon) ve işlem ücretleri için biraz AVAX (ör. 1-2 AVAX) olsun.
   - Kişisel cüzdanını **kullanma**.
@@ -33,6 +34,14 @@ Doldurulacaklar:
 | `PAYOUT_MODE` | `auto`: sunucu kendisi gönderir. `manual`: yönetici panelinden onaylayınca gönderir. |
 | `WEEKLY_SEND_CAP_ADA` | Bir haftada oyunculara gidebilecek en fazla ADA. Güvenlik sınırıdır. |
 | `LAUNCH_PRICE_USD` | 1 ADASTRA'nın açılış fiyatı ($). Boş kalırsa sunucunun ilk okuduğu fiyat kullanılır. |
+| `PUBLIC_URL` | Oyunun adresi (ör. `https://oyun.alanadin.com`). E-postadaki bağlantılar buraya gider. |
+| `SMTP_URL`, `MAIL_FROM` | E-posta servisi bilgisi ve gönderen adı. Boşsa e-postalar gönderilmez. |
+| `TRUST_PROXY` | Önünde Caddy/Nginx varsa `1`. |
+| `PAYMENTS_CONTRACT` | Ödeme sözleşmesinin adresi (aşağıda 6. adım). Boşsa cüzdandan ödeme ve Oyun Kasası kapalıdır. |
+| `KASA_MASTER_KEY` | Oyun Kasası anahtarlarını şifreleyen gizli ana anahtar: `openssl rand -hex 32`. |
+| `TEST_MODE` | Gerçek sunucuda **mutlaka `0`**. (`1` test menüsünü, bot rakibi ve taklit kasayı açar.) |
+
+🔑 **`KASA_MASTER_KEY` çok önemli:** Kaybedilirse oyuncuların Oyun Kasalarına bir daha erişilemez; çalınırsa kasalar risk altına girer. Güvenli bir yere (ör. şifre yöneticisi + kağıt) yedekle, kimseyle paylaşma.
 
 ⚠️ `server/.env` dosyası gizlidir; GitHub'a gönderilmez, kimseyle paylaşılmaz.
 
@@ -43,7 +52,7 @@ docker compose up -d --build
 docker compose logs -f        # "Realm of Astra sunucusu çalışıyor" satırını gör
 ```
 
-Oyun `http://SUNUCU:8080` adresinde açılır. Kayıtlar sunucudaki `data/realm.db` dosyasındadır; bu dosyayı düzenli yedekle.
+Oyun `http://SUNUCU:8080` adresinde açılır. Kayıtlar sunucudaki `data/realm.db` dosyasındadır; bu dosyayı **ve `KASA_MASTER_KEY`'i** düzenli yedekle.
 
 ## 4. HTTPS (Caddy örneği)
 
@@ -73,12 +82,38 @@ Düğmeler:
 
 "⚠️ gönderiliyordu" durumundaki bir ödeme, sunucu gönderim sırasında kapanmış demektir. Sunucu böyle bir ödemeyi **çift ödeme olmasın diye kendiliğinden tekrar göndermez**. İşlemin zincirde gerçekleşip gerçekleşmediğine snowtrace.io'dan bak.
 
+## 6. Ödeme sözleşmesini yükle
+
+Oyuncular cüzdandan ödeme yaptığında ADASTRA bu sözleşme üzerinden oyun cüzdanına geçer ve ağ ücreti kadar AVAX komisyonu komisyon cüzdanına gelir. Sözleşme para tutmaz; sahibi yalnız ayarları değiştirebilir ve ödemeleri durdurabilir.
+
+**Önce Fuji deneme ağında dene** (bedava test AVAX'ı Avalanche'ın "Fuji faucet" sayfasından alınır):
+
+```bash
+DEPLOY_RPC=https://api.avax-test.network/ext/bc/C/rpc \
+DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<komisyon cüzdanı> \
+DEPLOY_MOCK_TOKEN=1 node contracts/deploy.mjs
+```
+
+Çıktıdaki ayarları deneme sunucusunun `server/.env` dosyasına yaz, oyunu baştan sona dene.
+
+**Sonra gerçek ağa yükle:**
+
+```bash
+DEPLOY_RPC=https://api.avax.network/ext/bc/C/rpc \
+DEPLOYER_PRIVATE_KEY=0x... TREASURY=0x<oyun cüzdanı> FEE_RECEIVER=0x<komisyon cüzdanı> \
+TOKEN_ADDRESS=0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0 CONFIRM_MAINNET=1 node contracts/deploy.mjs
+```
+
+Çıktıdaki `PAYMENTS_CONTRACT` adresini gerçek sunucunun `server/.env` dosyasına yaz ve `docker compose up -d --build` ile yeniden başlat. Yükleyen cüzdan sözleşmenin sahibi olur; anahtarını güvenle sakla.
+
 ## Oyun nasıl işliyor? (kısa)
 
-- Oyuncu cüzdanıyla (Core / MetaMask) imza atarak girer. İmza hiçbir işlem ya da ücret onaylamaz.
+- **Hesap:** Oyuncu e-posta ve şifreyle kayıt olur. Cüzdanı kaybolsa bile oyundaki bakiyesi hesabında kalır. Siteyi giriş yapmadan gezebilir; bir işlem yapmak istediğinde giriş istenir.
+- **Bağlı cüzdan:** Ödeme ve çekim için Core ya da MetaMask cüzdanını hesabına bağlar (imza + e-posta onayı). Cüzdanı **değiştirmek** e-posta onayı ve **48 saat** bekleme ister; o sürede ödemeler eski cüzdana gider ve gerçek sahip "bu ben değilim" ile iptal edebilir.
 - Bütün oyun işlemleri sunucuda çalışır. Tarayıcıdan gelen hile girişimleri (bakiye değiştirme, test düğmeleri, sahte eşya) reddedilir.
-- **Yatırma:** Oyuncu kendi cüzdanından oyun cüzdanına ADASTRA gönderir. Birkaç dakika içinde serbest bakiyesine eklenir.
-- **Çekim:**
+- **Ödeme:** Tıklamalı işlerde önce oyunda kazanılmış bakiye kullanılır; yetmezse kalan kısım oyuncunun cüzdanından ödeme sözleşmesiyle ödenir (ilk seferde bir kez "izin ver" onayı).
+- **Oyun Kasası:** Her oyuncunun sunucunun yönettiği bir kasa adresi var. Oyuncu yokken çalışan işler (pasif iyileşme, bot, botun pazar işleri, alet onarımı) önce kazanılmış bakiyeden, yetmezse kasadan ödenir. Kasadan harcanan ADA saatte bir oyun cüzdanına aktarılır. Kasadaki para oyuncunun kendisinindir; istediği an kesintisiz çekebilir.
+- **Çekim (oyunda kazanılan ADA):**
   - Oyuncu serbest bakiyesinden talep verir. Talepler her **Pazartesi 00:01 (TSİ)** ortak haftalık havuzdan karşılanır.
   - Havuzun büyüklüğü, satıldığında ADASTRA fiyatını en fazla %2 düşürecek miktardır. Havuz katkı puanına göre paylaşılır.
   - Ücret %3'tür (fiyat freni açıkken %6). Ücretin %70'i temel gelire gider, %30'u yakılır. Başkasının kullanmadığı hakkı kullanan, %1,5 hak kirası öder.
@@ -99,4 +134,6 @@ docker compose up -d --build
 
 - **"Oyun dosyaları bulunamadı":** Paketi yeniden kur: `docker compose up -d --build`.
 - **Panelde "Otomatik (anahtar yok!)":** `GAME_WALLET_PRIVATE_KEY` boş. Ödemeler gönderilmez, panelden onay bekler.
-- **Yatırmalar görünmüyor:** Zincir bağlantısına bak (`docker compose logs`). Sunucu yatırmaları 2 dakikada bir tarar. Oyuncunun yatırmayı oyuna girdiği cüzdandan yapmış olması gerekir.
+- **Kasa yatırması görünmüyor:** Zincir bağlantısına bak (`docker compose logs`). Sunucu aktif oyuncuların kasa bakiyelerini 2 dakikada bir okur; oyuncu Hesabım → Oyun Kasası → "Yatırmamı kontrol et" ile hemen okutabilir.
+- **E-postalar gitmiyor:** `SMTP_URL` ve `MAIL_FROM` ayarlarını kontrol et; `docker compose logs` içinde hata ara.
+- **Cüzdandan ödeme kapalı:** `PAYMENTS_CONTRACT` boş ya da yanlış. 6. adımı tamamla.
