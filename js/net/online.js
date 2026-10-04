@@ -172,7 +172,7 @@ function overlay(html) {
     el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,16,0.92);padding:16px;';
     document.body.appendChild(el);
   }
-  el.innerHTML = `<div style="max-width:420px;width:100%;background:#111827;border:1px solid #a855f7;border-radius:14px;padding:22px;color:#e2e8f0;font-family:inherit;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">${html}</div>`;
+  el.innerHTML = `<div style="max-width:420px;width:100%;max-height:92vh;overflow-y:auto;box-sizing:border-box;background:#111827;border:1px solid #a855f7;border-radius:14px;padding:22px;color:#e2e8f0;font-family:inherit;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">${html}</div>`;
   return el;
 }
 const closeOverlay = () => document.getElementById('online-overlay')?.remove();
@@ -194,6 +194,44 @@ const tokenFromLink = (url, kind) => { const m = new RegExp('[?&]' + kind + '=([
 
 // 🛡️ Kale Kapısı: cüzdan değiştirirken 48 saat beklemenin oyunlaştırılmış açıklaması (kullanıcı isteği)
 export const KALE_KAPISI = `🛡️ <strong>Kale Kapısı Kuralı.</strong> Hazinene giden yolu değiştirmek istedin! Krallığın muhafızları önce sana bir haberci (e-posta) yollayacak ve hazine kapısı <strong>48 saat</strong> mühürlü kalacak. Neden mi? Bir hain senin kılığına girip hazineni kaçırmaya kalkarsa, bu 48 saat içinde haberciyi görür ve kapıyı ona kapatırsın. Bu bekleme seni korumak için: gerçek kral sensin ve kimse hazinene senden önce dokunamaz. 👑`;
+
+// 💰 Sandık Tavsiyesi: Oyun Kasası'nda az para tutmanın oyunlaştırılmış açıklaması (kullanıcı isteği)
+export const SANDIK_TAVSIYESI = `💰 <strong>Sandık Tavsiyesi.</strong> Oyun Kasan, krallığının günlük işleri (iyileşme, bot, onarım) için taşıdığın küçük bir kese. Muhafızlarımız onu gece gündüz bekler ama en sağlam kale senin kendi cüzdanındır. Kesende yalnızca birkaç günlük harcamalık altın tut, biriken servetini kendi cüzdanına taşı. Unutma: bir kralın en güvendiği kasa, anahtarı kendi cebinde olandır. 🗝️`;
+
+function kasaSection(k) {
+  if (!k || !k.enabled) return `<div style="${boxCss}"><div style="font-weight:800;color:#fde68a;">🏦 Oyun Kasası</div><div style="font-size:0.8rem;color:#94a3b8;">Oyun Kasası henüz açılmadı.</div></div>`;
+  const days = k.daysLeft == null ? null : k.daysLeft;
+  const left = k.usagePerDay > 0
+    ? `Günde yaklaşık <strong>${fmt(k.usagePerDay)} ADA</strong> harcanıyor → kasan <strong>${days < 1 ? 'bir günden az' : '~' + Math.floor(days) + ' gün'}</strong> yeter.`
+    : 'Henüz kasadan harcama olmadı.';
+  return `<div style="${boxCss}">
+    <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">🏦 Oyun Kasası</div>
+    <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Sen yokken çalışan işler (pasif iyileşme, bot ücreti, botun pazar işleri, alet onarımı) önce oyunda kazandığın bakiyeden, yetmezse bu kasadan ödenir. Kasadaki para senin: istediğin an kesintisiz çekebilirsin.</div>
+    ${k.simulated ? `<div style="margin-top:6px;color:#fbbf24;font-size:0.8rem;">🧪 Deneme sunucusu: kasa taklit, zincire bağlı değil. Buraya gerçek ADA gönderme!</div>` : ''}
+    <div style="margin-top:6px;font-size:0.78rem;color:#94a3b8;">Kasa adresin (ADASTRA ve işlem ücretleri için biraz AVAX gönder):</div>
+    <div style="font-family:monospace;font-size:0.78rem;word-break:break-all;color:#fde68a;">${esc(k.address)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+      <button id="ks-copy" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">📋 Adresi kopyala</button>
+      <button id="ks-refresh" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">🔄 Yatırmamı kontrol et</button>
+      ${k.simulated ? '<button id="ks-test" style="padding:5px 10px;border-radius:6px;border:1px solid #64748b;background:#334155;color:#fff;cursor:pointer;font-size:0.78rem;">🧪 Kasaya 10.000 ADA + 0,1 AVAX ekle</button>' : ''}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:space-between;margin:10px 0 4px;font-size:0.82rem;font-weight:800;">
+      <span style="color:#fde047;">🪙 ADA<br>${fmt(k.available)}</span>
+      <span style="color:#e2e8f0;">🔺 AVAX<br>${Number(k.avax || 0).toFixed(4)}</span>
+      <span style="color:#94a3b8;">⏳ Aktarılacak<br>${fmt(k.pending)}</span>
+    </div>
+    ${k.avaxLow ? `<div style="color:#fca5a5;font-size:0.8rem;">⚠️ Kasada işlem ücreti için AVAX kalmadı (en az ${k.minAvax}). Kasa şu an kullanılmıyor; biraz AVAX gönder.</div>` : ''}
+    <div style="font-size:0.8rem;color:#cbd5e1;margin-top:4px;">📅 ${left}</div>
+    <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Kazandığın bakiye ve kasan bitince: pasif iyileşme durur · bot ücreti yenilenemez, bot durur · botun pazar alımları durur · aletler onarılamaz.</div>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <input id="ks-amount" type="number" min="0" placeholder="Miktar" style="flex:1;padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
+      <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option>ADA</option><option>AVAX</option></select>
+      <button id="ks-withdraw" style="padding:7px 10px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Kasadan çek</button>
+    </div>
+    ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ADA çekimi', withdraw_avax: '🏧 AVAX çekimi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
+    <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${SANDIK_TAVSIYESI}</div>
+  </div>`;
+}
 
 // Giriş / Kayıt / Şifremi unuttum. Döner: giriş yapıldı mı
 function loginFlow(startMode = 'login') {
@@ -327,8 +365,8 @@ export async function openWalletPanel() {
   if (!online.active) return;
   if (!token && !(await requireLogin())) return;
   const el = overlay('<div style="padding:20px;">⏳ Yükleniyor…</div>');
-  let w;
-  try { w = await api('GET', '/api/wallet'); } catch (err) { el.innerHTML = ''; ctx.toast(err.message, 'error'); closeOverlay(); return; }
+  let w, k;
+  try { [w, k] = await Promise.all([api('GET', '/api/wallet'), api('GET', '/api/kasa').catch(() => null)]); } catch (err) { el.innerHTML = ''; ctx.toast(err.message, 'error'); closeOverlay(); return; }
   const acc = w.account || {};
   const wd = w.withdraw;
   const snow = h => `https://snowtrace.io/tx/${h}`;
@@ -360,6 +398,7 @@ export async function openWalletPanel() {
       <button id="wp-link" style="margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid #a78bfa;background:#4c1d95;color:#fff;font-weight:800;cursor:pointer;">${acc.wallet ? '🔁 Cüzdanı değiştir' : '🔗 Cüzdan bağla'}</button>
       ${acc.wallet ? `<div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${KALE_KAPISI}</div>` : ''}
     </div>
+    ${kasaSection(k)}
     <div style="${boxCss}">
       <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
       <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ADA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ADA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
@@ -387,6 +426,13 @@ export async function openWalletPanel() {
     } catch (err) { ctx.toast(err.message, 'error'); }
   };
   $('wp-link').onclick = () => linkWalletFlow();
+  if ($('ks-copy')) $('ks-copy').onclick = () => { navigator.clipboard?.writeText(k.address); ctx.toast('Kasa adresi kopyalandı', 'success'); };
+  if ($('ks-refresh')) $('ks-refresh').onclick = async () => { try { await api('POST', '/api/kasa/refresh'); ctx.toast('🔄 Kasa bakiyesi güncellendi', 'success'); openWalletPanel(); } catch (err) { ctx.toast(err.message, 'error'); } };
+  if ($('ks-test')) $('ks-test').onclick = async () => { try { await api('POST', '/api/kasa/test-deposit', { ada: 10000, avax: 0.1 }); ctx.toast('🧪 Kasaya deneme parası eklendi', 'success'); openWalletPanel(); } catch (err) { ctx.toast(err.message, 'error'); } };
+  if ($('ks-withdraw')) $('ks-withdraw').onclick = async () => {
+    try { const r = await api('POST', '/api/kasa/withdraw', { asset: $('ks-asset').value, amount: Number($('ks-amount').value) }); ctx.toast(r.message, 'success'); setTimeout(openWalletPanel, 800); }
+    catch (err) { ctx.toast(err.message, 'error'); }
+  };
   if ($('wp-wcancel')) $('wp-wcancel').onclick = async () => {
     try { await api('POST', '/api/account/wallet/cancel'); ctx.toast('✋ Cüzdan değişikliği iptal edildi. Şifreni değiştirmeyi unutma!', 'success'); openWalletPanel(); }
     catch (err) { ctx.toast(err.message, 'error'); }
