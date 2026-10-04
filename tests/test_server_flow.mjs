@@ -59,7 +59,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
 }
 
 // ── 2) Uçtan uca ─────────────────────────────────────────────────────────
-const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, publicRateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
+const cfg = { ...loadConfig({}), dbFile: ':memory:', adminToken: 'yonetici-test-anahtari-uzun-1234567890', serveDist: false, payoutMode: 'auto', rateLimitPerSec: 1000, publicRateLimitPerSec: 1000, ipRateLimitPerSec: 1000, weeklySendCapAda: 5e7, minWithdrawAda: 100 };
 const db = openDb(':memory:');
 const engine = await createEngine(db);
 const GAME_WALLET = '0x' + '11'.repeat(20);
@@ -264,14 +264,31 @@ try {
   // Durdurma anahtarı
   const unauth = await call('POST', '/api/admin/pause', { paused: true }, tA);
   assert.equal(unauth.status, 401, 'Oyuncu yönetici komutu kullanamaz');
-  const p = await call('POST', '/api/admin/pause', { paused: true }, 'yonetici-test');
+  const p = await call('POST', '/api/admin/pause', { paused: true }, 'yonetici-test-anahtari-uzun-1234567890');
   assert.equal(p.body.paused, true);
   const wPaused = await call('POST', '/api/withdraw', { amount: 100 }, tA);
   assert.equal(wPaused.body.success, false, 'Durdurulunca çekim talebi alınmaz');
-  const st = await call('GET', '/api/admin/status', null, 'yonetici-test');
+  const st = await call('GET', '/api/admin/status', null, 'yonetici-test-anahtari-uzun-1234567890');
   assert.equal(st.status, 200);
   assert.ok(st.body.players.total >= 2);
   ok('Çift ödeme yok; durdurma anahtarı ve yönetici yetkisi çalışıyor');
+
+  // HTTP sertleştirme: bozuk adres sunucuyu düşürmez, klasör dışına çıkılamaz, yönetici şifresi deneme sınırı, başlıklar
+  const raw = async (p, opts = {}) => { const r = await fetch(base + p, opts); return { status: r.status, headers: r.headers, text: await r.text() }; };
+  const bad = await raw('/%E0%A4%A');
+  assert.ok(bad.status === 400 || bad.status === 404, 'Bozuk adres düzgün reddedilir');
+  assert.equal((await call('GET', '/api/health')).status, 200, 'Sunucu ayakta');
+  const trav = await raw('/..%2fserver%2f.env.example');
+  assert.ok(!/GAME_WALLET_PRIVATE_KEY/.test(trav.text), 'Oyun klasörü dışındaki dosya verilmez');
+  const h = await raw('/api/health');
+  assert.equal(h.headers.get('x-content-type-options'), 'nosniff');
+  assert.ok(h.headers.get('x-frame-options'), 'Çerçeve koruması');
+  for (let i = 0; i < 10; i++) await call('GET', '/api/admin/status', null, 'yanlis-sifre-' + i);
+  const blocked = await call('GET', '/api/admin/status', null, 'yonetici-test-anahtari-uzun-1234567890');
+  assert.equal(blocked.status, 429, '10 yanlış yönetici denemesinden sonra doğru şifre bile bekletilir');
+  const notFound = await call('GET', '/api/__proto__');
+  assert.equal(notFound.status, 404, 'Özel adlar yol olarak kabul edilmez');
+  ok('Sunucu kapısı: bozuk istek, klasör dışı, yönetici şifre denemesi, güvenlik başlıkları');
 
   // 48 saat dolunca yeni cüzdan etkinleşir
   now += 49 * 3600000;

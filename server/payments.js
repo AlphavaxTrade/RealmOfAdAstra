@@ -29,7 +29,9 @@ export function createPayments({ db, engine, accounts, chain, cfg, clock = () =>
     get: db.raw.prepare('SELECT * FROM pay_quotes WHERE ref = ?'),
     used: db.raw.prepare('SELECT ref FROM pay_quotes WHERE tx_hash = ?'),
     mark: db.raw.prepare("UPDATE pay_quotes SET status = 'paid', tx_hash = ?, paid = ? WHERE ref = ? AND status = 'open'"),
-    purge: db.raw.prepare("DELETE FROM pay_quotes WHERE status = 'open' AND expires < ?")
+    // Açık teklifler hemen silinmez: geç gelen bir ödeme yine eşleşebilsin (30 gün)
+    purge: db.raw.prepare("DELETE FROM pay_quotes WHERE status = 'open' AND expires < ?"),
+    credit: db.raw.prepare("UPDATE pay_quotes SET status = 'credited', tx_hash = ?, paid = ? WHERE ref = ? AND status = 'open'")
   };
   const simulated = () => cfg.testMode && !cfg.paymentsContract;     // deneme sunucusu, sözleşme yok: ödeme taklidi
 
@@ -56,7 +58,7 @@ export function createPayments({ db, engine, accounts, chain, cfg, clock = () =>
     const p = info();
     if (!p.enabled) return { ok: false, error: 'Cüzdandan ödeme henüz açılmadı.' };
     const wallet = accounts ? accounts.activeWallet(playerId) : null;
-    q.purge.run(clock());
+    q.purge.run(clock() - 30 * 86400000);
     const ref = '0x' + crypto.randomBytes(32).toString('hex');
     q.add.run(ref, playerId, name, JSON.stringify(args || []), shortfall, clock(), clock() + 15 * 60000);
     return { ok: true, needPayment: true, ref, amountAda: shortfall, cost: Math.ceil(c.spent), balance: Math.floor(c.balance), wallet, ...p };
@@ -66,6 +68,7 @@ export function createPayments({ db, engine, accounts, chain, cfg, clock = () =>
   async function confirm(playerId, ref, txHash) {
     const row = typeof ref === 'string' ? q.get.get(ref) : null;
     if (!row || row.player !== playerId) return { ok: false, error: 'Teklif bulunamadı.' };
+    if (row.status === 'credited') return { ok: false, error: 'Ödemen zaten bakiyene eklendi; işlemi şimdi tekrar yapabilirsin.' };
     if (row.status !== 'open') return { ok: false, error: 'Bu teklif zaten kullanıldı.' };
     let paid;
     if (simulated()) {
@@ -111,5 +114,40 @@ export function createPayments({ db, engine, accounts, chain, cfg, clock = () =>
     return { ok: true, paid, result: out.result, state: out.state };
   }
 
-  return { info, quote, confirm };
+  // 🔎 Kurtarma: oyuncu ödeyip onay gelmeden tarayıcıyı kapatırsa para kaybolmasın. Sözleşmedeki ödemeler zincirden
+  // taranır; açık bir teklifle eşleşen her ödeme oyuncunun bakiyesine eklenir (işlem yapılmaz, oyuncu tekrar dener).
+  async function scanPaid() {
+    if (!chain || !cfg.paymentsContract || simulated()) return 0;
+    const latest = await chain.latestBlock();                 // Avalanche: işlem blokta görünür görünmez kesindir
+    let from = Number(db.kvGet('chain:payBlock')) || 0;
+    if (!from) { db.kvSet('chain:payBlock', latest + 1); return 0; }
+    if (from > latest) return 0;
+    const to = Math.min(latest, from + 20000);
+    const logs = await chain.scanPaid(from, to);
+    let n = 0;
+    for (const l of logs) {
+      const row = q.get.get(l.ref);
+      if (!row) { db.event('payment-unmatched', null, l); continue; }
+      if (row.status !== 'open') continue;
+      if (q.used.get(l.txHash)) continue;
+      try {
+        db.tx(() => {
+          if (Number(q.credit.run(l.txHash, l.amount, row.ref).changes) !== 1) return;
+          db.q.playerAddDeposit.run(l.amount, row.player);
+          engine.mutatePlayer(row.player, gs => {
+            gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + l.amount;
+            gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + l.amount;
+            gs.state.walletPaidAda = (Number(gs.state.walletPaidAda) || 0) + l.amount;
+            gs.pushNotice(`💳 Cüzdan ödemen (${Math.floor(l.amount).toLocaleString('tr-TR')} ADA) bakiyene eklendi. Yarım kalan işlemi şimdi tekrar yapabilirsin.`, 'success');
+          });
+          n++;
+        });
+        db.event('payment-recovered', row.player, { ref: row.ref, tx: l.txHash, amount: l.amount });
+      } catch (e) { engine.reloadWorld(); log.error('Ödeme kurtarma', e); }
+    }
+    db.kvSet('chain:payBlock', to + 1);
+    return n;
+  }
+
+  return { info, quote, confirm, scanPaid };
 }

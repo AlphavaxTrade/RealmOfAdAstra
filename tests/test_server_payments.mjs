@@ -18,7 +18,7 @@ const keys = Array.from({ length: 5 }, () => ethers.Wallet.createRandom().privat
 const node = ganache.server({ logging: { quiet: true }, wallet: { accounts: keys.map(k => ({ secretKey: k, balance: '0x' + (10n ** 21n).toString(16) })) }, chain: { chainId: 43114 } });
 await node.listen(PORT);
 try {
-  const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${PORT}`, 43114, { staticNetwork: true });
+  const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${PORT}`, 43114, { staticNetwork: true, cacheTimeout: -1 });
   const [owner, treasury, feeRx, playerW, otherW] = keys.map(k => new ethers.NonceManager(new ethers.Wallet(k, provider)));
   const signMsg = (i, m) => new ethers.Wallet(keys[i]).signMessage(m);
   const c = compile();
@@ -95,6 +95,23 @@ try {
   assert.ok(/az/.test(low.error), low.error);
   assert.equal(E.readPlayer(pid).soldierUnits.length, 1, 'Eksik ödemeyle asker verilmedi');
   ok('Teklifin altında ödeme kabul edilmiyor');
+
+  // 5b) Kurtarma: oyuncu öder ama tarayıcıyı kapatır (sunucuya bildirmez) → tarama parayı bulup bakiyeye ekler
+  const qtR = payments.quote(pid, 'buySoldierUnit', []);
+  const balR = E.readPlayer(pid).adAstraBalance;
+  const tR = await pay.connect(playerW).pay(ethers.parseUnits(String(qtR.amountAda), 18), qtR.ref, { value: gasPrice * FEE_GAS, gasPrice });
+  await tR.wait();
+  db.kvSet('chain:payBlock', 1);
+  const found = await payments.scanPaid();
+  assert.ok(found >= 1, 'Tarama ödemeyi buldu');
+  // Önceki adımlarda onaylanmamış (başka cüzdandan / eksik) ama zincirde gerçekten ödenmiş paralar da bakiyeye eklenir: para kaybolmaz
+  assert.ok(E.readPlayer(pid).adAstraBalance >= balR + qtR.amountAda - 1e-6, 'Ödenen ADA bakiyeye eklendi');
+  assert.equal(db.raw.prepare('SELECT status FROM pay_quotes WHERE ref = ?').get(qtR.ref).status, 'credited');
+  assert.ok(E.readPlayer(pid).pendingNotices.some(n => /bakiyene eklendi/.test(n.message)), 'Oyuncuya bildirim gitti');
+  const late = await payments.confirm(pid, qtR.ref, tR.hash);
+  assert.equal(late.ok, false, 'Sonradan onay ikinci kez para eklemez');
+  assert.equal(await payments.scanPaid(), 0, 'Tarama aynı ödemeyi iki kez eklemez');
+  ok('Kurtarma: bildirilmemiş ödeme zincirden bulunup bir kez bakiyeye eklendi');
 
   // 6) Bakiye yetiyorsa teklif ödeme istemez
   E.mutatePlayer(pid, gs => { gs.state.adAstraBalance = 1e7; });

@@ -9,6 +9,12 @@ import { getDungeonEntry } from './bestiary.js';
 import { splitTicketPayment, runDraw, winChance as lotteryWinChance } from './economy/lottery.js';
 import { levelWeight as ubiLevelWeight } from './economy/ubi.js';
 import { PVP_RULES } from './economy/pvp.js';
+
+// Oyuncunun yazdığı isimler başka oyuncuların ekranında da görünür (Kolezyum sıralaması, maç kayıtları):
+// HTML/kod gibi çalışabilecek işaretler ve görünmez karakterler atılır.
+export const cleanName = (s, max = 24) => String(s == null ? '' : s)
+  .replace(/[<>&"'`\\\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g, '')
+  .replace(/\s+/g, ' ').trim().slice(0, max);
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
 export class GameStateManager {
@@ -513,18 +519,18 @@ export class GameStateManager {
     const soldier = this.state.soldierUnits[soldierIndex];
     if (!soldier) return { success: false, message: 'Asker bulunamadı.' };
 
-    const cleanName = (newName || '').trim();
-    if (!cleanName) return { success: false, message: 'Asker ismi boş bırakılamaz.' };
-    if (cleanName.length > 24) return { success: false, message: 'Asker ismi en fazla 24 karakter olabilir.' };
+    if (String(newName || '').trim().length > 24) return { success: false, message: 'Asker ismi en fazla 24 karakter olabilir.' };
+    const safe = cleanName(newName, 24);
+    if (!safe) return { success: false, message: 'Asker ismi boş bırakılamaz (yalnız harf, rakam ve basit işaretler).' };
 
     const oldName = soldier.name;
-    soldier.name = cleanName;
+    soldier.name = safe;
     this.saveState();
     return {
       success: true,
-      message: `⚔️ Asker ismi "${cleanName}" olarak güncellendi!`,
+      message: `⚔️ Asker ismi "${safe}" olarak güncellendi!`,
       oldName,
-      newName: cleanName
+      newName: safe
     };
   }
 
@@ -4496,9 +4502,9 @@ export class GameStateManager {
       // 🔥 HAMMADDE ANINDA YAKILIR VE KARNAVAL YAKIM SAYACINA YAZILIR
       this.recordCarnivalResourceBurn(paymentMethod, requiredAmount);
       burnedInfo = { resource: paymentMethod, resourceNameTr: resNameTr, amount: requiredAmount, fromPayment: true };
-
-      // Hazine defteri ve tokenomics muhasebesi: 100 ADA eşdeğeri harcama kaydı
-      globalPool.recordTokenSpend(costAda);
+      // Güvenlik (4 Ekim 2026): burada eskiden recordTokenSpend(100 ADA) çağrılıyordu. Ortada ADA yokken hazineye,
+      // yakıma ve yapımcı payına para yazıyordu (yoktan para); sunucuda bunun yakım/yapımcı kısmı gerçek ADASTRA olarak
+      // zincire gönderilirdi. Hammadde yukarıda zaten yakılıyor; ADA kaydı yapılmaz.
     } else {
       return { success: false, message: 'Geçersiz ödeme yöntemi!' };
     }
@@ -6436,8 +6442,8 @@ export class GameStateManager {
     const soldiers = this.state.soldierUnits || [];
     const indices = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))].filter(i => Number.isInteger(i) && soldiers[i]);
     if (indices.length !== rule.size) return { success: false, message: `${mode} maçı için ${rule.size} asker seçmelisin.` };
-    const units = this.buildDungeonBattleUnits(getDungeonEntry(1), indices).allies.map(u => ({ ...u, hp: u.maxHp }));
-    return { success: true, mode, indices, units: JSON.parse(JSON.stringify(units)), name: soldiers[indices[0]].name };
+    const units = this.buildDungeonBattleUnits(getDungeonEntry(1), indices).allies.map(u => ({ ...u, hp: u.maxHp, name: cleanName(u.name) || 'Asker' }));
+    return { success: true, mode, indices, units: JSON.parse(JSON.stringify(units)), name: cleanName(soldiers[indices[0]].name) || 'Asker' };
   }
 
   // Giriş bedeli: bot maçıyla aynı (anahtar + stamina + günlük hak)
@@ -7168,7 +7174,7 @@ export class GameStateManager {
 
     this.state.combatPresets.presets[id].positions = positions;
     if (customName && typeof customName === 'string' && customName.trim()) {
-      this.state.combatPresets.presets[id].name = customName.trim().slice(0, 32);
+      this.state.combatPresets.presets[id].name = cleanName(customName, 32) || `Taktik ${id}`;
     }
     this.state.combatPresets.activePresetId = id;
 

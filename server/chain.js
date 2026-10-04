@@ -21,7 +21,8 @@ const PAIR_ABI = ['function getReserves() view returns (uint112,uint112,uint32)'
 const toAda = v => Number(ethers.formatUnits(v, 18));
 
 export function createChain(cfg) {
-  const providers = cfg.rpcUrls.map(u => new ethers.JsonRpcProvider(u.trim(), cfg.chainId, { staticNetwork: true }));
+  // Önbellek kapalı (cacheTimeout -1): işlemden hemen sonra okunan bakiye eski çıkmasın
+  const providers = cfg.rpcUrls.map(u => new ethers.JsonRpcProvider(u.trim(), cfg.chainId, { staticNetwork: true, cacheTimeout: -1 }));
   let pi = 0;
   // Sırayla yedek adreslere geçen okuma: bir düğüm yanıt vermezse sonrakini dener
   async function withProvider(fn) {
@@ -188,5 +189,22 @@ export function createChain(cfg) {
     return withProvider(async p => (await p.getFeeData()).gasPrice);
   }
 
-  return { sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  // Ödeme sözleşmesindeki Paid olayları (kurtarma taraması)
+  async function scanPaid(fromBlock, toBlock, step = 2000) {
+    const contract = String(cfg.paymentsContract || '');
+    if (!contract) return [];
+    const topic = payIface.getEvent('Paid').topicHash;
+    const out = [];
+    for (let b = fromBlock; b <= toBlock; b += step) {
+      const e = Math.min(toBlock, b + step - 1);
+      const logs = await withProvider(p => p.getLogs({ address: contract, topics: [topic], fromBlock: b, toBlock: e }));
+      for (const l of logs) {
+        const ev = payIface.parseLog(l);
+        out.push({ txHash: l.transactionHash, payer: ev.args.payer.toLowerCase(), ref: ev.args.ref, amount: toAda(ev.args.amount), block: l.blockNumber });
+      }
+    }
+    return out;
+  }
+
+  return { scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

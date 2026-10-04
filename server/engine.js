@@ -19,12 +19,14 @@ function installShims(db) {
       if (k.endsWith(BACKUP_SUFFIX)) return null;      // veritabanı kalıcı; tarayıcı yedeğine gerek yok
       if (cache.has(k)) return cache.get(k);
       const v = db.kvGet(K(k));
+      if (cache.size > 5000) cache.clear();
       cache.set(k, v);
       return v;
     },
     setItem(k, v) {
       if (k.endsWith(BACKUP_SUFFIX)) return;
       const s = String(v);
+      if (cache.size > 5000) cache.clear();       // bellek sınırı: çok oyunculu sunucuda kopya sınırsız büyümesin
       cache.set(k, s);
       db.kvSet(K(k), s);
     },

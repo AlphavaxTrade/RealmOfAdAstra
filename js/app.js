@@ -4741,11 +4741,13 @@ function openColosseumModal() {
 // 4.6b KOLEZYUM — GERÇEK RAKİPLER (sunucuda eşleşme; js/economy/pvp.js, server/arena.js)
 // =========================================================================
 let pvpMode = '1v1';
+// Başka oyunculardan gelen isimler ekrana yazılmadan önce etkisizleştirilir (sunucu da temizler; ikinci koruma)
+const escHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let pvpSelected = null;
 
 function pvpUnitView(u, side) {
   return {
-    uid: u.uid, name: u.name, icon: u.icon || (side === 'ally' ? '⚔️' : '🥷'),
+    uid: u.uid, name: escHtml(u.name), icon: escHtml(u.icon || (side === 'ally' ? '⚔️' : '🥷')),
     avatar: side === 'ally' ? 'assets/soldier_avatar.jpg' : 'assets/gladiator_rival.jpg',
     hp: u.maxHp, maxHp: u.maxHp, atk: u.atk,
     skills: Array.isArray(u.skills) && u.skills.length ? u.skills : ['shieldWall'],
@@ -4816,15 +4818,15 @@ async function renderPvpPanel() {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px;">
       <div>
         <div style="font-weight:800;color:#fde047;margin-bottom:4px;">🏆 Bu haftanın ilk 10'u</div>
-        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${r.name}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ADA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
+        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${escHtml(r.name)}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ADA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
         ${st.mine ? `<div class="clean-desc" style="margin-top:4px;">Senin sıran: <strong>${st.mine.rank}.</strong> · ${st.mine.points} puan · ${st.mine.wins} galibiyet / ${st.mine.losses} mağlubiyet</div>` : ''}
       </div>
       <div>
         <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">📜 Son maçların</div>
         ${st.matches.length ? st.matches.map(m => `<div style="border-bottom:1px solid #1e293b;padding:4px 0;font-size:0.8rem;">
-          ${resIcon[m.result] || ''} <strong>${m.mode}</strong> · ${m.opponent} · ${m.points ? '+' + m.points + ' puan' : ''}
+          ${resIcon[m.result] || ''} <strong>${escHtml(m.mode)}</strong> · ${escHtml(m.opponent)} · ${m.points ? '+' + m.points + ' puan' : ''}
           <button class="btn-clean btn-clean-outline pvp-watch" data-id="${m.id}" style="width:auto;padding:2px 8px;font-size:0.75rem;margin-left:4px;">▶️ İzle</button>
-          ${m.why ? `<div style="color:#fca5a5;margin-top:2px;">Neden kaybettin: ${m.why.join(' ')}</div>` : ''}
+          ${m.why ? `<div style="color:#fca5a5;margin-top:2px;">Neden kaybettin: ${escHtml(m.why.join(' '))}</div>` : ''}
         </div>`).join('') : '<div class="clean-desc">Henüz maçın yok.</div>'}
       </div>
     </div>`;
@@ -4854,13 +4856,13 @@ async function renderPvpPanel() {
     renderTopBar();
     if (!r.success) { showToast(r.message, 'error'); renderPvpPanel(); return; }
     if (r.queued) { showToast(r.message, 'success'); renderPvpPanel(); return; }
-    playPvpReplay({ allies: r.allies, enemies: r.enemies, sim: r.sim, title: `Gerçek rakip · <strong>${r.opponentName}</strong> (${r.mode})`, resultText: r.message, why: r.why });
+    playPvpReplay({ allies: r.allies, enemies: r.enemies, sim: r.sim, title: `Gerçek rakip · <strong>${escHtml(r.opponentName)}</strong> (${escHtml(r.mode)})`, resultText: r.message, why: r.why });
   });
   el.querySelectorAll('.pvp-watch').forEach(b => b.addEventListener('click', async () => {
     try {
       const m = await pvp.match(b.dataset.id);
       const rec = st.matches.find(x => String(x.id) === String(b.dataset.id));
-      playPvpReplay({ allies: m.a.units, enemies: m.b.units, sim: m.sim, title: `Tekrar · <strong>${m.a.name}</strong> vs <strong>${m.b.name}</strong> (${m.mode})`, resultText: '', why: rec && rec.why });
+      playPvpReplay({ allies: m.a.units, enemies: m.b.units, sim: m.sim, title: `Tekrar · <strong>${escHtml(m.a.name)}</strong> vs <strong>${escHtml(m.b.name)}</strong> (${escHtml(m.mode)})`, resultText: '', why: rec && rec.why });
     } catch (err) { showToast(err.message, 'error'); }
   }));
 }

@@ -8,7 +8,12 @@
 // random: sonucu şansa bağlı işlemler. Tarayıcı bunların sonucunu kendisi hesaplamaz, sunucuyu bekler.
 // ============================================================================
 
+import { GAME_CONFIG } from '../js/config.js';
+
 const SLOT_KEYS = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+const own = (obj, k) => typeof k === 'string' && !!obj && Object.hasOwn(obj, k);
+const SCROLLS = ['scroll_heal', 'scroll_stamina', 'scroll_teleport', 'scroll_repair'];
+const WHEEL_PAY = ['ada', 'ticket', 'wood', 'iron', 'wheat'];
 const RESOURCE_KEYS = ['wood', 'iron', 'wheat', 'fragments', 'boxes', 'keys'];
 const NODES = ['wood', 'iron', 'wheat'];
 
@@ -26,7 +31,18 @@ const T = {
   // Eşya konumu (eşyanın kendisi değil): { source, slotKey, armoryIndex, soldierIndex, itemId }
   ref: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 5 &&
     Object.entries(v).every(([k, x]) => ['source', 'slotKey', 'armoryIndex', 'soldierIndex', 'itemId'].includes(k) &&
-      (x == null || (typeof x === 'string' && x.length <= 64) || Number.isInteger(x))),
+      (x == null || (typeof x === 'string' && x.length <= 64) || Number.isInteger(x))) &&
+    ['armory', 'kingdom', 'soldier'].includes(v.source) &&
+    (v.slotKey == null || SLOT_KEYS.includes(v.slotKey)) &&
+    (v.armoryIndex == null || (Number.isInteger(v.armoryIndex) && v.armoryIndex >= 0)) &&
+    (v.soldierIndex == null || (Number.isInteger(v.soldierIndex) && v.soldierIndex >= 0 && v.soldierIndex < 64)),
+  // Yalnız oyunun kendi tanımladığı adlar ("__proto__" gibi nesne iç adları geçemez)
+  buff: v => own(GAME_CONFIG.TAVERN_BUFFS, v),
+  tool: v => own(GAME_CONFIG.TOOLS, v),
+  scroll: v => SCROLLS.includes(v),
+  row: v => v === 'front' || v === 'back',
+  wheelPay: v => WHEEL_PAY.includes(v),
+  quest: v => typeof v === 'string' && (GAME_CONFIG.ONBOARDING_QUESTS || []).some(q => q.id === v),
   fightOpts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(k => k === 'payGateFee') &&
     (v.payGateFee === undefined || typeof v.payGateFee === 'boolean')
 };
@@ -48,14 +64,14 @@ export const ACTIONS = {
   refillStaminaToMaxWithWheat: A([]),
   levelUp: A([]),
   upgradeWarehouse: A([]),
-  repairTool: A(['str']),
+  repairTool: A(['tool']),
   repairAllTools: A([]),
   // Ordu
   buySoldierUnit: A([]),
   instantHealSoldierUnit: A(['idx']),
   instantHealAllSoldiers: A([]),
   renameSoldierUnit: A(['idx', 'name']),
-  setSoldierRow: A(['idx', 'str']),
+  setSoldierRow: A(['idx', 'row']),
   saveCombatPreset: A(['idx', 'name?']),
   applyCombatPreset: A(['idx']),
   // Teçhizat (eşya her zaman konumuyla seçilir; tarayıcı eşya nesnesi gönderemez)
@@ -82,7 +98,7 @@ export const ACTIONS = {
   startBotTrial: A([]),
   setBotSiloOption: A(['bool']),
   setBotAutoRenew24h: A(['bool']),
-  buyTavernBuff: A(['str']),
+  buyTavernBuff: A(['buff']),
   // Pazar
   marketSell: A(['res', 'qty']),
   marketBuy: A(['res', 'qty']),
@@ -93,16 +109,16 @@ export const ACTIONS = {
   emergencyUnstakeWorldBossArmy: A([]),
   claimWorldBossReward: A([]),
   // Karnaval, kutular, parşömenler
-  spinCarnivalWheel: A(['str'], { random: true }),
+  spinCarnivalWheel: A(['wheelPay'], { random: true }),
   unboxMysteryBox: A([], { random: true }),
-  useScroll: A(['str', 'str?']),
+  useScroll: A(['scroll', 'str?']),
   carnivalCheer: A([]),
   // Ortak piyango (kasa ve toplam bilet sunucuda ortak; çekiliş haftalık hesaplaşmada)
   buyLotteryTickets: A(['int']),
   claimWinnerLotteryPayout: A([]),
   useLotteryTicketForWheel: A([], { random: true }),
   // Görevler, temel gelir, koleksiyon
-  claimOnboardingReward: A(['str']),
+  claimOnboardingReward: A(['quest']),
   claimWeeklyUbi: A([]),
   mintGenesisNft: A([])
 };

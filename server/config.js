@@ -38,6 +38,7 @@ export function loadConfig(env = process.env) {
     kasaMinSettle: num('KASA_MIN_SETTLE', 50),                     // bu kadar birikince (ya da 24 saatte bir) kasadan oyuna aktarım
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
     rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
+    ipRateLimitPerSec: num('IP_RATE_LIMIT_PER_SEC', 40),            // IP başına tüm istekler (kimlik denetiminden önce)
     publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5)        // giriş/kayıt sayfaları (IP başına)
   };
 }

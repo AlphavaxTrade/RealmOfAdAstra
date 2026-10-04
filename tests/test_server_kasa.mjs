@@ -21,7 +21,7 @@ const PORT = 19545 + Math.floor(Math.random() * 1000);
 const node = ganache.server({ logging: { quiet: true }, wallet: { accounts: keys.map(k => ({ secretKey: k, balance: '0x' + (10n ** 21n).toString(16) })) }, chain: { chainId: 43114 } });
 await node.listen(PORT);
 try {
-  const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${PORT}`, 43114, { staticNetwork: true });
+  const provider = new ethers.JsonRpcProvider(`http://127.0.0.1:${PORT}`, 43114, { staticNetwork: true, cacheTimeout: -1 });
   const [owner, treasury, feeRx, playerW] = keys.map(k => new ethers.NonceManager(new ethers.Wallet(k, provider)));
   const c = compile();
   const dep = async (n, ...a) => { const k = await new ethers.ContractFactory(c[n].abi, c[n].bytecode, owner).deploy(...a); await k.waitForDeployment(); return k; };

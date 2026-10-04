@@ -34,6 +34,16 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.woff2': 'font/woff2' };
 
+// Tarayıcı korumaları (her yanıta)
+const SEC_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+};
+const ADMIN_CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+const userError = msg => Object.assign(new Error(msg), { userError: true });
+
 const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/verify',
   'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
@@ -54,7 +64,15 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Sunucunun önünde HTTPS katmanı (Caddy/Nginx) varsa gerçek ziyaretçi adresi X-Forwarded-For'dadır
-  const clientIp = req => (cfg.trustProxy ? String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() : '') || req.socket.remoteAddress || '';
+  // Gerçek ziyaretçi adresi. Önde güvenilen tek bir vekil (Caddy/Nginx) varsa, onun eklediği SON adres alınır;
+  // ilk adresler ziyaretçinin kendi yazabildiği kısımdır (sahte olabilir).
+  const clientIp = req => {
+    if (cfg.trustProxy) {
+      const parts = String(req.headers['x-forwarded-for'] || '').split(',').map(s => s.trim()).filter(Boolean);
+      if (parts.length) return parts[parts.length - 1];
+    }
+    return req.socket.remoteAddress || '';
+  };
 
   function newSession(playerId) {
     const token = crypto.randomBytes(32).toString('hex');
@@ -66,15 +84,21 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
 
   function send(res, code, obj) {
     const body = JSON.stringify(obj);
-    res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Length': Buffer.byteLength(body) });
+    res.writeHead(code, { ...SEC_HEADERS, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Length': Buffer.byteLength(body) });
     res.end(body);
   }
 
   function readBody(req) {
     return new Promise((resolve, reject) => {
       let size = 0; const chunks = [];
-      req.on('data', c => { size += c.length; if (size > 64 * 1024) { reject(new Error('İstek çok büyük')); req.destroy(); } else chunks.push(c); });
-      req.on('end', () => { try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}); } catch { reject(new Error('Geçersiz JSON')); } });
+      req.on('data', c => { size += c.length; if (size > 64 * 1024) { reject(userError('İstek çok büyük')); req.destroy(); } else chunks.push(c); });
+      req.on('end', () => {
+        try {
+          const v = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
+          if (!v || typeof v !== 'object' || Array.isArray(v)) return reject(userError('Geçersiz istek'));
+          resolve(v);
+        } catch { reject(userError('Geçersiz JSON')); }
+      });
       req.on('error', reject);
     });
   }
@@ -93,7 +117,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   function isAdmin(req) {
     const h = req.headers.authorization || '';
     const t = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
-    if (!cfg.adminToken || !t) return false;
+    if (!cfg.adminToken || cfg.adminToken.length < 24 || !t) return false;   // kısa yönetici şifresi kabul edilmez
     const a = Buffer.from(t), b = Buffer.from(cfg.adminToken);
     return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
@@ -293,47 +317,69 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1)
   };
 
-  function serveStatic(req, res) {
-    if (!cfg.serveDist) { res.writeHead(404); return res.end(); }
+  function serveStatic(req, res, pathname) {
+    if (!cfg.serveDist) { res.writeHead(404, SEC_HEADERS); return res.end(); }
     const root = path.resolve(cfg.distDir);
-    let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    let p;
+    try { p = decodeURIComponent(pathname); } catch { res.writeHead(400, SEC_HEADERS); return res.end(); }
+    if (p.includes('\0')) { res.writeHead(400, SEC_HEADERS); return res.end(); }
     let file = path.resolve(root, '.' + p);
-    if (!file.startsWith(root)) { res.writeHead(403); return res.end(); }
+    if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403, SEC_HEADERS); return res.end(); }
     if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(root, 'index.html');
     if (!fs.existsSync(file)) { res.writeHead(404); return res.end('Oyun dosyaları bulunamadı: önce "npm run build" çalıştırın.'); }
     const ext = path.extname(file).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
-    fs.createReadStream(file).pipe(res);
+    const s = fs.createReadStream(file);
+    s.on('error', () => { if (!res.headersSent) res.writeHead(500, SEC_HEADERS); res.end(); });
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400' });
+    s.pipe(res);
   }
 
-  async function handle(req, res) {
+  // Yanlış yönetici şifresi denemeleri: IP başına 10 dakikada 10 → sonra bekletilir
+  const adminFails = new Map();
+  const adminBlocked = ip => { const f = adminFails.get(ip); return !!(f && clock() - f.t < 600000 && f.n >= 10); };
+  const adminFail = ip => { const now = clock(); let f = adminFails.get(ip); if (!f || now - f.t >= 600000) f = { t: now, n: 0 }; f.n++; adminFails.set(ip, f); if (adminFails.size > 10000) adminFails.clear(); };
+
+  async function handleInner(req, res) {
     const url = new URL(req.url, 'http://x');
     const key = `${req.method} ${url.pathname}`;
+    const ip = clientIp(req);
     if (url.pathname === '/admin' || url.pathname === '/admin/') {
       const html = fs.readFileSync(new URL('./admin.html', import.meta.url), 'utf8');
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY' });
+      res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': ADMIN_CSP });
       return res.end(html);
     }
-    if (!url.pathname.startsWith('/api/')) return serveStatic(req, res);
-    const route = routes[key];
+    if (!url.pathname.startsWith('/api/')) return serveStatic(req, res, url.pathname);
+    // IP başına genel sınır: kimlik denetiminden ÖNCE (yanlış şifre/anahtar denemeleri de sayılır)
+    if (limited('ip:' + ip, cfg.ipRateLimitPerSec || 40)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
+    const route = Object.hasOwn(routes, key) ? routes[key] : null;
     if (!route) return send(res, 404, { error: 'Bulunamadı' });
     try {
       let me = null;
       if (key.startsWith('GET /api/admin') || key.startsWith('POST /api/admin')) {
-        if (!isAdmin(req)) return send(res, 401, { error: 'Yönetici yetkisi gerekli' });
+        if (adminBlocked(ip)) return send(res, 429, { error: 'Çok fazla hatalı deneme; 10 dakika sonra tekrar dene.' });
+        if (!isAdmin(req)) { adminFail(ip); return send(res, 401, { error: 'Yönetici yetkisi gerekli' }); }
       } else if (!PUBLIC_ROUTES.includes(key)) {
         me = auth(req);
         if (!me) return send(res, 401, { error: 'Giriş gerekli' });
       }
-      const ip = clientIp(req);
       if (limited(me || ip)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       if (PUBLIC_ROUTES.includes(key) && key !== 'GET /api/health' && limited('pub:' + ip, cfg.publicRateLimitPerSec || 5)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       const out = await route(req, me);
       if (Array.isArray(out)) return send(res, out[0], out[1]);
       return send(res, 200, out);
     } catch (err) {
+      if (err && err.userError) return send(res, 400, { error: err.message });
       log.error('İstek hatası', key, err);
-      return send(res, 400, { error: String(err.message || err).slice(0, 200) });
+      return send(res, 500, { error: 'Sunucu hatası' });   // iç ayrıntı dışarı verilmez
+    }
+  }
+
+  // Hiçbir istek sunucuyu düşüremez: beklenmeyen her hata burada yakalanır
+  async function handle(req, res) {
+    try { await handleInner(req, res); }
+    catch (err) {
+      log.error('Beklenmeyen istek hatası', err);
+      try { if (!res.headersSent) send(res, 400, { error: 'Geçersiz istek' }); else res.end(); } catch { /* bağlantı kapanmış */ }
     }
   }
 

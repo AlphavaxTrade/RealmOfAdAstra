@@ -26,7 +26,20 @@ if (fs.existsSync(envFile)) {
 }
 
 const cfg = loadConfig();
+
+// 🔒 Güvenlik kilitleri: deneme modu gerçek para ile asla birlikte çalışmaz
+const stopWith = msg => { console.error('⛔ ' + msg); process.exit(1); };
+if (cfg.testMode && (cfg.gameWalletKey || cfg.kasaMasterKey)) stopWith('TEST_MODE=1 iken GAME_WALLET_PRIVATE_KEY ya da KASA_MASTER_KEY kullanılamaz (deneme menüsü gerçek parayı tehlikeye atar).');
+if (cfg.testMode && cfg.paymentsContract && cfg.chainId === 43114) stopWith('TEST_MODE=1 iken gerçek ağdaki ödeme sözleşmesi kullanılamaz (Fuji için CHAIN_ID=43113).');
+if (cfg.adminToken && cfg.adminToken.length < 24) console.warn('⚠️  ADMIN_TOKEN 24 karakterden kısa: yönetici paneli KAPALI. (openssl rand -hex 32)');
+
 const db = openDb(cfg.dbFile);
+// Deneme modunda kullanılmış bir kayıt dosyası (hileyle eklenmiş ADA içerebilir) gerçek sunucuda açılamaz
+if (cfg.testMode) db.kvSet('world:testModeEver', '1');
+else if (db.kvGet('world:testModeEver') === '1') stopWith(`Bu kayıt dosyası (${cfg.dbFile}) deneme modunda kullanılmış. Gerçek sunucu için yeni bir kayıt dosyası kullan.`);
+
+// Beklenmeyen bir hata sunucuyu düşürmesin (günlüğe yazılır)
+process.on('unhandledRejection', err => console.error('Yakalanmamış hata:', err));
 const engine = await createEngine(db, { testMode: cfg.testMode });
 const chain = cfg.chainEnabled ? createChain(cfg) : null;
 const { ethers } = await import('ethers');
@@ -55,6 +68,8 @@ app.server().listen(cfg.port, cfg.host, () => {
 const loop = () => world.tick().catch(err => console.error('Zamanlayıcı hatası:', err));
 setTimeout(loop, 3000);
 setInterval(loop, 60000);
+// Cüzdan ödemesi kurtarma taraması (2 dakikada bir)
+setInterval(() => payments.scanPaid().catch(err => console.warn('Ödeme taraması:', err.message)), 120000);
 
 const stop = () => { console.log('Sunucu kapanıyor…'); db.close(); process.exit(0); };
 process.on('SIGINT', stop);

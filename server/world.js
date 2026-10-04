@@ -232,7 +232,10 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       summary.defenseBurn = defense;
 
       // 3) Ücretsiz oyuncu havuzu: hiç yatırma yapmamış ve bu hafta oynamış oyuncular
-      const free = players.filter(p => !(p.deposited_ada > 0) && p.last_seen >= now - 7 * DAY);
+      // Ücretsiz oyuncu: hiç para koymamış, bu hafta oynamış ve (hesaplı oyuncuda) e-postasını doğrulamış.
+      // Doğrulama şartı: toplu açılan sahte hesapların havuzu sulandırmasını zorlaştırır.
+      const free = players.filter(p => !(p.deposited_ada > 0) && p.last_seen >= now - 7 * DAY &&
+        (!accounts || !String(p.address).startsWith('acc:') || accounts.isVerified(p.address)));
       const f = faucetWeekly({ mcapUsd: market?.mcapUsd || 0, priceUsd: market?.priceUsd || 0, freePlayers: free.length, questPool: T.getPool('quest') });
       if (f.perPlayer > 0) {
         T.state.pools.quest -= f.totalAda;
@@ -325,6 +328,10 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
         faucetPerPlayer: f.perPlayer, lastWeekly: summary
       });
       db.event('weekly', null, summary);
+      // Kayıt şişmesin: 90 günden eski olaylar ve en son 5.000 dışındaki maç kayıtları silinir
+      db.raw.prepare('DELETE FROM events WHERE at < ?').run(now - 90 * DAY);
+      const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
+      if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key LIKE 'pvp:match:%' AND CAST(substr(key, 11) AS INTEGER) <= ?").run(seq - 5000);
       return summary;
     });
   }
