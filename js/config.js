@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.31.0',
+  GAME_VERSION: '1.32.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -9,9 +9,14 @@ export const GAME_CONFIG = {
   // Her seviye atlandığında Max Stamina +50 artar (Lv 1: 100, Lv 2: 150, Lv 3: 200, Lv 10: 550, Lv 81: 4.100).
   // Böylece 3 paralel sefer gönderilse dahi geriye zindan katları ve boss savaşları için bol miktarda stamina kalır.
   MAX_STAMINA: 100,
-  STAMINA_MAX_PER_LEVEL: 50,          // max = 100 + 50·(L-1)
-  STAMINA_COST_PER_EXPEDITION: 20,    // maliyet = 20 + 8·(L-1)
-  STAMINA_COST_PER_LEVEL: 8,
+  STAMINA_MAX_PER_LEVEL: 50,          // max = en büyüğü(100 + 50·(L-1), 3,5 × sefer bedeli)
+  // Kullanıcı kararı (5 Ekim 2026): seferin stamina bedeli sefer SÜRESİYLE ve üretimle orantılı. Her seviye, 1.000 hammadde
+  // başına yakılan buğdayı yalnız STAMINA_EFFICIENCY_PER_LEVEL (%1) azaltır (eskiden 2. seviyede %65, 81'de %94 düşüyordu;
+  // orta-üst seviyede stamina için buğday neredeyse hiç yakılmıyordu → buğday enflasyonu).
+  // bedel(L) = 20 × (süre(L) / süre(1)) × üretim çarpanı(L) × (1 − 0,01)^(L−1)
+  STAMINA_COST_PER_EXPEDITION: 20,    // 1. seviye (18 dk) sefer bedeli
+  STAMINA_EFFICIENCY_PER_LEVEL: 0.01,
+  STAMINA_MAX_HEADROOM: 3.5,          // en yüksek stamina ≥ 3,5 sefer bedeli (3 alanı aynı anda başlatabilmek için)
   STAMINA_NATURAL_REGEN_INTERVAL: 150,
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
   WHEAT_PER_STAMINA: 3.15,            // 1 Stamina doldurmak için gereken buğday miktarı (Fix 3.15)
@@ -93,7 +98,7 @@ export const GAME_CONFIG = {
   // 📈 v1.25: Seviye başına kalıcı üretim bonusu. Eskiden dakikalık üretim hiçbir seviyede artmıyordu;
   // botla oynayan biri için en kârlı seviye 1'di. Artık her seviye dakikalık üretimi %1,5 artırır
   // (Lv.10: +%13,5 · Lv.30: +%43,5 · Lv.81: +%120). Seviye atlama maliyetleri taban üretimden hesaplanır.
-  LEVEL_PRODUCTION_BONUS_PER_LEVEL: 0.015,
+  LEVEL_PRODUCTION_BONUS_PER_LEVEL: 0.01,   // 5 Ekim 2026: %1,5 → %1 (81. seviyede +%120 yerine +%80; hammadde enflasyonu)
 
   // 🧭 v1.25: Yeni oyuncu rehberi — ödüller Zindan Ganimet Kasası'ndan (hazine) çekilir, basılmaz.
   ONBOARDING_QUESTS: [
@@ -1037,6 +1042,20 @@ export const GAME_CONFIG = {
         `Piyango biletiyle çevirince biletin piyango kasasındaki payı Karnaval kasasına geçer.`,
         `Hammaddeyle çevirme günde 3 hak (hammadde oyunda bedava toplandığı için kasa korunur).`,
         `Haftalık ücretsiz oyuncu payı adil hale geldi: en az 3. seviye ve haftada yeterli katkı puanı gerekir; pay katkın arttıkça hızla büyür ve her hafta üst üste katılınca sadakat serisiyle 2 katına kadar çıkar. Emeğini tek hesapta toplayan, yan hesaplara bölenden çok daha fazla kazanır. Pay kilitli gelir; oyunda harcadıkça çözülür. Şartlarını Hazine panelinde görebilirsin.`
+      ]
+    },
+    {
+      version: 'v1.32',
+      title: '🌾 Dengeli Buğday Ekonomisi & Kolay Yönetim',
+      date: '5 Ekim 2026',
+      changes: [
+        `Seferin stamina bedeli artık sefer süresiyle orantılı: her seviye, 1.000 hammadde başına yakılan buğdayı yalnız %1 azaltır (eskiden 2. seviyede bir anda %65 düşüyordu). Buğday her seviyede değerli kalır.`,
+        `Stamina sınırı, 3 alanı aynı anda başlatabileceğin kadar büyür.`,
+        `Seviye başına üretim bonusu %1,5'ten %1'e indi (81. seviyede +%80).`,
+        `Kışla yenilendi: aranabilir asker listesi, eşya yuvaları en üstte, yuvaya tıklayınca bütün uygun eşyalar karşılaştırmalı listelenir; cephanelikte süzme, sıralama ve akıllı öneriler.`,
+        `Pazar: "Hepsini sat" ve "Depoyu doldur" düğmeleri.`,
+        `Seviye atlama ve silo yükseltmede "Hızlı al": eksik hammaddeleri ADA'n yetiyorsa tek tuşla pazardan alır.`,
+        `Hesabım: kilitli ADA'nın nasıl açılacağını, yarın ve 7 günde ne kadarının açılacağını gösteren panel; pencere dışına tıklayınca kapanır.`
       ]
     }
   ],

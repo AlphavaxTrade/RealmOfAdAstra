@@ -965,6 +965,7 @@ function openWarehouseModal() {
         </div>
       </div>
 
+      ${quickBuyHtml('warehouse')}
       ${buttonHtml}
     `;
   } else {
@@ -1021,6 +1022,24 @@ function openWarehouseModal() {
   displayModal();
 }
 
+// ⚡ Hızlı al: seviye atlama / silo yükseltme için eksik hammaddeleri pazardan alır (ADA yetiyorsa)
+function quickBuyHtml(kind) {
+  const plan = gameState.getQuickBuyPlan(kind);
+  if (!plan.items.length) return '';
+  const list = plan.items.map(i => `${i.qty.toLocaleString('tr-TR')} ${i.name}`).join(' · ');
+  return `
+    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; background:#0f172a; border:1px dashed #4ade80; border-radius:8px; padding:9px 12px; margin:8px 0;">
+      <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.45;">
+        <strong style="color:#86efac;">Eksikler:</strong> ${list} <span style="color:#94a3b8;">· pazardan ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA</span>
+        ${plan.capBlocked ? '<br><span style="color:#fbbf24;">Siloda yer yetmediği için bir kısmı alınamıyor.</span>' : ''}
+        ${!plan.ok && plan.reason ? `<br><span style="color:#fca5a5;">${plan.reason}</span>` : ''}
+      </div>
+      <button class="btn-clean btn-quick-buy" data-kind="${kind}" ${plan.ok ? '' : 'disabled'} style="width:auto; padding:8px 14px; font-size:0.85rem; font-weight:800; background:#15803d; border-color:#4ade80; color:#fff;">
+        ⚡ Hızlı al
+      </button>
+    </div>`;
+}
+
 // 📊 v1.25: Seviye atlamanın somut faydası — şimdiki ve sonraki seviye yan yana
 function renderLevelBenefitTable(level) {
   const maxLvl = GAME_CONFIG.MAX_PLAYER_LEVEL || 81;
@@ -1028,7 +1047,7 @@ function renderLevelBenefitTable(level) {
   const a = gameState.getLevelBenefits(level);
   const b = gameState.getLevelBenefits(level + 1);
   const pct = (x) => `%${(x * 100).toFixed(x < 0.01 ? 3 : 2)}`;
-  const saving = a.wheatPerHour > 0 ? Math.round((1 - b.wheatPerHour / a.wheatPerHour) * 100) : 0;
+  const saving = a.wheatPer1000 > 0 ? Math.round((1 - b.wheatPer1000 / a.wheatPer1000) * 1000) / 10 : 0;
   const row = (label, cur, next, good = true, note = '') => `
     <div class="lb-row">
       <span class="lb-label">${label}</span>
@@ -1040,7 +1059,7 @@ function renderLevelBenefitTable(level) {
     <div class="level-benefit-card">
       <div class="lb-title">⭐ Seviye ${level + 1}'e çıkınca ne kazanırsın?</div>
       ${row('🏭 Üretim bonusu (dakikada)', `+%${a.productionBonusPct}`, `+%${b.productionBonusPct}`)}
-      ${row('🌾 Stamina için buğday (saatte, 3 alan)', `${a.wheatPerHour.toLocaleString('tr-TR')}`, `${b.wheatPerHour.toLocaleString('tr-TR')}`, true, saving > 0 ? `%${saving} tasarruf` : '')}
+      ${row('🌾 1.000 hammadde için stamina buğdayı', `${Math.round(a.wheatPer1000).toLocaleString('tr-TR')}`, `${Math.round(b.wheatPer1000).toLocaleString('tr-TR')}`, true, saving > 0 ? `%${String(saving).replace('.', ',')} tasarruf` : '')}
       ${row('⚡ Maksimum stamina', a.maxStamina.toLocaleString('tr-TR'), b.maxStamina.toLocaleString('tr-TR'))}
       ${row('⏳ Sefer süresi', `${a.expeditionHours} sa`, `${b.expeditionHours} sa`, true, 'daha az tıklama')}
       ${row('🧩 Zindan parça şansı', pct(a.fragmentRate), pct(b.fragmentRate))}
@@ -1146,6 +1165,7 @@ function openInventoryModal() {
         </div>
       </div>
 
+      ${quickBuyHtml('levelup')}
       <div id="levelup-feedback-box"></div>
 
       ${(() => {
@@ -2125,6 +2145,12 @@ function openTownZoneModal(zoneId, zoneName) {
               <button class="btn-clean btn-clean-green btn-amm-confirm-buy" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem;">
                 🟢 ONAYLA & SATIN AL
               </button>
+              ${['wood', 'iron', 'wheat'].includes(resKey) ? (() => {
+                const fq = gameState.getFillWarehouseQty(resKey);
+                return `<button class="btn-clean btn-amm-fill" data-res="${resKey}" ${fq.qty > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #4ade80; color: #86efac;" title="Silo dolana kadar al (ADA yetmezse alınabildiği kadar)">
+                  Depoyu doldur (${fq.qty.toLocaleString('tr-TR')} adet · ~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ADA${fq.limitedByAda ? ', ADA kadar' : ''})
+                </button>`;
+              })() : ''}
             </div>
 
             <!-- Sat (Sell) -->
@@ -3147,7 +3173,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         <!-- 15 Ödül Listesi / Detaylı İnceleme Bölümü -->
         <div class="clean-card" style="border-color: rgba(255,255,255,0.1); background: rgba(10,10,18,0.6); padding:12px;">
           <div style="font-size:0.85rem; font-weight:800; color:#cbd5e1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>📋 Çarktaki 15 Dilim Ödül Tablosu:</span>
+            <span>📋 Çarktaki 15 Dilim Ödül Tablosu: <span style="font-weight:600; color:#94a3b8; font-size:0.75rem;">hammadde, parça ve anahtar ödülleri Karnaval kasasının parasıyla pazardan geri alınıp sana verilir</span></span>
             <span style="font-size:0.75rem; color:#facc15;">${(() => { const w = wheelReturnStats(wheelRewards); return `Ortalama dönüş ~%${w.rtp} · bedelini geri alma ~%${w.back}`; })()}</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px;">
@@ -6762,6 +6788,43 @@ function initAppEvents() {
       sound.playLevelUp();
       renderTopBar();
       openTestMenuModal();
+      return;
+    }
+
+    // ⚡ Hızlı al: seviye atlama / silo yükseltme için eksik hammaddeleri pazardan al
+    const quickBuyBtn = e.target.closest('.btn-quick-buy');
+    if (quickBuyBtn) {
+      const kind = quickBuyBtn.dataset.kind;
+      const plan = gameState.getQuickBuyPlan(kind);
+      if (!plan.ok) { showToast(plan.reason || 'Alım yapılamıyor.', 'error'); return; }
+      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ADA)`).join('\n');
+      if (!confirm(`Eksik hammaddeler pazardan alınsın mı?\n${list}\nToplam ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA`)) return;
+      let bought = 0;
+      for (const it of plan.items) {
+        const r = await gameState.marketBuy(it.res, it.qty);
+        if (r && r.success) bought++;
+        else { showToast(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); break; }
+      }
+      if (bought) { showToast(`⚡ ${bought} hammadde pazardan alındı. Şimdi ${kind === 'levelup' ? 'seviye atlayabilirsin' : 'siloyu yükseltebilirsin'}!`, 'success'); sound.playHarvest && sound.playHarvest(); }
+      renderTopBar();
+      if (kind === 'levelup') openInventoryModal(); else openWarehouseModal();
+      return;
+    }
+
+    // 🧺 Pazar: Depoyu doldur (silo dolana kadar al; ADA yetmezse alınabildiği kadar)
+    const ammFillBtn = e.target.closest('.btn-amm-fill');
+    if (ammFillBtn) {
+      const resKey = ammFillBtn.dataset.res;
+      const fq = gameState.getFillWarehouseQty(resKey);
+      if (fq.qty <= 0) { showToast(fq.room > 0 ? 'ADA yetmiyor.' : 'Silo zaten dolu.', 'info'); return; }
+      const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
+      if (!confirm(`${fq.qty.toLocaleString('tr-TR')} ${name} alınsın mı? (~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ADA, %2 harç dahil)${fq.limitedByAda ? `\nADA'n siloyu tamamen doldurmaya yetmiyor; alınabilecek en fazla miktar bu (boş yer: ${fq.room.toLocaleString('tr-TR')}).` : ''}`)) return;
+      const res = await gameState.marketBuy(resKey, fq.qty);
+      if (res && res.success) {
+        showToast(`🧺 ${fq.qty.toLocaleString('tr-TR')} ${name} alındı (−${Number(res.cost || 0).toFixed(2)} ADA)`, 'success');
+        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
+      } else showToast((res && res.message) || 'Alım yapılamadı.', 'error');
+      renderTopBar();
       return;
     }
 

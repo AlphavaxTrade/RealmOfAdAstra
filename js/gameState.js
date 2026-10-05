@@ -887,13 +887,21 @@ export class GameStateManager {
   // işletmek Seviye 3'ten itibaren MATEMATİKSEL OLARAK İMKANSIZ hâle geliyordu
   // (3×49 = 147 > 140). Oyunun temel döngüsü ikinci seviye atlamasında ölüyordu.
   // v2'de 3·maliyet ≤ max eşitsizliği her seviyede korunur (F-14).
+  // En yüksek stamina: eski taban (100 + 50·(L-1)) ya da 3 alanı aynı anda başlatmaya yetecek kadar (3,5 sefer bedeli)
   getMaxStamina(level = this.state.level) {
-    return GAME_CONFIG.MAX_STAMINA + (level - 1) * GAME_CONFIG.STAMINA_MAX_PER_LEVEL;
+    const L = Math.max(1, Number(level) || 1);
+    const base = GAME_CONFIG.MAX_STAMINA + (L - 1) * GAME_CONFIG.STAMINA_MAX_PER_LEVEL;
+    const room = Math.ceil((GAME_CONFIG.STAMINA_MAX_HEADROOM ?? 3.5) * this.getExpeditionStaminaCost(L) / 10) * 10;
+    return Math.max(base, room);
   }
 
-  // Sefer maliyeti — v2: 20 + 8·(L-1). Lv.81'de 3 sefer = 1.980 ≤ 2.100 max.
+  // Sefer bedeli (5 Ekim 2026): süreyle ve üretimle orantılı; her seviye buğday verimini yalnız %1 iyileştirir.
+  // Böylece 1.000 hammadde başına yakılan buğday 1. seviyede 194, 10. seviyede 177, 81. seviyede 87 olur.
   getExpeditionStaminaCost(level = this.state.level) {
-    return Math.round(GAME_CONFIG.STAMINA_COST_PER_EXPEDITION + (level - 1) * GAME_CONFIG.STAMINA_COST_PER_LEVEL);
+    const L = Math.max(GAME_CONFIG.EXPEDITION_MIN_LEVEL || 1, Math.min(GAME_CONFIG.EXPEDITION_MAX_LEVEL || 81, Number(level) || 1));
+    const dur1 = this.getExpeditionDurationMinutes(1) || 18;
+    const eff = Math.pow(1 - (GAME_CONFIG.STAMINA_EFFICIENCY_PER_LEVEL ?? 0.01), L - 1);
+    return Math.max(1, Math.round((GAME_CONFIG.STAMINA_COST_PER_EXPEDITION || 20) * (this.getExpeditionDurationMinutes(L) / dur1) * this.getLevelProductionMultiplier(L) * eff));
   }
 
   // ⚔️ Zindan Savaşı Stamina Maliyeti Hesabı
@@ -3924,6 +3932,9 @@ export class GameStateManager {
     // 3 alan birden çalışırken saat başına harcanan stamina ve bunun buğday karşılığı
     const staminaPerHour = (3 * staminaCost) / Math.max(1e-9, durMin / 60);
     const wheatPerHour = staminaPerHour * (GAME_CONFIG.WHEAT_PER_STAMINA || 3.15);
+    // 1.000 hammadde (odun) başına stamina için yakılan buğday: seviye başına yalnız %1 iner
+    const woodPerHourField = this.getResourceRatePerMinute('wood', L) * 60;
+    const wheatPer1000 = woodPerHourField > 0 ? (wheatPerHour / 3) / woodPerHourField * 1000 : 0;
     const minUbi = (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3;
     return {
       level: L,
@@ -3932,6 +3943,7 @@ export class GameStateManager {
       expeditionHours: Math.round((durMin / 60) * 100) / 100,
       staminaPerHour: Math.round(staminaPerHour * 10) / 10,
       wheatPerHour: Math.round(wheatPerHour),
+      wheatPer1000: Math.round(wheatPer1000 * 10) / 10,
       maxStamina: this.getMaxStamina(L),
       fragmentRate: this.getFragmentDropRate(L),
       boxRate: this.getBoxDropRate(L),
@@ -7580,6 +7592,60 @@ export class GameStateManager {
     else this._onAdaEarned(res.adAstraReceived);
     this.saveState();
     return { ...res, qty: amount };
+  }
+
+  // ⚡ Hızlı al planı: seviye atlama ('levelup') ya da silo yükseltme ('warehouse') için eksik hammaddeler ve pazar bedeli.
+  // ok: hesaptaki ADA hem bu alıma hem yükseltmenin kendi ADA bedeline (%3 payla) yetiyor mu.
+  getQuickBuyPlan(kind) {
+    const inv = this.state.inventory || {};
+    const cap = this.getWarehouseCapacity();
+    let target = null, extraAda = 0, xpShort = false;
+    if (kind === 'levelup') {
+      const req = this.getNextLevelRequirement();
+      if (!req || req.isMaxLevel) return { ok: false, items: [], reason: 'Maksimum seviyedesin.' };
+      target = { wood: req.wood, iron: req.iron, wheat: req.wheat };
+      extraAda = Number(req.adAstra) || 0;
+      if ((Number(this.state.currentXp) || 0) < req.xp) xpShort = true;
+    } else if (kind === 'warehouse') {
+      const c = this.getWarehouseUpgradeCost();
+      if (!c || c.isMaxLevel) return { ok: false, items: [], reason: 'Silo en üst seviyede.' };
+      // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır
+      target = { wood: Math.max(c.wood, c.reqWoodFill), iron: Math.max(c.iron, c.reqIronFill), wheat: Math.max(c.wheat, c.reqWheatFill) };
+      extraAda = Number(c.adAstra) || 0;
+    } else return { ok: false, items: [], reason: 'Geçersiz.' };
+    const items = [];
+    let total = 0, capBlocked = false;
+    for (const res of ['wood', 'iron', 'wheat']) {
+      const have = Math.floor(Number(inv[res]) || 0);
+      let need = Math.max(0, Math.ceil(target[res] - have));
+      const room = cap && cap[res] != null ? Math.max(0, Math.floor(cap[res] - have)) : need;
+      if (need > room) { need = room; capBlocked = true; }
+      if (need <= 0) continue;
+      const cost = ammMarket.getEstimatedCostForBuy(res, need);
+      if (!isFinite(cost)) return { ok: false, items: [], reason: 'Pazarda yeterli hammadde yok.' };
+      items.push({ res, qty: need, cost, name: this.getResourceNameTr(res) });
+      total += cost;
+    }
+    const balance = Number(this.state.adAstraBalance) || 0;
+    const needAda = total + extraAda * 1.03;
+    if (xpShort && items.length) return { ok: false, items, total, extraAda, balance, needAda, capBlocked, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
+    return { ok: items.length > 0 && balance >= needAda, items, total, extraAda, balance, needAda, capBlocked,
+      reason: !items.length ? 'Eksik hammadde yok.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ADA gerekli.` : '' };
+  }
+
+  // 🧺 Depoyu doldur: siloda boş yer kadar, ADA yetmezse alınabilecek en fazla miktar
+  getFillWarehouseQty(resKey) {
+    const cap = this.getWarehouseCapacity()[resKey];
+    const have = Math.floor(Number((this.state.inventory || {})[resKey]) || 0);
+    let qty = Math.max(0, Math.floor((cap || 0) - have));
+    const balance = Number(this.state.adAstraBalance) || 0;
+    const costOf = q => (q > 0 ? ammMarket.getEstimatedCostForBuy(resKey, q) : 0);
+    if (qty > 0 && !(costOf(qty) <= balance)) {
+      let lo = 0, hi = qty;                                   // bütçeye sığan en büyük miktar
+      while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (costOf(mid) <= balance) lo = mid; else hi = mid - 1; }
+      return { qty: lo, room: qty, cost: costOf(lo), limitedByAda: true };
+    }
+    return { qty, room: qty, cost: costOf(qty), limitedByAda: false };
   }
 
   marketBuy(resKey, qty) {

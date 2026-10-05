@@ -64,10 +64,17 @@ const { GameStateManager } = await import('../js/gameState.js');
   const gs = new GameStateManager();
   const b1 = gs.getLevelBenefits(1), b2 = gs.getLevelBenefits(2), b3 = gs.getLevelBenefits(3);
   assert.ok(b2.productionBonusPct > b1.productionBonusPct, 'Üretim bonusu artmalı');
-  assert.ok(b2.wheatPerHour < b1.wheatPerHour * 0.5, 'Sv.2\'de stamina buğdayı yarıdan fazla azalmalı');
+  // 5 Ekim 2026: 1.000 hammadde başına stamina buğdayı her seviyede yalnız ~%1 iner (buğday tüketimi korunur)
+  for (let L = 1; L < 81; L++) {
+    const x = gs.getLevelBenefits(L), y = gs.getLevelBenefits(L + 1);
+    const drop = 1 - y.wheatPer1000 / x.wheatPer1000;
+    assert.ok(drop > 0.002 && drop < 0.02, `Sv.${L}→${L + 1} buğday verimi küçük adımla iyileşmeli (%${(drop * 100).toFixed(2)})`);
+    assert.ok(gs.getMaxStamina(L) >= 3 * gs.getExpeditionStaminaCost(L), `Sv.${L}: 3 sefer aynı anda başlatılabilmeli`);
+  }
+  assert.ok(Math.abs(gs.getLevelBenefits(81).wheatPer1000 / b1.wheatPer1000 - Math.pow(0.99, 80)) < 0.02, '81. seviyede 1.000 hammadde başına buğday ≈ 194 × 0,99^80');
   assert.ok(b2.maxStamina > b1.maxStamina);
   assert.equal(b2.ubiEligible, false);
   assert.equal(b3.ubiEligible, true);
   assert.ok(b3.ubiWeight > 2 && b3.ubiWeight < 2.1);
-  console.log(`✅ Seviye faydası: Sv.1→2 buğday ${b1.wheatPerHour}→${b2.wheatPerHour}/saat, üretim +%${b2.productionBonusPct}`);
+  console.log(`✅ Seviye faydası: 1.000 hammadde başına buğday ${b1.wheatPer1000}→${b2.wheatPer1000} (Sv.1→2), üretim +%${b2.productionBonusPct}`);
 }
