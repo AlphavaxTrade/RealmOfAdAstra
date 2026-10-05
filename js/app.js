@@ -986,7 +986,7 @@ function openWarehouseModal() {
 
       <div class="inv-grid" style="gap: 10px; margin-top: 8px;">
         <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">🌲 Odun Silosu (%${Math.round((wood / cap.wood) * 100)})</div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('wood', '🌲', 'width:20px;height:20px;')}</span>Odun Silosu (%${Math.round((wood / cap.wood) * 100)})</div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
               <div style="height: 100%; background: #4ade80; width: ${Math.min(100, (wood / cap.wood) * 100)}%;"></div>
@@ -996,7 +996,7 @@ function openWarehouseModal() {
         </div>
 
         <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">⛏️ Demir Silosu (%${Math.round((iron / cap.iron) * 100)})</div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('iron', '⛏️', 'width:20px;height:20px;')}</span>Demir Silosu (%${Math.round((iron / cap.iron) * 100)})</div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
               <div style="height: 100%; background: #94a3b8; width: ${Math.min(100, (iron / cap.iron) * 100)}%;"></div>
@@ -1006,7 +1006,7 @@ function openWarehouseModal() {
         </div>
 
         <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">🌾 Buğday Silosu (%${Math.round((wheat / cap.wheat) * 100)})</div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('wheat', '🌾', 'width:20px;height:20px;')}</span>Buğday Silosu (%${Math.round((wheat / cap.wheat) * 100)})</div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
               <div style="height: 100%; background: #facc15; width: ${Math.min(100, (wheat / cap.wheat) * 100)}%;"></div>
@@ -1771,9 +1771,9 @@ function openTownZoneModal(zoneId, zoneName) {
                       return `<div style="display:flex; justify-content:space-between; gap:6px;"><span>${icon} ${name}</span><span style="font-weight:800; color:${ok ? '#4ade80' : '#f87171'};">${f0(have)} / ${f0(need)}${overCap ? ' <span title="Silon bu kadar alamıyor" style="color:#fbbf24;">⚠ silo</span>' : ''}</span></div>`;
                     };
                     return `<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-size: 0.82rem; color: #cbd5e1; display:grid; gap:4px;">
-                      ${line('⛏️', 'Demir', state.inventory.iron || 0, cost.ironCost, capNow.iron)}
-                      ${line('🌲', 'Odun', state.inventory.wood || 0, cost.woodCost, capNow.wood)}
-                      ${line('🧩', 'Parça', state.inventory.fragments || 0, cost.fragCost, null)}
+                      ${line(resImg('iron', '⛏️', 'width:16px;height:16px;vertical-align:-3px;'), 'Demir', state.inventory.iron || 0, cost.ironCost, capNow.iron)}
+                      ${line(resImg('wood', '🌲', 'width:16px;height:16px;vertical-align:-3px;'), 'Odun', state.inventory.wood || 0, cost.woodCost, capNow.wood)}
+                      ${line(resImg('fragments', '🧩', 'width:16px;height:16px;vertical-align:-3px;'), 'Parça', state.inventory.fragments || 0, cost.fragCost, null)}
                       ${line('🟣', 'ADA', state.adAstraBalance || 0, cost.adaCost, null)}
                     </div>`;
                   })()}
