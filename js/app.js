@@ -3898,8 +3898,16 @@ function openColosseumModal() {
   if (colosseumActiveTab === 'pvp') {
     // 🌐 GERÇEK RAKİPLER (sunucu): içerik renderPvpPanel() ile doldurulur
     contentHtml = `<div id="pvp-panel" class="clean-card" style="border-color:#38bdf8;background:#0b1220;min-height:120px;">⏳ Yükleniyor…</div>`;
+  } else if (colosseumActiveTab === 'leaderboard' && online.active) {
+    // Çevrimiçi oyunda gerçek sıralama sunucuda: bilgisayar sürümünün bot tablosu ve sabit ödülleri gösterilmez
+    contentHtml = `
+      <div class="clean-card" style="border-color: #f59e0b; background: #1c140c; text-align: center; padding: 22px;">
+        <div style="font-size: 1.05rem; font-weight: 800; color: #fde047;">🏆 Haftalık sıralama gerçek oyuncularla</div>
+        <div style="font-size: 0.86rem; color: #cbd5e1; margin: 8px auto 14px; max-width: 560px; line-height: 1.5;">Çevrimiçi oyunda sıralama ve haftalık ödüller sunucuda tutulur. Hafta sonunda ilk 10 oyuncu Kolezyum kasasından pay alır.</div>
+        <button class="phase2-tab-btn colosseum-tab-btn" data-tab="pvp" style="display: inline-block; width: auto; padding: 9px 18px;">🌐 Gerçek Rakipler ve sıralamaya git</button>
+      </div>`;
   } else if (colosseumActiveTab === 'leaderboard') {
-    // 🏆 HAFTALIK SIRALAMA & ÖDÜLLER
+    // 🏆 HAFTALIK SIRALAMA & ÖDÜLLER (yalnız bilgisayardaki tek oyunculu sürüm)
     contentHtml = `
       <div class="clean-card" style="border-color: #f59e0b; background: #1c140c;">
         <div class="card-title-row">
