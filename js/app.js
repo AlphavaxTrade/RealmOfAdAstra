@@ -4832,7 +4832,7 @@ function openDashboardModal() {
 function openTreasuryVaultModal() {
   const summary = gameState.getTreasuryVaultSummary();
 
-  dom.modalTitle.innerHTML = `<span>🏦</span> <span>KRALLIK HAZİNESİ & ÖDÜL HAVUZLARI</span>`;
+  dom.modalTitle.innerHTML = `<span>🏦</span> <span>Krallık Hazinesi</span>`;
 
   const topOverviewHtml = `
     <div class="clean-card" style="background: linear-gradient(135deg, rgba(26,18,8,0.95), rgba(45,28,10,0.95)); border-color: #eab308; box-shadow: 0 0 25px rgba(234,179,8,0.15);">
@@ -4866,70 +4866,67 @@ function openTreasuryVaultModal() {
     </div>
   `;
 
-  const poolsGridHtml = `
-    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 14px;">
-      <div style="font-size: 0.95rem; font-weight: 800; color: #facc15; display: flex; align-items: center; gap: 6px;">
-        <span>📊</span> <span>Aktif Ödül Havuzları ve Biriken Miktarlar</span>
+  // Her 100 ADA harcamanın dağılımı ve kasaların payları (ayarlardan)
+  const A = GAME_CONFIG.TREASURY_ALLOCATION || {};
+  const T = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;
+  const shareOf = { world_boss: A.worldBoss, colosseum_arena: A.arena, dungeon_loot: A.dungeon, carnival_events: A.carnival, quest_pool: A.quest, amm_buyback: A.ammBuyback };
+  const pctTxt = v => '%' + (Math.round(v * 1000) / 10).toLocaleString('tr-TR');
+  const split = [
+    ['Oyun kasaları', T, '#e7b94c'], ['Temel gelir (UBI)', GAME_CONFIG.UBI_POOL_RATE ?? 0.06, '#43d19a'],
+    ['Yakım', GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05, '#f06868'], ['Yapımcı payı', GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03, '#a894ff']
+  ];
+  const splitHtml = `
+    <div class="clean-card" style="margin-top: 12px; padding: 12px 14px;">
+      <div style="font-size: 0.86rem; font-weight: 800; color: #e2e8f0; margin-bottom: 8px;">Oyunda harcanan her 100 ADA nereye gider?</div>
+      <div style="display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06);">
+        ${split.map(([, v, c]) => `<div style="width: ${v * 100}%; background: ${c};"></div>`).join('')}
       </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 0.78rem; color: #cbd5e1;">
+        ${split.map(([l, v, c]) => `<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:${c}; margin-right:5px;"></span>${l} <strong>${Math.round(v * 100)}</strong></span>`).join('')}
+      </div>
+      <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">Oyun kasalarına giden pay aşağıdaki kasalara bölünür; ödüller (zindan, boss, kolezyum, görev, çark) bu kasalardan ödenir, havadan basılmaz.</div>
+    </div>`;
 
-      ${summary.pools.map(pool => `
-        <div class="clean-card" style="border-color: ${pool.color}; background: #150f09; margin: 0; padding: 12px 16px;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 2rem;">${pool.icon}</span>
-              <div>
-                <div style="font-weight: 800; font-size: 1rem; color: #fff;">${pool.name}</div>
-                <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px; max-width: 480px; line-height: 1.3;">
-                  ${pool.description}
-                </div>
-              </div>
+  const poolsGridHtml = `
+    <div style="font-size: 0.95rem; font-weight: 800; color: #facc15; margin: 14px 0 8px;">Ödül kasaları</div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+      ${summary.pools.map(pool => {
+        const sh = shareOf[pool.id];
+        const shareTxt = pool.id === 'ubi_pool' ? `her harcamadan ${pctTxt(GAME_CONFIG.UBI_POOL_RATE ?? 0.06)} pay` : sh ? `her harcamadan ${pctTxt(T * sh)} pay` : '';
+        return `
+        <div class="clean-card" style="margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; border-color: ${pool.color}55;">
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="font-size: 1.7rem; width: 36px; text-align: center;">${pool.icon}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 800; font-size: 0.92rem; color: #fff; line-height: 1.25;">${pool.name}</div>
+              <div style="font-size: 1.12rem; font-weight: 900; color: ${pool.color};">${pool.totalPoolAda.toLocaleString('tr-TR')} <span style="font-size: 0.74rem; color: #c084fc;">ADA</span></div>
             </div>
-            <div style="text-align: right;">
-              <div style="font-size: 1.25rem; font-weight: 900; color: ${pool.color};">
-                ${pool.totalPoolAda.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
-              </div>
-              <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #cbd5e1; font-weight: 700;">
-                ${pool.statusBadge}
-              </span>
-            </div>
+            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #cbd5e1; font-weight: 700; align-self: flex-start;">${pool.statusBadge}</span>
           </div>
-
-          <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #2d1806; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <div style="font-size: 0.82rem; color: #fde047;">
-              <strong>👤 Senin Durumun / Payın:</strong> <span style="color: #cbd5e1;">${pool.userShareText}</span>
-            </div>
-            <button class="btn-clean btn-clean-outline btn-treasury-action" data-action="${pool.actionType}" style="padding: 6px 14px; font-size: 0.8rem; width: auto; border-color: ${pool.color}; color: #fff;">
-              ${pool.actionText} ➔
-            </button>
+          <div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; margin-top: auto;">
+            <span style="font-size: 0.78rem; color: #cbd5e1; flex: 1; min-width: 0;">👤 ${pool.userShareText}</span>
+            <button class="btn-clean btn-treasury-action" data-action="${pool.actionType}" style="padding: 5px 10px; font-size: 0.76rem; width: auto; border: 1px solid ${pool.color}; background: transparent; color: #fff; white-space: nowrap; flex-shrink: 0;">${pool.actionText} →</button>
           </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     </div>
   `;
 
-  dom.modalBody.innerHTML = topOverviewHtml + poolsGridHtml;
+  dom.modalBody.innerHTML = topOverviewHtml + splitHtml + poolsGridHtml;
 
   document.querySelectorAll('.btn-treasury-action').forEach(btn => {
     btn.addEventListener('click', () => {
       const act = btn.dataset.action;
-      if (act === 'boss') {
-        openTownZoneModal('barracks', '⚔️ KRALLIK KIŞLASI & ASKERİ KARARGAH');
-        barracksActiveTab = 'world_boss';
-        renderBarracksContent();
-      } else if (act === 'colosseum') {
-        openTownZoneModal('colosseum', '🏟️ KOLEZYUM ARENASI & GLADYATÖR');
-      } else if (act === 'dungeon') {
-        closeModal();
-        window.dispatchEvent(new CustomEvent('enter-dungeon-view'));
-      } else if (act === 'collection') {
-        openCollectionModal();
-      } else if (act === 'parliament') {
-        showToast('🏛️ AdAstra Meclisi: Topluluk oylamaları ve NFT pazar indirimleri aktiftir.', 'info');
-      } else if (act === 'quests') {
-        closeModal();
-        guideExpanded = true;
-        renderGuideWidget();
-      }
+      if (act === 'boss') openBattlefieldModal();
+      else if (act === 'colosseum') openColosseumModal();
+      else if (act === 'dungeon') { closeModal(); window.dispatchEvent(new CustomEvent('enter-dungeon-view')); }
+      else if (act === 'collection') openCollectionModal();
+      else if (act === 'carnival') openCarnivalModal('wheel');
+      else if (act === 'amm_buyback') { marketActiveTab = 'buyback_vault'; openTownZoneModal('market', '🏪 AMM Pazar Alanı'); }
+      else if (act === 'ubi') openEconomyDashboardModal('overview');
+      else if (act === 'parliament') showToast('🏛️ AdAstra Meclisi yakında: topluluk oylamaları hazırlanıyor.', 'info');
+      else if (act === 'quests') { closeModal(); guideExpanded = true; renderGuideWidget(); }
     });
   });
 

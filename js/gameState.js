@@ -5883,7 +5883,7 @@ export class GameStateManager {
           icon: '🌋',
           color: '#ef4444',
           totalPoolAda: worldBossPool,
-          description: 'Her Pazar 20:00\'da kilitlenen orduların vurduğu hasara göre dağıtılır.',
+          description: 'Her Pazar 18:00\'de (TSİ) ordusunu kilitleyenlerin vurduğu hasara göre paylaşılır.',
           userShareText: userBossDamage > 0 ? `%${((userBossDamage / maxBossHp) * 100).toFixed(2)} Hasar Payı (~${userBossRewardEstimate.toLocaleString()} ADA)` : (userStakedArmyCount > 0 ? `${userStakedArmyCount} Asker Kilitli (${userStakedAtk} ATK)` : 'Ordu Kilitlenmedi'),
           userClaimableAda: 0,
           statusBadge: userStakedArmyCount > 0 ? '🛡️ Ordu Kilitli' : '⚠️ Katılmadın',
