@@ -345,6 +345,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
         chainId: cfg.chainId, tokenAddress: cfg.tokenAddress, paymentsContract: cfg.paymentsContract || null,
         reserveWallet: cfg.reserveWallet || null, contractOwner: cfg.contractOwner || null,
         hotWallet: e.hotWallet || null, hotNeed: world.hotWalletNeed ? world.hotWalletNeed() : null,
+        partnerIncome: world.partnerIncomeStatus ? world.partnerIncomeStatus() : null,
         payouts: db.q.payoutsRecent.all(50),
         events: db.q.eventsRecent.all(50)
       };

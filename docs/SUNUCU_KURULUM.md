@@ -121,6 +121,17 @@ Oyun cüzdanının anahtarı sunucuda durur; sunucu ele geçirilirse içindeki p
 3. Oyun cüzdanı ihtiyacın altına düşerse yönetici panelinde ve e-postanda "yedek cüzdandan şu kadar ADA gönder" uyarısı çıkar. Paneldeki **"📥 Yedek cüzdandan oyun cüzdanına gönder"** düğmesiyle Ledger'dan tek onayla gönderirsin.
 4. Oyuncuların Oyun Kasaları da sınırlıdır: kasada ~30 günlük harcamadan fazlası birikirse fazlası oyuncunun kendi cüzdanına kendiliğinden döner.
 
+## 8. Trade sitesi (AlphAvax) geliri
+
+Trade sitesindeki harcamaların **%40'ı** ADASTRA olarak oyuna gönderilir ve her oyun harcaması gibi dağıtılır: %5 yakım, %6 temel gelir, %3 yapımcı payı, %86 ödül kasaları.
+
+1. Trade sitesinde "oyun payının gönderileceği adres" ayarını **oyun cüzdanı** (ya da yedek cüzdan) adresi yap. (Yayından önce şimdilik kişisel cüzdan yazılı; yayında değiştir.)
+2. Sunucunun `server/.env` dosyasına yaz:
+   - `PARTNER_INCOME_FROM=0x<trade sitesinin ödemeyi yaptığı cüzdan>`
+   - `PARTNER_INCOME_TO=0x<paranın geldiği adres>` (boşsa oyun cüzdanı)
+3. Sunucu 5 dakikada bir bu adrese o cüzdandan gelen ödemeleri bulur, her birini **bir kez** sayar. Yönetici panelinde "🤝 Trade sitesi geliri" kartında görünür.
+4. Para yedek cüzdana geliyorsa, yakım ve yapımcı ödemeleri oyun cüzdanından yapıldığı için oyun cüzdanını yedekten beslemeyi unutma (panel azalınca uyarır).
+
 ## Oyun nasıl işliyor? (kısa)
 
 - **Hesap:** Oyuncu e-posta ve şifreyle kayıt olur. Cüzdanı kaybolsa bile oyundaki bakiyesi hesabında kalır. Siteyi giriş yapmadan gezebilir; bir işlem yapmak istediğinde giriş istenir.

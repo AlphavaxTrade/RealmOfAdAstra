@@ -52,6 +52,11 @@ export function loadConfig(env = process.env) {
     hotWalletMinAda: num('HOT_WALLET_MIN_ADA', 0),                 // geçmiş yokken (ilk haftalar) oyun cüzdanında kalacak en az ADA
     contractOwner: (env.CONTRACT_OWNER || '').trim(),              // ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı)
     adminEmail: (env.ADMIN_EMAIL || '').trim(),                    // uyarı e-postaları (oyun cüzdanı azaldı vb.)
+    // Ortak gelir (kullanıcı kararı 6 Ekim 2026): trade sitesindeki (AlphAvax) harcamaların %40'ı ADASTRA olarak oyuna
+    // gönderilir. Sunucu PARTNER_INCOME_FROM cüzdan(lar)ından PARTNER_INCOME_TO adresine gelen ADASTRA'yı izler ve her
+    // oyun harcaması gibi dağıtır: %5 yakım, %6 temel gelir, %3 yapımcı payı, %86 ödül kasaları. TO boşsa oyun cüzdanı.
+    partnerIncomeFrom: (env.PARTNER_INCOME_FROM || '').split(',').map(s => s.trim().toLowerCase()).filter(a => /^0x[0-9a-f]{40}$/.test(a)),
+    partnerIncomeTo: (env.PARTNER_INCOME_TO || '').trim().toLowerCase(),
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
     rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
     ipRateLimitPerSec: num('IP_RATE_LIMIT_PER_SEC', 40),            // IP başına tüm istekler (kimlik denetiminden önce)

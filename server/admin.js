@@ -20,6 +20,7 @@ async function load() {
     card('Oyun cüzdanı', s.gameWallet ? `<a href="https://snowtrace.io/address/${esc(s.gameWallet)}" target="_blank" rel="noopener">${esc(s.gameWallet.slice(0, 8))}…</a>` : '—'),
     card('Cüzdandaki ADA', m.walletAda != null ? fmt(m.walletAda) : '—'),
     hotCard(s),
+    partnerCard(s),
     contractCard(s),
     card('ADASTRA fiyatı (1M)', m.priceUsd ? '$' + (m.priceUsd * 1e6).toFixed(3) : '—'),
     card('Piyasa değeri', m.mcapUsd ? '$' + fmt(m.mcapUsd) : '—'),
@@ -37,6 +38,11 @@ async function load() {
     s.payouts.map(p => `<tr><td>${p.id}</td><td>${p.epoch}</td><td>${esc(p.kind)}</td><td>${esc(p.address.slice(0, 10))}…</td><td>${fmt(p.amount)}</td><td>${st[p.status] || esc(p.status)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">görüntüle</a>` : ''}</td><td class="bad">${esc(p.error || '')}</td></tr>`).join('');
   $('events').innerHTML = '<tr><th>Zaman</th><th>Tür</th><th>Adres</th><th>Bilgi</th></tr>' +
     s.events.map(e => `<tr><td>${new Date(e.at).toLocaleString('tr-TR')}</td><td>${esc(e.type)}</td><td>${esc((e.address || '').slice(0, 10))}</td><td>${esc((e.data || '').slice(0, 160))}</td></tr>`).join('');
+}
+function partnerCard(s) {
+  const p = s.partnerIncome;
+  if (!p || !p.enabled) return card('🤝 Trade sitesi geliri', 'kapalı (PARTNER_INCOME_FROM)');
+  return `<div class="card"><div class="k">🤝 Trade sitesi geliri (7 gün / toplam)</div><div class="v ok">${fmt(p.weekAda)} / ${fmt(p.totalAda)}</div><div class="k">${p.count} ödeme · adres ${esc(String(p.to).slice(0, 8))}…</div></div>`;
 }
 function hotCard(s) {
   const h = s.hotWallet || {}, n = s.hotNeed || {};

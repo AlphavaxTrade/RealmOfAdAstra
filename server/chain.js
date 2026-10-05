@@ -93,6 +93,25 @@ export function createChain(cfg) {
     return out;
   }
 
+  // Belirli cüzdanlardan belirli bir adrese gelen ADASTRA transferleri (ortak gelir: trade sitesi)
+  async function scanTransfers(fromAddrs, toAddr, fromBlock, toBlock, step = 2000) {
+    if (!toAddr || !fromAddrs || !fromAddrs.length) return [];
+    const iface = new ethers.Interface(ERC20_ABI);
+    const topic = iface.getEvent('Transfer').topicHash;
+    const fromTopics = fromAddrs.map(a => ethers.zeroPadValue(a, 32));
+    const toTopic = ethers.zeroPadValue(toAddr, 32);
+    const out = [];
+    for (let b = fromBlock; b <= toBlock; b += step) {
+      const e = Math.min(toBlock, b + step - 1);
+      const logs = await withProvider(p => p.getLogs({ address: cfg.tokenAddress, topics: [topic, fromTopics, toTopic], fromBlock: b, toBlock: e }));
+      for (const l of logs) {
+        const ev = iface.parseLog(l);
+        out.push({ txHash: l.transactionHash, logIndex: l.index, from: ev.args.from.toLowerCase(), amount: toAda(ev.args.value), block: l.blockNumber });
+      }
+    }
+    return out;
+  }
+
   const erc20 = new ethers.Interface(ERC20_ABI);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -232,5 +251,5 @@ export function createChain(cfg) {
     });
   }
 
-  return { readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  return { scanTransfers, readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }
