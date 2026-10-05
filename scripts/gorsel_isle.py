@@ -1,6 +1,7 @@
 # Kullanım örneği: C:/Users/AlphAvax/video_edit/venv/Scripts/python.exe scripts/gorsel_isle.py ikon ~/.claude/gemini/cikti/x_1.jpg public/assets/ui/x.webp
 # Gemini görsellerini oyuna hazırlar:
 #  ikon: lacivert arka plan kenarlardan taşan doldurmayla şeffaf yapılır, kırpılır, 256x256 webp
+#        (isteğe bağlı 4. değer: renk toleransı, varsayılan 26; çerçeve arka plana yakınsa düşür, ör. 12)
 #  portre: kare 256x256 webp (arka plan kalır, yuvarlak çerçevede kullanılır)
 # Kullanım: python isle_gorsel.py <ikon|portre> <girdi> <çıktı> ; ayrıca: python isle_gorsel.py sayfa <çıktı.png> <girdi...>
 import sys
@@ -10,7 +11,7 @@ from PIL import Image
 def close(c, ref, tol):
     return abs(c[0] - ref[0]) <= tol and abs(c[1] - ref[1]) <= tol and abs(c[2] - ref[2]) <= tol
 
-def ikon(src, dst, size=256):
+def ikon(src, dst, size=256, tol=26):
     im = Image.open(src).convert('RGBA')
     w, h = im.size
     small = im.resize((w // 4, h // 4), Image.NEAREST)   # hız için yarı çözünürlükte maske
@@ -23,7 +24,7 @@ def ikon(src, dst, size=256):
         x, y = q.popleft()
         if x < 0 or y < 0 or x >= sw or y >= sh or seen[y * sw + x]:
             continue
-        if not close(px[x, y], ref, 26):
+        if not close(px[x, y], ref, tol):
             continue
         seen[y * sw + x] = 1
         q.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
@@ -60,7 +61,7 @@ def sayfa(dst, files):
 if __name__ == '__main__':
     kind = sys.argv[1]
     if kind == 'ikon':
-        ikon(sys.argv[2], sys.argv[3])
+        ikon(sys.argv[2], sys.argv[3], tol=int(sys.argv[4]) if len(sys.argv) > 4 else 26)
     elif kind == 'portre':
         portre(sys.argv[2], sys.argv[3])
     elif kind == 'sayfa':
