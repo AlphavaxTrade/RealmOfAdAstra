@@ -1,5 +1,8 @@
 // AdAstra: Genesis Realm - Gelişmiş Karakter Seviyesi, Ordu, Taverna & Otomasyon Yöneticisi
 import { GAME_CONFIG } from './config.js';
+// Asker portreleri (public/assets/ui, 5 Ekim 2026): numarasına göre sırayla
+const SOLDIER_PORTRAITS = ['assets/ui/soldier_1.webp', 'assets/ui/soldier_2.webp', 'assets/ui/soldier_3.webp', 'assets/ui/soldier_4.webp'];
+const soldierPortraitFor = n => SOLDIER_PORTRAITS[(Math.max(1, Number(n) || 1) - 1) % SOLDIER_PORTRAITS.length];
 import { globalPool } from './globalPool.js';
 import { sound } from './audio.js';
 import { ammMarket } from './ammMarket.js';
@@ -210,7 +213,7 @@ export class GameStateManager {
       classId: 'adastra_champion',
       className: 'AdAstra Şampiyonu',
       icon: '⚔️',
-      avatar: 'assets/soldier_avatar.jpg',
+      avatar: soldierPortraitFor(index),
       row: index <= 2 ? 'front' : 'back',
       skills: initialSkills,
       level,
@@ -269,7 +272,7 @@ export class GameStateManager {
         class: 'adastra_champion',
         className: 'AdAstra Şampiyonu',
         icon: '⚔️',
-        avatar: s.avatar || 'assets/soldier_avatar.jpg',
+        avatar: (s.avatar && s.avatar !== 'assets/soldier_avatar.jpg') ? s.avatar : soldierPortraitFor(i + 1),
         row: s.row || (i < 2 ? 'front' : 'back'),
         skills,
         level,

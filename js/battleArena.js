@@ -30,7 +30,7 @@ export function getMonsterAvatar(level, name) {
 
 export function getUnitAvatar(u) {
   if (u.avatar) return u.avatar;
-  if (u.side === 'ally') return 'assets/soldier_avatar.jpg';
+  if (u.side === 'ally') return 'assets/ui/soldier_1.webp';
   if ((u.name || '').includes('Gladyatör') || (u.name || '').includes('Kael') || (u.name || '').includes('Şampiyon') || (u.name || '').includes('Malok')) {
     return 'assets/gladiator_rival.jpg';
   }

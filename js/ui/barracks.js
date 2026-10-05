@@ -10,6 +10,8 @@
 // dinleyiciye ulaşmaz: eski panelde aynı sınıflı düğmeler yanlış pencere açıyordu).
 // ============================================================================
 
+import { equipImg, soldierPortrait } from './art.js';
+
 const SLOTS = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const SLOT_NAME = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Zırh', legs: 'Dizlik', boots: 'Çizme' };
 const SLOT_ICON = { weapon: '⚔️', helmet: '🪖', armor: '🛡️', legs: '👖', boots: '👢' };
@@ -115,6 +117,7 @@ export function createBarracksUI(deps) {
     return list.map(({ s, i, heal, stats, filled }) => `
       <button type="button" class="bk-row ${i === sel ? 'is-active' : ''}" data-bk="select" data-idx="${i}" aria-pressed="${i === sel}">
         <span class="bk-row-num">${i + 1}</span>
+        <img class="bk-row-face" src="${esc(soldierPortrait(s, i))}" alt="" loading="lazy" draggable="false">
         <span class="bk-row-main">
           <span class="bk-row-name">${esc(s.name)}${s.row === 'back' ? ' <span class="bk-tag">arka</span>' : ''}${heal.isPaused ? ' <span class="bk-tag bad">iyileşme durdu</span>' : ''}</span>
           <span class="bk-bar sm"><span class="bk-bar-fill ${hpTone(heal.hpPct)}" data-hp-idx="${i}" style="width:${heal.hpPct}%"></span></span>
@@ -140,7 +143,7 @@ export function createBarracksUI(deps) {
     const n = candidates(slot).length;
     if (!it) {
       return `<button type="button" class="bk-slot is-empty ${open ? 'is-open' : ''}" data-bk="picker" data-slot="${slot}">
-        <span class="bk-slot-icon">${SLOT_ICON[slot]}</span>
+        <span class="bk-slot-icon is-ghost">${equipImg(slot, SLOT_ICON[slot])}</span>
         <span class="bk-slot-name">${SLOT_NAME[slot]}</span>
         <span class="bk-slot-sub">${n ? `${n} uygun eşya · seç` : 'depoda yok'}</span>
       </button>`;
@@ -148,7 +151,7 @@ export function createBarracksUI(deps) {
     const d = dur(it);
     return `<div class="bk-slot ${open ? 'is-open' : ''}">
       <button type="button" class="bk-slot-hit" data-bk="picker" data-slot="${slot}" aria-label="${SLOT_NAME[slot]} değiştir">
-        <span class="bk-slot-icon">${esc(it.icon || SLOT_ICON[slot])}</span>
+        <span class="bk-slot-icon">${equipImg(slot, it.icon || SLOT_ICON[slot])}</span>
         <span class="bk-slot-name">${esc(it.name)} <b>Sv.${it.level || 1}</b></span>
         <span class="bk-slot-sub">${statLine(it)}</span>
         <span class="bk-bar sm" title="Dayanıklılık ${d.cur}/${d.max}"><span class="bk-bar-fill ${d.tone}" style="width:${d.pct}%"></span></span>
@@ -174,7 +177,7 @@ export function createBarracksUI(deps) {
       ${list.length ? `<div class="bk-picker-list">${list.slice(0, 60).map(c => {
         const d = dur(c.item);
         return `<div class="bk-pick">
-          <span class="bk-pick-icon">${esc(c.item.icon || SLOT_ICON[slot])}</span>
+          <span class="bk-pick-icon">${equipImg(slot, c.item.icon || SLOT_ICON[slot])}</span>
           <span class="bk-pick-main"><b>${esc(c.item.name)} · Sv.${c.item.level || 1}</b><span class="bk-dim">${statLine(c.item)} · <span class="${d.tone}">${d.cur}/${d.max}</span></span></span>
           <span class="bk-pick-delta">${deltaHtml(c.item, cur)}</span>
           <button type="button" class="bk-btn sm primary" data-bk="equip" data-source="${c.source}" data-slot="${slot}" data-armory="${c.armoryIndex ?? ''}">${cur ? 'Değiştir' : 'Tak'}</button>
@@ -193,6 +196,7 @@ export function createBarracksUI(deps) {
     const editing = getEditing() === idx;
     return `<section class="bk-sheet" aria-label="Asker ayrıntısı">
       <header class="bk-sheet-head">
+        <img class="bk-sheet-face" src="${esc(soldierPortrait(s, idx))}" alt="" draggable="false">
         <div class="bk-sheet-id">
           ${editing ? `
             <div class="bk-rename">
@@ -315,7 +319,7 @@ export function createBarracksUI(deps) {
       const moving = ui.moveKey === keyOf(e);
       return `<article class="bk-item ${e.source === 'soldier' ? 'is-worn' : ''}">
         <div class="bk-item-top">
-          <span class="bk-item-icon">${esc(it.icon || SLOT_ICON[e.slotKey])}</span>
+          <span class="bk-item-icon">${equipImg(e.slotKey, it.icon || SLOT_ICON[e.slotKey])}</span>
           <span class="bk-item-main"><b>${esc(it.name)}</b><span class="bk-dim">${SLOT_NAME[e.slotKey]} · Sv.${it.level || 1} · ${statLine(it)}</span></span>
         </div>
         <div class="bk-item-dur"><span class="bk-bar sm"><span class="bk-bar-fill ${d.tone}" style="width:${d.pct}%"></span></span><span class="${d.tone}">${d.cur}/${d.max}</span></div>

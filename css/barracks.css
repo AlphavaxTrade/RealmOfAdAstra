@@ -157,6 +157,18 @@
 .bk-move select { flex: 1; min-width: 0; }
 .bk-more { display: flex; justify-content: center; }
 
+/* Görseller */
+.bk .art-ico { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block; }
+.bk-slot-icon { width: 44px; height: 44px; font-size: 1.4rem; line-height: 44px; }
+.bk-slot-icon.is-ghost { opacity: .28; filter: grayscale(1); }
+.bk-pick-icon, .bk-item-icon { width: 36px; height: 36px; line-height: 36px; }
+.bk-row { grid-template-columns: 22px 30px 1fr auto; }
+.bk-row-face { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1px solid var(--bk-line); image-rendering: pixelated; }
+.bk-row.is-active .bk-row-face { border-color: var(--bk-gold); }
+.bk-sheet-head { align-items: center; }
+.bk-sheet-face { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 2px solid var(--bk-gold); image-rendering: pixelated; flex: 0 0 auto; }
+.bk-sheet-id { flex: 1; min-width: 160px; }
+
 /* Telefon ve dar ekran */
 @media (max-width: 900px) {
   .bk-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }

@@ -13,6 +13,7 @@ import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatD
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
+import { equipImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
@@ -1748,8 +1749,8 @@ function openTownZoneModal(zoneId, zoneName) {
               return `
                 <div class="clean-card" style="display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 16px; border: 1.5px solid ${canAfford ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.06)'};">
                   <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="font-size: 2.4rem; background: rgba(0,0,0,0.4); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
-                      ${recipe.icon}
+                    <div style="font-size: 2.4rem; background: rgba(0,0,0,0.4); width: 64px; height: 64px; padding: 6px; box-sizing: border-box; border-radius: 12px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+                      ${equipImg(slot, recipe.icon).replace('class="art-ico ', 'style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated;" class="art-ico ')}
                     </div>
                     <div>
                       <div style="font-size: 1.15rem; font-weight: 800; color: #fff;">${slotNames[slot]}</div>
@@ -4099,6 +4100,7 @@ function openColosseumModal() {
       ` : `
         <div class="clean-card" style="text-align: center; color: #94a3b8; padding: 24px;">
           ⚠️ Kolezyum'da 1v1 savaşmak için önce Kışla'dan asker satın almalısın!
+          <div style="margin-top: 12px;"><button class="btn-clean btn-goto-barracks" style="width:auto; padding:8px 16px; font-weight:800; background:#7c3aed; border-color:#a78bfa; color:#fff;">⚔️ Kışla'ya git</button></div>
         </div>
       `}
     `;
@@ -6802,6 +6804,13 @@ function initAppEvents() {
       sound.playLevelUp();
       renderTopBar();
       openTestMenuModal();
+      return;
+    }
+
+    // ⚔️ Kışla'ya git (ör. Kolezyum'da asker yokken)
+    if (e.target.closest('.btn-goto-barracks')) {
+      barracksActiveTab = 'army';
+      openBarracksModal();
       return;
     }
 
