@@ -13,7 +13,7 @@ import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatD
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
-import { equipImg } from './ui/art.js';
+import { equipImg, resImg, soldierPortrait } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
@@ -2100,7 +2100,7 @@ function openTownZoneModal(zoneId, zoneName) {
           <span style="font-size: 0.85rem; color: #c084fc; font-weight: 700;">Bakiye: ${state.adAstraBalance.toFixed(1)} ADA</span>
         </div>
         <div class="clean-desc">
-          Automated Market Maker ($x \\cdot y = k$) DEX likidite havuzlarında hammadde, Pandora Kutusu ve anahtar ticareti yapabilir veya P2P pazarda koleksiyon eserlerini satabilirsin.
+          Hammadde, Pandora Kutusu ve anahtar al-sat. Fiyatı havuzdaki arz belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde yakılır, %2 ADA harcı oyun kasalarına gider.
         </div>
       </div>
 
@@ -2127,9 +2127,9 @@ function openTownZoneModal(zoneId, zoneName) {
         <div class="amm-card" data-res="${resKey}">
           <div class="amm-card-header">
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 1.6rem;">${pool.icon}</span>
+              <span style="width: 44px; height: 44px; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center;">${resImg(resKey, pool.icon, 'width:44px;height:44px;')}</span>
               <div>
-                <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name} Havuzu</div>
+                <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name}</div>
                 <div style="font-size: 0.78rem; color: #94a3b8;">
                   Havuz: <strong>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name}</strong> • <strong>${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ADA</strong>
                 </div>
@@ -2137,7 +2137,14 @@ function openTownZoneModal(zoneId, zoneName) {
             </div>
             <div style="text-align: right;">
               <div style="font-size: 0.95rem; font-weight: 800; color: #facc15;">1 ${pool.name} = ${price >= 1000 ? price.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : price.toFixed(4)} $ADASTRA</div>
-              <div style="font-size: 0.78rem; color: #cbd5e1;">Envanterin: <strong style="color: #4ade80;">${invAmount.toLocaleString('tr-TR')} Adet</strong></div>
+              ${(() => {
+                const capAll = ['wood', 'iron', 'wheat'].includes(resKey) ? gameState.getWarehouseCapacity() : null;
+                const cap = capAll ? capAll[resKey] : null;
+                if (!cap) return `<div style="font-size: 0.78rem; color: #cbd5e1;">Elinde: <strong style="color: #4ade80;">${invAmount.toLocaleString('tr-TR')}</strong></div>`;
+                const pct = Math.min(100, Math.round(invAmount / cap * 100));
+                return `<div style="font-size: 0.78rem; color: #cbd5e1;">Silo: <strong style="color: #4ade80;">${Math.floor(invAmount).toLocaleString('tr-TR')}</strong> / ${cap.toLocaleString('tr-TR')}</div>
+                  <div style="height:4px; width:140px; margin:4px 0 0 auto; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${pct >= 95 ? '#f2b23a' : '#43d19a'};"></div></div>`;
+              })()}
             </div>
           </div>
 
@@ -2150,15 +2157,15 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="amm-input-row">
                 <input type="number" min="1" class="amm-number-input amm-buy-qty" data-res="${resKey}" value="${initialBuy}" placeholder="Adet..." />
               </div>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">${[100, 1000, 10000].map(q => `<button type="button" class="btn-amm-q" data-side="buy" data-res="${resKey}" data-q="${q}" style="padding:3px 8px; font-size:0.72rem; font-weight:700; border-radius:6px; border:1px solid #334155; background:transparent; color:#cbd5e1; cursor:pointer;">+${q.toLocaleString('tr-TR')}</button>`).join('')}</div>
               <div class="amm-est-display">
-                <span style="color: #94a3b8;">Maliyet (%2 ADA Harcı Dahil):</span>
+                <span style="color: #94a3b8;">Ödeyeceğin (harç dahil):</span>
                 <strong class="amm-est-cost-text" data-res="${resKey}" style="color: #f87171;">
                   ${isFinite(buyCost) ? `~${buyCost.toFixed(2)} ADA` : 'Yetersiz Likidite'}
                 </strong>
-                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Alımda %2 hammadde yakılır · %2 ADA harcı oyun kasalarına gider</div>
               </div>
               <button class="btn-clean btn-clean-green btn-amm-confirm-buy" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem;">
-                🟢 ONAYLA & SATIN AL
+                Satın al
               </button>
               ${['wood', 'iron', 'wheat'].includes(resKey) ? (() => {
                 const fq = gameState.getFillWarehouseQty(resKey);
@@ -2176,15 +2183,15 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="amm-input-row">
                 <input type="number" min="1" class="amm-number-input amm-sell-qty" data-res="${resKey}" value="${initialSell}" placeholder="Adet..." />
               </div>
+              <div style="display:flex; gap:4px; flex-wrap:wrap;">${[['%25', 0.25], ['Yarısı', 0.5], ['%75', 0.75]].map(([l, f]) => `<button type="button" class="btn-amm-q" data-side="sell" data-res="${resKey}" data-frac="${f}" style="padding:3px 8px; font-size:0.72rem; font-weight:700; border-radius:6px; border:1px solid #334155; background:transparent; color:#cbd5e1; cursor:pointer;">${l}</button>`).join('')}</div>
               <div class="amm-est-display">
-                <span style="color: #94a3b8;">Net Kazanç (%2 ADA Harcı Sonrası):</span>
+                <span style="color: #94a3b8;">Eline geçecek (harç sonrası):</span>
                 <strong class="amm-est-gain-text" data-res="${resKey}" style="color: #4ade80;">
                   ~${sellGain.toFixed(2)} ADA
                 </strong>
-                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Satışta %2 hammadde yakılır · %2 ADA harcı oyun kasalarına gider</div>
               </div>
               <button class="btn-clean btn-clean-outline btn-amm-confirm-sell" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem; border-color: #facc15; color: #fde047;">
-                🔴 ONAYLA & SAT
+                Sat
               </button>
               ${typeof (gameState.state.inventory || {})[resKey] === 'number' ? `
               <button class="btn-clean btn-amm-sell-all" data-res="${resKey}" ${Math.floor(gameState.state.inventory[resKey] || 0) > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #facc15; color: #fde047;" title="Silodaki bütün ${pool.name} tek seferde satılır">
@@ -4039,7 +4046,7 @@ function openColosseumModal() {
         <!-- Şampiyon Seçim Kartı -->
         <div class="clean-card" style="background: #151a26; border-color: #ca8a04;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap:wrap; gap:6px;">
-            <div style="font-weight: 800; font-size: 0.95rem; color: #fde047;">🛡️ Arenaya Çıkacak Şampiyonun:</div>
+            <div style="font-weight: 800; font-size: 0.95rem; color: #fde047; display:flex; align-items:center; gap:10px;"><img src="${soldierPortrait(soldiers[selectedColosseumChampionIdx] || soldiers[0], soldiers[selectedColosseumChampionIdx] ? selectedColosseumChampionIdx : 0)}" alt="" draggable="false" style="width:52px; height:52px; border-radius:10px; border:2px solid #ca8a04; image-rendering:pixelated; object-fit:cover;"> 🛡️ Arenaya çıkacak şampiyonun:</div>
             <div style="display:flex; align-items:center; gap:8px;">
               <select id="colosseum-champion-select" style="background: #24140b; color: #fff; border: 1.5px solid #ca8a04; padding: 5px 10px; border-radius: 6px; font-family: var(--font-game); font-size: 0.85rem;">
                 ${soldiers.map((s, idx) => `
@@ -6857,6 +6864,22 @@ function initAppEvents() {
       if (bought) { showToast(`⚡ ${bought} hammadde pazardan alındı. Şimdi ${kind === 'levelup' ? 'seviye atlayabilirsin' : 'siloyu yükseltebilirsin'}!`, 'success'); sound.playHarvest && sound.playHarvest(); }
       renderTopBar();
       if (kind === 'levelup') openInventoryModal(); else openWarehouseModal();
+      return;
+    }
+
+    // Pazar: hızlı miktar düğmeleri (+100 / +1.000 / yarısı …)
+    const ammQBtn = e.target.closest('.btn-amm-q');
+    if (ammQBtn) {
+      const resKey = ammQBtn.dataset.res;
+      const side = ammQBtn.dataset.side;
+      const input = dom.modalBody.querySelector(`.amm-${side}-qty[data-res="${resKey}"]`);
+      if (!input) return;
+      if (side === 'buy') { const cur = parseFloat(input.value) || 0; input.value = Math.max(1, Math.floor((cur <= 1 ? 0 : cur) + Number(ammQBtn.dataset.q))); }
+      else {
+        const have = resKey === 'boxes' ? (gameState.state.lockedBoxes || 0) : resKey === 'keys' ? (gameState.state.arenaKeys || 0) : (gameState.state.inventory[resKey] || 0);
+        input.value = Math.max(1, Math.floor(have * Number(ammQBtn.dataset.frac)));
+      }
+      input.dispatchEvent(new Event('input', { bubbles: true }));
       return;
     }
 

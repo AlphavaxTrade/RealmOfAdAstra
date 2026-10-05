@@ -29,3 +29,14 @@ export function equipImg(slot, emoji = '', cls = '') {
   if (!src) return attr(emoji);
   return `<img src="${src}" alt="" class="art-ico ${cls}" draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
 }
+
+// Hammadde simgeleri (pazar, silo, üst çubuk)
+export const RES_ART = {
+  wood: 'assets/ui/res_wood.webp', iron: 'assets/ui/res_iron.webp', wheat: 'assets/ui/res_wheat.webp',
+  fragments: 'assets/ui/res_fragments.webp', keys: 'assets/ui/res_keys.webp', boxes: 'assets/ui/res_boxes.webp'
+};
+export function resImg(key, emoji = '', style = '') {
+  const src = RES_ART[key];
+  if (!src) return attr(emoji);
+  return `<img src="${src}" alt="" class="art-ico" style="image-rendering:pixelated;object-fit:contain;${style}" draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
+}

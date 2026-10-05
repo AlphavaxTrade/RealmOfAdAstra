@@ -310,6 +310,7 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 .hud .res-frag:hover { border-color: rgba(195, 155, 255, .5); }
 .hud .res-frag { min-width: 72px; }
 .hud .res-icon { font-size: 16px; }
+.hud .res-icon img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; display: block; }
 .hud .res-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
 .hud .res-value { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--c-text); line-height: 1; }
 .hud .res-cap { display: block; height: 3px; width: 100%; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
