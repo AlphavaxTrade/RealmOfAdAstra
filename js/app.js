@@ -1535,7 +1535,7 @@ function openTownZoneModal(zoneId, zoneName) {
     const activeExp = state.activeExpeditions.wood;
     const isSpeedActive = gameState.isBuffActive('speed_wood');
     const currentDurationMin = gameState.getExpeditionDurationMinutes();
-    const estYield = Math.floor(18 * currentDurationMin * (isSpeedActive ? 1.5 : 1));
+    const estYield = Math.floor(gameState.getResourceRatePerMinute('wood') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
 
     html = `
       <div class="clean-card">
@@ -1545,7 +1545,7 @@ function openTownZoneModal(zoneId, zoneName) {
         </div>
         
         <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Fix Üretim:</strong> 18 Odun / dakika (1.080 Odun/saat) • Her seviyede sabittir.<br>
+          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('wood') * 100) / 100).toLocaleString('tr-TR')} Odun / dakika (${Math.round(gameState.getResourceRatePerMinute('wood') * 60).toLocaleString('tr-TR')} Odun/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
           📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Odun | 🪓 <strong>Aşınma:</strong> -${currentDurationMin} dk
         </div>
 
@@ -1556,7 +1556,7 @@ function openTownZoneModal(zoneId, zoneName) {
 
         ${activeExp ? renderExpeditionActiveBox('wood') : `
           <button class="btn-clean btn-modal-start" data-node="wood" ${playerTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Odun Görevine Gönder (-25 ⚡)
+            ${currentDuration} Saatlik Odun Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
           </button>
           ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
             <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
@@ -1594,7 +1594,7 @@ function openTownZoneModal(zoneId, zoneName) {
     const activeExp = state.activeExpeditions.iron;
     const isSpeedActive = gameState.isBuffActive('speed_iron');
     const currentDurationMin = gameState.getExpeditionDurationMinutes();
-    const estYield = Math.floor(12 * currentDurationMin * (isSpeedActive ? 1.5 : 1));
+    const estYield = Math.floor(gameState.getResourceRatePerMinute('iron') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
 
     html = `
       <div class="clean-card">
@@ -1604,7 +1604,7 @@ function openTownZoneModal(zoneId, zoneName) {
         </div>
 
         <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Fix Üretim:</strong> 12 Demir / dakika (720 Demir/saat) • Her seviyede sabittir.<br>
+          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('iron') * 100) / 100).toLocaleString('tr-TR')} Demir / dakika (${Math.round(gameState.getResourceRatePerMinute('iron') * 60).toLocaleString('tr-TR')} Demir/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
           📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Demir | ⛏️ <strong>Aşınma:</strong> -${currentDurationMin} dk
         </div>
 
@@ -1615,7 +1615,7 @@ function openTownZoneModal(zoneId, zoneName) {
 
         ${activeExp ? renderExpeditionActiveBox('iron') : `
           <button class="btn-clean btn-modal-start" data-node="iron" ${pickaxeTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Maden Görevine Gönder (-25 ⚡)
+            ${currentDuration} Saatlik Maden Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
           </button>
           ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
             <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
@@ -1730,8 +1730,9 @@ function openTownZoneModal(zoneId, zoneName) {
             <div style="font-size: 1.05rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
               <span>🔨 Ocağın Başı: Ne Üretmek İstersin?</span>
             </div>
-            <div style="font-size: 0.88rem; color: #94a3b8;">
-              İstediğin parçaya tıkla ve üret. Her 1 Saldırı Gücü = 18 dk kaynak, Her 1 Can Puanı = 21 dk kaynak + AMM DEX ADA + 1 Parça talep edilir. Eşyaların dayanıklılığı 13/13'tür.
+            <div style="font-size: 0.88rem; color: #94a3b8; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
+              <span>Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.</span>
+              <button class="btn-clean btn-goto-armory" style="width:auto; padding:6px 12px; font-size:0.8rem; background:transparent; border:1px solid #475569; color:#cbd5e1;">⚔️ Kışla → Cephanelik</button>
             </div>
           </div>
 
@@ -1760,16 +1761,29 @@ function openTownZoneModal(zoneId, zoneName) {
                     </div>
                   </div>
 
-                  <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-size: 0.82rem; color: #cbd5e1; display: flex; justify-content: space-around; flex-wrap:wrap; gap:4px;">
-                    <span>⛏️ ${cost.ironCost} Demir</span>
-                    <span>🌲 ${cost.woodCost} Odun</span>
-                    <span>🧩 ${cost.fragCost} Parça</span>
-                    <span>🟣 ${cost.adaCost} ADA</span>
-                  </div>
+                  ${(() => {
+                    const f0 = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
+                    const capNow = gameState.getWarehouseCapacity();
+                    const line = (icon, name, have, need, capRes) => {
+                      const ok = have >= need;
+                      const overCap = capRes != null && need > capRes;
+                      return `<div style="display:flex; justify-content:space-between; gap:6px;"><span>${icon} ${name}</span><span style="font-weight:800; color:${ok ? '#4ade80' : '#f87171'};">${f0(have)} / ${f0(need)}${overCap ? ' <span title="Silon bu kadar alamıyor" style="color:#fbbf24;">⚠ silo</span>' : ''}</span></div>`;
+                    };
+                    return `<div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; font-size: 0.82rem; color: #cbd5e1; display:grid; gap:4px;">
+                      ${line('⛏️', 'Demir', state.inventory.iron || 0, cost.ironCost, capNow.iron)}
+                      ${line('🌲', 'Odun', state.inventory.wood || 0, cost.woodCost, capNow.wood)}
+                      ${line('🧩', 'Parça', state.inventory.fragments || 0, cost.fragCost, null)}
+                      ${line('🟣', 'ADA', state.adAstraBalance || 0, cost.adaCost, null)}
+                    </div>`;
+                  })()}
 
-                  <button class="btn-clean btn-craft-equipment" data-slot="${slot}" style="padding: 12px; font-size: 1rem; font-weight: 800; background: ${canAfford ? '#16a34a' : '#334155'}; border-color: ${canAfford ? '#4ade80' : '#475569'}; color: #fff;" ${canAfford ? '' : 'disabled'}>
-                    ${canAfford ? `🔨 ${slotNames[slot]} Döv (1 Adet)` : '⚠️ Yetersiz Hammadde'}
-                  </button>
+                  ${(() => {
+                    if (canAfford) return `<button class="btn-clean btn-craft-equipment" data-slot="${slot}" style="padding: 12px; font-size: 1rem; font-weight: 800; background: #16a34a; border-color: #4ade80; color: #fff;">🔨 ${slotNames[slot]} döv</button>`;
+                    const plan = gameState.getQuickBuyPlan('craft:' + slot);
+                    if (plan.ok) return `<button class="btn-clean btn-quick-craft" data-slot="${slot}" style="padding: 12px; font-size: 0.95rem; font-weight: 800; background: #15803d; border-color: #4ade80; color: #fff;" title="${plan.items.map(i => i.qty.toLocaleString('tr-TR') + ' ' + i.name).join(', ')}">⚡ Eksikleri al ve döv · ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA</button>`;
+                    const why = plan.capBlocked ? 'Silon bu tarif için yetersiz: önce siloyu yükselt.' : (plan.reason || 'Eksik hammadde var.');
+                    return `<button class="btn-clean" disabled style="padding: 12px; font-size: 0.85rem; font-weight: 700; background: #334155; border-color: #475569; color: #cbd5e1;">⚠️ ${why}</button>`;
+                  })()}
                 </div>
               `;
             }).join('')}
@@ -2012,7 +2026,7 @@ function openTownZoneModal(zoneId, zoneName) {
     const isSpeedActive = gameState.isBuffActive('speed_wheat');
     const currentDurationMin = gameState.getExpeditionDurationMinutes();
     const wheatRatePm = (GAME_CONFIG.BASE_PRODUCTION && GAME_CONFIG.BASE_PRODUCTION.wheat) || 30;
-    const estYield = Math.floor(wheatRatePm * currentDurationMin * (isSpeedActive ? 1.5 : 1));
+    const estYield = Math.floor(gameState.getResourceRatePerMinute('wheat') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
 
     html = `
       <div class="clean-card">
@@ -2022,7 +2036,7 @@ function openTownZoneModal(zoneId, zoneName) {
         </div>
         
         <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Fix Üretim:</strong> ${wheatRatePm} Buğday / dakika (${wheatRatePm * 60} Buğday/saat) • Her seviyede sabittir.<br>
+          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('wheat') * 100) / 100).toLocaleString('tr-TR')} Buğday / dakika (${Math.round(gameState.getResourceRatePerMinute('wheat') * 60).toLocaleString('tr-TR')} Buğday/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
           📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Buğday | 🌾 <strong>Aşınma:</strong> -${currentDurationMin} dk
         </div>
 
@@ -2033,7 +2047,7 @@ function openTownZoneModal(zoneId, zoneName) {
 
         ${activeExp ? renderExpeditionActiveBox('wheat') : `
           <button class="btn-clean btn-modal-start" data-node="wheat" ${sickleTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Hasat Görevine Gönder (-25 ⚡)
+            ${currentDuration} Saatlik Hasat Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
           </button>
           ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
             <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
@@ -2140,7 +2154,7 @@ function openTownZoneModal(zoneId, zoneName) {
                 <strong class="amm-est-cost-text" data-res="${resKey}" style="color: #f87171;">
                   ${isFinite(buyCost) ? `~${buyCost.toFixed(2)} ADA` : 'Yetersiz Likidite'}
                 </strong>
-                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Alınan miktardan %2 fee anında yakılır</div>
+                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Alımda %2 hammadde yakılır · %2 ADA harcı oyun kasalarına gider</div>
               </div>
               <button class="btn-clean btn-clean-green btn-amm-confirm-buy" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem;">
                 🟢 ONAYLA & SATIN AL
@@ -2166,7 +2180,7 @@ function openTownZoneModal(zoneId, zoneName) {
                 <strong class="amm-est-gain-text" data-res="${resKey}" style="color: #4ade80;">
                   ~${sellGain.toFixed(2)} ADA
                 </strong>
-                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Satılan miktardan %2 fee anında yakılır</div>
+                <div style="font-size: 0.72rem; color: #f97316; margin-top: 3px;">🔥 Satışta %2 hammadde yakılır · %2 ADA harcı oyun kasalarına gider</div>
               </div>
               <button class="btn-clean btn-clean-outline btn-amm-confirm-sell" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem; border-color: #facc15; color: #fde047;">
                 🔴 ONAYLA & SAT
@@ -6788,6 +6802,32 @@ function initAppEvents() {
       sound.playLevelUp();
       renderTopBar();
       openTestMenuModal();
+      return;
+    }
+
+    // ⚔️ Demirciden Kışla → Cephanelik'e geç
+    if (e.target.closest('.btn-goto-armory')) {
+      barracksActiveTab = 'armory';
+      openBarracksModal();
+      return;
+    }
+
+    // ⚡ Demirci: eksikleri pazardan al ve eşyayı döv
+    const quickCraftBtn = e.target.closest('.btn-quick-craft');
+    if (quickCraftBtn) {
+      const slot = quickCraftBtn.dataset.slot;
+      const plan = gameState.getQuickBuyPlan('craft:' + slot);
+      if (!plan.ok) { showToast(plan.reason || 'Alım yapılamıyor.', 'error'); return; }
+      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ADA)`).join('\n');
+      if (!confirm(`Eksikler pazardan alınıp eşya dövülsün mü?\n${list}\nAlım ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA + dövme bedeli ~${Math.ceil(plan.extraAda).toLocaleString('tr-TR')} ADA`)) return;
+      for (const it of plan.items) {
+        const r = await gameState.marketBuy(it.res, it.qty);
+        if (!r || !r.success) { showToast(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); renderTopBar(); openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'); return; }
+      }
+      const res = await gameState.craftEquipment(slot);
+      showToast(res && res.message ? res.message : 'Dövme yapılamadı.', res && res.success ? 'success' : 'error');
+      renderTopBar();
+      openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
       return;
     }
 

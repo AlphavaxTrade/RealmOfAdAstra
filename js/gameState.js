@@ -7612,10 +7612,16 @@ export class GameStateManager {
       // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır
       target = { wood: Math.max(c.wood, c.reqWoodFill), iron: Math.max(c.iron, c.reqIronFill), wheat: Math.max(c.wheat, c.reqWheatFill) };
       extraAda = Number(c.adAstra) || 0;
+    } else if (String(kind).startsWith('craft:')) {
+      const slot = String(kind).slice(6);
+      if (!(GAME_CONFIG.EQUIPMENT_RECIPES || {})[slot]) return { ok: false, items: [], reason: 'Geçersiz tarif.' };
+      const c = this.calculateEquipmentCraftCost(slot);
+      target = { iron: c.ironCost, wood: c.woodCost, fragments: c.fragCost };
+      extraAda = Number(c.adaCost) || 0;
     } else return { ok: false, items: [], reason: 'Geçersiz.' };
     const items = [];
     let total = 0, capBlocked = false;
-    for (const res of ['wood', 'iron', 'wheat']) {
+    for (const res of Object.keys(target)) {
       const have = Math.floor(Number(inv[res]) || 0);
       let need = Math.max(0, Math.ceil(target[res] - have));
       const room = cap && cap[res] != null ? Math.max(0, Math.floor(cap[res] - have)) : need;
@@ -7629,8 +7635,8 @@ export class GameStateManager {
     const balance = Number(this.state.adAstraBalance) || 0;
     const needAda = total + extraAda * 1.03;
     if (xpShort && items.length) return { ok: false, items, total, extraAda, balance, needAda, capBlocked, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
-    return { ok: items.length > 0 && balance >= needAda, items, total, extraAda, balance, needAda, capBlocked,
-      reason: !items.length ? 'Eksik hammadde yok.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ADA gerekli.` : '' };
+    return { ok: items.length > 0 && balance >= needAda && !capBlocked, items, total, extraAda, balance, needAda, capBlocked,
+      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ADA gerekli.` : '' };
   }
 
   // 🧺 Depoyu doldur: siloda boş yer kadar, ADA yetmezse alınabilecek en fazla miktar
