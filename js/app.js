@@ -13,7 +13,7 @@ import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatD
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
-import { equipImg, resImg, soldierPortrait } from './ui/art.js';
+import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
@@ -2429,111 +2429,33 @@ function openTownZoneModal(zoneId, zoneName) {
     const botCalc = gameState.calculateTavernaBotProfitAndCost();
     const isSiloAutoUpgrade = gameState.state.botSiloAutoUpgrade !== false;
 
+    const n0 = v => Math.round(Number(v) || 0).toLocaleString('tr-TR');
+    const expState = k => gameState.state.activeExpeditions?.[k] ? (gameState.state.activeExpeditions[k].isCompleted ? '✅ toplanıyor' : '⏳ sürüyor') : '💤 boşta';
+    const statusColor = isPaused ? '#facc15' : (isBotActive ? '#4ade80' : '#94a3b8');
     html = `
-      <div class="clean-card">
-        <div class="card-title">🍺 Taverna & Otomasyon Merkezi</div>
-        <div class="clean-desc">
-          Net kâr ortaklığı ile çalışan 24 saatlik otonom sefer ve tamir botu ile ziyafet sofrası.
-        </div>
-      </div>
-
-      <!-- 1. 24 Saatlik Akıllı Otomasyon & Tamir Botu (%50 Saf Kâr Payı) -->
+      <!-- 1. Bot: durum ve satın alma (en üstte) -->
       <div class="clean-card" style="border-color: ${isPaused ? '#eab308' : (isBotActive ? '#4ade80' : '#f59e0b')}; background: #181109;">
-        <div class="card-title-row">
-          <div class="card-title">🤖 24 Saatlik Otonom Sefer & Tamir Botu</div>
-          <div class="card-badge" style="color: ${isPaused ? '#facc15' : (isBotActive ? '#4ade80' : '#94a3b8')}; font-weight:800;">
-            ${isPaused ? `⏸️ Bot Duraklatıldı (${botRemainingText} Donduruldu)` : (isBotActive ? `✅ Bot Aktif (${botRemainingText} Kaldı)` : '💤 Bot Kapalı')}
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+          <div style="width:84px; height:84px; flex:0 0 auto; font-size:3rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); border-radius:14px; border:1px solid rgba(255,255,255,.08);">
+            <img src="assets/ui/bot.webp" alt="" draggable="false" style="width:76px; height:76px; object-fit:contain; image-rendering:pixelated;" data-fb="text:🤖">
+          </div>
+          <div style="flex:1; min-width:220px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div style="font-size:1.1rem; font-weight:900; color:#fff;">Otomasyon Botu</div>
+              <div class="card-badge" style="color:${statusColor}; font-weight:800;">${isPaused ? `⏸️ Duraklatıldı · ${botRemainingText} donduruldu` : (isBotActive ? `✅ Çalışıyor · ${botRemainingText} kaldı` : '💤 Kapalı')}</div>
+            </div>
+            <div style="font-size:0.85rem; color:#cbd5e1; line-height:1.5; margin-top:4px;">
+              Sen yokken üç alanda (odun, demir, buğday) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <strong>günlük net kârın yarısı</strong>: şu an 24 saat için <strong style="color:#facc15;">~${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ADA</strong> (sana kalan net kâr ~${n0((botCalc?.dailyNetProfitAda || botCalc?.netProfitAda || 0) - (botCalc?.dailyBotCostAda || botCalc?.botCostAda || 0))} ADA).
+            </div>
           </div>
         </div>
         ${isPaused ? `
-          <div style="background: rgba(234,179,8,0.15); border: 1px solid #ca8a04; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 0.82rem; color: #fef08a;">
-            <strong>⏸️ Bot Geçici Olarak Duraklatıldı!</strong> Botun çalışabilmesi ve aşınan aletleri onarabilmesi için deponuzda en az 50 Demir, 50 Odun, 50 Buğday ve 50 $ADASTRA bulunması gerekmektedir. 
-            <br><strong>Kalan Süreniz:</strong> <code>${botRemainingText}</code> dondurulmuştur ve asla azalmaz!
-            <br><strong>Eksikler:</strong> <code>${prereq.missingText}</code> — AMM pazarından veya manuel seferlerden eksikleri tamamladığınız anda bot anında kaldığı yerden çalışmaya devam eder.
+          <div style="background: rgba(234,179,8,0.15); border: 1px solid #ca8a04; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #fef08a; line-height:1.5;">
+            <strong>Bot bekliyor:</strong> çalışmak ve aletleri onarmak için deponda en az 50 demir, 50 odun, 50 buğday ve 50 ADA olmalı. Kalan süren (${botRemainingText}) bu sırada azalmaz.
+            <br><strong>Eksikler:</strong> ${prereq.missingText} — tamamladığın anda bot kaldığı yerden devam eder.
           </div>
         ` : ''}
-        
-        <div class="clean-desc" style="font-size: 0.84rem; line-height: 1.5; color: #cbd5e1; margin-top:4px;">
-          Bot; dakika başı çıkartılan Odun, Demir ve Buğday'ın anlık AMM DEX değerinden, staminayı doldurmak için harcanan buğday ve aletlerin tamir masraflarını çıkardıktan sonra kalan <strong>saf kârınızın yarısına (%50) ortak</strong> olarak çalışır.
-        </div>
-
-        <!-- Şeffaf Saf Kâr & Maliyet Tablosu -->
-        <div style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 12px; margin: 10px 0; border: 1px solid rgba(245,158,11,0.2);">
-          <div style="font-weight:800; font-size:0.86rem; color:#fde047; margin-bottom:6px;">📊 24 Saatlik Ekonomik Hesaplama & Saf Kâr Dağılımı:</div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:0.8rem; color:#cbd5e1;">
-            <div>🌾 24s Brüt Üretim AMM Değeri:</div>
-            <div style="text-align:right; font-weight:700; color:#4ade80;">+${(botCalc?.dailyGrossValAda || botCalc?.grossRevenueAda || 0).toLocaleString()} ADA</div>
-
-            <div>⚡ 24s Stamina Buğday Bedeli:</div>
-            <div style="text-align:right; font-weight:700; color:#f87171;">-${(botCalc?.dailyStaminaCostAda || botCalc?.staminaWheatCostAda || 0).toLocaleString()} ADA (${botCalc?.dailyWheatNeededForStamina || 0} 🌾)</div>
-
-            <div>🔨 24s Alet Tamir Masrafı:</div>
-            <div style="text-align:right; font-weight:700; color:#f87171;">-${(botCalc?.dailyToolRepairAda || botCalc?.toolRepairCostAda || 0).toLocaleString()} ADA</div>
-
-            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-weight:800; color:#fff;">💰 24s Net Saf Kâr:</div>
-            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; text-align:right; font-weight:800; color:#38bdf8;">+${(botCalc?.dailyNetProfitAda || botCalc?.netProfitAda || 0).toLocaleString()} ADA</div>
-
-            <div style="font-weight:900; color:#ca8a04;">🤝 Bot Satış Bedeli (%50 Kâr Payı):</div>
-            <div style="text-align:right; font-weight:900; color:#facc15; font-size:0.95rem;">${(botCalc?.dailyBotCostAda || botCalc?.botCostAda || 0).toLocaleString()} $ADASTRA</div>
-          </div>
-        </div>
-
-        <!-- Silo Doluluk Seçeneği -->
-        <div style="background: rgba(15,23,42,0.6); padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 10px;">
-          <div style="font-weight: 800; font-size: 0.85rem; color: #38bdf8; margin-bottom: 6px;">📦 Silo Dolarsa Bot Ne Yapsın?</div>
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 4px;">
-            <input type="radio" name="bot_silo_opt" value="upgrade" ${isSiloAutoUpgrade ? 'checked' : ''} />
-            <span><strong>Siloyu Otomatik Yükselt:</strong> Silo dolunca büyütür. Güvenlik payının üstündeki ADA'yı kullanır, yetmezse fazla ürünü satar.</span>
-          </label>
-          <label style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer;">
-            <input type="radio" name="bot_silo_opt" value="sell" ${!isSiloAutoUpgrade ? 'checked' : ''} />
-            <span><strong>Kaynakları Sat:</strong> Silonun yarısını yedek olarak tutar, fazlasını pazarda satıp ADA'ya çevirir.</span>
-          </label>
-        </div>
-
-        <!-- 🔄 24 Saat Bitince Otomatik Yenileme Seçeneği -->
-        <div style="background: rgba(16,185,129,0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(16,185,129,0.35); margin-bottom: 10px;">
-          <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="chk-bot-auto-renew" style="margin-top: 3px; transform: scale(1.25); accent-color: #10b981; cursor: pointer;" ${gameState.state.botAutoRenew24h ? 'checked' : ''} />
-            <div>
-              <div style="font-weight: 800; font-size: 0.86rem; color: #34d399;">
-                🔄 Süre bitince kasada yeterli ADA varsa botu 24 saat daha yenile
-              </div>
-              <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 3px; line-height: 1.4;">
-                Bu seçenek işaretlendiğinde; 24 saat dolunca hesabınızda yeterli $ADASTRA bulunuyorsa bot otomatik olarak tekrar satın alınır ve bir 24 saat daha kesintisiz çalışmaya devam eder.
-              </div>
-            </div>
-          </label>
-        </div>
-        <!-- Canlı Otonom Sefer Durum Konsolu -->
-        <div style="background: rgba(0,0,0,0.5); border-radius: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid ${isBotActive ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.1)'};">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <span style="font-weight:800; font-size:0.86rem; color:${isBotActive ? '#4ade80' : '#94a3b8'};">
-              ${isBotActive ? '🟢 Otonom Sefer & Tamir Konsolu (Canlı Çalışıyor)' : '⚪ Otonom Konsol (Bot Beklemede)'}
-            </span>
-            ${isBotActive ? `
-              <button id="btn-trigger-bot-cycle" class="btn-clean" style="width:auto; padding:4px 10px; font-size:0.75rem; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#4ade80; cursor:pointer;" title="Tüm boştaki seferleri hemen şimdi tetikle">
-                ⚡ Boş Seferleri Şimdi Başlat
-              </button>
-            ` : ''}
-          </div>
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; font-size:0.78rem;">
-            <div style="background:rgba(255,255,255,0.04); padding:8px; border-radius:6px; border-left:3px solid #22c55e;">
-              <div style="color:#94a3b8;">🌲 Odun Seferi:</div>
-              <div style="font-weight:700; color:#fff;">${gameState.state.activeExpeditions?.wood ? (gameState.state.activeExpeditions.wood.isCompleted ? '✅ Toplanıyor' : '⏳ Sürüyor') : '💤 Boşta (Otonom Başlatılır)'}</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.04); padding:8px; border-radius:6px; border-left:3px solid #38bdf8;">
-              <div style="color:#94a3b8;">⛏️ Demir Seferi:</div>
-              <div style="font-weight:700; color:#fff;">${gameState.state.activeExpeditions?.iron ? (gameState.state.activeExpeditions.iron.isCompleted ? '✅ Toplanıyor' : '⏳ Sürüyor') : '💤 Boşta (Otonom Başlatılır)'}</div>
-            </div>
-            <div style="background:rgba(255,255,255,0.04); padding:8px; border-radius:6px; border-left:3px solid #facc15;">
-              <div style="color:#94a3b8;">🌾 Buğday Seferi:</div>
-              <div style="font-weight:700; color:#fff;">${gameState.state.activeExpeditions?.wheat ? (gameState.state.activeExpeditions.wheat.isCompleted ? '✅ Toplanıyor' : '⏳ Sürüyor') : '💤 Boşta (Otonom Başlatılır)'}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bot-package-row">
+        <div class="bot-package-row" style="margin-top:12px;">
           ${((GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.PACKAGE_HOURS) || [24]).map(h => `
             <button class="btn-clean btn-gold btn-buy-bot-package" id="${h === 24 ? 'btn-buy-taverna-bot' : 'btn-buy-taverna-bot-' + h}" data-hours="${h}">
               <span class="pkg-title">${isBotActive ? '⚡ +' + h + ' saat uzat' : '🤖 ' + h + ' saatlik bot'}</span>
@@ -2545,10 +2467,55 @@ function openTownZoneModal(zoneId, zoneName) {
               <span class="pkg-price">Bir kerelik hediye</span>
             </button>` : ''}
         </div>
-        <div class="clean-desc" style="margin-top:10px;">
-          🛡️ <strong>Güvenlik payı:</strong> Bot kasanda en az <strong>${gameState.getBotAdaReserve().toLocaleString('tr-TR')} ADA</strong> bırakır${gameState.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}. Siloyu bu parayla büyütmez; alet tamiri için önce fazla ürünü satar, satacak ürün kalmazsa botun durmaması için tamiri bu paradan yapar. Oyun kapalıyken de çalışır, döndüğünde "Sen yokken olanlar" raporunu görürsün.
+      </div>
+
+      <!-- 2. Seferlerin durumu -->
+      <div class="clean-card" style="padding:12px 14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+          <span style="font-weight:800; font-size:0.88rem; color:${isBotActive ? '#4ade80' : '#94a3b8'};">${isBotActive ? '🟢 Bot çalışıyor' : '⚪ Bot beklemede'} · seferler</span>
+          ${isBotActive ? `<button id="btn-trigger-bot-cycle" class="btn-clean" style="width:auto; padding:4px 10px; font-size:0.75rem; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#4ade80; cursor:pointer;" title="Boştaki seferleri hemen başlat">⚡ Boş seferleri şimdi başlat</button>` : ''}
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.8rem;">
+          ${[['wood', 'Odun', '#22c55e', '🌲'], ['iron', 'Demir', '#38bdf8', '⛏️'], ['wheat', 'Buğday', '#facc15', '🌾']].map(([k, nm, c, e]) => `
+            <div style="background:rgba(255,255,255,0.04); padding:8px 10px; border-radius:6px; border-left:3px solid ${c}; display:flex; align-items:center; gap:8px;">
+              <span style="width:22px; height:22px; display:inline-flex;">${resImg(k, e, 'width:22px;height:22px;')}</span>
+              <span><span style="color:#94a3b8;">${nm}:</span> <strong style="color:#fff;">${expState(k)}</strong></span>
+            </div>`).join('')}
         </div>
       </div>
+
+      <!-- 3. Ayarlar -->
+      <div class="clean-card" style="padding:12px 14px;">
+        <div style="font-weight:800; font-size:0.88rem; color:#e2e8f0; margin-bottom:8px;">⚙️ Bot ayarları</div>
+        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">Silo dolarsa:</div>
+        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 4px;">
+          <input type="radio" name="bot_silo_opt" value="upgrade" ${isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
+          <span><strong>Siloyu büyüt</strong> — güvenlik payının üstündeki ADA'yı kullanır, yetmezse fazla ürünü satar.</span>
+        </label>
+        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 10px;">
+          <input type="radio" name="bot_silo_opt" value="sell" ${!isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
+          <span><strong>Fazlasını sat</strong> — silonun yarısını yedek tutar, fazlasını pazarda satar.</span>
+        </label>
+        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; border-top:1px solid rgba(255,255,255,.06); padding-top:10px;">
+          <input type="checkbox" id="chk-bot-auto-renew" style="margin-top: 3px; transform: scale(1.2); accent-color: #10b981; cursor: pointer;" ${gameState.state.botAutoRenew24h ? 'checked' : ''} />
+          <span style="font-size:0.8rem; color:#cbd5e1;"><strong style="color:#34d399;">Süre bitince otomatik yenile</strong> — hesabında yeterli ADA varsa bot 24 saat daha çalışır.</span>
+        </label>
+      </div>
+
+      <!-- 4. Ayrıntı -->
+      <details class="clean-card" style="padding:12px 14px;">
+        <summary style="cursor:pointer; font-weight:800; font-size:0.86rem; color:#fde047;">📊 Ücret nasıl hesaplanıyor?</summary>
+        <div style="display:grid; grid-template-columns: 1fr auto; gap:6px; font-size:0.8rem; color:#cbd5e1; margin-top:10px;">
+          <div>24 saatlik üretimin pazar değeri</div><div style="text-align:right; font-weight:700; color:#4ade80;">+${n0(botCalc?.dailyGrossValAda || botCalc?.grossRevenueAda)} ADA</div>
+          <div>Stamina için buğday (${n0(botCalc?.dailyWheatNeededForStamina)} buğday)</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyStaminaCostAda || botCalc?.staminaWheatCostAda)} ADA</div>
+          <div>Alet onarımı</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyToolRepairAda || botCalc?.toolRepairCostAda)} ADA</div>
+          <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-weight:800; color:#fff;">Net kâr</div><div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; text-align:right; font-weight:800; color:#38bdf8;">+${n0(botCalc?.dailyNetProfitAda || botCalc?.netProfitAda)} ADA</div>
+          <div style="font-weight:800; color:#ca8a04;">Bot ücreti (net kârın yarısı)</div><div style="text-align:right; font-weight:900; color:#facc15;">${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ADA</div>
+        </div>
+        <div style="font-size:0.78rem; color:#94a3b8; margin-top:10px; line-height:1.5;">
+          🛡️ <strong>Güvenlik payı:</strong> Bot kasanda en az <strong>${gameState.getBotAdaReserve().toLocaleString('tr-TR')} ADA</strong> bırakır${gameState.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}. Siloyu bu parayla büyütmez; alet onarımı için önce fazla ürünü satar, satacak ürün kalmazsa botun durmaması için onarımı bu paradan yapar. Oyun kapalıyken de çalışır; döndüğünde "Sen yokken olanlar" raporunu görürsün.
+        </div>
+      </details>
     `;
   }
 
@@ -2904,7 +2871,7 @@ async function spinCarnivalWheelAnimated(payMethod) {
 
       resBox.innerHTML = `
         <div class="clean-card" style="border:2px solid #ec4899; background:linear-gradient(135deg, rgba(236,72,153,0.3), rgba(168,85,247,0.3)); text-align:center; padding:16px; margin-top:10px;">
-          <div style="font-size:2.5rem;">${res.reward?.icon || '🎁'}</div>
+          <div style="font-size:2.5rem;">${rewardImg(res.reward, 72)}</div>
           <div style="font-size:1.15rem; font-weight:900; color:#fff; margin-top:4px;">🎉 TEBRİKLER KAZANDINIZ!</div>
           <div style="font-size:1.05rem; font-weight:800; color:#fde047; margin-top:4px;">${res.rewardSummaryText}</div>
           ${buybackReceiptHtml}
@@ -3206,7 +3173,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                 const probText = prob < 0.1 ? prob.toFixed(2) : (prob < 10 ? prob.toFixed(2) : prob.toFixed(1));
                 return `
                   <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; text-align:center;">
-                    <div style="font-size: 1.2rem;">${r.icon}</div>
+                    <div style="font-size: 1.2rem; height: 40px; display: flex; align-items: center; justify-content: center;">${rewardImg(r, 40)}</div>
                     <div style="font-size: 0.74rem; font-weight: 800; color: #fff; line-height: 1.2; margin-top:2px;">${r.name}</div>
                     <div style="font-size: 0.65rem; color: #facc15; margin-top: 2px;">Şans: %${probText}</div>
                   </div>
@@ -5322,6 +5289,10 @@ function openPreBattleModal(monster) {
           <span style="font-size:0.75rem; color:#fde047; font-weight:700;">${curPresetObj.name}</span>
         </div>
 
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">
+          <button type="button" id="btn-pb-auto" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:800; background:#15803d; border-color:#4ade80; color:#fff;" title="En güçlülerden başlayarak kazanma şansı en az %80 olana kadar seçer (daha az asker = daha az stamina)">⚡ Kazanacak kadar seç</button>
+          <button type="button" id="btn-pb-all" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:700; background:transparent; border:1px solid #475569; color:#cbd5e1;">Tümünü seç</button>
+        </div>
         ${presetSelectorHtml}
         ${activeWeaponsPreviewHtml}
 
@@ -5410,6 +5381,25 @@ function openPreBattleModal(monster) {
       }
     });
   }
+
+  // ⚡ Kazanacak kadar seç: en güçlülerden başlayarak kazanma şansı %80'e ulaşana kadar (ulaşamazsa hepsi)
+  document.getElementById('btn-pb-auto')?.addEventListener('click', () => {
+    const order = soldiers.map((_, i) => { const st = gameState.getSoldierFullStats(i) || { totalAtk: 0, totalMaxHp: 0 }; return { i, w: st.totalAtk * 3 + st.totalMaxHp }; })
+      .sort((a, b) => b.w - a.w).map(x => x.i);
+    let pick = [];
+    for (const i of order) {
+      pick.push(i);
+      if ((gameState.predictDungeonBattle(monster, pick).winChance || 0) >= 80) break;
+    }
+    preBattleSelectedSoldiers = pick;
+    const chance = gameState.predictDungeonBattle(monster, pick).winChance || 0;
+    showToast(chance >= 80 ? `⚡ ${pick.length} asker yeterli: kazanma şansı %${chance}` : `Bütün ordunla bile kazanma şansı %${chance}. Askerlerini güçlendirmen gerekebilir.`, chance >= 80 ? 'success' : 'info');
+    openPreBattleModal(monster);
+  });
+  document.getElementById('btn-pb-all')?.addEventListener('click', () => {
+    preBattleSelectedSoldiers = soldiers.map((_, i) => i);
+    openPreBattleModal(monster);
+  });
 
   document.querySelectorAll('.prebattle-sol-check').forEach(chk => {
     chk.addEventListener('change', () => {

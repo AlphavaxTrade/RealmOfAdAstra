@@ -40,3 +40,22 @@ export function resImg(key, emoji = '', style = '') {
   if (!src) return attr(emoji);
   return `<img src="${src}" alt="" class="art-ico" style="image-rendering:pixelated;object-fit:contain;${style}" draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
 }
+
+// Çark ödülleri: ödül türüne göre resim
+export function rewardArtSrc(r) {
+  if (!r) return null;
+  if (r.id === 'ada_5000') return 'assets/ui/rw_jackpot.webp';
+  if (r.type === 'ada') return 'assets/ui/rw_ada.webp';
+  if (r.type === 'bot_free') return 'assets/ui/bot.webp';
+  if (r.type === 'ticket_shard') return 'assets/ui/rw_ticket.webp';
+  if (r.type === 'analysis_code') return 'assets/ui/rw_coupon.webp';
+  if (r.type === 'key') return RES_ART.keys;
+  if (r.key && RES_ART[r.key]) return RES_ART[r.key];
+  return null;
+}
+export function rewardImg(r, size = 32) {
+  const src = rewardArtSrc(r);
+  const emoji = (r && r.icon) || '🎁';
+  if (!src) return attr(emoji);
+  return `<img src="${src}" alt="" draggable="false" style="width:${size}px;height:${size}px;object-fit:contain;image-rendering:pixelated;display:inline-block;" data-fb="text:${attr(emoji)}">`;
+}
