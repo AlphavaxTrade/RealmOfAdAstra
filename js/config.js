@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.33.0',
+  GAME_VERSION: '1.34.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -1068,6 +1068,16 @@ export const GAME_CONFIG = {
         `Oyundaki bütün ADA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları, çark, zindan harcı, piyango, pazar komisyonu, çekim ücreti) artık herkesin görebileceği bir akıllı sözleşmede. Bir oran değişirse 24 saat önceden görünür.`,
         `Askerlerin kendi kendine iyileşmesinde harcanan ADA artık her harcama gibi kasalara dağıtılıyor (önceden hiçbir kasaya yazılmıyordu).`,
         `Kullanılan teçhizat parçası, anahtar, kutu ve parşömenler yakım kaydına giriyor.`
+      ]
+    },
+    {
+      version: 'v1.34',
+      title: '🎟️ Promo Kodları',
+      date: '6 Ekim 2026',
+      changes: [
+        `Promo kodu: kayıtta ya da oyunda Hesabım → Promo kodu'na yaz. Ödül ADA (kilitli, oyunda harcadıkça açılır) ya da hammadde, anahtar, kutu, parşömen olabilir; bedeli görev kasasından ödenir.`,
+        `Hesap açarken ve yeni şifre belirlerken şifre iki kez sorulur; yanlış yazılan şifreyle hesap açılmaz.`,
+        `Oyun artık realmofadastra.vercel.app adresinde.`
       ]
     }
   ],

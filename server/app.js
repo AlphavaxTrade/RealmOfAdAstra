@@ -26,6 +26,7 @@
 // Diğer tüm adresler: oyunun derlenmiş dosyaları (dist/).
 // ============================================================================
 import http from 'node:http';
+import { createPromo } from './promo.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -50,8 +51,9 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
+  promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
   // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
@@ -147,9 +149,13 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
 
     // ── Hesap ────────────────────────────────────────────────────────────
     'POST /api/account/register': async (req) => {
-      const { email, password } = await readBody(req);
+      const { email, password, promo: code } = await readBody(req);
+      // Promo kodu isteğe bağlı: yazıldıysa önce geçerli mi bakılır (e-posta bilgisi sızdırmaz), doğrulamada kullanılır
+      const pc = String(code || '').trim();
+      if (pc) { const ck = promo.check(pc); if (!ck.ok) return [400, { error: ck.error }]; }
       const r = await accounts.register(email, password);
       if (!r.ok) return [400, { error: r.error }];
+      if (pc && r.playerId) promo.setPending(r.playerId, pc);
       // Oturum AÇILMAZ: e-posta kayıtlı olsun olmasın yanıt aynıdır; oyuncu e-postadaki bağlantıyla girer
       return { ok: true, sent: true, message: r.message, devLink: r.devLink };
     },
@@ -172,6 +178,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const { token } = await readBody(req);
       const r = accounts.verifyEmail(token);
       if (!r.ok) return [400, { error: r.error }];
+      if (r.playerId) promo.redeemPending(r.playerId);
       return r.canLogin ? { ok: true, token: newSession(r.playerId), playerId: r.playerId } : { ok: true };
     },
     'POST /api/account/resend': async (req) => {
@@ -325,6 +332,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
         return { result: out.result, ...playerPayload(me, out.state) };
       } catch (err) { E.reloadWorld(); log.error('PvP', err); return [500, { error: 'Sunucu hatası' }]; }
     },
+    'POST /api/promo/redeem': async (req, me) => {
+      const { code } = await readBody(req);
+      const r = promo.redeem(me, code);
+      return r.success ? { ok: true, message: r.message } : [400, { error: r.message }];
+    },
     'GET /api/pvp/status': (req, me) => (arena ? arena.status(me) : [404, { error: 'Kapalı' }]),
     'GET /api/pvp/match': (req) => {
       const id = Number(new URL(req.url, 'http://x').searchParams.get('id'));
@@ -353,6 +365,9 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
         events: db.q.eventsRecent.all(50)
       };
     },
+    'GET /api/admin/promo': () => ({ codes: promo.list() }),
+    'POST /api/admin/promo/create': async (req) => promo.create(await readBody(req)),
+    'POST /api/admin/promo/active': async (req) => { const { code, active } = await readBody(req); return promo.setActive(code, !!active); },
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),

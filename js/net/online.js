@@ -364,6 +364,7 @@ function kasaSection(k) {
 function loginFlow(startMode = 'login') {
   return new Promise(resolve => {
     let mode = startMode, email = '', msg = '', isErr = true, extra = '';
+    let promoVal = '';   // kayıtta yazılan promo kodu (sayfa yeniden çizilince kaybolmasın)
     const titles = { login: 'Krallığa Dön', register: 'Krallığa Katıl', forgot: 'Şifremi Unuttum', resend: 'Onay Bağlantısı' };
     const intro = {
       login: 'E-posta ve şifrenle giriş yap.',
@@ -379,6 +380,8 @@ function loginFlow(startMode = 'login') {
         <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">${intro[mode]}</div>
         <input id="ol-email" type="email" autocomplete="email" placeholder="E-posta" value="${esc(email)}" style="${inputCss}">
         ${mode !== 'forgot' && mode !== 'resend' ? `<input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
+        ${mode === 'register' ? `<input id="ol-pass2" type="password" autocomplete="new-password" placeholder="Şifre (tekrar)" style="${inputCss}">
+        <input id="ol-promo" type="text" autocomplete="off" maxlength="32" placeholder="Promo kodu (isteğe bağlı)" value="${esc(promoVal)}" style="${inputCss};text-transform:uppercase;">` : ''}
         <button id="ol-go" ${busy ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${busy ? '⏳ Bekle…' : go_[mode]}</button>
         ${msg ? `<div style="margin-top:10px;font-size:0.85rem;color:${isErr ? '#fca5a5' : '#86efac'};">${esc(msg)}</div>` : ''}
         ${extra}
@@ -405,6 +408,11 @@ function loginFlow(startMode = 'login') {
       const el = document.getElementById('online-overlay');
       email = el.querySelector('#ol-email').value.trim();
       const password = el.querySelector('#ol-pass') ? el.querySelector('#ol-pass').value : '';
+      if (mode === 'register') {
+        promoVal = (el.querySelector('#ol-promo')?.value || '').trim();
+        // Şifre iki kez: yanlış yazılan şifreyle hesap açılmasın
+        if (password !== (el.querySelector('#ol-pass2')?.value || '')) { msg = '⚠️ Şifreler aynı değil. İkisini de yeniden yaz.'; isErr = true; extra = ''; return draw(); }
+      }
       draw(true);
       try {
         // Deneme sunucusunda gerçek e-posta yok: bağlantı düğme olarak gösterilir
@@ -420,7 +428,7 @@ function loginFlow(startMode = 'login') {
         }
         if (mode === 'register') {
           // Kayıtta oturum açılmaz: oyuncu e-postasındaki bağlantıyla girer (e-postanın kayıtlı olup olmadığı belli olmaz)
-          const r = await api('POST', '/api/account/register', { email, password });
+          const r = await api('POST', '/api/account/register', { email, password, ...(promoVal ? { promo: promoVal } : {}) });
           msg = r.message; isErr = false; extra = devBtns(r);
           return draw();
         }
@@ -562,6 +570,12 @@ export async function openWalletPanel() {
       </div>`}
       ${wd.pending > 0 ? '<button id="wp-cancel" style="margin-top:6px;padding:5px 10px;border-radius:6px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;cursor:pointer;font-size:0.78rem;">↩️ Bekleyen talebi geri al</button>' : ''}
     </div>
+    <div style="text-align:left;margin-top:10px;padding:10px;border:1px solid #334155;border-radius:10px;background:#0f172a;">
+      <div style="font-weight:800;color:#fde047;margin-bottom:6px;">🎟️ Promo kodu</div>
+      <div style="display:flex;gap:6px;"><input id="wp-promo" type="text" autocomplete="off" maxlength="32" placeholder="Kodu yaz" style="flex:1;min-width:0;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;text-transform:uppercase;">
+        <button id="wp-promo-go" style="padding:8px 12px;border-radius:6px;border:1px solid #fbbf24;background:#92400e;color:#fff;font-weight:800;cursor:pointer;">Kullan</button></div>
+      <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Her kod bir hesapta bir kez kullanılır. ADA ödülü kilitli gelir, oyunda harcadıkça açılır.</div>
+    </div>
     ${wd.payouts && wd.payouts.length ? `<div style="text-align:left;margin-top:10px;font-size:0.78rem;color:#cbd5e1;max-height:140px;overflow:auto;">
       <div style="font-weight:800;margin-bottom:4px;">Son gönderimler</div>
       ${wd.payouts.map(p => `<div>${fmt(p.amount)} ADA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
@@ -580,6 +594,17 @@ export async function openWalletPanel() {
     } catch (err) { ctx.toast(err.message, 'error'); }
   };
   $('wp-link').onclick = () => linkWalletFlow();
+  $('wp-promo-go').onclick = async () => {
+    const code = $('wp-promo').value.trim();
+    if (!code) return ctx.toast('Önce kodu yaz.', 'info');
+    $('wp-promo-go').disabled = true;
+    try {
+      const r = await api('POST', '/api/promo/redeem', { code });
+      apply(await api('GET', '/api/state'));
+      ctx.toast(r.message, 'success');
+      openWalletPanel();
+    } catch (err) { ctx.toast(err.message, 'error'); $('wp-promo-go').disabled = false; }
+  };
   if ($('tf-on')) $('tf-on').onclick = () => enable2faFlow();
   if ($('tf-off')) $('tf-off').onclick = async () => {
     if (!confirm('Muhafız Mührü kaldırılsın mı? Hesabın yalnız şifreyle korunur.')) return;
@@ -641,9 +666,11 @@ async function handleEmailLinks() {
       <div style="font-size:2rem;">🗝️</div>
       <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Yeni Şifre</div>
       <input id="rs-pass" type="password" autocomplete="new-password" placeholder="Yeni şifre (en az 8 karakter)" style="${inputCss}">
+      <input id="rs-pass2" type="password" autocomplete="new-password" placeholder="Yeni şifre (tekrar)" style="${inputCss}">
       <button id="rs-go" style="${btnCss('#7c3aed', '#c084fc')}">Şifreyi Kaydet</button>
       <div id="rs-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>`);
     el.querySelector('#rs-go').onclick = async () => {
+      if (el.querySelector('#rs-pass').value !== el.querySelector('#rs-pass2').value) { el.querySelector('#rs-msg').textContent = '⚠️ Şifreler aynı değil. İkisini de yeniden yaz.'; return; }
       try {
         const r = await api('POST', '/api/account/reset', { token: t, password: el.querySelector('#rs-pass').value });
         closeOverlay();

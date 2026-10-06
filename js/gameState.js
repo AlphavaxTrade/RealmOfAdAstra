@@ -4494,6 +4494,51 @@ export class GameStateManager {
   // 🎪 KRALLIK KARNAVALI: 14 ÖDÜLLÜ ŞANS ÇARKI & HAFTALIK PİYANGO
   // ═══════════════════════════════════════════════════════════════════════
   // 🏛️ Karnaval kasasından ödeme: kasada yoksa ödenmez (v1.25 öncesi boş kasada ödül yoktan ödeniyordu)
+  // 🎟️ Promo kodu ödülü (kullanıcı kararı 6 Ekim 2026): her kodun ne vereceğini yönetici seçer. Yoktan bir şey basılmaz:
+  // ADA görev kasasından gelir ve KİLİTLİ verilir (oyunda harcandıkça açılır); hammadde ve eşyalar görev kasasının
+  // parasıyla pazardan satın alınıp verilir. Kasa yetmezse ya da pazarda yeterli mal yoksa hiçbir şey verilmez.
+  // reward: { ada, wood, iron, wheat, fragments, keys, boxes, scroll_heal, scroll_stamina } (tam sayılar)
+  applyPromoReward(reward = {}) {
+    const ITEMS = ['wood', 'iron', 'wheat', 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
+    const ada = Math.max(0, Math.floor(Number(reward.ada) || 0));
+    const items = ITEMS.map(k => [k, Math.max(0, Math.floor(Number(reward[k]) || 0))]).filter(([, v]) => v > 0);
+    if (!ada && !items.length) return { success: false, message: 'Bu kodun ödülü yok.' };
+    const pools = treasury && treasury.state && treasury.state.pools;
+    if (!pools) return { success: false, message: 'Hazine okunamadı.' };
+    let need = ada;
+    for (const [k, v] of items) {
+      const est = ammMarket.getEstimatedCostForBuy(k, v);
+      if (!isFinite(est)) return { success: false, message: `Pazarda yeterli ${this.getResourceNameTr ? this.getResourceNameTr(k) : k} yok; kod şu an kullanılamıyor.` };
+      need += est;
+    }
+    if ((pools.quest || 0) < need * 1.02) return { success: false, message: 'Görev kasası şu an bu ödülü karşılayamıyor; daha sonra tekrar dene.' };
+    const got = [];
+    let spent = 0;
+    for (const [k, v] of items) {
+      const r = ammMarket.executeBuyAmount(k, v);
+      if (!r || !r.success) return { success: false, failedMidway: true, message: (r && r.message) || 'Pazardan alınamadı.' };
+      spent += r.cost;
+      if (['wood', 'iron', 'wheat'].includes(k)) this.storeResourceOrSell(k, v, 'Promo kodu');
+      else if (k === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + v;
+      else if (k === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + v;
+      else this.state.inventory[k] = (Number(this.state.inventory[k]) || 0) + v;
+      got.push(`${v.toLocaleString('tr-TR')} ${this.getResourceNameTr ? this.getResourceNameTr(k) : k}`);
+    }
+    spent += ada;
+    pools.quest = (pools.quest || 0) - spent;
+    if (!treasury.state.outflow) treasury.state.outflow = {};
+    treasury.state.outflow.quest = (treasury.state.outflow.quest || 0) + spent;
+    treasury.state.lifetimeWithdrawn = (treasury.state.lifetimeWithdrawn || 0) + spent;
+    treasury.save();
+    if (ada > 0) {
+      this.state.adAstraBalance = (Number(this.state.adAstraBalance) || 0) + ada;
+      this.state.lockedAda = Math.min(this.state.adAstraBalance, (Number(this.state.lockedAda) || 0) + ada);
+      got.unshift(`${ada.toLocaleString('tr-TR')} ADA (kilitli)`);
+    }
+    this.saveState();
+    return { success: true, spentFromQuest: spent, message: `🎟️ Promo kodu: ${got.join(', ')} hesabına eklendi.` };
+  }
+
   _drawCarnival(amount) {
     const want = Math.max(0, Number(amount) || 0);
     if (!treasury || !treasury.state || !treasury.state.pools) return 0;
