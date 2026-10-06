@@ -27,8 +27,12 @@ let token = null;
 const short = a => (a ? a.slice(0, 6) + '…' + a.slice(-4) : '');
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 
+// Oyun sunucusunun adresi. Oyun dosyaları başka bir yerden (ör. realmofadastra.vercel.app) sunulunca derlemede
+// VITE_API_URL ile verilir (https://sunucu-adresi); boşsa oyun, açıldığı adresteki sunucuyu kullanır.
+const API_BASE = String((import.meta.env && import.meta.env.VITE_API_URL) || '').replace(/\/+$/, '');
+
 async function api(method, path, body) {
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     method,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
     body: body ? JSON.stringify(body) : undefined,
@@ -47,7 +51,7 @@ async function api(method, path, body) {
 
 export async function detectServer() {
   try {
-    const r = await fetch('/api/health', { cache: 'no-store' });
+    const r = await fetch(API_BASE + '/api/health', { cache: 'no-store' });
     if (!r.ok) return null;
     const j = await r.json();
     return j && j.ok ? j : null;

@@ -397,6 +397,16 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       return res.end(code);
     }
     if (!url.pathname.startsWith('/api/')) return serveStatic(req, res, url.pathname);
+    // Oyun dosyaları başka adresten (Vercel) sunuluyorsa: yalnız CORS_ORIGINS'teki adreslere izin (giriş anahtarı başlıkta, çerez yok)
+    const origin = req.headers.origin;
+    if (origin && (cfg.corsOrigins || []).includes(origin) && !url.pathname.startsWith('/api/admin')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      if (req.method === 'OPTIONS') { res.writeHead(204, SEC_HEADERS); return res.end(); }
+    }
     // IP başına genel sınır: kimlik denetiminden ÖNCE (yanlış şifre/anahtar denemeleri de sayılır)
     if (limited('ip:' + ip, cfg.ipRateLimitPerSec || 40)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
     const route = Object.hasOwn(routes, key) ? routes[key] : null;

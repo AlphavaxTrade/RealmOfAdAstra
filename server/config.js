@@ -31,6 +31,9 @@ export function loadConfig(env = process.env) {
     treasuryAddress: (env.TREASURY_ADDRESS || '').trim(),          // sözleşmedeki hazine adresi (boşsa oyun cüzdanı)
     launchPriceUsd: num('LAUNCH_PRICE_USD', 0),                    // 0: ilk okunan fiyat açılış fiyatı sayılır
     sessionDays: num('SESSION_DAYS', 30),
+    // Oyun dosyaları başka bir adresten sunuluyorsa (ör. https://realmofadastra.vercel.app) o adres(ler) buraya:
+    // tarayıcı yalnız bu adreslerden gelen oyun isteklerine izin verir. Virgülle birden çok yazılabilir.
+    corsOrigins: (env.CORS_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(o => /^https?:\/\/[^/]+$/.test(o)),
     publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080)}`).trim(),   // e-postadaki bağlantılar bu adrese gider
     smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
     mailFrom: env.MAIL_FROM || 'Realm of Astra <no-reply@localhost>',
