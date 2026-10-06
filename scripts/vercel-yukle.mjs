@@ -61,9 +61,9 @@ fs.writeFileSync(path.join(dir, 'vercel.json'), JSON.stringify({
 
 const proj = path.join(ROOT, 'data', 'vercel-proje.json');
 if (fs.existsSync(proj)) { fs.mkdirSync(path.join(dir, '.vercel')); fs.copyFileSync(proj, path.join(dir, '.vercel', 'project.json')); }
-// Anahtar komut satırına değil ortam değişkenine verilir (başka programlar komut satırını görebilir)
-run('npx', ['--yes', 'vercel@latest', 'deploy', '--prod', '--yes'], { cwd: dir, env: { ...process.env, VERCEL_TOKEN: token } });
+// Not: Vercel CLI 62 yeni biçimli anahtarı (vcp_…) VERCEL_TOKEN ortam değişkeninden kabul etmiyor; --token ile verilir
+run('npx', ['--yes', 'vercel@latest', 'deploy', '--prod', '--yes', '--token', token], { cwd: dir });
 const linked = path.join(dir, '.vercel', 'project.json');
 if (fs.existsSync(linked)) { fs.mkdirSync(path.dirname(proj), { recursive: true }); fs.copyFileSync(linked, proj); }
-fs.rmSync(tmp, { recursive: true, force: true });
+try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* Windows geçici klasörü kilitleyebilir; zararsız */ }
 console.log(`\n✅ Yüklendi: https://${NAME}.vercel.app`);
