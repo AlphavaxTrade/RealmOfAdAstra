@@ -1,0 +1,694 @@
+{
+ "P": {
+  "N": 200,
+  "fiyatOlcek": 0.003,
+  "qpp": 0.4,
+  "qppSon": 0.134,
+  "kotaModu": "termostat",
+  "kota": 1,
+  "pazar": 100000000,
+  "geriAlimEsik": 0.8,
+  "hazirlik": 0.2,
+  "fiyat": "sabit",
+  "hakTavan": 3,
+  "yatirMid": 0,
+  "yatirWhale": 0
+ },
+ "idxMin": 0.94,
+ "idxUsdMin": 0.94,
+ "runwayMin": 13.5,
+ "f2pLevel": 12,
+ "f2pNetMonth": 2877,
+ "f2pUsdMonth": 0.0006,
+ "whaleF2pRatio": 3.5,
+ "top5Share": 0.09,
+ "quotaUse": 1,
+ "otorite": 13,
+ "pazarASTRA": 96350809,
+ "pools": 27068446,
+ "burned": 654019,
+ "buyback": 0,
+ "waste": 0,
+ "hazirlik": 2311971,
+ "deposits": 0,
+ "checks": {
+  "fiyat": true,
+  "kasa": true,
+  "f2pSeviye": true,
+  "adalet": true,
+  "kota": true
+ },
+ "passed": 5,
+ "monthly": [
+  {
+   "ay": 1,
+   "N": 200,
+   "idx": 0.996,
+   "idxUsd": 0.996,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.398,
+   "otorite": 6,
+   "pools": 45616549,
+   "pazarASTRA": 99832406,
+   "runwayMonths": 13.5,
+   "byType": {
+    "f2p": {
+     "n": 140,
+     "inc": 4030.1472542261945,
+     "net": 2764.6800555471673,
+     "level": 3,
+     "bal": 9478.271225655084
+    },
+    "mid": {
+     "n": 50,
+     "inc": 7998.002625789708,
+     "net": 2761.7736468979497,
+     "level": 5,
+     "bal": 11253.456430543432
+    },
+    "whale": {
+     "n": 10,
+     "inc": 9541.491148521034,
+     "net": 2412.29229350284,
+     "level": 5,
+     "bal": 9588.347360995016
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.4,
+   "burned": 51948,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 235323
+  },
+  {
+   "ay": 2,
+   "N": 206,
+   "idx": 0.989,
+   "idxUsd": 0.989,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.389,
+   "otorite": 8,
+   "pools": 43158270,
+   "pazarASTRA": 99520912,
+   "runwayMonths": 14.1,
+   "byType": {
+    "f2p": {
+     "n": 144,
+     "inc": 3602.600798126045,
+     "net": 2447.186351174791,
+     "level": 5,
+     "bal": 19482.611007435793
+    },
+    "mid": {
+     "n": 52,
+     "inc": 7387.899359941692,
+     "net": 2313.6500854532296,
+     "level": 7,
+     "bal": 20895.606612330535
+    },
+    "whale": {
+     "n": 10,
+     "inc": 9075.446646779488,
+     "net": 2061.63742320843,
+     "level": 7,
+     "bal": 18581.479795417603
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.5,
+   "burned": 114667,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 530650
+  },
+  {
+   "ay": 3,
+   "N": 212,
+   "idx": 0.98,
+   "idxUsd": 0.98,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.376,
+   "otorite": 9,
+   "pools": 41077859,
+   "pazarASTRA": 99071114,
+   "runwayMonths": 14.7,
+   "byType": {
+    "f2p": {
+     "n": 148,
+     "inc": 3441.118767083057,
+     "net": 2337.0137804298442,
+     "level": 6,
+     "bal": 28449.804152212535
+    },
+    "mid": {
+     "n": 54,
+     "inc": 6934.944606862786,
+     "net": 1964.2823926088545,
+     "level": 9,
+     "bal": 28752.451395210956
+    },
+    "whale": {
+     "n": 10,
+     "inc": 8598.491686789868,
+     "net": 1762.5666190522563,
+     "level": 9,
+     "bal": 26333.54405196546
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.5,
+   "burned": 178411,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 854342
+  },
+  {
+   "ay": 4,
+   "N": 218,
+   "idx": 0.969,
+   "idxUsd": 0.969,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.99,
+   "qpp": 0.358,
+   "otorite": 10,
+   "pools": 39035765,
+   "pazarASTRA": 98546484,
+   "runwayMonths": 15.2,
+   "byType": {
+    "f2p": {
+     "n": 152,
+     "inc": 3141.822401721774,
+     "net": 2122.2419753650074,
+     "level": 7,
+     "bal": 36352.38538860257
+    },
+    "mid": {
+     "n": 56,
+     "inc": 6606.910297673731,
+     "net": 1851.0080941673025,
+     "level": 10,
+     "bal": 35334.91277556597
+    },
+    "whale": {
+     "n": 10,
+     "inc": 8271.784063613695,
+     "net": 1640.2346702560958,
+     "level": 10,
+     "bal": 33167.468074188924
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.6,
+   "burned": 241358,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 1188927
+  },
+  {
+   "ay": 5,
+   "N": 225,
+   "idx": 0.96,
+   "idxUsd": 0.96,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.97,
+   "qpp": 0.336,
+   "otorite": 11,
+   "pools": 36894983,
+   "pazarASTRA": 98057541,
+   "runwayMonths": 15.7,
+   "byType": {
+    "f2p": {
+     "n": 157,
+     "inc": 2796.241238278854,
+     "net": 1884.9106785938206,
+     "level": 8,
+     "bal": 42926.456834140525
+    },
+    "mid": {
+     "n": 58,
+     "inc": 6084.5478293034375,
+     "net": 1570.2225965973676,
+     "level": 11,
+     "bal": 40405.79855710739
+    },
+    "whale": {
+     "n": 10,
+     "inc": 7681.473730240005,
+     "net": 1344.846103502455,
+     "level": 12,
+     "bal": 38561.89283186025
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.7,
+   "burned": 301031,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 1488080
+  },
+  {
+   "ay": 6,
+   "N": 232,
+   "idx": 0.952,
+   "idxUsd": 0.952,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.96,
+   "qpp": 0.31,
+   "otorite": 12,
+   "pools": 34533244,
+   "pazarASTRA": 97606937,
+   "runwayMonths": 15.9,
+   "byType": {
+    "f2p": {
+     "n": 162,
+     "inc": 2560.695686444579,
+     "net": 1692.6867618347844,
+     "level": 9,
+     "bal": 48421.74665275004
+    },
+    "mid": {
+     "n": 60,
+     "inc": 5529.702123565529,
+     "net": 1332.6362626910327,
+     "level": 12,
+     "bal": 44498.48800819168
+    },
+    "whale": {
+     "n": 10,
+     "inc": 7151.508039072757,
+     "net": 1099.8365302993902,
+     "level": 13,
+     "bal": 43084.18154010832
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.8,
+   "burned": 357281,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 1735287
+  },
+  {
+   "ay": 7,
+   "N": 239,
+   "idx": 0.944,
+   "idxUsd": 0.944,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.95,
+   "qpp": 0.277,
+   "otorite": 12,
+   "pools": 33503029,
+   "pazarASTRA": 97189401,
+   "runwayMonths": 16.8,
+   "byType": {
+    "f2p": {
+     "n": 167,
+     "inc": 2262.968423969358,
+     "net": 1465.514441212698,
+     "level": 9,
+     "bal": 53022.90416718674
+    },
+    "mid": {
+     "n": 62,
+     "inc": 5091.271050780024,
+     "net": 1112.9814103663207,
+     "level": 13,
+     "bal": 47716.45493193165
+    },
+    "whale": {
+     "n": 10,
+     "inc": 6657.414910960458,
+     "net": 808.1400943669578,
+     "level": 14,
+     "bal": 46601.44115579417
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 2.9,
+   "burned": 410645,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 1892605
+  },
+  {
+   "ay": 8,
+   "N": 246,
+   "idx": 0.939,
+   "idxUsd": 0.939,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.96,
+   "qpp": 0.241,
+   "otorite": 12,
+   "pools": 32546527,
+   "pazarASTRA": 96891617,
+   "runwayMonths": 17.7,
+   "byType": {
+    "f2p": {
+     "n": 172,
+     "inc": 1966.846073474867,
+     "net": 1235.1011369006628,
+     "level": 9,
+     "bal": 56706.863601641446
+    },
+    "mid": {
+     "n": 64,
+     "inc": 4535.270633101683,
+     "net": 861.5518311107053,
+     "level": 14,
+     "bal": 49837.612776450515
+    },
+    "whale": {
+     "n": 10,
+     "inc": 6013.189832531787,
+     "net": 510.35161132611756,
+     "level": 15,
+     "bal": 48831.29459868785
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.1,
+   "burned": 459423,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2037216
+  },
+  {
+   "ay": 9,
+   "N": 253,
+   "idx": 0.937,
+   "idxUsd": 0.937,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 0.97,
+   "qpp": 0.207,
+   "otorite": 13,
+   "pools": 29972857,
+   "pazarASTRA": 96715536,
+   "runwayMonths": 17.6,
+   "byType": {
+    "f2p": {
+     "n": 177,
+     "inc": 1747.768171138131,
+     "net": 1076.492798984562,
+     "level": 10,
+     "bal": 59490.47716750384
+    },
+    "mid": {
+     "n": 66,
+     "inc": 3960.3994804215463,
+     "net": 491.4270423547741,
+     "level": 15,
+     "bal": 50875.672421167656
+    },
+    "whale": {
+     "n": 10,
+     "inc": 5457.756990478911,
+     "net": 106.54008306810356,
+     "level": 17,
+     "bal": 49825.36822834241
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.1,
+   "burned": 505021,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2177494
+  },
+  {
+   "ay": 10,
+   "N": 260,
+   "idx": 0.936,
+   "idxUsd": 0.936,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.174,
+   "otorite": 13,
+   "pools": 29196778,
+   "pazarASTRA": 96499254,
+   "runwayMonths": 18.6,
+   "byType": {
+    "f2p": {
+     "n": 182,
+     "inc": 1633.6501302100273,
+     "net": 997.4443457812142,
+     "level": 11,
+     "bal": 61871.92205896603
+    },
+    "mid": {
+     "n": 68,
+     "inc": 3822.186900079039,
+     "net": 546.6830663718433,
+     "level": 16,
+     "bal": 51777.38844422419
+    },
+    "whale": {
+     "n": 10,
+     "inc": 5210.350849102845,
+     "net": 103.49761350208064,
+     "level": 17,
+     "bal": 50526.46534678702
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.2,
+   "burned": 549034,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2229867
+  },
+  {
+   "ay": 11,
+   "N": 267,
+   "idx": 0.936,
+   "idxUsd": 0.936,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.146,
+   "otorite": 13,
+   "pools": 28468758,
+   "pazarASTRA": 96387066,
+   "runwayMonths": 19.6,
+   "byType": {
+    "f2p": {
+     "n": 187,
+     "inc": 1297.3614042940226,
+     "net": 730.8161226259887,
+     "level": 12,
+     "bal": 63635.962294486104
+    },
+    "mid": {
+     "n": 70,
+     "inc": 3321.7360017984306,
+     "net": 445.39120133496556,
+     "level": 16,
+     "bal": 52031.15677716614
+    },
+    "whale": {
+     "n": 10,
+     "inc": 4637.02515620144,
+     "net": -45.60525659734194,
+     "level": 18,
+     "bal": 50288.87411253373
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.6,
+   "burned": 589194,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2259984
+  },
+  {
+   "ay": 12,
+   "N": 275,
+   "idx": 0.938,
+   "idxUsd": 0.938,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.131,
+   "otorite": 13,
+   "pools": 27743828,
+   "pazarASTRA": 96362415,
+   "runwayMonths": 20.7,
+   "byType": {
+    "f2p": {
+     "n": 193,
+     "inc": 1113.2335399042659,
+     "net": 718.8006212605155,
+     "level": 12,
+     "bal": 64670.89685906129
+    },
+    "mid": {
+     "n": 72,
+     "inc": 2827.7304933953287,
+     "net": 401.51860736420065,
+     "level": 17,
+     "bal": 52050.56001875719
+    },
+    "whale": {
+     "n": 10,
+     "inc": 4030.3150688317874,
+     "net": -106.69179372114158,
+     "level": 19,
+     "bal": 49682.985074466305
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.6,
+   "burned": 623115,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2282816
+  },
+  {
+   "ay": 13,
+   "N": 283,
+   "idx": 0.939,
+   "idxUsd": 0.939,
+   "fiyat": {
+    "bugday": 0,
+    "tas": 0,
+    "odun": 0.01,
+    "komur": 0.01,
+    "demir": 0.01,
+    "ot": 0.02
+   },
+   "m": 1,
+   "quotaUse": 1,
+   "qpp": 0.134,
+   "otorite": 13,
+   "pools": 27068446,
+   "pazarASTRA": 96350809,
+   "runwayMonths": 21.8,
+   "byType": {
+    "f2p": {
+     "n": 199,
+     "inc": 1004.1162223693916,
+     "net": 664.3893675488506,
+     "level": 12,
+     "bal": 65367.484973648556
+    },
+    "mid": {
+     "n": 74,
+     "inc": 2476.5824059861743,
+     "net": 404.42691769941183,
+     "level": 18,
+     "bal": 52043.37357705879
+    },
+    "whale": {
+     "n": 10,
+     "inc": 3560.1177332954567,
+     "net": -90.55980859652118,
+     "level": 20,
+     "bal": 49008.7945385223
+    }
+   },
+   "top5Share": 0.09,
+   "whaleF2pRatio": 3.5,
+   "burned": 654019,
+   "buyback": 0,
+   "waste": 0,
+   "hazirlikASTRA": 2311971
+  }
+ ]
+}
