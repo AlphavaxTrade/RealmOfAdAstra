@@ -17,7 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NAME = 'realmofadastra';
-const tokenFile = path.join(os.homedir(), '.realm_vercel_token');
+// Not Defteri dosyaya kendiliğinden .txt ekleyebilir: ikisi de kabul
+const tokenFile = [path.join(os.homedir(), '.realm_vercel_token'), path.join(os.homedir(), '.realm_vercel_token.txt')].find(f => fs.existsSync(f)) || path.join(os.homedir(), '.realm_vercel_token');
 const token = (process.env.REALM_VERCEL_TOKEN || (fs.existsSync(tokenFile) ? fs.readFileSync(tokenFile, 'utf8') : '')).trim();
 if (!/^[A-Za-z0-9_-]{10,}$/.test(token)) { console.error(`❌ Vercel erişim anahtarı yok: ${tokenFile} dosyasına kaydet.`); process.exit(1); }
 
