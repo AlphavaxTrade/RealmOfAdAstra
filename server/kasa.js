@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — Oyun Kasası (her oyuncuya sunucunun yönettiği gerçek bir zincir cüzdanı)
+// Realm of AdAstra sunucusu — Oyun Kasası (her oyuncuya sunucunun yönettiği gerçek bir zincir cüzdanı)
 // ============================================================================
 // Kullanıcı kararı (2 Ekim 2026, B seçeneği):
 //  • Oyuncu kendi Oyun Kasası adresine ADASTRA ve biraz AVAX yatırır. Kasa YALNIZ oyuncu yokken çalışan

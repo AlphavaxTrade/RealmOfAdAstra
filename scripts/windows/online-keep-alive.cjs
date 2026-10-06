@@ -1,4 +1,4 @@
-// Realm of Astra — yerel DENEME oyun sunucusu bekçisi (yönetici paneliyle)
+// Realm of AdAstra — yerel DENEME oyun sunucusu bekçisi (yönetici paneliyle)
 // ---------------------------------------------------------------------------
 // Oyun sunucusunu (server/index.js) deneme modunda arka planda çalıştırır, kapanırsa yeniden başlatır.
 //  • Oyun:            http://localhost:8080/

@@ -1,4 +1,4 @@
-# Realm of Astra — Sunucu Kurulumu
+# Realm of AdAstra — Sunucu Kurulumu
 
 Bu belge, oyunu bir sunucuda çevrimiçi (gerçek ADASTRA ile) çalıştırmak içindir. Sunucu tek bir program: oyunun kendisini de sunar, oyuncuların kayıtlarını tutar, haftalık ekonomi hesaplarını yapar ve ADASTRA gönderir.
 
@@ -49,7 +49,7 @@ Doldurulacaklar:
 
 ```bash
 docker compose up -d --build
-docker compose logs -f        # "Realm of Astra sunucusu çalışıyor" satırını gör
+docker compose logs -f        # "Realm of AdAstra sunucusu çalışıyor" satırını gör
 ```
 
 Sunucu yalnız aynı makineden erişilebilir (`127.0.0.1:8080`); oyuna dışarıdan 4. adımdaki HTTPS adresinden girilir. Çalıştığını görmek için: `curl http://127.0.0.1:8080/api/health`. Kayıtlar sunucudaki `data/realm.db` dosyasındadır; bu dosyayı **ve `KASA_MASTER_KEY`'i** düzenli yedekle.

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — e-posta gönderimi
+// Realm of AdAstra sunucusu — e-posta gönderimi
 // SMTP_URL tanımlıysa gerçek e-posta gönderilir (ör. smtps://kullanici:sifre@smtp.saglayici.com:465).
 // Tanımlı değilse e-postalar sunucu günlüğüne yazılır ve son 50'si kayıtta tutulur (deneme düzeni).
 import nodemailer from 'nodemailer';

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — oyuncunun çağırabileceği oyun işlemleri (beyaz liste)
+// Realm of AdAstra sunucusu — oyuncunun çağırabileceği oyun işlemleri (beyaz liste)
 // ============================================================================
 // Yalnızca bu listedeki işlemler sunucuda çalışır. Her işlemin kabul ettiği bilgiler tek tek tanımlıdır;
 // tarayıcıdan gelen başka her şey reddedilir. Test/hile düğmeleri (cheat*, setDev*, addDev*, ileri sarma,

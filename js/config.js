@@ -1,7 +1,7 @@
-// Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
+// Realm of AdAstra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
-  GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.34.0',
+  GAME_TITLE: 'Realm of AdAstra',
+  GAME_VERSION: '1.35.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -1079,6 +1079,12 @@ export const GAME_CONFIG = {
         `Hesap açarken ve yeni şifre belirlerken şifre iki kez sorulur; yanlış yazılan şifreyle hesap açılmaz.`,
         `Oyun artık realmofadastra.vercel.app adresinde.`
       ]
+    },
+    {
+      version: 'v1.35',
+      title: '👑 Yeni Ad: Realm of AdAstra',
+      date: '6 Ekim 2026',
+      changes: [`Oyunun adı her yerde "Realm of AdAstra" oldu: oyun ekranı, e-postalar, cüzdan bağlama mesajı ve yönetici paneli.`]
     }
   ],
 

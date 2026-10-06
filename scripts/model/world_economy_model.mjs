@@ -1,4 +1,4 @@
-// Realm of Astra — Bütün ekonomi modeli (öneri aracı; oyuna bağlı değil)
+// Realm of AdAstra — Bütün ekonomi modeli (öneri aracı; oyuna bağlı değil)
 // ============================================================================
 // Haftalık adımlarla 3 yıl: oyuncu tipleri (hiç yatırmayan / orta / balina), aylık yeni oyuncu
 // katılımı, dünya kotası, gerçek AMM pazarı (js/ammMarket.js), harcamanın bölünüşü ve her

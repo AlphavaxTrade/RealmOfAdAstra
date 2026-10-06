@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — dünya işleri: haftalık hesaplaşma, yatırma, çekim, zincir ödemeleri
+// Realm of AdAstra sunucusu — dünya işleri: haftalık hesaplaşma, yatırma, çekim, zincir ödemeleri
 // ============================================================================
 // Haftalık hesaplaşma (her Pazartesi 00:01 TSİ, oyunun hafta değişiminde) — kurallar server/economy.js:
 //  1. Çekim talepleri ortak havuzdan katkı puanına göre karşılanır; hak kirası ödenir; sığmayan kısım
@@ -649,7 +649,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       const gap = Math.ceil(n.need - m.walletAda);
       db.event('hot-wallet-low', null, { walletAda: m.walletAda, need: n.need, gap });
       if (mailer && cfg.adminEmail) {
-        await mailer.send({ to: cfg.adminEmail, subject: 'Realm of Astra — oyun cüzdanı azaldı',
+        await mailer.send({ to: cfg.adminEmail, subject: 'Realm of AdAstra — oyun cüzdanı azaldı',
           text: `Oyun cüzdanında ${fmt(m.walletAda)} ADA var; bu haftanın ihtiyacı ${fmt(n.need)} ADA.
 
 Yedek cüzdanından (Ledger) oyun cüzdanına en az ${fmt(gap)} ADA gönder:

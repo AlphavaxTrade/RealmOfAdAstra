@@ -1,4 +1,4 @@
-// Realm of Astra — Krallık Haritası (v1.25)
+// Realm of AdAstra — Krallık Haritası (v1.25)
 // ============================================================================
 //  • Harita oranı bozulmadan ekranı doldurur (cover); sürükle-kaydır, tekerlek/iki parmakla yakınlaştır
 //  • Binanın üzerine gelince bilgi kartı (ad, açıklama, canlı durum); biten seferde küçük "Hazır" rozeti

@@ -1,4 +1,4 @@
-// Realm of Astra — Token + oyun ekonomisi modeli (öneri aracı; oyuna bağlı değil)
+// Realm of AdAstra — Token + oyun ekonomisi modeli (öneri aracı; oyuna bağlı değil)
 // ============================================================================
 // Haftalık adımlarla 3 yıl. Dolar katmanı: ADASTRA'nın Arena bonding curve'ü (gerçek formül:
 // maliyet = a·(U³−L³)/(3c) wei, a=901, c=232210432401), 7,3 milyarda mezuniyet ve sonrasında

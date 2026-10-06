@@ -1,6 +1,6 @@
-// Realm of Astra — çevrimiçi mod (oyun sunucudan açıldığında)
+// Realm of AdAstra — çevrimiçi mod (oyun sunucudan açıldığında)
 // ============================================================================
-// Oyun bir Realm of Astra sunucusundan açılırsa (/api/health yanıt verirse) çevrimiçi moda geçer:
+// Oyun bir Realm of AdAstra sunucusundan açılırsa (/api/health yanıt verirse) çevrimiçi moda geçer:
 //  • Oyuncu cüzdanıyla (Core / MetaMask) imza atarak girer; şifre yoktur.
 //  • Kayıt sunucudadır. Normal işlemler ekranda hemen görünür ve arkadan sunucuya gider; sunucunun
 //    yanıtı her zaman son sözdür (tarayıcıdaki kopya sunucununkiyle değiştirilir).

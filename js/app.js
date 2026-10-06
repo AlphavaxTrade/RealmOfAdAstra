@@ -8691,7 +8691,7 @@ export function renderTopAnnouncementTicker() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  // 🌐 Oyun bir Realm of Astra sunucusundan açıldıysa çevrimiçi mod: cüzdanla giriş, kayıt sunucuda.
+  // 🌐 Oyun bir Realm of AdAstra sunucusundan açıldıysa çevrimiçi mod: cüzdanla giriş, kayıt sunucuda.
   // Sunucu yoksa (bilgisayardaki deneme modu) oyun eskisi gibi tarayıcıda çalışır.
   let isOnline = false;
   try {

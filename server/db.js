@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — kayıt (tek dosyalık SQLite; Node'un kendi node:sqlite modülü, ek kurulum yok)
+// Realm of AdAstra sunucusu — kayıt (tek dosyalık SQLite; Node'un kendi node:sqlite modülü, ek kurulum yok)
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';

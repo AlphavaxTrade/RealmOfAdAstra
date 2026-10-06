@@ -1,4 +1,4 @@
-// Realm of Astra — tüm testleri çalıştırıcı
+// Realm of AdAstra — tüm testleri çalıştırıcı
 // tests/ klasöründeki test_*.mjs dosyalarının HEPSİNİ ayrı süreçlerde sırayla çalıştırır.
 // (v1.25 öncesinde test listesi package.json'da elle tutuluyordu; 10 dosya listede yoktu ve
 // ikisi bozuk olduğu hâlde kimse fark etmiyordu.)

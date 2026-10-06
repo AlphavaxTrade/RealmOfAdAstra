@@ -1,4 +1,4 @@
-# 🌌 Realm of Astra
+# 🌌 Realm of AdAstra
 
 Avalanche ekosistemi için tasarlanan, tarayıcıda çalışan bir strateji / RPG oyunu. Kaynak seferleri, AMM pazarı, asker ve teçhizat gelişimi, zindan, kolezyum, karnaval (çark ve piyango) ile haftalık kotalara dayalı deflasyonist bir ekonomi içerir.
 

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — cüzdandan ödeme (RealmPayments sözleşmesi)
+// Realm of AdAstra sunucusu — cüzdandan ödeme (RealmPayments sözleşmesi)
 // ============================================================================
 // Kullanıcı kararı (2 Ekim 2026): tıklamalı işlerde önce oyunda kazanılmış bakiye kullanılır; yetmezse kalan
 // kısım oyuncunun kendi cüzdanından, ödeme sözleşmesi üzerinden tek işlemle ödenir (ağ ücreti kadar AVAX

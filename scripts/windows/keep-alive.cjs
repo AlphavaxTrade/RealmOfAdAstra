@@ -1,4 +1,4 @@
-// Realm of Astra — yerel sunucu bekçisi (watchdog)
+// Realm of AdAstra — yerel sunucu bekçisi (watchdog)
 // ---------------------------------------------------------------------------
 // Vite geliştirme sunucusunu arka planda çalıştırır ve kapanırsa yeniden başlatır.
 // Konsol penceresine bağlı değildir: OYUNU-BASLAT.bat bu dosyayı gizli olarak açar,

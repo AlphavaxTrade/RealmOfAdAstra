@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — Kolezyum: gerçek oyunculara karşı maç (eşleşme, maç, haftalık sıralama)
+// Realm of AdAstra sunucusu — Kolezyum: gerçek oyunculara karşı maç (eşleşme, maç, haftalık sıralama)
 // ============================================================================
 // Kurallar js/economy/pvp.js. Akış:
 //  • "Maç ara": takım görüntüsü alınır, giriş bedeli (anahtar + stamina + günlük hak) ödenir.

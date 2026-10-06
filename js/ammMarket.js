@@ -1,4 +1,4 @@
-// Realm of Astra — AMM Swap Motoru (x · y = k)
+// Realm of AdAstra — AMM Swap Motoru (x · y = k)
 // ============================================================================
 // AMM DEX Dinamik Havuz Mimarisi:
 //  • Rezervler AMM_CORRIDORS hedef fiyatlarından türetilir (YASA 3: kıt olan pahalıdır).

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — Avalanche zinciri: fiyat okuma, yatırma tarama, ADASTRA gönderme
+// Realm of AdAstra sunucusu — Avalanche zinciri: fiyat okuma, yatırma tarama, ADASTRA gönderme
 // ============================================================================
 // Oyun cüzdanının gizli anahtarı yalnız ortam değişkeninden (GAME_WALLET_PRIVATE_KEY) okunur; koda,
 // kayıtlara ve günlüklere asla yazılmaz. Anahtar yoksa sunucu yalnız okur (fiyat, yatırma) ve ödemeleri

@@ -1,4 +1,4 @@
-// Realm of Astra — ADA dağıtım oranları (saf fonksiyonlar; tarayıcıda, sunucuda ve panelde aynı liste)
+// Realm of AdAstra — ADA dağıtım oranları (saf fonksiyonlar; tarayıcıda, sunucuda ve panelde aynı liste)
 // ============================================================================
 // Kullanıcı kararı (6 Ekim 2026): oyundaki bütün ADA oranları herkesin görebileceği RealmRates sözleşmesinde durur.
 // Oranları yalnız sözleşme sahibi değiştirebilir; değişiklik 24 saat sonra geçerli olur (oyuncular önceden görür).

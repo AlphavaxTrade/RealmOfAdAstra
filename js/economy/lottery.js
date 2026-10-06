@@ -1,4 +1,4 @@
-// Realm of Astra — Haftalık Piyango hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı çalışır)
+// Realm of AdAstra — Haftalık Piyango hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı çalışır)
 // ============================================================================
 // Kurallar (29 Eylül 2026, kullanıcı kararı):
 //  • Her bilet 100 ADA. Her hesap haftada en fazla belirli sayıda bilet alabilir.

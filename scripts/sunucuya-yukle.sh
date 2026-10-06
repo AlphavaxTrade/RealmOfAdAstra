@@ -57,7 +57,7 @@ rm -rf /srv/realm/app.old && { [ -d /srv/realm/app ] && mv /srv/realm/app /srv/r
 chown -R realm:realm /srv/realm
 cat > /etc/systemd/system/realm.service <<UNIT
 [Unit]
-Description=Realm of Astra oyun sunucusu (deneme modu)
+Description=Realm of AdAstra oyun sunucusu (deneme modu)
 After=network.target
 
 [Service]

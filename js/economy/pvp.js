@@ -1,4 +1,4 @@
-// Realm of Astra — Kolezyum: gerçek oyunculara karşı maç (saf fonksiyonlar; tarayıcıda ve sunucuda aynı)
+// Realm of AdAstra — Kolezyum: gerçek oyunculara karşı maç (saf fonksiyonlar; tarayıcıda ve sunucuda aynı)
 // ============================================================================
 // Kullanıcı kararı (29-30 Eylül 2026):
 //  • Oyuncu askerini (1v1: 1 asker, 3v3: 3 asker) kilitleyip "Maç ara"ya basar; sırada bekleyen ilk oyuncuyla

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — HTTP uç noktaları (ek kütüphane yok; Node'un kendi http modülü)
+// Realm of AdAstra sunucusu — HTTP uç noktaları (ek kütüphane yok; Node'un kendi http modülü)
 // ============================================================================
 //  GET  /api/health                      sunucu ayakta mı
 //  POST /api/account/register {email, password}   kayıt → {token}

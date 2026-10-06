@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — başlatma
+// Realm of AdAstra sunucusu — başlatma
 // Kullanım: node server/index.js   (ayarlar ortam değişkenlerinden ya da server/.env dosyasından; bkz. server/.env.example)
 import fs from 'node:fs';
 import path from 'node:path';
@@ -64,7 +64,7 @@ if (!cfg.adminToken) console.warn('⚠️  ADMIN_TOKEN tanımlı değil: yöneti
 if (chain && !chain.canSend) console.warn('⚠️  GAME_WALLET_PRIVATE_KEY yok: çekimler yönetici onayı bekler (PAYOUT_MODE=manual).');
 
 app.server().listen(cfg.port, cfg.host, () => {
-  console.log(`✅ Realm of Astra sunucusu çalışıyor: http://localhost:${cfg.port}  (ödeme modu: ${cfg.payoutMode}, oyun cüzdanı: ${chain?.gameWallet || 'yok'})`);
+  console.log(`✅ Realm of AdAstra sunucusu çalışıyor: http://localhost:${cfg.port}  (ödeme modu: ${cfg.payoutMode}, oyun cüzdanı: ${chain?.gameWallet || 'yok'})`);
 });
 
 // Dünya zamanlayıcısı: her dakika (hafta değişimi, piyasa, yatırma, ödemeler)

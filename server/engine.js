@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — oyun motorunu sunucuda çalıştırır
+// Realm of AdAstra sunucusu — oyun motorunu sunucuda çalıştırır
 // ============================================================================
 // Tarayıcıdaki oyun motoru (js/*.js) burada aynen kullanılır. Farklar:
 //  • Kayıtlar tarayıcı deposu yerine sunucu veritabanına yazılır (localStorage taklidi, kv tablosu).

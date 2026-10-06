@@ -1,4 +1,4 @@
-// Realm of Astra — kalıcı kayıt yardımcıları (localStorage)
+// Realm of AdAstra — kalıcı kayıt yardımcıları (localStorage)
 // ---------------------------------------------------------------------------
 // • Her başarılı yüklemede kaydın bir kopyası "<anahtar>__yedek" olarak saklanır (son sağlam kayıt).
 // • Kayıt bozuksa (JSON okunamıyorsa) silinmez: "<anahtar>__bozuk" altına taşınır ve oyun yedekten açılır.

@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — hesaplar: e-posta/şifre, e-posta doğrulama, şifre sıfırlama, cüzdan bağlama
+// Realm of AdAstra sunucusu — hesaplar: e-posta/şifre, e-posta doğrulama, şifre sıfırlama, cüzdan bağlama
 // ============================================================================
 // Kullanıcı kararı (2 Ekim 2026):
 //  • Ana hesap e-posta + şifre. Cüzdan kaybolsa/çalınsa da oyundaki bakiye hesapta kalır.
@@ -175,7 +175,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
           q.tokensDelKind.run(old.id, 'verify');
           verifyPart = `\n\nHesabını henüz doğrulamadıysan bu bağlantıyla doğrulayabilirsin:\n${link('verify', newToken(old.id, 'verify', 7 * 86400000))}`;
         }
-        await mailer.send({ to: e, subject: 'Realm of Astra — bu e-postayla zaten bir hesabın var',
+        await mailer.send({ to: e, subject: 'Realm of AdAstra — bu e-postayla zaten bir hesabın var',
           text: `Biri (büyük ihtimalle sen) bu e-postayla yeniden kayıt olmayı denedi. Bu e-postayla zaten bir hesabın var. 👑\n\nŞifreni hatırlıyorsan oyuna giriş yapman yeterli. Unuttuysan bu bağlantıyla yeni şifre belirle (1 saat geçerli):\n${url}${verifyPart}\n\nBunu sen yapmadıysan bu e-postayı yok say; hesabında hiçbir şey değişmedi.` });
         extra = devLink(url);
       }
@@ -187,7 +187,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     db.q.playerAdd.run(playerIdOf(id), clock(), clock());
     const t = newToken(id, 'verify', 7 * 86400000);
     const url = link('verify', t);
-    await mailer.send({ to: e, subject: 'Realm of Astra — e-postanı doğrula ve krallığa gir', text: `Krallığa hoş geldin! 👑\n\nHesabını doğrulayıp oyuna girmek için bu bağlantıya tıkla:\n${url}\n\nBu hesabı sen açmadıysan bu e-postayı yok sayabilirsin.` });
+    await mailer.send({ to: e, subject: 'Realm of AdAstra — e-postanı doğrula ve krallığa gir', text: `Krallığa hoş geldin! 👑\n\nHesabını doğrulayıp oyuna girmek için bu bağlantıya tıkla:\n${url}\n\nBu hesabı sen açmadıysan bu e-postayı yok sayabilirsin.` });
     db.event('register', playerIdOf(id));
     return { ok: true, sent: true, message: SENT_MSG, ...devLink(url), playerId: playerIdOf(id) };   // playerId yalnız sunucu içi (yanıta konmaz)
   }
@@ -236,7 +236,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama zaten açık.' };
     const secret = base32(crypto.randomBytes(20));
     q.totpPending.run(secret, acc.id);
-    const uri = `otpauth://totp/${encodeURIComponent('Realm of Astra:' + acc.email)}?secret=${secret}&issuer=${encodeURIComponent('Realm of Astra')}&digits=6&period=30`;
+    const uri = `otpauth://totp/${encodeURIComponent('Realm of AdAstra:' + acc.email)}?secret=${secret}&issuer=${encodeURIComponent('Realm of AdAstra')}&digits=6&period=30`;
     const svg = await QRCode.toString(uri, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
     return { ok: true, secret, uri, qr: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64') };
   }
@@ -250,7 +250,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const codes = Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
     q.totpOn.run(s, JSON.stringify(codes.map(c => sha(normCode(c)))), acc.id);
     db.event('2fa-on', playerId);
-    await mailer.send({ to: acc.email, subject: 'Realm of Astra — iki adımlı doğrulama AÇILDI', text: 'Hesabında iki adımlı doğrulama açıldı. 🛡️ Artık girişte telefonundaki koda da ihtiyaç olacak.\n\nBunu sen yapmadıysan hemen şifreni sıfırla ve bize yaz.' }).catch(() => {});
+    await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — iki adımlı doğrulama AÇILDI', text: 'Hesabında iki adımlı doğrulama açıldı. 🛡️ Artık girişte telefonundaki koda da ihtiyaç olacak.\n\nBunu sen yapmadıysan hemen şifreni sıfırla ve bize yaz.' }).catch(() => {});
     return { ok: true, backupCodes: codes };
   }
 
@@ -261,7 +261,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!g.ok) return g;
     q.totpOff.run(acc.id);
     db.event('2fa-off', playerId);
-    await mailer.send({ to: acc.email, subject: 'Realm of Astra — iki adımlı doğrulama KAPATILDI', text: 'Hesabında iki adımlı doğrulama kapatıldı.\n\nBunu sen yapmadıysan hemen şifreni sıfırla, ardından iki adımlı doğrulamayı yeniden aç.' }).catch(() => {});
+    await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — iki adımlı doğrulama KAPATILDI', text: 'Hesabında iki adımlı doğrulama kapatıldı.\n\nBunu sen yapmadıysan hemen şifreni sıfırla, ardından iki adımlı doğrulamayı yeniden aç.' }).catch(() => {});
     return { ok: true };
   }
 
@@ -315,7 +315,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (acc && !acc.email_verified && mayMail('rv:' + acc.id, 2 * 60000)) {
       q.tokensDelKind.run(acc.id, 'verify');
       const url = link('verify', newToken(acc.id, 'verify', 7 * 86400000));
-      await mailer.send({ to: acc.email, subject: 'Realm of Astra — e-postanı doğrula', text: `Hesabını doğrulayıp oyuna girmek için:\n${url}` });
+      await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — e-postanı doğrula', text: `Hesabını doğrulayıp oyuna girmek için:\n${url}` });
       extra = devLink(url);
     }
     return { ok: true, message: 'Bu e-posta ile doğrulanmamış bir hesap varsa bağlantı yeniden gönderildi.', ...extra };
@@ -329,7 +329,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (acc && mayMail('fg:' + acc.id, 60000)) {
       q.tokensDelKind.run(acc.id, 'reset');
       const url = link('reset', newToken(acc.id, 'reset', 3600000));
-      await mailer.send({ to: e, subject: 'Realm of Astra — şifre sıfırlama', text: `Şifreni sıfırlamak için bu bağlantıya tıkla (1 saat geçerli):\n${url}\n\nBunu sen istemediysen bu e-postayı yok say; şifren değişmez.` });
+      await mailer.send({ to: e, subject: 'Realm of AdAstra — şifre sıfırlama', text: `Şifreni sıfırlamak için bu bağlantıya tıkla (1 saat geçerli):\n${url}\n\nBunu sen istemediysen bu e-postayı yok say; şifren değişmez.` });
       extra = devLink(url);
     }
     return { ok: true, message: 'Bu e-posta ile bir hesap varsa sıfırlama bağlantısı gönderildi.', ...extra };
@@ -344,7 +344,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     q.sessionsOf.run(playerIdOf(t.account_id));            // bütün cihazlardan çıkış
     db.event('password-reset', playerIdOf(t.account_id));
     const acc = q.byId.get(t.account_id);
-    if (acc) await mailer.send({ to: acc.email, subject: 'Realm of Astra — şifren değişti', text: 'Hesabının şifresi az önce değiştirildi ve bütün cihazlardan çıkış yapıldı. 🛡️\n\nBunu sen yapmadıysan hemen "Şifremi unuttum" ile yeni şifre belirle.' }).catch(() => {});
+    if (acc) await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — şifren değişti', text: 'Hesabının şifresi az önce değiştirildi ve bütün cihazlardan çıkış yapıldı. 🛡️\n\nBunu sen yapmadıysan hemen "Şifremi unuttum" ile yeni şifre belirle.' }).catch(() => {});
     return { ok: true, twoFactor: !!(acc && acc.totp_enabled) };
   }
 
@@ -377,7 +377,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!/^0x[a-fA-F0-9]{40}$/.test(String(address || ''))) return { ok: false, error: 'Geçersiz cüzdan adresi' };
     const a = address.toLowerCase();
     const nonce = crypto.randomBytes(12).toString('hex');
-    const message = `Realm of Astra — cüzdan bağlama\n\nBu cüzdanı ${acc.email} hesabına bağlıyorum.\nCüzdan: ${a}\nKod: ${nonce}\nSite: ${cfg.publicUrl}\n\nBu imza hiçbir işlem ya da ücret onaylamaz.`;
+    const message = `Realm of AdAstra — cüzdan bağlama\n\nBu cüzdanı ${acc.email} hesabına bağlıyorum.\nCüzdan: ${a}\nKod: ${nonce}\nSite: ${cfg.publicUrl}\n\nBu imza hiçbir işlem ya da ücret onaylamaz.`;
     q.nonceSet.run(acc.id, a, message, clock() + 10 * 60000);
     return { ok: true, message };
   }
@@ -401,7 +401,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const change = !!acc.wallet;
     await mailer.send({
       to: acc.email,
-      subject: change ? 'Realm of Astra — hazine yolu değişiyor (onay gerekli)' : 'Realm of Astra — cüzdan bağlama onayı',
+      subject: change ? 'Realm of AdAstra — hazine yolu değişiyor (onay gerekli)' : 'Realm of AdAstra — cüzdan bağlama onayı',
       text: (change
         ? `Hesabına bağlı cüzdanı ${n.address} olarak değiştirmek istendi.\nOnaylarsan yeni cüzdan 48 saat sonra etkin olur; o zamana kadar ödemeler eski cüzdanına gider.\n\nBunu SEN yaptıysan onayla:\n${url}\n\nSen yapmadıysan bu bağlantıya TIKLAMA ve hemen şifreni değiştir. 🛡️`
         : `Hesabına ${n.address} cüzdanını bağlamak için onayla:\n${url}\n\nBunu sen yapmadıysan tıklama ve şifreni değiştir.`)

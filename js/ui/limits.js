@@ -1,4 +1,4 @@
-// Realm of Astra — sınır ve kota arayüz bileşenleri
+// Realm of AdAstra — sınır ve kota arayüz bileşenleri
 // Kota paneli, piyango sekmesi, zindan giriş kartı ve yan panel aynı bileşenleri kullanır.
 // Fonksiyonlar yalnızca HTML metni üretir; oyun durumunu değiştirmez.
 

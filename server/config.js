@@ -1,4 +1,4 @@
-// Realm of Astra sunucusu — ayarlar (hepsi ortam değişkenlerinden; bkz. server/.env.example)
+// Realm of AdAstra sunucusu — ayarlar (hepsi ortam değişkenlerinden; bkz. server/.env.example)
 export function loadConfig(env = process.env) {
   const num = (k, d) => (env[k] != null && env[k] !== '' ? Number(env[k]) : d);
   const key = (env.GAME_WALLET_PRIVATE_KEY || '').trim();
@@ -36,7 +36,7 @@ export function loadConfig(env = process.env) {
     corsOrigins: (env.CORS_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(o => /^https?:\/\/[^/]+$/.test(o)),
     publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080)}`).trim(),   // e-postadaki bağlantılar bu adrese gider
     smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
-    mailFrom: env.MAIL_FROM || 'Realm of Astra <no-reply@localhost>',
+    mailFrom: env.MAIL_FROM || 'Realm of AdAstra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
     paymentsContract: (env.PAYMENTS_CONTRACT || '').trim(),        // RealmPayments sözleşmesinin adresi (boşsa cüzdandan ödeme kapalı)
     payFeeGas: num('PAY_FEE_GAS', 100000),

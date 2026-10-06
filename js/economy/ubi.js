@@ -1,4 +1,4 @@
-// Realm of Astra — Evrensel Temel Gelir (UBI) hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı)
+// Realm of AdAstra — Evrensel Temel Gelir (UBI) hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı)
 // ============================================================================
 // Kurallar (29 Eylül 2026, kullanıcı kararı):
 //  • Oyunda harcanan her ADA'nın %6'sı o haftanın UBI kasasında birikir.
