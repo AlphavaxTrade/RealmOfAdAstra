@@ -175,6 +175,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       treasury: treasury.state,
       globalPool: globalPool.state,
       economy: world(),
+      rates: (db.kvJson('world:rates', null) || {}).active || null,   // RealmRates oranları (tarayıcı kendi ayarına yazar)
       serverTime: clock()
     };
   }

@@ -1,7 +1,7 @@
 // Realm of Astra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of Astra',
-  GAME_VERSION: '1.32.0',
+  GAME_VERSION: '1.33.0',
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -563,6 +563,8 @@ export const GAME_CONFIG = {
   // ═══════════════════════════════════════════════════════════════════════
   // %5 Yakım, %6 UBI, %3 Team Payı; kalan %86'lık hazine girişinin 6 kasaya dağılımı (hazine payının yüzdesi):
   // Zindan %30, Kolezyum %15, World Boss %15, Pazar geri alımı %15, Görev & ücretsiz oyuncu %21, Karnaval %4
+  // Zindan kapı harcının doğrudan zindan kasasına giden kısmı (kalanı her harcama gibi dağıtılır). Oranlar: RealmRates sözleşmesi
+  DUNGEON_GATE_POOL_SHARE: 1,
   TREASURY_ALLOCATION: { dungeon: 0.30, arena: 0.15, worldBoss: 0.15, ammBuyback: 0.15, quest: 0.21, carnival: 0.04 },
   TREASURY_POOL_NAMES: {
     dungeon: 'Zindan Ganimet Kasası',
@@ -1056,6 +1058,16 @@ export const GAME_CONFIG = {
         `Pazar: "Hepsini sat" ve "Depoyu doldur" düğmeleri.`,
         `Seviye atlama ve silo yükseltmede "Hızlı al": eksik hammaddeleri ADA'n yetiyorsa tek tuşla pazardan alır.`,
         `Hesabım: kilitli ADA'nın nasıl açılacağını, yarın ve 7 günde ne kadarının açılacağını gösteren panel; pencere dışına tıklayınca kapanır.`
+      ]
+    },
+    {
+      version: 'v1.33',
+      title: '💸 Şeffaf ADA Oranları',
+      date: '6 Ekim 2026',
+      changes: [
+        `Oyundaki bütün ADA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları, çark, zindan harcı, piyango, pazar komisyonu, çekim ücreti) artık herkesin görebileceği bir akıllı sözleşmede. Bir oran değişirse 24 saat önceden görünür.`,
+        `Askerlerin kendi kendine iyileşmesinde harcanan ADA artık her harcama gibi kasalara dağıtılıyor (önceden hiçbir kasaya yazılmıyordu).`,
+        `Kullanılan teçhizat parçası, anahtar, kutu ve parşömenler yakım kaydına giriyor.`
       ]
     }
   ],

@@ -57,6 +57,22 @@
       <div class="row"><input id="topAmt" type="number" min="1" placeholder="ADA miktarı" class="narrow"><button id="topUp" class="go">📥 Yedek cüzdandan oyun cüzdanına gönder</button></div>
       <div id="ledgerMsg" class="k"></div>
     </div>
+    <h3>💸 ADA nereye gidiyor (RealmRates sözleşmesi)</h3>
+    <div class="card">
+      <div id="ratesInfo" class="k"></div>
+      <div class="scroll"><table id="ratesFlows"></table></div>
+      <details style="margin-top:8px;"><summary>Oranları değiştir (cüzdanla imza; 24 saat sonra geçerli olur)</summary>
+        <div class="k">Yüzde yaz (ör. 5 = %5). Harcama bölüşümü ve kasa payları ayrı ayrı %100 olmalı. Değişiklik 24 saat bekler; bu sürede oyuncular görür, istersen geri çekebilirsin.</div>
+        <div id="ratesForm" class="grid" style="margin-top:6px;"></div>
+        <div class="row">
+          <button id="rPropose" class="go">📝 Yeni oranları öner</button>
+          <button id="rCancel" class="danger">↩️ Bekleyen öneriyi geri çek</button>
+          <button id="rAccept">👑 Oran sözleşmesinin sahipliğini kabul et</button>
+          <button id="rSync">🔄 Sözleşmeden şimdi oku</button>
+        </div>
+        <div id="ratesMsg" class="k"></div>
+      </details>
+    </div>
     <h3>Son haftalık hesaplaşma</h3>
     <div class="card scroll"><pre id="weekly" style="margin:0;white-space:pre-wrap;font-size:0.78rem;"></pre></div>
     <h3>Ödemeler (son 50)</h3>

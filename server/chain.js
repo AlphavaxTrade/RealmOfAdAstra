@@ -251,5 +251,18 @@ export function createChain(cfg) {
     });
   }
 
-  return { scanTransfers, readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  // RealmRates: geçerli oranlar, bekleyen öneri ve sahibi
+  const RATES_ABI = ['function active() view returns (uint16[19])', 'function pending() view returns (uint16[19] rates, uint64 at)',
+    'function owner() view returns (address)', 'function pendingOwner() view returns (address)'];
+  async function readRates(address = cfg.ratesContract) {
+    if (!address) return null;
+    return withProvider(async p => {
+      const r = new ethers.Contract(address, RATES_ABI, p);
+      const [active, [next, at], owner, pendingOwner] = await Promise.all([r.active(), r.pending(), r.owner(), r.pendingOwner()]);
+      return { active: active.map(Number), pending: Number(at) ? next.map(Number) : null, pendingAt: Number(at) * 1000 || 0,
+        owner: owner.toLowerCase(), pendingOwner: pendingOwner.toLowerCase(), at: Date.now() };
+    });
+  }
+
+  return { readRates, scanTransfers, readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

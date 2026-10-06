@@ -35,7 +35,7 @@ export class GameStateManager {
     // 🛡️ Amorti İade Havuzu Düzeltmesi: Bilet alınmışsa ve amorti kasası 0 kalmışsa %2 payını anında aktar
     if (this.state.lotteryTickets > 0 && (!this.state.lotteryAmortiPool || this.state.lotteryAmortiPool === 0)) {
       const ticketCost = (GAME_CONFIG.CARNIVAL?.LOTTERY?.TICKET_COST_ADA || 100);
-      const amortiRate = (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE || 0.02);
+      const amortiRate = (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02);
       this.state.lotteryAmortiPool = Math.round(this.state.lotteryTickets * ticketCost * amortiRate);
       this.saveState();
     }
@@ -130,7 +130,7 @@ export class GameStateManager {
       lastSeenAt: parsed.lastSeenAt || 0,
       lotteryAmortiPool: (parsed.lotteryAmortiPool != null && parsed.lotteryAmortiPool > 0)
         ? parsed.lotteryAmortiPool
-        : Math.round((parsed.lotteryTickets || 0) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.TICKET_COST_ADA || 100) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE || 0.02)),
+        : Math.round((parsed.lotteryTickets || 0) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.TICKET_COST_ADA || 100) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02)),
       wheelTicketShards: parsed.wheelTicketShards || 0,
       botSiloAutoUpgrade: parsed.botSiloAutoUpgrade !== undefined ? parsed.botSiloAutoUpgrade : true,
       botAutoRenew24h: parsed.botAutoRenew24h !== undefined ? parsed.botAutoRenew24h : false,
@@ -314,6 +314,19 @@ export class GameStateManager {
     // Katkı puanı: yakılan hammaddenin pazar değeri
     const unitPrice = (ammMarket && typeof ammMarket.getPrice === 'function') ? Number(ammMarket.getPrice(resourceKey)) : 0;
     if (isFinite(unitPrice) && unitPrice > 0) this._addContribution(qty * unitPrice * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
+    return qty;
+  }
+
+  // Kullanılınca yok olan oyun içi eşyaların yakım kaydı (oyuncu + dünya). Yalnız kayıt; ekonomiyi değiştirmez.
+  // Eksi miktar kaydı geri alır (ör. Kolezyum sırasından çıkınca anahtar iade edilir).
+  burnItem(kind, amount) {
+    const qty = Number(amount) || 0;
+    if (!qty) return 0;
+    if (!this.state.burnedItems) this.state.burnedItems = {};
+    this.state.burnedItems[kind] = Math.max(0, (this.state.burnedItems[kind] || 0) + qty);
+    try {
+      if (typeof globalPool !== 'undefined' && globalPool && typeof globalPool.recordItemBurn === 'function') globalPool.recordItemBurn(kind, qty);
+    } catch (e) { /* kayıt hatası işlemi bozmasın */ }
     return qty;
   }
 
@@ -693,6 +706,7 @@ export class GameStateManager {
     const units = this.state.soldierUnits || [];
     let changed = false;
     let anyWounded = false;
+    let healAdaSpent = 0;
 
     const availableWheat = this.state.inventory?.wheat || 0;
     const availableAda = this.state.adAstraBalance || 0;
@@ -734,6 +748,7 @@ export class GameStateManager {
         this.burnResource('wheat', wheatCost);
         this.state.adAstraBalance = Math.max(0, Math.round((curA - adaCost) * 100) / 100);
         this._onAdaSpent(curA - this.state.adAstraBalance);
+        healAdaSpent += curA - this.state.adAstraBalance;
         soldier.hp = Math.min(maxHp, Math.round((currentHp + hpGain) * 100) / 100);
         changed = true;
       }
@@ -741,6 +756,18 @@ export class GameStateManager {
 
     if (anyWounded && !this.isArmyPassiveHealBlocked()) {
       this.state.isPassiveHealPaused = false;
+    }
+
+    // Denetim (6 Ekim 2026): iyileşmede harcanan ADA eskiden hiçbir kasaya yazılmıyordu (kayboluyordu).
+    // Artık her harcama gibi dağıtılır. Küçük tutarlar birikir, 1 ADA'yı geçince deftere işlenir (her karede yazmamak için).
+    if (healAdaSpent > 0) {
+      const due = (Number(this.state.passiveHealAdaPending) || 0) + healAdaSpent;
+      if (due >= 1) {
+        globalPool.recordTokenSpend(due);
+        this.state.passiveHealAdaPending = 0;
+      } else {
+        this.state.passiveHealAdaPending = due;
+      }
     }
 
     if (changed) this.requestSave();
@@ -3354,6 +3381,7 @@ export class GameStateManager {
     }
 
     inv.fragments = (inv.fragments || 0) - cost.fragments;
+    this.burnItem('fragments', cost.fragments);
     inv.iron -= cost.iron;
     inv.wood -= cost.wood;
     this.burnResources({ wood: cost.wood, iron: cost.iron });
@@ -3457,6 +3485,7 @@ export class GameStateManager {
     }
 
     inv.fragments = (inv.fragments || 0) - cost.fragmentCost;
+    this.burnItem('fragments', cost.fragmentCost);
     inv.iron -= cost.ironCost;
     inv.wood -= cost.woodCost;
     this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
@@ -3544,7 +3573,7 @@ export class GameStateManager {
     inv.iron -= cost.ironCost;
     inv.wood -= cost.woodCost;
     this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
-    if (cost.fragCost > 0) inv.fragments = (inv.fragments || 0) - cost.fragCost;
+    if (cost.fragCost > 0) { inv.fragments = (inv.fragments || 0) - cost.fragCost; this.burnItem('fragments', cost.fragCost); }
     this.state.adAstraBalance -= cost.adaCost;
     this._onAdaSpent(cost.adaCost);
     globalPool.recordTokenSpend(cost.adaCost);
@@ -4815,6 +4844,7 @@ export class GameStateManager {
       const healAmount = 10;
       target.hp = Math.min(target.maxHp || 100, (target.hp || 0) + healAmount);
       inv.scroll_heal -= 1;
+      this.burnItem('scroll_heal', 1);
       this.saveState();
       return {
         success: true,
@@ -4831,6 +4861,7 @@ export class GameStateManager {
       const actualGain = Math.min(100, maxStamina - curStam);
       this.state.stamina = Math.min(maxStamina, curStam + 100);
       inv.scroll_stamina -= 1;
+      this.burnItem('scroll_stamina', 1);
       this.saveState();
       return {
         success: true,
@@ -5182,6 +5213,8 @@ export class GameStateManager {
 
     this.state.lockedBoxes -= 1;
     this.state.arenaKeys -= 1;
+    this.burnItem('boxes', 1);
+    this.burnItem('keys', 1);
 
     // Rarity Ağırlıkları: Common (%50), Rare (%30), Epic (%15), Legendary (%5)
     const roll = Math.random();
@@ -5698,14 +5731,14 @@ export class GameStateManager {
     const alloc = GAME_CONFIG.TREASURY_ALLOCATION;
 
     const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
-    const ubiRate = GAME_CONFIG.UBI_POOL_RATE || 0.06;
-    const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE || 0.03;
+    const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;
+    const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;
     const lotteryPool = state.lotteryPool != null ? state.lotteryPool : 20000000;
     const amortiPool = state.lotteryAmortiPool || 0;
     const myTickets = state.lotteryTickets || 0;
     const lotteryWinnerMultiplier = GAME_CONFIG.CARNIVAL?.LOTTERY?.WINNER_MULTIPLIER || 2.0;
     const lotteryWinnerShare = myTickets > 0 ? myTickets * 100 * lotteryWinnerMultiplier : 200;
-    const lotteryAmortiShare = Math.round(lotteryPool * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE || 0.02));
+    const lotteryAmortiShare = Math.round(lotteryPool * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02));
     const lotteryRolloverShare = Math.max(0, lotteryPool - lotteryAmortiShare);
 
     // Sadece Karnaval Çarkında Anında Yakılan Hammaddeler sayacı (genel oyundaki yakımlar hariç)
@@ -6501,7 +6534,10 @@ export class GameStateManager {
     if (payFee) {
       this.state.adAstraBalance -= terms.fee;
       this._onAdaSpent(terms.fee);
-      if (treasury && treasury.depositTo) treasury.depositTo('dungeon', terms.fee);
+      // Kapı harcının oranı kadarı doğrudan zindan kasasına, kalanı her harcama gibi dağıtılır (oran: RealmRates, varsayılan %100)
+      const gateShare = Math.max(0, Math.min(1, GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1));
+      if (gateShare > 0 && treasury && treasury.depositTo) treasury.depositTo('dungeon', terms.fee * gateShare);
+      if (gateShare < 1) globalPool.recordTokenSpend(terms.fee * (1 - gateShare));
       c.dungeonPaidEntries = (c.dungeonPaidEntries || 0) + 1;
       this.saveState();
       return { ...base, rewarded: true, fee: terms.fee, message: `🚪 Kapı harcı ödendi (-${terms.fee} ADA, zindan kasasına)` };
@@ -6539,6 +6575,7 @@ export class GameStateManager {
     if (st.blockReason) return { success: false, message: '⛔ ' + st.blockReason };
     const cfg = GAME_CONFIG.COLOSSEUM;
     this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
+    this.burnItem('keys', cfg.ENTRY_KEY_COST);
     this.state.stamina -= cfg.ENTRY_STAMINA_COST;
     this.getDailyCounters().arenaMatches += 1;
     return { success: true };
@@ -6548,6 +6585,7 @@ export class GameStateManager {
   refundPvpEntry() {
     const cfg = GAME_CONFIG.COLOSSEUM;
     this.state.arenaKeys = (this.state.arenaKeys || 0) + cfg.ENTRY_KEY_COST;
+    this.burnItem('keys', -cfg.ENTRY_KEY_COST);
     this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + cfg.ENTRY_STAMINA_COST);
     const c = this.getDailyCounters();
     c.arenaMatches = Math.max(0, (c.arenaMatches || 0) - 1);
@@ -6677,6 +6715,7 @@ export class GameStateManager {
     }
 
     this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
+    this.burnItem('keys', cfg.ENTRY_KEY_COST);
     this.state.stamina -= cfg.ENTRY_STAMINA_COST;
     counters.arenaMatches += 1;
 

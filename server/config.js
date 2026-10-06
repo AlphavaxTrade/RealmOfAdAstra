@@ -36,7 +36,10 @@ export function loadConfig(env = process.env) {
     mailFrom: env.MAIL_FROM || 'Realm of Astra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
     paymentsContract: (env.PAYMENTS_CONTRACT || '').trim(),        // RealmPayments sözleşmesinin adresi (boşsa cüzdandan ödeme kapalı)
-    payFeeGas: num('PAY_FEE_GAS', 100000),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
+    payFeeGas: num('PAY_FEE_GAS', 100000),
+    // RealmRates sözleşmesi (kullanıcı kararı 6 Ekim 2026): oyundaki bütün ADA oranları burada durur; sunucu 5 dakikada bir okur.
+    // Boşsa oyunun kendi ayarları (js/config.js) kullanılır.
+    ratesContract: (env.RATES_CONTRACT || '').trim(),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
     kasaMasterKey: (env.KASA_MASTER_KEY || '').trim(),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
     kasaMinAvax: num('KASA_MIN_AVAX', 0.003),                      // kasada en az bu kadar AVAX yoksa kasa kullanılmaz (aktarım ücreti)
     kasaMinSettle: num('KASA_MIN_SETTLE', 50),                     // bu kadar birikince (ya da 24 saatte bir) kasadan oyuna aktarım

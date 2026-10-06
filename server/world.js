@@ -3,7 +3,7 @@
 // Haftalık hesaplaşma (her Pazartesi 00:01 TSİ, oyunun hafta değişiminde) — kurallar server/economy.js:
 //  1. Çekim talepleri ortak havuzdan katkı puanına göre karşılanır; hak kirası ödenir; sığmayan kısım
 //     bakiyeye döner.
-//  2. Çekim ücretinin %70'i temel gelire, %30'u yakıma.
+//  2. Çekim ücretinin %70'i temel gelire, %30'u yakıma (oranlar RealmRates sözleşmesinden değişebilir).
 //  3. Fren açıksa hazine kasalarının %1'i yakılır.
 //  4. Ücretsiz oyunculara (hiç yatırma yapmamış, bu hafta oynamış) görev kasasından pay.
 //  5. Fiyat çarpanı, temel gelir ağırlıkları güncellenir.
@@ -15,6 +15,7 @@ import { allocateWithdrawals, brakeState, faucetWeekly, nextMultiplier, withdraw
 import { SYSTEM } from './engine.js';
 import { runDraw } from '../js/economy/lottery.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../js/economy/faucet.js';
+import { applyRates, ratesFromConfig, validateRates, toNamed, moneyFlows, RATE_KEYS, RATE_CHANGE_DELAY_SEC } from '../js/economy/rates.js';
 
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
@@ -26,6 +27,48 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   const creatorWallet = () => E.GAME_CONFIG.CREATOR_WALLET_ADDRESS;
   // Hepsi ya da hiçbiri: hata olursa veritabanı geri alınır, bellekteki kayıt kopyası da boşaltılır
   const atomic = fn => { try { return db.tx(fn); } catch (err) { E.reloadWorld(); throw err; } };
+
+  // ── ADA oranları (RealmRates sözleşmesi, kullanıcı kararı 6 Ekim 2026) ──
+  // Sunucu açılışta en son okunan oranları uygular; 5 dakikada bir sözleşmeden okur. Sözleşme yoksa oyunun kendi
+  // ayarları geçerlidir. Okunan oranlar geçersizse (olmamalı: sözleşme de denetler) uygulanmaz.
+  const ratesDefault = ratesFromConfig(E.GAME_CONFIG, WEEKLY_RULES);
+  const storedRates = () => db.kvJson('world:rates', null);
+  { const st = storedRates(); if (st && Array.isArray(st.active)) applyRates(E.GAME_CONFIG, WEEKLY_RULES, st.active); }
+  const currentRates = () => { const st = storedRates(); return st && Array.isArray(st.active) ? st.active : ratesFromConfig(E.GAME_CONFIG, WEEKLY_RULES); };
+
+  async function syncRates() {
+    if (!chain || !chain.readRates || !cfg.ratesContract) return null;
+    const prev = storedRates() || {};
+    let r;
+    try { r = await chain.readRates(cfg.ratesContract); }
+    catch (err) { db.kvSetJson('world:rates', { ...prev, error: err.message, errorAt: clock() }); throw err; }
+    if (!r) return null;
+    const bad = validateRates(r.active);
+    if (bad) { log.warn('Oran sözleşmesi geçersiz oran döndürdü:', bad); db.kvSetJson('world:rates', { ...prev, error: bad, errorAt: clock() }); return null; }
+    const changed = !Array.isArray(prev.active) || prev.active.join(',') !== r.active.join(',');
+    applyRates(E.GAME_CONFIG, WEEKLY_RULES, r.active);
+    const next = { contract: cfg.ratesContract.toLowerCase(), active: r.active, pending: r.pending, pendingAt: r.pendingAt, owner: r.owner, pendingOwner: r.pendingOwner, readAt: clock() };
+    db.kvSetJson('world:rates', next);
+    if (changed) db.event('rates-changed', null, { from: prev.active || ratesDefault, to: r.active });
+    return next;
+  }
+
+  function ratesStatus() {
+    const st = storedRates() || {};
+    const active = currentRates();
+    return {
+      contract: cfg.ratesContract || null, chainId: cfg.chainId, source: cfg.ratesContract ? 'contract' : 'config',
+      keys: RATE_KEYS, delaySec: RATE_CHANGE_DELAY_SEC,
+      active, named: toNamed(active), flows: moneyFlows(active),
+      pending: st.pending || null, pendingAt: st.pendingAt || 0, pendingFlows: st.pending ? moneyFlows(st.pending) : null,
+      owner: st.owner || null, pendingOwner: st.pendingOwner && !/^0x0+$/.test(st.pendingOwner) ? st.pendingOwner : null,
+      readAt: st.readAt || 0, error: st.error && (st.errorAt || 0) > (st.readAt || 0) ? st.error : null,
+      pools: Object.fromEntries(Object.entries(E.treasury.state.pools || {}).map(([k, v]) => [k, Math.round(Number(v) || 0)])),
+      ubi: { accruing: Math.round(Number(E.globalPool.state.ubiWeekAccrued) || 0), claimable: Math.round(Number(E.globalPool.state.ubiClaimPot) || 0) },
+      totals: { spent: Math.round(Number(E.globalPool.state.totalSpent) || 0), burned: Math.round(Number(E.globalPool.state.totalBurned) || 0), creator: Math.round(Number(E.globalPool.state.creatorRoyaltyTotal) || 0) },
+      burnedResources: E.globalPool.state.totalBurnedResources || {}, burnedItems: E.globalPool.state.totalBurnedItems || {}
+    };
+  }
 
   // ── Piyasa ──────────────────────────────────────────────────────────────
   async function snapshotMarket() {
@@ -519,6 +562,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
         await reconcilePayouts().catch(err => log.warn('Ödeme kontrolü:', err.message));
         await processPayouts().catch(err => log.warn('Ödeme:', err.message));
       }
+      if (chain && cfg.ratesContract && now - (last.rates || 0) >= 300000) { last.rates = now; await syncRates().catch(err => log.warn('Oran sözleşmesi:', err.message)); }
       if (chain && now - (last.partner || 0) >= 300000) { last.partner = now; await scanPartnerIncome().catch(err => log.warn('Ortak gelir:', err.message)); }
       if (chain && now - (last.hotWallet || 0) >= DAY) { last.hotWallet = now; await checkHotWallet().catch(err => log.warn('Oyun cüzdanı:', err.message)); }
       // Günlük pazar geri alımı (dünya işi; sistem hesabıyla)
@@ -631,5 +675,5 @@ Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de
 
   function setPaused(paused) { setEcon({ paused: !!paused }); db.event(paused ? 'pause' : 'resume'); return { paused: !!paused }; }
 
-  return { scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

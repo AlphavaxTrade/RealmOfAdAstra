@@ -132,6 +132,16 @@ Trade sitesindeki harcamaların **%40'ı** ADASTRA olarak oyuna gönderilir ve h
 3. Sunucu 5 dakikada bir bu adrese o cüzdandan gelen ödemeleri bulur, her birini **bir kez** sayar. Yönetici panelinde "🤝 Trade sitesi geliri" kartında görünür.
 4. Para yedek cüzdana geliyorsa, yakım ve yapımcı ödemeleri oyun cüzdanından yapıldığı için oyun cüzdanını yedekten beslemeyi unutma (panel azalınca uyarır).
 
+## 9. ADA oranları sözleşmesi (RealmRates)
+
+Oyundaki bütün ADA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları ve payları, çarkın karnavala giden kısmı, zindan harcı, piyango amortisi, pazar komisyonu ve hammadde yakımı, çekim ücreti ve kirası) herkesin görebileceği bu sözleşmede durur.
+
+1. `contracts/deploy.mjs` ödeme sözleşmesiyle birlikte bunu da yükler. Yalnız bunu yüklemek için `ONLY_RATES=1` yaz. Başlangıç oranları oyunun bugünkü ayarlarıdır.
+2. Çıktıdaki adresi `server/.env` içine `RATES_CONTRACT=0x...` olarak yaz. Sunucu oranları 5 dakikada bir okur ve oyuna uygular.
+3. Oranları değiştirmek: alphavaxtrade.vercel.app panelinde **Oyun → ADA nereye gidiyor → Oranları değiştir** (ya da oyunun `/admin` sayfası). Sahibin cüzdanı imzalar; yeni oranlar **24 saat sonra** geçerli olur, bu sürede geri çekilebilir.
+4. `OWNER_ADDRESS` verildiyse sahiplik o cüzdana devredilir; o cüzdanla "Sahipliği kabul et" denince tamamlanır.
+5. Herkes oranları `GET /api/rates` adresinden görebilir.
+
 ## Oyun nasıl işliyor? (kısa)
 
 - **Hesap:** Oyuncu e-posta ve şifreyle kayıt olur. Cüzdanı kaybolsa bile oyundaki bakiyesi hesabında kalır. Siteyi giriş yapmadan gezebilir; bir işlem yapmak istediğinde giriş istenir.

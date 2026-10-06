@@ -9,6 +9,8 @@
 // Sunucu yoksa (bilgisayardaki deneme modu) hiçbir şey değişmez: oyun eskisi gibi tarayıcıda çalışır.
 // ============================================================================
 import { ACTIONS, DEV_ACTIONS } from '../../server/actions.js';
+import { GAME_CONFIG } from '../config.js';
+import { applyRates } from '../economy/rates.js';
 
 const SESSION_KEY = 'adastra_session_v1';
 // Zamanla ilerleyen işler: tarayıcıda yalnız görüntü için çalışır, sunucuya gönderilmez (sunucu kendisi işler)
@@ -70,6 +72,7 @@ function apply(payload) {
     if (w.globalPool) globalPool.state = w.globalPool;
     if (w.serverTime) { globalPool.serverTimeOffset = w.serverTime - Date.now(); globalPool.trustedTimeReady = true; }
     online.economy = w.economy || null;
+    if (Array.isArray(w.rates)) applyRates(GAME_CONFIG, null, w.rates);   // oranlar sunucudan (RealmRates sözleşmesi)
   }
   online.lastSync = Date.now();
   try { gameState.notifyListeners(); } catch { /* arayüz */ }

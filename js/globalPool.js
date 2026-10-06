@@ -208,7 +208,8 @@ export class GlobalResourceManager {
       },
       totalActiveMiners: 342,
       buybackFromBroadcasting: prevState ? (prevState.buybackFromBroadcasting || 0) : 0,
-      totalBurnedResources: prevState ? (prevState.totalBurnedResources || { wood: 0, iron: 0, wheat: 0 }) : { wood: 0, iron: 0, wheat: 0 }
+      totalBurnedResources: prevState ? (prevState.totalBurnedResources || { wood: 0, iron: 0, wheat: 0 }) : { wood: 0, iron: 0, wheat: 0 },
+      totalBurnedItems: prevState ? (prevState.totalBurnedItems || {}) : {}
     };
 
     this.state = state;
@@ -241,6 +242,17 @@ export class GlobalResourceManager {
 
     this.saveState();
     return { resourceKey, amount: qty, remainingCap: res ? res.totalCap : 0, remaining: res ? res.remaining : 0 };
+  }
+
+  // Kullanılınca oyundan tamamen çıkan eşyalar (teçhizat parçası, anahtar, kutu, parşömen): yalnız kayıt (denetim 6 Ekim 2026).
+  // Hammadde gibi haftalık kotayı etkilemez, katkı puanı vermez.
+  recordItemBurn(kind, amount) {
+    const qty = Number(amount) || 0;
+    if (!qty || !kind) return 0;
+    if (!this.state.totalBurnedItems) this.state.totalBurnedItems = {};
+    this.state.totalBurnedItems[kind] = Math.max(0, (this.state.totalBurnedItems[kind] || 0) + qty);
+    this.saveState();
+    return qty;
   }
 
   saveState() {

@@ -5147,7 +5147,7 @@ function openPreBattleModal(monster) {
           ? `<div class="pe-note ${terms.nextWeaponWear ? '' : 'pe-good'}">${terms.nextWeaponWear ? 'Savaşa giren her askerin silahı 1 aşınır.' : 'Günün ilk girişi: silahların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.</div>`
           : `<label class="pe-fee">
                <input type="checkbox" id="chk-dungeon-gate-fee" ${window.dungeonPayGateFee ? 'checked' : ''} />
-               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ADA</strong> — ödülüyle gir. Harcın tamamı zindan kasasına gider.</span>
+               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ADA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
              </label>
              <div class="pe-note">Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ADA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.</div>`}
       ${expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ADA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : ''}

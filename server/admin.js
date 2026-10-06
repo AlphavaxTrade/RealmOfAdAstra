@@ -32,6 +32,7 @@ async function load() {
     card('Sonraki hafta', s.nextWeekAt ? new Date(s.nextWeekAt).toLocaleString('tr-TR') : '—'),
     `<div class="card"><div class="k">Hazine kasaları</div><div style="font-size:0.8rem;margin-top:4px;">${pools}</div></div>`
   ].join('');
+  ratesView(s.rates);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
   const st = { pending: '⏳ sırada', sending: '⚠️ gönderiliyordu (kontrol et)', sent: '✅ gönderildi' };
   $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ADA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
@@ -39,6 +40,45 @@ async function load() {
   $('events').innerHTML = '<tr><th>Zaman</th><th>Tür</th><th>Adres</th><th>Bilgi</th></tr>' +
     s.events.map(e => `<tr><td>${new Date(e.at).toLocaleString('tr-TR')}</td><td>${esc(e.type)}</td><td>${esc((e.address || '').slice(0, 10))}</td><td>${esc((e.data || '').slice(0, 160))}</td></tr>`).join('');
 }
+// ── ADA oranları ────────────────────────────────────────────────────────
+let lastRates = null;
+const pctTr = bps => '%' + (bps / 100).toLocaleString('tr-TR');
+function ratesView(r) {
+  lastRates = r;
+  if (!r) { $('ratesInfo').textContent = 'Oran bilgisi yok.'; return; }
+  const src = r.contract ? `Sözleşme: <a href="https://${r.chainId === 43113 ? 'testnet.' : ''}snowtrace.io/address/${esc(r.contract)}" target="_blank" rel="noopener">${esc(r.contract.slice(0, 10))}…</a>${r.owner ? ' · sahibi ' + esc(r.owner.slice(0, 10)) + '…' : ''}${r.readAt ? ' · son okuma ' + new Date(r.readAt).toLocaleString('tr-TR') : ''}`
+    : 'Oran sözleşmesi tanımlı değil (RATES_CONTRACT): oyunun kendi ayarları geçerli.';
+  const pend = r.pending ? `<br><span class="warn">⏳ Bekleyen değişiklik: ${new Date(r.pendingAt).toLocaleString('tr-TR')} tarihinde geçerli olacak.</span>` : '';
+  $('ratesInfo').innerHTML = src + pend + (r.error ? `<br><span class="bad">Okuma hatası: ${esc(r.error)}</span>` : '');
+  const pf = r.pendingFlows || [];
+  $('ratesFlows').innerHTML = '<tr><th>Alan</th><th>Nereye gidiyor</th>' + (r.pending ? '<th>Bekleyen değişiklikten sonra</th>' : '') + '</tr>' +
+    r.flows.map((f, i) => `<tr><td><b>${esc(f.area)}</b>${f.note ? `<div class="k">${esc(f.note)}</div>` : ''}</td><td>${esc(f.where)}</td>${r.pending ? `<td>${esc((pf[i] || {}).where || '')}</td>` : ''}</tr>`).join('');
+  const src2 = r.pending || r.active;
+  $('ratesForm').innerHTML = r.keys.map((k, i) => `<label class="card" style="padding:6px;"><div class="k">${esc(k.label)}</div><input data-rate="${i}" type="number" min="0" max="100" step="0.01" value="${src2[i] / 100}"></label>`).join('');
+}
+function readRateForm() {
+  const arr = [...document.querySelectorAll('[data-rate]')].map(el => Math.round(Number(el.value) * 100));
+  const spend = arr[0] + arr[1] + arr[2] + arr[3], pools = arr.slice(4, 10).reduce((a, b) => a + b, 0);
+  if (arr.some(v => !Number.isFinite(v) || v < 0 || v > 10000)) throw new Error('Her oran %0 ile %100 arasında olmalı.');
+  if (spend !== 10000) throw new Error('Harcama bölüşümü toplamı %100 olmalı (şu an ' + pctTr(spend) + ').');
+  if (pools !== 10000) throw new Error('Kasa payları toplamı %100 olmalı (şu an ' + pctTr(pools) + ').');
+  lastRates.keys.forEach((k, i) => { if (k.max != null && arr[i] > k.max) throw new Error(k.label + ' en fazla ' + pctTr(k.max) + ' olabilir.'); });
+  return arr;
+}
+$('rPropose').onclick = () => {
+  try {
+    if (!lastRates || !lastRates.contract) return alert('Oran sözleşmesi tanımlı değil.');
+    const arr = readRateForm();
+    const diff = lastRates.keys.map((k, i) => arr[i] !== lastRates.active[i] ? `${k.label}: ${pctTr(lastRates.active[i])} → ${pctTr(arr[i])}` : null).filter(Boolean);
+    if (!diff.length) return alert('Değişen oran yok.');
+    if (!confirm('Şu oranlar değişecek (24 saat sonra geçerli):\n\n' + diff.join('\n'))) return;
+    ledgerTx(lastRates.contract, '0xd2c287e7' + arr.map(v => pad(v.toString(16))).join(''), 'Oran önerisi', 'ratesMsg');
+  } catch (e) { alert(e.message); }
+};
+$('rCancel').onclick = () => lastRates && lastRates.contract && confirm('Bekleyen oran değişikliği geri çekilsin mi?') && ledgerTx(lastRates.contract, '0xea8a1af0', 'Öneriyi geri çekme', 'ratesMsg');
+$('rAccept').onclick = () => lastRates && lastRates.contract && confirm('Oran sözleşmesinin sahipliğini bu cüzdanla kabul et?') && ledgerTx(lastRates.contract, '0x79ba5097', 'Sahiplik kabulü', 'ratesMsg');
+$('rSync').onclick = () => act(async () => { const r = await api('POST', '/api/admin/rates/sync'); if (r && r.skipped) alert(r.skipped); });
+
 function partnerCard(s) {
   const p = s.partnerIncome;
   if (!p || !p.enabled) return card('🤝 Trade sitesi geliri', 'kapalı (PARTNER_INCOME_FROM)');
@@ -58,8 +98,8 @@ function contractCard(s) {
   return `<div class="card"><div class="k">Sözleşme sahibi</div><div class="v ${c.ownerOk ? 'ok' : 'bad'}">${c.ownerOk ? '✅ donanım cüzdanı' : (c.ownerIsHot ? '⛔ SICAK CÜZDAN' : '⚠️ beklenen değil')}</div><div class="k">${esc(c.owner.slice(0, 10))}… ${c.paused ? '· <span class="bad">ödemeler durdurulmuş</span>' : ''}${pend}</div></div>`;
 }
 // ── Tarayıcı cüzdanıyla (Ledger) sözleşme işlemleri: sunucu imza atmaz ──
-async function ledgerTx(to, data, label) {
-  const msg = $('ledgerMsg');
+async function ledgerTx(to, data, label, msgId = 'ledgerMsg') {
+  const msg = $(msgId);
   if (!window.ethereum) { alert('Tarayıcıda cüzdan bulunamadı (MetaMask / Core + Ledger).'); return; }
   try {
     const s = await api('GET', '/api/admin/status');

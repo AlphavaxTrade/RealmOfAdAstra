@@ -47,7 +47,7 @@ const ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsa
 const GAME_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 const userError = msg => Object.assign(new Error(msg), { userError: true });
 
-const PUBLIC_ROUTES = ['GET /api/health', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
+const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
 export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, chain, cfg, clock = () => Date.now(), log = console }) {
@@ -141,6 +141,8 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   const routes = {
+    // ADA nereye gidiyor: oranlar herkese açık (RealmRates sözleşmesi)
+    'GET /api/rates': () => (world.ratesStatus ? world.ratesStatus() : [404, { error: 'Kapalı' }]),
     'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode, payments: payments ? payments.info() : null }),
 
     // ── Hesap ────────────────────────────────────────────────────────────
@@ -346,6 +348,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
         reserveWallet: cfg.reserveWallet || null, contractOwner: cfg.contractOwner || null,
         hotWallet: e.hotWallet || null, hotNeed: world.hotWalletNeed ? world.hotWalletNeed() : null,
         partnerIncome: world.partnerIncomeStatus ? world.partnerIncomeStatus() : null,
+        rates: world.ratesStatus ? world.ratesStatus() : null,
         payouts: db.q.payoutsRecent.all(50),
         events: db.q.eventsRecent.all(50)
       };
@@ -353,6 +356,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),
+    'POST /api/admin/rates/sync': async () => (world.syncRates ? (await world.syncRates()) || { skipped: 'oran sözleşmesi tanımlı değil' } : { skipped: true }),
     'POST /api/admin/hotwallet/check': async () => (world.checkHotWallet ? (await world.checkHotWallet()) || { skipped: 'zincir yok' } : { skipped: true })
   };
 
