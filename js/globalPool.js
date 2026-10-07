@@ -4,6 +4,7 @@ import { GAME_CONFIG } from './config.js';
 import { treasury } from './treasury.js';
 import { openWeek, shareOf, isEligible, levelWeight, DEFAULT_UBI_RULES } from './economy/ubi.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
+import { globalPoolV2 } from './v2/koyVeKonsey.js';
 
 const DAY_MS = 24 * 3600 * 1000;
 const zeroRes = () => Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ["wood", "iron", "wheat"]).map(k => [k, 0]));
@@ -785,4 +786,6 @@ export class GlobalResourceManager {
   }
 }
 
+// v2: Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri) — js/v2/koyVeKonsey.js
+Object.assign(GlobalResourceManager.prototype, globalPoolV2);
 export const globalPool = new GlobalResourceManager();

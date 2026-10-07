@@ -1935,6 +1935,7 @@ function openTownZoneModal(zoneId, zoneName) {
                       <span style="color: #facc15; font-size: 0.85rem; font-weight: 800; padding: 8px;">🏆 Maksimum Güç</span>
                     `}
 
+                    ${(() => { const rv = gameState.getRecycleValue ? gameState.getRecycleValue(item) : null; if (!rv) return ''; const txt = `${rv.wood}🌲 ${rv.iron}⛏️${rv.coal ? ` ${rv.coal}⚫` : ''}`; return `<button class="btn-clean btn-clean-outline btn-recycle-equipment" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" data-value="${txt}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f97316; color:#fdba74;" title="Geri dönüşüm: hammaddelerin %70'i geri gelir, ASTRA gelmez; eşya yok olur">♻️ Geri dönüştür (${txt})</button>`; })()}
                     ${isDamaged ? `
                       <button class="btn-clean btn-armory-repair btn-equip-repair" 
                         data-slot="${slotKey}" 
@@ -1971,70 +1972,84 @@ function openTownZoneModal(zoneId, zoneName) {
   }
 
   // 3. ÇİFTLİK (WHEAT)
-  // 3. YENİ BİNALAR (v2): Köy Evleri, Şifahane, Uzay Limanı (K1 kuralları adım adım bağlanıyor)
+  // 3. YENİ BİNALAR (v2 R5/R6): Köy Evleri, Şifahane, Uzay Limanı
   else if (zoneId === 'village') {
-    const v = state.village || { houses: 1, villagers: 10, labor: 0 };
-    const K = GAME_CONFIG.KOY || {};
-    const perHouse = K.VILLAGERS_PER_HOUSE ?? 10;
+    const vi = gameState.getVillageInfo();
+    const costTxt = vi.nextHouseCost ? Object.entries(vi.nextHouseCost).map(([k, n]) => `${(RES_META()[k] || {}).icon || ''} ${fmtInt(n)} ${(RES_META()[k] || {}).name || k}`).join(' + ') : '—';
+    const canAfford = vi.nextHouseCost ? Object.entries(vi.nextHouseCost).every(([k, n]) => (state.inventory[k] || 0) >= n) : false;
     html = `
       <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🏘️ Köy Evleri</div><div class="card-badge">${v.houses || 1} ev · ${Math.floor(v.villagers || 0)} köylü</div></div>
-        <div class="clean-desc">Köylüler günde buğday yer, emek puanı üretir (Konsey projeleri ve Madencilik Otoritesi inşaatı için) ve her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir. Universe açılınca köylüler kolonist olarak gönderilebilir.</div>
+        <div class="card-title-row"><div class="card-title">🏘️ Köy Evleri</div><div class="card-badge">${vi.houses} ev · ${vi.villagers} / ${vi.capacity} köylü</div></div>
+        <div class="clean-desc">Köylüler günde 2 buğday yer; buğday varsa nüfus günde %2 büyür (ev kapasitesine kadar), ${vi.starveDays} gün aç kalırsa günde %5 göç eder. Her köylü günde 1 emek puanı üretir (Konsey projeleri için). Her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir. Universe açılınca köylüler kolonist olarak gönderilebilir.</div>
+        ${vi.starving ? `<div style="background:rgba(185,28,28,.25); border:1px solid #ef4444; border-radius:8px; padding:8px 12px; margin-bottom:8px; color:#fca5a5; font-weight:700;">⚠️ Köy aç! ${vi.starvingDays} gündür buğday yok; ${vi.starveDays} günden sonra köylüler göç eder. Günlük ihtiyaç: ${vi.wheatPerDay} buğday.</div>` : ''}
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.85rem;">
-          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${Math.floor(v.villagers || 0)}</strong><span class="stat-tile-sub">kapasite ${(v.houses || 1) * perHouse}</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Emek puanı</span><strong>${Math.floor(v.labor || 0)}</strong><span class="stat-tile-sub">günde köylü başına 1</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Üretim bonusu</span><strong>+%${Math.min(20, Math.floor((v.villagers || 0) / 10))}</strong><span class="stat-tile-sub">her 10 köylü +%1</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Asker hakkı</span><strong>${(state.soldierUnits || []).length} / ${Math.floor(v.villagers || 0)}</strong><span class="stat-tile-sub">her asker 1 köylü</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${vi.villagers}</strong><span class="stat-tile-sub">kapasite ${vi.capacity} · günde +%${Math.round(vi.growthPerDay * 100)}</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Günlük buğday</span><strong>${vi.wheatPerDay}</strong><span class="stat-tile-sub">depoda ${fmtInt(state.inventory.wheat || 0)}</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Emek puanı</span><strong>${fmtInt(vi.labor)}</strong><span class="stat-tile-sub">günde +${vi.laborPerDay}</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Üretim bonusu</span><strong>+%${Math.round(vi.bonus * 100)}</strong><span class="stat-tile-sub">her 10 köylü +%1</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Asker hakkı</span><strong>${vi.soldiers} / ${vi.soldierCap}</strong><span class="stat-tile-sub">her asker 1 köylü</span></div>
         </div>
-        <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🏗️ Yeni ev yapımı, köylü büyümesi ve beslenme kuralları bu sürümde bağlanıyor.</div>
+      </div>
+      <div class="clean-card">
+        <div class="card-title-row"><div class="card-title">🏗️ Yeni ev</div><span class="card-badge">${vi.houses} / ${vi.maxHouses} (hesap seviyesi kadar)</span></div>
+        <div style="font-size:0.85rem; color:#cbd5e1; margin-bottom:8px;">Bedel: ${costTxt}</div>
+        <button class="btn-clean btn-clean-green" id="btn-build-house" style="width:auto; padding:9px 18px;" ${vi.canBuildHouse && canAfford ? '' : 'disabled'}>🏘️ Ev yap (+${GAME_CONFIG.KOY?.VILLAGERS_PER_HOUSE ?? 10} köylü kapasitesi)</button>
+        ${!vi.canBuildHouse && vi.houseLimitReason ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">${vi.houseLimitReason}.</div>` : (!canAfford ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">Malzeme eksik.</div>` : '')}
       </div>`;
   }
   else if (zoneId === 'healer') {
-    const injured = (state.soldierUnits || []).filter(sv => (sv.hp || 0) < (sv.maxHp || 100));
+    const S = GAME_CONFIG.SIFAHANE || {};
     const herbs = Math.floor(state.inventory.herb || 0);
-    const hpPerHerb = (GAME_CONFIG.SIFAHANE || {}).HP_PER_HERB ?? 5;
+    const rows = (state.soldierUnits || []).map((sv, i) => ({ i, sv, info: gameState.getHerbHealInfo(i) })).filter(x => x.info && !x.info.isFull);
     html = `
       <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🌿 Şifahane</div><div class="card-badge">${herbs} şifalı ot</div></div>
-        <div class="clean-desc">Şifalı ot ile yaralı askerler iyileştirilir: 1 ot = ${hpPerHerb} can. Otla iyileştirmede ASTRA bedeli yarıya iner. Şifalı ot yalnız Şifalı Ot Bahçesi seferlerinden gelir.</div>
-        <div style="font-size:0.85rem; color:#cbd5e1;">Yaralı asker: <strong>${injured.length}</strong> · Eksik can toplamı: <strong>${injured.reduce((t, sv) => t + ((sv.maxHp || 100) - (sv.hp || 0)), 0)}</strong></div>
-        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-clean btn-clean-green" id="btn-healer-open-barracks" style="width:auto; padding:8px 16px;">⚔️ Kışlaya git (iyileştirme)</button>
+        <div class="card-title-row"><div class="card-title">🌿 Şifahane</div><div class="card-badge">${fmtInt(herbs)} şifalı ot</div></div>
+        <div class="clean-desc">Şifalı ot ile iyileştirme: 1 ot = ${S.HP_PER_HERB ?? 5} can; buğday harcanmaz, ASTRA bedeli anında iyileştirmenin %${Math.round((S.ADA_SHARE_WITH_HERB ?? 0.5) * 100)}'i. Şifalı ot yalnız Şifalı Ot Bahçesi seferlerinden gelir.</div>
+        ${rows.length === 0 ? '<div style="color:#4ade80; font-weight:700;">✅ Bütün askerler tam can.</div>' : `
+        <div style="display:grid; gap:6px;">
+          ${rows.map(({ i, sv, info }) => `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(255,255,255,.04); padding:8px 10px; border-radius:8px; font-size:0.85rem;">
+            <span><strong>${sv.name}</strong> · ${info.hp}/${info.maxHp} can</span>
+            <button class="btn-clean btn-clean-green btn-heal-herb" data-soldier-idx="${i}" style="width:auto; padding:6px 12px;" ${herbs >= info.herbsNeeded && (state.adAstraBalance || 0) >= info.herbAdaCost ? '' : 'disabled'}>🌿 İyileştir (${info.herbsNeeded} ot + ${fmt3(info.herbAdaCost)} ASTRA)</button>
+          </div>`).join('')}
         </div>
-        <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🧪 Otla iyileştirme düğmesi bu sürümde Kışla ekranına ekleniyor.</div>
+        <button class="btn-clean btn-clean-green" id="btn-heal-herb-all" style="margin-top:10px; width:auto; padding:8px 16px;">🌿 Hepsini otla iyileştir</button>`}
+        <div style="margin-top:10px;"><button class="btn-clean btn-clean-outline" id="btn-healer-open-barracks" style="width:auto; padding:6px 14px;">⚔️ Kışlaya git (buğdayla iyileştirme)</button></div>
       </div>`;
   }
   else if (zoneId === 'spaceport') {
     const U = GAME_CONFIG.UZAY_LIMANI || {};
-    const parts = U.ROCKET_PARTS || {};
-    const v = state.village || { villagers: 0 };
+    const rk = gameState.getRocketStatus();
+    const vi = gameState.getVillageInfo();
     const soldiers = (state.soldierUnits || []).length;
     const genesis = !!state.genesisNftMinted;
     const stage = GAME_CONFIG.UNIVERSE_STAGE || 0;
     const stageNames = ['Aşama 0 — Realm (Universe kapalı)', 'Aşama 1 — Hazırlık (Hazırlık Deposu açık)', 'Aşama 2 — Ön sipariş', 'Aşama 3 — Universe açık'];
     const W = U.PROGRESS_WEIGHTS || { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 };
-    const rocketDone = !!state.rocketReady;
-    const pVill = Math.min(1, (v.villagers || 0) / 100), pSold = Math.min(1, soldiers / 10);
-    const progress = Math.round(((rocketDone ? 1 : 0) * W.rocket + 0 * W.depot + pVill * W.villagers + pSold * W.soldiers + (genesis ? 1 : 0) * W.genesis) * 100);
-    const partRows = Object.entries(parts).map(([k, need]) => { const have = k === 'adAstra' ? (state.adAstraBalance || 0) : (state.inventory[k] || 0); const mm = RES_META()[k] || {}; return `<div style="display:flex; justify-content:space-between;"><span>${mm.icon || '🟣'} ${mm.name || 'ASTRA'}</span><span style="font-weight:800; color:${have >= need ? '#4ade80' : '#f87171'};">${Math.floor(have).toLocaleString('tr-TR')} / ${need.toLocaleString('tr-TR')}</span></div>`; }).join('');
+    const pVill = Math.min(1, vi.villagers / 100), pSold = Math.min(1, soldiers / 10);
+    const progress = Math.round(((rk.ready ? 1 : 0) * W.rocket + 0 * W.depot + pVill * W.villagers + pSold * W.soldiers + (genesis ? 1 : 0) * W.genesis) * 100);
+    const partRows = rk.parts.map(p => `<div style="display:flex; justify-content:space-between;"><span>${p.icon} ${p.name}</span><span style="font-weight:800; color:${p.ok ? '#4ade80' : '#f87171'};">${fmtInt(p.have)} / ${fmtInt(p.need)}</span></div>`).join('');
     html = `
       <div class="clean-card">
         <div class="card-title-row"><div class="card-title">🚀 Uzay Limanı</div><div class="card-badge">${stageNames[stage] || stageNames[0]}</div></div>
-        <div class="clean-desc">Universe'e hazırlık merkezi: Roket Rampası (roket görevi), Yük İskelesi (Hazırlık Deposu) ve Gözlem Kulesi (kilitli). Realm tek başına en az 1 yıl oynanır; Universe açıldığında buradan geçilir.</div>
+        <div class="clean-desc">Universe'e hazırlık merkezi: Roket Rampası (roket görevi), Yük İskelesi (Hazırlık Deposu) ve Gözlem Kulesi (kilitli). Realm tek başına en az 1 yıl oynanır; Universe açıldığında geçiş buradan yapılır.</div>
         <div style="margin:8px 0 4px; font-weight:800; color:#e2e8f0;">Universe'e hazırlık: %${progress}</div>
         <div style="height:10px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${progress}%; background:linear-gradient(90deg,#38bdf8,#a78bfa);"></div></div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; font-size:0.82rem; margin-top:10px;">
-          <div class="stat-tile"><span class="stat-tile-label">Roket</span><strong>${rocketDone ? 'Hazır ✅' : 'Yapılmadı'}</strong><span class="stat-tile-sub">hesap seviyesi ${U.ROCKET_MIN_LEVEL ?? 3}+</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Roket</span><strong>${rk.ready ? 'Hazır ✅' : 'Yapılmadı'}</strong><span class="stat-tile-sub">hesap seviyesi ${rk.minLevel}+</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Hazırlık Deposu</span><strong>Kilitli</strong><span class="stat-tile-sub">Aşama 1'de açılır</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${Math.floor(v.villagers || 0)} / 100</strong><span class="stat-tile-sub">kolonist adayı</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${vi.villagers} / 100</strong><span class="stat-tile-sub">kolonist adayı</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Asker</span><strong>${soldiers} / 10</strong><span class="stat-tile-sub">mürettebat adayı</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Genesis NFT</span><strong>${genesis ? 'Var ✅' : 'Yok'}</strong><span class="stat-tile-sub">gezegen satın alma hakkı</span></div>
         </div>
       </div>
       <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🛠️ Roket Rampası — roket parçaları</div></div>
+        <div class="card-title-row"><div class="card-title">🛠️ Roket Rampası — roket parçaları</div><span class="card-badge">${rk.ready ? '🏅 Roket hazır' : (rk.levelOk ? 'parçalar' : `seviye ${rk.minLevel} gerekli`)}</span></div>
         <div style="display:grid; gap:4px; font-size:0.85rem; color:#cbd5e1; background:rgba(0,0,0,.3); border-radius:8px; padding:10px;">${partRows}</div>
-        <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">Roket görevi düğmesi bu sürümde bağlanıyor; parçaları şimdiden biriktirebilirsin.</div>
+        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-clean btn-clean-green" id="btn-build-rocket" style="width:auto; padding:9px 18px;" ${rk.canBuild ? '' : 'disabled'}>🚀 Roketi yap</button>
+          ${rk.reason && !rk.ready ? `<span style="font-size:0.8rem; color:#94a3b8;">${rk.reason}</span>` : ''}
+          ${rk.ready ? `<span style="font-size:0.8rem; color:#4ade80;">Roket ${new Date(rk.builtAt).toLocaleDateString('tr-TR')} tarihinde hazırlandı; Universe'e geçiş kilidi burada açılacak.</span>` : ''}
+        </div>
       </div>`;
   }
 
@@ -4840,7 +4855,25 @@ function openTreasuryVaultModal() {
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.82rem;">
         ${RES_KEYS().map(k => { const m = RES_META()[k] || {}; const r = us.rights[k]; return `<div class="stat-tile"><span class="stat-tile-label">${m.icon || ''} ${m.name || k}</span><strong>${fmtInt(r.used)} / ${fmtInt(r.weekly)}</strong><span class="stat-tile-sub">kota %${Math.round((r.qpp || 0) * 100)} · ortak kasa ${fmtInt(konseyStock[k] || 0)}</span></div>`; }).join('')}
       </div>
-      <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🏗️ Madencilik Otoritesi inşaatı ve Konsey projeleri (emek + hammadde katkısı) bu sürümde bağlanıyor; ortak kasa şimdiden birikiyor.</div>
+      ${(() => { const ot = globalPool.getOtoriteStatus(); const pj = globalPool.getProjectStatus(); const vi = gameState.getVillageInfo(); const inv = gameState.state.inventory || {}; const lbl = k => k === 'labor' ? '💪 Emek' : `${(RES_META()[k] || {}).icon || ''} ${(RES_META()[k] || {}).name || k}`; const row = (k, have, need) => `<div style="display:flex; justify-content:space-between; font-size:0.82rem;"><span>${lbl(k)}</span><span><strong>${fmtInt(have)}</strong> / ${fmtInt(need)}</span></div>`; const giveBtn = (target, k) => `<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="${k}" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${(inv[k] || 0) >= 2 ? '' : 'disabled'}>${lbl(k)} ver (yarısı: ${fmtInt(Math.floor((inv[k] || 0) / 2))})</button>`; return `
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-top:10px;">
+        <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px;">
+          <div style="font-weight:800; color:#e2e8f0;">⛏️ Madencilik Otoritesi — seviye ${ot.level}${ot.maxed ? ' (en üst)' : ` → ${ot.level + 1}`}</div>
+          <div style="font-size:0.78rem; color:#94a3b8; margin:4px 0 6px;">Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: taş %40, demir %20, odun %10; çelik payı %30 Konsey kasasından (${fmtInt(ot.steelAstra)} ASTRA).</div>
+          ${ot.maxed ? '' : `<div style="height:8px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-bottom:6px;"><div style="height:100%; width:${ot.pct}%; background:#a78bfa;"></div></div>
+          ${Object.keys(ot.need).map(k => row(k, ot.progress[k] || 0, ot.need[k])).join('')}
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${Object.keys(ot.need).map(k => giveBtn('otorite', k)).join('')}</div>`}
+        </div>
+        <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px;">
+          <div style="font-weight:800; color:#e2e8f0;">${pj.active ? `${pj.active.icon} Konsey projesi: ${pj.active.name}` : '✅ Bütün Konsey projeleri bitti'}</div>
+          ${pj.active ? `<div style="font-size:0.78rem; color:#94a3b8; margin:4px 0 6px;">${pj.active.desc} Gereken: ${fmtInt(pj.active.units)} birim hammadde (Otorite karışımı) + ${fmtInt(pj.active.labor)} emek. Senin emek puanın: ${fmtInt(vi.labor)}.</div>
+          <div style="height:8px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-bottom:6px;"><div style="height:100%; width:${pj.pct}%; background:#38bdf8;"></div></div>
+          ${Object.keys(pj.need).map(k => row(k, pj.progress[k] || 0, pj.need[k])).join('')}
+          ${row('labor', pj.labor, pj.active.labor)}
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${Object.keys(pj.need).map(k => giveBtn('project', k)).join('')}<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="project" data-res="labor" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${vi.labor >= 1 ? '' : 'disabled'}>💪 Emek ver (hepsi: ${fmtInt(vi.labor)})</button></div>` : ''}
+          ${pj.done.length ? `<div style="font-size:0.78rem; color:#4ade80; margin-top:6px;">Biten: ${pj.done.map(d => d.icon + ' ' + d.name).join(', ')}</div>` : ''}
+        </div>
+      </div>`; })()}
     </div>` : '';
 
   dom.modalBody.innerHTML = konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
@@ -6139,6 +6172,64 @@ function initAppEvents() {
   });
 
   dom.modalBody.addEventListener('click', async (e) => {
+    // ── v2 binaları: Köy Evleri, Şifahane, Uzay Limanı, Demirhane geri dönüşümü, Konsey katkısı ──
+    if (e.target.closest('#btn-build-house')) {
+      const r = gameState.buildHouse();
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) sound.playLevelUp();
+      openTownZoneModal('village', ZONE_LABELS.village);
+      renderTopBar();
+      return;
+    }
+    const herbBtn = e.target.closest('.btn-heal-herb');
+    if (herbBtn) {
+      const r = gameState.healSoldierWithHerb(parseInt(herbBtn.dataset.soldierIdx, 10));
+      showToast(r.message, r.success ? 'success' : 'error');
+      openTownZoneModal('healer', ZONE_LABELS.healer);
+      renderTopBar();
+      return;
+    }
+    if (e.target.closest('#btn-heal-herb-all')) {
+      const r = gameState.healAllWithHerb();
+      showToast(r.message, r.healed > 0 ? 'success' : 'info');
+      openTownZoneModal('healer', ZONE_LABELS.healer);
+      renderTopBar();
+      return;
+    }
+    if (e.target.closest('#btn-healer-open-barracks')) { openBarracksModal(); return; }
+    if (e.target.closest('#btn-build-rocket')) {
+      const r = gameState.buildRocket();
+      showToast(r.message, r.success ? 'success' : 'error');
+      if (r.success) sound.playLevelUp();
+      openTownZoneModal('spaceport', ZONE_LABELS.spaceport);
+      renderTopBar();
+      return;
+    }
+    const recBtn = e.target.closest('.btn-recycle-equipment');
+    if (recBtn) {
+      const d = recBtn.dataset;
+      if (!window.confirm(`Bu eşya geri dönüştürülsün mü? Geri gelen: ${d.value || ''}. Eşya yok olur.`)) return;
+      const r = gameState.recycleEquipment({ source: d.source, slotKey: d.slot, armoryIndex: d.armoryIdx !== '' ? parseInt(d.armoryIdx, 10) : null, soldierIndex: d.soldierIdx !== '' ? parseInt(d.soldierIdx, 10) : null });
+      showToast(r.message, r.success ? 'success' : 'error');
+      openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
+      renderTopBar();
+      return;
+    }
+    const kBtn = e.target.closest('.btn-konsey-contribute');
+    if (kBtn) {
+      const res = kBtn.dataset.res, target = kBtn.dataset.target;
+      const inv = gameState.state.inventory || {};
+      let r;
+      if (res === 'labor') r = gameState.contributeToProject({}, Math.floor(gameState.getVillageInfo().labor));
+      else {
+        const amt = Math.floor((inv[res] || 0) / 2);
+        r = target === 'otorite' ? gameState.contributeToOtorite({ [res]: amt }) : gameState.contributeToProject({ [res]: amt }, 0);
+      }
+      showToast(r.message, r.success ? 'success' : 'error');
+      openTreasuryVaultModal();
+      renderTopBar();
+      return;
+    }
     // 1-Click: Tüm Seferleri Topla & Yeniden Başlat
     const exp1ClickBtn = e.target.closest('.btn-1click-claim-restart-exp');
     if (exp1ClickBtn) {
@@ -8511,6 +8602,7 @@ function uiGameLoop(currentTime) {
 
     gameState.runTavernaAutomationCycle();
     gameState.processSoldierPassiveHealing(slowDelta);
+    if (gameState.processVillage) gameState.processVillage(slowDelta);
     gameState.tickUpgradeCostBot(slowDelta);
     gameState.checkDailyAutonomousBuyback();
     globalPool.simulateGlobalActivity(slowDelta);

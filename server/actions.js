@@ -45,7 +45,10 @@ const T = {
   wheelPay: v => WHEEL_PAY.includes(v),
   quest: v => typeof v === 'string' && (GAME_CONFIG.ONBOARDING_QUESTS || []).some(q => q.id === v),
   fightOpts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(k => k === 'payGateFee') &&
-    (v.payGateFee === undefined || typeof v.payGateFee === 'boolean')
+    (v.payGateFee === undefined || typeof v.payGateFee === 'boolean'),
+  // v2: Konsey katkısı — { hammadde: miktar } (yalnız oyunun 6 hammaddesi, pozitif sayılar)
+  amounts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 &&
+    Object.entries(v).every(([k, x]) => NODES.includes(k) && typeof x === 'number' && isFinite(x) && x >= 0 && x <= 1e12)
 };
 
 // name: [argüman türleri] — '?' ile bitenler isteğe bağlı
@@ -67,6 +70,14 @@ export const ACTIONS = {
   upgradeWarehouse: A([]),
   repairTool: A(['tool']),
   repairAllTools: A([]),
+  // v2 (R5/R6): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Sirius Konseyi katkıları
+  buildHouse: A([]),
+  healSoldierWithHerb: A(['idx']),
+  healAllWithHerb: A([]),
+  recycleEquipment: A(['ref']),
+  buildRocket: A([]),
+  contributeToOtorite: A(['amounts']),
+  contributeToProject: A(['amounts', 'int?']),
   // Ordu
   buySoldierUnit: A([]),
   instantHealSoldierUnit: A(['idx']),

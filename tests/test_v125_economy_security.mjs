@@ -207,7 +207,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   assert.equal(gs.buyTavernBuff('auto_collector_monthly').success, false);
   assert.ok(Math.abs(gs.getLevelProductionMultiplier(10) - 1.09) < 1e-9);   // 5 Ekim 2026: seviye başına %1
   gs.state.level = 10;
-  assert.ok(Math.abs(gs.getResourceRatePerMinute('wood') - GAME_CONFIG.BASE_PRODUCTION.wood * 1.09) < 1e-9);
+  assert.ok(Math.abs(gs.getResourceRatePerMinute('wood') - GAME_CONFIG.BASE_PRODUCTION.wood * 1.09 * gs.getVillageProductionMultiplier('wood')) < 1e-9);   // v2: köylü bonusu dahil
   ok('Eski bot paketleri kapalı, seviye bonusu +%1/seviye');
 }
 

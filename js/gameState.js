@@ -7,6 +7,7 @@ import { globalPool } from './globalPool.js';
 import { sound } from './audio.js';
 import { ammMarket } from './ammMarket.js';
 import { treasury } from './treasury.js';
+import { gameStateV2 } from './v2/koyVeKonsey.js';
 import { createUnit, simulateBattle, predictBattle, DEFAULT_BOSS_PHASES } from './combat.js';
 import { getDungeonEntry } from './bestiary.js';
 import { splitTicketPayment, runDraw, winChance as lotteryWinChance } from './economy/lottery.js';
@@ -107,6 +108,9 @@ export class GameStateManager {
       arenaKeys: parsed.arenaKeys || 0,
       genesisNftMinted: parsed.genesisNftMinted || false,
       uretim: parsed.uretim || null,   // v2: Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
+      rocketReady: !!parsed.rocketReady,
+      rocketBuiltAt: parsed.rocketBuiltAt || 0,
+      grants: Array.isArray(parsed.grants) ? parsed.grants : [],
       equipment: {
         weapon: null,
         helmet: null,
@@ -646,6 +650,13 @@ export class GameStateManager {
     if (maxSoldiers !== Infinity && this.state.soldierUnits.length >= maxSoldiers) {
       return { success: false, message: `Maksimum ${maxSoldiers} askere zaten sahipsin!` };
     }
+    // v2 (R5): her asker bir köylü ister
+    if (this.getVillageInfo) {
+      const vi = this.getVillageInfo();
+      if (this.state.soldierUnits.length + 1 > vi.soldierCap) {
+        return { success: false, message: `🏘️ Yeni asker için köylü gerekir: ${vi.villagers} köylü ile en çok ${vi.soldierCap} asker. Köy Evleri yap, köylüler çoğalsın.` };
+      }
+    }
     const newIdx = this.state.soldierUnits.length + 1;
     const cost = this.getSoldierCost(newIdx);
     if ((this.state.adAstraBalance || 0) < cost) {
@@ -768,8 +779,8 @@ export class GameStateManager {
     const fullHealSec = passiveCfg.FULL_HEAL_SECONDS || 86400; // 24 Saat
     const secondsRemaining = missingHp > 0 ? Math.ceil((missingHp / maxHp) * fullHealSec) : 0;
     const wheatInStock = Math.floor(this.state.inventory?.wheat || 0);
-    const adaInBalance = Math.floor(this.state.adAstraBalance || 0);
-    const isPaused = missingHp > 0 && (wheatInStock <= 0 || adaInBalance <= 0 || wheatInStock < 0.30 || adaInBalance < 0.10);
+    const adaInBalance = Number(this.state.adAstraBalance) || 0;   // v2: ASTRA tam sayıya yuvarlanmaz (0,5 ASTRA geçerli bakiye)
+    const isPaused = missingHp > 0 && (wheatInStock < passiveWheatRate || adaInBalance < passiveAdaRate);
 
     return {
       hp: Math.floor(hp),
@@ -1013,14 +1024,17 @@ export class GameStateManager {
   getExpeditionDurationMinutes(level = this.state.level) {
     const lvl = Math.max(GAME_CONFIG.EXPEDITION_MIN_LEVEL, Math.min(GAME_CONFIG.EXPEDITION_MAX_LEVEL, level));
     const slope = (GAME_CONFIG.EXPEDITION_MAX_DURATION_MINUTES - GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES) / (GAME_CONFIG.EXPEDITION_MAX_LEVEL - GAME_CONFIG.EXPEDITION_MIN_LEVEL);
-    return Math.round(GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES + slope * (lvl - GAME_CONFIG.EXPEDITION_MIN_LEVEL));
+    // v2: Nehir Köprüsü projesi bitince sefer süreleri %2 kısalır
+    const projMult = 1 + ((typeof globalPool !== 'undefined' && globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('expeditionTime') : 0);
+    return Math.max(1, Math.round((GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES + slope * (lvl - GAME_CONFIG.EXPEDITION_MIN_LEVEL)) * projMult));
   }
 
   // Formül: DurationSeconds(level) = Math.round((18 + (level - 1) * 53.775) * 60)
   getExpeditionDurationSeconds(level = this.state.level) {
     const lvl = Math.max(GAME_CONFIG.EXPEDITION_MIN_LEVEL, Math.min(GAME_CONFIG.EXPEDITION_MAX_LEVEL, level));
     const slope = (GAME_CONFIG.EXPEDITION_MAX_DURATION_MINUTES - GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES) / (GAME_CONFIG.EXPEDITION_MAX_LEVEL - GAME_CONFIG.EXPEDITION_MIN_LEVEL);
-    return Math.round((GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES + slope * (lvl - GAME_CONFIG.EXPEDITION_MIN_LEVEL)) * 60);
+    const projMult = 1 + ((typeof globalPool !== 'undefined' && globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('expeditionTime') : 0);
+    return Math.max(60, Math.round((GAME_CONFIG.EXPEDITION_MIN_DURATION_MINUTES + slope * (lvl - GAME_CONFIG.EXPEDITION_MIN_LEVEL)) * 60 * projMult));
   }
 
   // Formül: DurationHours(level) = parseFloat(((18 + (level - 1) * 53.775) / 60).toFixed(2))
@@ -1382,6 +1396,7 @@ export class GameStateManager {
         }
         this.regenerateStamina(nextSec);
         this.processSoldierPassiveHealing(nextSec);
+        this.processVillage(nextSec);
         if (botActive) report.botWorkedSeconds += nextSec;
         t += nextSec * 1000;
       }
@@ -2202,7 +2217,8 @@ export class GameStateManager {
   // v1.25: Taban üretim × seviye bonusu (her seviye +%1,5)
   getResourceRatePerMinute(nodeId, level = this.state.level) {
     const base = (GAME_CONFIG.BASE_PRODUCTION && GAME_CONFIG.BASE_PRODUCTION[nodeId]) || 15;
-    return base * this.getLevelProductionMultiplier(level);
+    // v2 (R5): köylü bonusu (+%1 / 10 köylü, en çok +%20) ve Şifa Bahçesi projesi (şifalı ot +%5)
+    return base * this.getLevelProductionMultiplier(level) * (this.getVillageProductionMultiplier ? this.getVillageProductionMultiplier(nodeId) : 1);
   }
 
   getAccruedExpeditionHarvest(nodeId) {
@@ -3175,7 +3191,9 @@ export class GameStateManager {
     const step = lvl - 1;
     const grow = res => (lvl === maxLevel ? max[res] : Math.round(min[res] * Math.pow(Math.pow(max[res] / min[res], 1 / (maxLevel - 1)), step)));
     const cap = {};
-    for (const k of RES_KEYS()) cap[k] = min[k] != null && max[k] != null ? grow(k) : null;
+    // v2: Büyük Ambar projesi bitince herkesin silosu %5 büyür
+    const siloMult = 1 + ((typeof globalPool !== 'undefined' && globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('warehouse') : 0);
+    for (const k of RES_KEYS()) cap[k] = min[k] != null && max[k] != null ? Math.round(grow(k) * siloMult) : null;
     cap.fragments = lvl === maxLevel ? max.fragments : Math.round(min.fragments + step * fragmentsPerLevel);
     return cap;
   }
@@ -5479,6 +5497,8 @@ export class GameStateManager {
     this._onAdaSpent(cost);
     globalPool.recordTokenSpend(cost);
     this.state.genesisNftMinted = true;
+    // v2 (M): Genesis NFT = Universe'de gezegen satın alma hakkı
+    this.state.grants = Array.from(new Set([...(Array.isArray(this.state.grants) ? this.state.grants : []), ...((GAME_CONFIG.GENESIS_NFT && GAME_CONFIG.GENESIS_NFT.grants) || ['universe_planet_purchase'])]));
 
     sound.playLevelUp();
     this.saveState();
@@ -5751,6 +5771,9 @@ export class GameStateManager {
       arenaKeys: 0,
       genesisNftMinted: false,
       uretim: null,
+      rocketReady: false,
+      rocketBuiltAt: 0,
+      grants: [],
       activeBuffs: {},
       activeExpeditions: {},
       dungeonProgress: 1,
@@ -7952,5 +7975,8 @@ export class GameStateManager {
   }
 }
 
+// v2 (R5/R6/R2): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Konsey katkıları, Genesis hakkı (js/v2/koyVeKonsey.js)
+Object.assign(GameStateManager.prototype, gameStateV2);
+if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
 export const gameState = new GameStateManager();
 
