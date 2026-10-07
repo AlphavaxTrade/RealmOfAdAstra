@@ -19,24 +19,24 @@ const MAX_ZOOM = 2.2;
 
 // Konumlar — px/py resim üzerindeki oran, pr tıklama yarıçapı (resim genişliğine oran)
 export const TOWN_ZONES = [
-  { id: 'dungeon',     icon: '💀', name: 'Zindan Mağarası',   sub: '18 seviyeli zindana in',                        px: 0.065, py: 0.540, pr: 0.060, color: '#a855f7' },
-  { id: 'coalmine',    icon: '⚫', name: 'Kömür Ocağı',       sub: 'Kömür seferleri',                               px: 0.060, py: 0.210, pr: 0.050, color: '#64748b' },
-  { id: 'mine',        icon: '⛏️', name: 'Demir Madeni',      sub: 'Demir seferleri',                               px: 0.165, py: 0.175, pr: 0.050, color: '#38bdf8' },
-  { id: 'quarry',      icon: '🪨', name: 'Taş Ocağı',         sub: 'Taş seferleri',                                 px: 0.280, py: 0.165, pr: 0.050, color: '#a8a29e' },
-  { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                                px: 0.575, py: 0.160, pr: 0.080, color: '#4ade80' },
-  { id: 'spaceport',   icon: '🚀', name: 'Uzay Limanı',       sub: 'Roket görevi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.075, color: '#38bdf8' },
-  { id: 'healer',      icon: '🌿', name: 'Şifahane',          sub: 'Şifalı otla asker iyileştirme',                 px: 0.280, py: 0.430, pr: 0.040, color: '#86efac' },
-  { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',                px: 0.390, py: 0.385, pr: 0.050, color: '#ec4899' },
-  { id: 'council',     icon: '🏛️', name: 'Sirius Konseyi',    sub: 'Kasalar, Otorite, projeler, ortak kasa',        px: 0.460, py: 0.300, pr: 0.045, color: '#a78bfa' },
-  { id: 'blacksmith',  icon: '⚒️', name: 'Demirhane',         sub: 'Dövme, onarım, geri dönüşüm',                   px: 0.560, py: 0.355, pr: 0.045, color: '#fb923c' },
-  { id: 'market',      icon: '🏪', name: 'Meydan Pazarı',     sub: 'Havuz pazarı: al ve sat',                       px: 0.500, py: 0.505, pr: 0.060, color: '#f43f5e' },
-  { id: 'village',     icon: '🏘️', name: 'Köy Evleri',        sub: 'Köylüler, emek ve nüfus',                       px: 0.340, py: 0.585, pr: 0.055, color: '#fbbf24' },
-  { id: 'tavern',      icon: '🍺', name: 'Taverna',           sub: 'Otomasyon botu ve rehber',                      px: 0.585, py: 0.630, pr: 0.040, color: '#eab308' },
-  { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',                          px: 0.690, py: 0.440, pr: 0.100, color: '#ef4444' },
-  { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                              px: 0.875, py: 0.500, pr: 0.070, color: '#facc15' },
-  { id: 'herbgarden',  icon: '🌿', name: 'Şifalı Ot Bahçesi', sub: 'Şifalı ot seferleri',                           px: 0.770, py: 0.710, pr: 0.045, color: '#86efac' },
-  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.723, py: 0.805, pr: 0.042, color: '#fbbf24' },   // sağdaki iki katlı ahşap ambar (7 Ekim: ahırla karışıyordu)
-  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.596, py: 0.857, pr: 0.070, color: '#60a5fa' },   // uzun ahır + at eğitim alanı
+  { id: 'dungeon',     icon: '💀', name: 'Zindan Mağarası',   sub: '18 seviyeli zindana in',                        px: 0.075, py: 0.540, pr: 0.065, color: '#a855f7' },
+  { id: 'coalmine',    icon: '⚫', name: 'Kömür Ocağı',       sub: 'Kömür seferleri',                               px: 0.085, py: 0.215, pr: 0.055, color: '#64748b' },
+  { id: 'mine',        icon: '⛏️', name: 'Demir Madeni',      sub: 'Demir seferleri',                               px: 0.165, py: 0.200, pr: 0.050, color: '#38bdf8' },
+  { id: 'quarry',      icon: '🪨', name: 'Taş Ocağı',         sub: 'Taş seferleri',                                 px: 0.280, py: 0.165, pr: 0.055, color: '#a8a29e' },
+  { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                                px: 0.620, py: 0.160, pr: 0.090, color: '#4ade80' },
+  { id: 'spaceport',   icon: '🚀', name: 'Uzay Limanı',       sub: 'Roket görevi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.085, color: '#38bdf8' },
+  { id: 'healer',      icon: '🌿', name: 'Şifahane',          sub: 'Şifalı otla asker iyileştirme',                 px: 0.285, py: 0.500, pr: 0.040, color: '#86efac' },
+  { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',                px: 0.385, py: 0.420, pr: 0.050, color: '#ec4899' },
+  { id: 'council',     icon: '🏛️', name: 'Sirius Konseyi',    sub: 'Kasalar, Otorite, projeler, ortak kasa',        px: 0.460, py: 0.305, pr: 0.045, color: '#a78bfa' },
+  { id: 'blacksmith',  icon: '⚒️', name: 'Demirhane',         sub: 'Dövme, onarım, geri dönüşüm',                   px: 0.565, py: 0.350, pr: 0.045, color: '#fb923c' },
+  { id: 'market',      icon: '🏪', name: 'Meydan Pazarı',     sub: 'Havuz pazarı: al ve sat',                       px: 0.500, py: 0.505, pr: 0.065, color: '#f43f5e' },
+  { id: 'village',     icon: '🏘️', name: 'Köy Evleri',        sub: 'Köylüler, emek ve nüfus',                       px: 0.365, py: 0.600, pr: 0.055, color: '#fbbf24' },
+  { id: 'tavern',      icon: '🍺', name: 'Taverna',           sub: 'Otomasyon botu ve rehber',                      px: 0.610, py: 0.630, pr: 0.040, color: '#eab308' },
+  { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',                          px: 0.690, py: 0.450, pr: 0.100, color: '#ef4444' },
+  { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                              px: 0.925, py: 0.850, pr: 0.070, color: '#facc15' },
+  { id: 'herbgarden',  icon: '🌿', name: 'Şifalı Ot Bahçesi', sub: 'Şifalı ot seferleri',                           px: 0.780, py: 0.710, pr: 0.045, color: '#86efac' },
+  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.870, py: 0.530, pr: 0.075, color: '#fbbf24' },   // iki tahıl kulesi + kırmızı ambar, sağda kolezyum ile tarla arasında (7 Ekim: yeni harita, ahırdan ayrı)
+  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.620, py: 0.860, pr: 0.085, color: '#60a5fa' },   // alt ortadaki ahır + at eğitim alanı
   { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',                           px: 0.200, py: 0.850, pr: 0.130, color: '#f87171' }
 ];
 

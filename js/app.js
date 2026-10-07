@@ -8793,9 +8793,9 @@ function initPhaser() {
     scene: [GrandTownScene, DungeonScene]
   };
 
-  // 3B vadi varsayılan; eski 2B harita ?harita=2d ile ya da localStorage 'harita'='2d' ile
-  let use3D = true;
-  try { use3D = !/[?&]harita=2d/.test(location.search) && localStorage.getItem('harita') !== '2d'; } catch (e) { /* depolama kapalı */ }
+  // 2B piksel harita varsayılan (kullanıcı kararı 7 Ekim: 3B vadi rafa kalktı); 3B deneme ?harita=3d ile ya da localStorage 'harita'='3d' ile
+  let use3D = false;
+  try { use3D = /[?&]harita=3d/.test(location.search) || localStorage.getItem('harita') === '3d'; } catch (e) { /* depolama kapalı */ }
   if (use3D) {
     document.body.classList.add('map-3d');
     config.scene = [VadiBootScene, DungeonScene];   // zindan Phaser'da kalır; kasaba sahnesi hiç açılmaz
@@ -8806,7 +8806,7 @@ function initPhaser() {
     const host = document.getElementById('vadi3d-container');
     const gal = /[?&]galeri=(\w+)/.exec(location.search);   // geliştirici: model galerisi
     if (gal && host) { import('./vadi3d/galeri.js').then(m => gal[1] === 'binalar' ? m.startBinaGalerisi(host) : m.startGaleri(host, gal[1], Number((/[?&]sayfa=(\d+)/.exec(location.search) || [])[1] || 0))); return; }
-    if (host) { try { window.__vadi3d = startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.setItem('harita', '2d'); } catch (e2) { /* yoksay */ } location.reload(); } }
+    if (host) { try { window.__vadi3d = startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.removeItem('harita'); } catch (e2) { /* yoksay */ } location.reload(); } }
   }
 
   // Force canvas to fill area below top header strip & ticker
