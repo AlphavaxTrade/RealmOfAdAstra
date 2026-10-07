@@ -8804,6 +8804,8 @@ function initPhaser() {
   phaserGame = new Phaser.Game(config);
   if (use3D) {
     const host = document.getElementById('vadi3d-container');
+    const gal = /[?&]galeri=(\w+)/.exec(location.search);   // geliştirici: model galerisi
+    if (gal && host) { import('./vadi3d/galeri.js').then(m => gal[1] === 'binalar' ? m.startBinaGalerisi(host) : m.startGaleri(host, gal[1], Number((/[?&]sayfa=(\d+)/.exec(location.search) || [])[1] || 0))); return; }
     if (host) { try { window.__vadi3d = startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.setItem('harita', '2d'); } catch (e2) { /* yoksay */ } location.reload(); } }
   }
 
