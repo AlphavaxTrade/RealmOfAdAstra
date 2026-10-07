@@ -67,6 +67,19 @@ const m = arena.getMatch(q2.result.matchId);
 assert.ok(m && m.sim && m.a.units.length === 1 && m.b.units.length === 1, 'Maç tekrar izlenebilir');
 ok('Eşleşme: maç sunucuda oynanıyor, puan, bildirim, neden ve tekrar izleme');
 
+// 2b) Maç tekrarı bilerek herkese açık (Kolezyum sıralaması gibi); ama hesap/cüzdan kimliği sızmamalı (kurumsal A2.6)
+{
+  const ham = JSON.stringify(arena.getMatch(q2.result.matchId));
+  for (const adres of [A, B]) assert.ok(!ham.toLowerCase().includes(adres.toLowerCase()), 'tam cüzdan adresi sızmamalı');
+  assert.ok(!/"address"|"id":"acc:|@/.test(ham), 'adres/hesap kimliği/e-posta alanı olmamalı');
+  const m2 = arena.getMatch(q2.result.matchId);
+  assert.deepEqual(Object.keys(m2).sort(), ['a', 'at', 'b', 'id', 'mode', 'points', 'result', 'sim']);
+  assert.deepEqual(Object.keys(m2.a).sort(), ['name', 'units'], 'taraf yalnız ad ve takım içerir');
+  assert.equal(arena.getMatch(999999), null, 'olmayan maç bulunamaz');
+  for (const satir of arena.status(A).top) assert.equal(satir.id, undefined, 'sıralamada kimlik yok');
+  ok('Maç tekrarı herkese açık ama hesap/cüzdan kimliği sızdırmaz');
+}
+
 // 3) Sıradan çıkınca iade
 const keysBefore = E.readPlayer(C).arenaKeys;
 assert.ok(arena.queue(C, '1v1', [0]).result.queued);
