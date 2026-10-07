@@ -191,6 +191,7 @@ export function createBarracksUI(deps) {
     const s = soldiers()[idx];
     const stats = gameState.getSoldierFullStats(idx) || { totalAtk: 0, totalMaxHp: 0 };
     const heal = gameState.getSoldierHealInfo(idx);
+    const herb = gameState.getHerbHealInfo ? gameState.getHerbHealInfo(idx) : null;
     const set = gameState.getSoldierSetBonus(idx);
     const scrolls = (st().inventory || {}).scroll_heal || 0;
     const editing = getEditing() === idx;
@@ -220,6 +221,7 @@ export function createBarracksUI(deps) {
           <span class="bk-dim">${heal.isFull ? 'Tam can' : heal.isPaused ? '<span class="bad">İyileşme durdu: buğday ya da ASTRA yetersiz</span>' : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</span>
           <span class="bk-hp-actions">
             ${!heal.isFull ? `<button type="button" class="bk-btn sm" data-bk="heal">Hemen doyur · ${num(heal.wheatNeeded)} buğday + ${num(heal.adaCost)} ASTRA</button>` : ''}
+            ${!heal.isFull && herb ? `<button type="button" class="bk-btn sm" data-bk="heal-herb" title="Şifahane kuralı: 1 şifalı ot = 5 can, ASTRA bedeli yarı, buğday harcanmaz" ${herb.herbsInStock >= herb.herbsNeeded ? '' : 'disabled'}>🌿 Otla iyileştir · ${num(herb.herbsNeeded)} ot + ${num(herb.herbAdaCost)} ASTRA${herb.herbsInStock < herb.herbsNeeded ? ` (elinde ${num(herb.herbsInStock)})` : ''}</button>` : ''}
             ${!heal.isFull && scrolls > 0 ? `<button type="button" class="bk-btn sm" data-bk="scroll">Parşömen (${scrolls})</button>` : ''}
           </span>
         </div>
@@ -412,6 +414,7 @@ export function createBarracksUI(deps) {
       case 'unequip': return done(gameState.unequipSoldierToArmory(idx, el.dataset.slot));
       case 'repair': return done(gameState.repairEquipment(el.dataset.slot, idx));
       case 'heal': return done(gameState.instantHealSoldierUnit(idx));
+      case 'heal-herb': return done(gameState.healSoldierWithHerb(idx));
       case 'scroll': { const s = soldiers()[idx]; return done(gameState.useScroll('scroll_heal', s?.id ?? idx)); }
       case 'row': { const s = soldiers()[idx]; return done(gameState.setSoldierRow(idx, s && s.row === 'back' ? 'front' : 'back')); }
       case 'rename': setEditing(idx); return reopen();

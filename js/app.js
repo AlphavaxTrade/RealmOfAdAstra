@@ -4905,7 +4905,7 @@ function openTreasuryVaultModal() {
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.82rem;">
         ${RES_KEYS().map(k => { const m = RES_META()[k] || {}; const r = us.rights[k]; return `<div class="stat-tile"><span class="stat-tile-label">${m.icon || ''} ${m.name || k}</span><strong>${fmtInt(r.used)} / ${fmtInt(r.weekly)}</strong><span class="stat-tile-sub">kota %${Math.round((r.qpp || 0) * 100)} · ortak kasa ${fmtInt(konseyStock[k] || 0)}</span></div>`; }).join('')}
       </div>
-      ${(() => { const ot = globalPool.getOtoriteStatus(); const pj = globalPool.getProjectStatus(); const vi = gameState.getVillageInfo(); const inv = gameState.state.inventory || {}; const lbl = k => k === 'labor' ? '💪 Emek' : `${(RES_META()[k] || {}).icon || ''} ${(RES_META()[k] || {}).name || k}`; const row = (k, have, need) => `<div style="display:flex; justify-content:space-between; font-size:0.82rem;"><span>${lbl(k)}</span><span><strong>${fmtInt(have)}</strong> / ${fmtInt(need)}</span></div>`; const giveBtn = (target, k) => `<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="${k}" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${(inv[k] || 0) >= 2 ? '' : 'disabled'}>${lbl(k)} ver (yarısı: ${fmtInt(Math.floor((inv[k] || 0) / 2))})</button>`; return `
+      ${(() => { const ot = globalPool.getOtoriteStatus(); const pj = globalPool.getProjectStatus(); const vi = gameState.getVillageInfo(); const inv = gameState.state.inventory || {}; const lbl = k => k === 'labor' ? '💪 Emek' : `${(RES_META()[k] || {}).icon || ''} ${(RES_META()[k] || {}).name || k}`; const row = (k, have, need) => `<div style="display:flex; justify-content:space-between; font-size:0.82rem;"><span>${lbl(k)}</span><span><strong>${fmtInt(have)}</strong> / ${fmtInt(need)}</span></div>`; const giveBtn = (target, k) => k === 'labor' ? `<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="labor" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${Math.floor(vi.labor) >= 1 ? '' : 'disabled'}>💪 Emek ver (hepsi: ${fmtInt(Math.floor(vi.labor))})</button>` : `<span style="display:inline-flex; align-items:center; gap:4px;"><input type="number" class="konsey-amt" data-target="${target}" data-res="${k}" min="1" max="${Math.floor(inv[k] || 0)}" value="${Math.floor((inv[k] || 0) / 2)}" style="width:84px; padding:4px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.35); color:#e2e8f0; font-size:0.78rem;" title="Verilecek miktar (elinde ${fmtInt(inv[k] || 0)})"><button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="${k}" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${(inv[k] || 0) >= 1 ? '' : 'disabled'}>${lbl(k)} ver</button></span>`; return `
       <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-top:10px;">
         <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px;">
           <div style="font-weight:800; color:#e2e8f0;">⛏️ Madencilik Otoritesi — seviye ${ot.level}${ot.maxed ? ' (en üst)' : ` → ${ot.level + 1}`}</div>
@@ -6328,7 +6328,10 @@ function initAppEvents() {
       let r;
       if (res === 'labor') r = gameState.contributeToProject({}, Math.floor(gameState.getVillageInfo().labor));
       else {
-        const amt = Math.floor((inv[res] || 0) / 2);
+        const box = kBtn.parentElement && kBtn.parentElement.querySelector('input.konsey-amt');
+        const typed = box ? Math.floor(Number(box.value)) : NaN;
+        const amt = Number.isFinite(typed) && typed > 0 ? Math.min(typed, Math.floor(inv[res] || 0)) : Math.floor((inv[res] || 0) / 2);
+        if (!(amt > 0)) { showToast('Geçerli bir miktar yaz.', 'error'); return; }
         r = target === 'otorite' ? gameState.contributeToOtorite({ [res]: amt }) : gameState.contributeToProject({ [res]: amt }, 0);
       }
       showToast(r.message, r.success ? 'success' : 'error');
@@ -8638,12 +8641,11 @@ function openOfflineReportModal() {
         ${r.botRenewals ? `<div><span class="stat-label">Otomatik yenileme</span><strong>${r.botRenewals} kez</strong></div>` : ''}
       </div>
       <div class="report-table">
-        ${row('🌲', 'Odun', b.wood, a.wood)}
-        ${row('⛏️', 'Demir', b.iron, a.iron)}
-        ${row('🌾', 'Buğday', b.wheat, a.wheat)}
+        ${RES_KEYS().map(k => { const m = RES_META()[k] || {}; return row(m.icon || '', m.name || k, b[k], a[k]); }).join('')}
         ${row('🟣', 'ASTRA', b.ada, a.ada, 2)}
         ${row('🏰', 'Silo seviyesi', b.warehouseLevel, a.warehouseLevel)}
       </div>
+      ${r.village ? `<div class="notice-card">🏘️ Köy: ${fmtNum(r.village.eaten)} buğday yendi, ${fmtNum(r.village.grew, 1)} köylü doğdu${r.village.lost > 0 ? `, <span style="color:#f87171;">${fmtNum(r.village.lost, 1)} köylü açlıktan göç etti</span>` : ''}; şimdi ${fmtNum(r.village.villagers)} köylü.</div>` : ''}
       ${r.botStoppedReason ? `<div class="notice-card notice-warn">⏸️ Bot durdu: ${r.botStoppedReason}</div>` : ''}
       ${r.skippedSeconds > 0 ? `<div class="notice-card">ℹ️ Bot en fazla 7 günü telafi eder; daha eski ${fmtDuration(r.skippedSeconds)} hesaba katılmadı.</div>` : ''}
       <button class="btn-clean btn-gold" id="btn-close-offline-report" style="margin-top:14px;">Tamam, devam et</button>

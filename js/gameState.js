@@ -1396,7 +1396,8 @@ export class GameStateManager {
         }
         this.regenerateStamina(nextSec);
         this.processSoldierPassiveHealing(nextSec);
-        this.processVillage(nextSec);
+        { const vr = this.processVillage(nextSec);   // köy olayları rapora (Sen yokken olanlar)
+          if (vr) { const rv = report.village || (report.village = { eaten: 0, grew: 0, lost: 0, villagers: 0 }); rv.eaten += vr.eaten; rv.grew += vr.grew; rv.lost += vr.lost; rv.villagers = vr.villagers; } }
         if (botActive) report.botWorkedSeconds += nextSec;
         t += nextSec * 1000;
       }
@@ -1444,7 +1445,7 @@ export class GameStateManager {
       const exp = this.state.activeExpeditions[nodeId];
       if (exp) exp.lastTickAt = now;
     }
-    if (seconds >= 15 * 60 && (report.expeditionsClaimed > 0 || report.botWorkedSeconds > 0)) {
+    if (seconds >= 15 * 60 && (report.expeditionsClaimed > 0 || report.botWorkedSeconds > 0 || (report.village && (report.village.lost > 0 || report.village.grew >= 1)))) {
       this.state.offlineReport = { ...report, at: now, skippedSeconds: skipped };
     }
     this.saveState();
@@ -7758,7 +7759,12 @@ export class GameStateManager {
       three_expeditions: ['wood', 'iron', 'wheat'].every(n => !!active[n]),
       bot_trial: !!this.state.botTrialUsed,
       first_level_up: (this.state.level || 1) >= 2,
-      first_silo_upgrade: (this.state.warehouseLevel || 1) >= 2
+      first_silo_upgrade: (this.state.warehouseLevel || 1) >= 2,
+      // v2: yeni binalar (js/v2/koyVeKonsey.js _markFirst)
+      first_house: ((this.state.village || {}).houses || 1) >= 2,
+      first_herb_heal: !!(this.state.firsts || {}).herbHeal,
+      first_recycle: !!(this.state.firsts || {}).recycle,
+      first_konsey: !!(this.state.firsts || {}).konsey
     };
     let newlyDone = [];
     for (const q of (GAME_CONFIG.ONBOARDING_QUESTS || [])) {

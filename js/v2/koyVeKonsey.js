@@ -211,6 +211,8 @@ export const gameStateV2 = {
     const v = this._village();
     v.houses += 1;
     this.saveState();
+    this._markFirst('house');
+    this._markFirst('house');
     return { success: true, message: `🏘️ ${v.houses}. ev yapıldı! Köy kapasitesi ${v.houses * ((GAME_CONFIG.KOY || {}).VILLAGERS_PER_HOUSE ?? 10)} köylü.`, cost, houses: v.houses };
   },
 
@@ -274,6 +276,7 @@ export const gameStateV2 = {
       globalPool.recordTokenSpend(info.herbAdaCost);
     }
     soldier.hp = soldier.maxHp || 100;
+    this._markFirst('herbHeal');
     this.saveState();
     return { success: true, message: `🌿 ${soldier.name} Şifahane'de iyileşti! (-${info.herbsNeeded} 🌿 şifalı ot, -${info.herbAdaCost} ASTRA)`, herbsUsed: info.herbsNeeded, adaCost: info.herbAdaCost };
   },
@@ -318,6 +321,8 @@ export const gameStateV2 = {
       got[k] = st.stored;
       if (st.overflow > 0 && this._sellOverflow) { const r = this._sellOverflow(k, st.overflow, 'Geri dönüşüm'); if (r.soldQty) sold[k] = r.soldQty; if (r.lostQty) lost[k] = r.lostQty; }
     }
+    this._markFirst('recycle');
+    this._markFirst('recycle');
     this.saveState();
     const txt = Object.entries(got).map(([k, q]) => `+${q} ${resName(k)}`).join(', ');
     const extra = Object.keys(sold).length ? ` (siloya sığmayan ${Object.entries(sold).map(([k, q]) => `${q} ${resName(k)}`).join(', ')} pazarda satıldı)` : '';
@@ -380,6 +385,7 @@ export const gameStateV2 = {
     for (const [k, q] of Object.entries(acc)) { inv[k] = (Number(inv[k]) || 0) - q; value += q * priceOf(k); }
     this.burnResources(acc);
     if (value > 0 && this._addContribution) this._addContribution(round3(value));
+    this._markFirst('konsey');
     this.saveState();
     const txt = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ');
     return { success: true, message: r.completed ? `⛏️ Otorite ${r.status.level}. seviyeye yükseldi! (${txt}; çelik payı Konsey kasasından ${round3(r.steelPaid)} ASTRA)` : `⛏️ Otorite inşaatına ${txt} verildi (%${r.status.pct}). Katkı puanı +${round3(value)}.`, accepted: acc, completed: r.completed, contribution: round3(value) };
@@ -407,6 +413,8 @@ export const gameStateV2 = {
     const parts = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`);
     if (r.acceptedLabor > 0) parts.push(`${r.acceptedLabor} emek`);
     const name = r.completed ? (r.status.done[r.status.done.length - 1] || {}).name : (r.status.active ? r.status.active.name : '');
+    this._markFirst('konsey');
+    this._markFirst('konsey');
     return { success: true, message: r.completed ? `🏛️ ${name} tamamlandı! Bonus bütün Sirius'a uygulandı.` : `🏛️ ${name} projesine ${parts.join(', ')} verildi (%${r.status.pct}).`, accepted: acc, acceptedLabor: r.acceptedLabor, completed: r.completed, contribution: round3(value) };
   },
 
@@ -434,6 +442,11 @@ export const globalPoolV2Depot = {
 };
 
 export const gameStateV2Depot = {
+  // Rehber görevleri: ilk kez yapılan işler (ev, otla iyileştirme, geri dönüşüm, Konsey katkısı)
+  _markFirst(key) {
+    if (!this.state.firsts || typeof this.state.firsts !== 'object') this.state.firsts = {};
+    if (!this.state.firsts[key]) this.state.firsts[key] = this._now();
+  },
   _prepDepot() {
     if (!this.state.hazirlikDepo || typeof this.state.hazirlikDepo !== 'object') this.state.hazirlikDepo = { items: zeroRes(), value: 0, since: 0 };
     if (!this.state.hazirlikDepo.items) this.state.hazirlikDepo.items = zeroRes();

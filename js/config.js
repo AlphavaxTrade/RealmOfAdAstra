@@ -191,7 +191,12 @@ export const GAME_CONFIG = {
     { id: 'three_expeditions',  icon: '⚙️', title: 'Üç alanı birden çalıştır',   desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.',           rewardAda: 2 },
     { id: 'bot_trial',          icon: '🤖', title: 'Otomasyon botunu dene',      desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.',        rewardAda: 1 },
     { id: 'first_level_up',     icon: '⭐', title: 'Seviye 2\'ye ulaş',          desc: 'Deneyim barını doldur ve ilk seviyeni atla.',                 rewardAda: 3 },
-    { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 4 }
+    { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 4 },
+    // v2 (7 Ekim 2026): yeni binalar — Köy Evleri, Şifahane, Demirhane geri dönüşümü, Sirius Konseyi
+    { id: 'first_house',        icon: '🏘️', title: 'İkinci evi yap',             desc: 'Köy Evleri\'nde yeni bir ev kur; köylü sayın artar.',          rewardAda: 2 },
+    { id: 'first_herb_heal',    icon: '🌿', title: 'Şifahane\'de otla iyileştir', desc: 'Yaralı bir askeri şifalı otla iyileştir (buğday harcamadan).', rewardAda: 1.5 },
+    { id: 'first_recycle',      icon: '♻️', title: 'Bir eşyayı geri dönüştür',   desc: 'Demirhane\'de kullanmadığın bir eşyayı hammaddeye çevir.',    rewardAda: 1 },
+    { id: 'first_konsey',       icon: '🏛️', title: 'Konsey\'e katkı ver',        desc: 'Sirius Konseyi\'nde Otorite inşaatına ya da projeye hammadde ver.', rewardAda: 2 }
   ],
   // 🏰 ZİNDAN ORDU YORULMASI & STAMİNA MALİYETİ MATRİSİ
   // Her kat için asker başına harcanan stamina: Taban (5) + Canavar Seviyesi (Level)
