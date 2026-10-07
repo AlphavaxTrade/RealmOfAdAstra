@@ -77,6 +77,9 @@ export const GAME_CONFIG = {
     START_LIMIT: 50, GROWTH_STEP: 0.10, USD_TIERS: [10, 30, 100, 300], AVG_MONTHS: 3,
     INACTIVE_WARN_DAYS: 14, INACTIVE_SUSPEND_DAYS: 30, ACTIVE_DAYS_PER_WEEK: 3, REGISTRATION_FEE_ADA: 1
   },
+  // İlan pazarı (teçhizat; server/pazar.js): komisyon %2 (yarısı yakım, yarısı kasalar), 7 gün, en çok 10 açık ilan,
+  // alıcı önce kilitli ASTRA'sından öder, satıcıya gelen paranın %80'i kilitli gelir
+  ILAN_PAZARI: { FEE: 0.02, FEE_BURN_SHARE: 0.5, DAYS: 7, MAX_LISTINGS: 10, SELLER_LOCKED_SHARE: 0.8, MIN_PRICE: 0.01, MAX_PRICE: 1e9 },
   // Universe'e geçiş aşamaları (R3): 0 Realm, 1 Hazırlık, 2 Ön sipariş, 3 Universe (yalnız yönetici)
   UNIVERSE_STAGE: 0,
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
@@ -246,6 +249,10 @@ export const GAME_CONFIG = {
 
   // Teçhizat en fazla 10. seviyeye yükseltilir (maliyet: EQUIPMENT_RECIPES ve gameState)
   EQUIPMENT_MAX_LEVEL: 10,
+  // v2 dövme bedeli: eşyanın gücü dakikalık taban üretimle çarpılır (1 ATK = 2 dk, 1 CAN = 0,8 dk; odun ve demir tam, kömür üçte bir).
+  // En pahalı temel eşya 50 dakikalık üretimdir: 1. seviye silo (1 saatlik üretim) ilk takımı dövmeye yeter.
+  // (7 Ekim 2026'dan önce 18 / 21 dakikaydı: ilk kılıç 1.620 demir istiyor, 216 demirlik siloya sığmıyordu.)
+  EQUIPMENT_CRAFT_MINUTES: { PER_ATK: 2, PER_HP: 0.8 },
 
   // ═══════════════════════════════════════════════════════════════════════
   // AMM FİYAT KORİDORU — v2: ARTIK GERÇEKTEN UYGULANIYOR (F-04)

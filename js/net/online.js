@@ -809,6 +809,14 @@ export const pvp = {
   }
 };
 
+// ── İlan pazarı (teçhizat; yalnız sunucuda, server/pazar.js) ────────────
+export const pazar = {
+  list: () => api('GET', '/api/pazar'),
+  async sell(ref, price) { const r = await api('POST', '/api/pazar/sell', { ref, price }); apply(r); return r.result; },
+  async cancel(id) { const r = await api('POST', '/api/pazar/cancel', { id }); apply(r); return r.result; },
+  async buy(id) { const r = await api('POST', '/api/pazar/buy', { id }); apply(r); return r.result; }
+};
+
 // ── Başlat ──────────────────────────────────────────────────────────────
 // Sunucu varsa girişi yapar, kaydı yükler ve true döner; yoksa false (deneme modu).
 export async function startOnline(context) {

@@ -51,7 +51,7 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
@@ -128,6 +128,14 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Oyuncu işlemi: hata olursa veritabanı ve bellekteki dünya geri alınır
+  // İlan pazarı işlemi: yalnız vatandaşlar; kullanıcı hatası 400, beklenmeyen hata 500 (veritabanı geri alınır)
+  async function pazarOp(me, fn) {
+    if (!pazar) return [404, { error: 'İlan pazarı kapalı' }];
+    if (kapi && !kapi.isCitizen(me)) return [403, { error: '⏳ İlan pazarı yalnız vatandaşlara açık; sıran gelince kullanabilirsin.' }];
+    try { const r = await fn(); db.q.playerSeen.run(clock(), me); return { result: r.result, ...playerPayload(me, r.state) }; }
+    catch (err) { if (err.userError) return [400, { error: err.message }]; log.error('İlan pazarı hatası', me, err); return [500, { error: 'Sunucu hatası, işlem yapılmadı.' }]; }
+  }
+
   function safePlayer(address, fn) {
     try {
       return db.tx(() => { const out = E.withPlayer(address, fn); db.q.playerSeen.run(clock(), address); return out; });
@@ -347,6 +355,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const r = promo.redeem(me, code);
       return r.success ? { ok: true, message: r.message } : [400, { error: r.message }];
     },
+    // ── İlan pazarı (teçhizat; server/pazar.js) ──
+    'GET /api/pazar': (req, me) => (pazar ? pazar.list(me) : [404, { error: 'İlan pazarı kapalı' }]),
+    'POST /api/pazar/sell': async (req, me) => pazarOp(me, async () => { const { ref, price } = await readBody(req); return pazar.sell(me, ref, price); }),
+    'POST /api/pazar/cancel': async (req, me) => pazarOp(me, async () => { const { id } = await readBody(req); return pazar.cancel(me, id); }),
+    'POST /api/pazar/buy': async (req, me) => pazarOp(me, async () => { const { id } = await readBody(req); return pazar.buy(me, id); }),
     'GET /api/pvp/status': (req, me) => (arena ? arena.status(me) : [404, { error: 'Kapalı' }]),
     'GET /api/pvp/match': (req) => {
       const id = Number(new URL(req.url, 'http://x').searchParams.get('id'));

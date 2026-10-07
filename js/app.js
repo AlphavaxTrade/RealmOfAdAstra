@@ -14,7 +14,7 @@ import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
-import { startOnline, openWalletPanel, online, pvp, isLoggedIn, requireLogin } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -252,6 +252,24 @@ function renderGateBanner() {
     : `⏸️ <strong>Yerin askıda.</strong> Uzun süre girmediğin için yerin bekleyen bir vatandaşa verildi. Hesabın duruyor; sıranın önündesin, ilk boşalan yer senin.`;
   el.innerHTML = `<span class="gate-banner-icon">🚪</span><span>${txt}</span>`;
   el.hidden = false;
+}
+
+// 🏷️ İlan pazarı (teçhizat; yalnız sunucuda): ilanlar sunucudan ayrıca çekilir, kabuk hemen çizilir
+function renderIlanPazariShell() {
+  if (!online.active) return `<div class="clean-card"><div class="card-title">🏷️ İlan Pazarı</div><div class="clean-desc">Oyuncular arası teçhizat satışı yalnız çevrimiçi sunucuda çalışır (bilgisayardaki deneme modunda kapalı).</div></div>`;
+  return `<div class="clean-card" style="border-color:#f59e0b;"><div class="card-title-row"><div class="card-title" style="color:#fcd34d;">🏷️ İlan Pazarı — oyuncudan oyuncuya teçhizat</div><span class="card-badge">komisyon %2 · 7 gün · 10 ilan</span></div><div class="clean-desc">Cephanelik'teki bir eşyayı "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Alıcı önce kilitli ASTRA'sından öder; satıcıya gelen paranın %80'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya sana döner.</div><div id="ilan-pazari-body" style="margin-top:10px; color:#94a3b8; font-size:0.85rem;">Yükleniyor…</div></div>`;
+}
+async function loadIlanPazari() {
+  const body = document.getElementById('ilan-pazari-body');
+  if (!body || !online.active) return;
+  let d;
+  try { d = await pazar.list(); } catch (e) { body.textContent = 'İlanlar alınamadı: ' + e.message; return; }
+  const left = ms => { const h = Math.max(0, Math.round(ms / 3600000)); return h >= 48 ? `${Math.floor(h / 24)} gün` : `${h} sa`; };
+  const itemTxt = it => `${it.icon || '🛡️'} <strong>${it.name || 'Eşya'}</strong> sv.${it.level || 1} · ⚔️${it.atkBonus || 0} ❤️${it.hpBonus || 0} · dayanıklılık ${it.durability ?? '?'}/${it.maxDurability ?? '?'}`;
+  const card = (l, btn) => `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; flex-wrap:wrap;"><div style="font-size:0.84rem;">${itemTxt(l.item)}<div style="font-size:0.75rem; color:#94a3b8;">${l.mine ? 'senin ilanın' : 'satıcı ' + String(l.seller).slice(0, 10) + '…'} · kalan ${left(l.expires - d.now)}</div></div><div style="display:flex; align-items:center; gap:8px;"><strong style="color:#facc15;">${fmt3(l.price)} ASTRA</strong>${btn}</div></div>`;
+  const mine = (d.mine || []).map(l => card(l, `<button class="btn-clean btn-clean-outline btn-ilan-cancel" data-id="${l.id}" style="width:auto; padding:6px 10px; font-size:0.78rem;">↩️ Geri çek</button>`)).join('');
+  const others = (d.listings || []).filter(l => !l.mine).map(l => card(l, `<button class="btn-clean btn-ilan-buy" data-id="${l.id}" data-price="${l.price}" data-name="${String(l.item.name || 'Eşya').replace(/"/g, '')}" style="width:auto; padding:6px 12px; font-size:0.8rem;">🛒 Satın al</button>`)).join('');
+  body.innerHTML = `<div style="font-weight:800; color:#e2e8f0; margin-bottom:6px;">Senin ilanların (${(d.mine || []).length}/${d.maxListings})</div>${mine || '<div style="color:#64748b; margin-bottom:8px;">İlanın yok. Cephanelik\'te bir eşyanın yanındaki "Pazara koy" düğmesini kullan.</div>'}<div style="font-weight:800; color:#e2e8f0; margin:10px 0 6px;">Satıştakiler (${(d.listings || []).filter(l => !l.mine).length})</div>${others || '<div style="color:#64748b;">Şu an satışta eşya yok.</div>'}`;
 }
 
 function renderTopBar() {
@@ -1949,6 +1967,7 @@ function openTownZoneModal(zoneId, zoneName) {
                       <span style="color: #facc15; font-size: 0.85rem; font-weight: 800; padding: 8px;">🏆 Maksimum Güç</span>
                     `}
 
+                    ${online.active ? `<button class="btn-clean btn-clean-outline btn-sell-equipment" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f59e0b; color:#fcd34d;" title="İlan pazarına koy: komisyon %2, 7 gün, en çok 10 ilan">🏷️ Pazara koy</button>` : ''}
                     ${(() => { const rv = gameState.getRecycleValue ? gameState.getRecycleValue(item) : null; if (!rv) return ''; const txt = `${rv.wood}🌲 ${rv.iron}⛏️${rv.coal ? ` ${rv.coal}⚫` : ''}`; return `<button class="btn-clean btn-clean-outline btn-recycle-equipment" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" data-value="${txt}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f97316; color:#fdba74;" title="Geri dönüşüm: hammaddelerin %70'i geri gelir, ASTRA gelmez; eşya yok olur">♻️ Geri dönüştür (${txt})</button>`; })()}
                     ${isDamaged ? `
                       <button class="btn-clean btn-armory-repair btn-equip-repair" 
@@ -2075,6 +2094,7 @@ function openTownZoneModal(zoneId, zoneName) {
         <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'fragments' ? 'active' : ''}" data-tab="fragments">🧩 Teçhizat Parçaları</button>
         <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'p2p_collection' ? 'active' : ''}" data-tab="p2p_collection">👑 P2P Koleksiyon</button>
         <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'buyback_vault' ? 'active' : ''}" data-tab="buyback_vault" style="${marketActiveTab === 'buyback_vault' ? 'border-color:#38bdf8; color:#38bdf8;' : ''}">🛡️ Otonom Buyback & Yakım</button>
+        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'ilan' ? 'active' : ''}" data-tab="ilan" style="${marketActiveTab === 'ilan' ? 'border-color:#f59e0b; color:#fcd34d;' : ''}">🏷️ İlan Pazarı</button>
       </div>
     `;
 
@@ -2187,6 +2207,14 @@ function openTownZoneModal(zoneId, zoneName) {
         </div>
       `;
     };
+
+    if (marketActiveTab === 'ilan') {
+      html += renderIlanPazariShell();
+      dom.modalBody.innerHTML = html;
+      displayModal();
+      loadIlanPazari();
+      return;
+    }
 
     if (marketActiveTab === 'fragments') {
       html += `
@@ -6227,6 +6255,30 @@ function initAppEvents() {
       if (r.success) sound.playLevelUp();
       openTownZoneModal('spaceport', ZONE_LABELS.spaceport);
       renderTopBar();
+      return;
+    }
+    // 🏷️ İlan pazarı: ilan ver / satın al / geri çek (sunucu)
+    const sellBtn = e.target.closest('.btn-sell-equipment');
+    if (sellBtn) {
+      const d = sellBtn.dataset;
+      const v = window.prompt('Fiyat (ASTRA)? Komisyon %2, ilan 7 gün sürer; satılmazsa eşya sana döner.', '1');
+      if (v == null) return;
+      const price = Number(String(v).replace(',', '.'));
+      if (!(price > 0)) { showToast('Geçerli bir fiyat yaz.', 'error'); return; }
+      pazar.sell({ source: d.source, slotKey: d.slot, armoryIndex: d.armoryIdx !== '' ? parseInt(d.armoryIdx, 10) : null, soldierIndex: d.soldierIdx !== '' ? parseInt(d.soldierIdx, 10) : null }, price)
+        .then(r => { showToast(r.message, r.success ? 'success' : 'error'); openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'); renderTopBar(); })
+        .catch(err => showToast('İlan verilemedi: ' + err.message, 'error'));
+      return;
+    }
+    const buyBtn = e.target.closest('.btn-ilan-buy');
+    if (buyBtn) {
+      if (!window.confirm(`${buyBtn.dataset.name} ${buyBtn.dataset.price} ASTRA'ya alınsın mı? Önce kilitli ASTRA'n kullanılır.`)) return;
+      pazar.buy(Number(buyBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); renderTopBar(); }).catch(err => showToast('Satın alınamadı: ' + err.message, 'error'));
+      return;
+    }
+    const cancelBtn = e.target.closest('.btn-ilan-cancel');
+    if (cancelBtn) {
+      pazar.cancel(Number(cancelBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); }).catch(err => showToast('Geri çekilemedi: ' + err.message, 'error'));
       return;
     }
     const recBtn = e.target.closest('.btn-recycle-equipment');

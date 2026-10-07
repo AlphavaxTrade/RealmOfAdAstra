@@ -3443,9 +3443,11 @@ export class GameStateManager {
     const lvl = Math.max(1, item?.level || 1);
     const atk = item?.baseAtk || (item?.slot === 'weapon' ? 25 : 0);
     const hp = item?.baseHp || (item?.slot !== 'weapon' ? 50 : 0);
-    // v2: 1 ATK = 18 dk, 1 HP = 21 dk üretim; dakikalık taban üretimle çarpılır (×0,3 ölçek)
-    const baseWood = Math.max(15, Math.round((atk * 18 + hp * 21) * (GAME_CONFIG.BASE_PRODUCTION?.wood ?? 18)));
-    const baseIron = Math.max(20, Math.round((atk * 18 + hp * 21) * (GAME_CONFIG.BASE_PRODUCTION?.iron ?? 12)));
+    // v2: eşyanın gücü dakikalık taban üretimle çarpılır (GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES; dövme bedeliyle aynı formül)
+    const CM = GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES || { PER_ATK: 2, PER_HP: 0.8 };
+    const minutes = atk * CM.PER_ATK + hp * CM.PER_HP;
+    const baseWood = Math.max(15, Math.round(minutes * (GAME_CONFIG.BASE_PRODUCTION?.wood ?? 18)));
+    const baseIron = Math.max(20, Math.round(minutes * (GAME_CONFIG.BASE_PRODUCTION?.iron ?? 12)));
 
     let totalWood = 0;
     let totalIron = 0;
@@ -3469,8 +3471,9 @@ export class GameStateManager {
       : (recipeOrSlot || {});
     const atk = recipe.baseAtk || 0;
     const hp = recipe.baseHp || 0;
-    // v2: 1 ATK = 18 dk, 1 HP = 21 dk üretim (dakikalık taban üretimle çarpılır); kömür demirin üçte biri kadar dakika
-    const minutes = atk * 18 + hp * 21;
+    // v2: 1 ATK ve 1 CAN kaç dakikalık üretim ister (GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES); kömür demirin üçte biri kadar dakika
+    const CM = GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES || { PER_ATK: 2, PER_HP: 0.8 };
+    const minutes = atk * CM.PER_ATK + hp * CM.PER_HP;
     const P = GAME_CONFIG.BASE_PRODUCTION || {};
     const wood = Math.max(15, Math.round(minutes * (P.wood ?? 18)));
     const iron = Math.max(20, Math.round(minutes * (P.iron ?? 12)));
@@ -3602,6 +3605,8 @@ export class GameStateManager {
       woodCost,
       fragmentCost,
       adAstraCost,
+      fragCost: fragmentCost,     // Cephanelik kartı bu adları okur (eskiden undefined yazıyor, düğme hep kapalı kalıyordu)
+      adaCost: adAstraCost,
       nextAtk: Math.round(item.baseAtk * (1 + (nextLvl - 1) * 0.35)),
       nextHp: Math.round(item.baseHp * (1 + (nextLvl - 1) * 0.35)),
       item

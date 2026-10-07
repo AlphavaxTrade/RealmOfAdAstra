@@ -20,7 +20,7 @@ import { applyRates, ratesFromConfig, validateRates, toNamed, moneyFlows, RATE_K
 const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 const DAY = 86400000;
 
-export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, mailer = null, kapi = null, cfg, clock = () => Date.now(), log = console }) {
+export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, mailer = null, kapi = null, pazar = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const econ = () => db.kvJson('world:economy', {});
   const setEcon = patch => { const next = { ...econ(), ...patch }; db.kvSetJson('world:economy', next); return next; };
@@ -572,6 +572,8 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       if (now - (last.uretim || 0) >= 3600000) { last.uretim = now; try { refreshUretim(); } catch (err) { log.warn('Üretim Hakkı:', err.message); } }
       // Kapı kuralı (saatte bir): pasiflik uyarı/askı, boş yerleri sıradan doldur, sınır büyümesi
       if (kapi && now - (last.kapi || 0) >= 3600000) { last.kapi = now; try { kapi.run(); } catch (err) { log.warn('Kapı:', err.message); } }
+      // İlan pazarı: süresi dolan ilanların eşyası sahibine döner
+      if (pazar && now - (last.pazar || 0) >= 3600000) { last.pazar = now; try { pazar.expire(); } catch (err) { log.warn('İlan pazarı:', err.message); } }
       if (kasa && now - (last.kasaRefresh || 0) >= 120000) { last.kasaRefresh = now; await kasa.refreshActive().catch(err => log.warn('Kasa bakiyeleri:', err.message)); }
       if (kasa && now - (last.kasaSettle || 0) >= 3600000) { last.kasaSettle = now; kasa.queueSettlements(); if (kasa.enforceCaps) kasa.enforceCaps(); }
       if (kasa && now - (last.kasaOps || 0) >= 300000) {

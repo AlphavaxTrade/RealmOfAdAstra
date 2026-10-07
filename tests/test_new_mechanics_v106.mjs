@@ -113,8 +113,13 @@ console.log('✅ Zindan persistent canavar canı sistemi %100 doğrulandı.');
 // ══════════════════════════════════════════════════════════════════════════
 // 4. TEÇHİZAT CRAFT, UPGRADE, DAYANIKLILIK VE CEPHANELİK YÖNETİMİ
 // ══════════════════════════════════════════════════════════════════════════
-console.log('\n[4/7] Teçhizat 18dk/21dk Formülleri, 13 Durability & Cephanelik Test Ediliyor...');
-// Kılıç (weapon): 25 ATK => 1 ATK = 18 dk kaynak
+console.log('\n[4/7] Teçhizat dövme formülü (EQUIPMENT_CRAFT_MINUTES), 13 Durability & Cephanelik Test Ediliyor...');
+// v2: en pahalı temel eşya bile 1. seviye siloya sığmalı (yeni oyuncu ilk takımını dövebilsin)
+for (const [slot, r] of Object.entries(GAME_CONFIG.EQUIPMENT_RECIPES)) {
+  const c = gs.calculateEquipmentCraftCost(slot);
+  const cap = GAME_CONFIG.WAREHOUSE.initialCapacities;
+  assert(c.ironCost <= cap.iron && c.woodCost <= cap.wood && (c.coal || 0) <= cap.coal, `${r.name}: dövme bedeli 1. seviye siloya sığmalı (demir ${c.ironCost}/${cap.iron}, odun ${c.woodCost}/${cap.wood}, kömür ${c.coal}/${cap.coal})`);
+}
 const weaponCraftCost = gs.calculateEquipmentCraftCost('weapon');
 assert(weaponCraftCost.ironCost > 0, 'Silah demir maliyeti olmalı');
 assert(weaponCraftCost.woodCost > 0, 'Silah odun maliyeti olmalı');
