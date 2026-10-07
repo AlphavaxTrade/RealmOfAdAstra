@@ -205,18 +205,20 @@ body:not(.in-dungeon) .hud .hud-nav {
   position: static !important;
   transform: none !important;
   min-width: 0;
+  overflow: hidden;               /* dar ekranda kaynak kutucuklarının üstüne taşmaz */
 }
 body.in-dungeon .hud .hud-nav { display: none !important; }
 .hud-btn {
   all: unset;
   box-sizing: border-box;
   display: inline-flex; align-items: center; gap: 8px;
-  height: 38px; padding: 0 14px;
+  height: 38px; padding: 0 12px;
   border-radius: 10px;
   font-size: 13px; font-weight: 700;
   color: var(--c-text-2);
   cursor: pointer;
   white-space: nowrap;
+  flex: 0 0 auto;
   transition: background .15s ease, color .15s ease;
 }
 .hud-btn:hover { background: var(--c-surface-3); color: var(--c-text); }
@@ -281,7 +283,7 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   grid-area: res;
   display: flex !important;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   position: static !important;
   background: none !important;
   border: 0 !important;
@@ -295,8 +297,9 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   box-sizing: border-box;
   position: relative;
   display: flex; align-items: center; gap: 8px;
-  height: 46px; min-width: 96px; padding: 0 12px 0 10px;
+  height: 46px; min-width: 0; padding: 0 10px 0 8px;
   border-radius: var(--radius-m);
+  flex: 0 0 auto;
   background: var(--c-surface-2);
   border: 1px solid var(--c-line);
   cursor: pointer;
@@ -308,10 +311,10 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 .hud .res-wood:hover { border-color: rgba(95, 214, 138, .5); }
 .hud .res-iron:hover { border-color: rgba(127, 182, 230, .5); }
 .hud .res-frag:hover { border-color: rgba(195, 155, 255, .5); }
-.hud .res-frag { min-width: 72px; }
+.hud .res-frag { min-width: 0; }
 .hud .res-icon { font-size: 16px; }
 .hud .res-icon img { width: 22px; height: 22px; object-fit: contain; image-rendering: pixelated; display: block; }
-.hud .res-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.hud .res-body { display: flex; flex-direction: column; gap: 5px; min-width: 30px; flex: 1; }
 .hud .res-value { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--c-text); line-height: 1; }
 .hud .res-cap { display: block; height: 3px; width: 100%; border-radius: 3px; background: rgba(255,255,255,0.08); overflow: hidden; }
 .hud .res-cap > span { display: block; height: 100%; width: 0; border-radius: 3px; transition: width .4s ease; }
@@ -865,15 +868,16 @@ body.modal-open .guide-widget { display: none; }
 /* =========================================================================
    DUYARLI DÜZEN
    ========================================================================= */
-@media (max-width: 1600px) {
-  .hud .top-res-pill { min-width: 86px; }
+@media (max-width: 1800px) {
+  .hud .top-res-pill { height: 42px; gap: 6px; }
+  .hud .res-icon img { width: 20px; height: 20px; }
   .hud-btn-dev .hud-btn-label { display: none; }
   .hud .hud-version { display: none; }
   .hud #btn-changelog-pill::before { content: '📜'; font-size: 14px; }
 }
 
 /* 5 menü düğmesi etiketleriyle ancak geniş ekrana sığar; daha dar ekranda yalnız simgeler */
-@media (max-width: 1520px) {
+@media (max-width: 1700px) {
   .hud-btn .hud-btn-label { display: none; }
   .hud-bot .hud-btn-label { display: inline; }
   .hud-btn { padding: 0 11px; }
@@ -881,14 +885,23 @@ body.modal-open .guide-widget { display: none; }
   .hud-stamina .hud-meter { width: 48px; }
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1400px) {
   .hud-bot .hud-btn-label { display: none !important; }
   .hud-bot::after { content: "🤖"; font-size: 15px; }
-  .hud .top-res-pill { min-width: 78px; padding: 0 9px 0 8px; }
+  .hud .top-res-pill { padding: 0 8px 0 7px; gap: 5px; }
+  .hud .res-value { font-size: 13px; }
+  .hud .hud-unit { display: none; }
+  .hud .hud-stamina-text { display: none; }
+  .hud-stamina .hud-meter { width: 40px; }
+  .hud #btn-carnival-pill { display: none; }     /* Karnaval haritadan açılır */
+}
+@media (max-width: 1300px) {
+  .hud #btn-daily-limits { display: none; }      /* Kotalar: yan panel ve K kısayolu */
+  .hud .res-icon img { width: 18px; height: 18px; }
 }
 
 
-@media (max-width: 1040px) {
+@media (max-width: 1180px) {
   :root {
     --ticker-h: 24px;
     --topbar-h: 102px;
