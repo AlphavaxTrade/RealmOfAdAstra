@@ -34,6 +34,8 @@ async function load() {
   ].join('');
   ratesView(s.rates);
   kapiView(s.kapi);
+  $('uniStage').value = String(s.universeStage ?? 0);
+  $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
   const st = { pending: '⏳ sırada', sending: '⚠️ gönderiliyordu (kontrol et)', sent: '✅ gönderildi' };
   $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ADA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
@@ -55,6 +57,7 @@ function kapiView(k) {
     ((k.suspendedList || []).map(p => `<tr><td>${esc(p.email || p.playerId)}</td><td>${new Date(p.since).toLocaleString('tr-TR')}</td><td>${new Date(p.lastSeen).toLocaleString('tr-TR')}</td><td>${btn(p.playerId, 'citizen', '👑 İçeri al')} ${btn(p.playerId, 'waiting', '⏳ Sıraya koy')}</td></tr>`).join('') || '<tr><td colspan="4">Askıda kimse yok</td></tr>');
 }
 $('kapiSave').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi', { limit: Number($('kapiLimit').value) || null, tier: Number($('kapiTier').value) }); $('kapiLimit').value = ''; $('kapiMsg').textContent = `Kaydedildi: sınır ${r.limit}, dönem ${r.tier + 1}`; });
+$('uniSave').onclick = () => confirm('Universe aşaması ' + $('uniStage').value + ' yapılsın mı? (oyuncuların gördüğü kilitler değişir)') && act(() => api('POST', '/api/admin/universe-stage', { stage: Number($('uniStage').value) }));
 $('kapiRun').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi/run'); $('kapiMsg').textContent = `İşletildi: ${r.admitted} içeri alındı, ${(r.warned || []).length} uyarıldı, ${(r.suspended || []).length} askıya alındı${r.grown ? ', sınır ' + r.grown.from + ' → ' + r.grown.to : ''}`; });
 for (const id of ['kapiQueue', 'kapiSusp']) $(id).addEventListener('click', ev => {
   const b = ev.target.closest('button[data-pid]');

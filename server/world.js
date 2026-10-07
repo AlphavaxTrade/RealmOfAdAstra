@@ -698,6 +698,18 @@ Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de
   }
 
   function setPaused(paused) { setEcon({ paused: !!paused }); db.event(paused ? 'pause' : 'resume'); return { paused: !!paused }; }
+  // Universe aşaması (R3): 0 Realm, 1 Hazırlık (Hazırlık Deposu açılır), 2 Ön sipariş, 3 Universe — yalnız yönetici değiştirir; kayıt kv'de
+  { const st = db.kvGet('world:universeStage'); if (st != null) E.GAME_CONFIG.UNIVERSE_STAGE = Math.max(0, Math.min(3, Number(st) || 0)); }
+  function setUniverseStage(stage) {
+    const n = Math.floor(Number(stage));
+    if (!Number.isInteger(n) || n < 0 || n > 3) throw new Error('Aşama 0 ile 3 arasında olmalı');
+    const from = Number(E.GAME_CONFIG.UNIVERSE_STAGE) || 0;
+    E.GAME_CONFIG.UNIVERSE_STAGE = n;
+    db.kvSet('world:universeStage', n);
+    db.event('universe-stage', null, { from, to: n });
+    return { universeStage: n };
+  }
+  const universeStage = () => Number(E.GAME_CONFIG.UNIVERSE_STAGE) || 0;
 
-  return { refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

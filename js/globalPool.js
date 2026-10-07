@@ -4,7 +4,7 @@ import { GAME_CONFIG } from './config.js';
 import { treasury } from './treasury.js';
 import { openWeek, shareOf, isEligible, levelWeight, DEFAULT_UBI_RULES } from './economy/ubi.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
-import { globalPoolV2 } from './v2/koyVeKonsey.js';
+import { globalPoolV2, globalPoolV2Depot } from './v2/koyVeKonsey.js';
 
 const DAY_MS = 24 * 3600 * 1000;
 const zeroRes = () => Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ["wood", "iron", "wheat"]).map(k => [k, 0]));
@@ -119,6 +119,7 @@ export class GlobalResourceManager {
         if (!parsed.resources) parsed.resources = {};
         if (!parsed.uretim || !parsed.uretim.qpp) parsed.uretim = this.nextUretim(parsed.uretim || null);
         if (!parsed.konsey || !parsed.konsey.stock) parsed.konsey = { stock: zeroRes() };
+        if (!parsed.hazirlikDepo) parsed.hazirlikDepo = { totalValue: 0 };
         const loadParams = this.uretimParams(parsed.uretim);
         for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
           const configCap = this.computeWeekCapacity(key, loadParams);
@@ -164,6 +165,7 @@ export class GlobalResourceManager {
     const uretim = this.nextUretim(prevState && prevState.uretim);
     const params = this.uretimParams(uretim);
     const konsey = (prevState && prevState.konsey && prevState.konsey.stock) ? prevState.konsey : { stock: zeroRes() };
+    const hazirlikDepo = (prevState && prevState.hazirlikDepo) ? prevState.hazirlikDepo : { totalValue: 0 };   // depo haftayla sıfırlanmaz
     const pool = {};
     for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
       const cap = this.computeWeekCapacity(key, params);
@@ -188,6 +190,7 @@ export class GlobalResourceManager {
       resources: pool,
       uretim,
       konsey,
+      hazirlikDepo,
       
       // 🪙 10 MİLYAR MAKRO TOKENOMİK VE MUHASEBE
       maxSupply: MAX_SUPPLY,
@@ -788,4 +791,5 @@ export class GlobalResourceManager {
 
 // v2: Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri) — js/v2/koyVeKonsey.js
 Object.assign(GlobalResourceManager.prototype, globalPoolV2);
+Object.assign(GlobalResourceManager.prototype, globalPoolV2Depot);   // Hazırlık Deposu dünya toplamı (10 M ASTRA sınırı)
 export const globalPool = new GlobalResourceManager();

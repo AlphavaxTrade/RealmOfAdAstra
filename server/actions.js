@@ -78,6 +78,9 @@ export const ACTIONS = {
   buildRocket: A([]),
   contributeToOtorite: A(['amounts']),
   contributeToProject: A(['amounts', 'int?']),
+  // v2 (R6/F): Yük İskelesi — Hazırlık Deposu (aşama 1'den itibaren)
+  depositToPrepDepot: A(['amounts']),
+  withdrawFromPrepDepot: A(['node', 'int']),
   // Ordu
   buySoldierUnit: A([]),
   instantHealSoldierUnit: A(['idx']),

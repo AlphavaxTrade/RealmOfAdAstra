@@ -7,7 +7,7 @@ import { globalPool } from './globalPool.js';
 import { sound } from './audio.js';
 import { ammMarket } from './ammMarket.js';
 import { treasury } from './treasury.js';
-import { gameStateV2 } from './v2/koyVeKonsey.js';
+import { gameStateV2, gameStateV2Depot } from './v2/koyVeKonsey.js';
 import { createUnit, simulateBattle, predictBattle, DEFAULT_BOSS_PHASES } from './combat.js';
 import { getDungeonEntry } from './bestiary.js';
 import { splitTicketPayment, runDraw, winChance as lotteryWinChance } from './economy/lottery.js';
@@ -7982,6 +7982,7 @@ export class GameStateManager {
 
 // v2 (R5/R6/R2): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Konsey katkıları, Genesis hakkı (js/v2/koyVeKonsey.js)
 Object.assign(GameStateManager.prototype, gameStateV2);
+Object.assign(GameStateManager.prototype, gameStateV2Depot);   // Yük İskelesi: Hazırlık Deposu + Universe hazırlık yüzdesi
 if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
 export const gameState = new GameStateManager();
 

@@ -78,6 +78,7 @@ function apply(payload) {
     online.economy = w.economy || null;
     online.kapi = w.kapi || null;          // Kapı: sınır, vatandaş / sıra sayıları, gösterge
     if (Array.isArray(w.rates)) applyRates(GAME_CONFIG, null, w.rates);   // oranlar sunucudan (RealmRates sözleşmesi)
+    if (w.universeStage != null) GAME_CONFIG.UNIVERSE_STAGE = Number(w.universeStage) || 0;   // Universe aşaması (yönetici)
   }
   online.gate = payload.gate || null;    // bu hesabın kapı durumu: citizen / waiting / suspended
   online.lastSync = Date.now();

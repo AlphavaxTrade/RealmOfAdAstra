@@ -189,6 +189,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       globalPool: globalPool.state,
       economy: world(),
       rates: (db.kvJson('world:rates', null) || {}).active || null,   // RealmRates oranları (tarayıcı kendi ayarına yazar)
+      universeStage: Number(GAME_CONFIG.UNIVERSE_STAGE) || 0,            // Universe aşaması (yönetici; tarayıcı kendi ayarına yazar)
       serverTime: clock()
     };
   }

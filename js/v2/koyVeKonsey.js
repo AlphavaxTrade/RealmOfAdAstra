@@ -415,3 +415,101 @@ export const gameStateV2 = {
     return Array.isArray(this.state.grants) && this.state.grants.includes(id);
   }
 };
+
+// ════════════════════════════════════════════════════════════════════════════
+// Yük İskelesi: Hazırlık Deposu (R6 / F) — Universe hazırlık aşamasında (UNIVERSE_STAGE ≥ 1) açılır.
+// Oyuncu hammaddesini Universe için depoya koyar: silodan çıkar, pazara giremez, ilan verilemez.
+// Sınırlar: kişi başı her hammaddede 4 haftalık Üretim Hakkı; dünya toplamı 10 M ASTRA değeri.
+// Geri alma: %10 kesinti (yakılır), kalan siloya (sığmayan pazarda satılır). Açılış günü Konsey depoyu alır (ileride).
+// ════════════════════════════════════════════════════════════════════════════
+export const globalPoolV2Depot = {
+  getPrepDepotTotal() { return Number(this.state && this.state.hazirlikDepo && this.state.hazirlikDepo.totalValue) || 0; },
+  addPrepDepotValue(delta) {
+    if (!this.state) return 0;
+    if (!this.state.hazirlikDepo) this.state.hazirlikDepo = { totalValue: 0 };
+    this.state.hazirlikDepo.totalValue = Math.max(0, round3((Number(this.state.hazirlikDepo.totalValue) || 0) + (Number(delta) || 0)));
+    this.saveState();
+    return this.state.hazirlikDepo.totalValue;
+  }
+};
+
+export const gameStateV2Depot = {
+  _prepDepot() {
+    if (!this.state.hazirlikDepo || typeof this.state.hazirlikDepo !== 'object') this.state.hazirlikDepo = { items: zeroRes(), value: 0, since: 0 };
+    if (!this.state.hazirlikDepo.items) this.state.hazirlikDepo.items = zeroRes();
+    return this.state.hazirlikDepo;
+  },
+  getPrepDepotStatus() {
+    const U = GAME_CONFIG.UZAY_LIMANI || {};
+    const stage = Number(GAME_CONFIG.UNIVERSE_STAGE) || 0;
+    const d = this._prepDepot();
+    const weeksCap = U.PREP_DEPOT_WEEKS_CAP ?? 4;
+    const rows = RES_KEYS().map(k => {
+      const weekly = this.getUretimHakki ? (Number(this.getUretimHakki(k).weekly) || 0) : 0;
+      const cap = Math.floor(weekly * weeksCap);
+      const stored = Math.floor(Number(d.items[k]) || 0);
+      return { key: k, name: resName(k), icon: resIcon(k), stored, cap, room: Math.max(0, cap - stored), price: priceOf(k), have: Math.floor(Number((this.state.inventory || {})[k]) || 0) };
+    });
+    const value = round3(rows.reduce((s, r) => s + r.stored * r.price, 0));
+    const capValue = round3(rows.reduce((s, r) => s + r.cap * r.price, 0));
+    const worldTotal = globalPool.getPrepDepotTotal ? globalPool.getPrepDepotTotal() : 0;
+    const worldCap = U.PREP_DEPOT_TOTAL_ASTRA ?? 1e7;
+    return { open: stage >= 1, stage, rows, value, capValue, fill: capValue > 0 ? Math.min(1, value / capValue) : 0,
+      worldTotal, worldCap, worldRoom: Math.max(0, round3(worldCap - worldTotal)), cancelFee: U.PREP_DEPOT_CANCEL_FEE ?? 0.1, weeksCap };
+  },
+  depositToPrepDepot(amounts) {
+    const st = this.getPrepDepotStatus();
+    if (!st.open) return { success: false, message: '🔒 Hazırlık Deposu henüz kapalı: Universe hazırlık aşaması (Aşama 1) başlayınca açılır.' };
+    const inv = this.state.inventory || {};
+    const d = this._prepDepot();
+    const put = {}; let value = 0; let worldRoom = st.worldRoom;
+    for (const [k, n] of Object.entries(amounts || {})) {
+      const row = st.rows.find(r => r.key === k);
+      if (!row) continue;
+      let q = Math.min(Math.max(0, Math.floor(Number(n) || 0)), row.have, row.room);
+      if (row.price > 0) q = Math.min(q, Math.floor(worldRoom / row.price));
+      if (q <= 0) continue;
+      put[k] = q;
+      inv[k] = (Number(inv[k]) || 0) - q;
+      d.items[k] = (Number(d.items[k]) || 0) + q;
+      value += q * row.price; worldRoom -= q * row.price;
+    }
+    if (!Object.keys(put).length) return { success: false, message: 'Depoya konacak uygun miktar yok (sınır: kişi başı 4 haftalık Üretim Hakkı; dünya toplamı 10 M ASTRA değeri).' };
+    value = round3(value);
+    d.value = round3((Number(d.value) || 0) + value);
+    if (!d.since) d.since = this._now();
+    if (globalPool.addPrepDepotValue) globalPool.addPrepDepotValue(value);
+    if (value > 0 && this._addContribution) this._addContribution(round3(value * 0.5));   // Universe'e hazırlık katkısı: yarım ağırlık
+    this.saveState();
+    return { success: true, message: `📦 Hazırlık Deposu'na kondu: ${Object.entries(put).map(([k, q]) => `${q} ${resName(k)}`).join(', ')} (${value} ASTRA değeri).`, put, value };
+  },
+  withdrawFromPrepDepot(key, qty) {
+    const d = this._prepDepot();
+    const have = Math.floor(Number(d.items[key]) || 0);
+    const q = Math.min(Math.max(0, Math.floor(Number(qty) || 0)), have);
+    if (q <= 0) return { success: false, message: 'Depoda bu hammaddeden yok.' };
+    const feeRate = (GAME_CONFIG.UZAY_LIMANI || {}).PREP_DEPOT_CANCEL_FEE ?? 0.1;
+    const fee = Math.ceil(q * feeRate);
+    const back = q - fee;
+    d.items[key] = have - q;
+    const value = round3(q * priceOf(key));
+    d.value = Math.max(0, round3((Number(d.value) || 0) - value));
+    if (globalPool.addPrepDepotValue) globalPool.addPrepDepotValue(-value);
+    if (fee > 0) this.burnResources({ [key]: fee });
+    const stRes = this.storeResource(key, back);
+    let soldTxt = '';
+    if (stRes.overflow > 0 && this._sellOverflow) { const r = this._sellOverflow(key, stRes.overflow, 'Hazırlık Deposu'); if (r.soldQty) soldTxt = ` (siloya sığmayan ${r.soldQty} pazarda satıldı)`; }
+    this.saveState();
+    return { success: true, message: `↩️ ${back} ${resName(key)} depodan geri alındı; %${Math.round(feeRate * 100)} kesinti (${fee}) yakıldı${soldTxt}.`, back, fee };
+  },
+  // Universe'e hazırlık yüzdesi: roket, depo doluluğu, köylü (100'e göre), asker (10'a göre), Genesis — her biri %20
+  getUniversePrepProgress() {
+    const U = GAME_CONFIG.UZAY_LIMANI || {};
+    const W = U.PROGRESS_WEIGHTS || { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 };
+    const rk = this.getRocketStatus(), vi = this.getVillageInfo(), dp = this.getPrepDepotStatus();
+    const soldiers = (this.state.soldierUnits || []).length;
+    const parts = { rocket: rk.ready ? 1 : 0, depot: dp.fill, villagers: Math.min(1, vi.villagers / (U.PROGRESS_VILLAGERS_REF || 100)), soldiers: Math.min(1, soldiers / (U.PROGRESS_SOLDIERS_REF || 10)), genesis: this.state.genesisNftMinted ? 1 : 0 };
+    const pct = Math.round(Object.entries(parts).reduce((s, [k, v]) => s + v * (W[k] || 0), 0) * 100);
+    return { pct, parts, weights: W, depot: dp, rocket: rk, villagers: vi.villagers, soldiers };
+  }
+};

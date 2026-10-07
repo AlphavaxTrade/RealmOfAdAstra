@@ -2057,9 +2057,16 @@ function openTownZoneModal(zoneId, zoneName) {
     const genesis = !!state.genesisNftMinted;
     const stage = GAME_CONFIG.UNIVERSE_STAGE || 0;
     const stageNames = ['Aşama 0 — Realm (Universe kapalı)', 'Aşama 1 — Hazırlık (Hazırlık Deposu açık)', 'Aşama 2 — Ön sipariş', 'Aşama 3 — Universe açık'];
-    const W = U.PROGRESS_WEIGHTS || { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 };
-    const pVill = Math.min(1, vi.villagers / 100), pSold = Math.min(1, soldiers / 10);
-    const progress = Math.round(((rk.ready ? 1 : 0) * W.rocket + 0 * W.depot + pVill * W.villagers + pSold * W.soldiers + (genesis ? 1 : 0) * W.genesis) * 100);
+    const prep = gameState.getUniversePrepProgress();
+    const progress = prep.pct;
+    const dp = prep.depot;
+    const depotRows = dp.rows.map(r => `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.82rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.05);"><span>${r.icon} ${r.name}</span><span><strong>${fmtInt(r.stored)}</strong> / ${fmtInt(r.cap)}</span><span style="display:flex; gap:4px;"><button class="btn-clean btn-clean-outline btn-depot-put" data-res="${r.key}" style="width:auto; padding:4px 8px; font-size:0.74rem;" ${dp.open && r.have >= 2 && r.room > 0 ? '' : 'disabled'} title="Elindekinin yarısını depoya koy">📦 yarısını koy (${fmtInt(Math.min(Math.floor(r.have / 2), r.room))})</button><button class="btn-clean btn-clean-outline btn-depot-take" data-res="${r.key}" style="width:auto; padding:4px 8px; font-size:0.74rem;" ${r.stored > 0 ? '' : 'disabled'} title="Hepsini geri al (%${Math.round(dp.cancelFee * 100)} kesinti)">↩️ geri al</button></span></div>`).join('');
+    const depotHtml = `
+      <div class="clean-card" style="border-color:${dp.open ? '#38bdf8' : '#475569'};">
+        <div class="card-title-row"><div class="card-title">📦 Yük İskelesi — Hazırlık Deposu</div><span class="card-badge">${dp.open ? `doluluk %${Math.round(dp.fill * 100)} · değer ${fmt3(dp.value)} ASTRA` : '🔒 Aşama 1\'de açılır'}</span></div>
+        <div class="clean-desc">Universe'e götüreceğin hammaddeyi buraya koyarsın: silodan çıkar, pazara giremez. Sınır: her hammaddede ${dp.weeksCap} haftalık Üretim Hakkın; dünya toplamı ${fmtInt(dp.worldCap)} ASTRA değeri (şu an ${fmt3(dp.worldTotal)}). Geri alırsan %${Math.round(dp.cancelFee * 100)} kesinti yakılır. Universe açılış günü depoyu Sirius Konseyi teslim alır.</div>
+        ${dp.open ? `<div style="margin-top:8px;">${depotRows}</div>` : ''}
+      </div>`;
     const partRows = rk.parts.map(p => `<div style="display:flex; justify-content:space-between;"><span>${p.icon} ${p.name}</span><span style="font-weight:800; color:${p.ok ? '#4ade80' : '#f87171'};">${fmtInt(p.have)} / ${fmtInt(p.need)}</span></div>`).join('');
     html = `
       <div class="clean-card">
@@ -2069,7 +2076,7 @@ function openTownZoneModal(zoneId, zoneName) {
         <div style="height:10px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${progress}%; background:linear-gradient(90deg,#38bdf8,#a78bfa);"></div></div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; font-size:0.82rem; margin-top:10px;">
           <div class="stat-tile"><span class="stat-tile-label">Roket</span><strong>${rk.ready ? 'Hazır ✅' : 'Yapılmadı'}</strong><span class="stat-tile-sub">hesap seviyesi ${rk.minLevel}+</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Hazırlık Deposu</span><strong>Kilitli</strong><span class="stat-tile-sub">Aşama 1'de açılır</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Hazırlık Deposu</span><strong>${dp.open ? `%${Math.round(dp.fill * 100)}` : 'Kilitli'}</strong><span class="stat-tile-sub">${dp.open ? `${fmt3(dp.value)} ASTRA değeri` : 'Aşama 1\'de açılır'}</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${vi.villagers} / 100</strong><span class="stat-tile-sub">kolonist adayı</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Asker</span><strong>${soldiers} / 10</strong><span class="stat-tile-sub">mürettebat adayı</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Genesis NFT</span><strong>${genesis ? 'Var ✅' : 'Yok'}</strong><span class="stat-tile-sub">gezegen satın alma hakkı</span></div>
@@ -2083,7 +2090,8 @@ function openTownZoneModal(zoneId, zoneName) {
           ${rk.reason && !rk.ready ? `<span style="font-size:0.8rem; color:#94a3b8;">${rk.reason}</span>` : ''}
           ${rk.ready ? `<span style="font-size:0.8rem; color:#4ade80;">Roket ${new Date(rk.builtAt).toLocaleDateString('tr-TR')} tarihinde hazırlandı; Universe'e geçiş kilidi burada açılacak.</span>` : ''}
         </div>
-      </div>`;
+      </div>
+      ${depotHtml}`;
   }
 
   // 4. AMM PAZAR YERİ (AUTOMATED MARKET MAKER DEX SWAP & P2P MARKET)
@@ -6279,6 +6287,28 @@ function initAppEvents() {
     const cancelBtn = e.target.closest('.btn-ilan-cancel');
     if (cancelBtn) {
       pazar.cancel(Number(cancelBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); }).catch(err => showToast('Geri çekilemedi: ' + err.message, 'error'));
+      return;
+    }
+    // 📦 Hazırlık Deposu: yarısını koy / hepsini geri al
+    const putBtn = e.target.closest('.btn-depot-put');
+    if (putBtn) {
+      const k = putBtn.dataset.res;
+      const half = Math.floor(((gameState.state.inventory || {})[k] || 0) / 2);
+      const r = gameState.depositToPrepDepot({ [k]: half });
+      showToast(r.message, r.success ? 'success' : 'error');
+      openTownZoneModal('spaceport', ZONE_LABELS.spaceport); renderTopBar();
+      return;
+    }
+    const takeBtn = e.target.closest('.btn-depot-take');
+    if (takeBtn) {
+      const k = takeBtn.dataset.res;
+      const st = gameState.getPrepDepotStatus();
+      const row = st.rows.find(x => x.key === k);
+      if (!row || !(row.stored > 0)) return;
+      if (!window.confirm(`${row.stored} ${row.name} depodan geri alınsın mı? %${Math.round(st.cancelFee * 100)} kesinti yakılır.`)) return;
+      const r = gameState.withdrawFromPrepDepot(k, row.stored);
+      showToast(r.message, r.success ? 'success' : 'error');
+      openTownZoneModal('spaceport', ZONE_LABELS.spaceport); renderTopBar();
       return;
     }
     const recBtn = e.target.closest('.btn-recycle-equipment');
