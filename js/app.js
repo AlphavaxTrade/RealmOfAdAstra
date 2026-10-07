@@ -7252,9 +7252,9 @@ function initAppEvents() {
       } else if (act === 'colosseum') {
         openColosseumModal();
       } else if (act === 'boss') {
+        // Kışla'nın yeni arayüzünde (v1.32) ayrı "Dünya Bossu" sekmesi yok; eskiden burada olmayan bir
+        // renderBarracksContent() çağrılıyordu (ReferenceError). Kışla açılır, yeterli.
         openTownZoneModal('barracks', '⚔️ KRALLIK KIŞLASI & ASKERİ KARARGAH');
-        barracksActiveTab = 'world_boss';
-        renderBarracksContent();
       } else if (act === 'market') {
         openTownZoneModal('market', '🏪 AMM Pazar Alanı');
       } else if (act === 'carnival_wheel') {

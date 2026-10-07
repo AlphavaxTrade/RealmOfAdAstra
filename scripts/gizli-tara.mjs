@@ -11,8 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 const IZIN = 'gizli-tara: izin';
 const IKILI = /\.(png|jpe?g|webp|gif|ico|mp3|ogg|wav|woff2?|glb|gltf|bin|zip|gz|db|lock)$/i;
-const ENV_DOSYASI = /(^|\/)\.env(\.[^/]+)?$/;
-const ENV_ORNEK = /(^|\/)\.env\.(example|ornek|sample)$/;
+const ENV_ORNEK_SONEKLERI = ['.example', '.ornek', '.sample'];
 
 // Her kural: ad + satırda aranacak desen
 export const KURALLAR = [
@@ -39,8 +38,9 @@ export function taraMetin(metin, dosya = '(metin)') {
 
 // Dosya adı tek başına yasak mı (.env gibi)
 export function yasakDosyaMi(ad) {
-  const a = ad.replace(/\\/g, '/');
-  return ENV_DOSYASI.test(a) && !ENV_ORNEK.test(a);
+  const taban = path.posix.basename(ad.replace(/\\/g, '/'));
+  const envMi = taban === '.env' || taban.startsWith('.env.');
+  return envMi && !ENV_ORNEK_SONEKLERI.some(s => taban === '.env' + s);
 }
 
 function git(args, cwd) {

@@ -13,11 +13,15 @@
     "test": "node tests/run_all.mjs",
     "serve": "node scripts/windows/keep-alive.cjs",
     "olu-kod": "knip --no-progress --reporter compact",
+    "lint": "eslint server js scripts tests contracts eslint.config.js --max-warnings=94",
     "gizli-tara": "node scripts/gizli-tara.mjs",
     "audit-uretim": "node scripts/audit-uretim.mjs"
   },
   "devDependencies": {
+    "eslint": "^10.12.0",
+    "eslint-plugin-security": "^4.2.0",
     "ganache": "^7.9.2",
+    "globals": "^17.13.0",
     "knip": "^6.40.0",
     "phaser": "^3.80.1",
     "playwright": "^1.62.1",

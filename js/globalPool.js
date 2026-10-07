@@ -482,7 +482,7 @@ export class GlobalResourceManager {
 
     this.saveState();
     if (typeof window !== 'undefined' && typeof window.updateUbiCardLive === 'function') {
-      try { window.updateUbiCardLive(); } catch (e) {}
+      try { window.updateUbiCardLive(); } catch (e) { console.warn('UBI kartı yenilenemedi:', e && e.message); }
     }
     return { burned, creatorRoyalty, ubiShare, treasuryShare, allocations: result.allocations };
   }

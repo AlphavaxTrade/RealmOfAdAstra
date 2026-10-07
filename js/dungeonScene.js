@@ -203,7 +203,7 @@ export class DungeonScene extends Phaser.Scene {
             z.disableInteractive();
             z.removeAllListeners();
             z.destroy();
-          } catch (_) {}
+          } catch (_) { /* bölge zaten yok edilmiş: sahne kapanırken beklenen durum */ }
         }
       });
     }
