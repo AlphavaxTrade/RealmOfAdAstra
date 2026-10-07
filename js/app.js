@@ -7,6 +7,7 @@ import { ammMarket } from './ammMarket.js';
 import { sound } from './audio.js';
 import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
+import { startVadi3D, VadiBootScene } from './vadi3d/vadi.js';   // 3B vadi (kampuse tarzı); ?harita=2d eski haritayı açar
 import { createUnit, simulateBattle, DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from './combat.js';
 import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleArena.js';
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
@@ -616,6 +617,7 @@ function enterDungeonScene() {
     if (phaserGame.scene.isActive('GrandTownScene')) {
       phaserGame.scene.stop('GrandTownScene');
     }
+    if (window.__vadi3d) window.__vadi3d.hide();   // 3B vadi gizlenir, zindan (Phaser) görünür
     phaserGame.scene.start('DungeonScene');
 
     // Üst şerit menüyü Zindan Menüsüyle değiştir & hammadde pillerini gizle
@@ -636,7 +638,8 @@ function returnToTown() {
   if (phaserGame.scene.isActive('DungeonScene')) {
     phaserGame.scene.stop('DungeonScene');
   }
-  phaserGame.scene.start('GrandTownScene');
+  if (window.__vadi3d) window.__vadi3d.show();
+  else phaserGame.scene.start('GrandTownScene');
 
   // Üst şerit menüyü Kasaba Menüsüne geri döndür
   document.body.classList.remove('in-dungeon');
@@ -8790,7 +8793,19 @@ function initPhaser() {
     scene: [GrandTownScene, DungeonScene]
   };
 
+  // 3B vadi varsayılan; eski 2B harita ?harita=2d ile ya da localStorage 'harita'='2d' ile
+  let use3D = true;
+  try { use3D = !/[?&]harita=2d/.test(location.search) && localStorage.getItem('harita') !== '2d'; } catch (e) { /* depolama kapalı */ }
+  if (use3D) {
+    document.body.classList.add('map-3d');
+    config.scene = [VadiBootScene, DungeonScene];   // zindan Phaser'da kalır; kasaba sahnesi hiç açılmaz
+  }
+
   phaserGame = new Phaser.Game(config);
+  if (use3D) {
+    const host = document.getElementById('vadi3d-container');
+    if (host) { try { window.__vadi3d = startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.setItem('harita', '2d'); } catch (e2) { /* yoksay */ } location.reload(); } }
+  }
 
   // Force canvas to fill area below top header strip & ticker
   phaserGame.events.once('ready', () => {

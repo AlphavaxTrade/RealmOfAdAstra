@@ -4954,3 +4954,9 @@ body.in-dungeon .royal-advisor-bar {
 .gate-banner { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 950; width: min(960px, calc(100% - 32px)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(245,158,11,.18), rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.55); color: #fde68a; font-size: .86rem; line-height: 1.4; }
 .gate-banner[hidden] { display: none; }
 .gate-banner-icon { font-size: 1.4rem; }
+
+/* ── 3B vadi (js/vadi3d/vadi.js): aynı yerleşim; zindanda Phaser görünür, vadide Phaser gizli ── */
+#vadi3d-container { z-index: 2; background: #bfe3ff; }
+body.map-3d:not(.in-dungeon) #phaser-game-container { visibility: hidden; pointer-events: none; }
+body.map-3d.in-dungeon #vadi3d-container { display: none !important; }
+#vadi3d-container .map-overlay { z-index: 4; }

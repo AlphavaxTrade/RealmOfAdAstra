@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: {
       input: 'index.html',
       // Phaser ayrı dosyada: oyun kodu değiştiğinde tarayıcı önbelleğindeki Phaser yeniden indirilmez
-      output: { manualChunks: { phaser: ['phaser'] } },
+      output: { manualChunks: { phaser: ['phaser'], three: ['three'] } },
     },
     chunkSizeWarningLimit: 1600,
   },
