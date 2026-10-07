@@ -82,3 +82,17 @@ Releases and chain deploys happen only at the user's request, local first (see `
 - three.js 0.186 has no `PCFSoftShadowMap`; use `PCFShadowMap`. Kenney tile scale is `S = 2.3`, world 168 × 100 units, wall panels sit on the +x edge of a tile (`cx = 0.45`, `ry = dir × 90°`, dir 0 east / 1 north / 2 west / 3 south).
 - `npm run dev` never exercises the server path; anything touching accounts, the gate, listings or payouts must be checked against `node server/index.js` or the :8080 trial server, which serves `dist/` (rebuild first).
 - `data/`, `logs/`, `dist/`, `server/.env`, `*.db`, `contracts/build/` are gitignored; `server/.env.example` lists every env var.
+
+## Çalışma kuralları (Claude proje kiti)
+
+Kaynak: `claude-proje-kiti/claude-proje-kiti` (`KURULUM.md`). Bu bölümle yukarıdaki proje kuralları çelişirse **yukarıdakiler geçer** (ör. mevcut yığın Vanilla JS + Vite + `node:sqlite` korunur, kitin Next.js önerisi uygulanmaz; test düzeni `tests/test_*.mjs`; commit başlıkları Türkçe harfsiz; sürüm yayını ve zincir işlemleri yalnız kullanıcı isteyince, önce localhost; push kısıtları `CLAUDE.local.md`'de).
+
+- **Kullanıcı ve dil:** kullanıcı yazılımcı değil; sade Türkçe, teknik terim ilk geçtiğinde bir cümleyle açıklanır. Dürüstlük önce: çalışmayan şeye "çalışıyor", denemediğine "test ettim" denmez. Teknik kararları ben veririm, her birini bir cümleyle gerekçelendirip alternatifini söylerim.
+- **İşi baştan sona ben yaparım:** kurulum, komut, test, tarayıcıda deneme, hata ayıklama kullanıcıya devredilmez. Bozulursa önce logu okuyup kendim çözerim; üç denemede olmazsa ne denediğimi ve neye ihtiyacım olduğunu anlatırım. Kullanıcıdan yalnız karar, hesap/anahtar, ödeme ve yayın/push onayı istenir.
+- **Gerçek veri:** sahte veri, gömülü dizi, tarayıcı `localStorage`'ı sunucu verisi sayılmaz (tek oyunculu yerel mod hariç; o bilinen tasarım). Geçici sahte veri kullanılırsa "SAHTE VERİ" diye belirtilir. Veritabanı değişikliği `server/db.js` yolundan; elle tablo silme yok.
+- **Gizli bilgi:** anahtar yalnız `server/.env`'de; kullanıcı anahtarı sohbete yapıştırırsa kullanmam, açığa çıktığını söyleyip yenilemesini öneririm. Commit öncesi `git diff --cached` ile gizli bilgi kontrolü.
+- **Test ve doğrulama:** yeni özelliğe en az bir otomatik test; geçmeyen test varken "bitti" denmez, test silinip zayıflatılmaz. Arayüz değişince build edilmiş oyun yerel deneme sunucusunda gerçekten denenir (yenileyince kayıt duruyor mu, konsolda hata var mı, mobil genişlik) ve raporda ne denediğim yazılır; deneyemediysem nedeni söylenir.
+- **Hata yönetimi:** her sunucu hatası loglanır (hangi istek, hangi oyuncu kimliği; şifre/token/anahtar yok), kullanıcıya anlaşılır mesaj gösterilir, boş `catch {}` yasak.
+- **Git:** büyük değişiklik veya silmeden önce commit (geri dönüş noktası). Force push, geçmişi yeniden yazma, `.git` silme yasak. Onaysız büyük bölüm silip baştan yazma yok; gerekirse nedeni açıklanır, onay alınır, eskisi bir dalda saklanır. `..\adastra-realm-VANILLA-v1.34` klasörüne dokunulmaz.
+- **Çalışma şekli:** büyük iş önce kısa plan + onay; aynı anda tek özellik (bitir, doğrula, commit'le); alt ajan açmadan önce sorulur; emin olmadığım kütüphane API'sini tahmin etmem, belgesine bakarım; kullanıcı "dur" derse commit'lenmemiş her şeyi listelerim.
+- **İş sonu raporu:** ne yapıldı, nasıl doğrulandı, kullanıcının şimdi ne yapması gerekiyor. "Bitti" demeden önce: veri gerçekten kaydoluyor mu, `npm test` ve `npm run build` geçti mi, oyun denendi mi, gizli bilgi sızmadı mı, commit atıldı mı.
