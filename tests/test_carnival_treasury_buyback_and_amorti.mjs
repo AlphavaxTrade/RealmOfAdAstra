@@ -16,7 +16,7 @@ globalThis.localStorage = {
 console.log('--- 🧪 KARNAVAL HAZİNE BUYBACK & 3 AMORTİ BİLETİ TESTİ BAŞLATILIYOR ---');
 
 const gs = new GameStateManager();
-treasury.state.pools.carnival = 5000000; // 5 Milyon ADA Karnaval Kasası
+treasury.state.pools.carnival = 5000000; // 5 Milyon ASTRA Karnaval Kasası
 
 // Test 1: Config Kontrolü (3 Adet = 1 Çevirme)
 console.log('\n[1/5] Config Amorti Bilet Tanımı Denetleniyor...');
@@ -55,21 +55,21 @@ assert.equal(gs.state.lotteryTickets, 1, '3. parçada tam +1 Piyango/Çark Bilet
 assert(spin3.rewardSummaryText.includes('+1 Çark Çevirme / Piyango Bileti'), 'Özet metninde bilet kazanımı belirtilmeli');
 console.log('✅ 3 Parça = 1 Çark/Piyango Bileti tam olarak doğrulandı.');
 
-// Test 3: ADA Ödülü - Karnaval Hazine Kasasından Karşılanması
-console.log('\n[3/5] ADA Ödüllerinin Karnaval Hazine Kasasından Karşılanması Test Ediliyor...');
+// Test 3: ASTRA Ödülü - Karnaval Hazine Kasasından Karşılanması
+console.log('\n[3/5] ASTRA Ödüllerinin Karnaval Hazine Kasasından Karşılanması Test Ediliyor...');
 const preCarnivalAda = treasury.state.pools.carnival;
 const preUserAda = gs.state.adAstraBalance;
-const mockAdaReward = { id: 'ada_200', name: '200 $ADASTRA Nakit Ödül', icon: '🟣', type: 'ada', amount: 200, valAda: 200 };
+const mockAdaReward = { id: 'ada_200', name: '200 ASTRA Nakit Ödül', icon: '🟣', type: 'ada', amount: 200, valAda: 200 };
 GAME_CONFIG.CARNIVAL.WHEEL_REWARDS = [mockAdaReward];
 
 const spinAda = gs.spinCarnivalWheel('ada');
 assert(spinAda.success, 'ADA ödüllü çark başarılı olmalı');
-// 100 ADA çevirme ücretinden Karnaval hazinesine %10 pay (+10 ADA) girer, 200 ADA ödül çıkar: net -190 ADA (veya -200 payout)
-assert.equal(treasury.state.outflow.carnival >= 200, true, 'Karnaval kasasından en az 200 ADA çıkış (outflow) kaydedilmeli');
+// 100 ASTRA çevirme ücretinden Karnaval hazinesine %10 pay (+10 ASTRA) girer, 200 ASTRA ödül çıkar: net -190 ASTRA (veya -200 payout)
+assert.equal(treasury.state.outflow.carnival >= 200, true, 'Karnaval kasasından en az 200 ASTRA çıkış (outflow) kaydedilmeli');
 // Kullanıcı 100 ödedi, 200 kazandı -> net +100
 assert.equal(gs.state.adAstraBalance, preUserAda - gs.getWheelCostAda() + 200, 'Kullanıcıya hazineden 200 ASTRA aktarılmalı (çevirme bedeli düşülür)');
 assert(spinAda.rewardSummaryText.includes('Karnaval Hazinesinden Karşılandı'), 'Açıklamada hazineden karşılandığı belirtilmeli');
-console.log('✅ ADA ödülü havadan basılmadı, doğrudan Karnaval Hazine Kasasından ödendi.');
+console.log('✅ ASTRA ödülü havadan basılmadı, doğrudan Karnaval Hazine Kasasından ödendi.');
 
 // Test 4: Hammadde Ödülü - AMM DEX Buyback ve Teslimat
 console.log('\n[4/5] Hammadde Ödüllerinin AMM DEX Buyback Mekanizması Test Ediliyor...');
@@ -93,7 +93,7 @@ assert.equal(gs.state.inventory.wood, preUserWood + spinWood.buybackInfo.amount,
 assert.ok(spinWood.buybackInfo.newPrice > preAmmWoodPrice, `Odun market fiyatı artmalı! Eski: ${preAmmWoodPrice}, Yeni: ${spinWood.buybackInfo.newPrice}`);
 assert.ok(spinWood.buybackInfo.priceDelta > 0, 'Fiyat artışı pozitif olmalı');
 assert(spinWood.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada Karnaval AMM Buyback belirtilmeli');
-console.log(`✅ Hammadde havadan basılmadı; Karnaval Hazinesi bütçesiyle AMM pazarından fiziki buyback yapıldı! Odun Fiyatı: ${preAmmWoodPrice.toFixed(4)} -> ${spinWood.buybackInfo.newPrice.toFixed(4)} ADA (+%${spinWood.buybackInfo.priceDeltaPct.toFixed(2)})`);
+console.log(`✅ Hammadde havadan basılmadı; Karnaval Hazinesi bütçesiyle AMM pazarından fiziki buyback yapıldı! Odun Fiyatı: ${preAmmWoodPrice.toFixed(4)} -> ${spinWood.buybackInfo.newPrice.toFixed(4)} ASTRA (+%${spinWood.buybackInfo.priceDeltaPct.toFixed(2)})`);
 
 // Test 5: Teçhizat Parçaları & Pandora Kutu Anahtarları Buyback
 console.log('\n[5/5] Teçhizat Parçaları ve Kutu Anahtarları Buyback Test Ediliyor...');
@@ -110,7 +110,7 @@ assert.equal(treasury.state.outflow.carnival, preOutflowKeys + spinKey.buybackIn
 assert.equal(gs.state.arenaKeys, preUserKeys + 1, 'Kullanıcıya 1 Pandora Kutusu Anahtarı teslim edilmeli');
 assert.ok(spinKey.buybackInfo.newPrice > preKeyPrice, `Anahtar market fiyatı artmalı! Eski: ${preKeyPrice}, Yeni: ${spinKey.buybackInfo.newPrice}`);
 assert(spinKey.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada buyback yapıldığı belirtilmeli');
-console.log(`✅ Anahtar fiziki buyback ile fiyata yukarı yönlü etki etti: ${preKeyPrice.toFixed(1)} -> ${spinKey.buybackInfo.newPrice.toFixed(1)} ADA`);
+console.log(`✅ Anahtar fiziki buyback ile fiyata yukarı yönlü etki etti: ${preKeyPrice.toFixed(1)} -> ${spinKey.buybackInfo.newPrice.toFixed(1)} ASTRA`);
 
 // Teçhizat Parçası Testi
 const preOutflowFrag = treasury.state.outflow?.carnival || 0;
@@ -126,7 +126,7 @@ assert.equal(treasury.state.outflow.carnival, preOutflowFrag + spinFrag.buybackI
 assert.equal(gs.state.inventory.fragments, preUserFrag + 10, 'Kullanıcıya 10 Teçhizat Parçası teslim edilmeli');
 assert.ok(spinFrag.buybackInfo.newPrice > preFragPrice, `Teçhizat parçası fiyatı artmalı! Eski: ${preFragPrice}, Yeni: ${spinFrag.buybackInfo.newPrice}`);
 assert(spinFrag.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada buyback yapıldığı belirtilmeli');
-console.log(`✅ Parça fiziki buyback ile fiyata yukarı yönlü etki etti: ${preFragPrice.toFixed(2)} -> ${spinFrag.buybackInfo.newPrice.toFixed(2)} ADA`);
+console.log(`✅ Parça fiziki buyback ile fiyata yukarı yönlü etki etti: ${preFragPrice.toFixed(2)} -> ${spinFrag.buybackInfo.newPrice.toFixed(2)} ASTRA`);
 
 // Restore original rewards
 GAME_CONFIG.CARNIVAL.WHEEL_REWARDS = origRewards;

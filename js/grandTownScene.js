@@ -3,7 +3,7 @@
 //  • Harita oranı bozulmadan ekranı doldurur (cover); sürükle-kaydır, tekerlek/iki parmakla yakınlaştır
 //  • Binanın üzerine gelince bilgi kartı (ad, açıklama, canlı durum); biten seferde küçük "Hazır" rozeti
 //  • Hareketli süsler (köylüler, bulut, kuş, duman, gece karartması) kullanıcı isteğiyle kaldırıldı
-// Harita resmi 1024×572; tüm koordinatlar resim pikseli cinsindendir.
+// Harita: AdAstra Vadisi (v2, 7 Ekim 2026) 2048×1143; px/py resim oranı, pr tıklama yarıçapı (genişliğe oran).
 // ============================================================================
 import { gameState } from './gameState.js';
 import { globalPool } from './globalPool.js';
@@ -12,28 +12,36 @@ import { GAME_CONFIG } from './config.js';
 import { sound } from './audio.js';
 import Phaser from 'phaser';
 
-const IMG_W = 1024;
-const IMG_H = 572;
+const IMG_W = 2048;
+const IMG_H = 1143;
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 2.2;
 
 // Konumlar — px/py resim üzerindeki oran, pr tıklama yarıçapı (resim genişliğine oran)
 export const TOWN_ZONES = [
-  { id: 'dungeon',     icon: '💀', name: 'Zindan Mağarası',   sub: '18 seviyeli zindana in',          px: 0.078, py: 0.295, pr: 0.055, color: '#a855f7' },
-  { id: 'warehouse',   icon: '📦', name: 'Krallık Silosu',    sub: 'Ambar, envanter ve yükseltme',     px: 0.105, py: 0.550, pr: 0.065, color: '#fbbf24' },
-  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',          px: 0.160, py: 0.840, pr: 0.090, color: '#60a5fa' },
-  { id: 'mine',        icon: '⛏️', name: 'Maden Ocağı',       sub: 'Demir seferleri',                  px: 0.275, py: 0.185, pr: 0.065, color: '#38bdf8' },
-  { id: 'blacksmith',  icon: '⚒️', name: 'Demirci',           sub: 'Silah ve zırh dövme, onarım',      px: 0.275, py: 0.515, pr: 0.045, color: '#fb923c' },
-  { id: 'market',      icon: '🏪', name: 'Meydan Pazarı',     sub: 'AMM pazar: al ve sat',             px: 0.380, py: 0.535, pr: 0.065, color: '#f43f5e' },
-  { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',   px: 0.465, py: 0.415, pr: 0.050, color: '#ec4899' },
-  { id: 'tavern',      icon: '🍺', name: 'Taverna',           sub: 'Otomasyon botu ve rehber',         px: 0.585, py: 0.275, pr: 0.065, color: '#eab308' },
-  { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',             px: 0.745, py: 0.535, pr: 0.110, color: '#ef4444' },
-  { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                 px: 0.945, py: 0.540, pr: 0.065, color: '#facc15' },
-  { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                   px: 0.845, py: 0.165, pr: 0.070, color: '#4ade80' },
-  { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',              px: 0.530, py: 0.860, pr: 0.120, color: '#f87171' }
+  { id: 'dungeon',     icon: '💀', name: 'Zindan Mağarası',   sub: '18 seviyeli zindana in',                        px: 0.065, py: 0.540, pr: 0.060, color: '#a855f7' },
+  { id: 'coalmine',    icon: '⚫', name: 'Kömür Ocağı',       sub: 'Kömür seferleri',                               px: 0.060, py: 0.210, pr: 0.050, color: '#64748b' },
+  { id: 'mine',        icon: '⛏️', name: 'Demir Madeni',      sub: 'Demir seferleri',                               px: 0.165, py: 0.175, pr: 0.050, color: '#38bdf8' },
+  { id: 'quarry',      icon: '🪨', name: 'Taş Ocağı',         sub: 'Taş seferleri',                                 px: 0.280, py: 0.165, pr: 0.050, color: '#a8a29e' },
+  { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                                px: 0.575, py: 0.160, pr: 0.080, color: '#4ade80' },
+  { id: 'spaceport',   icon: '🚀', name: 'Uzay Limanı',       sub: 'Roket görevi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.075, color: '#38bdf8' },
+  { id: 'healer',      icon: '🌿', name: 'Şifahane',          sub: 'Şifalı otla asker iyileştirme',                 px: 0.280, py: 0.430, pr: 0.040, color: '#86efac' },
+  { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',                px: 0.390, py: 0.385, pr: 0.050, color: '#ec4899' },
+  { id: 'council',     icon: '🏛️', name: 'Sirius Konseyi',    sub: 'Kasalar, Otorite, projeler, ortak kasa',        px: 0.460, py: 0.300, pr: 0.045, color: '#a78bfa' },
+  { id: 'blacksmith',  icon: '⚒️', name: 'Demirhane',         sub: 'Dövme, onarım, geri dönüşüm',                   px: 0.560, py: 0.355, pr: 0.045, color: '#fb923c' },
+  { id: 'market',      icon: '🏪', name: 'Meydan Pazarı',     sub: 'Havuz pazarı: al ve sat',                       px: 0.500, py: 0.505, pr: 0.060, color: '#f43f5e' },
+  { id: 'village',     icon: '🏘️', name: 'Köy Evleri',        sub: 'Köylüler, emek ve nüfus',                       px: 0.340, py: 0.585, pr: 0.055, color: '#fbbf24' },
+  { id: 'tavern',      icon: '🍺', name: 'Taverna',           sub: 'Otomasyon botu ve rehber',                      px: 0.585, py: 0.630, pr: 0.040, color: '#eab308' },
+  { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',                          px: 0.690, py: 0.440, pr: 0.100, color: '#ef4444' },
+  { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                              px: 0.875, py: 0.500, pr: 0.070, color: '#facc15' },
+  { id: 'herbgarden',  icon: '🌿', name: 'Şifalı Ot Bahçesi', sub: 'Şifalı ot seferleri',                           px: 0.770, py: 0.710, pr: 0.045, color: '#86efac' },
+  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.620, py: 0.790, pr: 0.050, color: '#fbbf24' },
+  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.665, py: 0.890, pr: 0.070, color: '#60a5fa' },
+  { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',                           px: 0.200, py: 0.850, pr: 0.130, color: '#f87171' }
 ];
 
-const NODE_OF_ZONE = { forest: 'wood', mine: 'iron', farm: 'wheat' };
+// v2: alan → hammadde eşlemesi config'ten (6 alan)
+const NODE_OF_ZONE = Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [((GAME_CONFIG.RESOURCE_META || {})[k] || {}).zone || k, k]));
 
 function isAnyModalActive() {
   const rpgModal = document.getElementById('rpg-modal');
@@ -64,7 +72,7 @@ export class GrandTownScene extends Phaser.Scene {
 
   preload() {
     const v = Date.now();
-    this.load.image('grand_town_map', 'assets/adastra_grand_town.jpg?v=' + v);
+    this.load.image('grand_town_map', 'assets/adastra_vadisi.jpg?v=' + v);
     // Zindan katları da burada yüklenir (DungeonScene aynı anahtarları kullanır)
     this.load.image('dungeon_tex_f1', 'assets/dungeon_map.jpg?v=' + v);
     this.load.image('dungeon_tex_f2', 'assets/dungeon_floor2.jpg?v=' + v);
@@ -123,7 +131,7 @@ export class GrandTownScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const prevCenter = (!initial && this.worldScale)
       ? { x: (cam.worldView.centerX) / this.worldScale, y: (cam.worldView.centerY) / this.worldScale }
-      : { x: 430, y: 300 }; // ilk açılış: kasaba meydanı biraz sağında
+      : { x: 1000, y: 600 }; // ilk açılış: kale meydanı
     const prevZoom = initial ? 1 : cam.zoom;
 
     this.worldScale = Math.max(w / IMG_W, h / IMG_H);

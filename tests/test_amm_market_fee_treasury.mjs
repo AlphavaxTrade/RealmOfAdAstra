@@ -26,9 +26,9 @@ const prevTotalSpent = globalPool.state.totalSpent || 0;
 const prevTotalBurned = globalPool.state.totalBurned || 0;
 const prevUbiPool = globalPool.state.ubiPool || 0;
 
-console.log(`Başlangıç Hazine Toplam Kasası: ${prevTreasuryBalance.toLocaleString()} ADA`);
-console.log(`Başlangıç Toplam Harcanan Token: ${prevTotalSpent.toLocaleString()} ADA`);
-console.log(`Başlangıç UBI Havuzu: ${prevUbiPool.toLocaleString()} ADA`);
+console.log(`Başlangıç Hazine Toplam Kasası: ${prevTreasuryBalance.toLocaleString()} ASTRA`);
+console.log(`Başlangıç Toplam Harcanan Token: ${prevTotalSpent.toLocaleString()} ASTRA`);
+console.log(`Başlangıç UBI Havuzu: ${prevUbiPool.toLocaleString()} ASTRA`);
 
 // 3. Kullanıcı Senaryosu: 100.000 Odun Satışı
 const sellAmount = 100000;
@@ -43,7 +43,7 @@ const expectedNet = expectedGross - expectedFee;
 
 assert(Math.abs(sellRes.fee - expectedFee) < 0.001, 'Harç brüt satışın tam %2 si olmalı');
 assert(Math.abs(sellRes.adAstraReceived - expectedNet) < 0.001, 'Oyuncuya net tutar (brüt - %2 harç) aktarılmalı');
-console.log(`✅ [2/5] 100k Odun Satıldı: Brüt ${expectedGross.toFixed(2)} ADA, %2 Harç: ${expectedFee.toFixed(2)} ADA, Net: ${expectedNet.toFixed(2)} ADA`);
+console.log(`✅ [2/5] 100k Odun Satıldı: Brüt ${expectedGross.toFixed(2)} ASTRA, %2 Harç: ${expectedFee.toFixed(2)} ASTRA, Net: ${expectedNet.toFixed(2)} ASTRA`);
 
 // 4. Hazine ve Tokenomics Yansıması Kontrolü
 const afterTreasuryBalance = treasury.getSummary().totalBalance;
@@ -56,9 +56,9 @@ const spentIncrease = afterTotalSpent - prevTotalSpent;
 const burnedIncrease = afterTotalBurned - prevTotalBurned;
 const ubiIncrease = afterUbiPool - prevUbiPool;
 
-console.log(`Satış Sonrası Hazine Toplam Kasası: ${afterTreasuryBalance.toLocaleString()} ADA (Artış: +${treasuryIncrease.toFixed(2)} ADA)`);
-console.log(`Satış Sonrası UBI Havuzu: ${afterUbiPool.toLocaleString()} ADA (Artış: +${ubiIncrease.toFixed(2)} ADA)`);
-console.log(`Satış Sonrası Toplam Yakılan: ${afterTotalBurned.toLocaleString()} ADA (Artış: +${burnedIncrease.toFixed(2)} ADA)`);
+console.log(`Satış Sonrası Hazine Toplam Kasası: ${afterTreasuryBalance.toLocaleString()} ASTRA (Artış: +${treasuryIncrease.toFixed(2)} ASTRA)`);
+console.log(`Satış Sonrası UBI Havuzu: ${afterUbiPool.toLocaleString()} ASTRA (Artış: +${ubiIncrease.toFixed(2)} ASTRA)`);
+console.log(`Satış Sonrası Toplam Yakılan: ${afterTotalBurned.toLocaleString()} ASTRA (Artış: +${burnedIncrease.toFixed(2)} ASTRA)`);
 
 assert(Math.abs(spentIncrease - expectedFee) < 0.01, 'Harcanan token miktarı tam alınan fee kadar artmalı');
 assert(treasuryIncrease > 0, 'Toplam kilitli hazine kasasında ARTIŞ OLMALI!');
@@ -71,7 +71,7 @@ console.log('✅ [3/5] Hazine kasaları, Yakım ve UBI artışları anayasa oran
 const gs = new GameStateManager();
 const eco = gs.getEconomyAndPoolsSummary();
 assert(eco.totalPoolsBalance >= afterTreasuryBalance, 'getEconomyAndPoolsSummary() güncel kilitli kasaları yansıtmalı');
-console.log(`✅ [4/5] GameStateManager Kilitli Ödül Kasası: ${eco.totalPoolsBalance.toLocaleString()} ADA başarıyla okundu.`);
+console.log(`✅ [4/5] GameStateManager Kilitli Ödül Kasası: ${eco.totalPoolsBalance.toLocaleString()} ASTRA başarıyla okundu.`);
 
 // 6. Alış İşleminde de Harç ve Hammadde Yakımı Doğrulaması
 const initialIronCap = globalPool.state.resources.iron.totalCap;
@@ -88,6 +88,6 @@ assert.equal(buyRes.resourceBurnFee, 20, '1000 demir alımında %2 fee = 20 demi
 assert.equal(globalPool.state.resources.iron.totalCap, initialIronCap - 20, 'Demir küresel total arzından 20 adet silinmeli');
 assert.equal(globalPool.state.totalBurnedResources.iron, initialBurnedIron + 20, 'Yakılan demir sayacı 20 artmalı');
 
-console.log(`✅ [5/5] Alış işleminde de %2 harç (${buyRes.fee.toFixed(2)} ADA) hazine kasasını büyüttü ve %2 hammadde (${buyRes.resourceBurnFee} Demir) yakılıp total arzdan silindi.`);
+console.log(`✅ [5/5] Alış işleminde de %2 harç (${buyRes.fee.toFixed(2)} ASTRA) hazine kasasını büyüttü ve %2 hammadde (${buyRes.resourceBurnFee} Demir) yakılıp total arzdan silindi.`);
 
 console.log('🎉 TÜM AMM MARKET %2 HARCI, %2 HAMMADDE YAKIMI VE TOPLAM KİLİTLİ ÖDÜL KASASI TESTLERİ %100 BAŞARIYLA GEÇTİ!');

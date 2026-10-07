@@ -116,8 +116,11 @@ export class GlobalResourceManager {
         // Artık haftanın başındaki taban kota (baseCap) ayrıca saklanır; yalnızca config
         // gerçekten değişmişse yeniden hizalanır, yakılan miktar korunur.
         if (!parsed.resources) parsed.resources = {};
+        if (!parsed.uretim || !parsed.uretim.qpp) parsed.uretim = this.nextUretim(parsed.uretim || null);
+        if (!parsed.konsey || !parsed.konsey.stock) parsed.konsey = { stock: zeroRes() };
+        const loadParams = this.uretimParams(parsed.uretim);
         for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
-          const configCap = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key].totalCap;
+          const configCap = this.computeWeekCapacity(key, loadParams);
           const r = parsed.resources[key];
           if (!r) {
             parsed.resources[key] = { remaining: configCap, totalCap: configCap, baseCap: configCap, depleted: false };
@@ -156,9 +159,13 @@ export class GlobalResourceManager {
   }
 
   createNewEpoch(prevState = null) {
+    // v2: Üretim Hakkı parametreleri (termostat uygulanmış) ve Konsey ortak kasası haftadan haftaya taşınır
+    const uretim = this.nextUretim(prevState && prevState.uretim);
+    const params = this.uretimParams(uretim);
+    const konsey = (prevState && prevState.konsey && prevState.konsey.stock) ? prevState.konsey : { stock: zeroRes() };
     const pool = {};
     for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
-      const cap = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key].totalCap;
+      const cap = this.computeWeekCapacity(key, params);
       pool[key] = {
         remaining: cap,
         totalCap: cap,
@@ -178,6 +185,8 @@ export class GlobalResourceManager {
       epochStartTime: Date.now(),
       epochEndTime: this.getNextWeeklyResetTRT(),
       resources: pool,
+      uretim,
+      konsey,
       
       // 🪙 10 MİLYAR MAKRO TOKENOMİK VE MUHASEBE
       maxSupply: MAX_SUPPLY,
@@ -216,6 +225,129 @@ export class GlobalResourceManager {
     this.state = state;
     this.saveState();
     return state;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // v2 (R2/R4): ÜRETİM HAKKI — Sirius Çıkarma Kapasitesi, kişi başı kota termostatı, Madencilik Otoritesi, ortak kasa
+  //  • Haftalık kapasite (kaynak başına) = Σ(aktif oyuncu ağırlığı) × taban (dk) × çalışma dakikası × kişi başı kota × Otorite × yönetici
+  //  • Kişi başı kota (qpp): başlangıç 0,40; her hafta fiyat/açılış oranına göre ±%10; 0,05-1,0
+  //  • Otorite seviyesi: kapasite +%5/sv, çalışma 20→24 saat, 6→7 gün
+  // ═══════════════════════════════════════════════════════════════════════
+  uretimParams(u = (this.state && this.state.uretim) || {}) {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const src = u && typeof u === 'object' ? u : {};
+    const qpp = {};
+    for (const k of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
+      const v = Number(src.qpp && src.qpp[k]);
+      qpp[k] = isFinite(v) && v > 0 ? v : (U.QPP_START ?? 0.4);
+    }
+    return {
+      qpp,
+      adminMult: Number(src.adminMult) > 0 ? Number(src.adminMult) : (U.ADMIN_MULT ?? 1),
+      otoriteLevel: Math.max(0, Number(src.otoriteLevel) || 0),
+      sumWeight: Number(src.sumWeight) > 0 ? Number(src.sumWeight) : 1,
+      priceRatio: (src.priceRatio && typeof src.priceRatio === 'object') ? src.priceRatio : {}
+    };
+  }
+
+  otoriteWork(level = 0) {
+    const O = GAME_CONFIG.OTORITE || {};
+    const L = Math.max(0, Math.min(O.MAX_LEVEL ?? 20, Number(level) || 0));
+    const hours = Math.min(24, (O.HOURS_BASE ?? 20) + L * (O.HOURS_PER_LEVEL ?? 0.2));
+    const days = Math.min(7, (O.DAYS_BASE ?? 6) + L * (O.DAYS_PER_LEVEL ?? 0.05));
+    return { level: L, hours, days, minutes: hours * 60 * days, mult: 1 + L * (O.PER_LEVEL_BONUS ?? 0.05) };
+  }
+
+  // Bir birim ağırlık için haftalık hak (birim)
+  weeklyRightPerWeight(key, params = this.uretimParams()) {
+    const rate = (GAME_CONFIG.BASE_PRODUCTION || {})[key] || 0;
+    const w = this.otoriteWork(params.otoriteLevel);
+    return rate * w.minutes * (params.qpp[key] || 0) * w.mult * params.adminMult;
+  }
+
+  computeWeekCapacity(key, params = this.uretimParams()) {
+    return Math.floor(this.weeklyRightPerWeight(key, params) * params.sumWeight + 1e-6);
+  }
+
+  // Yeni haftanın parametreleri: termostat (fiyat/açılış oranı) kotayı ±%10 oynatır
+  nextUretim(prevU) {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const p = this.uretimParams(prevU || {});
+    const qpp = { ...p.qpp };
+    const applied = {};
+    for (const k of Object.keys(qpp)) {
+      const r = Number((p.priceRatio || {})[k]);
+      if (!isFinite(r) || r <= 0) continue;
+      const step = U.TERMO_STEP ?? 0.1, target = U.TERMO_TARGET ?? 1;
+      let next = qpp[k];
+      if (r > target * 1.0001) next = qpp[k] * (1 + step);
+      else if (r < target * 0.9999) next = qpp[k] * (1 - step);
+      next = Math.max(U.QPP_MIN ?? 0.05, Math.min(U.QPP_MAX ?? 1, Math.round(next * 1000) / 1000));
+      applied[k] = { from: qpp[k], to: next, priceRatio: r };
+      qpp[k] = next;
+    }
+    return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, lastTermostat: applied };
+  }
+
+  recordPriceRatios(ratios, at = this.getTrustedTime()) {
+    if (!this.state) return;
+    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+    this.state.uretim.priceRatio = { ...(ratios || {}) };
+    this.state.uretim.priceAt = at;
+    this.saveState();
+  }
+
+  // Aktif oyuncu ağırlıkları toplamı değişince (yeni oyuncu, hafta başı) kapasite yeniden hesaplanır; çıkarılan ve yakılan korunur
+  setSumWeight(sum) {
+    if (!this.state) return;
+    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+    this.state.uretim.sumWeight = Math.max(0.001, Number(sum) || 1);
+    this.recomputeWeekCapacity();
+  }
+
+  recomputeWeekCapacity() {
+    if (!this.state || !this.state.resources) return;
+    const params = this.uretimParams();
+    for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
+      const r = this.state.resources[key];
+      const cap = this.computeWeekCapacity(key, params);
+      if (!r) { this.state.resources[key] = { remaining: cap, totalCap: cap, baseCap: cap, harvested: 0, depleted: false }; continue; }
+      const burned = Math.max(0, (r.baseCap ?? cap) - (r.totalCap ?? cap));
+      const harvested = Math.max(0, Number(r.harvested) || 0);
+      r.baseCap = cap;
+      r.totalCap = Math.max(0, cap - burned);
+      r.remaining = Math.max(0, r.totalCap - harvested);
+      r.depleted = r.remaining <= 0;
+    }
+    this.saveState();
+  }
+
+  // Ortak kasa (Sirius Konseyi): çıkarılan her hammaddenin %5'i kaynak olarak burada birikir
+  addKonseyStock(key, qty) {
+    const q = Math.max(0, Number(qty) || 0);
+    if (!q || !this.state) return 0;
+    if (!this.state.konsey || !this.state.konsey.stock) this.state.konsey = { stock: zeroRes() };
+    this.state.konsey.stock[key] = (Number(this.state.konsey.stock[key]) || 0) + q;
+    this.saveState();
+    return q;
+  }
+
+  // Ortak kasa payı için dünya kapasitesinden çıkarma (oyuncu hasadı sayılmaz; harvest() kancalarına takılmaz)
+  takeForKonsey(key, qty) {
+    const res = this.state && this.state.resources && this.state.resources[key];
+    const q = Math.max(0, Number(qty) || 0);
+    if (!res || !q) return 0;
+    const actual = Math.max(0, Math.min(q, this.getAvailableToday(key)));
+    if (actual <= 0) return 0;
+    res.remaining -= actual;
+    res.harvested = (res.harvested || 0) + actual;
+    if (res.remaining <= 0) { res.remaining = 0; res.depleted = true; }
+    this.addKonseyStock(key, actual);
+    return actual;
+  }
+
+  getKonseyStock() {
+    return { ...zeroRes(), ...((this.state && this.state.konsey && this.state.konsey.stock) || {}) };
   }
 
   // 🔥 HAMMADDE KALICI YAKIMI (BURN) VE TOTAL ARZDAN DÜŞÜLMESİ

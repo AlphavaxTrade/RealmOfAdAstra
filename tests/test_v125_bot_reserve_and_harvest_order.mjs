@@ -60,5 +60,5 @@ const botOn = (gs, hours = 24) => {
   const reserve = gs.getBotAdaReserve();
   assert.ok(gs.state.warehouseLevel > level0, 'Bot siloyu büyütmeye devam etmeli');
   assert.ok(gs.state.adAstraBalance >= reserve - 1, `Kasada güvenlik payı kalmalı (kalan ${gs.state.adAstraBalance.toFixed(0)}, pay ${reserve})`);
-  console.log(`✅ Silo modunda 24 saat sonra kasada ${gs.state.adAstraBalance.toFixed(0)} ADA kaldı (pay ${reserve}), silo ${level0} → ${gs.state.warehouseLevel}`);
+  console.log(`✅ Silo modunda 24 saat sonra kasada ${gs.state.adAstraBalance.toFixed(0)} ASTRA kaldı (pay ${reserve}), silo ${level0} → ${gs.state.warehouseLevel}`);
 }

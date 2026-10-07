@@ -2,8 +2,8 @@
 //  • Harcama bölünüşü: %5 yakım, %3 telif, %6 UBI, %86 hazine; hazine 6 kasaya (görev kasası yeni)
 //  • Kilitli bakiye: kazancın %20'si serbest, %80'i kilitli; harcamada önce kilitli kısım, +%20 ek açılma;
 //    haftada %1 taban + oyuna girilen günler için ek açılma
-//  • Katkı puanı: ADA harcaması ×1, hammadde yakımı ve net hammadde satışı ×0,5 (al-sat puan getirmez)
-//  • ADA fiyat çarpanı: sabit fiyatlar ve ödüller ölçeklenir, haftada en fazla %5 değişir
+//  • Katkı puanı: ASTRA harcaması ×1, hammadde yakımı ve net hammadde satışı ×0,5 (al-sat puan getirmez)
+//  • ASTRA fiyat çarpanı: sabit fiyatlar ve ödüller ölçeklenir, haftada en fazla %5 değişir
 import assert from 'node:assert/strict';
 
 globalThis.localStorage = {
@@ -49,7 +49,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   assert.deepEqual(A, { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 });
   const expect = Object.fromEntries(Object.entries(A).map(([id, s]) => [id, 8600 * s]));
   for (const [id, v] of Object.entries(expect)) {
-    assert.ok(near(treasury.getPool(id) - before[id], v, 1e-3), `${id} kasasına ${v} ADA girmeli`);
+    assert.ok(near(treasury.getPool(id) - before[id], v, 1e-3), `${id} kasasına ${v} ASTRA girmeli`);
   }
   assert.equal(GAME_CONFIG.CREATOR_WALLET_ADDRESS, '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C');
   ok('Harcama bölünüşü %5/%3/%6/%86, hazine 8 kasaya doğru bölünüyor');
@@ -98,13 +98,13 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ok('Zindan ödülü kilitleniyor, asker alımı önce kilitli bakiyeyi kullanıyor');
 }
 
-// 4) Katkı puanı: ADA harcaması ×1; al-sat puan getirmez; kendi ürününü satmak ×0,5; hammadde yakımı ×0,5
+// 4) Katkı puanı: ASTRA harcaması ×1; al-sat puan getirmez; kendi ürününü satmak ×0,5; hammadde yakımı ×0,5
 {
   const gs = fresh();
   gs.state.adAstraBalance = 50000;
   gs.state.adAstraBalance -= 1000;
   gs._onAdaSpent(1000);
-  assert.equal(gs.getContributionInfo().week, 1000, 'Harcanan her ADA 1 puan');
+  assert.equal(gs.getContributionInfo().week, 1000, 'Harcanan her ASTRA 1 puan');
 
   const cap = gs.getWarehouseCapacity().wheat;
   gs.state.inventory.wheat = 0;
@@ -160,7 +160,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ok('Zamanla kilit açılması: haftada %1 taban + günlük giriş payı');
 }
 
-// 7) ADA fiyat çarpanı: haftada en fazla %5, sabit fiyat ve ödüller ölçeklenir
+// 7) ASTRA fiyat çarpanı: haftada en fazla %5, sabit fiyat ve ödüller ölçeklenir
 {
   const gs = fresh();
   const soldier1 = gs.getSoldierCost(1);

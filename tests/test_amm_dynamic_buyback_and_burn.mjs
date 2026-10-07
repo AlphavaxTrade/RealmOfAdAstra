@@ -23,7 +23,7 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
 
   await t.test('2. Oyundaki Tüm Harcamalardan AMM Havuzuna %12,9 Akış Doğrulaması', () => {
     const initialAmmPool = treasury.getPool('ammBuyback') || 0;
-    const testSpend = 10000; // 10.000 ADA harcama yapıldığında
+    const testSpend = 10000; // 10.000 ASTRA harcama yapıldığında
 
     // globalPool.recordTokenSpend: %86 Hazineye aktarılır, bunun %15'i AMM Havuzuna gider (= %12,9 net)
     globalPool.recordTokenSpend(testSpend);
@@ -32,14 +32,14 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
     const gained = newAmmPool - initialAmmPool;
     const expectedAmmInflow = testSpend * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * GAME_CONFIG.TREASURY_ALLOCATION.ammBuyback; // v2: %86 × %15
 
-    assert.ok(Math.abs(gained - expectedAmmInflow) < 0.1, `Harcamanın tam %12,9'u (${expectedAmmInflow} ADA) AMM Kasasına akmalı. Gerçekleşen: ${gained}`);
+    assert.ok(Math.abs(gained - expectedAmmInflow) < 0.1, `Harcamanın tam %12,9'u (${expectedAmmInflow} ASTRA) AMM Kasasına akmalı. Gerçekleşen: ${gained}`);
   });
 
-  await t.test('3. Fiyat Başlangıç Seviyesindeyken Müdahale = 0 ADA (Cephane Koruması)', () => {
+  await t.test('3. Fiyat Başlangıç Seviyesindeyken Müdahale = 0 ASTRA (Cephane Koruması)', () => {
     ammMarket.resetPools(); // Tüm havuzları Genesis fiyatına sıfırla
     const analysis = ammMarket.getBuybackAnalysis(0.10);
 
-    assert.equal(analysis.totalFundToSpend, 0, 'Fiyatlar başlangıç seviyesindeyken harcanacak bütçe 0 ADA olmalı');
+    assert.equal(analysis.totalFundToSpend, 0, 'Fiyatlar başlangıç seviyesindeyken harcanacak bütçe 0 ASTRA olmalı');
     const res = ammMarket.executeAutonomousBuyback(0.10);
     assert.equal(res.executed, false, 'Müdahale tetiklenmemeli');
   });
@@ -64,7 +64,7 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
     ammMarket.resetPools();
 
     // Buğday havuzuna yapay satış baskısı yapıp fiyatını %80 düşürelim
-    // 0.90 ADA -> ~0.18 ADA
+    // 0.90 ASTRA -> ~0.18 ASTRA
     ammMarket.pools.wheat.resourceReserve *= 4.0;
     ammMarket.pools.wheat.adAstraReserve *= 0.8;
     ammMarket.savePools();

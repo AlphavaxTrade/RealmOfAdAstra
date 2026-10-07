@@ -259,12 +259,12 @@ function renderTopBar() {
   if (dom.adAstraBalance.parentElement) {
     const lk = gameState.getLockedBalanceInfo();
     const f2 = v => v.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-    dom.adAstraBalance.parentElement.title = `$ADASTRA bakiyen: ${fullBalance}\n🔓 Serbest: ${f2(lk.free)} · 🔒 Kilitli: ${f2(lk.locked)}`;
+    dom.adAstraBalance.parentElement.title = `ASTRA bakiyen: ${fullBalance}\n🔓 Serbest: ${f2(lk.free)} · 🔒 Kilitli: ${f2(lk.locked)}`;
   }
 
   const siloCap = gameState.getWarehouseCapacity();
   const fmtRes = (v) => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
-  [['wheat', dom.resWheat], ['wood', dom.resWood], ['iron', dom.resIron]].forEach(([key, el]) => {
+  RES_KEYS().map(key => [key, document.getElementById('res-' + key)]).forEach(([key, el]) => {
     const cur = Number(state.inventory[key]) || 0;
     const cap = siloCap[key] || 0;
     if (el) el.innerText = fmtRes(cur);
@@ -427,9 +427,9 @@ function renderRealmSidebar(state, maxStamina, staminaInt) {
 
   // 2. Aktif Seferler & Tamamlanma Sayacı
   let readyCount = 0;
-  if (renderExpeditionTracker('iron', dom.expFillIron, dom.expTimeIron)) readyCount++;
-  if (renderExpeditionTracker('wood', dom.expFillWood, dom.expTimeWood)) readyCount++;
-  if (renderExpeditionTracker('wheat', dom.expFillWheat, dom.expTimeWheat)) readyCount++;
+  for (const k of RES_KEYS()) {
+    if (renderExpeditionTracker(k, document.getElementById(`exp-fill-${k}`), document.getElementById(`exp-time-${k}`))) readyCount++;
+  }
 
   const sweepBtn = document.getElementById('side-btn-sweep-harvest');
   const readyBadge = document.getElementById('sidebar-exp-completed-count');
@@ -447,21 +447,22 @@ function renderRealmSidebar(state, maxStamina, staminaInt) {
   }
 
   // 3. Kota özeti: çubuğun açık kısmı bugüne kadar açılan kota, dolu kısmı şu an çıkarılabilecek miktar
-  for (const key of ['iron', 'wood', 'wheat']) {
-    const info = globalPool.getResourceInfo(key);
-    const base = info.baseCap || 1;
+  // v2: kenar çubuğu kişisel Üretim Hakkı'nı gösterir (açık kısım bugüne kadar açılan hak, dolu kısım şu an alınabilir)
+  for (const key of RES_KEYS()) {
+    const hak = gameState.getUretimHakki(key);
+    const base = hak.weekly || 1;
     const textEl = document.getElementById(`sidebar-limit-text-${key}`);
     const fillEl = document.getElementById(`sidebar-limit-fill-${key}`);
     const relEl = document.getElementById(`sidebar-limit-released-${key}`);
-    if (textEl) textEl.innerText = `${fmtInt(info.availableToday)} / ${fmtInt(base)}`;
-    if (relEl) relEl.style.width = `${Math.min(100, (info.releasedCap / base) * 100)}%`;
+    if (textEl) textEl.innerText = `${fmtInt(hak.canTake)} / ${fmtInt(hak.weekly)}`;
+    if (relEl) relEl.style.width = `${Math.min(100, (hak.released / base) * 100)}%`;
     if (fillEl) {
-      fillEl.style.left = `${Math.min(100, (info.harvestedThisWeek / base) * 100)}%`;
-      fillEl.style.width = `${Math.min(100, (info.availableToday / base) * 100)}%`;
+      fillEl.style.left = `${Math.min(100, (hak.used / base) * 100)}%`;
+      fillEl.style.width = `${Math.min(100, (hak.canTake / base) * 100)}%`;
     }
   }
   if (dom.sidebarResetTimer) {
-    const nextRel = globalPool.getResourceInfo('wood').nextReleaseAt;
+    const nextRel = globalPool.getResourceInfo(RES_KEYS()[0]).nextReleaseAt;
     dom.sidebarResetTimer.innerText = `⏳ +1 gün: ${formatDuration(nextRel - Date.now())}`;
   }
   const personalEl = document.getElementById('sidebar-personal-limits');
@@ -683,7 +684,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
     contentHtml = `
       <div class="clean-card" style="border-color: #c084fc; background: #160e1c;">
         <div class="card-title-row">
-          <div class="card-title">🟣 $ADASTRA Avalanche C-Chain Tokenomics</div>
+          <div class="card-title">🟣 ASTRA Avalanche C-Chain Tokenomics</div>
           <span class="card-badge" style="color: #4ade80;">10 Milyar Sabit Arz</span>
         </div>
         <div style="font-size: 0.8rem; color: #cbd5e1; word-break: break-all; margin-top: 4px; background: #0e0712; padding: 6px 10px; border-radius: 6px; border: 1px solid #581c87;">
@@ -696,7 +697,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
         <div class="clean-card" style="border-color: #ef4444; background: #1a0a0a;">
           <div style="font-size: 0.82rem; color: #fca5a5; font-weight: 700;">🔥 Toplam Kalıcı Yakım (%18)</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: #f87171; margin-top: 4px;">
-            ${Math.floor(poolState.totalBurned).toLocaleString('tr-TR')} ADA
+            ${Math.floor(poolState.totalBurned).toLocaleString('tr-TR')} ASTRA
           </div>
           <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">Ebediyen dolaşımdan çıkarıldı</div>
         </div>
@@ -704,7 +705,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
         <div class="clean-card" style="border-color: #38bdf8; background: #081520;">
           <div style="font-size: 0.82rem; color: #7dd3fc; font-weight: 700;">💎 Toplam Hazine Kasası (%82)</div>
           <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-top: 4px;">
-            ${Math.floor(poolState.totalTreasury).toLocaleString('tr-TR')} ADA
+            ${Math.floor(poolState.totalTreasury).toLocaleString('tr-TR')} ASTRA
           </div>
           <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;">4 kolda ekosisteme dağıtılıyor</div>
         </div>
@@ -720,7 +721,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
               <span style="color: #f87171; font-weight: 700;">🏰 Zindan & Bosslar (%35)</span>
             </div>
             <div style="font-size: 1.05rem; font-weight: 800; color: #fca5a5; margin-top: 2px;">
-              ${Math.floor(treasury.dungeon).toLocaleString('tr-TR')} ADA
+              ${Math.floor(treasury.dungeon).toLocaleString('tr-TR')} ASTRA
             </div>
             <div style="font-size: 0.72rem; color: #94a3b8;">PvE canavar ve boss ödülleri</div>
           </div>
@@ -730,7 +731,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
               <span style="color: #38bdf8; font-weight: 700;">💧 AMM DEX Geri Alım (%30)</span>
             </div>
             <div style="font-size: 1.05rem; font-weight: 800; color: #7dd3fc; margin-top: 2px;">
-              ${Math.floor(treasury.ammBuyback).toLocaleString('tr-TR')} ADA
+              ${Math.floor(treasury.ammBuyback).toLocaleString('tr-TR')} ASTRA
             </div>
             <div style="font-size: 0.72rem; color: #94a3b8;">DEX fiyat tabanı & likidite desteği</div>
           </div>
@@ -740,7 +741,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
               <span style="color: #facc15; font-weight: 700;">🏟️ Kolezyum Arena (%25)</span>
             </div>
             <div style="font-size: 1.05rem; font-weight: 800; color: #fde047; margin-top: 2px;">
-              ${Math.floor(treasury.arena).toLocaleString('tr-TR')} ADA
+              ${Math.floor(treasury.arena).toLocaleString('tr-TR')} ASTRA
             </div>
             <div style="font-size: 0.72rem; color: #94a3b8;">18v18 gladyatör şampiyonluk havuzu</div>
           </div>
@@ -750,7 +751,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
               <span style="color: #c084fc; font-weight: 700;">🔒 Staking Rezervi (%10)</span>
             </div>
             <div style="font-size: 1.05rem; font-weight: 800; color: #e9d5ff; margin-top: 2px;">
-              ${Math.floor(treasury.staking).toLocaleString('tr-TR')} ADA
+              ${Math.floor(treasury.staking).toLocaleString('tr-TR')} ASTRA
             </div>
             <div style="font-size: 0.72rem; color: #94a3b8;">%8-12 APY pasif kilitli getiri</div>
           </div>
@@ -768,7 +769,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
           AlphAvax yayınlarından gelen gelirin <strong>%35'i</strong> ile DEX'ten açık piyasadan token satın alınır; %50'si yakılır, %50'si AMM likiditesine kilitlenir.
         </div>
         <div style="font-size: 1.1rem; font-weight: 800; color: #4ade80; margin-top: 6px;">
-          Aktif Buyback Hacmi: ${Math.floor(poolState.buybackFromBroadcasting).toLocaleString('tr-TR')} $ADASTRA
+          Aktif Buyback Hacmi: ${Math.floor(poolState.buybackFromBroadcasting).toLocaleString('tr-TR')} ASTRA
         </div>
       </div>
     `;
@@ -828,9 +829,9 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
       <tr style="border-bottom: 1px solid #38200f; font-size: 0.78rem; text-align: center;">
         <td style="padding: 6px; font-weight: 700; color: #facc15;">Gün ${r.day}</td>
         <td style="padding: 6px; color: #38bdf8;">${r.activePlayers}</td>
-        <td style="padding: 6px; color: #cbd5e1;">${r.dailySpend.toLocaleString('tr-TR')} ADA</td>
-        <td style="padding: 6px; color: #f87171; font-weight: 700;">-${r.dailyBurn.toLocaleString('tr-TR')} ADA</td>
-        <td style="padding: 6px; color: #4ade80;">${r.dungeonVault.toLocaleString('tr-TR')} ADA</td>
+        <td style="padding: 6px; color: #cbd5e1;">${r.dailySpend.toLocaleString('tr-TR')} ASTRA</td>
+        <td style="padding: 6px; color: #f87171; font-weight: 700;">-${r.dailyBurn.toLocaleString('tr-TR')} ASTRA</td>
+        <td style="padding: 6px; color: #4ade80;">${r.dungeonVault.toLocaleString('tr-TR')} ASTRA</td>
         <td style="padding: 6px; color: #c084fc;">${(r.circulatingSupply / 1000000).toFixed(2)}M</td>
       </tr>
     `).join('');
@@ -839,7 +840,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
       <div class="clean-card">
         <div class="card-title">🎮 Makro Ekonomi Projeksiyon Simülatörü</div>
         <div class="clean-desc">
-          Farklı aktif oyuncu kitleleri ve zaman dilimlerinde $ADASTRA yakımını, hazine büyümesini ve dolaşım arzını canlı simüle et.
+          Farklı aktif oyuncu kitleleri ve zaman dilimlerinde ASTRA yakımını, hazine büyümesini ve dolaşım arzını canlı simüle et.
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: flex-end; margin-top: 10px;">
@@ -900,6 +901,8 @@ function openWarehouseModal() {
   const iron = state.inventory.iron || 0;
   const wheat = state.inventory.wheat || 0;
   const adAstra = state.adAstraBalance || 0;
+  const RK = RES_KEYS(), RM = RES_META();
+  const inv = k => Math.floor(Number(state.inventory[k]) || 0);
 
   const cap = gameState.getWarehouseCapacity();
   const cost = gameState.getWarehouseUpgradeCost();
@@ -919,7 +922,7 @@ function openWarehouseModal() {
     } else if (!canAfford) {
       buttonHtml = `
         <button id="btn-modal-upgrade-warehouse" class="btn-clean" disabled style="margin-top: 12px; width: 100%; font-size: 0.95rem; padding: 13px; font-weight: 800; background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; cursor: not-allowed;">
-          ⚠️ YETERSİZ KAYNAK VEYA $ADASTRA BAKİYESİ
+          ⚠️ YETERSİZ KAYNAK VEYA ASTRA BAKİYESİ
         </button>
       `;
     } else {
@@ -938,13 +941,11 @@ function openWarehouseModal() {
           <span style="font-size: 0.8rem; font-weight: 700; color: ${is80 ? '#4ade80' : '#f59e0b'};">${is80 ? '✅ KOŞUL SAĞLANDI' : '⚠️ DOLULUK BEKLENİYOR'}</span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 0.82rem;">
-          <div style="color: ${cost.isWood80 ? '#4ade80' : '#f87171'}; font-weight: 700;">🌲 ${wood.toFixed(0)}/${cost.reqWoodFill} (%80) ${cost.isWood80 ? '✅' : '❌'}</div>
-          <div style="color: ${cost.isIron80 ? '#4ade80' : '#f87171'}; font-weight: 700;">⛏️ ${iron.toFixed(0)}/${cost.reqIronFill} (%80) ${cost.isIron80 ? '✅' : '❌'}</div>
-          <div style="color: ${cost.isWheat80 ? '#4ade80' : '#f87171'}; font-weight: 700;">🌾 ${wheat.toFixed(0)}/${cost.reqWheatFill} (%80) ${cost.isWheat80 ? '✅' : '❌'}</div>
+          ${cost.keys.map(k => `<div style="color: ${cost.fillOk[k] ? '#4ade80' : '#f87171'}; font-weight: 700;">${(RM[k] || {}).icon || ''} ${inv(k)}/${cost.fills[k]} (%80) ${cost.fillOk[k] ? '✅' : '❌'}</div>`).join('')}
         </div>
       </div>
 
-      <!-- Yükseltme Maliyeti (Kapasitenin %50'si + Anlık DEX Pazar ADA Değeri) -->
+      <!-- Yükseltme Maliyeti (Kapasitenin %50'si + Anlık DEX Pazar ASTRA Değeri) -->
       <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007; margin-top: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <span style="color: #cbd5e1; font-weight: 800; font-size: 0.9rem;">Seviye ${cost.nextLevel} Yükseltme Maliyeti:</span>
@@ -953,15 +954,13 @@ function openWarehouseModal() {
           </span>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem;">
-          <div style="color: ${wood >= cost.wood ? '#4ade80' : '#f87171'}; font-weight: 700;">🌲 ${wood.toFixed(0)}/${cost.wood} Odun</div>
-          <div style="color: ${iron >= cost.iron ? '#4ade80' : '#f87171'}; font-weight: 700;">⛏️ ${iron.toFixed(0)}/${cost.iron} Demir</div>
-          <div style="color: ${wheat >= cost.wheat ? '#4ade80' : '#f87171'}; font-weight: 700;">🌾 ${wheat.toFixed(0)}/${cost.wheat} Buğday</div>
+          ${cost.keys.map(k => `<div style="color: ${inv(k) >= cost.costs[k] ? '#4ade80' : '#f87171'}; font-weight: 700;">${(RM[k] || {}).icon || ''} ${inv(k)}/${cost.costs[k]} ${(RM[k] || {}).name || k}</div>`).join('')}
           <div style="color: ${adAstra >= cost.adAstra ? '#4ade80' : '#f87171'}; font-weight: 700;" id="live-warehouse-ada-cost">
-            🟣 <span id="val-warehouse-ada-cur">${adAstra.toFixed(1)}</span> / <span id="val-warehouse-ada-req">${cost.adAstra.toLocaleString('tr-TR')}</span> $ADASTRA
+            🟣 <span id="val-warehouse-ada-cur">${adAstra.toFixed(1)}</span> / <span id="val-warehouse-ada-req">${cost.adAstra.toLocaleString('tr-TR')}</span> ASTRA
           </div>
         </div>
         <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #3e2205; font-size: 0.78rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-          <span>Yeni Kapasiteler (Lv.${cost.nextLevel}): <strong style="color: #fde047;">🌲 ${cost.nextCap.wood} | ⛏️ ${cost.nextCap.iron} | 🌾 ${cost.nextCap.wheat}</strong></span>
+          <span>Yeni Kapasiteler (Lv.${cost.nextLevel}): <strong style="color: #fde047;">${cost.keys.map(k => `${(RM[k] || {}).icon || ''} ${cost.nextCap[k]}`).join(' | ')}</strong></span>
           <span style="color: #a78bfa; font-size: 0.74rem;">⚡ Saniye başı AMM güncellenir</span>
         </div>
       </div>
@@ -970,7 +969,7 @@ function openWarehouseModal() {
       ${buttonHtml}
     `;
   } else {
-    upgradeSection = `<div style="text-align: center; color: #facc15; margin-top: 12px; font-weight: 800; font-size: 0.95rem;">✅ Maksimum Silo Seviyesine Ulaşıldı (Seviye 18 Master - 90k🌲 / 65k⛏️ / 245k🌾)</div>`;
+    upgradeSection = `<div style="text-align: center; color: #facc15; margin-top: 12px; font-weight: 800; font-size: 0.95rem;">✅ Silo bu sürümdeki en üst seviyede (Seviye ${state.warehouseLevel}; 13. seviye ve üstü Universe açılınca)</div>`;
   }
 
   dom.modalBody.innerHTML = `
@@ -981,39 +980,20 @@ function openWarehouseModal() {
       </div>
       
       <div class="clean-desc" style="margin-bottom: 12px;">
-        Depo seviyeni yükselterek Odun, Demir ve Buğday maks stok kapasitelerini artırabilirsin. Siloyu yükseltmek için <strong>tüm depolar en az %80 dolu</strong> olmalı ve kapasitenin <strong>%50'si + anlık pazar değeri kadar ADA</strong> harcanır.
+        Depo seviyeni yükselterek 6 hammaddenin stok kapasitesini artırabilirsin. Siloyu yükseltmek için <strong>tüm depolar en az %80 dolu</strong> olmalı ve kapasitenin <strong>%50'si + anlık pazar değeri kadar ASTRA</strong> harcanır.
       </div>
 
       <div class="inv-grid" style="gap: 10px; margin-top: 8px;">
+        ${RK.map(k => { const mm = RM[k] || {}; const c = cap[k] || 1; const v = inv(k); const pct = Math.min(100, (v / c) * 100); return `
         <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('wood', '🌲', 'width:20px;height:20px;')}</span>Odun Silosu (%${Math.round((wood / cap.wood) * 100)})</div>
+          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg(k, mm.icon || '', 'width:20px;height:20px;')}</span>${mm.name || k} Silosu (%${Math.round(pct)})</div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
-              <div style="height: 100%; background: #4ade80; width: ${Math.min(100, (wood / cap.wood) * 100)}%;"></div>
+              <div style="height: 100%; background: ${mm.color || '#94a3b8'}; width: ${pct}%;"></div>
             </div>
-            <span style="font-weight: 800; color: #4ade80; min-width: 80px; text-align: right;">${wood.toFixed(0)}/${cap.wood}</span>
+            <span style="font-weight: 800; color: ${mm.color || '#94a3b8'}; min-width: 80px; text-align: right;">${v}/${c}</span>
           </div>
-        </div>
-
-        <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('iron', '⛏️', 'width:20px;height:20px;')}</span>Demir Silosu (%${Math.round((iron / cap.iron) * 100)})</div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
-              <div style="height: 100%; background: #94a3b8; width: ${Math.min(100, (iron / cap.iron) * 100)}%;"></div>
-            </div>
-            <span style="font-weight: 800; color: #94a3b8; min-width: 80px; text-align: right;">${iron.toFixed(0)}/${cap.iron}</span>
-          </div>
-        </div>
-
-        <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg('wheat', '🌾', 'width:20px;height:20px;')}</span>Buğday Silosu (%${Math.round((wheat / cap.wheat) * 100)})</div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
-              <div style="height: 100%; background: #facc15; width: ${Math.min(100, (wheat / cap.wheat) * 100)}%;"></div>
-            </div>
-            <span style="font-weight: 800; color: #facc15; min-width: 80px; text-align: right;">${wheat.toFixed(0)}/${cap.wheat}</span>
-          </div>
-        </div>
+        </div>`; }).join('')}
       </div>
 
       ${upgradeSection}
@@ -1031,7 +1011,7 @@ function quickBuyHtml(kind) {
   return `
     <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; background:#0f172a; border:1px dashed #4ade80; border-radius:8px; padding:9px 12px; margin:8px 0;">
       <div style="font-size:0.8rem; color:#cbd5e1; line-height:1.45;">
-        <strong style="color:#86efac;">Eksikler:</strong> ${list} <span style="color:#94a3b8;">· pazardan ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA</span>
+        <strong style="color:#86efac;">Eksikler:</strong> ${list} <span style="color:#94a3b8;">· pazardan ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ASTRA</span>
         ${plan.capBlocked ? '<br><span style="color:#fbbf24;">Siloda yer yetmediği için bir kısmı alınamıyor.</span>' : ''}
         ${!plan.ok && plan.reason ? `<br><span style="color:#fca5a5;">${plan.reason}</span>` : ''}
       </div>
@@ -1156,12 +1136,12 @@ function openInventoryModal() {
           <div style="color: ${iron >= req.iron ? '#4ade80' : '#f87171'};">⛏️ ${iron}/${req.iron} Demir</div>
           <div style="color: ${wheat >= req.wheat ? '#4ade80' : '#f87171'};">🌾 ${wheat}/${req.wheat} Buğday</div>
           <div style="color: ${adAstra >= req.adAstra ? '#4ade80' : '#f87171'};" id="live-levelup-ada-box">
-            🟣 <span id="val-levelup-ada-cur">${adAstra.toFixed(1)}</span> / <span id="val-levelup-ada-req">${req.adAstra.toLocaleString('tr-TR')}</span> ADA
+            🟣 <span id="val-levelup-ada-cur">${adAstra.toFixed(1)}</span> / <span id="val-levelup-ada-req">${req.adAstra.toLocaleString('tr-TR')}</span> ASTRA
           </div>
         </div>
         
         <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 2px; border-top: 1px dashed #3e2205; padding-top: 5px; display: flex; justify-content: space-between; align-items: center;">
-          <span>💡 Ekstra ADA bedeli, istenen odun/demir/buğdayın DEX pazar değeridir.</span>
+          <span>💡 Ekstra ASTRA bedeli, istenen odun/demir/buğdayın DEX pazar değeridir.</span>
           <span style="color: #a78bfa; font-size: 0.72rem;">⚡ Canlı Bot Aktif</span>
         </div>
       </div>
@@ -1186,7 +1166,7 @@ function openInventoryModal() {
         } else if (!canLevelUp) {
           let missingReason = '';
           if (!hasXp) missingReason = `Yetersiz Deneyim (${state.currentXp}/${req.xp} XP)`;
-          else if (!hasAda) missingReason = `Yetersiz $ADASTRA (${adAstra.toFixed(0)}/${req.adAstra} ADA)`;
+          else if (!hasAda) missingReason = `Yetersiz ASTRA (${adAstra.toFixed(0)}/${req.adAstra} ASTRA)`;
           else missingReason = 'Eksik Hammadde Bulunuyor';
 
           return `
@@ -1225,23 +1205,23 @@ function openInventoryModal() {
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem;">
           <div>
             <div style="color: #a855f7; font-size: 0.72rem; font-weight: 700;">TOPLAM UBI HAVUZU:</div>
-            <div id="ubi-total-pool-val" style="color: #f3e8ff; font-weight: 800; font-size: 0.95rem;">${ubiInfo.totalPool.toLocaleString('tr-TR')} 🟣 ADA</div>
+            <div id="ubi-total-pool-val" style="color: #f3e8ff; font-weight: 800; font-size: 0.95rem;">${ubiInfo.totalPool.toLocaleString('tr-TR')} 🟣 ASTRA</div>
           </div>
           <div>
             <div style="color: #a855f7; font-size: 0.72rem; font-weight: 700;">BU HAFTALIK BÜTÇE (1/12):</div>
-            <div id="ubi-weekly-budget-val" style="color: #38bdf8; font-weight: 800; font-size: 0.95rem;">${ubiInfo.weeklyBudget.toLocaleString('tr-TR')} 🟣 ADA</div>
+            <div id="ubi-weekly-budget-val" style="color: #38bdf8; font-weight: 800; font-size: 0.95rem;">${ubiInfo.weeklyBudget.toLocaleString('tr-TR')} 🟣 ASTRA</div>
           </div>
         </div>
 
         <div style="border-top: 1px dashed rgba(168, 85, 247, 0.3); padding-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.82rem;">
           <div>
             <div style="color: #cbd5e1; font-size: 0.74rem;">Mevcut Seviyeniz (Lv.${state.level}):</div>
-            <div id="ubi-player-payout-val" style="color: #4ade80; font-weight: 900; font-size: 1.05rem;">${ubiInfo.payout.toFixed(2)} 🟣 ADA / Hafta</div>
+            <div id="ubi-player-payout-val" style="color: #4ade80; font-weight: 900; font-size: 1.05rem;">${ubiInfo.payout.toFixed(2)} 🟣 ASTRA / Hafta</div>
           </div>
           <div>
             <div style="color: #cbd5e1; font-size: 0.74rem;">Sonraki Seviye (Lv.${Math.min(81, state.level + 1)}):</div>
             <div id="ubi-next-payout-box" style="color: #facc15; font-weight: 800; font-size: 0.95rem;">
-              <span id="ubi-next-payout-val">${ubiInfo.nextLevelPayout.toFixed(2)}</span> ADA 
+              <span id="ubi-next-payout-val">${ubiInfo.nextLevelPayout.toFixed(2)}</span> ASTRA 
               <span id="ubi-increase-pct-val" style="font-size: 0.75rem; color: #4ade80;">(+%${ubiInfo.increasePct})</span>
             </div>
           </div>
@@ -1260,7 +1240,7 @@ function openInventoryModal() {
         </button>
       ` : `
         <button id="btn-claim-ubi" class="btn-clean" style="margin-top: 8px; background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%); color: #fff; font-weight: 900; font-size: 0.95rem; border: 1.5px solid #d8b4fe; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);">
-          🏛️ HAFTALIK EVRENSEL TEMEL GELİRİ AL <span id="ubi-btn-claim-amount">(+${ubiInfo.payout.toFixed(2)} ADA)</span>
+          🏛️ HAFTALIK EVRENSEL TEMEL GELİRİ AL <span id="ubi-btn-claim-amount">(+${ubiInfo.payout.toFixed(2)} ASTRA)</span>
         </button>
       `}
     </div>
@@ -1360,12 +1340,12 @@ function openInventoryModal() {
       </div>
     </div>
 
-    <!-- Aletler & Tamirat (Odun + Demir + 1 ADA/dk - Buğday Gerekmez) -->
+    <!-- Aletler & Tamirat (Odun + Demir + 1 ASTRA/dk - Buğday Gerekmez) -->
     <div class="clean-card">
       <div class="card-title-row">
         <div class="card-title">🔨 Aletler & Dayanıklılık</div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">Odun + Demir + ADA ile Onarım (Buğdaysız)</span>
+          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">Odun + Demir + ASTRA ile Onarım (Buğdaysız)</span>
         </div>
       </div>
 
@@ -1375,7 +1355,7 @@ function openInventoryModal() {
           <span style="font-size: 1.4rem;">🪓</span>
           <div>
             <div style="font-size: 0.95rem; font-weight: 800;">Acemi Baltası</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">${axe.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${axeCost.missingDurability} dk): <strong>${axeCost.woodCost} Odun</strong> + <strong>${axeCost.ironCost} Demir</strong> + <strong>${axeCost.adAstraCost} ADA</strong>`}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">${axe.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${axeCost.missingDurability} dk): <strong>${axeCost.woodCost} Odun</strong> + <strong>${axeCost.ironCost} Demir</strong> + <strong>${axeCost.adAstraCost} ASTRA</strong>`}</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -1390,7 +1370,7 @@ function openInventoryModal() {
           <span style="font-size: 1.4rem;">⛏️</span>
           <div>
             <div style="font-size: 0.95rem; font-weight: 800;">Bronz Kazma</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">${pickaxe.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${pickaxeCost.missingDurability} dk): <strong>${pickaxeCost.woodCost} Odun</strong> + <strong>${pickaxeCost.ironCost} Demir</strong> + <strong>${pickaxeCost.adAstraCost} ADA</strong>`}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">${pickaxe.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${pickaxeCost.missingDurability} dk): <strong>${pickaxeCost.woodCost} Odun</strong> + <strong>${pickaxeCost.ironCost} Demir</strong> + <strong>${pickaxeCost.adAstraCost} ASTRA</strong>`}</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -1405,7 +1385,7 @@ function openInventoryModal() {
           <span style="font-size: 1.4rem;">🌾</span>
           <div>
             <div style="font-size: 0.95rem; font-weight: 800;">Demir Orak</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">${sickle.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${sickleCost.missingDurability} dk): <strong>${sickleCost.woodCost} Odun</strong> + <strong>${sickleCost.ironCost} Demir</strong> + <strong>${sickleCost.adAstraCost} ADA</strong>`}</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">${sickle.durability >= 4320 ? '✅ Tam Sağlam (4320/4320 dk)' : `Onarım Maliyeti (-${sickleCost.missingDurability} dk): <strong>${sickleCost.woodCost} Odun</strong> + <strong>${sickleCost.ironCost} Demir</strong> + <strong>${sickleCost.adAstraCost} ASTRA</strong>`}</div>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -1432,19 +1412,100 @@ export function updateUbiCardLive() {
   const elPct = document.getElementById('ubi-increase-pct-val');
   const elBtnAmt = document.getElementById('ubi-btn-claim-amount');
 
-  elTotal.innerText = `${ubiInfo.totalPool.toLocaleString('tr-TR')} 🟣 ADA`;
-  if (elBudget) elBudget.innerText = `${ubiInfo.weeklyBudget.toLocaleString('tr-TR')} 🟣 ADA`;
-  if (elPayout) elPayout.innerText = `${ubiInfo.payout.toFixed(2)} 🟣 ADA / Hafta`;
+  elTotal.innerText = `${ubiInfo.totalPool.toLocaleString('tr-TR')} 🟣 ASTRA`;
+  if (elBudget) elBudget.innerText = `${ubiInfo.weeklyBudget.toLocaleString('tr-TR')} 🟣 ASTRA`;
+  if (elPayout) elPayout.innerText = `${ubiInfo.payout.toFixed(2)} 🟣 ASTRA / Hafta`;
   if (elNext) elNext.innerText = `${ubiInfo.nextLevelPayout.toFixed(2)}`;
   if (elPct) elPct.innerText = `(+%${ubiInfo.increasePct})`;
-  if (elBtnAmt) elBtnAmt.innerText = `(+${ubiInfo.payout.toFixed(2)} ADA)`;
+  if (elBtnAmt) elBtnAmt.innerText = `(+${ubiInfo.payout.toFixed(2)} ASTRA)`;
 }
 window.updateUbiCardLive = updateUbiCardLive;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// v2 (7 Ekim 2026): 6 hammadde alanı tek şablondan (config.RESOURCE_META: ad, simge, renk, alet, alan)
+// ═══════════════════════════════════════════════════════════════════════════
+const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+const RES_META = () => GAME_CONFIG.RESOURCE_META || {};
+const ZONE_OF_NODE = key => ((RES_META()[key] || {}).zone) || key;
+const NODE_OF_ZONE_UI = zoneId => RES_KEYS().find(k => ZONE_OF_NODE(k) === zoneId) || null;
+const ZONE_NAMES = { wheat: 'Güneş Tarlası & Değirmen', stone: 'Taş Ocağı', wood: 'Zümrüt Ormanı & Oduncu', coal: 'Kömür Ocağı', iron: 'Demir Madeni & Tamirhane', herb: 'Şifalı Ot Bahçesi' };
+const ZONE_LABELS = { village: '🏘️ Köy Evleri', council: '🏛️ Sirius Konseyi', healer: '🌿 Şifahane', spaceport: '🚀 Uzay Limanı' };
+const TOOL_NAMES = { sickle: 'Orak', chisel: 'Keski', axe: 'Balta', coalpick: 'Kömür Kazması', pickaxe: 'Kazma', herbknife: 'Ot Bıçağı' };
+const ZONE_TITLE = key => { const m = RES_META()[key] || {}; const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[key] || {}; return `${m.icon || cap.icon || ''} ${ZONE_NAMES[key] || cap.name || key}`; };
+const fmt3 = v => (Math.round((Number(v) || 0) * 1000) / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 3 });
+
+function renderResourceZoneHtml(nodeId) {
+  const state = gameState.state;
+  const meta = RES_META()[nodeId] || {};
+  const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[nodeId] || {};
+  const toolId = meta.tool || cap.requiredTool;
+  const toolCfg = (GAME_CONFIG.TOOLS || {})[toolId] || {};
+  const maxDur = toolCfg.maxDurability || 4320;
+  const tool = (state.tools || {})[toolId] || { durability: maxDur };
+  const durPct = Math.round(((tool.durability != null ? tool.durability : maxDur) / maxDur) * 100);
+  const repCost = gameState.calculateRepairCost(toolId) || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
+  const activeExp = state.activeExpeditions[nodeId];
+  const isSpeedActive = gameState.isBuffActive('speed_' + nodeId);
+  const currentDuration = gameState.getExpeditionDurationHours();
+  const currentDurationMin = gameState.getExpeditionDurationMinutes();
+  const ratePm = gameState.getResourceRatePerMinute(nodeId);
+  const estYield = Math.floor(ratePm * currentDurationMin * (isSpeedActive ? 1.5 : 1));
+  const name = meta.name || cap.name || nodeId;
+  const icon = meta.icon || cap.icon || '';
+  const toolName = toolCfg.name || TOOL_NAMES[toolId] || toolId;
+  const staminaCost = gameState.getExpeditionStaminaCost();
+  const lowStamina = state.stamina < staminaCost;
+  const hak = gameState.getUretimHakki ? gameState.getUretimHakki(nodeId) : null;
+  return `
+      <div class="clean-card">
+        <div class="card-title-row">
+          <div class="card-title">${icon} ${name} Seferi</div>
+          <div class="card-badge">${currentDuration} Saat (${currentDurationMin} dk) ${isSpeedActive ? '⚡ 1.5x Hızlı' : ''}</div>
+        </div>
+        <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
+          ⚡ <strong>Üretim:</strong> ${(Math.round(ratePm * 100) / 100).toLocaleString('tr-TR')} ${name} / dakika (${Math.round(ratePm * 60).toLocaleString('tr-TR')} / saat, seviye bonusu dahil)<br>
+          📦 <strong>Beklenen sefer kazancı:</strong> ~${estYield} ${name} | 🔧 <strong>Aşınma:</strong> -${currentDurationMin} dk
+          ${hak ? `<br>🎫 <strong>Üretim Hakkın:</strong> bugün alınabilir <strong style="color:${hak.canTake > 0 ? '#4ade80' : '#f87171'};">${fmtInt(hak.canTake)}</strong> ${name} · bu hafta ${fmtInt(hak.used)} / ${fmtInt(hak.released)} açılan (haftalık ${fmtInt(hak.weekly)}, ağırlık ×${hak.weight})${hak.extra > 0 ? ` · +${fmtInt(hak.extra)} başkalarının kullanmadığı` : ''}` : ''}
+        </div>
+        <div class="durability-row">
+          <span style="font-size: 0.95rem; font-weight: 700;">🔧 ${toolName} Durumu:</span>
+          <span class="card-badge" style="color: ${tool.durability <= maxDur / 6 ? '#ef4444' : '#22c55e'};">${tool.durability} / ${maxDur} dk (%${durPct})</span>
+        </div>
+        ${activeExp ? renderExpeditionActiveBox(nodeId) : `
+          <button class="btn-clean btn-modal-start" data-node="${nodeId}" ${tool.durability <= 0 || lowStamina ? 'disabled' : ''}>
+            ${currentDuration} Saatlik ${name} Görevine Gönder (-${staminaCost.toLocaleString('tr-TR')} ⚡)
+          </button>
+          ${lowStamina && (state.inventory.scroll_stamina || 0) > 0 ? `
+            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
+              ⚡ Yetersiz Stamina! Parşömen Kullan (${state.inventory.scroll_stamina} Adet • +100 ⚡)
+            </button>
+          ` : ''}
+        `}
+      </div>
+
+      <div class="clean-card">
+        <div class="card-title-row">
+          <div class="card-title">🔨 ${toolName} Tamiratı</div>
+          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">
+            ${repCost.missingDurability > 0 ? `${repCost.woodCost} Odun + ${repCost.ironCost} Demir + ${fmt3(repCost.adAstraCost)} ASTRA` : '✅ Tam Sağlam'}
+          </span>
+        </div>
+        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
+          Onarım bedeli: aşınan her dakika için odun + demir (dakikalık üretimin %25'i, aletlere bölünmüş) + bu malzemenin pazar değerinin %30'u kadar ASTRA (Eksik: ${repCost.missingDurability} dk)
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn-clean btn-clean-outline btn-modal-repair" data-tool="${toolId}" style="flex: 1; min-width: 160px;" ${repCost.missingDurability <= 0 ? 'disabled' : ''}>
+            ${repCost.missingDurability <= 0 ? `${toolName} Tamamen Sağlam` : `${toolName} Onar (${repCost.woodCost}🌲 + ${repCost.ironCost}⛏️ + ${fmt3(repCost.adAstraCost)} 🪙)`}
+          </button>
+        </div>
+      </div>
+    `;
+}
 
 function renderExpeditionActiveBox(nodeId) {
   const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
   const accrued = gameState.getAccruedExpeditionHarvest(nodeId);
-  const colorMap = { wood: '#4ade80', iron: '#38bdf8', wheat: '#facc15' };
+  const colorMap = Object.fromEntries(RES_KEYS().map(k => [k, (RES_META()[k] || {}).color]));
   const nodeColor = colorMap[nodeId] || '#ca8a04';
 
   const cap = gameState.getWarehouseCapacity();
@@ -1453,7 +1514,7 @@ function renderExpeditionActiveBox(nodeId) {
   const availableRoom = limit != null ? Math.max(0, limit - currentInv) : accrued.accruedAmount;
   const isCompletelyFull = limit != null && availableRoom <= 0;
   const isPartialRoom = limit != null && availableRoom > 0 && (availableRoom < accrued.accruedAmount);
-  const resourceDisplayNames = { wood: 'odun', iron: 'demir', wheat: 'buğday' };
+  const resourceDisplayNames = Object.fromEntries(RES_KEYS().map(k => [k, ((RES_META()[k] || {}).name || k).toLocaleLowerCase('tr-TR')]));
   const rLabel = resourceDisplayNames[nodeId] || nodeConfig.name;
 
   return `
@@ -1520,6 +1581,10 @@ function openTownZoneModal(zoneId, zoneName) {
     openColosseumModal();
     return;
   }
+  if (zoneId === 'council') {
+    openTreasuryVaultModal();
+    return;
+  }
 
   const state = gameState.state;
   dom.modalTitle.innerHTML = `<span>📍</span> <span>${zoneName}</span>`;
@@ -1527,122 +1592,10 @@ function openTownZoneModal(zoneId, zoneName) {
 
   let html = '';
 
-  // 1. ORMAN (WOOD)
-  if (zoneId === 'forest') {
-    const playerTool = state.tools.axe || { durability: 4320 };
-    const maxDur = 4320;
-    const durPct = Math.round(((playerTool.durability != null ? playerTool.durability : maxDur) / maxDur) * 100);
-    const axeCost = gameState.calculateRepairCost('axe') || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
-    const activeExp = state.activeExpeditions.wood;
-    const isSpeedActive = gameState.isBuffActive('speed_wood');
-    const currentDurationMin = gameState.getExpeditionDurationMinutes();
-    const estYield = Math.floor(gameState.getResourceRatePerMinute('wood') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
-
-    html = `
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🌲 Odun Kesim Seferi</div>
-          <div class="card-badge">${currentDuration} Saat (${currentDurationMin} dk) ${isSpeedActive ? '⚡ 1.5x Hızlı' : ''}</div>
-        </div>
-        
-        <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('wood') * 100) / 100).toLocaleString('tr-TR')} Odun / dakika (${Math.round(gameState.getResourceRatePerMinute('wood') * 60).toLocaleString('tr-TR')} Odun/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
-          📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Odun | 🪓 <strong>Aşınma:</strong> -${currentDurationMin} dk
-        </div>
-
-        <div class="durability-row">
-          <span style="font-size: 0.95rem; font-weight: 700;">🪓 Balta Durumu:</span>
-          <span class="card-badge" style="color: ${playerTool.durability <= 720 ? '#ef4444' : '#22c55e'};">${playerTool.durability} / 4320 dk (%${durPct})</span>
-        </div>
-
-        ${activeExp ? renderExpeditionActiveBox('wood') : `
-          <button class="btn-clean btn-modal-start" data-node="wood" ${playerTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Odun Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
-          </button>
-          ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
-              ⚡ Yetersiz Stamina! Parşömen Kullan (${state.inventory.scroll_stamina} Adet • +100 ⚡)
-            </button>
-          ` : ''}
-        `}
-      </div>
-
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🔨 Balta Tamiratı</div>
-          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">
-            ${axeCost.missingDurability > 0 ? `${axeCost.woodCost} Odun + ${axeCost.ironCost} Demir + ${axeCost.adAstraCost} ADA` : '✅ Tam Sağlam'}
-          </span>
-        </div>
-        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
-          Onarım Bedeli: Dk başı 1.5 Odun + 1.0 Demir + Anlık AMM Pazar Değeri ADA (Eksik: ${axeCost.missingDurability} dk)
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-clean btn-clean-outline btn-modal-repair" data-tool="axe" style="flex: 1; min-width: 160px;" ${axeCost.missingDurability <= 0 ? 'disabled' : ''}>
-            ${axeCost.missingDurability <= 0 ? 'Balta Tamamen Sağlam' : `Baltayı Onar (${axeCost.woodCost}🌲 + ${axeCost.ironCost}⛏️ + ${axeCost.adAstraCost} 🪙)`}
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  // 2. MADEN (IRON) - Sadece Maden Seferleri & Kazma Bakımı (Sekmesiz Temiz Görünüm)
-  else if (zoneId === 'mine') {
-    const pickaxeTool = state.tools.pickaxe || { durability: 4320 };
-    const maxDur = 4320;
-    const durPct = Math.round(((pickaxeTool.durability != null ? pickaxeTool.durability : maxDur) / maxDur) * 100);
-    const pickCost = gameState.calculateRepairCost('pickaxe') || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
-    const activeExp = state.activeExpeditions.iron;
-    const isSpeedActive = gameState.isBuffActive('speed_iron');
-    const currentDurationMin = gameState.getExpeditionDurationMinutes();
-    const estYield = Math.floor(gameState.getResourceRatePerMinute('iron') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
-
-    html = `
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">⛏️ Demir Madeni Seferi</div>
-          <div class="card-badge">${currentDuration} Saat (${currentDurationMin} dk) ${isSpeedActive ? '⚡ 1.5x Hızlı' : ''}</div>
-        </div>
-
-        <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('iron') * 100) / 100).toLocaleString('tr-TR')} Demir / dakika (${Math.round(gameState.getResourceRatePerMinute('iron') * 60).toLocaleString('tr-TR')} Demir/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
-          📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Demir | ⛏️ <strong>Aşınma:</strong> -${currentDurationMin} dk
-        </div>
-
-        <div class="durability-row">
-          <span style="font-size: 0.95rem; font-weight: 700;">⛏️ Kazma Durumu:</span>
-          <span class="card-badge" style="color: ${pickaxeTool.durability <= 720 ? '#ef4444' : '#22c55e'};">${pickaxeTool.durability} / 4320 dk (%${durPct})</span>
-        </div>
-
-        ${activeExp ? renderExpeditionActiveBox('iron') : `
-          <button class="btn-clean btn-modal-start" data-node="iron" ${pickaxeTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Maden Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
-          </button>
-          ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
-              ⚡ Yetersiz Stamina! Parşömen Kullan (${state.inventory.scroll_stamina} Adet • +100 ⚡)
-            </button>
-          ` : ''}
-        `}
-      </div>
-
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🔨 Kazma Tamiratı</div>
-          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">
-            ${pickCost.missingDurability > 0 ? `${pickCost.woodCost} Odun + ${pickCost.ironCost} Demir + ${pickCost.adAstraCost} ADA` : '✅ Tam Sağlam'}
-          </span>
-        </div>
-        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
-          Onarım Bedeli: Dk başı 1.5 Odun + 1.0 Demir + Anlık AMM Pazar Değeri ADA (Eksik: ${pickCost.missingDurability} dk)
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-clean btn-clean-outline btn-modal-repair" data-tool="pickaxe" style="flex: 1; min-width: 160px;" ${pickCost.missingDurability <= 0 ? 'disabled' : ''}>
-            ${pickCost.missingDurability <= 0 ? 'Kazma Tamamen Sağlam' : `Kazmayı Onar (${pickCost.woodCost}🌲 + ${pickCost.ironCost}⛏️ + ${pickCost.adAstraCost} 🪙)`}
-          </button>
-        </div>
-      </div>
-    `;
+  // 1-3. HAMMADDE ALANLARI (v2: tarla, taş ocağı, orman, kömür ocağı, maden, ot bahçesi — tek şablon)
+  const zoneNode = NODE_OF_ZONE_UI(zoneId);
+  if (zoneNode) {
+    html = renderResourceZoneHtml(zoneNode);
   }
 
   // 2.5 DEMİRCİ & TAMİRHANE (ŞEHİR MERKEZİNDEKİ EV) - Geniş Ekran 3 Sütunlu Entegre Cephanelik, Dövme ve Donatım Merkezi
@@ -1774,14 +1727,14 @@ function openTownZoneModal(zoneId, zoneName) {
                       ${line(resImg('iron', '⛏️', 'width:16px;height:16px;vertical-align:-3px;'), 'Demir', state.inventory.iron || 0, cost.ironCost, capNow.iron)}
                       ${line(resImg('wood', '🌲', 'width:16px;height:16px;vertical-align:-3px;'), 'Odun', state.inventory.wood || 0, cost.woodCost, capNow.wood)}
                       ${line(resImg('fragments', '🧩', 'width:16px;height:16px;vertical-align:-3px;'), 'Parça', state.inventory.fragments || 0, cost.fragCost, null)}
-                      ${line('🟣', 'ADA', state.adAstraBalance || 0, cost.adaCost, null)}
+                      ${line('🟣', 'ASTRA', state.adAstraBalance || 0, cost.adaCost, null)}
                     </div>`;
                   })()}
 
                   ${(() => {
                     if (canAfford) return `<button class="btn-clean btn-craft-equipment" data-slot="${slot}" style="padding: 12px; font-size: 1rem; font-weight: 800; background: #16a34a; border-color: #4ade80; color: #fff;">🔨 ${slotNames[slot]} döv</button>`;
                     const plan = gameState.getQuickBuyPlan('craft:' + slot);
-                    if (plan.ok) return `<button class="btn-clean btn-quick-craft" data-slot="${slot}" style="padding: 12px; font-size: 0.95rem; font-weight: 800; background: #15803d; border-color: #4ade80; color: #fff;" title="${plan.items.map(i => i.qty.toLocaleString('tr-TR') + ' ' + i.name).join(', ')}">⚡ Eksikleri al ve döv · ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA</button>`;
+                    if (plan.ok) return `<button class="btn-clean btn-quick-craft" data-slot="${slot}" style="padding: 12px; font-size: 0.95rem; font-weight: 800; background: #15803d; border-color: #4ade80; color: #fff;" title="${plan.items.map(i => i.qty.toLocaleString('tr-TR') + ' ' + i.name).join(', ')}">⚡ Eksikleri al ve döv · ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ASTRA</button>`;
                     const why = plan.capBlocked ? 'Silon bu tarif için yetersiz: önce siloyu yükselt.' : (plan.reason || 'Eksik hammadde var.');
                     return `<button class="btn-clean" disabled style="padding: 12px; font-size: 0.85rem; font-weight: 700; background: #334155; border-color: #475569; color: #cbd5e1;">⚠️ ${why}</button>`;
                   })()}
@@ -1954,12 +1907,12 @@ function openTownZoneModal(zoneId, zoneName) {
                       </div>
                       ${upCost ? `
                         <div style="font-size:0.75rem; color:#a78bfa; margin-top:4px;">
-                          ✨ Lv.${nextLvl} Geliştirme: ${upCost.ironCost}⛏️ Demir • ${upCost.woodCost}🌲 Odun • ${upCost.fragCost}🧩 Parça • ${upCost.adaCost}🟣 ADA
+                          ✨ Lv.${nextLvl} Geliştirme: ${upCost.ironCost}⛏️ Demir • ${upCost.woodCost}🌲 Odun • ${upCost.fragCost}🧩 Parça • ${upCost.adaCost}🟣 ASTRA
                         </div>
                       ` : ''}
                       ${repCost ? `
                         <div style="font-size:0.75rem; color:#38bdf8; margin-top:2px;">
-                          🔧 Tamir Bedeli: ${repCost.ironCost}⛏️ Demir • ${repCost.woodCost}🌲 Odun • ${repCost.adaCost}🟣 ADA
+                          🔧 Tamir Bedeli: ${repCost.ironCost}⛏️ Demir • ${repCost.woodCost}🌲 Odun • ${repCost.adaCost}🟣 ASTRA
                         </div>
                       ` : ''}
                     </div>
@@ -1988,7 +1941,7 @@ function openTownZoneModal(zoneId, zoneName) {
                         data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}"
                         style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 10px 14px; font-size: 0.88rem;"
                         ${canAffordRep ? '' : 'disabled'}>
-                        🔧 Onar (${repCost ? repCost.adaCost : 0} ADA)
+                        🔧 Onar (${repCost ? repCost.adaCost : 0} ASTRA)
                       </button>
                     ` : ''}
 
@@ -2018,68 +1971,71 @@ function openTownZoneModal(zoneId, zoneName) {
   }
 
   // 3. ÇİFTLİK (WHEAT)
-  else if (zoneId === 'farm') {
-    const sickleTool = state.tools.sickle || { durability: 4320 };
-    const maxDur = 4320;
-    const durPct = Math.round(((sickleTool.durability != null ? sickleTool.durability : maxDur) / maxDur) * 100);
-    const sickleCost = gameState.calculateRepairCost('sickle') || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
-    const activeExp = state.activeExpeditions.wheat;
-    const isSpeedActive = gameState.isBuffActive('speed_wheat');
-    const currentDurationMin = gameState.getExpeditionDurationMinutes();
-    const wheatRatePm = (GAME_CONFIG.BASE_PRODUCTION && GAME_CONFIG.BASE_PRODUCTION.wheat) || 30;
-    const estYield = Math.floor(gameState.getResourceRatePerMinute('wheat') * currentDurationMin * (isSpeedActive ? 1.5 : 1));
-
+  // 3. YENİ BİNALAR (v2): Köy Evleri, Şifahane, Uzay Limanı (K1 kuralları adım adım bağlanıyor)
+  else if (zoneId === 'village') {
+    const v = state.village || { houses: 1, villagers: 10, labor: 0 };
+    const K = GAME_CONFIG.KOY || {};
+    const perHouse = K.VILLAGERS_PER_HOUSE ?? 10;
     html = `
       <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🌾 Buğday Hasat Seferi</div>
-          <div class="card-badge">${currentDuration} Saat (${currentDurationMin} dk) ${isSpeedActive ? '⚡ 1.5x Hızlı' : ''}</div>
+        <div class="card-title-row"><div class="card-title">🏘️ Köy Evleri</div><div class="card-badge">${v.houses || 1} ev · ${Math.floor(v.villagers || 0)} köylü</div></div>
+        <div class="clean-desc">Köylüler günde buğday yer, emek puanı üretir (Konsey projeleri ve Madencilik Otoritesi inşaatı için) ve her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir. Universe açılınca köylüler kolonist olarak gönderilebilir.</div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.85rem;">
+          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${Math.floor(v.villagers || 0)}</strong><span class="stat-tile-sub">kapasite ${(v.houses || 1) * perHouse}</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Emek puanı</span><strong>${Math.floor(v.labor || 0)}</strong><span class="stat-tile-sub">günde köylü başına 1</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Üretim bonusu</span><strong>+%${Math.min(20, Math.floor((v.villagers || 0) / 10))}</strong><span class="stat-tile-sub">her 10 köylü +%1</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Asker hakkı</span><strong>${(state.soldierUnits || []).length} / ${Math.floor(v.villagers || 0)}</strong><span class="stat-tile-sub">her asker 1 köylü</span></div>
         </div>
-        
-        <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Üretim:</strong> ${(Math.round(gameState.getResourceRatePerMinute('wheat') * 100) / 100).toLocaleString('tr-TR')} Buğday / dakika (${Math.round(gameState.getResourceRatePerMinute('wheat') * 60).toLocaleString('tr-TR')} Buğday/saat) • seviye bonusu +%${(Math.round((gameState.getLevelProductionMultiplier() - 1) * 1000) / 10).toLocaleString('tr-TR')} dahil.<br>
-          📦 <strong>Beklenen Sefer Kazancı:</strong> ~${estYield} Buğday | 🌾 <strong>Aşınma:</strong> -${currentDurationMin} dk
-        </div>
-
-        <div class="durability-row">
-          <span style="font-size: 0.95rem; font-weight: 700;">🌾 Orak Durumu:</span>
-          <span class="card-badge" style="color: ${sickleTool.durability <= 720 ? '#ef4444' : '#22c55e'};">${sickleTool.durability} / 4320 dk (%${durPct})</span>
-        </div>
-
-        ${activeExp ? renderExpeditionActiveBox('wheat') : `
-          <button class="btn-clean btn-modal-start" data-node="wheat" ${sickleTool.durability <= 0 || state.stamina < 25 ? 'disabled' : ''}>
-            ${currentDuration} Saatlik Hasat Görevine Gönder (-${gameState.getExpeditionStaminaCost().toLocaleString('tr-TR')} ⚡)
-          </button>
-          ${state.stamina < 25 && (state.inventory.scroll_stamina || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
-              ⚡ Yetersiz Stamina! Parşömen Kullan (${state.inventory.scroll_stamina} Adet • +100 ⚡)
-            </button>
-          ` : ''}
-        `}
-      </div>
-
+        <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🏗️ Yeni ev yapımı, köylü büyümesi ve beslenme kuralları bu sürümde bağlanıyor.</div>
+      </div>`;
+  }
+  else if (zoneId === 'healer') {
+    const injured = (state.soldierUnits || []).filter(sv => (sv.hp || 0) < (sv.maxHp || 100));
+    const herbs = Math.floor(state.inventory.herb || 0);
+    const hpPerHerb = (GAME_CONFIG.SIFAHANE || {}).HP_PER_HERB ?? 5;
+    html = `
       <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🔨 Orak Tamiratı</div>
-          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">
-            ${sickleCost.missingDurability > 0 ? `${sickleCost.woodCost} Odun + ${sickleCost.ironCost} Demir + ${sickleCost.adAstraCost} ADA` : '✅ Tam Sağlam'}
-          </span>
+        <div class="card-title-row"><div class="card-title">🌿 Şifahane</div><div class="card-badge">${herbs} şifalı ot</div></div>
+        <div class="clean-desc">Şifalı ot ile yaralı askerler iyileştirilir: 1 ot = ${hpPerHerb} can. Otla iyileştirmede ASTRA bedeli yarıya iner. Şifalı ot yalnız Şifalı Ot Bahçesi seferlerinden gelir.</div>
+        <div style="font-size:0.85rem; color:#cbd5e1;">Yaralı asker: <strong>${injured.length}</strong> · Eksik can toplamı: <strong>${injured.reduce((t, sv) => t + ((sv.maxHp || 100) - (sv.hp || 0)), 0)}</strong></div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-clean btn-clean-green" id="btn-healer-open-barracks" style="width:auto; padding:8px 16px;">⚔️ Kışlaya git (iyileştirme)</button>
         </div>
-        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
-          Onarım Bedeli: Dk başı 1.5 Odun + 1.0 Demir + Anlık AMM Pazar Değeri ADA (Eksik: ${sickleCost.missingDurability} dk)
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-clean btn-clean-outline btn-modal-repair" data-tool="sickle" style="flex: 1; min-width: 160px;" ${sickleCost.missingDurability <= 0 ? 'disabled' : ''}>
-            ${sickleCost.missingDurability <= 0 ? 'Orak Tamamen Sağlam' : `Orağı Onar (${sickleCost.woodCost}🌲 + ${sickleCost.ironCost}⛏️ + ${sickleCost.adAstraCost} 🪙)`}
-          </button>
-          ${(state.inventory.scroll_repair || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_repair" style="width: auto; padding: 8px 14px; font-weight: 800;" ${sickleTool.durability >= 4320 ? 'disabled' : ''} title="%10 Alet Onarım Parşömeni Kullan">
-              📜 Parşömen Kullan (${state.inventory.scroll_repair} Adet)
-            </button>
-          ` : ''}
+        <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🧪 Otla iyileştirme düğmesi bu sürümde Kışla ekranına ekleniyor.</div>
+      </div>`;
+  }
+  else if (zoneId === 'spaceport') {
+    const U = GAME_CONFIG.UZAY_LIMANI || {};
+    const parts = U.ROCKET_PARTS || {};
+    const v = state.village || { villagers: 0 };
+    const soldiers = (state.soldierUnits || []).length;
+    const genesis = !!state.genesisNftMinted;
+    const stage = GAME_CONFIG.UNIVERSE_STAGE || 0;
+    const stageNames = ['Aşama 0 — Realm (Universe kapalı)', 'Aşama 1 — Hazırlık (Hazırlık Deposu açık)', 'Aşama 2 — Ön sipariş', 'Aşama 3 — Universe açık'];
+    const W = U.PROGRESS_WEIGHTS || { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 };
+    const rocketDone = !!state.rocketReady;
+    const pVill = Math.min(1, (v.villagers || 0) / 100), pSold = Math.min(1, soldiers / 10);
+    const progress = Math.round(((rocketDone ? 1 : 0) * W.rocket + 0 * W.depot + pVill * W.villagers + pSold * W.soldiers + (genesis ? 1 : 0) * W.genesis) * 100);
+    const partRows = Object.entries(parts).map(([k, need]) => { const have = k === 'adAstra' ? (state.adAstraBalance || 0) : (state.inventory[k] || 0); const mm = RES_META()[k] || {}; return `<div style="display:flex; justify-content:space-between;"><span>${mm.icon || '🟣'} ${mm.name || 'ASTRA'}</span><span style="font-weight:800; color:${have >= need ? '#4ade80' : '#f87171'};">${Math.floor(have).toLocaleString('tr-TR')} / ${need.toLocaleString('tr-TR')}</span></div>`; }).join('');
+    html = `
+      <div class="clean-card">
+        <div class="card-title-row"><div class="card-title">🚀 Uzay Limanı</div><div class="card-badge">${stageNames[stage] || stageNames[0]}</div></div>
+        <div class="clean-desc">Universe'e hazırlık merkezi: Roket Rampası (roket görevi), Yük İskelesi (Hazırlık Deposu) ve Gözlem Kulesi (kilitli). Realm tek başına en az 1 yıl oynanır; Universe açıldığında buradan geçilir.</div>
+        <div style="margin:8px 0 4px; font-weight:800; color:#e2e8f0;">Universe'e hazırlık: %${progress}</div>
+        <div style="height:10px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${progress}%; background:linear-gradient(90deg,#38bdf8,#a78bfa);"></div></div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; font-size:0.82rem; margin-top:10px;">
+          <div class="stat-tile"><span class="stat-tile-label">Roket</span><strong>${rocketDone ? 'Hazır ✅' : 'Yapılmadı'}</strong><span class="stat-tile-sub">hesap seviyesi ${U.ROCKET_MIN_LEVEL ?? 3}+</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Hazırlık Deposu</span><strong>Kilitli</strong><span class="stat-tile-sub">Aşama 1'de açılır</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${Math.floor(v.villagers || 0)} / 100</strong><span class="stat-tile-sub">kolonist adayı</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Asker</span><strong>${soldiers} / 10</strong><span class="stat-tile-sub">mürettebat adayı</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Genesis NFT</span><strong>${genesis ? 'Var ✅' : 'Yok'}</strong><span class="stat-tile-sub">gezegen satın alma hakkı</span></div>
         </div>
       </div>
-    `;
+      <div class="clean-card">
+        <div class="card-title-row"><div class="card-title">🛠️ Roket Rampası — roket parçaları</div></div>
+        <div style="display:grid; gap:4px; font-size:0.85rem; color:#cbd5e1; background:rgba(0,0,0,.3); border-radius:8px; padding:10px;">${partRows}</div>
+        <div style="margin-top:8px; font-size:0.8rem; color:#94a3b8;">Roket görevi düğmesi bu sürümde bağlanıyor; parçaları şimdiden biriktirebilirsin.</div>
+      </div>`;
   }
 
   // 4. AMM PAZAR YERİ (AUTOMATED MARKET MAKER DEX SWAP & P2P MARKET)
@@ -2097,10 +2053,10 @@ function openTownZoneModal(zoneId, zoneName) {
       <div class="clean-card">
         <div class="card-title-row">
           <div class="card-title">🏪 AMM Pazar Yeri & P2P Koleksiyon Pazarı</div>
-          <span style="font-size: 0.85rem; color: #c084fc; font-weight: 700;">Bakiye: ${state.adAstraBalance.toFixed(1)} ADA</span>
+          <span style="font-size: 0.85rem; color: #c084fc; font-weight: 700;">Bakiye: ${state.adAstraBalance.toFixed(1)} ASTRA</span>
         </div>
         <div class="clean-desc">
-          Hammadde, Pandora Kutusu ve anahtar al-sat. Fiyatı havuzdaki arz belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde yakılır, %2 ADA harcı oyun kasalarına gider.
+          Hammadde, Pandora Kutusu ve anahtar al-sat. Fiyatı havuzdaki arz belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde yakılır, %2 ASTRA harcı oyun kasalarına gider.
         </div>
       </div>
 
@@ -2131,14 +2087,14 @@ function openTownZoneModal(zoneId, zoneName) {
               <div>
                 <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name}</div>
                 <div style="font-size: 0.78rem; color: #94a3b8;">
-                  Havuz: <strong>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name}</strong> • <strong>${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ADA</strong>
+                  Havuz: <strong>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name}</strong> • <strong>${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</strong>
                 </div>
               </div>
             </div>
             <div style="text-align: right;">
-              <div style="font-size: 0.95rem; font-weight: 800; color: #facc15;">1 ${pool.name} = ${price >= 1000 ? price.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : price.toFixed(4)} $ADASTRA</div>
+              <div style="font-size: 0.95rem; font-weight: 800; color: #facc15;">1 ${pool.name} = ${price >= 1000 ? price.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : price.toFixed(4)} ASTRA</div>
               ${(() => {
-                const capAll = ['wood', 'iron', 'wheat'].includes(resKey) ? gameState.getWarehouseCapacity() : null;
+                const capAll = RES_KEYS().includes(resKey) ? gameState.getWarehouseCapacity() : null;
                 const cap = capAll ? capAll[resKey] : null;
                 if (!cap) return `<div style="font-size: 0.78rem; color: #cbd5e1;">Elinde: <strong style="color: #4ade80;">${invAmount.toLocaleString('tr-TR')}</strong></div>`;
                 const pct = Math.min(100, Math.round(invAmount / cap * 100));
@@ -2161,16 +2117,16 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="amm-est-display">
                 <span style="color: #94a3b8;">Ödeyeceğin (harç dahil):</span>
                 <strong class="amm-est-cost-text" data-res="${resKey}" style="color: #f87171;">
-                  ${isFinite(buyCost) ? `~${buyCost.toFixed(2)} ADA` : 'Yetersiz Likidite'}
+                  ${isFinite(buyCost) ? `~${buyCost.toFixed(2)} ASTRA` : 'Yetersiz Likidite'}
                 </strong>
               </div>
               <button class="btn-clean btn-clean-green btn-amm-confirm-buy" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem;">
                 Satın al
               </button>
-              ${['wood', 'iron', 'wheat'].includes(resKey) ? (() => {
+              ${RES_KEYS().includes(resKey) ? (() => {
                 const fq = gameState.getFillWarehouseQty(resKey);
                 return `<button class="btn-clean btn-amm-fill" data-res="${resKey}" ${fq.qty > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #4ade80; color: #86efac;" title="Silo dolana kadar al (ADA yetmezse alınabildiği kadar)">
-                  Depoyu doldur (${fq.qty.toLocaleString('tr-TR')} adet · ~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ADA${fq.limitedByAda ? ', ADA kadar' : ''})
+                  Depoyu doldur (${fq.qty.toLocaleString('tr-TR')} adet · ~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA${fq.limitedByAda ? ', ASTRA kadar' : ''})
                 </button>`;
               })() : ''}
             </div>
@@ -2187,7 +2143,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="amm-est-display">
                 <span style="color: #94a3b8;">Eline geçecek (harç sonrası):</span>
                 <strong class="amm-est-gain-text" data-res="${resKey}" style="color: #4ade80;">
-                  ~${sellGain.toFixed(2)} ADA
+                  ~${sellGain.toFixed(2)} ASTRA
                 </strong>
               </div>
               <button class="btn-clean btn-clean-outline btn-amm-confirm-sell" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem; border-color: #facc15; color: #fde047;">
@@ -2235,7 +2191,7 @@ function openTownZoneModal(zoneId, zoneName) {
               </div>
               <div style="text-align:right;">
                 <span class="card-badge rarity-${cfg.rarity}" style="font-size:0.7rem;">${cfg.rarity.toUpperCase()}</span>
-                <div style="font-weight:800; font-size:1.05rem; color:#fde047; margin-top:3px;">🟣 ${item.priceAda.toLocaleString()} ADA</div>
+                <div style="font-weight:800; font-size:1.05rem; color:#fde047; margin-top:3px;">🟣 ${item.priceAda.toLocaleString()} ASTRA</div>
               </div>
             </div>
             <div style="font-size:0.76rem; color:#cbd5e1; margin:8px 0; font-style:italic;">"${cfg.lore}"</div>
@@ -2246,7 +2202,7 @@ function openTownZoneModal(zoneId, zoneName) {
                 </button>
               ` : `
                 <button class="btn-clean btn-clean-sm btn-p2p-buy-listing" data-id="${item.id}" style="width:auto; padding:6px 16px; background:#15803d; border-color:#22c55e;">
-                  🛒 SATIN AL (${item.priceAda} ADA)
+                  🛒 SATIN AL (${item.priceAda} ASTRA)
                 </button>
               `}
             </div>
@@ -2265,7 +2221,7 @@ function openTownZoneModal(zoneId, zoneName) {
             <div class="card-title">👑 P2P Koleksiyon Eseri Satış İlanı Oluştur</div>
             <span class="card-badge" style="color:#fde047;">${userArtifacts.length} Eser Sahip</span>
           </div>
-          <div class="clean-desc">Zindandan veya Pandora Kutularından çıkardığın nadir koleksiyon eserlerini istediğin $ADASTRA fiyatı ile diğer oyunculara sat!</div>
+          <div class="clean-desc">Zindandan veya Pandora Kutularından çıkardığın nadir koleksiyon eserlerini istediğin ASTRA fiyatı ile diğer oyunculara sat!</div>
           
           ${userArtifacts.length > 0 ? `
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;">
@@ -2305,13 +2261,13 @@ function openTownZoneModal(zoneId, zoneName) {
                 <span>🛡️</span> <span>AMM Hazine Rezervi & Otonom Buyback-Burn Motoru</span>
               </div>
               <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; max-width: 580px; line-height: 1.4;">
-                Oyundaki <strong>tüm $ADASTRA harcamalarının %18'i</strong> doğrudan bu kasaya akar. Varlıklar başlangıç fiyatından düştükçe üstel katsayıyla (döngü başına %10 tavan) piyasadan malzeme satın alınıp kalıcı yakılır.
+                Oyundaki <strong>tüm ASTRA harcamalarının %18'i</strong> doğrudan bu kasaya akar. Varlıklar başlangıç fiyatından düştükçe üstel katsayıyla (döngü başına %10 tavan) piyasadan malzeme satın alınıp kalıcı yakılır.
               </div>
             </div>
             <div style="text-align: right; background: rgba(30,41,59,0.6); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2);">
               <div style="font-size: 0.72rem; color: #94a3b8;">AMM Kasası Mevcut Bakiye:</div>
-              <div style="font-size: 1.25rem; font-weight: 900; color: #facc15;">${analysis.availableTreasury.toLocaleString('tr-TR')} $ADASTRA</div>
-              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">Döngü Başına Müdahale Tavanı (%10): <strong>${analysis.maxCycleFund.toLocaleString('tr-TR')} ADA</strong></div>
+              <div style="font-size: 1.25rem; font-weight: 900; color: #facc15;">${analysis.availableTreasury.toLocaleString('tr-TR')} ASTRA</div>
+              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">Döngü Başına Müdahale Tavanı (%10): <strong>${analysis.maxCycleFund.toLocaleString('tr-TR')} ASTRA</strong></div>
             </div>
           </div>
         </div>
@@ -2344,14 +2300,14 @@ function openTownZoneModal(zoneId, zoneName) {
                   return `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
                       <td style="padding: 8px; font-weight: 700; color: #fff;">${a.icon} ${a.name}</td>
-                      <td style="padding: 8px; color: #94a3b8;">${a.genesisPrice.toLocaleString('tr-TR')} ADA</td>
-                      <td style="padding: 8px; font-weight: 700; color: #facc15;">${a.currentPrice >= 100 ? a.currentPrice.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : a.currentPrice.toFixed(3)} ADA</td>
+                      <td style="padding: 8px; color: #94a3b8;">${a.genesisPrice.toLocaleString('tr-TR')} ASTRA</td>
+                      <td style="padding: 8px; font-weight: 700; color: #facc15;">${a.currentPrice >= 100 ? a.currentPrice.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : a.currentPrice.toFixed(3)} ASTRA</td>
                       <td style="padding: 8px; font-weight: 800; color: ${dropColor};">
                         ${isDrop ? `-%${a.dropPct}` : '✅ Sağlıklı'}
                       </td>
                       <td style="padding: 8px; color: #38bdf8;">%${Math.round(a.weight * 100)}</td>
                       <td style="padding: 8px; font-weight: 700; color: ${a.allocatedBudget > 0 ? '#f87171' : '#94a3b8'};">
-                        ${a.allocatedBudget > 0 ? `${a.allocatedBudget.toLocaleString('tr-TR')} ADA` : '0 ADA'}
+                        ${a.allocatedBudget > 0 ? `${a.allocatedBudget.toLocaleString('tr-TR')} ASTRA` : '0 ASTRA'}
                       </td>
                       <td style="padding: 8px; font-weight: 800; color: ${a.estimatedUnitsToBurn > 0 ? '#4ade80' : '#94a3b8'};">
                         ${a.estimatedUnitsToBurn > 0 ? `🔥 ~${a.estimatedUnitsToBurn.toLocaleString('tr-TR')} Adet` : '-'}
@@ -2367,7 +2323,7 @@ function openTownZoneModal(zoneId, zoneName) {
             <div>
               <span style="font-size: 0.82rem; color: #94a3b8;">Bu Döngü Kullanılacak Fon:</span>
               <strong style="font-size: 1.05rem; color: ${analysis.totalFundToSpend > 0 ? '#f87171' : '#4ade80'}; margin-left: 6px;">
-                ${analysis.totalFundToSpend.toLocaleString('tr-TR')} ADA
+                ${analysis.totalFundToSpend.toLocaleString('tr-TR')} ASTRA
               </strong>
             </div>
             <button id="btn-run-amm-buyback" class="btn-clean btn-clean-gold" style="padding: 8px 18px; font-weight: 800; font-size: 0.85rem; width: auto;" ${analysis.totalFundToSpend <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
@@ -2383,14 +2339,14 @@ function openTownZoneModal(zoneId, zoneName) {
               <span style="font-size: 0.72rem; color: #94a3b8;">${new Date(lastReport.timestamp).toLocaleString('tr-TR')}</span>
             </div>
             <div style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 8px;">
-              Hazine Kasasından Toplam <strong>${lastReport.totalSpent.toLocaleString('tr-TR')} ADA</strong> harcandı ve malzemeler yakılarak total arzdan silindi:
+              Hazine Kasasından Toplam <strong>${lastReport.totalSpent.toLocaleString('tr-TR')} ASTRA</strong> harcandı ve malzemeler yakılarak total arzdan silindi:
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
               ${lastReport.items.map(item => `
                 <div style="background: rgba(15,23,42,0.6); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
                   <span>${item.icon} ${item.name}:</span>
                   <strong style="color: #4ade80;">-${item.unitsBurned.toLocaleString('tr-TR')} Adet</strong>
-                  <span style="color: #fde047;">(${item.budgetSpent.toLocaleString('tr-TR')} ADA)</span>
+                  <span style="color: #fde047;">(${item.budgetSpent.toLocaleString('tr-TR')} ASTRA)</span>
                 </div>
               `).join('')}
             </div>
@@ -2404,11 +2360,9 @@ function openTownZoneModal(zoneId, zoneName) {
     }
 
     html += `
-      <!-- 5 AMM Likidite Havuzu (Odun, Demir, Buğday, Kilitli Sandık, Arena Anahtarı) -->
+      <!-- Havuzlar: 6 hammadde + Pandora kutusu + anahtar -->
       <div class="amm-trade-container">
-        ${renderAmmTradeCard('wood')}
-        ${renderAmmTradeCard('iron')}
-        ${renderAmmTradeCard('wheat')}
+        ${RES_KEYS().map(k => renderAmmTradeCard(k)).join('')}
         ${renderAmmTradeCard('boxes')}
         ${renderAmmTradeCard('keys')}
       </div>
@@ -2445,13 +2399,13 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="card-badge" style="color:${statusColor}; font-weight:800;">${isPaused ? `⏸️ Duraklatıldı · ${botRemainingText} donduruldu` : (isBotActive ? `✅ Çalışıyor · ${botRemainingText} kaldı` : '💤 Kapalı')}</div>
             </div>
             <div style="font-size:0.85rem; color:#cbd5e1; line-height:1.5; margin-top:4px;">
-              Sen yokken üç alanda (odun, demir, buğday) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <strong>günlük net kârın yarısı</strong>: şu an 24 saat için <strong style="color:#facc15;">~${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ADA</strong> (sana kalan net kâr ~${n0((botCalc?.dailyNetProfitAda || botCalc?.netProfitAda || 0) - (botCalc?.dailyBotCostAda || botCalc?.botCostAda || 0))} ADA).
+              Sen yokken altı alanda (buğday, taş, odun, kömür, demir, şifalı ot) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <strong>günlük net kârın yarısı</strong>: şu an 24 saat için <strong style="color:#facc15;">~${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ASTRA</strong> (sana kalan net kâr ~${n0((botCalc?.dailyNetProfitAda || botCalc?.netProfitAda || 0) - (botCalc?.dailyBotCostAda || botCalc?.botCostAda || 0))} ASTRA).
             </div>
           </div>
         </div>
         ${isPaused ? `
           <div style="background: rgba(234,179,8,0.15); border: 1px solid #ca8a04; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #fef08a; line-height:1.5;">
-            <strong>Bot bekliyor:</strong> çalışmak ve aletleri onarmak için deponda en az 50 demir, 50 odun, 50 buğday ve 50 ADA olmalı. Kalan süren (${botRemainingText}) bu sırada azalmaz.
+            <strong>Bot bekliyor:</strong> çalışmak ve aletleri onarmak için deponda en az 50 demir, 50 odun, 50 buğday ve 50 ASTRA olmalı. Kalan süren (${botRemainingText}) bu sırada azalmaz.
             <br><strong>Eksikler:</strong> ${prereq.missingText} — tamamladığın anda bot kaldığı yerden devam eder.
           </div>
         ` : ''}
@@ -2459,7 +2413,7 @@ function openTownZoneModal(zoneId, zoneName) {
           ${((GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.PACKAGE_HOURS) || [24]).map(h => `
             <button class="btn-clean btn-gold btn-buy-bot-package" id="${h === 24 ? 'btn-buy-taverna-bot' : 'btn-buy-taverna-bot-' + h}" data-hours="${h}">
               <span class="pkg-title">${isBotActive ? '⚡ +' + h + ' saat uzat' : '🤖 ' + h + ' saatlik bot'}</span>
-              <span class="pkg-price" data-bot-pkg-price="${h}">${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ADA</span>
+              <span class="pkg-price" data-bot-pkg-price="${h}">${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ASTRA</span>
             </button>`).join('')}
           ${!gameState.state.botTrialUsed ? `
             <button class="btn-clean btn-outline" id="btn-start-bot-trial">
@@ -2476,7 +2430,7 @@ function openTownZoneModal(zoneId, zoneName) {
           ${isBotActive ? `<button id="btn-trigger-bot-cycle" class="btn-clean" style="width:auto; padding:4px 10px; font-size:0.75rem; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#4ade80; cursor:pointer;" title="Boştaki seferleri hemen başlat">⚡ Boş seferleri şimdi başlat</button>` : ''}
         </div>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.8rem;">
-          ${[['wood', 'Odun', '#22c55e', '🌲'], ['iron', 'Demir', '#38bdf8', '⛏️'], ['wheat', 'Buğday', '#facc15', '🌾']].map(([k, nm, c, e]) => `
+          ${RES_KEYS().map(k => { const mm = RES_META()[k] || {}; return [k, mm.name || k, mm.color || '#94a3b8', mm.icon || '']; }).map(([k, nm, c, e]) => `
             <div style="background:rgba(255,255,255,0.04); padding:8px 10px; border-radius:6px; border-left:3px solid ${c}; display:flex; align-items:center; gap:8px;">
               <span style="width:22px; height:22px; display:inline-flex;">${resImg(k, e, 'width:22px;height:22px;')}</span>
               <span><span style="color:#94a3b8;">${nm}:</span> <strong style="color:#fff;">${expState(k)}</strong></span>
@@ -2490,7 +2444,7 @@ function openTownZoneModal(zoneId, zoneName) {
         <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">Silo dolarsa:</div>
         <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 4px;">
           <input type="radio" name="bot_silo_opt" value="upgrade" ${isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
-          <span><strong>Siloyu büyüt</strong> — güvenlik payının üstündeki ADA'yı kullanır, yetmezse fazla ürünü satar.</span>
+          <span><strong>Siloyu büyüt</strong> — güvenlik payının üstündeki ASTRA'yı kullanır, yetmezse fazla ürünü satar.</span>
         </label>
         <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 10px;">
           <input type="radio" name="bot_silo_opt" value="sell" ${!isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
@@ -2498,7 +2452,7 @@ function openTownZoneModal(zoneId, zoneName) {
         </label>
         <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; border-top:1px solid rgba(255,255,255,.06); padding-top:10px;">
           <input type="checkbox" id="chk-bot-auto-renew" style="margin-top: 3px; transform: scale(1.2); accent-color: #10b981; cursor: pointer;" ${gameState.state.botAutoRenew24h ? 'checked' : ''} />
-          <span style="font-size:0.8rem; color:#cbd5e1;"><strong style="color:#34d399;">Süre bitince otomatik yenile</strong> — hesabında yeterli ADA varsa bot 24 saat daha çalışır.</span>
+          <span style="font-size:0.8rem; color:#cbd5e1;"><strong style="color:#34d399;">Süre bitince otomatik yenile</strong> — hesabında yeterli ASTRA varsa bot 24 saat daha çalışır.</span>
         </label>
       </div>
 
@@ -2506,14 +2460,14 @@ function openTownZoneModal(zoneId, zoneName) {
       <details class="clean-card" style="padding:12px 14px;">
         <summary style="cursor:pointer; font-weight:800; font-size:0.86rem; color:#fde047;">📊 Ücret nasıl hesaplanıyor?</summary>
         <div style="display:grid; grid-template-columns: 1fr auto; gap:6px; font-size:0.8rem; color:#cbd5e1; margin-top:10px;">
-          <div>24 saatlik üretimin pazar değeri</div><div style="text-align:right; font-weight:700; color:#4ade80;">+${n0(botCalc?.dailyGrossValAda || botCalc?.grossRevenueAda)} ADA</div>
-          <div>Stamina için buğday (${n0(botCalc?.dailyWheatNeededForStamina)} buğday)</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyStaminaCostAda || botCalc?.staminaWheatCostAda)} ADA</div>
-          <div>Alet onarımı</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyToolRepairAda || botCalc?.toolRepairCostAda)} ADA</div>
-          <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-weight:800; color:#fff;">Net kâr</div><div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; text-align:right; font-weight:800; color:#38bdf8;">+${n0(botCalc?.dailyNetProfitAda || botCalc?.netProfitAda)} ADA</div>
-          <div style="font-weight:800; color:#ca8a04;">Bot ücreti (net kârın yarısı)</div><div style="text-align:right; font-weight:900; color:#facc15;">${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ADA</div>
+          <div>24 saatlik üretimin pazar değeri</div><div style="text-align:right; font-weight:700; color:#4ade80;">+${n0(botCalc?.dailyGrossValAda || botCalc?.grossRevenueAda)} ASTRA</div>
+          <div>Stamina için buğday (${n0(botCalc?.dailyWheatNeededForStamina)} buğday)</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyStaminaCostAda || botCalc?.staminaWheatCostAda)} ASTRA</div>
+          <div>Alet onarımı</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyToolRepairAda || botCalc?.toolRepairCostAda)} ASTRA</div>
+          <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-weight:800; color:#fff;">Net kâr</div><div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; text-align:right; font-weight:800; color:#38bdf8;">+${n0(botCalc?.dailyNetProfitAda || botCalc?.netProfitAda)} ASTRA</div>
+          <div style="font-weight:800; color:#ca8a04;">Bot ücreti (net kârın yarısı)</div><div style="text-align:right; font-weight:900; color:#facc15;">${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ASTRA</div>
         </div>
         <div style="font-size:0.78rem; color:#94a3b8; margin-top:10px; line-height:1.5;">
-          🛡️ <strong>Güvenlik payı:</strong> Bot kasanda en az <strong>${gameState.getBotAdaReserve().toLocaleString('tr-TR')} ADA</strong> bırakır${gameState.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}. Siloyu bu parayla büyütmez; alet onarımı için önce fazla ürünü satar, satacak ürün kalmazsa botun durmaması için onarımı bu paradan yapar. Oyun kapalıyken de çalışır; döndüğünde "Sen yokken olanlar" raporunu görürsün.
+          🛡️ <strong>Güvenlik payı:</strong> Bot kasanda en az <strong>${gameState.getBotAdaReserve().toLocaleString('tr-TR')} ASTRA</strong> bırakır${gameState.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}. Siloyu bu parayla büyütmez; alet onarımı için önce fazla ürünü satar, satacak ürün kalmazsa botun durmaması için onarımı bu paradan yapar. Oyun kapalıyken de çalışır; döndüğünde "Sen yokken olanlar" raporunu görürsün.
         </div>
       </details>
     `;
@@ -2562,8 +2516,8 @@ function getResourceNameTr(key) {
     wood: 'Odun',
     iron: 'Demir',
     wheat: 'Buğday',
-    ada: 'ADA',
-    adastra: '$ADASTRA',
+    ada: 'ASTRA',
+    adastra: 'ASTRA',
     ticket: 'Bilet',
     fragments: 'Teçhizat Parçası',
     boxes: 'Pandora Kutusu',
@@ -2583,7 +2537,7 @@ function wheelReturnStats(wheelRewards) {
 }
 
 const WHEEL_SHORT_LABELS = {
-  'ada_5000': '5K ADA 💎',
+  'ada_5000': '5K ASTRA 💎',
   'frag_10': '10 Parça',
   'raw_1000_wood': '1K Odun',
   'raw_1000_iron': '1K Demir',
@@ -2592,9 +2546,9 @@ const WHEEL_SHORT_LABELS = {
   'raw_100_iron': '100 Demir',
   'raw_100_wheat': '100 Buğday',
   'free_bot_24h': '24s Bot',
-  'ada_200': '200 ADA',
-  'ada_1000': '1K ADA 👑',
-  'ada_50': '50 ADA',
+  'ada_200': '200 ASTRA',
+  'ada_1000': '1K ASTRA 👑',
+  'ada_50': '50 ASTRA',
   'box_key': 'Kutu Anahtarı',
   'wheel_ticket_shard': 'Bilet Parça',
   'coin_analysis_code': 'Coin Analiz'
@@ -2766,19 +2720,12 @@ function updateCarnivalWheelUI(options = { updateShards: true }) {
   }
 
   // 3. AMM Fiyatlarına Göre Canlı Hammadde Maliyetleri
-  const pWheat = ammMarket.getPrice('wheat') || 1.0;
-  const pIron = ammMarket.getPrice('iron') || 1.0;
-  const pWood = ammMarket.getPrice('wood') || 1.0;
-  const costWheat = Math.round(100 / pWheat);
-  const costIron = Math.round(100 / pIron);
-  const costWood = Math.round(100 / pWood);
-
-  const btnWheat = document.querySelector('.btn-spin-wheel[data-pay="wheat"]');
-  if (btnWheat) btnWheat.innerHTML = `🌾 ${costWheat} Buğday İle Çevir`;
-  const btnIron = document.querySelector('.btn-spin-wheel[data-pay="iron"]');
-  if (btnIron) btnIron.innerHTML = `⛏️ ${costIron} Demir İle Çevir`;
-  const btnWood = document.querySelector('.btn-spin-wheel[data-pay="wood"]');
-  if (btnWood) btnWood.innerHTML = `🌲 ${costWood} Odun İle Çevir`;
+  for (const k of RES_KEYS()) {
+    const mm = RES_META()[k] || {};
+    const p = ammMarket.getPrice(k) || 1.0;
+    const btn = document.querySelector(`.btn-spin-wheel[data-pay="${k}"]`);
+    if (btn) btn.innerHTML = `${mm.icon || ''} ${Math.ceil(gameState.getWheelCostAda() / p)} ${mm.name || k} İle Çevir`;
+  }
 
   // 4. Kazanılan Redeem Kodları Listesi Canlı Güncelleme
   const redeemContainer = document.getElementById('carnival-redeem-codes-container');
@@ -2854,12 +2801,12 @@ async function spinCarnivalWheelAnimated(payMethod) {
             </div>
             <div style="background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px;">
               <div style="color:#94a3b8; font-size:0.72rem;">💰 Karnaval Kasası Ödedi:</div>
-              <div style="font-weight:800; color:#facc15;">-${res.buybackInfo.adaSpent.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} $ADASTRA</div>
+              <div style="font-weight:800; color:#facc15;">-${res.buybackInfo.adaSpent.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ASTRA</div>
             </div>
             <div style="background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px;">
               <div style="color:#94a3b8; font-size:0.72rem;">📈 Canlı AMM Fiyatı:</div>
               <div style="font-weight:800; color:#4ade80;">
-                ${res.buybackInfo.oldPrice.toFixed(4)} ➔ ${res.buybackInfo.newPrice.toFixed(4)} ADA <span style="font-size:0.72rem; color:#22c55e;">(+%${res.buybackInfo.priceDeltaPct.toFixed(2)})</span>
+                ${res.buybackInfo.oldPrice.toFixed(4)} ➔ ${res.buybackInfo.newPrice.toFixed(4)} ASTRA <span style="font-size:0.72rem; color:#22c55e;">(+%${res.buybackInfo.priceDeltaPct.toFixed(2)})</span>
               </div>
             </div>
           </div>
@@ -3000,12 +2947,12 @@ async function spinCarnivalWheelAnimated(payMethod) {
               </div>
               <div style="background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px;">
                 <div style="color:#94a3b8; font-size:0.72rem;">💰 Karnaval Kasası Ödedi:</div>
-                <div style="font-weight:800; color:#facc15;">-${res.buybackInfo.adaSpent.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} $ADASTRA</div>
+                <div style="font-weight:800; color:#facc15;">-${res.buybackInfo.adaSpent.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ASTRA</div>
               </div>
               <div style="background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px;">
                 <div style="color:#94a3b8; font-size:0.72rem;">📈 Canlı AMM Fiyatı:</div>
                 <div style="font-weight:800; color:#4ade80;">
-                  ${res.buybackInfo.oldPrice.toFixed(4)} ➔ ${res.buybackInfo.newPrice.toFixed(4)} ADA <span style="font-size:0.72rem; color:#22c55e;">(+%${res.buybackInfo.priceDeltaPct.toFixed(2)})</span>
+                  ${res.buybackInfo.oldPrice.toFixed(4)} ➔ ${res.buybackInfo.newPrice.toFixed(4)} ASTRA <span style="font-size:0.72rem; color:#22c55e;">(+%${res.buybackInfo.priceDeltaPct.toFixed(2)})</span>
                 </div>
               </div>
             </div>
@@ -3040,13 +2987,13 @@ function renderCarnivalHtml(activeTab = 'wheel') {
   const state = gameState.state;
   const eco = gameState.getEconomyAndPoolsSummary ? gameState.getEconomyAndPoolsSummary() : null;
   const wheelRewards = GAME_CONFIG.CARNIVAL?.WHEEL_REWARDS || [];
-  const pWheat = ammMarket.getPrice('wheat') || 1.0;
-  const pIron = ammMarket.getPrice('iron') || 1.0;
-  const pWood = ammMarket.getPrice('wood') || 1.0;
-
-  const costWheat = Math.round(100 / pWheat);
-  const costIron = Math.round(100 / pIron);
-  const costWood = Math.round(100 / pWood);
+  const wheelResBtns = RES_KEYS().map(k => {
+    const mm = RES_META()[k] || {};
+    const p = ammMarket.getPrice(k) || 1.0;
+    return `<button class="btn-clean btn-spin-wheel" data-pay="${k}" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#1f2937; border-color:${mm.color || '#94a3b8'}; font-weight:800; padding:10px;">
+              ${mm.icon || ''} ${Math.ceil(gameState.getWheelCostAda() / p)} ${mm.name || k} İle Çevir
+            </button>`;
+  }).join('');
 
   const myTickets = state.lotteryTickets || 0;
   const shards = state.wheelTicketShards || 0;
@@ -3082,7 +3029,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                 <span class="card-badge" style="background:#ec4899; color:#fff; border:none; font-weight:800;">Ortalama dönüş ~%${wheelReturnStats(wheelRewards).rtp} • Kasa Garantili</span>
               </div>
               <div style="font-size: 0.85rem; color: #cbd5e1; margin-top:2px;">
-                ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA veya bu tutara denk gelen hammadde ile çevirebilir, ya da piyango biletini çark hakkına dönüştürebilirsin!
+                ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ASTRA veya bu tutara denk gelen hammadde ile çevirebilir, ya da piyango biletini çark hakkına dönüştürebilirsin!
               </div>
             </div>
             <div id="carnival-shards-badge" style="font-size:0.82rem; color:#fde047; background:rgba(0,0,0,0.4); padding:6px 14px; border-radius:8px; border:1px solid rgba(250,204,21,0.3); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, border-color 0.2s ease;">
@@ -3131,28 +3078,20 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
         ${(() => {
           const ws = gameState.isCarnivalWheelOpen();
-          return ws.open ? '' : `<div class="clean-card notice-card notice-warn">🎪 Karnaval kasası yenileniyor (${Math.floor(ws.balance).toLocaleString('tr-TR')} / ${ws.minBalance.toLocaleString('tr-TR')} ADA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.</div>`;
+          return ws.open ? '' : `<div class="clean-card notice-card notice-warn">🎪 Karnaval kasası yenileniyor (${Math.floor(ws.balance).toLocaleString('tr-TR')} / ${ws.minBalance.toLocaleString('tr-TR')} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.</div>`;
         })()}
 
         <!-- 4 Farklı Ödeme Yöntemi ile Çarkı Çevir Butonları -->
         <div class="clean-card" style="border-color: #ec4899; background: #120914;">
           <div style="font-size:0.88rem; font-weight:800; color:#f472b6; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>🪙 Çarkı Çevirme Seçenekleri (${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA Eşdeğeri):</span>
+            <span>🪙 Çarkı Çevirme Seçenekleri (${gameState.getWheelCostAda().toLocaleString('tr-TR')} ASTRA Eşdeğeri):</span>
             <span style="font-size:0.75rem; color:#fde047;">Hammaddenin yarısı yakılır, yarısı satılıp Karnaval kasasına girer · bugün hammaddeyle kalan: ${gameState.getWheelResourceSpinsLeft()}/${GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3}</span>
           </div>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
             <button class="btn-clean btn-spin-wheel" data-pay="ada" style="background:#7c3aed; border-color:#a78bfa; font-weight:800; padding:10px;">
-              🟣 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ADA İle Çevir
+              🟣 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ASTRA İle Çevir
             </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="wheat" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#854d0e; border-color:#fde047; font-weight:800; padding:10px;">
-              🌾 ${costWheat} Buğday İle Çevir
-            </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="iron" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#0369a1; border-color:#38bdf8; font-weight:800; padding:10px;">
-              ⛏️ ${costIron} Demir İle Çevir
-            </button>
-            <button class="btn-clean btn-spin-wheel" data-pay="wood" ${gameState.getWheelResourceSpinsLeft() > 0 ? '' : 'disabled'} style="background:#14532d; border-color:#4ade80; font-weight:800; padding:10px;">
-              🌲 ${costWood} Odun İle Çevir
-            </button>
+            ${wheelResBtns}
             <button id="btn-spin-wheel-ticket" class="btn-clean btn-spin-wheel" data-pay="ticket" ${myTickets > 0 ? '' : 'disabled'} style="background:#db2777; border-color:#f472b6; font-weight:800; padding:10px;">
               🎟️ 1 Bilet İle Çevir (${myTickets} Bilet)
             </button>
@@ -3220,8 +3159,8 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         </div>
 
         <div class="stat-grid">
-          <div class="stat-tile"><span class="stat-tile-label">Piyango kasası</span><strong class="tone-violet">${fmt(lot.pool)} ADA</strong></div>
-          <div class="stat-tile"><span class="stat-tile-label">Kazanırsan alacağın</span><strong class="tone-gold">${fmt(lot.potentialPrize)} ADA</strong><span class="stat-tile-sub">${fmt(lot.paid)} ADA ödedin × 2</span></div>
+          <div class="stat-tile"><span class="stat-tile-label">Piyango kasası</span><strong class="tone-violet">${fmt(lot.pool)} ASTRA</strong></div>
+          <div class="stat-tile"><span class="stat-tile-label">Kazanırsan alacağın</span><strong class="tone-gold">${fmt(lot.potentialPrize)} ASTRA</strong><span class="stat-tile-sub">${fmt(lot.paid)} ASTRA ödedin × 2</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Kazanma şansın</span><strong class="tone-green">%${(lot.chance * 100).toFixed(2)}</strong><span class="stat-tile-sub">${fmt(lot.myTickets)} / ${fmt(lot.totalTickets)} bilet</span></div>
           <div class="stat-tile"><span class="stat-tile-label">Sonraki çekiliş</span><strong>${formatDuration(nextDraw - Date.now())}</strong></div>
         </div>
@@ -3245,11 +3184,11 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             <label for="lottery-ticket-count" class="lottery-buy-label">Bilet adedi</label>
             <input type="number" id="lottery-ticket-count" class="lottery-buy-input" value="${Math.min(1, lot.canBuy) || 1}" min="1" max="${Math.max(1, lot.canBuy)}" ${lot.canBuy > 0 ? '' : 'disabled'} />
             <button id="btn-buy-lottery-action" class="btn-clean btn-gold" ${lot.canBuy > 0 ? '' : 'disabled'}>
-              ${lot.canBuy > 0 ? `🎟️ Bilet al (${gameState.getLotteryRules().ticketPrice.toLocaleString('tr-TR')} ADA/adet) · en fazla ${lot.canBuy}` : '🚫 Şu an bilet alamazsın'}
+              ${lot.canBuy > 0 ? `🎟️ Bilet al (${gameState.getLotteryRules().ticketPrice.toLocaleString('tr-TR')} ASTRA/adet) · en fazla ${lot.canBuy}` : '🚫 Şu an bilet alamazsın'}
             </button>
           </div>
           ${blockedBy ? `<div class="pe-note pe-warn">${blockedBy}</div>` : ''}
-          <div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ADA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div>
+          <div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ASTRA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div>
         </div>
 
         <div class="clean-card lottery-draw-card ${pending > 0 ? 'is-winner' : ''}">
@@ -3258,8 +3197,8 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             <span class="card-badge">${pending > 0 ? 'Çekilmeyi bekliyor' : 'Bekleyen kazanç yok'}</span>
           </div>
           <div class="lottery-draw-stats">
-            <div><span class="stat-label">Çekilecek kazanç</span><strong class="${pending > 0 ? 'text-win' : ''}">${fmt(pending)} ADA</strong></div>
-            <div><span class="stat-label">Son çekiliş</span><strong>${last ? (last.userWon ? `🎉 Kazandın (+${fmt(last.wonAmount)} ADA)` : (last.amorti > 0 ? `Amorti +${fmt(last.amorti)} ADA` : 'Çıkmadı, biletlerin devretti')) : 'Henüz yok'}</strong></div>
+            <div><span class="stat-label">Çekilecek kazanç</span><strong class="${pending > 0 ? 'text-win' : ''}">${fmt(pending)} ASTRA</strong></div>
+            <div><span class="stat-label">Son çekiliş</span><strong>${last ? (last.userWon ? `🎉 Kazandın (+${fmt(last.wonAmount)} ASTRA)` : (last.amorti > 0 ? `Amorti +${fmt(last.amorti)} ASTRA` : 'Çıkmadı, biletlerin devretti')) : 'Henüz yok'}</strong></div>
           </div>
           <div style="margin-top: 12px;">
             <button id="btn-claim-winner-lottery" class="btn-clean btn-gold" ${pending > 0 ? '' : 'disabled'} style="width:auto;">
@@ -3313,8 +3252,8 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             return `
           <div style="background: #111827; padding: 12px 14px; border-radius: 8px; border: 1px solid #334155; margin-top: 12px;">
             <div style="display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.88rem; font-weight: 800;">
-              <span style="color: #4ade80;">🔓 Serbest: ${f(lk.free)} ADA</span>
-              <span style="color: #fbbf24;">🔒 Kilitli: ${f(lk.locked)} ADA</span>
+              <span style="color: #4ade80;">🔓 Serbest: ${f(lk.free)} ASTRA</span>
+              <span style="color: #fbbf24;">🔒 Kilitli: ${f(lk.locked)} ASTRA</span>
               <span style="color: #38bdf8;">🏅 Katkı puanı (bu hafta): ${f(ct.week)}</span>
               <span style="color: #c084fc;">💱 Fiyat çarpanı: ×${mult.toLocaleString('tr-TR', { maximumFractionDigits: 3 })}</span>
             </div>
@@ -3330,7 +3269,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
               </div>`;
             })()}
             <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
-              Oyundan kazandığın ADA'nın %20'si serbest, %80'i kilitli başlar. Kilitli ADA'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. İleride çekim yalnız serbest kısımdan yapılacak; ortak haftalık çekim hakkından payını katkı puanın belirleyecek.
+              Oyundan kazandığın ASTRA'nın %20'si serbest, %80'i kilitli başlar. Kilitli ASTRA'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. İleride çekim yalnız serbest kısımdan yapılacak; ortak haftalık çekim hakkından payını katkı puanın belirleyecek.
             </div>
           </div>`;
           })()}
@@ -3343,7 +3282,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
               </div>
             </div>
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
-              <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">🔥 Toplam Yakılan $ADASTRA</div>
+              <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">🔥 Toplam Yakılan ASTRA</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #f97316; margin-top: 4px;">
                 ${eData.lifetimeBurnedAda.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
               </div>
@@ -3446,10 +3385,10 @@ function renderCarnivalHtml(activeTab = 'wheel') {
               <span>📊</span>
               <span>Hangi Havuza Ne Kadar Gidiyor? (Gelir Dağılım Oranları)</span>
             </div>
-            <span class="card-badge" style="background:#0284c7; color:#fff; font-weight:800;">100 ADA Harcama Dağılımı (%100)</span>
+            <span class="card-badge" style="background:#0284c7; color:#fff; font-weight:800;">100 ASTRA Harcama Dağılımı (%100)</span>
           </div>
           <div class="clean-desc" style="font-size:0.83rem; color:#cbd5e1; line-height:1.4;">
-            Karnaval çarkı ve piyangosu dahil, oyunda harcanan her <strong>100 $ADASTRA</strong>'nın anlık akış oranları:
+            Karnaval çarkı ve piyangosu dahil, oyunda harcanan her <strong>100 ASTRA</strong>'nın anlık akış oranları:
           </div>
 
           <!-- Dağılım Çubuğu (%100 Tam Kırılım) — oranlar ayarlardan (GAME_CONFIG) okunur -->
@@ -3504,7 +3443,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                 <div style="text-align: right;">
                   <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Hazinede Mevcut:</div>
                   <div style="font-size: 1.45rem; font-weight: 900; color: ${pool.color}; text-shadow: 0 0 14px ${pool.color}50; margin-top: 2px;">
-                    ${pool.balance.toLocaleString('tr-TR')} <span style="font-size: 0.9rem; color: #c084fc;">$ADASTRA</span>
+                    ${pool.balance.toLocaleString('tr-TR')} <span style="font-size: 0.9rem; color: #c084fc;">ASTRA</span>
                   </div>
                 </div>
               </div>
@@ -3529,7 +3468,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
                   <div style="font-weight: 800; font-size: 1.05rem; color: #fff; display:flex; align-items:center; gap:8px;">
                     <span>Haftalık Büyük Krallık Piyangosu Kasası</span>
                     <span class="card-badge" style="background:#a855f7; color:#fff; font-weight:900; font-size:0.75rem;">
-                      1.000.000 ADA Tohum Fon
+                      1.000.000 ASTRA Tohum Fon
                     </span>
                   </div>
                   <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 2px; max-width: 520px; line-height: 1.3;">
@@ -3540,14 +3479,14 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
               <div style="text-align: right;">
                 <div style="font-size: 1.35rem; font-weight: 900; color: #c084fc; text-shadow: 0 0 12px rgba(192,132,252,0.4);">
-                  ${eData.lottery.lotteryPool.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #fde047;">$ADASTRA</span>
+                  ${eData.lottery.lotteryPool.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #fde047;">ASTRA</span>
                 </div>
               </div>
             </div>
 
             <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <div style="font-size: 0.8rem; color: #cbd5e1;">
-                🛡️ <strong>Amorti Kasası (%2):</strong> <span style="color: #38bdf8;">${eData.lottery.amortiShare.toLocaleString('tr-TR')} ADA</span> • 🔄 <strong>Haftalık Devir (%80):</strong> <span style="color: #facc15;">${eData.lottery.rolloverShare.toLocaleString('tr-TR')} ADA</span>
+                🛡️ <strong>Amorti Kasası (%2):</strong> <span style="color: #38bdf8;">${eData.lottery.amortiShare.toLocaleString('tr-TR')} ASTRA</span> • 🔄 <strong>Haftalık Devir (%80):</strong> <span style="color: #facc15;">${eData.lottery.rolloverShare.toLocaleString('tr-TR')} ASTRA</span>
               </div>
               <button class="btn-clean btn-clean-purple btn-eco-pool-jump" data-action="lottery" style="padding: 6px 14px; font-size: 0.8rem; width: auto;">
                 🎟️ Piyango Biletlerine Git ➔
@@ -3667,10 +3606,10 @@ function openBattlefieldModal() {
     <div class="clean-card" style="border-color: #ef4444; background: #1c0a0a;">
       <div class="card-title-row">
         <div class="card-title">🌋 Haftalık Savaş Alanı & World Boss Etkinliği</div>
-        <span class="card-badge" style="color: #fde047; border-color: #fde047;">Ödül Havuzu: 🟣 ${boss.weeklyAdaPool.toLocaleString('tr-TR')} ADA</span>
+        <span class="card-badge" style="color: #fde047; border-color: #fde047;">Ödül Havuzu: 🟣 ${boss.weeklyAdaPool.toLocaleString('tr-TR')} ASTRA</span>
       </div>
       <div class="clean-desc" style="line-height: 1.5; color: #cbd5e1;">
-        ⏰ <strong>Otomatik Savaş Mekaniği:</strong> Oyuncular manuel saldırmaz. Hafta boyunca kilitlenen orduların saldırı ve can puanları üzerinden toplam hasar gücü hesaplanır. <strong>Her Pazar TSİ 18:00'da</strong> savaşlar tek seferlik <strong>otomatik</strong> gerçekleşir ve hak edilen $ADASTRA ödülü bu ekrana düşer.
+        ⏰ <strong>Otomatik Savaş Mekaniği:</strong> Oyuncular manuel saldırmaz. Hafta boyunca kilitlenen orduların saldırı ve can puanları üzerinden toplam hasar gücü hesaplanır. <strong>Her Pazar TSİ 18:00'da</strong> savaşlar tek seferlik <strong>otomatik</strong> gerçekleşir ve hak edilen ASTRA ödülü bu ekrana düşer.
       </div>
       <div style="margin-top: 8px; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 6px; border: 1px dashed #ef4444; font-size: 0.8rem; color: #fca5a5;">
         📐 <strong>Hasar Formülü:</strong> Hasar = (Toplam ATK × 1.0) + (Toplam HP × 0.25) <span style="color:#fde047;">(ATK 1:1 rasyo • HP 1:0.25 rasyo)</span>
@@ -3710,13 +3649,13 @@ function openBattlefieldModal() {
       <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: #0c0805; padding: 10px 14px; border-radius: 8px; flex-wrap: wrap; gap: 8px;">
         <div style="font-size: 0.85rem; color: #cbd5e1;">
           🔮 <strong>${isStaked ? 'Kilitli Ordu Pazar Günü Kazancı:' : 'Tahmini Pazar Günü Kazancı:'}</strong>
-          <span style="color: #fde047; font-weight: 900; font-size: 1.05rem;">~${displayExpectedAda.toLocaleString('tr-TR')} $ADASTRA</span>
-          <span style="color: #94a3b8; font-size: 0.75rem; margin-left: 4px;">(${displayDamage.toLocaleString('tr-TR')} Hasar × ${adaRate.toFixed(3)} ADA)</span>
+          <span style="color: #fde047; font-weight: 900; font-size: 1.05rem;">~${displayExpectedAda.toLocaleString('tr-TR')} ASTRA</span>
+          <span style="color: #94a3b8; font-size: 0.75rem; margin-left: 4px;">(${displayDamage.toLocaleString('tr-TR')} Hasar × ${adaRate.toFixed(3)} ASTRA)</span>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           ${isStaked ? `
             <button id="btn-emergency-unstake-boss" class="btn-clean btn-clean-red" style="width: auto; padding: 8px 14px; font-size: 0.8rem;" title="Pazar gününden önce erken çekilme cezası (%18)">
-              🔓 %18 Ceza ile Erken Çek (${Math.max(1, Math.round(power.estimatedAda * 0.18)).toLocaleString('tr-TR')} ADA)
+              🔓 %18 Ceza ile Erken Çek (${Math.max(1, Math.round(power.estimatedAda * 0.18)).toLocaleString('tr-TR')} ASTRA)
             </button>
           ` : ''}
           <button id="btn-stake-army-boss" class="btn-clean ${isStaked ? 'btn-clean-outline' : 'btn-clean-gold'}" style="width: auto; padding: 8px 18px;" ${!hasSoldiers ? 'disabled' : ''}>
@@ -3745,11 +3684,11 @@ function openBattlefieldModal() {
 
       <div style="background: #0f0505; padding: 12px 14px; border-radius: 8px; font-size: 0.82rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-          <div>📊 <strong>Hasar Başına ADA Dağıtım Oranı:</strong> <span style="color:#fde047; font-weight:800;">1 Hasar = ${adaRate.toFixed(3)} $ADASTRA</span></div>
+          <div>📊 <strong>Hasar Başına ASTRA Dağıtım Oranı:</strong> <span style="color:#fde047; font-weight:800;">1 Hasar = ${adaRate.toFixed(3)} ASTRA</span></div>
           <div>💥 <strong>Önceki Savaşta Verdiğin Toplam Hasar:</strong> <span style="color:#4ade80; font-weight:800;">${(boss.userDamage || 0).toLocaleString('tr-TR')} Hasar</span></div>
         </div>
 
-        <!-- KULLANICININ İSTEDİĞİ CANLI KİLİTLİ SALDIRI VE HAFTALIK ADA KAZANÇ PANELİ -->
+        <!-- KULLANICININ İSTEDİĞİ CANLI KİLİTLİ SALDIRI VE HAFTALIK ASTRA KAZANÇ PANELİ -->
         ${isStaked ? `
           <div style="margin-top: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid #22c55e; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.15);">
             <div>
@@ -3762,16 +3701,16 @@ function openBattlefieldModal() {
                 <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">(${displayAtk.toLocaleString('tr-TR')} ATK + ${displayHpContrib.toLocaleString('tr-TR')} HP)</span>
               </div>
               <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 2px;">
-                📐 Dağıtım Çarpanı: 1 Saldırı = <strong style="color: #fde047;">${adaRate.toFixed(3)} $ADASTRA</strong>
+                📐 Dağıtım Çarpanı: 1 Saldırı = <strong style="color: #fde047;">${adaRate.toFixed(3)} ASTRA</strong>
               </div>
             </div>
             <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 8px 16px; text-align: right; min-width: 220px;">
               <div style="font-size: 0.72rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🏆 BU HAFTA WORLD BOSS'TA KAZANILACAK:</div>
               <div style="font-size: 1.45rem; font-weight: 900; color: #fde047; text-shadow: 0 0 12px rgba(253, 224, 71, 0.5); line-height: 1.2; margin: 2px 0;">
-                ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.95rem; color: #c084fc;">$ADASTRA</span>
+                ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.95rem; color: #c084fc;">ASTRA</span>
               </div>
               <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">
-                Hesap: ${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ADA
+                Hesap: ${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ASTRA
               </div>
             </div>
           </div>
@@ -3782,17 +3721,17 @@ function openBattlefieldModal() {
                 <span>⚠️ Ordun Henüz World Boss İçin Kilitlenmedi</span>
               </div>
               <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 2px;">
-                ${hasSoldiers ? `Mevcut ${soldiers.length} kişilik ordunu kilitlediğinde toplam <strong style="color:#4ade80;">${displayDamage.toLocaleString('tr-TR')} Saldırı Gücü</strong> devreye girer.` : 'Kışladan asker alıp ordunu kilitlediğinde saldırı gücünle orantılı $ADASTRA kazanırsın.'}
+                ${hasSoldiers ? `Mevcut ${soldiers.length} kişilik ordunu kilitlediğinde toplam <strong style="color:#4ade80;">${displayDamage.toLocaleString('tr-TR')} Saldırı Gücü</strong> devreye girer.` : 'Kışladan asker alıp ordunu kilitlediğinde saldırı gücünle orantılı ASTRA kazanırsın.'}
               </div>
             </div>
             ${hasSoldiers ? `
               <div style="text-align: right;">
                 <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">KİLİTLERSEN BU HAFTA TAHMİNİ KAZANÇ:</div>
                 <div style="font-size: 1.2rem; font-weight: 900; color: #fde047;">
-                  ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">$ADASTRA</span>
+                  ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
                 </div>
                 <div style="font-size: 0.68rem; color: #94a3b8;">
-                  (${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ADA)
+                  (${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ASTRA)
                 </div>
               </div>
             ` : ''}
@@ -3804,17 +3743,17 @@ function openBattlefieldModal() {
       <div style="background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(234,179,8,0.15)); border: 1px solid #eab308; border-radius: 8px; padding: 14px; text-align: center; margin-top: 10px;">
         <div style="font-size: 0.85rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Toplanmaya Hazır World Boss Ödülün</div>
         <div style="font-size: 1.8rem; font-weight: 900; color: #fde047; margin: 4px 0;">
-          🟣 ${claimable.toLocaleString()} <span style="font-size: 1rem; color: #c084fc;">$ADASTRA</span>
+          🟣 ${claimable.toLocaleString()} <span style="font-size: 1rem; color: #c084fc;">ASTRA</span>
         </div>
         <button id="btn-claim-world-boss-reward" class="btn-clean ${claimable > 0 || isStaked ? 'btn-clean-gold' : 'btn-clean-outline'}" style="font-size: 1.05rem; padding: 12px 24px; font-weight: 800; margin-top: 6px; box-shadow: ${claimable > 0 ? '0 0 20px rgba(234,179,8,0.4)' : 'none'};" ${claimable <= 0 && !isStaked ? 'disabled' : ''}>
-          ${claimable > 0 ? `🎁 Hak Edilen ${claimable.toLocaleString()} ADA Ödülünü & Ordunu Topla (Claim)` : isStaked ? '⏳ Pazar 18:00 Savaşı Bekleniyor (Ordu Kilitli)' : '⏳ Kilitli Ordu veya Ödül Yok'}
+          ${claimable > 0 ? `🎁 Hak Edilen ${claimable.toLocaleString()} ASTRA Ödülünü & Ordunu Topla (Claim)` : isStaked ? '⏳ Pazar 18:00 Savaşı Bekleniyor (Ordu Kilitli)' : '⏳ Kilitli Ordu veya Ödül Yok'}
         </button>
       </div>
 
       <!--
         v1'de burada oyuncunun görebildiği bir "[Test] Pazar Savaşını Şimdi
         Simüle Et" butonu vardı. Her tıklama hasarı ve toplanabilir ödülü
-        artırıyordu, sınır yoktu: sınırsız ADA basımı (denetim bulgusu F-03).
+        artırıyordu, sınır yoktu: sınırsız ASTRA basımı (denetim bulgusu F-03).
         Savaş artık gerçek takvime bağlı; buton üretimden kaldırıldı ve
         yalnızca geliştirici panelinden (T) tetiklenebiliyor.
       -->
@@ -3916,7 +3855,7 @@ function openColosseumModal() {
         </div>
         <div class="clean-desc">
           Kolezyum'da 1v1 maçları kazanarak sıralamada yüksel! Hafta sonunda ilk 10 gladyatöre devasa ödüller dağıtılır:
-          <br><strong>🥇 1. Sıra:</strong> 5 Zindan Anahtarı + 15.000 $ADASTRA • <strong>🥈 2. Sıra:</strong> 3 Anahtar + 8.000 ADA • <strong>🥉 3-10. Sıra:</strong> 1 Anahtar + 2.500 ADA
+          <br><strong>🥇 1. Sıra:</strong> 5 Zindan Anahtarı + 15.000 ASTRA • <strong>🥈 2. Sıra:</strong> 3 Anahtar + 8.000 ASTRA • <strong>🥉 3-10. Sıra:</strong> 1 Anahtar + 2.500 ASTRA
         </div>
       </div>
 
@@ -3948,7 +3887,7 @@ function openColosseumModal() {
                 <td style="padding: 8px; color: #94a3b8; font-size: 0.78rem;">${row.title}</td>
                 <td style="padding: 8px; text-align: center; color: #4ade80; font-weight: 800;">${row.wins} G</td>
                 <td style="padding: 8px; text-align: right; color: #fde047; font-weight: 700;">
-                  🔑 ${row.rewardKeys} Anahtar + 🟣 ${row.rewardAda.toLocaleString()} ADA
+                  🔑 ${row.rewardKeys} Anahtar + 🟣 ${row.rewardAda.toLocaleString()} ASTRA
                 </td>
               </tr>
             `).join('')}
@@ -4204,7 +4143,7 @@ function openColosseumModal() {
       };
 
       const loot = [
-        `🪙 +${res.rewardAda} $ADASTRA`,
+        `🪙 +${res.rewardAda} ASTRA`,
         `⭐ ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO (Yeni Puan: ${res.newRating})`,
         res.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık Lig Puanı (+3)'
       ];
@@ -4222,7 +4161,7 @@ function openColosseumModal() {
           renderTopBar();
           if (res.isVictory) {
             sound.playLevelUp();
-            showToast(`🏆 Zafer! +${res.rewardAda} $ADASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!`, 'success');
+            showToast(`🏆 Zafer! +${res.rewardAda} ASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!`, 'success');
           } else {
             sound.playBreakWarning();
             showToast('💀 Mağlubiyet! Şampiyonun yaralandı.', 'error');
@@ -4314,7 +4253,7 @@ async function renderPvpPanel() {
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px;">
       <div>
         <div style="font-weight:800;color:#fde047;margin-bottom:4px;">🏆 Bu haftanın ilk 10'u</div>
-        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${escHtml(r.name)}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ADA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
+        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${escHtml(r.name)}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ASTRA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
         ${st.mine ? `<div class="clean-desc" style="margin-top:4px;">Senin sıran: <strong>${st.mine.rank}.</strong> · ${st.mine.points} puan · ${st.mine.wins} galibiyet / ${st.mine.losses} mağlubiyet</div>` : ''}
       </div>
       <div>
@@ -4400,7 +4339,7 @@ function renderCollectionHtml() {
         </div>
         <div class="clean-desc">Zindan bosslarını yenerek ve Pandora Kutuları açarak 18 Koleksiyon Eserinin tamamını topla; ardından efsanevi Genesis NFT'ni bas!</div>
         <button id="btn-mint-genesis" class="btn-clean btn-clean-purple" ${(!allDiscovered || genesisMinted) ? 'disabled' : ''}>
-          ${genesisMinted ? '✅ Genesis NFT Zaten Basıldı' : `🏆 GENESIS NFT BAS (${GAME_CONFIG.GENESIS_NFT.adAstraCost} ADA)`}
+          ${genesisMinted ? '✅ Genesis NFT Zaten Basıldı' : `🏆 GENESIS NFT BAS (${GAME_CONFIG.GENESIS_NFT.adAstraCost} ASTRA)`}
         </button>
       </div>
       <div class="collection-grid">${artifactCards}</div>
@@ -4426,7 +4365,7 @@ function renderCollectionHtml() {
           <div class="card-title">📦 Pandora Kutuları</div>
           <span class="card-badge">🔑 ${arenaKeys} Anahtar</span>
         </div>
-        <div class="clean-desc">Her kutuyu açmak 1 🔑 Anahtar gerektirir. Anahtarlar yalnızca Kolezyum derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir. Koleksiyonu tamamlayanlar fazla kutularını AMM pazarında ~10.000 ADA gibi yüksek bir fiyata satabilir!</div>
+        <div class="clean-desc">Her kutuyu açmak 1 🔑 Anahtar gerektirir. Anahtarlar yalnızca Kolezyum derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir. Koleksiyonu tamamlayanlar fazla kutularını AMM pazarında ~10.000 ASTRA gibi yüksek bir fiyata satabilir!</div>
       </div>
       ${revealHtml}
       <div class="mystery-box-grid">${boxesHtml}</div>
@@ -4471,7 +4410,7 @@ function openTestMenuModal() {
       <div class="clean-card" style="background: #140b12; border-color: #a855f7;">
         <div style="font-weight: 800; font-size: 0.9rem; color: #c084fc; margin-bottom: 8px;">💰 1. Bakiye & Kaynak Ekleme</div>
         <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_ada" style="background: #581c87;">🟣 +10.000 $ADASTRA Ekle</button>
+          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_ada" style="background: #581c87;">🟣 +10.000 ASTRA Ekle</button>
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_wood" style="background: #14532d;">🌲 +5.000 Odun Ekle</button>
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_iron" style="background: #0369a1;">⛏️ +5.000 Demir Ekle</button>
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_wheat" style="background: #854d0e;">🌾 +5.000 Buğday Ekle</button>
@@ -4537,7 +4476,7 @@ function openTestMenuModal() {
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="enable_bot" style="background: #0284c7;">🤖 24 Saatlik Otomasyon Botunu Aktifleştir</button>
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="enable_buffs" style="background: #0369a1;">⚡ Tüm Hız İksirlerini Aktifleştir</button>
           <button class="btn-clean btn-clean-sm btn-test-action" data-action="finish_expeditions" style="background: #0f766e;">⏳ Tüm Seferleri Anında Tamamla</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="reset_state" style="background: #450a0a; border-color: #ef4444;">🏛️ 100M ADA TOHUMU & VANILLA SIFIRLA</button>
+          <button class="btn-clean btn-clean-sm btn-test-action" data-action="reset_state" style="background: #450a0a; border-color: #ef4444;">🏛️ 100M ASTRA TOHUMU & VANILLA SIFIRLA</button>
         </div>
       </div>
 
@@ -4709,7 +4648,7 @@ function openDashboardModal() {
           <span class="dashboard-stat-value" style="color:#fde047;">Lv.${summary.level}</span>
         </div>
         <div class="dashboard-stat-row">
-          <span>$ADASTRA Bakiyesi</span>
+          <span>ASTRA Bakiyesi</span>
           <span class="dashboard-stat-value" style="color:#c084fc;">${summary.ada.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} 🟣</span>
         </div>
         <div class="dashboard-stat-row">
@@ -4807,7 +4746,7 @@ function openDashboardModal() {
 function openTreasuryVaultModal() {
   const summary = gameState.getTreasuryVaultSummary();
 
-  dom.modalTitle.innerHTML = `<span>🏦</span> <span>Krallık Hazinesi</span>`;
+  dom.modalTitle.innerHTML = `<span>🏛️</span> <span>Sirius Konseyi & Hazine</span>`;
 
   const topOverviewHtml = `
     <div class="clean-card" style="background: linear-gradient(135deg, rgba(26,18,8,0.95), rgba(45,28,10,0.95)); border-color: #eab308; box-shadow: 0 0 25px rgba(234,179,8,0.15);">
@@ -4822,26 +4761,26 @@ function openTreasuryVaultModal() {
         <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
           <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">Toplam Kilitli Ödül & Hazine</div>
           <div style="font-size: 1.3rem; font-weight: 900; color: #fde047; margin-top: 4px;">
-            ${summary.totalVaultAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">$ADASTRA</span>
+            ${summary.totalVaultAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
           </div>
         </div>
         <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
           <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">AMM Likidite Rezervi</div>
           <div style="font-size: 1.3rem; font-weight: 900; color: #38bdf8; margin-top: 4px;">
-            ${summary.totalAmmLiquidityAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">$ADASTRA</span>
+            ${summary.totalAmmLiquidityAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
           </div>
         </div>
         <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
           <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">Kalıcı Yakılan (Deflasyon)</div>
           <div style="font-size: 1.3rem; font-weight: 900; color: #f97316; margin-top: 4px;">
-            🔥 ${summary.burnedNftPool.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">$ADASTRA</span>
+            🔥 ${summary.burnedNftPool.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
           </div>
         </div>
       </div>
     </div>
   `;
 
-  // Her 100 ADA harcamanın dağılımı ve kasaların payları (ayarlardan)
+  // Her 100 ASTRA harcamanın dağılımı ve kasaların payları (ayarlardan)
   const A = GAME_CONFIG.TREASURY_ALLOCATION || {};
   const T = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;
   const shareOf = { world_boss: A.worldBoss, colosseum_arena: A.arena, dungeon_loot: A.dungeon, carnival_events: A.carnival, quest_pool: A.quest, amm_buyback: A.ammBuyback };
@@ -4852,7 +4791,7 @@ function openTreasuryVaultModal() {
   ];
   const splitHtml = `
     <div class="clean-card" style="margin-top: 12px; padding: 12px 14px;">
-      <div style="font-size: 0.86rem; font-weight: 800; color: #e2e8f0; margin-bottom: 8px;">Oyunda harcanan her 100 ADA nereye gider?</div>
+      <div style="font-size: 0.86rem; font-weight: 800; color: #e2e8f0; margin-bottom: 8px;">Oyunda harcanan her 100 ASTRA nereye gider?</div>
       <div style="display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06);">
         ${split.map(([, v, c]) => `<div style="width: ${v * 100}%; background: ${c};"></div>`).join('')}
       </div>
@@ -4888,7 +4827,23 @@ function openTreasuryVaultModal() {
     </div>
   `;
 
-  dom.modalBody.innerHTML = topOverviewHtml + splitHtml + poolsGridHtml;
+  // v2: Sirius Konseyi — üretim düzeni (kota termostatı, Otorite, ağırlık) ve ortak kasa stoğu
+  const us = gameState.getUretimSummary ? gameState.getUretimSummary() : null;
+  const konseyStock = (typeof globalPool !== 'undefined' && globalPool.getKonseyStock) ? globalPool.getKonseyStock() : {};
+  const konseyHtml = us ? `
+    <div class="clean-card" style="border-color:#a78bfa;">
+      <div class="card-title-row">
+        <div class="card-title" style="color:#c4b5fd;">🏛️ Sirius Konseyi — üretim düzeni ve ortak kasa</div>
+        <span class="card-badge">Otorite sv.${us.otorite.level} · ${Math.round(us.otorite.hours)} sa × ${Math.round(us.otorite.days)} gün</span>
+      </div>
+      <div class="clean-desc">Kişi başı kota (termostat): her hafta kaynağın fiyatı açılışın üstündeyse +%10, altındaysa −%10 (0,05-1,0). Senin ağırlığın ×${us.weight.weight} (seviye ×${us.weight.levelFactor} · katkı kademesi ${us.weight.tier.name} ×${us.weight.tier.mult} · aktiflik ×${us.weight.activity}). Dünya ağırlık toplamı: ${(us.params.sumWeight || 1).toLocaleString('tr-TR')}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.</div>
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.82rem;">
+        ${RES_KEYS().map(k => { const m = RES_META()[k] || {}; const r = us.rights[k]; return `<div class="stat-tile"><span class="stat-tile-label">${m.icon || ''} ${m.name || k}</span><strong>${fmtInt(r.used)} / ${fmtInt(r.weekly)}</strong><span class="stat-tile-sub">kota %${Math.round((r.qpp || 0) * 100)} · ortak kasa ${fmtInt(konseyStock[k] || 0)}</span></div>`; }).join('')}
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#94a3b8;">🏗️ Madencilik Otoritesi inşaatı ve Konsey projeleri (emek + hammadde katkısı) bu sürümde bağlanıyor; ortak kasa şimdiden birikiyor.</div>
+    </div>` : '';
+
+  dom.modalBody.innerHTML = konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
 
   document.querySelectorAll('.btn-treasury-action').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -5105,7 +5060,7 @@ function openScrapReportModal(report) {
   const gotoForgeBtn = document.getElementById('btn-goto-forge-from-scrap');
   if (gotoForgeBtn) {
     gotoForgeBtn.addEventListener('click', () => {
-      openTownZoneModal('iron', '⛏️ DERİN DEMİR MADENİ & KRALLIK DEMİRCİSİ');
+      openTownZoneModal('mine', ZONE_TITLE('iron'));
     });
   }
 }
@@ -5147,10 +5102,10 @@ function openPreBattleModal(monster) {
           ? `<div class="pe-note ${terms.nextWeaponWear ? '' : 'pe-good'}">${terms.nextWeaponWear ? 'Savaşa giren her askerin silahı 1 aşınır.' : 'Günün ilk girişi: silahların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.</div>`
           : `<label class="pe-fee">
                <input type="checkbox" id="chk-dungeon-gate-fee" ${window.dungeonPayGateFee ? 'checked' : ''} />
-               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ADA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
+               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ASTRA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
              </label>
-             <div class="pe-note">Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ADA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.</div>`}
-      ${expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ADA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : ''}
+             <div class="pe-note">Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.</div>`}
+      ${expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ASTRA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : ''}
     </div>`;
 
   const staminaCost = terms.staminaCost;
@@ -5205,7 +5160,7 @@ function openPreBattleModal(monster) {
       </div>
       <div class="dashboard-stat-row">
         <span>Ganimet Ödülü</span>
-        <span class="dashboard-stat-value" style="color:#fde047;">+${expectedAda.toLocaleString('tr-TR')} ADA • +${baseReward.xp.toLocaleString('tr-TR')} XP • askerlere +${monster.rewardXp} XP</span>
+        <span class="dashboard-stat-value" style="color:#fde047;">+${expectedAda.toLocaleString('tr-TR')} ASTRA • +${baseReward.xp.toLocaleString('tr-TR')} XP • askerlere +${monster.rewardXp} XP</span>
       </div>
 
       <div class="prebattle-prediction ${prediction.difficulty.toLowerCase()}">
@@ -5492,7 +5447,7 @@ function openPreBattleModal(monster) {
         const isBossFee = !!(monster.isBoss || monster.level === 9 || monster.level === 18);
         const fee = gameState.getDungeonGateFee(monster.level, isBossFee);
         if ((gameState.state.adAstraBalance || 0) < fee) {
-          showToast(`Kapı harcı için ${fee.toLocaleString('tr-TR')} ADA gerekiyor.`, 'error');
+          showToast(`Kapı harcı için ${fee.toLocaleString('tr-TR')} ASTRA gerekiyor.`, 'error');
           return;
         }
       }
@@ -5583,12 +5538,12 @@ async function executeMonsterBattle(monster, selectedIndices, { payGateFee = fal
   const previewBase = gameState.getDungeonBaseReward(monster.level, isBossMonster);
   const previewAda = Math.min(previewBase.ada, gameState.getDungeonDayStatus().budgetLeft);
   const lootPreview = entry.rewarded ? [
-    `🟣 +${previewAda.toLocaleString('tr-TR')} $ADASTRA`,
+    `🟣 +${previewAda.toLocaleString('tr-TR')} ASTRA`,
     `✨ +${monster.rewardXp || (monster.level * 15)} Asker XP`,
     `🧩 Teçhizat Parçası (${gameState.getFragmentDropRate(state.level)}% Şans)`,
     `📦 Pandora Kutusu (${gameState.getBoxDropRate(state.level)}% Şans)`
   ] : [
-    `🏋️ Antrenman girişi: ADA ve ganimet yok`,
+    `🏋️ Antrenman girişi: ASTRA ve ganimet yok`,
     `✨ +${monster.rewardXp || (monster.level * 15)} Asker XP · +${previewBase.xp.toLocaleString('tr-TR')} hesap XP`
   ];
 
@@ -5612,13 +5567,13 @@ async function executeMonsterBattle(monster, selectedIndices, { payGateFee = fal
         const lvlMsg = outcome.levelUps.length > 0 ? ` • 🎉 ${outcome.levelUps.join(', ')}` : '';
         const wearMsg = weaponsWorn.length > 0 ? ` • ⚔️ Silah Aşınması: ${weaponsWorn.join(', ')}` : '';
         const scrollNotice = outcome.scrollGained ? ` • 📜 ${outcome.scrollGained.name} DÜŞTÜ!` : '';
-        addNotification('🏆', `${monster.name} yenildi! +${adaReward} ADA kazandın (⚡ -${staminaCost} Stamina).${scrollNotice} Savaşa katılan askerlerin +${monster.rewardXp} Asker XP kazandı.${lvlMsg}${wearMsg}`);
+        addNotification('🏆', `${monster.name} yenildi! +${adaReward} ASTRA kazandın (⚡ -${staminaCost} Stamina).${scrollNotice} Savaşa katılan askerlerin +${monster.rewardXp} Asker XP kazandı.${lvlMsg}${wearMsg}`);
 
         if (weaponsWorn.length > 0) {
           showToast(`⚔️ Silahların dayanıklılığı -1 azaldı: ${weaponsWorn.join(', ')}`, 'info');
         }
         showToast(entry.rewarded
-          ? `🏆 Zafer! ${monster.name} mağlup edildi! (+${adaReward.toLocaleString('tr-TR')} ADA)`
+          ? `🏆 Zafer! ${monster.name} mağlup edildi! (+${adaReward.toLocaleString('tr-TR')} ASTRA)`
           : `🏋️ Antrenman zaferi: ${monster.name} yenildi (yalnızca deneyim)`, 'success');
       } else {
         sound.playBreakWarning();
@@ -5725,6 +5680,9 @@ function executeCommand(actionId) {
     case 'forest': openTownZoneModal('forest', '🌲 Zümrüt Ormanı & Oduncu'); break;
     case 'mine': openTownZoneModal('mine', '⛏️ Maden Ocağı & Tamirhane'); break;
     case 'farm': openTownZoneModal('farm', '🌾 Güneş Tarlası & Değirmen'); break;
+    case 'quarry': case 'coalmine': case 'herbgarden': openTownZoneModal(actionId, ZONE_TITLE(NODE_OF_ZONE_UI(actionId))); break;
+    case 'village': case 'healer': case 'spaceport': openTownZoneModal(actionId, ZONE_LABELS[actionId]); break;
+    case 'council': openTreasuryVaultModal(); break;
     case 'barracks': openBarracksModal(); break;
     case 'market': openTownZoneModal('market', '🏪 AMM Pazar Yeri'); break;
     case 'dungeon': enterDungeonScene(); break;
@@ -5749,7 +5707,7 @@ function executeCommand(actionId) {
       if (rRes.repaired > 0) {
         showToast(`🔨 ${rRes.repaired} alet tamir edildi!`, 'success');
       } else if (rRes.hasDamagedTools && rRes.missingAda) {
-        showToast('⚠️ Hesapta yeteri kadar $ADASTRA yok!', 'error');
+        showToast('⚠️ Hesapta yeteri kadar ASTRA yok!', 'error');
       } else {
         showToast(rRes.message || 'Tamir edilecek alet yok.', 'info');
       }
@@ -5943,14 +5901,10 @@ function initAppEvents() {
   }
 
   // SAĞ ÜST KÖŞE HAMMADDE KUTUCUKLARI (RESOURCE PILLS TIKLAMA OLAYLARI)
-  const pillWheat = document.getElementById('res-pill-wheat');
-  if (pillWheat) pillWheat.addEventListener('click', () => openTownZoneModal('farm', '🌾 Güneş Tarlası & Değirmen'));
-
-  const pillWood = document.getElementById('res-pill-wood');
-  if (pillWood) pillWood.addEventListener('click', () => openTownZoneModal('forest', '🌲 Zümrüt Ormanı & Oduncu Kulübesi'));
-
-  const pillIron = document.getElementById('res-pill-iron');
-  if (pillIron) pillIron.addEventListener('click', () => openTownZoneModal('mine', '⛏️ Maden Ocağı & Tamirhane'));
+  for (const k of RES_KEYS()) {
+    const pill = document.getElementById(`res-pill-${k}`);
+    if (pill) pill.addEventListener('click', () => openTownZoneModal(ZONE_OF_NODE(k), ZONE_TITLE(k)));
+  }
 
   const pillFragments = document.getElementById('res-pill-fragments');
   if (pillFragments) pillFragments.addEventListener('click', () => openTownZoneModal('market', '🏪 AMM Pazar Alanı'));
@@ -6090,9 +6044,7 @@ function initAppEvents() {
   document.querySelectorAll('.sidebar-exp-card').forEach(card => {
     card.addEventListener('click', () => {
       const node = card.dataset.node;
-      if (node === 'iron') openTownZoneModal('mine', '⛏️ Maden Ocağı & Tamirhane');
-      else if (node === 'wood') openTownZoneModal('forest', '🌲 Zümrüt Ormanı & Oduncu Kulübesi');
-      else if (node === 'wheat') openTownZoneModal('farm', '🌾 Güneş Tarlası & Değirmen');
+      if (RES_KEYS().includes(node)) openTownZoneModal(ZONE_OF_NODE(node), ZONE_TITLE(node));
     });
   });
 
@@ -6158,6 +6110,8 @@ function initAppEvents() {
       openWarehouseModal();
     } else if (zoneId === 'collection') {
       openCollectionModal();
+    } else if (zoneId === 'council') {
+      openTreasuryVaultModal();
     } else if (zoneId === 'blacksmith') {
       mineActiveTab = 'blacksmith';
       openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
@@ -6229,7 +6183,7 @@ function initAppEvents() {
         showToast(`🔨 ${res.repaired} alet tamir edildi: -${res.totalWood}🌲 -${res.totalIron}⛏️ -${res.totalAda}🟣`, 'success');
         sound.playRepair();
       } else if (res.hasDamagedTools && res.missingAda) {
-        showToast('⚠️ Hesapta yeteri kadar $ADASTRA yok!', 'error');
+        showToast('⚠️ Hesapta yeteri kadar ASTRA yok!', 'error');
       } else {
         showToast(res.message || 'Tamir edilecek alet yok.', 'info');
       }
@@ -6348,7 +6302,7 @@ function initAppEvents() {
           closeModal();
         }
       } else {
-        showToast(res.message, res.isWarehouseFull ? 'warning' : 'error');
+        showToast(res.message, (res.isWarehouseFull || res.isQuotaWait) ? 'warning' : 'error');
       }
       renderTopBar();
       return;
@@ -6363,7 +6317,7 @@ function initAppEvents() {
         showToast(res.message, 'success');
         openTownZoneModal(node, GAME_CONFIG.GLOBAL_RESOURCE_CAPS[node]?.name || node);
       } else {
-        showToast(res.message, res.isWarehouseFull ? 'warning' : 'error');
+        showToast(res.message, (res.isWarehouseFull || res.isQuotaWait) ? 'warning' : 'error');
       }
       renderTopBar();
       return;
@@ -6571,7 +6525,7 @@ function initAppEvents() {
     if (smartHealAllBtn) {
       const res = gameState.instantHealAllSoldiers();
       if (res.healed > 0) {
-        showToast(`⚡ ${res.healed} asker tam cana ulaştırıldı! (-${res.totalWheat} 🌾, -${res.totalAda} 🟣 ADA)`, 'success');
+        showToast(`⚡ ${res.healed} asker tam cana ulaştırıldı! (-${res.totalWheat} 🌾, -${res.totalAda} 🟣 ASTRA)`, 'success');
         sound.playRepair();
       } else {
         showToast('İyileştirilecek yaralı asker bulunmuyor veya kaynaklar yetersiz.', 'info');
@@ -6636,12 +6590,9 @@ function initAppEvents() {
           openDashboardModal();
         } else if (dom.modalTitle && (dom.modalTitle.innerText.includes('KIŞLA') || dom.modalTitle.innerText.includes('KARARGAH'))) {
           openBarracksModal();
-        } else if (dom.modalTitle && dom.modalTitle.innerText.includes('ORMAN')) {
-          openTownZoneModal('forest', '🌲 BÜYÜLÜ ORMAN & ODUNCULUK');
-        } else if (dom.modalTitle && dom.modalTitle.innerText.includes('MADEN')) {
-          openTownZoneModal('mine', '⛏️ KRALLIK DEMİR MADENİ');
-        } else if (dom.modalTitle && dom.modalTitle.innerText.includes('ÇİFTLİK')) {
-          openTownZoneModal('farm', '🌾 ALTIN BUĞDAY TARLASI');
+        } else if (dom.modalTitle && RES_KEYS().some(k => dom.modalTitle.innerText.includes(ZONE_TITLE(k)))) {
+          const zk = RES_KEYS().find(k => dom.modalTitle.innerText.includes(ZONE_TITLE(k)));
+          openTownZoneModal(ZONE_OF_NODE(zk), ZONE_TITLE(zk));
         } else if (dom.modalTitle && dom.modalTitle.innerText.includes('SAVAŞ ÖNCESİ') && window.currentPreBattleMonster) {
           openPreBattleModal(window.currentPreBattleMonster);
         } else {
@@ -6663,7 +6614,7 @@ function initAppEvents() {
       switch (act) {
         case 'add_ada':
           gameState.cheatAddResources(0, 0, 0, 0, 10000, 0, 0);
-          toastMsg = '🟣 +10.000 $ADASTRA eklendi!';
+          toastMsg = '🟣 +10.000 ASTRA eklendi!';
           break;
         case 'add_wood':
           gameState.cheatAddResources(5000, 0, 0, 0, 0, 0, 0);
@@ -6796,7 +6747,7 @@ function initAppEvents() {
           toastMsg = '⏳ Tüm Sefer Zamanlayıcıları Anında Tamamlandı!';
           break;
         case 'reset_state':
-          if (!window.confirm('🏛️ 100M $ADASTRA İLK DAĞITIMINA & VANILLA HESABA SIFIRLA\n\nTüm hesap ilerlemeni ve ekonomiyi (AMM 40M havuzları, Hazine 40M kasaları, Piyango 20M havuzu ve haftalık limitleri) ilk 100 Milyon $ADASTRA tohum dağıtım anına sıfırlamak istiyor musun?')) return;
+          if (!window.confirm('🏛️ 100M ASTRA İLK DAĞITIMINA & VANILLA HESABA SIFIRLA\n\nTüm hesap ilerlemeni ve ekonomiyi (AMM 40M havuzları, Hazine 40M kasaları, Piyango 20M havuzu ve haftalık limitleri) ilk 100 Milyon ASTRA tohum dağıtım anına sıfırlamak istiyor musun?')) return;
           gameState.vanillaReset();
           location.reload();
           return;
@@ -6829,8 +6780,8 @@ function initAppEvents() {
       const slot = quickCraftBtn.dataset.slot;
       const plan = gameState.getQuickBuyPlan('craft:' + slot);
       if (!plan.ok) { showToast(plan.reason || 'Alım yapılamıyor.', 'error'); return; }
-      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ADA)`).join('\n');
-      if (!confirm(`Eksikler pazardan alınıp eşya dövülsün mü?\n${list}\nAlım ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA + dövme bedeli ~${Math.ceil(plan.extraAda).toLocaleString('tr-TR')} ADA`)) return;
+      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ASTRA)`).join('\n');
+      if (!confirm(`Eksikler pazardan alınıp eşya dövülsün mü?\n${list}\nAlım ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ASTRA + dövme bedeli ~${Math.ceil(plan.extraAda).toLocaleString('tr-TR')} ASTRA`)) return;
       for (const it of plan.items) {
         const r = await gameState.marketBuy(it.res, it.qty);
         if (!r || !r.success) { showToast(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); renderTopBar(); openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'); return; }
@@ -6848,8 +6799,8 @@ function initAppEvents() {
       const kind = quickBuyBtn.dataset.kind;
       const plan = gameState.getQuickBuyPlan(kind);
       if (!plan.ok) { showToast(plan.reason || 'Alım yapılamıyor.', 'error'); return; }
-      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ADA)`).join('\n');
-      if (!confirm(`Eksik hammaddeler pazardan alınsın mı?\n${list}\nToplam ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ADA`)) return;
+      const list = plan.items.map(i => `• ${i.qty.toLocaleString('tr-TR')} ${i.name} (~${Math.ceil(i.cost).toLocaleString('tr-TR')} ASTRA)`).join('\n');
+      if (!confirm(`Eksik hammaddeler pazardan alınsın mı?\n${list}\nToplam ~${Math.ceil(plan.total).toLocaleString('tr-TR')} ASTRA`)) return;
       let bought = 0;
       for (const it of plan.items) {
         const r = await gameState.marketBuy(it.res, it.qty);
@@ -6878,17 +6829,17 @@ function initAppEvents() {
       return;
     }
 
-    // 🧺 Pazar: Depoyu doldur (silo dolana kadar al; ADA yetmezse alınabildiği kadar)
+    // 🧺 Pazar: Depoyu doldur (silo dolana kadar al; ASTRA yetmezse alınabildiği kadar)
     const ammFillBtn = e.target.closest('.btn-amm-fill');
     if (ammFillBtn) {
       const resKey = ammFillBtn.dataset.res;
       const fq = gameState.getFillWarehouseQty(resKey);
       if (fq.qty <= 0) { showToast(fq.room > 0 ? 'ADA yetmiyor.' : 'Silo zaten dolu.', 'info'); return; }
       const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
-      if (!confirm(`${fq.qty.toLocaleString('tr-TR')} ${name} alınsın mı? (~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ADA, %2 harç dahil)${fq.limitedByAda ? `\nADA'n siloyu tamamen doldurmaya yetmiyor; alınabilecek en fazla miktar bu (boş yer: ${fq.room.toLocaleString('tr-TR')}).` : ''}`)) return;
+      if (!confirm(`${fq.qty.toLocaleString('tr-TR')} ${name} alınsın mı? (~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA, %2 harç dahil)${fq.limitedByAda ? `\nADA'n siloyu tamamen doldurmaya yetmiyor; alınabilecek en fazla miktar bu (boş yer: ${fq.room.toLocaleString('tr-TR')}).` : ''}`)) return;
       const res = await gameState.marketBuy(resKey, fq.qty);
       if (res && res.success) {
-        showToast(`🧺 ${fq.qty.toLocaleString('tr-TR')} ${name} alındı (−${Number(res.cost || 0).toFixed(2)} ADA)`, 'success');
+        showToast(`🧺 ${fq.qty.toLocaleString('tr-TR')} ${name} alındı (−${Number(res.cost || 0).toFixed(2)} ASTRA)`, 'success');
         openTownZoneModal('market', '🏪 AMM Pazar Alanı');
       } else showToast((res && res.message) || 'Alım yapılamadı.', 'error');
       renderTopBar();
@@ -6907,10 +6858,10 @@ function initAppEvents() {
       const est = ammMarket.getEstimatedAdAstraForSell ? ammMarket.getEstimatedAdAstraForSell(resKey, qty) : 0;
       const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
       const partNote = qty < have ? `\n\nPazar fiyatı en alt sınıra inmesin diye şimdilik ${qty.toLocaleString('tr-TR')} adedi satılabilir; kalan ${(have - qty).toLocaleString('tr-TR')} adet siloda kalır.` : '';
-      if (!confirm(`${qty.toLocaleString('tr-TR')} ${name} satılsın mı?\nTahmini kazanç: ~${Math.floor(est).toLocaleString('tr-TR')} ADA (%2 harç sonrası).${partNote}`)) return;
+      if (!confirm(`${qty.toLocaleString('tr-TR')} ${name} satılsın mı?\nTahmini kazanç: ~${Math.floor(est).toLocaleString('tr-TR')} ASTRA (%2 harç sonrası).${partNote}`)) return;
       const res = await gameState.marketSell(resKey, qty);
       if (res && res.success) {
-        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName || name} satıldı: +${Number(res.adAstraReceived || 0).toFixed(2)} ADA${qty < have ? ` (${(have - qty).toLocaleString('tr-TR')} adet taban fiyat sınırı yüzünden siloda kaldı)` : ''}`, 'success');
+        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName || name} satıldı: +${Number(res.adAstraReceived || 0).toFixed(2)} ASTRA${qty < have ? ` (${(have - qty).toLocaleString('tr-TR')} adet taban fiyat sınırı yüzünden siloda kaldı)` : ''}`, 'success');
         sound.playLevelUp();
         openTownZoneModal('market', '🏪 AMM Pazar Alanı');
       } else {
@@ -6934,7 +6885,7 @@ function initAppEvents() {
       const res = gameState.marketSell(resKey, qty);
       if (res.success) {
         const burnInfo = res.resourceBurnFee > 0 ? ` (🔥 %2 Yakım: ${res.resourceBurnFee.toLocaleString('tr-TR')} ${res.resourceName} kalıcı silindi)` : '';
-        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName} satıldı: +${res.adAstraReceived.toFixed(2)} ADA cüzdana eklendi! (%2 Harç: ${res.fee.toFixed(2)} ADA Hazine Kasalarına & UBI'ye aktarıldı)${burnInfo}`, 'success');
+        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName} satıldı: +${res.adAstraReceived.toFixed(2)} ASTRA cüzdana eklendi! (%2 Harç: ${res.fee.toFixed(2)} ASTRA Hazine Kasalarına & UBI'ye aktarıldı)${burnInfo}`, 'success');
         sound.playLevelUp();
         openTownZoneModal('market', '🏪 AMM Pazar Alanı');
       } else {
@@ -6959,7 +6910,7 @@ function initAppEvents() {
       const res = gameState.marketBuy(resKey, qty);
       if (res.success) {
         const burnInfo = res.resourceBurnFee > 0 ? ` (🔥 %2 Yakım: ${res.resourceBurnFee.toLocaleString('tr-TR')} ${res.resourceName} kalıcı silindi)` : '';
-        showToast(`🛒 ${res.cost.toFixed(2)} ADA ödendi: +${res.resourceReceived.toLocaleString('tr-TR')} ${res.resourceName} satın alındı! (%2 Harç: ${res.fee.toFixed(2)} ADA Hazine Kasalarına aktarıldı)${burnInfo}`, 'success');
+        showToast(`🛒 ${res.cost.toFixed(2)} ASTRA ödendi: +${res.resourceReceived.toLocaleString('tr-TR')} ${res.resourceName} satın alındı! (%2 Harç: ${res.fee.toFixed(2)} ASTRA Hazine Kasalarına aktarıldı)${burnInfo}`, 'success');
         sound.playLevelUp();
 
         // 🤖 Bot duraklatılmışsa ve eksik kaynak tamamlandıysa anında devreye girdi
@@ -7325,7 +7276,7 @@ function initAppEvents() {
       return;
     }
 
-    // Karnaval: Talihli Biletlerini Yak & 2 Katı ADA Kasadan Çek (#btn-claim-winner-lottery)
+    // Karnaval: Talihli Biletlerini Yak & 2 Katı ASTRA Kasadan Çek (#btn-claim-winner-lottery)
     if (e.target.closest('#btn-claim-winner-lottery')) {
       const res = gameState.claimWinnerLotteryPayout();
       if (res.success) {
@@ -7615,10 +7566,10 @@ function initAppEvents() {
       const costEl = dom.modalBody.querySelector(`.amm-est-cost-text[data-res="${resKey}"]`);
       if (costEl) {
         if (qty <= 0) {
-          costEl.innerText = '~0.00 ADA';
+          costEl.innerText = '~0.00 ASTRA';
         } else {
           const cost = ammMarket.getEstimatedCostForBuy(resKey, qty);
-          costEl.innerText = isFinite(cost) ? `~${cost.toFixed(2)} ADA` : 'Yetersiz Likidite';
+          costEl.innerText = isFinite(cost) ? `~${cost.toFixed(2)} ASTRA` : 'Yetersiz Likidite';
         }
       }
       return;
@@ -7632,10 +7583,10 @@ function initAppEvents() {
       const gainEl = dom.modalBody.querySelector(`.amm-est-gain-text[data-res="${resKey}"]`);
       if (gainEl) {
         if (qty <= 0) {
-          gainEl.innerText = '~0.00 ADA';
+          gainEl.innerText = '~0.00 ASTRA';
         } else {
           const gain = ammMarket.getEstimatedAdAstraForSell(resKey, qty);
-          gainEl.innerText = `~${gain.toFixed(2)} ADA`;
+          gainEl.innerText = `~${gain.toFixed(2)} ASTRA`;
         }
       }
       return;
@@ -7664,7 +7615,7 @@ function initAppEvents() {
       const isAutoRenew = !!e.target.checked;
       gameState.setBotAutoRenew24h(isAutoRenew);
       if (isAutoRenew) {
-        showToast('🔄 24 saat bitince hesapta yeterli ADA varsa bot otomatik olarak tekrar satın alınıp devam edecek.', 'success');
+        showToast('🔄 24 saat bitince hesapta yeterli ASTRA varsa bot otomatik olarak tekrar satın alınıp devam edecek.', 'success');
       } else {
         showToast('⏸️ 24 saat bitince bot otomatik yenilemesi kapatıldı.', 'info');
       }
@@ -7699,6 +7650,7 @@ function syncDevLiveInputs() {
   if (elWood) elWood.value = inv.wood || 0;
   if (elIron) elIron.value = inv.iron || 0;
   if (elWheat) elWheat.value = inv.wheat || 0;
+  for (const k of ['stone', 'coal', 'herb']) { const el = document.getElementById('dev-live-' + k); if (el) el.value = inv[k] || 0; }
   if (elFrag) elFrag.value = inv.fragments || 0;
   if (elAda) elAda.value = Math.floor(st.adAstraBalance || 0);
   if (elStam) elStam.value = Math.floor(st.stamina || 0);
@@ -7777,7 +7729,7 @@ function initDevPanelEvents() {
     const val = parseFloat(inputCustomVal.value) || 0;
 
     let msg = '';
-    if (target === 'wood' || target === 'iron' || target === 'wheat' || target === 'fragments') {
+    if (RES_KEYS().includes(target) || target === 'fragments') {
       const cur = gameState.state.inventory[target] || 0;
       if (mode === 'add') {
         gameState.addDevResource(target, val);
@@ -7795,16 +7747,16 @@ function initDevPanelEvents() {
     } else if (target === 'adAstra') {
       if (mode === 'add') {
         gameState.addDevAdAstra(val);
-        msg = `🟣 $ADASTRA: +${val.toLocaleString()} eklendi!`;
+        msg = `🟣 ASTRA: +${val.toLocaleString()} eklendi!`;
       } else if (mode === 'sub') {
         gameState.addDevAdAstra(-val);
-        msg = `🔻 $ADASTRA: -${val.toLocaleString()} çıkarıldı!`;
+        msg = `🔻 ASTRA: -${val.toLocaleString()} çıkarıldı!`;
       } else if (mode === 'set') {
         gameState.setDevAdAstra(val);
-        msg = `🎯 $ADASTRA: Değer ${val.toLocaleString()} yapıldı!`;
+        msg = `🎯 ASTRA: Değer ${val.toLocaleString()} yapıldı!`;
       } else if (mode === 'zero') {
         gameState.setDevAdAstra(0);
-        msg = `🗑️ $ADASTRA sıfırlandı!`;
+        msg = `🗑️ ASTRA sıfırlandı!`;
       }
     } else if (target === 'stamina') {
       const maxStam = gameState.getMaxStamina();
@@ -7866,6 +7818,7 @@ function initDevPanelEvents() {
   bindLiveInput('dev-live-wood', v => gameState.setDevResource('wood', v));
   bindLiveInput('dev-live-iron', v => gameState.setDevResource('iron', v));
   bindLiveInput('dev-live-wheat', v => gameState.setDevResource('wheat', v));
+  for (const k of ['stone', 'coal', 'herb']) bindLiveInput(`dev-live-${k}`, v => gameState.setDevResource(k, v));
   bindLiveInput('dev-live-fragments', v => gameState.setDevResource('fragments', v));
   bindLiveInput('dev-live-adastra', v => gameState.setDevAdAstra(v));
   bindLiveInput('dev-live-stamina', v => { gameState.state.stamina = Math.min(gameState.getMaxStamina(), Math.max(0, v)); gameState.saveState(); });
@@ -7947,6 +7900,14 @@ function initDevPanelEvents() {
         sound.playHarvest();
         break;
 
+      case 'add-stone': case 'add-coal': case 'add-herb': {
+        const rk = action.slice(4); const mm = RES_META()[rk] || {};
+        gameState.addDevResource(rk, amount);
+        showToast(`${mm.icon || ''} +${amount.toLocaleString()} ${mm.name || rk} eklendi!`, 'success');
+        sound.playHarvest();
+        break;
+      }
+
       case 'add-fragments':
         gameState.addDevResource('fragments', amount);
         showToast(`🧩 +${amount.toLocaleString()} Teçhizat Parçaları eklendi!`, 'success');
@@ -7955,7 +7916,7 @@ function initDevPanelEvents() {
 
       case 'add-adastra':
         gameState.addDevAdAstra(amount);
-        showToast(`🟣 +${amount.toLocaleString()} $ADASTRA bakiyene eklendi!`, 'success');
+        showToast(`🟣 +${amount.toLocaleString()} ASTRA bakiyene eklendi!`, 'success');
         sound.playLevelUp();
         break;
 
@@ -8021,7 +7982,7 @@ function initDevPanelEvents() {
                 <span style="color:#4ade80;">🌲 +${report.woodGain.toLocaleString()} Odun</span>
                 <span style="color:#38bdf8;">⛏️ +${report.ironGain.toLocaleString()} Demir</span>
                 <span style="color:#facc15;">🌾 +${report.wheatGain.toLocaleString()} Buğday</span>
-                <span style="color:#c084fc;">🪙 ${report.adaDiff >= 0 ? '+' : ''}${report.adaDiff.toFixed(1)} ADA</span>
+                <span style="color:#c084fc;">🪙 ${report.adaDiff >= 0 ? '+' : ''}${report.adaDiff.toFixed(1)} ASTRA</span>
                 <span style="color:#60a5fa;">✨ +${(report.xpGain || 0).toLocaleString()} XP</span>
               </div>
             </div>
@@ -8121,19 +8082,19 @@ function initDevPanelEvents() {
 
       case 'vanilla-reset': {
         const confirmReset = window.confirm(
-          '🏛️ 100 MİLYON $ADASTRA BAŞLANGIÇ DAĞITIMI VE VANILLA HESAP SIFIRLAMA\n\n' +
+          '🏛️ 100 MİLYON ASTRA BAŞLANGIÇ DAĞITIMI VE VANILLA HESAP SIFIRLAMA\n\n' +
           'Bu işlem:\n' +
-          '1. Kişisel hesabını başlangıç profiline (Lv.1, 100 Stamina, 250 ADA) döndürür.\n' +
+          '1. Kişisel hesabını başlangıç profiline (Lv.1, 100 Stamina, 250 ASTRA) döndürür.\n' +
           '2. Haftalık kaynak çıkarma limitlerini tam kapasiteye (%100) sıfırlar.\n' +
-          '3. AMM DEX Pazar Havuzlarını tam 40M $ADASTRA ilk tohum rezervlerine (14M Buğday, 10M Odun, 10M Demir, 3M Parça, 2M Kutu, 1M Anahtar) sıfırlar.\n' +
-          '4. Krallık Hazinesi Kasalarını tam 40M $ADASTRA ilk tohum rezervlerine (14M Zindan, 8M Arena, 8M World Boss, 6M Buyback, 4M Karnaval) sıfırlar.\n' +
-          '5. Krallık Piyango Havuzunu tam 20M $ADASTRA tohumuna sıfırlar.\n\n' +
-          'Toplam 100 Milyon $ADASTRA ilk dağıtım anındaki havuz oranlarına eksiksiz sıfırlanacaktır.\n\n' +
+          '3. AMM DEX Pazar Havuzlarını tam 40M ASTRA ilk tohum rezervlerine (14M Buğday, 10M Odun, 10M Demir, 3M Parça, 2M Kutu, 1M Anahtar) sıfırlar.\n' +
+          '4. Krallık Hazinesi Kasalarını tam 40M ASTRA ilk tohum rezervlerine (14M Zindan, 8M Arena, 8M World Boss, 6M Buyback, 4M Karnaval) sıfırlar.\n' +
+          '5. Krallık Piyango Havuzunu tam 20M ASTRA tohumuna sıfırlar.\n\n' +
+          'Toplam 100 Milyon ASTRA ilk dağıtım anındaki havuz oranlarına eksiksiz sıfırlanacaktır.\n\n' +
           'Devam etmek istiyor musun?'
         );
         if (!confirmReset) break;
         gameState.vanillaReset();
-        showToast('🏛️ 100M $ADASTRA başlangıç havuzları ve profil başarıyla ilk anki oranlarına sıfırlandı! Sayfa yenileniyor...', 'success');
+        showToast('🏛️ 100M ASTRA başlangıç havuzları ve profil başarıyla ilk anki oranlarına sıfırlandı! Sayfa yenileniyor...', 'success');
         sound.playLevelUp();
         renderTopBar();
         setTimeout(() => location.reload(), 900);
@@ -8200,7 +8161,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
         whBtn.style.color = '#f87171';
         whBtn.style.borderColor = '#7f1d1d';
         whBtn.style.cursor = 'not-allowed';
-        whBtn.innerText = '⚠️ YETERSİZ KAYNAK VEYA $ADASTRA BAKİYESİ';
+        whBtn.innerText = '⚠️ YETERSİZ KAYNAK VEYA ASTRA BAKİYESİ';
       } else {
         whBtn.disabled = false;
         whBtn.className = 'btn-clean btn-clean-green';
@@ -8244,7 +8205,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
           lvlBtn.style.fontWeight = '800';
           let missingReason = '';
           if (!hasXp) missingReason = `Yetersiz Deneyim (${state.currentXp}/${req.xp} XP)`;
-          else if (!hasAda) missingReason = `Yetersiz $ADASTRA (${adAstra.toFixed(0)}/${req.adAstra} ADA)`;
+          else if (!hasAda) missingReason = `Yetersiz ASTRA (${adAstra.toFixed(0)}/${req.adAstra} ASTRA)`;
           else missingReason = 'Eksik Hammadde';
           lvlBtn.innerText = `🔒 SEVİYE ${state.level + 1}'E YÜKSELT — ${missingReason}`;
         } else {
@@ -8262,7 +8223,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
   // 3. Taverna Bot Modalı Açıksa Canlı Fiyat Güncellemesi
   dom.modalContainer.querySelectorAll('[data-bot-pkg-price]').forEach(el => {
     const h = Number(el.dataset.botPkgPrice) || 24;
-    el.textContent = `${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ADA`;
+    el.textContent = `${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ASTRA`;
   });
 
   // 4. Alet Onarım Butonları Açıksa (Balta, Kazma, Orak) Canlı Güncelle
@@ -8285,7 +8246,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
     }
   });
 
-  // 5. Demirci Teçhizat Dövme Butonları & Canlı AMM ADA Fiyatları
+  // 5. Demirci Teçhizat Dövme Butonları & Canlı AMM ASTRA Fiyatları
   const craftBtns = dom.modalContainer.querySelectorAll('.btn-craft-equipment');
   craftBtns.forEach(btn => {
     const slot = btn.dataset.slot;
@@ -8300,13 +8261,13 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
         const slotNames = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Zırh', legs: 'Pantolon', boots: 'Çizme' };
         btn.innerText = canAfford ? `🔨 ${slotNames[slot] || 'Teçhizat'} Döv (1 Adet)` : '⚠️ Yetersiz Hammadde';
 
-        // Ebeveyn kart içerisindeki ADA tutarını canlı güncelle
+        // Ebeveyn kart içerisindeki ASTRA tutarını canlı güncelle
         const card = btn.closest('.clean-card');
         if (card) {
           const spans = card.querySelectorAll('span');
           spans.forEach(sp => {
-            if (sp.innerText.includes('ADA') && sp.innerText.includes('🟣')) {
-              sp.innerText = `🟣 ${cost.adaCost} ADA`;
+            if (sp.innerText.includes('ASTRA') && sp.innerText.includes('🟣')) {
+              sp.innerText = `🟣 ${cost.adaCost} ASTRA`;
             }
           });
         }
@@ -8341,7 +8302,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
                         (inv.wood || 0) >= repCost.woodCost &&
                         adAstra >= repCost.adaCost;
       btn.disabled = !canAfford;
-      btn.innerText = `🔧 Onar (${repCost.adaCost} ADA)`;
+      btn.innerText = `🔧 Onar (${repCost.adaCost} ASTRA)`;
     }
   });
 
@@ -8351,7 +8312,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
     repAllArmoryBtn.disabled = allRepCost.count === 0 || !allRepCost.canAfford;
     repAllArmoryBtn.innerText = allRepCost.count === 0 
       ? '✨ Tüm Eşyalar Sağlam' 
-      : `🔨 Tüm Hasarlı Eşyaları Onar (${allRepCost.totalWood}🌲 + ${allRepCost.totalIron}⛏️ + ${allRepCost.totalAda}🟣 ADA)`;
+      : `🔨 Tüm Hasarlı Eşyaları Onar (${allRepCost.totalWood}🌲 + ${allRepCost.totalIron}⛏️ + ${allRepCost.totalAda}🟣 ASTRA)`;
   }
 
   // 8. Kışla Asker Hızlı İyileştirme Butonları
@@ -8367,7 +8328,7 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
         } else {
           const canAfford = (inv.wheat || 0) >= hInfo.wheatNeeded && adAstra >= hInfo.adaCost;
           btn.disabled = !canAfford;
-          btn.innerText = `⚡ Anında İyileştir (${hInfo.wheatNeeded}🌾 + ${hInfo.adaCost}🟣 ADA)`;
+          btn.innerText = `⚡ Anında İyileştir (${hInfo.wheatNeeded}🌾 + ${hInfo.adaCost}🟣 ASTRA)`;
         }
       }
     }
@@ -8434,7 +8395,7 @@ function renderGuideWidget() {
       <span class="guide-icon">🧭</span>
       <span class="guide-head-text">
         <span class="guide-title">Krallık Rehberi</span>
-        <span class="guide-sub">${st.claimableCount > 0 ? `${st.claimableCount} ödül hazır · +${fmtNum(st.claimableAda)} ADA` : (st.next ? st.next.title : 'Tüm görevler tamam')}</span>
+        <span class="guide-sub">${st.claimableCount > 0 ? `${st.claimableCount} ödül hazır · +${fmtNum(st.claimableAda)} ASTRA` : (st.next ? st.next.title : 'Tüm görevler tamam')}</span>
       </span>
       <span class="guide-count">${st.doneCount}/${st.total}</span>
     </button>
@@ -8446,7 +8407,7 @@ function renderGuideWidget() {
           <span class="q-icon">${q.claimed ? '✅' : q.icon}</span>
           <span class="q-text"><strong>${q.title}</strong><small>${q.desc}</small></span>
           ${q.done && !q.claimed
-            ? `<button class="q-claim" data-claim-quest="${q.id}">+${fmtNum(q.rewardAda)} ADA al</button>`
+            ? `<button class="q-claim" data-claim-quest="${q.id}">+${fmtNum(q.rewardAda)} ASTRA al</button>`
             : `<span class="q-reward">${q.claimed ? 'Alındı' : '+' + fmtNum(q.rewardAda)}</span>`}
         </li>`).join('')}
     </ul>
@@ -8483,7 +8444,7 @@ function openOfflineReportModal() {
         ${row('🌲', 'Odun', b.wood, a.wood)}
         ${row('⛏️', 'Demir', b.iron, a.iron)}
         ${row('🌾', 'Buğday', b.wheat, a.wheat)}
-        ${row('🟣', 'ADA', b.ada, a.ada, 2)}
+        ${row('🟣', 'ASTRA', b.ada, a.ada, 2)}
         ${row('🏰', 'Silo seviyesi', b.warehouseLevel, a.warehouseLevel)}
       </div>
       ${r.botStoppedReason ? `<div class="notice-card notice-warn">⏸️ Bot durdu: ${r.botStoppedReason}</div>` : ''}
@@ -8564,7 +8525,7 @@ function uiGameLoop(currentTime) {
     tickPlayerGuide(currentTime);
 
     // Canlı Açık Sefer Modalı Sayacı Güncelleme
-    ['wood', 'iron', 'wheat'].forEach(nodeId => {
+    RES_KEYS().forEach(nodeId => {
       const timeEl = document.getElementById(`modal-exp-time-${nodeId}`);
       const pctEl = document.getElementById(`modal-exp-pct-${nodeId}`);
       const fillEl = document.getElementById(`modal-exp-fill-${nodeId}`);

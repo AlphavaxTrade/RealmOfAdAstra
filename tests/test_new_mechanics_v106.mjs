@@ -37,7 +37,7 @@ gs.state.soldierUnits = [soldier];
 const healInfo = gs.getSoldierHealInfo(0);
 assert.equal(healInfo.missingHp, 50, '50 eksik HP tespit edilmeli');
 
-// 1. 18 Saatlik Otomatik Pasif İyileşme (1 HP = 0.30 Buğday + 0.10 ADA)
+// 1. 18 Saatlik Otomatik Pasif İyileşme (1 HP = 0.30 Buğday + 0.10 ASTRA)
 const PH = GAME_CONFIG.SOLDIER_PASSIVE_HEAL, FH = GAME_CONFIG.SOLDIER_FAST_HEAL;
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 assert.equal(healInfo.passiveWheatNeeded, 15, 'Otomatik iyileşme: 50 HP için 15 Buğday (0.30 x 50)');
@@ -61,7 +61,7 @@ gs.state.adAstraBalance = 50000;
 const healRes = gs.healSoldierInstantly(0);
 assert(healRes.success, 'Asker 10x formülüyle anında doyurulabilmeli');
 assert.equal(soldier.hp, 100, 'Hızlı doyurma sonrası asker tam canlı olmalı');
-console.log('✅ 18 saatlik otomatik pasif iyileşme (0.30 Buğday + 0.10 ADA) ve 10 katı hızlı doyurma (3 Buğday + 1 ADA) %100 doğrulandı.');
+console.log('✅ 18 saatlik otomatik pasif iyileşme (0.30 Buğday + 0.10 ASTRA) ve 10 katı hızlı doyurma (3 Buğday + 1 ASTRA) %100 doğrulandı.');
 
 // ══════════════════════════════════════════════════════════════════════════
 // 2. 1-CLICK SEFER TOPLAMA (BİTMEMİŞ SEFERLERDEN BİRİKENİ TOPLAMA)
@@ -118,7 +118,7 @@ console.log('\n[4/7] Teçhizat 18dk/21dk Formülleri, 13 Durability & Cephanelik
 const weaponCraftCost = gs.calculateEquipmentCraftCost('weapon');
 assert(weaponCraftCost.ironCost > 0, 'Silah demir maliyeti olmalı');
 assert(weaponCraftCost.woodCost > 0, 'Silah odun maliyeti olmalı');
-assert(weaponCraftCost.adaCost > 0, 'Silah AMM DEX ADA maliyeti olmalı');
+assert(weaponCraftCost.adaCost > 0, 'Silah AMM DEX ASTRA maliyeti olmalı');
 assert.equal(weaponCraftCost.fragCost, 1, 'Lv.1 üretim 1 parça talep etmeli');
 
 gs.state.warehouseLevel = 18;
@@ -206,7 +206,7 @@ for (let i = 0; i < 50; i++) {
   totalReturnedValueAda += (spinRes.reward.valAda || 0);
 }
 const simulatedRtp = (totalReturnedValueAda / totalPaidAda) * 100;
-console.log(`50 Çevirme Simülasyonu - Ödenen: ${totalPaidAda} ADA, Dağıtılan Değer: ${totalReturnedValueAda} ADA, RTP: %${simulatedRtp.toFixed(1)}`);
+console.log(`50 Çevirme Simülasyonu - Ödenen: ${totalPaidAda} ASTRA, Dağıtılan Değer: ${totalReturnedValueAda} ASTRA, RTP: %${simulatedRtp.toFixed(1)}`);
 assert(totalReturnedValueAda < totalPaidAda * 1.5, 'Kasa iflas ettirilemez (RTP dengesi korunmalı)');
 Math.random = realRandom;
 console.log('✅ Krallık Karnavalı Şans Çarkı mekaniği %100 doğrulandı.');

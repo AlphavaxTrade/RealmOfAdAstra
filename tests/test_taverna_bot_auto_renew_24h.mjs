@@ -38,8 +38,8 @@ const firstExpiry = gs.getAutoCollectorExpiry();
 assert(firstExpiry > Date.now(), 'Bot süresi gelecekte olmalı');
 console.log('✅ [2/5] Bot başarıyla başlatıldı. Bitiş süresi:', new Date(firstExpiry).toISOString());
 
-// 3. Test: 24 Saat Dolduğunda Yeterli ADA ile Canlı Otomatik Yenileme
-console.log('\n[3/5] 24 Saat Bittiğinde Otomatik Yenileme Kontrolü (Yeterli ADA)...');
+// 3. Test: 24 Saat Dolduğunda Yeterli ASTRA ile Canlı Otomatik Yenileme
+console.log('\n[3/5] 24 Saat Bittiğinde Otomatik Yenileme Kontrolü (Yeterli ASTRA)...');
 // Süreyi geçmiş zamana çekerek 24 saatin bittiğini simüle edelim
 const now = Date.now();
 gs.state.botActiveUntil = now - 5000;
@@ -55,11 +55,11 @@ assert.equal(status.justRenewed, true, 'updateBotPauseState justRenewed: true d�
 assert.equal(status.isBotPurchased, true, 'Bot hala aktif satın alınmış durumda olmalı');
 assert(gs.getAutoCollectorExpiry() > now, 'Yeni bot bitiş süresi geleceğe uzatılmış olmalı');
 assert(gs.state.adAstraBalance < prevBalance, 'Kullanıcının bakiyesinden bot bedeli tahsil edilmiş olmalı');
-console.log('✅ [3/5] Bot 24 saat bitince yeterli ADA ile otomatik tekrar satın alındı ve devam etti!');
+console.log('✅ [3/5] Bot 24 saat bitince yeterli ASTRA ile otomatik tekrar satın alındı ve devam etti!');
 
-// 4. Test: 24 Saat Dolduğunda Yetersiz ADA Durumu
-console.log('\n[4/5] 24 Saat Bittiğinde Yetersiz ADA ile Davranış...');
-gs.state.adAstraBalance = 0; // ADA yok
+// 4. Test: 24 Saat Dolduğunda Yetersiz ASTRA Durumu
+console.log('\n[4/5] 24 Saat Bittiğinde Yetersiz ASTRA ile Davranış...');
+gs.state.adAstraBalance = 0; // ASTRA yok
 gs.state.botActiveUntil = now - 5000;
 gs.state.tavernaBotExpiresAt = now - 5000;
 if (gs.state.activeBuffs && gs.state.activeBuffs.auto_collector) {

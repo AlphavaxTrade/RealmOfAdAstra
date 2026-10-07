@@ -118,7 +118,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       // Kullanıcı kararı (2 Ekim 2026): yeni hesap 0 ADA ve 0 kaynakla başlar
       gs.state.adAstraBalance = 0;
       gs.state.lockedAda = 0;
-      gs.state.inventory = { ...gs.state.inventory, wood: 0, iron: 0, wheat: 0, fragments: 0 };
+      gs.state.inventory = { ...gs.state.inventory, ...Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [k, 0])), fragments: 0 };   // v2: 6 hammadde
       gs.state.lockedBoxes = 0;
       gs.state.arenaKeys = 0;
     }

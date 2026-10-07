@@ -222,13 +222,14 @@ export const GAME_CONFIG = {
 
   // Kaynak Alanları (v2: 6 alan). totalCap = tarayıcı (tek oyunculu) modda kişi başı haftalık Üretim Hakkı
   // (taban × 168 saat × QPP_START 0,4); sunucuda dünya kapasitesi aktif oyuncu sayısıyla hesaplanır (server/world.js).
+  // v2: totalCap = taban × 60 × 20 saat × 6 gün × 0,40 (kişi başı kota) × ağırlık toplamı 1 — globalPool.computeWeekCapacity ile aynı
   GLOBAL_RESOURCE_CAPS: {
-    wheat: { id: 'wheat', name: 'Güneş Buğdayı',     icon: '🌾', color: '#facc15', totalCap: 36288, ratePerMinute: 9,   baseYieldPerHour: 540, requiredTool: 'sickle' },
-    stone: { id: 'stone', name: 'Vadi Taşı',          icon: '🪨', color: '#a8a29e', totalCap: 24192, ratePerMinute: 6,   baseYieldPerHour: 360, requiredTool: 'chisel' },
-    wood:  { id: 'wood',  name: 'Zümrüt Meşe Odunu',  icon: '🌲', color: '#4ade80', totalCap: 21773, ratePerMinute: 5.4, baseYieldPerHour: 324, requiredTool: 'axe' },
-    coal:  { id: 'coal',  name: 'Kara Kömür',         icon: '⚫', color: '#64748b', totalCap: 18144, ratePerMinute: 4.5, baseYieldPerHour: 270, requiredTool: 'coalpick' },
-    iron:  { id: 'iron',  name: 'Derin Demir Cevheri', icon: '⛏️', color: '#94a3b8', totalCap: 14515, ratePerMinute: 3.6, baseYieldPerHour: 216, requiredTool: 'pickaxe' },
-    herb:  { id: 'herb',  name: 'Şifalı Ot',          icon: '🌿', color: '#86efac', totalCap: 4838,  ratePerMinute: 1.2, baseYieldPerHour: 72,  requiredTool: 'herbknife' }
+    wheat: { id: 'wheat', name: 'Güneş Buğdayı',     icon: '🌾', color: '#facc15', totalCap: 25920, ratePerMinute: 9,   baseYieldPerHour: 540, requiredTool: 'sickle' },
+    stone: { id: 'stone', name: 'Vadi Taşı',          icon: '🪨', color: '#a8a29e', totalCap: 17280, ratePerMinute: 6,   baseYieldPerHour: 360, requiredTool: 'chisel' },
+    wood:  { id: 'wood',  name: 'Zümrüt Meşe Odunu',  icon: '🌲', color: '#4ade80', totalCap: 15552, ratePerMinute: 5.4, baseYieldPerHour: 324, requiredTool: 'axe' },
+    coal:  { id: 'coal',  name: 'Kara Kömür',         icon: '⚫', color: '#64748b', totalCap: 12960, ratePerMinute: 4.5, baseYieldPerHour: 270, requiredTool: 'coalpick' },
+    iron:  { id: 'iron',  name: 'Derin Demir Cevheri', icon: '⛏️', color: '#94a3b8', totalCap: 10368, ratePerMinute: 3.6, baseYieldPerHour: 216, requiredTool: 'pickaxe' },
+    herb:  { id: 'herb',  name: 'Şifalı Ot',          icon: '🌿', color: '#86efac', totalCap: 3456,  ratePerMinute: 1.2, baseYieldPerHour: 72,  requiredTool: 'herbknife' }
   },
 
   // Aletler (v2: 6 alet, ilk sürümde yalnız Acemi kademe; 72 saat = 4320 dakika dayanıklılık, dakikada 1 aşınma)

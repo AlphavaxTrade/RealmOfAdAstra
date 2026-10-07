@@ -106,6 +106,7 @@ export class GameStateManager {
       lockedBoxes: parsed.lockedBoxes || 0,
       arenaKeys: parsed.arenaKeys || 0,
       genesisNftMinted: parsed.genesisNftMinted || false,
+      uretim: parsed.uretim || null,   // v2: Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
       equipment: {
         weapon: null,
         helmet: null,
@@ -342,7 +343,7 @@ export class GameStateManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 🔒 KİLİTLİ BAKİYE · 🏅 KATKI PUANI · 💱 ADA FİYAT ÇARPANI (ekonomi kararı 30 Eylül 2026)
+  // 🔒 KİLİTLİ BAKİYE · 🏅 KATKI PUANI · 💱 ASTRA FİYAT ÇARPANI (ekonomi kararı 30 Eylül 2026)
   // adAstraBalance toplam bakiyedir ve oyunda tamamı harcanabilir. lockedAda bunun kilitli kısmıdır;
   // çekim (sunucu aşaması) yalnız serbest kısımdan yapılır. Katkı puanı, ortak haftalık çekim
   // havuzundan payı belirleyecek (sunucu aşaması); şimdilik yalnız biriktirilir.
@@ -370,12 +371,12 @@ export class GameStateManager {
       locked, free, total, freeSharePct: Math.round((L.FREE_SHARE ?? 0.2) * 100), spendBonusPct: Math.round(spend * 100),
       weeklyBasePct: base * 100, weeklyActivePct: active * 100,
       tomorrowActive, tomorrowIdle, weekActive, weekIdle, loggedToday,
-      // 1.000 ADA harcarsan: harcanan kilitliden düşer, üstüne harcananın %20'si serbest kalır
+      // 1.000 ASTRA harcarsan: harcanan kilitliden düşer, üstüne harcananın %20'si serbest kalır
       per1000Free: Math.min(Math.max(0, locked - 1000), 1000 * spend)
     };
   }
 
-  // Oyundan kazanılan ADA: FREE_SHARE serbest, kalanı kilitli. saleOf: pazara satılan hammadde (katkı puanı)
+  // Oyundan kazanılan ASTRA: FREE_SHARE serbest, kalanı kilitli. saleOf: pazara satılan hammadde (katkı puanı)
   _onAdaEarned(amount, { saleOf = null } = {}) {
     const v = Number(amount) || 0;
     if (!(v > 0)) return;
@@ -390,7 +391,7 @@ export class GameStateManager {
     }
   }
 
-  // Oyunda harcanan ADA: önce kilitli kısım kullanılır, üstüne harcananın UNLOCK_ON_SPEND'i kadar kilit açılır.
+  // Oyunda harcanan ASTRA: önce kilitli kısım kullanılır, üstüne harcananın UNLOCK_ON_SPEND'i kadar kilit açılır.
   // boughtResource: pazardan hammadde alımı — puan vermez, aynı hammaddenin sonraki satışından düşülür.
   _onAdaSpent(amount, { boughtResource = null } = {}) {
     const v = Number(amount) || 0;
@@ -453,7 +454,116 @@ export class GameStateManager {
     return { total: Math.round(c.total), week: Math.round(c.week), lastWeek: Math.round(c.lastWeek || 0) };
   }
 
-  // 💱 Sabit ADA fiyatları ve ödülleri çarpanla ölçeklenir (bkz. GAME_CONFIG.ADA_PRICE_MULTIPLIER)
+  // ═══════════════════════════════════════════════════════════════════════
+  // v2 (R2/R4): ÜRETİM HAKKI — kişisel haftalık pay (gün gün açılır), ağırlık, ortak kasa payı
+  // ═══════════════════════════════════════════════════════════════════════
+  _uretim() {
+    const ep = (globalPool && globalPool.state) ? globalPool.state.epochId : 1;
+    let u = this.state.uretim;
+    if (!u || typeof u !== 'object') u = this.state.uretim = { epochId: ep, used: zeroRes(), activeDays: [], since: this._now() };
+    if (u.epochId !== ep) { u.epochId = ep; u.used = zeroRes(); }
+    if (!u.used || typeof u.used !== 'object') u.used = zeroRes();
+    if (!Array.isArray(u.activeDays)) u.activeDays = [];
+    if (!u.since) u.since = this._now();
+    return u;
+  }
+
+  // Katkı kademesi: GEÇEN haftanın katkı puanı (eşikler fiyat çarpanıyla ölçekli)
+  getContributionTier() {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const tiers = U.TIERS || [{ id: 'none', name: 'Yok', min: 0, mult: 1 }];
+    const score = Number(this.getContributionInfo().lastWeek) || 0;
+    const mult = this.getAdaPriceMultiplier();
+    let best = tiers[0];
+    for (const t of tiers) if (score >= (t.min || 0) * mult) best = t;
+    return { ...best, score };
+  }
+
+  // Aktiflik: son 7 günde sefer toplanan gün sayısı / 7 (en az 0,25); ilk hafta tam sayılır
+  getUretimActivity() {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const u = this._uretim();
+    const now = this._now();
+    const DAY = 86400000;
+    if (now - (u.since || now) < 7 * DAY) return 1;
+    const today = Math.floor(now / DAY);
+    const days = u.activeDays.filter(d => d > today - 7 && d <= today).length;
+    return Math.max(U.ACTIVITY_MIN ?? 0.25, Math.min(1, days / 7));
+  }
+
+  getUretimWeight() {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const lvl = Math.max(1, Number(this.state.level) || 1);
+    const levelFactor = Math.min(U.LEVEL_WEIGHT_MAX ?? 2, 1 + (U.LEVEL_WEIGHT_PER_LEVEL ?? 0.025) * lvl);
+    const tier = this.getContributionTier();
+    const activity = this.getUretimActivity();
+    return { weight: round3(levelFactor * tier.mult * activity), levelFactor: round3(levelFactor), tier, activity: round3(activity) };
+  }
+
+  // Bu hafta bu kaynak için hakkın: haftalık, bugüne kadar açılan, kullanılan, alınabilir (dünya tavanıyla)
+  getUretimHakki(key) {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const params = globalPool.uretimParams();
+    const w = this.getUretimWeight();
+    const weekly = Math.floor(globalPool.weeklyRightPerWeight(key, params) * w.weight + 1e-6);
+    const dayIndex = globalPool.getEpochDayIndex();
+    const released = Math.floor(weekly * (dayIndex + 1) / 7);
+    const u = this._uretim();
+    const used = Math.floor(Number(u.used[key]) || 0);
+    const own = Math.max(0, released - used);
+    const info = globalPool.getResourceInfo(key);
+    // Başkalarının açılmış ama kullanmadığı hak: hakkını aşanlara (en çok FAIRNESS_CAP katına kadar) akar
+    const worldSpare = Math.max(0, (info.releasedCap || 0) - (info.harvestedThisWeek || 0) - own);
+    const fairnessCap = Math.floor(released * (U.FAIRNESS_CAP ?? 3));
+    const extra = own > 0 ? 0 : Math.max(0, Math.min(worldSpare, fairnessCap - used));
+    const canTake = Math.max(0, Math.min(own + extra, info.availableToday || 0));
+    return { key, weekly, released, used, remaining: own, extra, worldSpare, canTake, weight: w.weight, qpp: params.qpp[key], dayIndex, nextReleaseAt: info.nextReleaseAt, worldAvailable: info.availableToday || 0 };
+  }
+
+  getUretimSummary() {
+    return { weight: this.getUretimWeight(), rights: Object.fromEntries(RES_KEYS().map(k => [k, this.getUretimHakki(k)])), params: globalPool.uretimParams(), otorite: globalPool.otoriteWork(globalPool.uretimParams().otoriteLevel) };
+  }
+
+  _recordUretimUse(key, amount) {
+    const u = this._uretim();
+    u.used[key] = (Number(u.used[key]) || 0) + Math.max(0, Number(amount) || 0);
+    const today = Math.floor(this._now() / 86400000);
+    if (!u.activeDays.includes(today)) { u.activeDays.push(today); if (u.activeDays.length > 14) u.activeDays = u.activeDays.slice(-14); }
+    this.snapshotPriceRatios();
+  }
+
+  // Ortak kasa payı: çıkarılan miktarın %5'i dünya kapasitesinden ayrıca çıkarılır ve Konsey stoğuna girer; hak kullanımına sayılır
+  _takeKonseyShare(key, extracted) {
+    const rate = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
+    let share = Math.floor((Number(extracted) || 0) * rate);
+    if (share > 0) share = globalPool.takeForKonsey ? globalPool.takeForKonsey(key, share) : 0;
+    this._recordUretimUse(key, (Number(extracted) || 0) + share);
+    return share;
+  }
+
+  // Fiyat/açılış oranı (termostat girdisi): saatte bir ya da zorla kaydedilir
+  snapshotPriceRatios(force = false) {
+    if (typeof ammMarket === 'undefined' || !ammMarket || !ammMarket.getPrice || !globalPool || !globalPool.recordPriceRatios) return null;
+    const now = this._now();
+    const u = globalPool.state && globalPool.state.uretim;
+    if (!force && u && (now - (Number(u.priceAt) || 0)) < 3600000) return null;
+    const ratios = {};
+    for (const k of RES_KEYS()) {
+      const open = ((GAME_CONFIG.AMM_CORRIDORS || {})[k] || {}).defaultPriceAda || 0;
+      const p = ammMarket.getPrice(k) || 0;
+      if (open > 0 && p > 0) ratios[k] = Math.round((p / open) * 1000) / 1000;
+    }
+    globalPool.recordPriceRatios(ratios, now);
+    return ratios;
+  }
+
+  _fmtWait(ms) {
+    const s = Math.max(0, Math.round((Number(ms) || 0) / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h} sa ${m} dk` : `${Math.max(1, m)} dk`;
+  }
+
+  // 💱 Sabit ASTRA fiyatları ve ödülleri çarpanla ölçeklenir (bkz. GAME_CONFIG.ADA_PRICE_MULTIPLIER)
   getAdaPriceMultiplier() {
     const m = Number(this.state.adaPriceMultiplier);
     return isFinite(m) && m > 0 ? m : (GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1);
@@ -513,7 +623,7 @@ export class GameStateManager {
     return qty;
   }
 
-  // Asker satın alma maliyeti: İlk asker 5.000 $ADASTRA, 18. asker 1.800.000 $ADASTRA kademeli artan model
+  // Asker satın alma maliyeti: İlk asker 5.000 ASTRA, 18. asker 1.800.000 ASTRA kademeli artan model
   getSoldierCost(index = (this.state.soldierUnits || []).length + 1) {
     const n = Math.max(1, index);
     const base = GAME_CONFIG.SOLDIER_COST_BASE || 5000;
@@ -539,11 +649,11 @@ export class GameStateManager {
     const newIdx = this.state.soldierUnits.length + 1;
     const cost = this.getSoldierCost(newIdx);
     if ((this.state.adAstraBalance || 0) < cost) {
-      return { success: false, message: `Yetersiz $ADASTRA! ${newIdx}. asker için ${cost.toLocaleString()} ADA gerekir.` };
+      return { success: false, message: `Yetersiz ASTRA! ${newIdx}. asker için ${cost.toLocaleString()} ASTRA gerekir.` };
     }
     this.state.adAstraBalance -= cost;
     this._onAdaSpent(cost);
-    // v1'de bu satır YOKTU: 18 askerlik 324.000 ADA'lık harcama ne yakılıyor
+    // v1'de bu satır YOKTU: 18 askerlik 324.000 ASTRA'lık harcama ne yakılıyor
     // ne hazineye giriyordu — muhasebe dışı bir delikti (F-06).
     globalPool.recordTokenSpend(cost);
 
@@ -553,7 +663,7 @@ export class GameStateManager {
     sound.playLevelUp();
     return {
       success: true,
-      message: `⚔️ ${newUnit.icon} ${newUnit.name} (${newUnit.className}) orduya katıldı! (-${cost.toLocaleString()} ADA)`,
+      message: `⚔️ ${newUnit.icon} ${newUnit.name} (${newUnit.className}) orduya katıldı! (-${cost.toLocaleString()} ASTRA)`,
       soldier: newUnit,
       cost
     };
@@ -643,13 +753,13 @@ export class GameStateManager {
     const hp = Math.min(maxHp, Math.max(0, soldier.hp != null ? soldier.hp : maxHp));
     const missingHp = Math.max(0, maxHp - hp);
 
-    // 24 Saatlik Otomatik Pasif İyileşme Oranları (1 HP = 0.30 Buğday + 0.10 ADA)
+    // 24 Saatlik Otomatik Pasif İyileşme Oranları (1 HP = 0.30 Buğday + 0.10 ASTRA)
     const passiveWheatRate = passiveCfg.wheatPerHp != null ? passiveCfg.wheatPerHp : 0.30;
     const passiveAdaRate = (passiveCfg.adaPerHp != null ? passiveCfg.adaPerHp : 0.10) * this.getAdaPriceMultiplier();
     const passiveWheatNeeded = Math.round(missingHp * passiveWheatRate * 100) / 100;
     const passiveAdaCost = Math.round(missingHp * passiveAdaRate * 100) / 100;
 
-    // Hızlı Doldurma Oranları (24 Saatlik Formülün 10 Katı: 1 HP = 3 Buğday + 1 ADA)
+    // Hızlı Doldurma Oranları (24 Saatlik Formülün 10 Katı: 1 HP = 3 Buğday + 1 ASTRA)
     const fastWheatRate = fastCfg.wheatPerHp != null ? fastCfg.wheatPerHp : 3.0;
     const fastAdaRate = (fastCfg.adAstraPerHp != null ? fastCfg.adAstraPerHp : 1.0) * this.getAdaPriceMultiplier();
     const wheatNeeded = Math.round(missingHp * fastWheatRate * 100) / 100;
@@ -668,7 +778,7 @@ export class GameStateManager {
       hpPct: Math.floor((hp / maxHp) * 100),
       isFull: missingHp <= 0,
       isPaused,
-      pauseMessage: isPaused ? 'Hesabınızda yeteri kadar $ADASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.' : null,
+      pauseMessage: isPaused ? 'Hesabınızda yeteri kadar ASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.' : null,
       // 24 Saatlik Otomatik Pasif İyileşme
       passiveWheatRate,
       passiveAdaRate,
@@ -699,8 +809,8 @@ export class GameStateManager {
   }
 
   // 24 Saatlik Otomatik Pasif Asker İyileşmesi:
-  // Her 1 HP için: 24 saat boyunca toplam 0.30 Buğday + 0.10 ADA tüketerek kendi kendine yavaş yavaş dolar.
-  // Kural: Hesapta yeteri kadar buğday VEYA $ADASTRA yoksa süreç tamamen durdurulur!
+  // Her 1 HP için: 24 saat boyunca toplam 0.30 Buğday + 0.10 ASTRA tüketerek kendi kendine yavaş yavaş dolar.
+  // Kural: Hesapta yeteri kadar buğday VEYA ASTRA yoksa süreç tamamen durdurulur!
   processSoldierPassiveHealing(deltaSeconds) {
     if (!deltaSeconds || deltaSeconds <= 0) return { wheatRanOut: false, isPaused: false };
 
@@ -764,11 +874,11 @@ export class GameStateManager {
       this.state.isPassiveHealPaused = false;
     }
 
-    // Denetim (6 Ekim 2026): iyileşmede harcanan ADA eskiden hiçbir kasaya yazılmıyordu (kayboluyordu).
-    // Artık her harcama gibi dağıtılır. Küçük tutarlar birikir, 1 ADA'yı geçince deftere işlenir (her karede yazmamak için).
+    // Denetim (6 Ekim 2026): iyileşmede harcanan ASTRA eskiden hiçbir kasaya yazılmıyordu (kayboluyordu).
+    // Artık her harcama gibi dağıtılır. Küçük tutarlar birikir, 1 ASTRA'yı geçince deftere işlenir (her karede yazmamak için).
     if (healAdaSpent > 0) {
       const due = (Number(this.state.passiveHealAdaPending) || 0) + healAdaSpent;
-      if (due >= 0.01) {   // v2 ölçeği: 0,01 ASTRA biriktikçe deftere (eski eşik 1 ADA idi)
+      if (due >= 0.01) {   // v2 ölçeği: 0,01 ASTRA biriktikçe deftere (eski eşik 1 ASTRA idi)
         globalPool.recordTokenSpend(due);
         this.state.passiveHealAdaPending = 0;
       } else {
@@ -783,7 +893,7 @@ export class GameStateManager {
     };
   }
 
-  // '⚡ ANINDA DOYUR & İYİLEŞTİR': Kalan Buğday ihtiyacını + hızlı iyileştirme bedelini (ADA) anında harcayıp HP'yi MaxHP'ye tamamlar.
+  // '⚡ ANINDA DOYUR & İYİLEŞTİR': Kalan Buğday ihtiyacını + hızlı iyileştirme bedelini (ASTRA) anında harcayıp HP'yi MaxHP'ye tamamlar.
   instantHealSoldierUnit(soldierIndex) {
     const soldier = (this.state.soldierUnits || [])[soldierIndex];
     if (!soldier) return { success: false, message: 'Asker bulunamadı!' };
@@ -798,7 +908,7 @@ export class GameStateManager {
       return { success: false, message: `⚠️ Yetersiz Buğday! (${info.wheatNeeded} 🌾 gerekli, Depoda: ${info.wheatInStock})` };
     }
     if ((this.state.adAstraBalance || 0) < info.adaCost) {
-      return { success: false, message: `⚠️ Yetersiz $ADASTRA! (${info.adaCost} 🟣 ADA gerekli)` };
+      return { success: false, message: `⚠️ Yetersiz ASTRA! (${info.adaCost} 🟣 ASTRA gerekli)` };
     }
 
     inv.wheat -= info.wheatNeeded;
@@ -808,7 +918,7 @@ export class GameStateManager {
     soldier.hp = soldier.maxHp || 100;
 
     // 🔥 Hazine Muhasebesi ve Deflasyonist Yakım Entegrasyonu
-    // Hızlı doyurulan askerin harcanan ADA bedeli: bir kısmı kalıcı yakılır, çoğu hazine havuzlarına aktarılır (bkz. recordTokenSpend)
+    // Hızlı doyurulan askerin harcanan ASTRA bedeli: bir kısmı kalıcı yakılır, çoğu hazine havuzlarına aktarılır (bkz. recordTokenSpend)
     if (info.adaCost > 0) {
       globalPool.recordTokenSpend(info.adaCost);
     }
@@ -818,7 +928,7 @@ export class GameStateManager {
 
     return {
       success: true,
-      message: `⚡ ${soldier.name} anında tam cana kavuştu! (-${info.wheatNeeded} 🌾 Buğday, -${info.adaCost} 🟣 ADA • 🔥 %${Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100)} Yakıldı)`
+      message: `⚡ ${soldier.name} anında tam cana kavuştu! (-${info.wheatNeeded} 🌾 Buğday, -${info.adaCost} 🟣 ASTRA • 🔥 %${Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100)} Yakıldı)`
     };
   }
 
@@ -1116,7 +1226,7 @@ export class GameStateManager {
 
   // 2. Tavernadan AdAstra Karşılığında Staminayı Fullleme (DEVRE DIŞI - Stamina sadece Buğday ile doldurulabilir)
   instantRefillStamina() {
-    return { success: false, message: 'Stamina $ADASTRA ile doldurulamaz! Sadece buğday ile doldurulabilir.' };
+    return { success: false, message: 'Stamina ASTRA ile doldurulamaz! Sadece buğday ile doldurulabilir.' };
   }
 
   // =========================================================================
@@ -1405,8 +1515,8 @@ export class GameStateManager {
 
     // =========================================================================
     // 0. BOT ÇALIŞMA DURUMU & ÖNKOŞUL KONTROLÜ (Oto-Finansman / Asgari Oto-Tedarik)
-    // Eğer hammadde eksikse ve kasada ADA varsa botun durmaması için asgari (50x) tamamlanır.
-    // Kasada ADA yoksa bot duraklatılır ve süre dondurulur.
+    // Eğer hammadde eksikse ve kasada ASTRA varsa botun durmaması için asgari (50x) tamamlanır.
+    // Kasada ASTRA yoksa bot duraklatılır ve süre dondurulur.
     // =========================================================================
     // =========================================================================
     // 1. ÖNCE TAMAMLANAN SEFERLERİ TOPLA (Hasat)
@@ -1447,7 +1557,7 @@ export class GameStateManager {
         const repCost = this.calculateRepairCost(toolId);
         if (repCost && repCost.missingDurability > 0) {
           // A) Tamir bedeli ödenince kasa güvenlik payının altına inecekse, önce depodaki fazla üründen eşit miktarda
-          //    satarak ADA temin eder (v1.25: güvenlik payı yalnızca silo için değil, tamir için de korunur).
+          //    satarak ASTRA temin eder (v1.25: güvenlik payı yalnızca silo için değil, tamir için de korunur).
           //    Satacak ürün kalmadıysa tamir yine yapılır; bot durmaz.
           if (!this._botCanSpend(repCost.adAstraCost)) {
             const fundRes = this.autoFundBotAdaDeficit(repCost.adAstraCost + this.getBotAdaReserve(), { wood: repCost.woodCost, iron: repCost.ironCost });
@@ -1503,7 +1613,7 @@ export class GameStateManager {
     // 4. SİLO DURUMUNU KONTROL ET & SİLOYU YÜKSELT (Veya Kaynakları Sat)
     // SADECE VE SADECE bu döngüde tamamlanan bir sefer toplanmışsa (hasClaimedAny) kontrol edilir!
     // Bu sayede bot satın alındığı ilk milisaniyede veya boşta beklerken kontrolsüz ani seviye atlayıp
-    // kullanıcının kasasındaki ADA'yı eritmesi kökten engellenir.
+    // kullanıcının kasasındaki ASTRA'yı eritmesi kökten engellenir.
     // =========================================================================
     if (this.state.botSiloAutoUpgrade) {
       if (hasClaimedAny) {
@@ -1522,7 +1632,7 @@ export class GameStateManager {
         for (const nid of nodes) {
           const spaceRes = this.handleBotSiloSpace(nid, 1);
           if (spaceRes && spaceRes.action === 'sold') {
-            actions.push(`⚖️ Satış Modu (%50 Rezerve): ${spaceRes.amountSold} ${nid} satıldı (+${spaceRes.adAstraReceived?.toFixed(1)} ADA).`);
+            actions.push(`⚖️ Satış Modu (%50 Rezerve): ${spaceRes.amountSold} ${nid} satıldı (+${spaceRes.adAstraReceived?.toFixed(1)} ASTRA).`);
           }
         }
       }
@@ -1597,11 +1707,11 @@ export class GameStateManager {
   }
 
   /**
-   * 🤖 Bot Çalışırken ADA Yetersizliği Durumunda Depodan Eşit Miktarda Kaynak Satışı
-   * Kullanıcı kuralı: Bot alet onarırken veya çalışırken hesapta yeteri kadar ADA yok ise bot,
-   * aletleri onarmak için ihtiyaç duyduğu ADA miktarı kadar elindeki kaynaklardan
-   * eşit miktarda satarak pazardan ADA elde eder.
-   * @param {number} neededTarget - Hedef ADA tutarı (Örn: aletin onarım bedeli)
+   * 🤖 Bot Çalışırken ASTRA Yetersizliği Durumunda Depodan Eşit Miktarda Kaynak Satışı
+   * Kullanıcı kuralı: Bot alet onarırken veya çalışırken hesapta yeteri kadar ASTRA yok ise bot,
+   * aletleri onarmak için ihtiyaç duyduğu ASTRA miktarı kadar elindeki kaynaklardan
+   * eşit miktarda satarak pazardan ASTRA elde eder.
+   * @param {number} neededTarget - Hedef ASTRA tutarı (Örn: aletin onarım bedeli)
    * @param {Object|null} preserveResources - Satılmaması gereken hammadde rezervi (Örn: tamirde harcanacak {wood, iron})
    */
   autoFundBotAdaDeficit(neededTarget = 50, preserveResources = null) {
@@ -1785,8 +1895,8 @@ export class GameStateManager {
   }
 
   /**
-   * 🤖 Bot Çalışırken Hammadde Yetersizliği Durumunda Kasadaki ADA ile AMM'den Asgari Satın Alma (Oto-Tedarik)
-   * KULLANICI KURALI: Botun durmaması için kasada ADA varken AMM pazarından SADECE ve SADECE
+   * 🤖 Bot Çalışırken Hammadde Yetersizliği Durumunda Kasadaki ASTRA ile AMM'den Asgari Satın Alma (Oto-Tedarik)
+   * KULLANICI KURALI: Botun durmaması için kasada ASTRA varken AMM pazarından SADECE ve SADECE
    * eksik olan miktar kadar (asgari 50 birimlik önkoşulu tamamlayacak kadar minimal) alım yapılır.
    * Siloyu dolduracak biçimde yüzlerce kaynak asla alınmaz; sadece botun kesintisiz çalışması sağlanır.
    */
@@ -1874,7 +1984,7 @@ export class GameStateManager {
 
     if (totalSpentAda > 0) {
       this.saveState();
-      const actionMsg = `🛒 Bot Asgari Oto-Tedarik: Botun durmaması için kasadaki ADA ile AMM pazarından ${totalSpentAda.toFixed(1)} ADA harcanarak (${itemsPurchasedText.join(', ')}) tamamlandı.`;
+      const actionMsg = `🛒 Bot Asgari Oto-Tedarik: Botun durmaması için kasadaki ASTRA ile AMM pazarından ${totalSpentAda.toFixed(1)} ASTRA harcanarak (${itemsPurchasedText.join(', ')}) tamamlandı.`;
       if (!this.state.lastBotActions) this.state.lastBotActions = [];
       this.state.lastBotActions.push(actionMsg);
 
@@ -1921,9 +2031,9 @@ export class GameStateManager {
     let prereq = this.checkBotPrerequisites();
 
     // 🤖 KULLANICI KURALI: Çift Yönlü Bot Dengeleme ve Kesintisiz Çalışma Motoru!
-    // v1.25: Sat-al kısır döngüsü kaldırıldı. Eskiden ADA ve bir malzeme aynı anda 50'nin altındayken bot
+    // v1.25: Sat-al kısır döngüsü kaldırıldı. Eskiden ASTRA ve bir malzeme aynı anda 50'nin altındayken bot
     // eksik malzemeyi de satıp hemen geri alıyordu (saniyede onlarca işlem, her turda komisyon kaybı).
-    // Artık: satış yalnızca 50'nin ÜSTÜNDEKİ fazladan yapılır, alım yalnızca 50 ADA'nın ÜSTÜNDEKİ parayla yapılır.
+    // Artık: satış yalnızca 50'nin ÜSTÜNDEKİ fazladan yapılır, alım yalnızca 50 ASTRA'nın ÜSTÜNDEKİ parayla yapılır.
     if (!prereq.isMet) {
       const hasAdaMissing = prereq.missing.some(m => m.key === 'adAstra');
       const resMissing = prereq.missing.filter(m => RES_KEYS().includes(m.key));
@@ -1943,7 +2053,7 @@ export class GameStateManager {
       }
     }
 
-    // 2) KULLANICI KURALI: Eğer Hammadde (Odun, Demir, Buğday) < 50 olduğu için duracaksa ve kasada ADA varsa:
+    // 2) KULLANICI KURALI: Eğer Hammadde (Odun, Demir, Buğday) < 50 olduğu için duracaksa ve kasada ASTRA varsa:
     // Pazarından SADECE eksik olan kadar (50'ye tamamlayacak kadar minimal) satın al ve botun durmasını engelle!
     if (!prereq.isMet) {
       const hasResourceMissing = prereq.missing.some(m => RES_KEYS().includes(m.key));
@@ -1956,7 +2066,7 @@ export class GameStateManager {
     }
 
     if (!prereq.isMet) {
-      // Koşullar sağlanmıyor (Hammadde veya ADA < 50 ve kasada satın alacak ADA yok) -> BOT DURAKLATILMALI VE SÜRESİ DONDURULMALI!
+      // Koşullar sağlanmıyor (Hammadde veya ASTRA < 50 ve kasada satın alacak ASTRA yok) -> BOT DURAKLATILMALI VE SÜRESİ DONDURULMALI!
       if (!this.state.botPaused) {
         this.state.botPaused = true;
         const remainingMs = Math.max(1000, rawExp - now);
@@ -1975,7 +2085,7 @@ export class GameStateManager {
       }
       return { isBotPurchased: true, isPaused: true, prereq };
     } else {
-      // Koşullar tam! (En az 50 Demir, 50 Odun, 50 Buğday, 50 ADA mevcut)
+      // Koşullar tam! (En az 50 Demir, 50 Odun, 50 Buğday, 50 ASTRA mevcut)
       if (this.state.botPaused) {
         // Bot duraklatılmıştı, ŞİMDİ ANINDA UYANDIRILACAK (RESUME)!
         this.state.botPaused = false;
@@ -2169,8 +2279,15 @@ export class GameStateManager {
     }
 
     // 2. Durum: Depoda yer var - boş yeri tam dolduracak kadarını al, kalanı seferde bırak
-    const amountToHarvest = Math.min(accruedInfo.accruedAmount, availableRoom);
+    // v2: erken toplama da Üretim Hakkı ile sınırlı (ortak kasa payı için 1/1,05)
+    const hakP = this.getUretimHakki(nodeId);
+    const wantP = Math.min(accruedInfo.accruedAmount, availableRoom);
+    const amountToHarvest = Math.max(0, Math.min(wantP, Math.floor(hakP.canTake / (1 + Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05)))));
+    if (wantP > 0 && amountToHarvest <= 0) {
+      return { success: false, isQuotaWait: true, nodeId, message: `⏳ Üretim Hakkın doldu (${Math.floor(hakP.used).toLocaleString('tr-TR')} / ${Math.floor(hakP.released).toLocaleString('tr-TR')}); biriken mahsul seferde izin bekliyor. Yeni hak ${this._fmtWait(hakP.nextReleaseAt - this._now())} sonra açılır.` };
+    }
     const requested = globalPool.harvest(nodeId, amountToHarvest);
+    this._takeKonseyShare(nodeId, requested);
     const { stored: harvestedAmount, overflow } = this.storeResource(nodeId, requested);
     if (playerTool) {
       playerTool.totalGathered = (playerTool.totalGathered || 0) + harvestedAmount;
@@ -2255,7 +2372,7 @@ export class GameStateManager {
     const lostQty = amount - soldQty;
     const name = this.getResourceNameTr ? this.getResourceNameTr(resourceKey) : resourceKey;
     if (!this._isFastForwarding) {
-      if (soldQty > 0) this.pushNotice(`📦 ${reason}: siloya sığmayan ${soldQty.toLocaleString('tr-TR')} ${name} pazarda satıldı (+${adaGained.toFixed(1)} ADA).`, 'info');
+      if (soldQty > 0) this.pushNotice(`📦 ${reason}: siloya sığmayan ${soldQty.toLocaleString('tr-TR')} ${name} pazarda satıldı (+${adaGained.toFixed(1)} ASTRA).`, 'info');
       if (lostQty > 0) this.pushNotice(`⚠️ ${reason}: ${lostQty.toLocaleString('tr-TR')} ${name} siloya sığmadı ve pazar taban fiyatta olduğu için satılamadı.`, 'error');
     }
     return { soldQty, adaGained, lostQty };
@@ -2360,12 +2477,34 @@ export class GameStateManager {
     }
 
     // 2. Durum: Depoda yer var veya bot artanı markette sattı!
-    const harvestAmount = Math.min(remainingToClaim, availableRoom);
+    // v2: Üretim Hakkı — kişisel haftalık pay gün gün açılır; hak dolunca mahsul seferde bekler (izin bekliyor).
+    // Ortak kasa payı (%5) hakkın içinden ayrıca çıkarılır: hakkın 1/1,05'i siloya girer.
+    const hak = this.getUretimHakki(nodeId);
+    const chestRate = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
+    const wantAmount = Math.min(remainingToClaim, availableRoom);
+    const harvestAmount = Math.max(0, Math.min(wantAmount, Math.floor(hak.canTake / (1 + chestRate))));
+    const quotaWait = Math.max(0, wantAmount - harvestAmount);
+    if (wantAmount > 0 && harvestAmount <= 0) {
+      exp.isCompleted = true;
+      exp.stillRemaining = remainingToClaim;
+      this.saveState();
+      return {
+        success: false,
+        isQuotaWait: true,
+        nodeId,
+        remainingToClaim,
+        stillRemaining: remainingToClaim,
+        hak,
+        message: `⏳ Üretim Hakkın doldu: bu hafta ${nodeConfig.name} için ${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')} birim çıkardın. Kalan ${remainingToClaim} ${rLabel} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.`
+      };
+    }
     let harvestedAmount = 0;
+    let konseyShare = 0;
     if (harvestAmount > 0) {
       const fromPool = globalPool.harvest(nodeId, harvestAmount);
       const storedRes = this.storeResource(nodeId, fromPool);
       harvestedAmount = storedRes.stored;
+      konseyShare = this._takeKonseyShare(nodeId, fromPool);
     }
 
     const totalClaimedThisStep = harvestedAmount;
@@ -2407,8 +2546,9 @@ export class GameStateManager {
       this.saveState();
 
       let msg = `🌾 ${harvestedAmount} ${nodeConfig.name} başarıyla toplandı ve ambarınıza eklendi! (+${xpGained} XP)`;
+      if (konseyShare > 0) msg += ` 🏛️ Ortak kasaya ${konseyShare} ${nodeConfig.name} (%5).`;
       if (botSurplusSold > 0) {
-        msg = `🤖 Ambar doldu: ${harvestedAmount} ${nodeConfig.name} depolandı (%100 silo). Fazla gelen ${botSurplusSold} ${nodeConfig.name} AMM'de satıldı (+${botSurplusAdaEarned.toFixed(1)} ADA, +${xpGained} XP). Sefer tamamlandı!`;
+        msg = `🤖 Ambar doldu: ${harvestedAmount} ${nodeConfig.name} depolandı (%100 silo). Fazla gelen ${botSurplusSold} ${nodeConfig.name} AMM'de satıldı (+${botSurplusAdaEarned.toFixed(1)} ASTRA, +${xpGained} XP). Sefer tamamlandı!`;
       }
 
       return {
@@ -2421,6 +2561,7 @@ export class GameStateManager {
         resourceName: nodeConfig.name,
         botSurplusSold,
         botSurplusAdaEarned,
+        konseyShare,
         stillRemaining: 0,
         message: msg
       };
@@ -2438,6 +2579,7 @@ export class GameStateManager {
 
       sound.playHarvest();
       this.saveState();
+      const quotaMsg = quotaWait > 0 ? `⏳ Üretim Hakkı: +${harvestedAmount} ${nodeConfig.name} toplandı (+${xpGained} XP); hakkın doldu (${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')}). Kalan ${stillRemaining} ${rLabel} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.` : null;
 
       return {
         success: true,
@@ -2450,7 +2592,9 @@ export class GameStateManager {
         stillRemaining,
         currentAmount: this.state.inventory[nodeId],
         limit,
-        message: `📥 Silodaki boş alan kadar +${harvestedAmount} ${nodeConfig.name} depoya aktarıldı ve ambarınız doldu (${this.state.inventory[nodeId]}/${limit})! (+${xpGained} XP) Kalan ${stillRemaining} ${nodeConfig.name} seferde bekletiliyor. Depoda yer açtığınızda veya silonuzu büyüttüğünüzde kalan mahsulü de toplayabilirsiniz.`
+        message: `📥 Silodaki boş alan kadar +${harvestedAmount} ${nodeConfig.name} depoya aktarıldı ve ambarınız doldu (${this.state.inventory[nodeId]}/${limit})! (+${xpGained} XP) Kalan ${stillRemaining} ${nodeConfig.name} seferde bekletiliyor. Depoda yer açtığınızda veya silonuzu büyüttüğünüzde kalan mahsulü de toplayabilirsiniz.`,
+        ...(quotaWait > 0 ? { isQuotaWait: true, message: quotaMsg } : {}),
+        konseyShare
       };
     }
   }
@@ -2653,8 +2797,8 @@ export class GameStateManager {
   // 35×süreSaat. İki eğri arasındaki uçurum kapatılamıyordu:
   //     Lv.30  →  1.257.370 XP  →  4,1 YIL kesintisiz oyun
   //     Lv.81  → 128.726.298 XP →  420 YIL
-  // Alt uçta da kırıktı: Lv.2 için 6.527 ADA gerekiyordu ama oyuncu 250 ADA
-  // ile başlıyor ve TÜM DÜNYANIN haftalık hammadde geliri 6.264 ADA idi.
+  // Alt uçta da kırıktı: Lv.2 için 6.527 ASTRA gerekiyordu ama oyuncu 250 ASTRA
+  // ile başlıyor ve TÜM DÜNYANIN haftalık hammadde geliri 6.264 ASTRA idi.
   //
   // v2'de eğri tersinden kurulur: "Lv.81 yaklaşık 1.100 günde (3 yıl)
   // ulaşılabilir olsun" denir ve XP maliyeti buradan türetilir.
@@ -2695,7 +2839,7 @@ export class GameStateManager {
     const iron = Math.round(totalIron / 2);
     const wheat = Math.round(totalWheat / 2);
 
-    // ADA maliyeti: AMM DEX pazar yerinde istenen odun, demir ve buğdayın anlık toplam AdAstra değeri!
+    // ASTRA maliyeti: AMM DEX pazar yerinde istenen odun, demir ve buğdayın anlık toplam AdAstra değeri!
     let adAstra = 0;
     let ammBreakdown = { wood: 0, iron: 0, wheat: 0 };
     if (typeof ammMarket !== 'undefined' && ammMarket && ammMarket.calculateResourcesAdAstraValue) {
@@ -2767,7 +2911,7 @@ export class GameStateManager {
       return { success: false, message: `Yetersiz Buğday! (${req.wheat} Buğday gerekli)` };
     }
     if (this.state.adAstraBalance < req.adAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${req.adAstra} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${req.adAstra} ASTRA gerekli)` };
     }
 
     // Maliyetleri düş
@@ -2806,7 +2950,7 @@ export class GameStateManager {
 
     const troopCost = this.adaPrice(troop.costAdAstra);
     if (this.state.adAstraBalance < troopCost) {
-      return { success: false, message: `Yetersiz AdAstra! (${troopCost} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${troopCost} ASTRA gerekli)` };
     }
 
     this.state.adAstraBalance -= troopCost;
@@ -2834,7 +2978,7 @@ export class GameStateManager {
 
   buyTavernBuff(buffId) {
     // v1.25: Otomasyon botu yalnızca Taverna'dan güncel (kâr ortaklığı) fiyatıyla alınır. Eski sabit
-    // fiyatlı paketler (24 saat 1.800 ADA vb.) gerçek ücretin çok altındaydı; bu yol kapatıldı.
+    // fiyatlı paketler (24 saat 1.800 ASTRA vb.) gerçek ücretin çok altındaydı; bu yol kapatıldı.
     if (String(buffId || '').startsWith('auto_collector')) {
       return { success: false, message: 'Otomasyon botu yalnızca Taverna\'dan güncel fiyatıyla alınabilir.' };
     }
@@ -2843,7 +2987,7 @@ export class GameStateManager {
 
     const buffCost = this.adaPrice(buffConfig.costAdAstra);
     if (this.state.adAstraBalance < buffCost) {
-      return { success: false, message: `Yetersiz AdAstra! (${buffCost} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${buffCost} ASTRA gerekli)` };
     }
 
     this.state.adAstraBalance -= buffCost;
@@ -2871,7 +3015,7 @@ export class GameStateManager {
   }
 
   // =========================================================================
-  // 5. ALET TAMİRATI (Dakika Başına Odun & Demir Üretiminin %25/3'ü + 1 ADA)
+  // 5. ALET TAMİRATI (Dakika Başına Odun & Demir Üretiminin %25/3'ü + 1 ASTRA)
   // =========================================================================
   calculateRepairCost(toolId) {
     const toolConfig = GAME_CONFIG.TOOLS[toolId];
@@ -2962,9 +3106,9 @@ export class GameStateManager {
       };
     }
     if (this.state.adAstraBalance < cost.adAstraCost) {
-      // 🤖 KULLANICI KURALI: Eğer alet onarırken hesapta yeteri kadar ADA yok ise bot,
-      // aletleri onarmak için ihtiyaç duyduğu ADA miktarı kadar elindeki kaynaklardan
-      // eşit miktarda satarak pazardan ADA elde eder!
+      // 🤖 KULLANICI KURALI: Eğer alet onarırken hesapta yeteri kadar ASTRA yok ise bot,
+      // aletleri onarmak için ihtiyaç duyduğu ASTRA miktarı kadar elindeki kaynaklardan
+      // eşit miktarda satarak pazardan ASTRA elde eder!
       const isBotActive = this.hasPurchasedBot();
       if (isBotActive) {
         this.autoFundBotAdaDeficit(cost.adAstraCost, { wood: cost.woodCost, iron: cost.ironCost });
@@ -3271,8 +3415,8 @@ export class GameStateManager {
   // ═══════════════════════════════════════════════════════════════════════
   // 🔨 YENİ MATEMATİKSEL TEÇHİZAT CRAFT, UPGRADE VE ONARIM MOTORU
   // ═══════════════════════════════════════════════════════════════════════
-  // 1 ATK = 18 dk Odun (324) + 18 dk Demir (216) + AMM DEX ADA + 1 Parça
-  // 1 HP  = 21 dk Odun (378) + 21 dk Demir (252) + AMM DEX ADA + 1 Parça
+  // 1 ATK = 18 dk Odun (324) + 18 dk Demir (216) + AMM DEX ASTRA + 1 Parça
+  // 1 HP  = 21 dk Odun (378) + 21 dk Demir (252) + AMM DEX ASTRA + 1 Parça
   // Upgrade: Hammadde +%18 (1.18x), Parça 2 katı (1 -> 2 -> 4 -> 8 -> 16)
   // Dayanıklılık: 13/13 (Zafere -1). Sıfırlanınca yenileme: Kümülatif üretimin %10'u
   // ═══════════════════════════════════════════════════════════════════════
@@ -3358,7 +3502,7 @@ export class GameStateManager {
       return { success: false, message: `Yetersiz Kömür! (${cost.coal} Kömür gerekli)` };
     }
     if (this.state.adAstraBalance < cost.adAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstra} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstra} ASTRA gerekli)` };
     }
 
     inv.fragments = (inv.fragments || 0) - cost.fragments;
@@ -3406,7 +3550,7 @@ export class GameStateManager {
   }
 
   // 2. Ekipman Geliştirme Maliyeti (Upgrade Cost)
-  // Kaynaklar +%18 artar, Parçalar 2 katına çıkar, ADA ise AMM DEX pazar değerine eşittir
+  // Kaynaklar +%18 artar, Parçalar 2 katına çıkar, ASTRA ise AMM DEX pazar değerine eşittir
   calculateEquipmentUpgradeCost(itemOrSlot, soldierIndex = null) {
     let item = null;
     if (typeof itemOrSlot === 'object' && itemOrSlot !== null) {
@@ -3463,7 +3607,7 @@ export class GameStateManager {
       return { success: false, message: `Yetersiz Odun! (${cost.woodCost} Odun gerekli)` };
     }
     if (this.state.adAstraBalance < cost.adAstraCost) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstraCost} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstraCost} ASTRA gerekli)` };
     }
 
     inv.fragments = (inv.fragments || 0) - cost.fragmentCost;
@@ -3491,7 +3635,7 @@ export class GameStateManager {
   }
 
   // 3. Teçhizat Onarım Maliyeti (Repair Cost)
-  // Kural: Dayanıklılık sıfırlanınca üretim kaynaklarının %10'u (Odun+Demir+AMM DEX ADA). Kısmi hasarda oranlanır.
+  // Kural: Dayanıklılık sıfırlanınca üretim kaynaklarının %10'u (Odun+Demir+AMM DEX ASTRA). Kısmi hasarda oranlanır.
   calculateEquipmentRepairCost(itemOrSlot, soldierIndex = null) {
     let item = null;
     if (typeof itemOrSlot === 'object' && itemOrSlot !== null) {
@@ -3549,7 +3693,7 @@ export class GameStateManager {
       return { success: false, message: `Yetersiz Teçhizat Parçası! (${cost.fragCost} Teçhizat Parçaları gerekli)` };
     }
     if ((this.state.adAstraBalance || 0) < cost.adaCost) {
-      return { success: false, message: `Yetersiz $ADASTRA! (${cost.adaCost} ADA gerekli)` };
+      return { success: false, message: `Yetersiz ASTRA! (${cost.adaCost} ASTRA gerekli)` };
     }
 
     inv.iron -= cost.ironCost;
@@ -3843,7 +3987,7 @@ export class GameStateManager {
     const inv = this.state.inventory;
     if ((inv.iron || 0) < totalIron) return { success: false, message: `Yetersiz Demir! (${totalIron} Demir gerekli)` };
     if ((inv.wood || 0) < totalWood) return { success: false, message: `Yetersiz Odun! (${totalWood} Odun gerekli)` };
-    if ((this.state.adAstraBalance || 0) < totalAda) return { success: false, message: `Yetersiz $ADASTRA! (${totalAda} ADA gerekli)` };
+    if ((this.state.adAstraBalance || 0) < totalAda) return { success: false, message: `Yetersiz ASTRA! (${totalAda} ASTRA gerekli)` };
 
     inv.iron -= totalIron;
     inv.wood -= totalWood;
@@ -3862,7 +4006,7 @@ export class GameStateManager {
     return {
       success: true,
       repairedCount,
-      message: `🔨 Krallıktaki ${repairedCount} parça teçhizat tek seferde onarıldı! (-${totalWood} Odun, -${totalIron} Demir, -${totalAda} ADA)`
+      message: `🔨 Krallıktaki ${repairedCount} parça teçhizat tek seferde onarıldı! (-${totalWood} Odun, -${totalIron} Demir, -${totalAda} ASTRA)`
     };
   }
 
@@ -4067,7 +4211,7 @@ export class GameStateManager {
     if (!useFree && this.state.adAstraBalance < cost) {
       return {
         success: false,
-        message: `Yetersiz $ADASTRA! ${h} Saatlik Otomasyon Botu için ${cost.toLocaleString()} ADA gereklidir (Saf kârın %50'si).`
+        message: `Yetersiz ASTRA! ${h} Saatlik Otomasyon Botu için ${cost.toLocaleString()} ASTRA gereklidir (Saf kârın %50'si).`
       };
     }
 
@@ -4112,7 +4256,7 @@ export class GameStateManager {
       costPaid: cost,
       message: useFree
         ? `🤖 ${h} Saatlik Otomasyon Botu hediye olarak aktifleştirildi!`
-        : `🤖 ${h} Saatlik Otomasyon Botu aktifleştirildi! (Maliyet: ${cost.toLocaleString()} ADA, Kâr Ortaklığı: %50)`
+        : `🤖 ${h} Saatlik Otomasyon Botu aktifleştirildi! (Maliyet: ${cost.toLocaleString()} ASTRA, Kâr Ortaklığı: %50)`
     };
   }
 
@@ -4146,7 +4290,7 @@ export class GameStateManager {
   /**
    * 🔄 24 Saatlik Botun Süresi Bittiğinde Otomatik Yeniden Satın Alınması
    * Kullanıcı kuralı: Kişi 24 saatlik bot alırsa ve "24 saat bitince hesapta yeterli adastra
-   * varsa tekrar bot al ve devam et" seçeneğini seçerse, hesapta yeteri kadar ADA olursa
+   * varsa tekrar bot al ve devam et" seçeneğini seçerse, hesapta yeteri kadar ASTRA olursa
    * bot 24 saat bitince otomatik yine satın alınır ve bir 24 saat daha çalışmaya devam eder.
    */
   checkAndProcessBotAutoRenew() {
@@ -4172,13 +4316,13 @@ export class GameStateManager {
       if (buyRes && buyRes.success) {
         this.state.botRenewCount = (this.state.botRenewCount || 0) + 1;
         if (!this.state.lastBotActions) this.state.lastBotActions = [];
-        this.state.lastBotActions.push(`🔄 Bot Otomatik Yenilendi: 24 saat tamamlandı. Kasadaki ${cost.toLocaleString()} $ADASTRA ile bot 24 saat daha uzatıldı ve kesintisiz çalışıyor.`);
+        this.state.lastBotActions.push(`🔄 Bot Otomatik Yenilendi: 24 saat tamamlandı. Kasadaki ${cost.toLocaleString()} ASTRA ile bot 24 saat daha uzatıldı ve kesintisiz çalışıyor.`);
         this.saveState();
         return true;
       }
     } else {
       if (!this.state.lastBotActions) this.state.lastBotActions = [];
-      this.state.lastBotActions.push(`⚠️ Bot Otomatik Yenilenemedi: 24 saat tamamlandı ancak hesapta yeterli $ADASTRA (${(this.state.adAstraBalance || 0).toFixed(1)} / ${cost.toLocaleString()} ADA) olmadığı için bot durduruldu.`);
+      this.state.lastBotActions.push(`⚠️ Bot Otomatik Yenilenemedi: 24 saat tamamlandı ancak hesapta yeterli ASTRA (${(this.state.adAstraBalance || 0).toFixed(1)} / ${cost.toLocaleString()} ASTRA) olmadığı için bot durduruldu.`);
       this.state.botActiveUntil = 0;
       this.state.tavernaBotActive = false;
       this.state.tavernaBotExpiresAt = 0;
@@ -4194,12 +4338,12 @@ export class GameStateManager {
    * 🤖 24 Saatlik Otomasyon Botu - Kapsamlı Akıllı Silo Alanı Yönetimi
    * Kullanıcı Talimatları Doğrultusunda:
    * 1. Silonun yükseltilebilip yükseltilemeyeceğini kontrol eder; botSiloAutoUpgrade === true ise HER ZAMAN ÖNCE SİLOYU YÜKSELTİR.
-   * 2. Yükseltme için tüm depolar %80 doluluğa ulaşmış fakat yeterli ADA yoksa:
-   *    Silonun %80 doluluğunu korur, %80 üzerindeki fazlalığı silo yükseltmek için gereken ADA birikene kadar AMM'de satar!
+   * 2. Yükseltme için tüm depolar %80 doluluğa ulaşmış fakat yeterli ASTRA yoksa:
+   *    Silonun %80 doluluğunu korur, %80 üzerindeki fazlalığı silo yükseltmek için gereken ASTRA birikene kadar AMM'de satar!
    * 3. Silonun yükseltilemediği durumlarda:
    *    Seferden elde edilecek kaynak miktarı kadar siloda yer açacak kadar AMM'den satış yapar (tam gereken yer açılır).
    * 4. botSiloAutoUpgrade === false (Kaynakları Sat Modu) ise:
-   *    Silonun yarısını (%50) rezerve korur, fazlasını sürekli AMM'de satarak ADA'ya dönüştürür.
+   *    Silonun yarısını (%50) rezerve korur, fazlasını sürekli AMM'de satarak ASTRA'ya dönüştürür.
    */
   handleBotSiloSpace(nodeId, harvestYield) {
     const capMap = this.getWarehouseCapacity();
@@ -4259,7 +4403,7 @@ export class GameStateManager {
               };
               this.saveState();
 
-              // Satış sonrası ADA tamamlandıysa anında yükseltmeyi dene!
+              // Satış sonrası ASTRA tamamlandıysa anında yükseltmeyi dene!
               const freshCost = this.getWarehouseUpgradeCost();
               if (freshCost && freshCost.canUpgrade && canAutoUpgradeTime && this._botCanSpend(freshCost.adAstra)) {
                 const freshUp = this.upgradeWarehouse();
@@ -4274,7 +4418,7 @@ export class GameStateManager {
                 action: 'sold_for_ada',
                 amountSold: amountToSell,
                 adAstraReceived: sellRes.adAstraReceived,
-                message: `🤖 Silo yükseltme ADA açığını kapatmak için %80 barajı üzerindeki ${amountToSell} ${nodeId} satıldı (+${sellRes.adAstraReceived.toFixed(1)} ADA).`
+                message: `🤖 Silo yükseltme ASTRA açığını kapatmak için %80 barajı üzerindeki ${amountToSell} ${nodeId} satıldı (+${sellRes.adAstraReceived.toFixed(1)} ASTRA).`
               };
             }
           }
@@ -4311,7 +4455,7 @@ export class GameStateManager {
               action: 'sold',
               amountSold: amountToSell,
               adAstraReceived: sellRes.adAstraReceived,
-              message: `🤖 Sefer hasadı için tam gereken yer açıldı: ${amountToSell} ${nodeId} AMM'de satıldı (+${sellRes.adAstraReceived.toFixed(1)} ADA).`
+              message: `🤖 Sefer hasadı için tam gereken yer açıldı: ${amountToSell} ${nodeId} AMM'de satıldı (+${sellRes.adAstraReceived.toFixed(1)} ASTRA).`
             };
           }
         }
@@ -4349,7 +4493,7 @@ export class GameStateManager {
             action: 'sold',
             amountSold: amountToSell,
             adAstraReceived: sellRes.adAstraReceived,
-            message: `🤖 Kaynak Satış Modu: Silo yarısı (%50) korunup ${amountToSell} ${nodeId} satıldı (+${sellRes.adAstraReceived.toFixed(1)} ADA).`
+            message: `🤖 Kaynak Satış Modu: Silo yarısı (%50) korunup ${amountToSell} ${nodeId} satıldı (+${sellRes.adAstraReceived.toFixed(1)} ASTRA).`
           };
         }
       }
@@ -4359,13 +4503,13 @@ export class GameStateManager {
   }
 
   /**
-   * 🤖 Silo Yükseltme & %80 Barajında ADA Finansmanı (Adım 4 A Seçeneği 2. Bölüm)
+   * 🤖 Silo Yükseltme & %80 Barajında ASTRA Finansmanı (Adım 4 A Seçeneği 2. Bölüm)
    * Her sefer bitiminde tetiklenir:
    * 1. Tüm depolar %80 doluluğa ulaşmış mı kontrol eder.
-   * 2. Gerekli hammadde (odun, demir, buğday) yeterliyse fakat ADA eksikse:
+   * 2. Gerekli hammadde (odun, demir, buğday) yeterliyse fakat ASTRA eksikse:
    *    Depolardaki %80 güvenlik barajının üstünde kalan fazlalık kaynakları AMM DEX'te satarak
-   *    yükseltme için gereken ADA'yı finanse eder.
-   * 3. ADA tamamlandığında siloyu derhal Seviye Atlatır!
+   *    yükseltme için gereken ASTRA'yı finanse eder.
+   * 3. ASTRA tamamlandığında siloyu derhal Seviye Atlatır!
    */
   tryAutoUpgradeWarehouseWithAdaFinancing() {
     if (!this.state.botSiloAutoUpgrade) return { success: false, reason: 'auto_upgrade_disabled' };
@@ -4379,12 +4523,12 @@ export class GameStateManager {
     if (!cost) return { success: false, reason: 'max_level' };
 
     // 🛡️ BOT İŞLETME REZERVİ KORUMASI:
-    // Bot alet tamiratı ve operasyonlarını sürdürebilmek için kasada en az 500 ADA güvenlik tamponu korur.
-    // Eğer kasadaki ADA doğrudan harcandığında bakiye 500 ADA altına inecekse;
-    // Kasadaki nakit yerine ambarlardaki %80 üzeri fazlalık kaynaklar AMM'de satılarak ADA temin edilir.
+    // Bot alet tamiratı ve operasyonlarını sürdürebilmek için kasada en az 500 ASTRA güvenlik tamponu korur.
+    // Eğer kasadaki ASTRA doğrudan harcandığında bakiye 500 ASTRA altına inecekse;
+    // Kasadaki nakit yerine ambarlardaki %80 üzeri fazlalık kaynaklar AMM'de satılarak ASTRA temin edilir.
     // Böylece hem piyasa fiyatları düşer hem de kullanıcının kasası sıfırlanmaz!
     // Eğer zaten yükseltilebiliyorsa doğrudan yükselt!
-    // v1.25: Bot yükseltme için kasadaki paranın hepsini harcamaz; güvenlik payını (en az 500 ADA,
+    // v1.25: Bot yükseltme için kasadaki paranın hepsini harcamaz; güvenlik payını (en az 500 ASTRA,
     // oto-yenileme açıksa ertesi günün bot ücreti) her zaman bırakır.
     if (cost.canUpgrade && this._botCanSpend(cost.adAstra)) {
       const upRes = this.upgradeWarehouse();
@@ -4394,8 +4538,8 @@ export class GameStateManager {
       }
     }
 
-    // %80 Barajında ADA Finansmanı:
-    // Depolar %80 dolu mu fakat ADA (güvenlik payı dahil) eksik mi?
+    // %80 Barajında ASTRA Finansmanı:
+    // Depolar %80 dolu mu fakat ASTRA (güvenlik payı dahil) eksik mi?
     if (cost.is80PercentFull && !(cost.canAffordCost && this._botCanSpend(cost.adAstra))) {
       const inv = this.state.inventory || {};
       const hasAllRes = (cost.keys || RES_KEYS()).every(k => (inv[k] || 0) >= ((cost.costs || {})[k] || 0));
@@ -4436,7 +4580,7 @@ export class GameStateManager {
 
           this.saveState();
 
-          // ADA tamamlandıysa siloyu derhal seviye atlat!
+          // ASTRA tamamlandıysa siloyu derhal seviye atlat!
           const freshCost = this.getWarehouseUpgradeCost();
           if (freshCost && freshCost.canUpgrade && this._botCanSpend(freshCost.adAstra)) {
             const freshUp = this.upgradeWarehouse();
@@ -4488,7 +4632,7 @@ export class GameStateManager {
   // ═══════════════════════════════════════════════════════════════════════
   // 🏛️ Karnaval kasasından ödeme: kasada yoksa ödenmez (v1.25 öncesi boş kasada ödül yoktan ödeniyordu)
   // 🎟️ Promo kodu ödülü (kullanıcı kararı 6 Ekim 2026): her kodun ne vereceğini yönetici seçer. Yoktan bir şey basılmaz:
-  // ADA görev kasasından gelir ve KİLİTLİ verilir (oyunda harcandıkça açılır); hammadde ve eşyalar görev kasasının
+  // ASTRA görev kasasından gelir ve KİLİTLİ verilir (oyunda harcandıkça açılır); hammadde ve eşyalar görev kasasının
   // parasıyla pazardan satın alınıp verilir. Kasa yetmezse ya da pazarda yeterli mal yoksa hiçbir şey verilmez.
   // reward: { ada, wood, iron, wheat, fragments, keys, boxes, scroll_heal, scroll_stamina } (tam sayılar)
   applyPromoReward(reward = {}) {
@@ -4526,7 +4670,7 @@ export class GameStateManager {
     if (ada > 0) {
       this.state.adAstraBalance = (Number(this.state.adAstraBalance) || 0) + ada;
       this.state.lockedAda = Math.min(this.state.adAstraBalance, (Number(this.state.lockedAda) || 0) + ada);
-      got.unshift(`${ada.toLocaleString('tr-TR')} ADA (kilitli)`);
+      got.unshift(`${ada.toLocaleString('tr-TR')} ASTRA (kilitli)`);
     }
     this.saveState();
     return { success: true, spentFromQuest: spent, message: `🎟️ Promo kodu: ${got.join(', ')} hesabına eklendi.` };
@@ -4599,14 +4743,14 @@ export class GameStateManager {
     // v1.25: Kasa en büyük ödülü karşılayamıyorsa çark geçici olarak kapalı
     const wheelStatus = this.isCarnivalWheelOpen();
     if (!wheelStatus.open) {
-      return { success: false, wheelClosed: true, message: `🎪 Karnaval kasası yenileniyor (${Math.floor(wheelStatus.balance).toLocaleString('tr-TR')} / ${wheelStatus.minBalance.toLocaleString('tr-TR')} ADA). Pazar ve harcama komisyonlarıyla kasa dolunca çark yeniden açılacak.` };
+      return { success: false, wheelClosed: true, message: `🎪 Karnaval kasası yenileniyor (${Math.floor(wheelStatus.balance).toLocaleString('tr-TR')} / ${wheelStatus.minBalance.toLocaleString('tr-TR')} ASTRA). Pazar ve harcama komisyonlarıyla kasa dolunca çark yeniden açılacak.` };
     }
 
     let burnedInfo = null;
 
     if (paymentMethod === 'ada') {
       if (this.state.adAstraBalance < costAda) {
-        return { success: false, message: `Yetersiz $ADASTRA! Çark çevirmek için ${costAda} ADA gereklidir.` };
+        return { success: false, message: `Yetersiz ASTRA! Çark çevirmek için ${costAda} ASTRA gereklidir.` };
       }
       this.state.adAstraBalance -= costAda;
       this._onAdaSpent(costAda);
@@ -4632,7 +4776,7 @@ export class GameStateManager {
       const resLimit = GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3;
       const dcRes = this.getDailyCounters();
       if ((dcRes.wheelResourceSpins || 0) >= resLimit) {
-        return { success: false, message: `🎪 Bugün hammaddeyle ${resLimit} kez çevirdin (günlük sınır). Yarın yine gel ya da ADA / biletle çevir.` };
+        return { success: false, message: `🎪 Bugün hammaddeyle ${resLimit} kez çevirdin (günlük sınır). Yarın yine gel ya da ASTRA / biletle çevir.` };
       }
       const price = ammMarket.getPrice(paymentMethod) || 1.0;
       const requiredAmount = Math.ceil(costAda / price);
@@ -4642,7 +4786,7 @@ export class GameStateManager {
       }
       inv[paymentMethod] -= requiredAmount;
       dcRes.wheelResourceSpins = (dcRes.wheelResourceSpins || 0) + 1;
-      // Kullanıcı kararı (4 Ekim 2026): ödenen hammaddenin YARISI yakılır, YARISI pazarda satılır ve gelen ADA
+      // Kullanıcı kararı (4 Ekim 2026): ödenen hammaddenin YARISI yakılır, YARISI pazarda satılır ve gelen ASTRA
       // Karnaval kasasına girer (ödüller bu kasadan ödenir). Pazar fiyatı tabandaysa satılamayan kısım da yakılır.
       const toSell = Math.min(Math.floor(requiredAmount / 2), ammMarket.getMaxSellBeforeFloor(paymentMethod));
       let soldQty = 0, carnivalIn = 0;
@@ -4656,9 +4800,9 @@ export class GameStateManager {
       const burnQty = requiredAmount - soldQty;
       this.recordCarnivalResourceBurn(paymentMethod, burnQty);
       burnedInfo = { resource: paymentMethod, resourceNameTr: resNameTr, amount: burnQty, soldQty, carnivalIn, fromPayment: true };
-      // Güvenlik (4 Ekim 2026): burada eskiden recordTokenSpend(100 ADA) çağrılıyordu. Ortada ADA yokken hazineye,
+      // Güvenlik (4 Ekim 2026): burada eskiden recordTokenSpend(100 ASTRA) çağrılıyordu. Ortada ASTRA yokken hazineye,
       // yakıma ve yapımcı payına para yazıyordu (yoktan para); sunucuda bunun yakım/yapımcı kısmı gerçek ADASTRA olarak
-      // zincire gönderilirdi. Hammadde yukarıda zaten yakılıyor; ADA kaydı yapılmaz.
+      // zincire gönderilirdi. Hammadde yukarıda zaten yakılıyor; ASTRA kaydı yapılmaz.
     } else {
       return { success: false, message: 'Geçersiz ödeme yöntemi!' };
     }
@@ -4679,22 +4823,22 @@ export class GameStateManager {
     let rewardSummaryText = selectedReward.name;
     let buybackInfo = null;
 
-    // Pazardan alınamayan eşya ödülünün yerine, ödülün ADA karşılığı kasadan verilir
+    // Pazardan alınamayan eşya ödülünün yerine, ödülün ASTRA karşılığı kasadan verilir
     const payAdaFallback = (valueAda, label) => {
       const paid = this._drawCarnival(valueAda);
       this.state.adAstraBalance += paid;
       this._onAdaEarned(paid);
-      rewardSummaryText = `${label} yerine ${paid.toLocaleString('tr-TR')} $ADASTRA (pazarda şu an alınamadı; 🏛️ Karnaval Hazinesinden)`;
+      rewardSummaryText = `${label} yerine ${paid.toLocaleString('tr-TR')} ASTRA (pazarda şu an alınamadı; 🏛️ Karnaval Hazinesinden)`;
     };
 
     if (selectedReward.type === 'ada') {
-      // 🏛️ KARNAVAL HAZİNESİNDEN ADA ÖDÜLÜ: Havadan basılmaz, doğrudan Karnaval Hazine Kasasından karşılanır!
+      // 🏛️ KARNAVAL HAZİNESİNDEN ASTRA ÖDÜLÜ: Havadan basılmaz, doğrudan Karnaval Hazine Kasasından karşılanır!
       const rewardAmount = this.adaPrice(selectedReward.amount || 0);
       const adaToPay = this._drawCarnival(rewardAmount);
 
       this.state.adAstraBalance += adaToPay;
       this._onAdaEarned(adaToPay);
-      rewardSummaryText = `${adaToPay.toLocaleString('tr-TR')} $ADASTRA (🏛️ Karnaval Hazinesinden Karşılandı)`;
+      rewardSummaryText = `${adaToPay.toLocaleString('tr-TR')} ASTRA (🏛️ Karnaval Hazinesinden Karşılandı)`;
 
     } else if (selectedReward.key === 'fragments' || (selectedReward.type === 'resource' && selectedReward.key === 'fragments')) {
       // 🏛️ TEÇHİZAT PARÇALARI: Havadan basılmaz, Karnaval Hazinesi bütçesiyle AMM marketten fiziki buyback yapılır!
@@ -4720,7 +4864,7 @@ export class GameStateManager {
       // Kullanıcıya teslim edilir
       inv.fragments = (inv.fragments || 0) + fragAmount;
       const pctSign = priceDeltaPct >= 0 ? '+' : '';
-      rewardSummaryText = `${fragAmount} Teçhizat Parçası (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(2)} ➔ ${newPrice.toFixed(2)} ADA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
+      rewardSummaryText = `${fragAmount} Teçhizat Parçası (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(2)} ➔ ${newPrice.toFixed(2)} ASTRA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
       buybackInfo = {
         item: `${fragAmount} Teçhizat Parçası`,
         resourceKey: 'fragments',
@@ -4757,11 +4901,11 @@ export class GameStateManager {
       // Karnaval Hazine Kasasından Maliyeti Düş
       this._drawCarnival(costAda);
 
-      // Kullanıcıya teslim edilir — silo doluysa sığmayan kısım kaybolmaz, pazarda satılıp ADA olarak verilir
+      // Kullanıcıya teslim edilir — silo doluysa sığmayan kısım kaybolmaz, pazarda satılıp ASTRA olarak verilir
       const stored = this.storeResourceOrSell(resKey, grantAmount, 'Çark ödülü');
       const grantResNameTr = this.getResourceNameTr(resKey);
       const pctSign = priceDeltaPct >= 0 ? '+' : '';
-      rewardSummaryText = `${grantAmount.toLocaleString('tr-TR')} ${grantResNameTr} (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(4)} ➔ ${newPrice.toFixed(4)} ADA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
+      rewardSummaryText = `${grantAmount.toLocaleString('tr-TR')} ${grantResNameTr} (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(4)} ➔ ${newPrice.toFixed(4)} ASTRA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
       buybackInfo = {
         item: `${grantAmount.toLocaleString('tr-TR')} ${grantResNameTr}`,
         resourceKey: resKey,
@@ -4775,7 +4919,7 @@ export class GameStateManager {
         poolIcon: resKey === 'wood' ? '🌲' : (resKey === 'iron' ? '⛏️' : '🌾')
       };
       if (stored.soldQty > 0) {
-        rewardSummaryText += ` — silo dolu olduğu için ${stored.soldQty.toLocaleString('tr-TR')} adedi pazarda satıldı (+${stored.adaGained.toFixed(1)} ADA)`;
+        rewardSummaryText += ` — silo dolu olduğu için ${stored.soldQty.toLocaleString('tr-TR')} adedi pazarda satıldı (+${stored.adaGained.toFixed(1)} ASTRA)`;
       }
       }
 
@@ -4803,7 +4947,7 @@ export class GameStateManager {
       // Kullanıcıya teslim edilir
       this.state.arenaKeys = (this.state.arenaKeys || 0) + keyAmount;
       const pctSign = priceDeltaPct >= 0 ? '+' : '';
-      rewardSummaryText = `${keyAmount} Pandora Kutusu Anahtarı (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(1)} ➔ ${newPrice.toFixed(1)} ADA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
+      rewardSummaryText = `${keyAmount} Pandora Kutusu Anahtarı (🏛️ Karnaval AMM Buyback: ${oldPrice.toFixed(1)} ➔ ${newPrice.toFixed(1)} ASTRA, ${pctSign}%${priceDeltaPct.toFixed(2)} 📈)`;
       buybackInfo = {
         item: `${keyAmount} Pandora Kutusu Anahtarı`,
         resourceKey: 'keys',
@@ -4849,9 +4993,9 @@ export class GameStateManager {
       burnedInfo,
       buybackInfo,
       message: buybackInfo
-        ? `🎉 Çarktan kazandın: ${rewardSummaryText}! (🏛️ Karnaval Hazine Kasasından ${buybackInfo.adaSpent.toLocaleString('tr-TR')} ADA ile AMM DEX pazarından buyback yapılıp teslim edildi)`
+        ? `🎉 Çarktan kazandın: ${rewardSummaryText}! (🏛️ Karnaval Hazine Kasasından ${buybackInfo.adaSpent.toLocaleString('tr-TR')} ASTRA ile AMM DEX pazarından buyback yapılıp teslim edildi)`
         : burnedInfo
-        ? `🔥 ${burnedInfo.amount.toLocaleString('tr-TR')} ${burnedInfo.resourceNameTr} yakıldı${burnedInfo.soldQty > 0 ? `, ${burnedInfo.soldQty.toLocaleString('tr-TR')} adedi pazarda satılıp Karnaval kasasına ${Math.floor(burnedInfo.carnivalIn).toLocaleString('tr-TR')} ADA kazandırdı` : ''}! Çarktan kazandın: ${rewardSummaryText}`
+        ? `🔥 ${burnedInfo.amount.toLocaleString('tr-TR')} ${burnedInfo.resourceNameTr} yakıldı${burnedInfo.soldQty > 0 ? `, ${burnedInfo.soldQty.toLocaleString('tr-TR')} adedi pazarda satılıp Karnaval kasasına ${Math.floor(burnedInfo.carnivalIn).toLocaleString('tr-TR')} ASTRA kazandırdı` : ''}! Çarktan kazandın: ${rewardSummaryText}`
         : `🎉 Tebrikler! Çarktan kazandın: ${rewardSummaryText}`
     };
   }
@@ -4908,7 +5052,7 @@ export class GameStateManager {
     }
 
     if (scrollType === 'scroll_repair') {
-      return { success: false, message: '🔨 Alet onarım parşömenleri oyundan kaldırılmıştır. Aletlerinizi Demirci aracılığıyla (Odun + Demir + ADA) tamir edebilirsiniz.' };
+      return { success: false, message: '🔨 Alet onarım parşömenleri oyundan kaldırılmıştır. Aletlerinizi Demirci aracılığıyla (Odun + Demir + ASTRA) tamir edebilirsiniz.' };
     }
 
     return { success: false, message: 'Bilinmeyen parşömen türü!' };
@@ -4980,7 +5124,7 @@ export class GameStateManager {
     const rules = this.getLotteryRules();
     const { cost, toAmorti, toPool } = splitTicketPayment(count, rules);
     if (this.state.adAstraBalance < cost) {
-      return { success: false, message: `Yetersiz $ADASTRA! ${count} bilet için ${cost} ADA gereklidir.` };
+      return { success: false, message: `Yetersiz ASTRA! ${count} bilet için ${cost} ASTRA gereklidir.` };
     }
 
     if (this.state.lotteryTicketsPaid == null) this.state.lotteryTicketsPaid = (this.state.lotteryTickets || 0) * rules.ticketPrice;
@@ -5002,7 +5146,7 @@ export class GameStateManager {
       lotteryPool: this.state.lotteryPool,
       lotteryAmortiPool: this.state.lotteryAmortiPool,
       amortiAdded: toAmorti,
-      message: `🎟️ ${count} bilet alındı (${cost.toLocaleString('tr-TR')} ADA). Elindeki bilet: ${this.state.lotteryTickets} · Kazanırsan: ${(this.state.lotteryTicketsPaid * rules.winnerMultiplier).toLocaleString('tr-TR')} ADA`
+      message: `🎟️ ${count} bilet alındı (${cost.toLocaleString('tr-TR')} ASTRA). Elindeki bilet: ${this.state.lotteryTickets} · Kazanırsan: ${(this.state.lotteryTicketsPaid * rules.winnerMultiplier).toLocaleString('tr-TR')} ASTRA`
     };
   }
 
@@ -5077,10 +5221,10 @@ export class GameStateManager {
     let message;
     if (userWon) {
       message = result.poolDepleted
-        ? `👑 Piyango sana çıktı! Kasada kalan ${wonAmount.toLocaleString('tr-TR')} ADA'nın tamamı senin. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`
-        : `👑 Piyango sana çıktı! Biletlerine ödediğinin 2 katı: ${wonAmount.toLocaleString('tr-TR')} ADA. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`;
+        ? `👑 Piyango sana çıktı! Kasada kalan ${wonAmount.toLocaleString('tr-TR')} ASTRA'nın tamamı senin. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`
+        : `👑 Piyango sana çıktı! Biletlerine ödediğinin 2 katı: ${wonAmount.toLocaleString('tr-TR')} ASTRA. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`;
     } else if (result.poolDepleted) {
-      message = `🎲 Piyango kasası bitti: kalan tüm biletlere amorti dağıtıldı${amortiAmount > 0 ? ` (sana +${amortiAmount.toLocaleString('tr-TR')} ADA)` : ''}. Biletler kapandı, piyango yeni satışlarla yeniden dolacak.`;
+      message = `🎲 Piyango kasası bitti: kalan tüm biletlere amorti dağıtıldı${amortiAmount > 0 ? ` (sana +${amortiAmount.toLocaleString('tr-TR')} ASTRA)` : ''}. Biletler kapandı, piyango yeni satışlarla yeniden dolacak.`;
     } else {
       message = myTickets > 0
         ? `🎲 Haftalık çekiliş yapıldı, bu hafta sana çıkmadı. ${myTickets} biletin yanmadı, sonraki haftaya devretti.`
@@ -5129,7 +5273,7 @@ export class GameStateManager {
       payoutAda: pending,
       burnedTickets: burned,
       remainingPool: this.state.lotteryPool,
-      message: `🏆 Piyango kazancın (+${pending.toLocaleString('tr-TR')} $ADASTRA) cüzdanına aktarıldı!${burned > 0 ? ` Kazanan ${burned} bilet yandı.` : ''}`
+      message: `🏆 Piyango kazancın (+${pending.toLocaleString('tr-TR')} ASTRA) cüzdanına aktarıldı!${burned > 0 ? ` Kazanan ${burned} bilet yandı.` : ''}`
     };
   }
 
@@ -5328,7 +5472,7 @@ export class GameStateManager {
 
     const cost = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
     if (this.state.adAstraBalance < cost) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz AdAstra! (${cost} ASTRA gerekli)` };
     }
 
     this.state.adAstraBalance -= cost;
@@ -5554,16 +5698,16 @@ export class GameStateManager {
     this.saveState();
   }
 
-  // 🍦 VANILLA HESAP & 100M $ADASTRA İLK DAĞITIM TOHUM HAVUZLARI VE TÜM HAZİNELERİ SIFIRLAMA:
+  // 🍦 VANILLA HESAP & 100M ASTRA İLK DAĞITIM TOHUM HAVUZLARI VE TÜM HAZİNELERİ SIFIRLAMA:
   // 1. Oyuncunun kişisel hesabını başlangıç profiline döndürür.
   // 2. Haftalık kaynak çıkartma limitlerini tam kapasiteye (%100) sıfırlar.
-  // 3. AMM DEX Pazar Havuzlarını tam 40M $ADASTRA ilk tohum rezervlerine sıfırlar.
-  // 4. Krallık Hazinesi Kasalarını (Zindan 14M, Arena 8M, World Boss 8M, AMM Buyback 6M, Karnaval 4M) tam 40M $ADASTRA ilk tohum rezervlerine sıfırlar.
-  // 5. Krallık Piyango Havuzunu tam 20M $ADASTRA tohumuna sıfırlar.
-  // 6. World Boss'u tam 1.000.000 Can ve 8M ADA ödül havuzuyla ilk haline sıfırlar.
+  // 3. AMM DEX Pazar Havuzlarını tam 40M ASTRA ilk tohum rezervlerine sıfırlar.
+  // 4. Krallık Hazinesi Kasalarını (Zindan 14M, Arena 8M, World Boss 8M, AMM Buyback 6M, Karnaval 4M) tam 40M ASTRA ilk tohum rezervlerine sıfırlar.
+  // 5. Krallık Piyango Havuzunu tam 20M ASTRA tohumuna sıfırlar.
+  // 6. World Boss'u tam 1.000.000 Can ve 8M ASTRA ödül havuzuyla ilk haline sıfırlar.
   // 7. Kolezyum Gladyatör Arenasını, ELO derecesini, günlük maç haklarını ve liderlik tablosunu sıfırlar.
   // 8. Zindan katlarını ve canavar canlarını Seviye 1'e ve %100 tam cana sıfırlar.
-  // Toplam 100 Milyon $ADASTRA başlangıç fonu ilk anki oranlarıyla oyuna yeniden dağıtılır!
+  // Toplam 100 Milyon ASTRA başlangıç fonu ilk anki oranlarıyla oyuna yeniden dağıtılır!
   vanillaReset() {
     removeJSON(this.storageKey);
     if (typeof globalPool !== 'undefined' && globalPool) {
@@ -5606,6 +5750,7 @@ export class GameStateManager {
       lockedBoxes: 0,
       arenaKeys: 0,
       genesisNftMinted: false,
+      uretim: null,
       activeBuffs: {},
       activeExpeditions: {},
       dungeonProgress: 1,
@@ -5854,7 +5999,7 @@ export class GameStateManager {
         inflow: Math.round(treasury.state?.inflow?.carnival || 0),
         outflow: Math.round(treasury.state?.outflow?.carnival || 0),
         description: '15 potansiyel ödüllü Şans Çarkındaki doğrudan token ödüllerinin emisyon kasasıdır.',
-        howToEarn: 'Karnavalda 100 ADA, hammadde veya biletle şans çarkını çevir.',
+        howToEarn: 'Karnavalda 100 ASTRA, hammadde veya biletle şans çarkını çevir.',
         actionType: 'carnival_wheel',
         actionText: '🎡 Şans Çarkı'
       },
@@ -5977,7 +6122,7 @@ export class GameStateManager {
           color: '#ef4444',
           totalPoolAda: worldBossPool,
           description: 'Her Pazar 18:00\'de (TSİ) ordusunu kilitleyenlerin vurduğu hasara göre paylaşılır.',
-          userShareText: userBossDamage > 0 ? `%${((userBossDamage / maxBossHp) * 100).toFixed(2)} Hasar Payı (~${userBossRewardEstimate.toLocaleString()} ADA)` : (userStakedArmyCount > 0 ? `${userStakedArmyCount} Asker Kilitli (${userStakedAtk} ATK)` : 'Ordu Kilitlenmedi'),
+          userShareText: userBossDamage > 0 ? `%${((userBossDamage / maxBossHp) * 100).toFixed(2)} Hasar Payı (~${userBossRewardEstimate.toLocaleString()} ASTRA)` : (userStakedArmyCount > 0 ? `${userStakedArmyCount} Asker Kilitli (${userStakedAtk} ATK)` : 'Ordu Kilitlenmedi'),
           userClaimableAda: 0,
           statusBadge: userStakedArmyCount > 0 ? '🛡️ Ordu Kilitli' : '⚠️ Katılmadın',
           actionType: 'boss',
@@ -5990,7 +6135,7 @@ export class GameStateManager {
           color: '#f59e0b',
           totalPoolAda: colosseumPool,
           description: 'Arena anahtarı kullanan gladyatörlerin dövüşlerinden biriken haftalık zafer fonu.',
-          userShareText: `${colosseum.wins || 0} Galibiyet • Kazanılan: ${(colosseum.totalAdaWon || 0).toLocaleString()} ADA`,
+          userShareText: `${colosseum.wins || 0} Galibiyet • Kazanılan: ${(colosseum.totalAdaWon || 0).toLocaleString()} ASTRA`,
           userClaimableAda: 0,
           statusBadge: colosseum.wins > 0 ? '⚔️ Gladyatör' : 'Çaylak',
           actionType: 'colosseum',
@@ -6003,7 +6148,7 @@ export class GameStateManager {
           color: '#d8b4fe',
           totalPoolAda: ubiPool,
           description: 'Tüm oyun ve silo harcamalarından %6 pay alan, her hafta Pazar gecesi 00:01\'de seviyenize göre dağıtılan pasif gelir fonu.',
-          userShareText: `Mevcut Seviyeniz (Lv.${state.level || 1}) • Haftalık Hak: ${typeof globalPool !== 'undefined' ? globalPool.getUbiPoolInfo(state.level || 1).payout.toFixed(2) : '0.00'} ADA`,
+          userShareText: `Mevcut Seviyeniz (Lv.${state.level || 1}) • Haftalık Hak: ${typeof globalPool !== 'undefined' ? globalPool.getUbiPoolInfo(state.level || 1).payout.toFixed(2) : '0.00'} ASTRA`,
           userClaimableAda: 0,
           statusBadge: '🏛️ UBI Payı (%6)',
           actionType: 'ubi',
@@ -6016,7 +6161,7 @@ export class GameStateManager {
           color: '#38bdf8',
           totalPoolAda: ammBuybackPool,
           description: 'Harcamalardan biriken hazine fonuyla her gün sonu piyasadan dipteki malzemeleri alıp kalıcı yakan stabilizasyon kasası.',
-          userShareText: `Gün Sonu Alım Bütçesi: ~${Math.round(ammBuybackPool * 0.15).toLocaleString()} ADA`,
+          userShareText: `Gün Sonu Alım Bütçesi: ~${Math.round(ammBuybackPool * 0.15).toLocaleString()} ASTRA`,
           userClaimableAda: 0,
           statusBadge: '🔄 Otonom Buyback',
           actionType: 'amm_buyback',
@@ -6080,7 +6225,7 @@ export class GameStateManager {
           icon: '🔥',
           color: '#f97316',
           totalPoolAda: burnedNftPool,
-          description: 'P2P Pazaryerindeki %18 indirimli alımlardan ve Genesis NFT üretiminden kalıcı yakılan $ADASTRA.',
+          description: 'P2P Pazaryerindeki %18 indirimli alımlardan ve Genesis NFT üretiminden kalıcı yakılan ASTRA.',
           userShareText: `${(state.collectionArtifacts || []).filter(a => a.discovered).length}/18 Eser Keşfedildi`,
           userClaimableAda: 0,
           statusBadge: state.genesisNftMinted ? '💎 Genesis NFT Basıldı' : '🔥 Kalıcı Yakım',
@@ -6210,9 +6355,9 @@ export class GameStateManager {
     }
     results.success = results.repaired > 0;
     if (results.success) {
-      results.message = `🔨 ${results.repaired} Adet Alet Başarıyla Onarıldı! (-${results.totalWood} Odun, -${results.totalIron} Demir, -${results.totalAda} ADA)`;
+      results.message = `🔨 ${results.repaired} Adet Alet Başarıyla Onarıldı! (-${results.totalWood} Odun, -${results.totalIron} Demir, -${results.totalAda} ASTRA)`;
     } else if (results.hasDamagedTools && results.missingAda) {
-      results.message = '⚠️ Hesapta yeteri kadar $ADASTRA yok!';
+      results.message = '⚠️ Hesapta yeteri kadar ASTRA yok!';
     } else if (results.messages.length > 0) {
       results.message = results.messages[0];
     } else {
@@ -6466,7 +6611,7 @@ export class GameStateManager {
         type: 'warning',
         icon: '⏸️',
         title: '24s Otomasyon Botu Duraklatıldı (Süreniz Donduruldu)',
-        text: `Botun aletleri onarabilmesi ve seferleri aksatmaması için deponuzda en az 50 Demir, 50 Odun, 50 Buğday ve 50 $ADASTRA bulunmalıdır. Süreniz dondurulmuştur ve asla azalmaz! (Eksikler: ${prereq.missingText}) — Kaynakları tamamladığınız an bot anında otomatik çalışmaya devam edecektir.`,
+        text: `Botun aletleri onarabilmesi ve seferleri aksatmaması için deponuzda en az 50 Demir, 50 Odun, 50 Buğday ve 50 ASTRA bulunmalıdır. Süreniz dondurulmuştur ve asla azalmaz! (Eksikler: ${prereq.missingText}) — Kaynakları tamamladığınız an bot anında otomatik çalışmaya devam edecektir.`,
         missing: prereq.missing
       };
     }
@@ -6575,7 +6720,7 @@ export class GameStateManager {
     const c = this.state.dailyCounters;
     const payFee = terms.nextNeedsFee && payGateFee;
     if (payFee && (this.state.adAstraBalance || 0) < terms.fee) {
-      return { success: false, rewarded: false, fee: terms.fee, message: `Kapı harcı için ${terms.fee} ADA gerekli.` };
+      return { success: false, rewarded: false, fee: terms.fee, message: `Kapı harcı için ${terms.fee} ASTRA gerekli.` };
     }
     const paid = this.deductDungeonStamina(level, soldierCount);
     if (!paid.success) return { success: false, rewarded: false, fee: 0, message: paid.message };
@@ -6599,7 +6744,7 @@ export class GameStateManager {
       if (gateShare < 1) globalPool.recordTokenSpend(terms.fee * (1 - gateShare));
       c.dungeonPaidEntries = (c.dungeonPaidEntries || 0) + 1;
       this.saveState();
-      return { ...base, rewarded: true, fee: terms.fee, message: `🚪 Kapı harcı ödendi (-${terms.fee} ADA, zindan kasasına)` };
+      return { ...base, rewarded: true, fee: terms.fee, message: `🚪 Kapı harcı ödendi (-${terms.fee} ASTRA, zindan kasasına)` };
     }
     this.saveState();
     return { ...base, rewarded: false, fee: 0, message: '🏋️ Antrenman girişi: yalnızca deneyim kazanılır' };
@@ -6858,7 +7003,7 @@ export class GameStateManager {
       this.state.colosseumStats.score += 3;
 
       // Hazine Arena Kasasından Ödül — v1.25: ödül kasadan gerçekten çekilir (eskiden kasadan düşülmeden
-      // bakiyeye ekleniyordu; kolezyum her zaferde yoktan ADA basıyordu)
+      // bakiyeye ekleniyordu; kolezyum her zaferde yoktan ASTRA basıyordu)
       const arenaPool = (typeof treasury !== 'undefined' && treasury.getPool) ? treasury.getPool('arena') : 0;
       const baseReward = Math.min(this.adaPrice(2500), Math.round(arenaPool * 0.0002));
       const requested = Math.round(baseReward * tier.rewardMult);
@@ -7044,7 +7189,7 @@ export class GameStateManager {
   // geliştirici paneline değil OYUNCUNUN GÖRDÜĞÜ EKRANA, bir "[Test] Pazar
   // Savaşını Şimdi Simüle Et" butonu konmuştu. Her tıklama hasarı ve
   // toplanabilir ödülü artırıyordu; sınır yoktu. Tam donanımlı 18 askerle
-  // tıklama başına ~901 ADA, saniyede birkaç tıklama.
+  // tıklama başına ~901 ASTRA, saniyede birkaç tıklama.
   //
   // v2'de savaş gerçek takvime bağlıdır ve haftada bir kez çalışır.
   executeSundayAutoWorldBossBattle({ force = false } = {}) {
@@ -7091,7 +7236,7 @@ export class GameStateManager {
       requested: request,
       scaled: draw.scaleFactor < 0.999,
       claimableRewardAda: boss.claimableRewardAda,
-      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${damageDealt.toLocaleString()} hasar vurdu ve ${rewardAda.toLocaleString()} $ADASTRA kazandı.${draw.scaleFactor < 0.999 ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : ''}`
+      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${damageDealt.toLocaleString()} hasar vurdu ve ${rewardAda.toLocaleString()} ASTRA kazandı.${draw.scaleFactor < 0.999 ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : ''}`
     };
   }
 
@@ -7099,7 +7244,7 @@ export class GameStateManager {
     return !!(this.state.worldBoss && this.state.worldBoss.userStaked);
   }
 
-  // Kullanıcının World Boss ekranına düşen ADA ödülünü cüzdanına çekmesi (Claim)
+  // Kullanıcının World Boss ekranına düşen ASTRA ödülünü cüzdanına çekmesi (Claim)
   claimWorldBossReward() {
     const boss = this.getWorldBossInfo();
     const claimable = boss.claimableRewardAda || 0;
@@ -7132,14 +7277,14 @@ export class GameStateManager {
       unlockedSoldiersCount: soldiersCount,
       newBalance: this.state.adAstraBalance,
       message: claimable > 0
-        ? `🎁 ${claimable.toLocaleString()} $ADASTRA World Boss ödülü cüzdanına aktarıldı ve ordun serbest bırakıldı!`
+        ? `🎁 ${claimable.toLocaleString()} ASTRA World Boss ödülü cüzdanına aktarıldı ve ordun serbest bırakıldı!`
         : `🛡️ ${soldiersCount} kişilik ordun serbest bırakıldı!`
     };
   }
 
   // Erken Çekilme (Emergency Unstake):
   // Pazar günü etkinlik tamamlanmadan önce ordu çekilirse, ordunun vereceği hasar üzerinden
-  // kazanacağı anlık tahmini ADA miktarının %18'i ceza olarak ödenir ve ordu serbest bırakılır.
+  // kazanacağı anlık tahmini ASTRA miktarının %18'i ceza olarak ödenir ve ordu serbest bırakılır.
   emergencyUnstakeWorldBossArmy() {
     const boss = this.getWorldBossInfo();
     if (!boss.userStaked) {
@@ -7148,14 +7293,14 @@ export class GameStateManager {
 
     const power = this.calculateUserWorldBossPower();
     const estimatedAda = power.estimatedAda || 0;
-    // Anlık tahmini ADA miktarının %18'i ceza olarak hesaplanır:
+    // Anlık tahmini ASTRA miktarının %18'i ceza olarak hesaplanır:
     const penaltyAda = Math.max(1, Math.round(estimatedAda * 0.18));
 
     if (this.state.adAstraBalance < penaltyAda) {
       return {
         success: false,
         penaltyRequired: penaltyAda,
-        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%18) cezası olan ${penaltyAda.toLocaleString()} $ADASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ADA).`
+        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%18) cezası olan ${penaltyAda.toLocaleString()} ASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ASTRA).`
       };
     }
 
@@ -7182,7 +7327,7 @@ export class GameStateManager {
       penaltyPaid: penaltyAda,
       unlockedSoldiersCount: soldiersCount,
       newBalance: this.state.adAstraBalance,
-      message: `🔓 %18 Ceza (${penaltyAda.toLocaleString()} $ADASTRA) ödendi. ${soldiersCount} kişilik ordunun kilidi başarıyla açıldı!`
+      message: `🔓 %18 Ceza (${penaltyAda.toLocaleString()} ASTRA) ödendi. ${soldiersCount} kişilik ordunun kilidi başarıyla açıldı!`
     };
   }
 
@@ -7206,7 +7351,7 @@ export class GameStateManager {
   createP2PArtifactListing(artifactId, priceAda) {
     const price = Math.floor(Number(priceAda));
     if (isNaN(price) || price < 10) {
-      return { success: false, message: 'Minimum satış fiyatı 10 $ADASTRA olmalıdır!' };
+      return { success: false, message: 'Minimum satış fiyatı 10 ASTRA olmalıdır!' };
     }
     const art = (this.state.collectionArtifacts || []).find(a => a.id === artifactId);
     if (!art || !art.discovered) {
@@ -7226,7 +7371,7 @@ export class GameStateManager {
     listings.unshift(listing);
     this.saveState();
 
-    return { success: true, message: `🚀 ${cfg ? cfg.icon : '👑'} ${cfg ? cfg.name : artifactId} eseri ${price.toLocaleString()} $ADASTRA fiyatla pazara ilan verildi!`, listing };
+    return { success: true, message: `🚀 ${cfg ? cfg.icon : '👑'} ${cfg ? cfg.name : artifactId} eseri ${price.toLocaleString()} ASTRA fiyatla pazara ilan verildi!`, listing };
   }
 
   buyP2PArtifactListing(listingId) {
@@ -7236,7 +7381,7 @@ export class GameStateManager {
 
     const listing = listings[idx];
     if (this.state.adAstraBalance < listing.priceAda) {
-      return { success: false, message: `Yetersiz Bakiye! (${listing.priceAda.toLocaleString()} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz Bakiye! (${listing.priceAda.toLocaleString()} ASTRA gerekli)` };
     }
 
     this.state.adAstraBalance -= listing.priceAda;
@@ -7257,7 +7402,7 @@ export class GameStateManager {
     sound.playLevelUp();
     this.saveState();
 
-    return { success: true, message: `🎉 ${cfg ? cfg.icon : '👑'} ${cfg ? cfg.name : listing.artifactId} eseri ${listing.priceAda.toLocaleString()} $ADASTRA ödenerek pazardan satın alındı ve albümüne eklendi!` };
+    return { success: true, message: `🎉 ${cfg ? cfg.icon : '👑'} ${cfg ? cfg.name : listing.artifactId} eseri ${listing.priceAda.toLocaleString()} ASTRA ödenerek pazardan satın alındı ve albümüne eklendi!` };
   }
 
   cancelP2PArtifactListing(listingId) {
@@ -7595,7 +7740,7 @@ export class GameStateManager {
       }
     }
     if (newlyDone.length > 0 && !this._isFastForwarding) {
-      newlyDone.forEach(q => this.pushNotice(`🧭 Görev tamamlandı: ${q.title} — ödülünü Rehber panelinden al (+${q.rewardAda} ADA)`, 'success'));
+      newlyDone.forEach(q => this.pushNotice(`🧭 Görev tamamlandı: ${q.title} — ödülünü Rehber panelinden al (+${q.rewardAda} ASTRA)`, 'success'));
     }
     return newlyDone;
   }
@@ -7668,7 +7813,7 @@ export class GameStateManager {
     this._onAdaEarned(granted);
     sound.playLevelUp();
     this.saveState();
-    return { success: true, granted, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} $ADASTRA (Krallık Hazinesinden)` };
+    return { success: true, granted, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} ASTRA (Krallık Hazinesinden)` };
   }
 
   // =========================================================================
@@ -7696,7 +7841,7 @@ export class GameStateManager {
   }
 
   // ⚡ Hızlı al planı: seviye atlama ('levelup') ya da silo yükseltme ('warehouse') için eksik hammaddeler ve pazar bedeli.
-  // ok: hesaptaki ADA hem bu alıma hem yükseltmenin kendi ADA bedeline (%3 payla) yetiyor mu.
+  // ok: hesaptaki ASTRA hem bu alıma hem yükseltmenin kendi ASTRA bedeline (%3 payla) yetiyor mu.
   getQuickBuyPlan(kind) {
     const inv = this.state.inventory || {};
     const cap = this.getWarehouseCapacity();
@@ -7737,10 +7882,10 @@ export class GameStateManager {
     const needAda = total + extraAda * 1.03;
     if (xpShort && items.length) return { ok: false, items, total, extraAda, balance, needAda, capBlocked, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
     return { ok: items.length > 0 && balance >= needAda && !capBlocked, items, total, extraAda, balance, needAda, capBlocked,
-      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ADA gerekli.` : '' };
+      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ASTRA gerekli.` : '' };
   }
 
-  // 🧺 Depoyu doldur: siloda boş yer kadar, ADA yetmezse alınabilecek en fazla miktar
+  // 🧺 Depoyu doldur: siloda boş yer kadar, ASTRA yetmezse alınabilecek en fazla miktar
   getFillWarehouseQty(resKey) {
     const cap = this.getWarehouseCapacity()[resKey];
     const have = Math.floor(Number((this.state.inventory || {})[resKey]) || 0);
@@ -7761,7 +7906,7 @@ export class GameStateManager {
     const est = ammMarket.getEstimatedCostForBuy(resKey, amount);
     if (!isFinite(est)) return { success: false, message: 'Havuzda bu miktarı karşılayacak yeterli likidite yok!' };
     if ((this.state.adAstraBalance || 0) < est) {
-      return { success: false, message: `Yetersiz $ADASTRA! Gereken: ~${est.toFixed(2)} ADA, bakiyen: ${(this.state.adAstraBalance || 0).toFixed(2)} ADA` };
+      return { success: false, message: `Yetersiz ASTRA! Gereken: ~${est.toFixed(2)} ASTRA, bakiyen: ${(this.state.adAstraBalance || 0).toFixed(2)} ASTRA` };
     }
     if (RES_KEYS().includes(resKey)) {
       const limit = this.getWarehouseCapacity()[resKey];

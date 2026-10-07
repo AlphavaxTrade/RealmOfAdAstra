@@ -1,5 +1,5 @@
 // Oyun Kasası — 1) taklit kasa ile motor katmanı (önce kazanılmış bakiye, sonra kasa) ve kurallar
-//               2) sahte zincirde (ganache) gerçek kasa: oyuna aktarım sözleşmeden, komisyon, ADA/AVAX çekimi
+//               2) sahte zincirde (ganache) gerçek kasa: oyuna aktarım sözleşmeden, komisyon, ASTRA/AVAX çekimi
 import assert from 'node:assert/strict';
 import ganache from 'ganache';
 import { ethers } from 'ethers';
@@ -47,7 +47,7 @@ try {
     const sim = createKasa({ db, accounts, cfg: { ...base, testMode: true }, log: { warn() {} } });
     E.setKasa(sim);
     assert.ok(sim.enabled && sim.simulated);
-    // Yaralı asker, buğday var; kazanılmış bakiye 3 ADA; kasada 1000 ADA
+    // Yaralı asker, buğday var; kazanılmış bakiye 3 ASTRA; kasada 1000 ASTRA
     E.withPlayer(pid, gs => {
       gs.state.adAstraBalance = 20000; gs.buySoldierUnit();
       gs.state.adAstraBalance = 0.03; gs.state.lockedAda = 0;   // v2 ölçeği: iyileşme 0,001 ASTRA/HP
@@ -56,7 +56,7 @@ try {
     });
     sim.simulateDeposit(pid, 1000, 0);
     assert.equal(sim.available(pid), 1000);
-    // 20 saat sonra oyuncu döner: pasif iyileşme ADA harcar
+    // 20 saat sonra oyuncu döner: pasif iyileşme ASTRA harcar
     E.mutatePlayer(pid, gs => { gs.state.lastSeenAt = Date.now() - 20 * 3600000; });
     E.withPlayer(pid, () => null);
     const st = E.readPlayer(pid), ks = sim.status(pid);
@@ -74,7 +74,7 @@ try {
 
     // Aktarım ve çekim kuralları
     sim.consume(pid, 60);
-    assert.equal(sim.queueSettlements(), 1, '50 ADA eşiği aşılınca aktarım sıraya girer');
+    assert.equal(sim.queueSettlements(), 1, '50 ASTRA eşiği aşılınca aktarım sıraya girer');
     await sim.processOps();
     const k2 = sim.status(pid);
     assert.ok(near(k2.pending, 0, 0.01) && k2.ada < 1000 - 60 + 1e-6, 'Aktarım yapıldı, kasadan düştü (kuruş altı kalan bekler)');
@@ -96,7 +96,7 @@ try {
     const row = real.ensure(pid);
     assert.ok(/^0x[0-9a-f]{40}$/.test(row.address), 'Oyuncuya kasa adresi açıldı');
     assert.ok(!JSON.stringify(db.raw.prepare('SELECT * FROM kasa').all()).includes('0x' + 'ab'.repeat(32)), 'Ana anahtar kayıtta yok');
-    // Oyuncu kasasına 1.000 ADA ve 0,1 AVAX yatırır
+    // Oyuncu kasasına 1.000 ASTRA ve 0,1 AVAX yatırır
     await (await token.mint(row.address, ethers.parseUnits('1000', 18))).wait();
     await (await owner.sendTransaction({ to: row.address, value: ethers.parseEther('0.1') })).wait();
     await real.refresh(pid);
@@ -107,12 +107,12 @@ try {
     real.consume(pid, 120);
     real.queueSettlements();
     await real.processOps();
-    assert.equal(await token.balanceOf(await treasury.getAddress()), ethers.parseUnits('120', 18), 'Aktarılan ADA oyun hazinesine gitti');
+    assert.equal(await token.balanceOf(await treasury.getAddress()), ethers.parseUnits('120', 18), 'Aktarılan ASTRA oyun hazinesine gitti');
     assert.ok((await provider.getBalance(await feeRx.getAddress())) > feeBefore, 'AVAX komisyonu geldi');
     const ks = real.status(pid);
-    assert.ok(near(ks.ada, 880, 1e-6) && near(ks.pending, 0), 'Kasada 880 ADA kaldı');
+    assert.ok(near(ks.ada, 880, 1e-6) && near(ks.pending, 0), 'Kasada 880 ASTRA kaldı');
     ok('Gerçek kasa: harcama sözleşmeden oyuna aktarıldı, komisyon alındı');
-    // Oyuncu kasasındaki ADA'yı ve AVAX'ı kendi cüzdanına çeker (kesintisiz)
+    // Oyuncu kasasındaki ASTRA'yı ve AVAX'ı kendi cüzdanına çeker (kesintisiz)
     const wa = real.withdraw(pid, 'ADA', 500);
     assert.ok(wa.ok, wa.error);
     await real.processOps();
@@ -123,7 +123,7 @@ try {
     await real.processOps();
     assert.equal((await provider.getBalance(playerAddr)) - avaxBefore, ethers.parseEther('0.05'), 'AVAX bağlı cüzdana geldi');
     assert.equal(real.withdraw(pid, 'AVAX', 1).ok, false, 'Gaz payı bırakılmadan AVAX çekilemez');
-    ok('Gerçek kasa: ADA ve AVAX bağlı cüzdana çekildi');
+    ok('Gerçek kasa: ASTRA ve AVAX bağlı cüzdana çekildi');
     // AVAX biterse kasa kullanılmaz
     db.raw.prepare('UPDATE kasa SET avax = 0.001 WHERE player = ?').run(pid);
     assert.equal(real.available(pid), 0, 'İşlem ücreti için AVAX yoksa kasa kullanılmaz');

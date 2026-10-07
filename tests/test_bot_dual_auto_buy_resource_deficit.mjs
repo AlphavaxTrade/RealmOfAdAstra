@@ -74,7 +74,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
 
     const buyRes = gs.autoBuyBotResourceDeficit();
 
-    // KULLANICI KURALI: Kasada ADA varken botun durmaması için asgari önkoşul satın alınır!
+    // KULLANICI KURALI: Kasada ASTRA varken botun durmaması için asgari önkoşul satın alınır!
     assert.equal(buyRes.bought, true, 'AMMden asgari satın alım başarıyla yapılmalı');
     assert.ok(buyRes.totalSpentAda > 0 && buyRes.totalSpentAda < 2000, 'Siloyu fullemeden sadece asgari harcama yapılmalı');
     assert.ok(gs.state.inventory.wood >= 50, 'Odun en az 50 olmalı');
@@ -110,7 +110,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     assert.equal(gs.isBotPaused(), false, 'Bot asla duraklatılmamış olmalı');
   });
 
-  await t.test('4. Dondurulmuş (Paused) bot, kasada ADA varken updateBotPauseState anında asgari tedarikle uyanmalı; ADA yoksa donuk kalmalı', () => {
+  await t.test('4. Dondurulmuş (Paused) bot, kasada ASTRA varken updateBotPauseState anında asgari tedarikle uyanmalı; ASTRA yoksa donuk kalmalı', () => {
     const gs = new GameStateManager();
     gs.state.level = 1;
     gs.state.tavernaBotActive = true;
@@ -121,16 +121,16 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     gs.state.inventory.wood = 0;
     gs.state.inventory.iron = 0;
     gs.state.inventory.wheat = 0;
-    gs.state.adAstraBalance = 0; // ADA YOK!
+    gs.state.adAstraBalance = 0; // ASTRA YOK!
     gs.state.stamina = 100;
     for (const t of Object.values(gs.state.tools)) t.durability = 4320;   // v2: 6 alet, hepsi sağlam
 
-    // ADA yokken updateBotPauseState çağrıldığında alım yapamaz ve donuk kalır
+    // ASTRA yokken updateBotPauseState çağrıldığında alım yapamaz ve donuk kalır
     const pauseState = gs.updateBotPauseState();
     assert.equal(pauseState.isPaused, true, 'ADA yokken bot donuk kalmalı');
     assert.equal(gs.isBotPaused(), true, 'Bot güvenle duraklatılmış olmalı');
 
-    // Kullanıcı hesaba ADA yatırdığında (Örn: 8.000 ADA) bot asgari kaynak alıp anında uyanmalı
+    // Kullanıcı hesaba ASTRA yatırdığında (Örn: 8.000 ASTRA) bot asgari kaynak alıp anında uyanmalı
     gs.state.adAstraBalance = 8000;
     const resumeCheck = gs.updateBotPauseState();
     assert.equal(resumeCheck.isPaused, false, 'ADA gelince asgari kaynak alınıp bot uyanmalı');

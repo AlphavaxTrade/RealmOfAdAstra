@@ -217,9 +217,9 @@ export function createBarracksUI(deps) {
         <div class="bk-hp-top"><span>Can</span><b class="${hpTone(heal.hpPct)}" id="bk-hp-text">${num(heal.hp)} / ${num(heal.maxHp)}</b></div>
         <span class="bk-bar"><span class="bk-bar-fill ${hpTone(heal.hpPct)}" data-hp-idx="${idx}" style="width:${heal.hpPct}%"></span></span>
         <div class="bk-hp-foot">
-          <span class="bk-dim">${heal.isFull ? 'Tam can' : heal.isPaused ? '<span class="bad">İyileşme durdu: buğday ya da ADA yetersiz</span>' : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</span>
+          <span class="bk-dim">${heal.isFull ? 'Tam can' : heal.isPaused ? '<span class="bad">İyileşme durdu: buğday ya da ASTRA yetersiz</span>' : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</span>
           <span class="bk-hp-actions">
-            ${!heal.isFull ? `<button type="button" class="bk-btn sm" data-bk="heal">Hemen doyur · ${num(heal.wheatNeeded)} buğday + ${num(heal.adaCost)} ADA</button>` : ''}
+            ${!heal.isFull ? `<button type="button" class="bk-btn sm" data-bk="heal">Hemen doyur · ${num(heal.wheatNeeded)} buğday + ${num(heal.adaCost)} ASTRA</button>` : ''}
             ${!heal.isFull && scrolls > 0 ? `<button type="button" class="bk-btn sm" data-bk="scroll">Parşömen (${scrolls})</button>` : ''}
           </span>
         </div>
@@ -244,7 +244,7 @@ export function createBarracksUI(deps) {
     const canBuy = (max === Infinity || list.length < max) && st().adAstraBalance >= cost;
     if (!list.length) {
       return `<div class="bk-hero"><h3>Ordun henüz boş</h3><p class="bk-dim">İlk askerini al; silah ve zırhları ona buradan takacaksın.</p>
-        <button type="button" class="bk-btn primary" data-bk="buy" ${canBuy ? '' : 'disabled'}>Yeni asker al · ${num(cost)} ADA</button></div>`;
+        <button type="button" class="bk-btn primary" data-bk="buy" ${canBuy ? '' : 'disabled'}>Yeni asker al · ${num(cost)} ASTRA</button></div>`;
     }
     let sel = getSelected();
     if (!list[sel]) { sel = 0; setSelected(0); }
@@ -257,7 +257,7 @@ export function createBarracksUI(deps) {
     const blocked = gameState.isArmyPassiveHealBlocked ? gameState.isArmyPassiveHealBlocked() : false;
     const chip = (id, label, n) => `<button type="button" class="bk-chip ${ui.chip === id ? 'is-on' : ''}" data-bk="chip" data-chip="${id}">${label}${n != null ? ` <span>${n}</span>` : ''}</button>`;
     return `
-      ${blocked ? `<div class="bk-alert">Buğday ya da ADA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Ambara buğday ekle ve hesabında ADA bulundur.</div>` : ''}
+      ${blocked ? `<div class="bk-alert">Buğday ya da ASTRA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Ambara buğday ekle ve hesabında ASTRA bulundur.</div>` : ''}
       <div class="bk-summary">
         <div class="bk-summary-stats">
           <span><b>${list.length}</b> asker</span><span><b>${num(atk)}</b> saldırı</span><span><b>${num(hp)}</b> can</span><span><b>${filled}/${list.length * 5}</b> yuva dolu</span>
@@ -266,7 +266,7 @@ export function createBarracksUI(deps) {
           <button type="button" class="bk-btn primary" data-bk="prep" title="Yaralıları doyurur, boş yuvalara en iyi eşyaları takar">Orduyu hazırla</button>
           <button type="button" class="bk-btn" data-bk="auto">Boş yuvaları doldur</button>
           <button type="button" class="bk-btn" data-bk="heal-all">Hepsini doyur</button>
-          <button type="button" class="bk-btn" data-bk="buy" ${canBuy ? '' : 'disabled'} title="${num(cost)} ADA">Yeni asker · ${num(cost)} ADA</button>
+          <button type="button" class="bk-btn" data-bk="buy" ${canBuy ? '' : 'disabled'} title="${num(cost)} ASTRA">Yeni asker · ${num(cost)} ASTRA</button>
           <button type="button" class="bk-btn ghost" data-bk="unequip-all" title="Bütün askerlerin eşyaları depoya döner">Hepsini soy</button>
         </div>
       </div>
@@ -332,7 +332,7 @@ export function createBarracksUI(deps) {
             ${best ? `<button type="button" class="bk-btn sm primary" data-bk="give" ${data(e)} data-to="${best.idx}">${best.idx + 1}. askere tak</button>` : ''}
             <button type="button" class="bk-btn sm" data-bk="move" data-key="${esc(keyOf(e))}">${e.source === 'soldier' ? 'Başka askere' : 'Askere tak…'}</button>
             ${e.source === 'soldier' ? `<button type="button" class="bk-mini" data-bk="a-unequip" ${data(e)}>Çıkar</button>` : ''}
-            ${up && !up.isMaxLevel ? `<button type="button" class="bk-mini" data-bk="upgrade" ${data(e)} title="Sv.${up.nextLevel}: ${num(up.ironCost)} demir, ${num(up.woodCost)} odun, ${num(up.fragmentCost)} parça, ${num(up.adAstraCost)} ADA">Yükselt</button>` : ''}
+            ${up && !up.isMaxLevel ? `<button type="button" class="bk-mini" data-bk="upgrade" ${data(e)} title="Sv.${up.nextLevel}: ${num(up.ironCost)} demir, ${num(up.woodCost)} odun, ${num(up.fragmentCost)} parça, ${num(up.adAstraCost)} ASTRA">Yükselt</button>` : ''}
           </div>`}
       </article>`;
     }).join('');

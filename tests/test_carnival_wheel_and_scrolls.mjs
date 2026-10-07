@@ -95,7 +95,7 @@ assert(droppedScrolls > 0, '50 Boss zaferinde en az bir parşömen düşmeli (%4
 console.log(`✅ Boss zaferlerinde parşömen düşme mekaniği doğrulandı (${droppedScrolls}/50 düşüş).`);
 
 // Test 5: Karnaval Çarkı hammaddeyle (kullanıcı kararı 4 Ekim 2026): ödenen hammaddenin YARISI yakılır,
-// YARISI pazarda satılır ve gelen ADA Karnaval kasasına girer.
+// YARISI pazarda satılır ve gelen ASTRA Karnaval kasasına girer.
 console.log('\n[5/6] Karnaval Çarkında hammadde ödemesi: yarısı yakılır, yarısı satılıp Karnaval kasasına...');
 gs.state.warehouseLevel = 18;
 for (const res of ['wood', 'iron', 'wheat']) {
@@ -109,7 +109,7 @@ for (const res of ['wood', 'iron', 'wheat']) {
   assert(bi && bi.resource === res, 'burnedInfo dönmeli');
   assert.equal(bi.amount + bi.soldQty, cost, 'Yakılan + satılan = ödenen hammadde');
   assert.equal(bi.soldQty, Math.floor(cost / 2), 'Yarısı pazarda satıldı');
-  assert(bi.carnivalIn > 0, 'Satıştan gelen ADA Karnaval kasasına girdi');
+  assert(bi.carnivalIn > 0, 'Satıştan gelen ASTRA Karnaval kasasına girdi');
   assert.equal(gs.state.burnedResources[res] - burnedBefore, bi.amount, 'Kalan yarı yakıldı');
   let won = 0;
   if (r.slice?.type === 'amm_raw' && r.slice?.key === res) won = Math.round(r.slice.adaVal / (ammMarket.getPrice(res) || 1.0));
@@ -199,6 +199,6 @@ const keyPrice = ammMarket.getPrice('keys');
 const C = GAME_CONFIG.AMM_CORRIDORS;
 assert(boxPrice >= C.boxes.minPriceAda && boxPrice <= C.boxes.maxPriceAda, `Pandora kutusu pazar fiyatı koridor içinde olmalı: ${boxPrice}`);
 assert(keyPrice >= C.keys.minPriceAda && keyPrice <= C.keys.maxPriceAda, `Anahtar pazar fiyatı koridor içinde olmalı: ${keyPrice}`);
-console.log(`✅ Pandora Kutusu AMM Fiyatı: ~${boxPrice.toFixed(0)} ADA, Anahtar: ~${keyPrice.toFixed(0)} ADA doğrulandı.`);
+console.log(`✅ Pandora Kutusu AMM Fiyatı: ~${boxPrice.toFixed(0)} ASTRA, Anahtar: ~${keyPrice.toFixed(0)} ASTRA doğrulandı.`);
 
 console.log('\n🎉 TÜM ŞANS ÇARKI, PİYANGO 2X VE PANDORA KUTUSU TESTLERİ %100 BAŞARIYLA TAMAMLANDI! 🎉\n');

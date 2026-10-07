@@ -42,13 +42,13 @@ try {
   const before = { spent: gp.totalSpent || 0, burned: gp.totalBurned || 0, creator: gp.creatorRoyaltyTotal || 0, ubi: gp.ubiWeekAccrued || 0,
     dungeon: T.getPool('dungeon'), quest: T.getPool('quest'), carnival: T.getPool('carnival') };
 
-  // Trade sitesinden 10.000 ve 5.000 ADA; yabancı bir cüzdandan 7.777 ADA (sayılmamalı)
+  // Trade sitesinden 10.000 ve 5.000 ASTRA; yabancı bir cüzdandan 7.777 ASTRA (sayılmamalı)
   await (await token.connect(trade).transfer(to, ethers.parseUnits('10000', 18))).wait();
   await (await token.connect(stranger).transfer(to, ethers.parseUnits('7777', 18))).wait();
   await (await token.connect(trade).transfer(to, ethers.parseUnits('5000', 18))).wait();
 
   const got = await world.scanPartnerIncome();
-  assert.ok(near(got, 15000), `Yalnız trade sitesinin 15.000 ADA'sı sayıldı (${got})`);
+  assert.ok(near(got, 15000), `Yalnız trade sitesinin 15.000 ASTRA'sı sayıldı (${got})`);
   const A = E.GAME_CONFIG.TREASURY_ALLOCATION;
   assert.ok(near((gp.totalSpent || 0) - before.spent, 15000), 'Harcama olarak kaydedildi');
   assert.ok(near((gp.totalBurned || 0) - before.burned, 15000 * 0.05), '%5 yakım');

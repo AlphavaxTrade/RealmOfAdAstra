@@ -13,7 +13,7 @@ globalThis.localStorage = {
   clear() { this.store = {}; }
 };
 
-console.log('🧪 Test: Vanilla Reset Sonrası 50k ADA + Bot Alımı & Silo Taşma Koruması');
+console.log('🧪 Test: Vanilla Reset Sonrası 50k ASTRA + Bot Alımı & Silo Taşma Koruması');
 
 const gs = new GameStateManager();
 gs.vanillaReset();
@@ -28,7 +28,7 @@ const initCap = gs.getWarehouseCapacity();
 const W = GAME_CONFIG.WAREHOUSE.initialCapacities;
 for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.strictEqual(initCap[k], W[k], `Lv 1 ${k} kapasitesi ${W[k]} olmalı`);
 
-// 2. 50k ADA Yükleme & Bot Satın Alma
+// 2. 50k ASTRA Yükleme & Bot Satın Alma
 gs.state.adAstraBalance = 50000;
 const buyRes = gs.buyTavernaAutomationBot(false);
 assert(buyRes.success, 'Bot satın alımı başarılı olmalı');
@@ -58,5 +58,5 @@ for (let round = 1; round <= 15; round++) {
 }
 
 // 4. Silo doğal olarak seviye atlamış ve asla taşmamış olmalı
-assert(gs.state.warehouseLevel >= 2, 'Silo yeterli kaynak ve ADA finansmanı ile Seviye 2 veya üzerine yükselmeli');
+assert(gs.state.warehouseLevel >= 2, 'Silo yeterli kaynak ve ASTRA finansmanı ile Seviye 2 veya üzerine yükselmeli');
 console.log('✅ Tüm testler başarıyla geçti: Silo asla %3000 taşmadı ve Seviye ' + gs.state.warehouseLevel + '\'e yükseldi!');

@@ -53,9 +53,9 @@ gm.state.level = 5;
 const dropRes = gm.addDungeonXpAndDrops(5, false);
 console.log('Zindan Canavarı Ödül Çekimi:', dropRes);
 if (dropRes.adAstraGained <= 0) {
-  throw new Error('HATA: Zindan canavarından ADA kazanılamadı!');
+  throw new Error('HATA: Zindan canavarından ASTRA kazanılamadı!');
 }
-console.log(`Kazanılan ADA: ${dropRes.adAstraGained}, Hazine Zindan Havuzundan çekildi.`);
+console.log(`Kazanılan ASTRA: ${dropRes.adAstraGained}, Hazine Zindan Havuzundan çekildi.`);
 console.log('✅ 7. Madde Başarılı: Zindan ödülü hazine defteriyle muhasebeleştirildi.');
 
 console.log('🎉 TÜM 7 MADDE DÜZELTME VE DOĞRULAMA TESTLERİ %100 BAŞARIYLA GEÇTİ!');

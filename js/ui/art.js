@@ -33,6 +33,7 @@ export function equipImg(slot, emoji = '', cls = '') {
 // Hammadde simgeleri (pazar, silo, üst çubuk)
 export const RES_ART = {
   wood: 'assets/ui/res_wood.webp', iron: 'assets/ui/res_iron.webp', wheat: 'assets/ui/res_wheat.webp',
+  stone: 'assets/ui/res_stone.webp', coal: 'assets/ui/res_coal.webp', herb: 'assets/ui/res_herb.webp',
   fragments: 'assets/ui/res_fragments.webp', keys: 'assets/ui/res_keys.webp', boxes: 'assets/ui/res_boxes.webp'
 };
 export function resImg(key, emoji = '', style = '') {

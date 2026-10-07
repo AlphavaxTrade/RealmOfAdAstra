@@ -50,12 +50,12 @@ async function newPlayer(email, withWallet) {
   assert.equal(kasa.enforceCaps(), 1, 'Yalnız bağlı cüzdanı olan oyuncu için iade açıldı');
   assert.equal(kasa.enforceCaps(), 0, 'Bekleyen iade varken ikinci iade açılmaz');
   await kasa.processOps();
-  assert.ok(near(kasa.status(a).ada, 20000), 'Fazla (80.000 ADA) bağlı cüzdana döndü, kasada sınır kadar kaldı');
+  assert.ok(near(kasa.status(a).ada, 20000), 'Fazla (80.000 ASTRA) bağlı cüzdana döndü, kasada sınır kadar kaldı');
   assert.ok(kasa.status(a).ops.some(o => o.kind === 'return_ada' && o.status === 'sent'));
   assert.ok(notes.length === 1 && notes[0][0] === a && /geri gönderiliyor/.test(notes[0][1]), 'Oyuncuya bildirim');
   const sb = kasa.status(b);
   assert.ok(near(sb.ada, 100000) && sb.overCap && !sb.hasWallet, 'Cüzdansız oyuncunun parası kasada kalır, panel uyarır');
-  // Sınır günlük harcamayla büyür: günde 2.000 ADA harcayan oyuncunun sınırı ≈ 30 günlük harcaması
+  // Sınır günlük harcamayla büyür: günde 2.000 ASTRA harcayan oyuncunun sınırı ≈ 30 günlük harcaması
   db.raw.prepare('UPDATE kasa SET created = ? WHERE player = ?').run(Date.now() - 14 * 86400000, a);
   for (let d = 0; d < 14; d++) db.raw.prepare('INSERT INTO kasa_usage (player, day, ada) VALUES (?, ?, ?)').run(a, new Date(Date.now() - d * 86400000 + 3 * 3600000).toISOString().slice(0, 10), 2000);
   assert.ok(near(kasa.capOf(a), 60000, 1), 'Sınır = günlük ortalama × 30');
@@ -77,14 +77,14 @@ async function newPlayer(email, withWallet) {
   };
   const world = createWorld({ db, engine: E, chain, accounts, mailer, cfg: { ...cfg, testMode: false, contractOwner: '' }, log: { warn() {}, error() {} } });
   const ep = Number(E.globalPool.state.epochId);
-  // Geçmiş: son haftalarda en yüksek haftalık gönderim 1.000.000 ADA
+  // Geçmiş: son haftalarda en yüksek haftalık gönderim 1.000.000 ASTRA
   db.q.payoutAdd.run(ep - 1, 'withdraw', '0x' + 'aa'.repeat(20), 800000, Date.now());
   db.q.payoutAdd.run(ep - 1, 'burn', cfg.deadAddress, 200000, Date.now());
   db.q.payoutAdd.run(ep - 2, 'withdraw', '0x' + 'aa'.repeat(20), 300000, Date.now());
   db.raw.exec("UPDATE payouts SET status = 'sent'");
   const st = await world.checkHotWallet();
   assert.equal(st.weekly, 1000000, 'Haftalık ihtiyaç = son haftaların en yüksek gönderimi');
-  assert.equal(st.swept, 4000000, 'Fazlası (4.000.000 ADA) yedek cüzdana');
+  assert.equal(st.swept, 4000000, 'Fazlası (4.000.000 ASTRA) yedek cüzdana');
   const row = db.raw.prepare("SELECT * FROM payouts WHERE kind = 'reserve'").get();
   assert.ok(row && row.address === RESERVE && row.amount === 4000000 && row.status === 'pending', 'Aktarım, güvenli ödeme sırasına girdi');
   assert.equal((await world.checkHotWallet()).swept, 0, 'Bekleyen aktarım varken ikincisi açılmaz');
@@ -95,7 +95,7 @@ async function newPlayer(email, withWallet) {
   const low = await world.checkHotWallet();
   assert.equal(low.need, 2000000, 'Bekleyen talepler en yüksek geçmiş haftayı aşınca ihtiyaç onlar');
   assert.ok(low.low && low.swept === 0, 'Az: aktarım yok, uyarı var');
-  assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'yonetici@ornek.com' && /azaldı/.test(m.subject) && /500\.000/.test(m.text)), 'Yöneticiye "yedek cüzdandan 500.000 ADA gönder" e-postası');
+  assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'yonetici@ornek.com' && /azaldı/.test(m.subject) && /500\.000/.test(m.text)), 'Yöneticiye "yedek cüzdandan 500.000 ASTRA gönder" e-postası');
   const mails = db.kvJson('dev:outbox', []).length;
   await world.checkHotWallet();
   assert.equal(db.kvJson('dev:outbox', []).length, mails, 'Uyarı e-postası günde en çok bir kez');

@@ -32,7 +32,7 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(healInfo.secondsRemaining, 43200, 'Kalan süre 43200 saniye (12 saat) olmalı');
   });
 
-  it('Hesapta yeterli Buğday ve ADA varken pasif iyileşme normal çalışmalı', () => {
+  it('Hesapta yeterli Buğday ve ASTRA varken pasif iyileşme normal çalışmalı', () => {
     gs.state.soldierUnits[0].hp = 50;
     gs.state.inventory.wheat = 100;
     gs.state.adAstraBalance = 100;
@@ -59,14 +59,14 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
 
     const healInfo = gs.getSoldierHealInfo(0);
     assert.strictEqual(healInfo.isPaused, true, 'Asker heal info isPaused true olmalı');
-    assert.ok(healInfo.pauseMessage.toLowerCase().includes('yeteri kadar $adastra veya buğday yok'), 'Net uyarı mesajı bulunmalı');
+    assert.ok(healInfo.pauseMessage.toLowerCase().includes('yeteri kadar astra veya buğday yok'), 'Net uyarı mesajı bulunmalı');
     assert.ok(healInfo.pauseMessage.toLowerCase().includes('askerlerin iyileşmesi durduruldu'), 'Durduruldu mesajı içermeli');
   });
 
-  it('Hesapta $ADASTRA YOKSA (0 ADA) iyileşme süreci DERHAL durdurulmalı ve can artmamalı', () => {
+  it('Hesapta ASTRA YOKSA (0 ASTRA) iyileşme süreci DERHAL durdurulmalı ve can artmamalı', () => {
     gs.state.soldierUnits[0].hp = 50;
     gs.state.inventory.wheat = 100;
-    gs.state.adAstraBalance = 0; // ADA bitti!
+    gs.state.adAstraBalance = 0; // ASTRA bitti!
 
     const prevHp = gs.state.soldierUnits[0].hp;
     const res = gs.processSoldierPassiveHealing(3600); // 1 saat geçse bile
@@ -79,7 +79,7 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(healInfo.isPaused, true, 'Asker heal info isPaused true olmalı');
   });
 
-  it('Buğday ve ADA tekrar temin edildiğinde iyileşme otomatik olarak devam etmeli', () => {
+  it('Buğday ve ASTRA tekrar temin edildiğinde iyileşme otomatik olarak devam etmeli', () => {
     gs.state.soldierUnits[0].hp = 50;
     gs.state.inventory.wheat = 50;
     gs.state.adAstraBalance = 50;

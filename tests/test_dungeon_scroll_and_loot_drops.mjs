@@ -54,6 +54,6 @@ test('Zindan Parşömen Düşüşü, Görselleri ve Resimli Ganimet Doğrulama T
     assert.equal(resNormal.isBoss, false);
     assert.equal(resBoss.isBoss, true);
     assert.ok(resBoss.xpGained > resNormal.xpGained, 'Boss daha yüksek XP vermeli');
-    assert.ok(resBoss.adAstraGained > resNormal.adAstraGained, 'Boss daha yüksek ADA vermeli');
+    assert.ok(resBoss.adAstraGained > resNormal.adAstraGained, 'Boss daha yüksek ASTRA vermeli');
   });
 });

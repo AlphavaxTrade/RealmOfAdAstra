@@ -1114,7 +1114,7 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
 
 /* Bina etiketleri yalnızca ürünü hazır olan sefer alanlarında küçük rozet olarak görünür */
 .map-label { display: none; }
-.map-label[data-tone="ready"]:is([data-zone="forest"], [data-zone="mine"], [data-zone="farm"]),
+.map-label[data-tone="ready"]:is([data-zone="forest"], [data-zone="mine"], [data-zone="farm"], [data-zone="quarry"], [data-zone="coalmine"], [data-zone="herbgarden"]),
 .map-label[data-tone="gift"][data-zone="carnival"] {
   all: unset;
   box-sizing: border-box;
@@ -1423,3 +1423,13 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
 .sidebar-badge-blue.hidden,
 .grid-menu-btn.is-locked .sidebar-badge-red,
 .grid-menu-btn.is-locked .sidebar-badge-blue { display: none !important; }
+
+/* v2 (7 Ekim 2026): yeni hammaddeler — taş, kömür, şifalı ot */
+:root { --c-stone: #b8b2a8; --c-coal: #8b95a5; --c-herb: #86efac; }
+.hud .res-stone:hover { border-color: rgba(184, 178, 168, .5); }
+.hud .res-coal:hover { border-color: rgba(139, 149, 165, .5); }
+.hud .res-herb:hover { border-color: rgba(134, 239, 172, .5); }
+.hud .res-stone .res-cap > span { background: var(--c-stone); }
+.hud .res-coal .res-cap > span { background: var(--c-coal); }
+.hud .res-herb .res-cap > span { background: var(--c-herb); }
+.hud .top-resource-dock { flex-wrap: wrap; row-gap: 4px; }

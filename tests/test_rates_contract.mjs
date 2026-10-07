@@ -1,5 +1,5 @@
-// ADA oranları (kullanıcı kararı 6 Ekim 2026): bütün oranlar RealmRates sözleşmesinde; değişiklik 24 saat sonra geçerli,
-// oyun sunucusu sözleşmeden okuyup oyuna uygular. Ayrıca denetim düzeltmeleri: kendi kendine iyileşmedeki ADA artık
+// ASTRA oranları (kullanıcı kararı 6 Ekim 2026): bütün oranlar RealmRates sözleşmesinde; değişiklik 24 saat sonra geçerli,
+// oyun sunucusu sözleşmeden okuyup oyuna uygular. Ayrıca denetim düzeltmeleri: kendi kendine iyileşmedeki ASTRA artık
 // kasalara gidiyor; kullanılan kutu/anahtar/parça/parşömen yakım kaydına giriyor. Sahte zincirde (ganache) denenir.
 import assert from 'node:assert/strict';
 import ganache from 'ganache';
@@ -103,7 +103,7 @@ try {
   await assert.rejects(rates.cancel(), /NothingPending|revert/);
   ok('Bekleyen öneri geri çekilebiliyor');
 
-  // ── Denetim: kendi kendine iyileşmedeki ADA kasalara gidiyor ──
+  // ── Denetim: kendi kendine iyileşmedeki ASTRA kasalara gidiyor ──
   const P = '0x' + '1'.repeat(40);
   E.withPlayer(P, gs => {
     gs.state.adAstraBalance = 1000;
@@ -120,8 +120,8 @@ try {
     spentAda = a0 - gs.state.adAstraBalance;
   });
   assert.ok(spentAda > 0.01, `iyileşme ASTRA harcadı (${spentAda})`);
-  assert.ok(near((gp.totalSpent || 0) - before, spentAda, 0.02), `harcanan ADA deftere girdi (${(gp.totalSpent || 0) - before} / ${spentAda})`);
-  ok('Kendi kendine iyileşmede harcanan ADA artık kaybolmuyor, her harcama gibi dağıtılıyor');
+  assert.ok(near((gp.totalSpent || 0) - before, spentAda, 0.02), `harcanan ASTRA deftere girdi (${(gp.totalSpent || 0) - before} / ${spentAda})`);
+  ok('Kendi kendine iyileşmede harcanan ASTRA artık kaybolmuyor, her harcama gibi dağıtılıyor');
 
   // ── Kullanılan kutu ve anahtar yakım kaydına giriyor ──
   E.withPlayer(P, gs => {

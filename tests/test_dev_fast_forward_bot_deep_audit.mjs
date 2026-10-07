@@ -102,7 +102,7 @@ console.log('+18 Saat Sonrası Rapor:', {
 });
 
 assert.equal(report18h.botExecutionStatus, 'ran', 'Bot otomatik yenilenerek kesintisiz çalışmaya devam etmiş olmalı');
-assert.equal(gs.hasPurchasedBot(), true, 'Bot süresi bittiği an kasadaki ADA ile yenilenip aktif kalmalı');
+assert.equal(gs.hasPurchasedBot(), true, 'Bot süresi bittiği an kasadaki ASTRA ile yenilenip aktif kalmalı');
 const expiryAfterRenew = gs.getAutoCollectorExpiry();
 assert.ok(expiryAfterRenew > Date.now(), 'Yeni 24 saatlik periyottan kalan süre gelecekte olmalı');
 console.log('✅ [3/4] 24 saatlik sınır aşıldığında bot otomatik satın alınıp kesintisiz devam etti!');
@@ -111,7 +111,7 @@ console.log('✅ [3/4] 24 saatlik sınır aşıldığında bot otomatik satın a
 // [4/4] DONDURULMUŞ (PAUSED) BOT İLE İLERİ SARMA (SÜRE KORUMA DOĞRULAMASI)
 // =========================================================================
 console.log('\n[4/4] Dondurulmuş Bot İle İleri Sarma (Süre Kaybı Olmama Testi)...');
-// Botu dondurmak için depoyu ve ADA'yı sıfırlayalım
+// Botu dondurmak için depoyu ve ASTRA'yı sıfırlayalım
 gs.state.inventory = { wood: 0, iron: 0, wheat: 0 };
 gs.state.adAstraBalance = 0;
 const pauseSt = gs.updateBotPauseState();

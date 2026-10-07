@@ -1,4 +1,4 @@
-// Promo kodları (kullanıcı kararı 6 Ekim 2026): yönetici kod üretir, ödülü kod başına seçer (kilitli ADA ve/veya eşya);
+// Promo kodları (kullanıcı kararı 6 Ekim 2026): yönetici kod üretir, ödülü kod başına seçer (kilitli ASTRA ve/veya eşya);
 // bedel görev kasasından; her hesap bir kez; kullanım sınırı, süre, kapatma; yanlış deneme sınırı; kayıtta yazılan kod
 // e-posta doğrulanınca kullanılır. Sunucu gerçek HTTP ile denenir (zincir yok).
 import assert from 'node:assert/strict';
@@ -60,12 +60,12 @@ try {
   const r1 = await call('POST', '/api/promo/redeem', { code: 'hosgeldin-2026' }, a.token);
   assert.equal(r1.status, 200, JSON.stringify(r1.body));
   const s1 = await state(a.token);
-  assert.equal(s1.adAstraBalance - (s0.adAstraBalance || 0), 500, '500 ADA geldi');
+  assert.equal(s1.adAstraBalance - (s0.adAstraBalance || 0), 500, '500 ASTRA geldi');
   assert.ok((s1.lockedAda || 0) >= 500, 'ADA kilitli geldi');
   assert.equal(s1.inventory.wood - (s0.inventory.wood || 0), 200, '200 odun geldi');
   assert.equal((s1.arenaKeys || 0) - (s0.arenaKeys || 0), 2, '2 anahtar geldi');
-  assert.ok(q0 - quest() > 500, `Bedel görev kasasından çıktı (${Math.round(q0 - quest())} ADA)`);
-  ok('Kod oyunda kullanılıyor: kilitli ADA + pazardan alınan odun ve anahtar, bedeli görev kasasından');
+  assert.ok(q0 - quest() > 500, `Bedel görev kasasından çıktı (${Math.round(q0 - quest())} ASTRA)`);
+  ok('Kod oyunda kullanılıyor: kilitli ASTRA + pazardan alınan odun ve anahtar, bedeli görev kasasından');
 
   assert.equal((await call('POST', '/api/promo/redeem', { code: 'HOSGELDIN-2026' }, a.token)).status, 400, 'Aynı hesap ikinci kez kullanamaz');
   const b = await signup('banu@example.com');

@@ -1,6 +1,6 @@
 // Test paneli olayları yalnızca bir kez bağlanmalı.
 // Önceden initDevPanelEvents iki kez çağrılıyordu; her test düğmesi iki kez çalışıyordu
-// (+6 saat ileri sarma botun süresinden 12 saat düşüyor, +10.000 ADA 20.000 ekliyordu).
+// (+6 saat ileri sarma botun süresinden 12 saat düşüyor, +10.000 ASTRA 20.000 ekliyordu).
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 

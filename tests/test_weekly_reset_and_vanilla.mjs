@@ -72,12 +72,12 @@ assert.equal(woodAfter, GAME_CONFIG.GLOBAL_RESOURCE_CAPS.wood.totalCap, 'Odun li
 assert.equal(wheatAfter, GAME_CONFIG.GLOBAL_RESOURCE_CAPS.wheat.totalCap, 'Buğday limiti %100 kapasiteye (490.000) sıfırlanmalı');
 assert.equal(ironAfter, GAME_CONFIG.GLOBAL_RESOURCE_CAPS.iron.totalCap, 'Demir limiti %100 kapasiteye (130.000) sıfırlanmalı');
 
-// 3. 100 Milyon $ADASTRA Başlangıç Fonu Tohum Havuzları Doğrulaması
-console.log('\n--- 🏛️ 100 MİLYON $ADASTRA İLK DAĞITIM VE SIFIRLAMA HAVUZ KONTROLÜ ---');
+// 3. 100 Milyon ASTRA Başlangıç Fonu Tohum Havuzları Doğrulaması
+console.log('\n--- 🏛️ 100 MİLYON ASTRA İLK DAĞITIM VE SIFIRLAMA HAVUZ KONTROLÜ ---');
 
 // A. AMM DEX Pazar Havuzları (derivePool ve AMM_CORRIDORS ile Senkron Türetim)
 const p = ammMarket.pools;
-console.log(`AMM Havuzları: Buğday: ${p.wheat.adAstraReserve} ADA (${p.wheat.resourceReserve} kaynak), Odun: ${p.wood.adAstraReserve} ADA (${p.wood.resourceReserve} kaynak), Demir: ${p.iron.adAstraReserve} ADA (${p.iron.resourceReserve} kaynak)`);
+console.log(`AMM Havuzları: Buğday: ${p.wheat.adAstraReserve} ASTRA (${p.wheat.resourceReserve} kaynak), Odun: ${p.wood.adAstraReserve} ASTRA (${p.wood.resourceReserve} kaynak), Demir: ${p.iron.adAstraReserve} ASTRA (${p.iron.resourceReserve} kaynak)`);
 
 // Fiyat oranlarının koridor varsayılan fiyatları ile %100 senkronizasyon kontrolü
 const wheatPrice = p.wheat.adAstraReserve / p.wheat.resourceReserve;
@@ -92,7 +92,7 @@ assert(p.wheat.adAstraReserve > 0 && p.wood.adAstraReserve > 0 && p.iron.adAstra
 assert(p.fragments.adAstraReserve > 0 && p.boxes.adAstraReserve > 0 && p.keys.adAstraReserve > 0, 'Özel varlık havuzları fonlanmış olmalı');
 console.log('✅ [1/3] AMM DEX Havuzları: derivePool ve AMM_CORRIDORS hedef fiyatlarıyla kusursuz senkronize.');
 
-// B. Krallık Hazinesi Kasaları (Tam 40.000.000 $ADASTRA)
+// B. Krallık Hazinesi Kasaları (Tam 40.000.000 ASTRA)
 const t = treasury.state.pools;
 // v2 (R3): tohumlar config.TREASURY_SEED (9 kasa, toplam 88M ASTRA)
 const SEED = GAME_CONFIG.TREASURY_SEED;
@@ -101,26 +101,26 @@ for (const [id, v] of Object.entries(SEED)) assert.equal(t[id], v, `Hazine ${id}
 
 const totalTreasuryAda = Object.values(t).reduce((s, v) => s + v, 0);
 assert.equal(totalTreasuryAda, Object.values(SEED).reduce((s, v) => s + v, 0), 'Toplam hazine kasaları tohum toplamına eşit olmalı');
-console.log(`✅ [2/3] Krallık Hazinesi Kasaları: ${totalTreasuryAda.toLocaleString()} $ADASTRA (%40.00) doğrulandı.`);
+console.log(`✅ [2/3] Krallık Hazinesi Kasaları: ${totalTreasuryAda.toLocaleString()} ASTRA (%40.00) doğrulandı.`);
 
-// C. Krallık Karnavalı Piyangosu (Tam 20.000.000 $ADASTRA)
+// C. Krallık Karnavalı Piyangosu (Tam 20.000.000 ASTRA)
 const lotteryPoolAda = gs.state.lotteryPool;
-console.log(`Piyango Havuzu: ${lotteryPoolAda} ADA`);
+console.log(`Piyango Havuzu: ${lotteryPoolAda} ASTRA`);
 assert.equal(lotteryPoolAda, GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA, 'Krallık Piyango Havuzu tohum tutarında olmalı (v2: 12M ASTRA)');
 assert.equal(gs.state.lotteryTickets, 0, 'Sıfırlama sonrası piyango biletleri 0 olmalı');
-console.log(`✅ [3/3] Krallık Piyangosu: ${lotteryPoolAda.toLocaleString()} $ADASTRA (%20.00) doğrulandı.`);
+console.log(`✅ [3/3] Krallık Piyangosu: ${lotteryPoolAda.toLocaleString()} ASTRA (%20.00) doğrulandı.`);
 
 // D. World Boss, Kolezyum Arenası ve Zindan Sıfırlama Doğrulaması
 console.log('\n--- 🌋 WORLD BOSS, KOLEZYUM VE ZİNDAN SIFIRLAMA KONTROLÜ ---');
 const wb = gs.getWorldBossInfo();
-console.log(`World Boss: ${wb.name}, Can: ${wb.bossHp}/${wb.maxBossHp}, Haftalık Havuz: ${wb.weeklyAdaPool} ADA, Kilitli: ${wb.userStaked}`);
+console.log(`World Boss: ${wb.name}, Can: ${wb.bossHp}/${wb.maxBossHp}, Haftalık Havuz: ${wb.weeklyAdaPool} ASTRA, Kilitli: ${wb.userStaked}`);
 assert.equal(wb.bossHp, 1000000, 'World Boss canı 1M tam can olmalı');
 assert.equal(wb.maxBossHp, 1000000, 'World Boss max can 1M olmalı');
 assert.equal(wb.weeklyAdaPool, SEED.worldBoss, 'World Boss haftalık ödül havuzu hazine rezervine eşit olmalı');
 assert.equal(wb.userStaked, false, 'Sıfırlama sonrası ordu kilitli olmamalı');
 assert.equal(wb.userDamage, 0, 'Sıfırlama sonrası vurulan hasar 0 olmalı');
 assert.equal(wb.claimableRewardAda, 0, 'Sıfırlama sonrası talep edilebilir ödül 0 olmalı');
-console.log('✅ [4/5] World Boss Canı (%100) ve 8M ADA Ödül Havuzu başarıyla sıfırlandı.');
+console.log('✅ [4/5] World Boss Canı (%100) ve 8M ASTRA Ödül Havuzu başarıyla sıfırlandı.');
 
 const col = gs.state.colosseumStats;
 console.log(`Kolezyum İstatistikleri: Galibiyet: ${col.wins}, Mağlubiyet: ${col.losses}, Puan: ${col.score}, ELO: ${col.rating}`);
@@ -138,6 +138,6 @@ assert.equal(Object.keys(gs.state.dungeonMonsterCurrentHp || {}).length, 0, 'Zin
 const totalAmmAda = Object.values(p).reduce((sum, pool) => sum + (pool.adAstraReserve || 0), 0);
 const grandTotalAda = totalAmmAda + totalTreasuryAda + lotteryPoolAda;
 assert(grandTotalAda > 80000000, 'Genel toplam ekosistem rezervi 80M üzerinde olmalı');
-console.log(`\n🏛️ EKOSİSTEM REZERVİ KESİN DAĞILIMI: Toplam ${grandTotalAda.toLocaleString()} $ADASTRA (AMM: ${totalAmmAda.toLocaleString()}, Hazine: ${totalTreasuryAda.toLocaleString()}, Piyango: ${lotteryPoolAda.toLocaleString()}) %100 DOĞRULANDI!`);
+console.log(`\n🏛️ EKOSİSTEM REZERVİ KESİN DAĞILIMI: Toplam ${grandTotalAda.toLocaleString()} ASTRA (AMM: ${totalAmmAda.toLocaleString()}, Hazine: ${totalTreasuryAda.toLocaleString()}, Piyango: ${lotteryPoolAda.toLocaleString()}) %100 DOĞRULANDI!`);
 
-console.log('\n🎉 TÜM HAFTALIK RESET, WORLD BOSS, KOLEZYUM VE 100M ADA TOHUM DAĞITIM SIFIRLAMA TESTLERİ BAŞARIYLA GEÇTİ!');
+console.log('\n🎉 TÜM HAFTALIK RESET, WORLD BOSS, KOLEZYUM VE 100M ASTRA TOHUM DAĞITIM SIFIRLAMA TESTLERİ BAŞARIYLA GEÇTİ!');

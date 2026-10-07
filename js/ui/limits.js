@@ -110,6 +110,9 @@ export function renderDungeonEntryLadder(st) {
 export function renderQuotaTracker({ gameState, globalPool, config }) {
   const caps = config.GLOBAL_RESOURCE_CAPS;
   const order = config.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+  const W = gameState.getUretimWeight ? gameState.getUretimWeight() : { weight: 1, levelFactor: 1, tier: { name: 'Yok', mult: 1 }, activity: 1 };
+  const UP = globalPool.uretimParams ? globalPool.uretimParams() : { qpp: {}, otoriteLevel: 0 };
+  const OT = globalPool.otoriteWork ? globalPool.otoriteWork(UP.otoriteLevel) : { hours: 20, days: 6 };
   const infos = Object.fromEntries(order.map(k => [k, globalPool.getResourceInfo(k)]));
   const first = infos[order[0]] || {};
   const dayIndex = first.dayIndex || 0;
@@ -138,7 +141,23 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
 
       <section class="clean-card quota-section">
         <div class="card-title-row">
-          <div class="card-title">🌍 Dünya kaynak kotası (bu hafta)</div>
+          <div class="card-title">🎫 Üretim Hakkın (bu hafta)</div>
+          <span class="card-badge">ağırlık ×${W.weight} · kademe ${W.tier.name}</span>
+        </div>
+        <div class="clean-desc">Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(OT.hours)} sa × ${Math.round(OT.days)} gün) × kişi başı kota × ağırlığın (seviye ×${W.levelFactor} · katkı kademesi ${W.tier.name} ×${W.tier.mult} · aktiflik ×${W.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.</div>
+        <div class="quota-res-grid">
+          ${order.map(k => { const hk = gameState.getUretimHakki(k); const m = caps[k]; const pc = (n, b) => (b > 0 ? Math.min(100, (n / b) * 100) : 0).toFixed(1); return `
+          <div class="quota-res-card" style="--res-color:${m.color}">
+            <div class="quota-res-head"><span class="quota-res-name"><span aria-hidden="true">${m.icon}</span> ${m.name}</span><span class="quota-res-avail">Alınabilir: <strong>${fmtInt(hk.canTake)}</strong></span></div>
+            <div class="quota-stack" role="img" aria-label="${m.name}: haftalık hak ${fmtInt(hk.weekly)}, açılan ${fmtInt(hk.released)}, kullanılan ${fmtInt(hk.used)}"><div class="quota-stack-released" style="width:${pc(hk.released, hk.weekly)}%"></div><div class="quota-stack-harvested" style="width:${pc(hk.used, hk.weekly)}%"></div></div>
+            <div class="quota-res-legend"><span><i class="lg lg-harvested"></i>Kullanılan ${fmtInt(hk.used)}</span><span><i class="lg lg-released"></i>Açılan ${fmtInt(hk.released)}</span><span><i class="lg lg-locked"></i>Haftalık ${fmtInt(hk.weekly)}</span>${hk.extra > 0 ? `<span>➕ Başkalarından ${fmtInt(hk.extra)}</span>` : ''}</div>
+          </div>`; }).join('')}
+        </div>
+      </section>
+
+      <section class="clean-card quota-section">
+        <div class="card-title-row">
+          <div class="card-title">🌍 Sirius Çıkarma Kapasitesi (bu hafta, bütün oyuncular · kota %${Math.round((UP.qpp[order[0]] || 0) * 100)} · Otorite sv.${UP.otoriteLevel})</div>
           <span class="card-badge">${dayIndex + 1}. gün / 7</span>
         </div>
         <div class="clean-desc">Bütün oyuncuların bu hafta çıkarabileceği toplam hammadde. Kota her gün bir parça açılır; açılıp çıkarılmayan kısım hafta içinde birikir. Seferin topladığı miktar, o an alınabilir olanla sınırlıdır.</div>
@@ -155,7 +174,7 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
         <div class="limit-list">
           ${renderLimitMeter({ icon: '💀', label: 'Zindan: harçsız ödüllü giriş', used: dun.freeUsed, max: dun.freeTotal, note: dun.nextNeedsFee ? 'Sonraki girişler harçlı' : (dun.nextWeaponWear ? 'Silahlar her girişte 1 aşınır' : 'Sıradaki girişte silahlar aşınmaz') })}
           ${renderLimitMeter({ icon: '🏟️', label: 'Kolezyum maçı', used: counters.arenaMatches || 0, max: arenaCap })}
-          ${renderLimitMeter({ icon: '🏦', label: 'Zindan kasasının bugünkü ödeme bütçesi', used: Math.max(0, (dun.budget || 0) - (dun.budgetLeft || 0)), max: dun.budget || 0, unit: ' ADA', note: 'Kasa günde en fazla bakiyesinin %1\'ini öder' })}
+          ${renderLimitMeter({ icon: '🏦', label: 'Zindan kasasının bugünkü ödeme bütçesi', used: Math.max(0, (dun.budget || 0) - (dun.budgetLeft || 0)), max: dun.budget || 0, unit: ' ASTRA', note: 'Kasa günde en fazla bakiyesinin %1\'ini öder' })}
         </div>
         ${renderDungeonEntryLadder(dun)}
       </section>

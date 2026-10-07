@@ -248,29 +248,29 @@ async function withCode(call, title) {
   throw new Error('Çok fazla deneme.');
 }
 
-// 🔒 Kilitli ADA paneli: nasıl açılır, yarın ve bu hafta ne kadarı açılacak
+// 🔒 Kilitli ASTRA paneli: nasıl açılır, yarın ve bu hafta ne kadarı açılacak
 function lockPanelHtml() {
   const gs = ctx && ctx.gameState;
   if (!gs || !gs.getLockedUnlockForecast) return '';
   const f = gs.getLockedUnlockForecast();
   const f0 = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
   const pct = v => String(Math.round(v * 10) / 10).replace('.', ',');
-  if (!(f.locked > 0)) return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;">🔓 Kilitli ADA'n yok. Oyundan kazandığın her ADA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir.</div>`;
+  if (!(f.locked > 0)) return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;">🔓 Kilitli ASTRA'n yok. Oyundan kazandığın her ASTRA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir.</div>`;
   return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;line-height:1.55;">
-    <div style="font-weight:800;color:#fbbf24;margin-bottom:6px;">🔒 Kilitli ${f0(f.locked)} ADA nasıl açılır?</div>
+    <div style="font-weight:800;color:#fbbf24;margin-bottom:6px;">🔒 Kilitli ${f0(f.locked)} ASTRA nasıl açılır?</div>
     <div style="display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
-      <span>📅 Yarın (oyuna girersen)</span><strong style="color:#4ade80;">+${f0(f.tomorrowActive)} ADA</strong>
-      <span style="color:#94a3b8;">Yarın (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.tomorrowIdle)} ADA</span>
-      <span>🗓️ 7 gün (her gün girersen)</span><strong style="color:#4ade80;">+${f0(f.weekActive)} ADA</strong>
-      <span style="color:#94a3b8;">7 gün (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.weekIdle)} ADA</span>
-      <span>⚒️ Oyunda 1.000 ADA harcarsan</span><strong style="color:#4ade80;">+${f0(f.per1000Free)} ADA serbest kalır</strong>
+      <span>📅 Yarın (oyuna girersen)</span><strong style="color:#4ade80;">+${f0(f.tomorrowActive)} ASTRA</strong>
+      <span style="color:#94a3b8;">Yarın (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.tomorrowIdle)} ASTRA</span>
+      <span>🗓️ 7 gün (her gün girersen)</span><strong style="color:#4ade80;">+${f0(f.weekActive)} ASTRA</strong>
+      <span style="color:#94a3b8;">7 gün (hiç girmezsen)</span><span style="color:#94a3b8;">+${f0(f.weekIdle)} ASTRA</span>
+      <span>⚒️ Oyunda 1.000 ASTRA harcarsan</span><strong style="color:#4ade80;">+${f0(f.per1000Free)} ASTRA serbest kalır</strong>
     </div>
     <div style="margin-top:8px;color:#94a3b8;">
       Kilit üç yolla açılır:<br>
-      • <strong style="color:#e2e8f0;">Harcayarak (en hızlısı):</strong> oyunda harcadığında önce kilitli ADA kullanılır, üstüne harcadığının %${f.spendBonusPct}'si kadar daha kilit açılır.<br>
+      • <strong style="color:#e2e8f0;">Harcayarak (en hızlısı):</strong> oyunda harcadığında önce kilitli ASTRA kullanılır, üstüne harcadığının %${f.spendBonusPct}'si kadar daha kilit açılır.<br>
       • <strong style="color:#e2e8f0;">Her gün girerek:</strong> oyuna girdiğin her gün kilitlinin küçük bir kısmı açılır (her gün girene haftada toplam %${pct(f.weeklyActivePct)}).${f.loggedToday ? ' Bugünkü payını aldın ✅' : ''}<br>
       • <strong style="color:#e2e8f0;">Zamanla:</strong> girmesen de haftada %${pct(f.weeklyBasePct)} kendiliğinden açılır.<br>
-      Oyundan kazandığın her ADA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir. Kilitli ADA'yı oyunda harcayabilirsin; çekim yalnız serbest kısımdan yapılır.
+      Oyundan kazandığın her ASTRA'nın %${f.freeSharePct}'si serbest, kalanı kilitli gelir. Kilitli ASTRA'yı oyunda harcayabilirsin; çekim yalnız serbest kısımdan yapılır.
     </div>
   </div>`;
 }
@@ -328,34 +328,34 @@ function kasaSection(k) {
   if (!k || !k.enabled) return `<div style="${boxCss}"><div style="font-weight:800;color:#fde68a;">🏦 Oyun Kasası</div><div style="font-size:0.8rem;color:#94a3b8;">Oyun Kasası henüz açılmadı.</div></div>`;
   const days = k.daysLeft == null ? null : k.daysLeft;
   const left = k.usagePerDay > 0
-    ? `Günde yaklaşık <strong>${fmt(k.usagePerDay)} ADA</strong> harcanıyor → kasan <strong>${days < 1 ? 'bir günden az' : '~' + Math.floor(days) + ' gün'}</strong> yeter.`
+    ? `Günde yaklaşık <strong>${fmt(k.usagePerDay)} ASTRA</strong> harcanıyor → kasan <strong>${days < 1 ? 'bir günden az' : '~' + Math.floor(days) + ' gün'}</strong> yeter.`
     : 'Henüz kasadan harcama olmadı.';
   return `<div style="${boxCss}">
     <div style="font-weight:800;color:#fde68a;margin-bottom:4px;">🏦 Oyun Kasası</div>
     <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Sen yokken çalışan işler (pasif iyileşme, bot ücreti, botun pazar işleri, alet onarımı) önce oyunda kazandığın bakiyeden, yetmezse bu kasadan ödenir. Kasadaki para senin: istediğin an kesintisiz çekebilirsin.</div>
-    ${k.simulated ? `<div style="margin-top:6px;color:#fbbf24;font-size:0.8rem;">🧪 Deneme sunucusu: kasa taklit, zincire bağlı değil. Buraya gerçek ADA gönderme!</div>` : ''}
+    ${k.simulated ? `<div style="margin-top:6px;color:#fbbf24;font-size:0.8rem;">🧪 Deneme sunucusu: kasa taklit, zincire bağlı değil. Buraya gerçek ASTRA gönderme!</div>` : ''}
     <div style="margin-top:6px;font-size:0.78rem;color:#94a3b8;">Kasa adresin (ADASTRA ve işlem ücretleri için biraz AVAX gönder):</div>
     <div style="font-family:monospace;font-size:0.78rem;word-break:break-all;color:#fde68a;">${esc(k.address)}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
       <button id="ks-copy" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">📋 Adresi kopyala</button>
       <button id="ks-refresh" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">🔄 Yatırmamı kontrol et</button>
-      ${k.simulated ? '<button id="ks-test" style="padding:5px 10px;border-radius:6px;border:1px solid #64748b;background:#334155;color:#fff;cursor:pointer;font-size:0.78rem;">🧪 Kasaya 10.000 ADA + 0,1 AVAX ekle</button>' : ''}
+      ${k.simulated ? '<button id="ks-test" style="padding:5px 10px;border-radius:6px;border:1px solid #64748b;background:#334155;color:#fff;cursor:pointer;font-size:0.78rem;">🧪 Kasaya 10.000 ASTRA + 0,1 AVAX ekle</button>' : ''}
     </div>
     <div style="display:flex;gap:8px;justify-content:space-between;margin:10px 0 4px;font-size:0.82rem;font-weight:800;">
-      <span style="color:#fde047;">🪙 ADA<br>${fmt(k.available)}</span>
+      <span style="color:#fde047;">🪙 ASTRA<br>${fmt(k.available)}</span>
       <span style="color:#e2e8f0;">🔺 AVAX<br>${Number(k.avax || 0).toFixed(4)}</span>
       <span style="color:#94a3b8;">⏳ Aktarılacak<br>${fmt(k.pending)}</span>
     </div>
     ${k.avaxLow ? `<div style="color:#fca5a5;font-size:0.8rem;">⚠️ Kasada işlem ücreti için AVAX kalmadı (en az ${k.minAvax}). Kasa şu an kullanılmıyor; biraz AVAX gönder.</div>` : ''}
     <div style="font-size:0.8rem;color:#cbd5e1;margin-top:4px;">📅 ${left}</div>
-    ${k.cap ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">🛡️ Kasa üst sınırı: <strong>${fmt(k.cap)} ADA</strong> (yaklaşık ${k.capDays} günlük harcaman). Fazlası güvenliğin için kendiliğinden bağlı cüzdanına geri gönderilir.${k.overCap && !k.hasWallet ? ' <span style="color:#fbbf24;">Kasan sınırın üstünde ama bağlı cüzdanın yok: geri gönderim için cüzdan bağla.</span>' : ''}</div>` : ''}
+    ${k.cap ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">🛡️ Kasa üst sınırı: <strong>${fmt(k.cap)} ASTRA</strong> (yaklaşık ${k.capDays} günlük harcaman). Fazlası güvenliğin için kendiliğinden bağlı cüzdanına geri gönderilir.${k.overCap && !k.hasWallet ? ' <span style="color:#fbbf24;">Kasan sınırın üstünde ama bağlı cüzdanın yok: geri gönderim için cüzdan bağla.</span>' : ''}</div>` : ''}
     <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Kazandığın bakiye ve kasan bitince: pasif iyileşme durur · bot ücreti yenilenemez, bot durur · botun pazar alımları durur · aletler onarılamaz.</div>
     <div style="display:flex;gap:6px;margin-top:8px;">
       <input id="ks-amount" type="number" min="0" placeholder="Miktar" style="flex:1;padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
       <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option>ADA</option><option>AVAX</option></select>
       <button id="ks-withdraw" style="padding:7px 10px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Kasadan çek</button>
     </div>
-    ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ADA çekimi', withdraw_avax: '🏧 AVAX çekimi', return_ada: '↩️ fazlanın iadesi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
+    ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ASTRA çekimi', withdraw_avax: '🏧 AVAX çekimi', return_ada: '↩️ fazlanın iadesi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
     <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;margin-top:8px;">${SANDIK_TAVSIYESI}</div>
   </div>`;
 }
@@ -547,7 +547,7 @@ export async function openWalletPanel() {
       · <a href="#" id="wp-logout" style="color:#f87171;">çıkış</a></div>
     <div style="display:flex;gap:8px;justify-content:space-between;margin:12px 0 4px;font-size:0.85rem;font-weight:800;">
       <span style="color:#4ade80;">🔓 Serbest<br>${fmt(wd.free)}</span>
-      <button type="button" id="wp-lock-toggle" title="Kilitli ADA nasıl açılır? Tıkla" style="background:none;border:0;color:#fbbf24;font:inherit;font-weight:800;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">🔒 Kilitli ⓘ<br>${fmt(wd.locked)}</button>
+      <button type="button" id="wp-lock-toggle" title="Kilitli ASTRA nasıl açılır? Tıkla" style="background:none;border:0;color:#fbbf24;font:inherit;font-weight:800;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">🔒 Kilitli ⓘ<br>${fmt(wd.locked)}</button>
       <span style="color:#38bdf8;">🏦 Çekimde<br>${fmt(wd.pending)}</span>
     </div>
     <div id="wp-lock-panel" style="display:${lockOpen ? 'block' : 'none'};">${lockPanelHtml()}</div>
@@ -562,10 +562,10 @@ export async function openWalletPanel() {
     ${kasaSection(k)}
     <div style="${boxCss}">
       <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
-      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ADA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ADA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
+      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ASTRA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ASTRA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
       ${wd.paused ? '<div style="margin-top:6px;color:#fca5a5;font-size:0.82rem;">Çekimler şu an bakımda.</div>' : `
       <div style="display:flex;gap:6px;margin-top:8px;">
-        <input id="wp-amount" type="number" min="${wd.minWithdraw}" placeholder="En az ${fmt(wd.minWithdraw)} ADA" style="flex:1;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
+        <input id="wp-amount" type="number" min="${wd.minWithdraw}" placeholder="En az ${fmt(wd.minWithdraw)} ASTRA" style="flex:1;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
         <button id="wp-withdraw" style="padding:8px 12px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Talep ver</button>
       </div>`}
       ${wd.pending > 0 ? '<button id="wp-cancel" style="margin-top:6px;padding:5px 10px;border-radius:6px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;cursor:pointer;font-size:0.78rem;">↩️ Bekleyen talebi geri al</button>' : ''}
@@ -574,11 +574,11 @@ export async function openWalletPanel() {
       <div style="font-weight:800;color:#fde047;margin-bottom:6px;">🎟️ Promo kodu</div>
       <div style="display:flex;gap:6px;"><input id="wp-promo" type="text" autocomplete="off" maxlength="32" placeholder="Kodu yaz" style="flex:1;min-width:0;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;text-transform:uppercase;">
         <button id="wp-promo-go" style="padding:8px 12px;border-radius:6px;border:1px solid #fbbf24;background:#92400e;color:#fff;font-weight:800;cursor:pointer;">Kullan</button></div>
-      <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Her kod bir hesapta bir kez kullanılır. ADA ödülü kilitli gelir, oyunda harcadıkça açılır.</div>
+      <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Her kod bir hesapta bir kez kullanılır. ASTRA ödülü kilitli gelir, oyunda harcadıkça açılır.</div>
     </div>
     ${wd.payouts && wd.payouts.length ? `<div style="text-align:left;margin-top:10px;font-size:0.78rem;color:#cbd5e1;max-height:140px;overflow:auto;">
       <div style="font-weight:800;margin-bottom:4px;">Son gönderimler</div>
-      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ADA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
+      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ASTRA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
     </div>` : ''}`, { dismissable: true });
   const $ = id => document.getElementById(id);
   $('wp-close').onclick = closeOverlay;
@@ -759,9 +759,9 @@ async function startPayment(name, args) {
           <div style="font-size:2rem;">💳</div>
           <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">Cüzdandan Öde</div>
           <div style="font-size:0.86rem;color:#cbd5e1;line-height:1.55;text-align:left;">
-            Bu işlem <strong>${fmt(q.cost)} ADA</strong> tutuyor; oyunda kazandığın bakiye <strong>${fmt(q.balance)} ADA</strong>.
-            Kalan <strong style="color:#fde047;">${fmt(q.amountAda)} ADA</strong> cüzdanından ödenecek.
-            <div style="margin-top:6px;color:#94a3b8;font-size:0.8rem;">Avalanche ağ ücreti ve aynı tutarda küçük bir oyun komisyonu (AVAX) alınır. Ödediğin ADA'dan işlemden artan kısım oyun bakiyende kalır.</div>
+            Bu işlem <strong>${fmt(q.cost)} ASTRA</strong> tutuyor; oyunda kazandığın bakiye <strong>${fmt(q.balance)} ASTRA</strong>.
+            Kalan <strong style="color:#fde047;">${fmt(q.amountAda)} ASTRA</strong> cüzdanından ödenecek.
+            <div style="margin-top:6px;color:#94a3b8;font-size:0.8rem;">Avalanche ağ ücreti ve aynı tutarda küçük bir oyun komisyonu (AVAX) alınır. Ödediğin ASTRA'dan işlemden artan kısım oyun bakiyende kalır.</div>
           </div>
           ${noWallet ? `<div style="${boxCss};color:#fbbf24;">Cüzdandan ödeme için önce hesabına bir cüzdan bağla.</div><button id="py-acc" style="${btnCss('#4c1d95', '#a78bfa')}">🔗 Hesabım → Cüzdan bağla</button>` : ''}
           ${q.simulated ? `<button id="py-sim" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: ödemeyi taklit et</button>` : ''}
@@ -775,7 +775,7 @@ async function startPayment(name, args) {
           apply(r);
           closeOverlay();
           const res = r.result || {};
-          ctx.toast(res.success === false ? `Ödemen alındı (${fmt(r.paid)} ADA bakiyende) ama işlem yapılamadı: ${res.message}` : `✅ Ödeme alındı. ${res.message || ''}`, res.success === false ? 'info' : 'success');
+          ctx.toast(res.success === false ? `Ödemen alındı (${fmt(r.paid)} ASTRA bakiyende) ama işlem yapılamadı: ${res.message}` : `✅ Ödeme alındı. ${res.message || ''}`, res.success === false ? 'info' : 'success');
           resolve();
         };
         el.querySelector('#py-sim')?.addEventListener('click', async () => { try { await finish('test'); } catch (err) { draw('', err.message); } });

@@ -409,6 +409,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
     let market = null;
     try { market = await snapshotMarket(); } catch (err) { log.warn('Piyasa okunamadı, son kayıt kullanılıyor:', err.message); }
     market = market || econ().market || null;
+    try { refreshUretim(); } catch (err) { log.warn('Üretim Hakkı (hafta başı):', err.message); }
     const summary = settleWeek(closedEpoch, market);
     await processPayouts();
     return summary;
@@ -519,6 +520,22 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   }
 
   // ── Canlı çekim tahmini (her 10 dakikada) ───────────────────────────────
+  // v2: Sirius Çıkarma Kapasitesi = aktif oyuncu ağırlıkları toplamı × kişi başı hak. Saatte bir tazelenir (yeni oyuncu
+  // gelince kapasite büyür); fiyat/açılış oranı da kaydedilir (haftalık termostat girdisi).
+  function refreshUretim() {
+    let sum = 0;
+    const cutoff = clock() - 14 * DAY;
+    for (const p of db.q.playersAll.all()) {
+      const st = E.readPlayer(p.address);
+      if (!st || (Number(st.lastSeenAt) || 0) < cutoff) continue;
+      const r = E.withPlayer(p.address, gs => gs.getUretimWeight().weight);
+      sum += Number(r && r.result) || 0;
+    }
+    try { E.gs.snapshotPriceRatios(true); } catch (err) { log.warn('Fiyat oranı:', err.message); }
+    E.globalPool.setSumWeight(Math.max(1, sum));
+    return sum;
+  }
+
   function refreshLive() {
     const ep = E.globalPool.state.epochId;
     let scoreTotal = 0;
@@ -550,6 +567,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       if (chain && now - last.market >= 3600000) { last.market = now; await snapshotMarket().catch(err => log.warn('Piyasa:', err.message)); }
       if (chain && now - last.deposits >= 120000) { last.deposits = now; await scanDeposits().catch(err => log.warn('Yatırma tarama:', err.message)); }
       if (now - last.live >= 600000) { last.live = now; refreshLive(); }
+      if (now - (last.uretim || 0) >= 3600000) { last.uretim = now; try { refreshUretim(); } catch (err) { log.warn('Üretim Hakkı:', err.message); } }
       if (kasa && now - (last.kasaRefresh || 0) >= 120000) { last.kasaRefresh = now; await kasa.refreshActive().catch(err => log.warn('Kasa bakiyeleri:', err.message)); }
       if (kasa && now - (last.kasaSettle || 0) >= 3600000) { last.kasaSettle = now; kasa.queueSettlements(); if (kasa.enforceCaps) kasa.enforceCaps(); }
       if (kasa && now - (last.kasaOps || 0) >= 300000) {
@@ -675,5 +693,5 @@ Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de
 
   function setPaused(paused) { setEcon({ paused: !!paused }); db.event(paused ? 'pause' : 'resume'); return { paused: !!paused }; }
 
-  return { syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

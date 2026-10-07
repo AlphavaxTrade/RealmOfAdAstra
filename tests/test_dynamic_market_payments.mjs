@@ -18,8 +18,8 @@ globalThis.localStorage = {
 ammMarket.resetPools();
 const gs = new GameStateManager();
 
-// 1. Alet Onarımında Talep Edilen Odun ve Demirin Anlık Market Değeri Kadar ADA Alınması
-console.log('\n[1/5] Alet Onarımında Anlık AMM Pazar Değeri ADA Bedeli Test Ediliyor...');
+// 1. Alet Onarımında Talep Edilen Odun ve Demirin Anlık Market Değeri Kadar ASTRA Alınması
+console.log('\n[1/5] Alet Onarımında Anlık AMM Pazar Değeri ASTRA Bedeli Test Ediliyor...');
 const axe = gs.state.tools.axe;
 axe.durability = 4320 - 100; // 100 dakika aşınma
 
@@ -43,13 +43,13 @@ const expectedAmmValInitial = Math.max(0.001, r3(ammMarket.calculateResourcesAdA
 }).totalAda * SHARE));
 
 assert.equal(initialRepairCost.adAstraCost, expectedAmmValInitial, 'Alet onarım ASTRA bedeli istenen odun ve demirin anlık pazar değerinin %30u olmalı');
-console.log(`✅ [1. Test Başarılı] İlk Balta Onarım Bedeli: ${initialRepairCost.woodCost} Odun + ${initialRepairCost.ironCost} Demir + ${initialRepairCost.adAstraCost} ADA (AMM Değeriyle Tam Eşit)`);
+console.log(`✅ [1. Test Başarılı] İlk Balta Onarım Bedeli: ${initialRepairCost.woodCost} Odun + ${initialRepairCost.ironCost} Demir + ${initialRepairCost.adAstraCost} ASTRA (AMM Değeriyle Tam Eşit)`);
 
-// 2. AMM DEX Pazar Fiyatı Değişince Onarım ADA Bedelinin Anında Değişmesi
+// 2. AMM DEX Pazar Fiyatı Değişince Onarım ASTRA Bedelinin Anında Değişmesi
 console.log('\n[2/5] AMM DEX Fiyatı Değişimi & Anında Güncellenen Alet Onarım Bedeli Test Ediliyor...');
 const oldWoodPrice = ammMarket.getPrice('wood');
 const oldIronPrice = ammMarket.getPrice('iron');
-console.log(`Eski Fiyatlar: Odun: ${oldWoodPrice.toFixed(4)} ADA, Demir: ${oldIronPrice.toFixed(4)} ADA`);
+console.log(`Eski Fiyatlar: Odun: ${oldWoodPrice.toFixed(4)} ASTRA, Demir: ${oldIronPrice.toFixed(4)} ASTRA`);
 
 // Pazarda büyük bir alım simüle ederek fiyatları yükseltelim
 // (veya havuz rezervlerini doğrudan değiştirerek fiyat artışı oluşturalım)
@@ -59,7 +59,7 @@ ammMarket.savePools();
 
 const newWoodPrice = ammMarket.getPrice('wood');
 const newIronPrice = ammMarket.getPrice('iron');
-console.log(`Yeni Fiyatlar (Pazar Yükseldi): Odun: ${newWoodPrice.toFixed(4)} ADA, Demir: ${newIronPrice.toFixed(4)} ADA`);
+console.log(`Yeni Fiyatlar (Pazar Yükseldi): Odun: ${newWoodPrice.toFixed(4)} ASTRA, Demir: ${newIronPrice.toFixed(4)} ASTRA`);
 
 const updatedRepairCost = gs.calculateRepairCost('axe');
 console.log('Piyasa Yükseldikten Sonra Balta Onarım Maliyeti:', {
@@ -68,13 +68,13 @@ console.log('Piyasa Yükseldikten Sonra Balta Onarım Maliyeti:', {
   adAstraCost: updatedRepairCost.adAstraCost
 });
 
-assert(updatedRepairCost.adAstraCost > initialRepairCost.adAstraCost, 'Piyasa yükselince alet onarım ADA maliyeti de hemen artmalı');
+assert(updatedRepairCost.adAstraCost > initialRepairCost.adAstraCost, 'Piyasa yükselince alet onarım ASTRA maliyeti de hemen artmalı');
 const expectedNewAmmVal = Math.max(0.001, r3(ammMarket.calculateResourcesAdAstraValue({
   wood: updatedRepairCost.woodCost,
   iron: updatedRepairCost.ironCost
 }).totalAda * SHARE));
 assert.equal(updatedRepairCost.adAstraCost, expectedNewAmmVal, 'Yeni alet onarım ASTRA maliyeti anlık yükselen pazar değerinin %30una tam eşit olmalı');
-console.log(`✅ [2. Test Başarılı] Balta Onarım ADA Bedeli ${initialRepairCost.adAstraCost} ADA -> ${updatedRepairCost.adAstraCost} ADA olarak anında güncellendi!`);
+console.log(`✅ [2. Test Başarılı] Balta Onarım ASTRA Bedeli ${initialRepairCost.adAstraCost} ASTRA -> ${updatedRepairCost.adAstraCost} ASTRA olarak anında güncellendi!`);
 
 // 3. Taverna 24s Otomasyon Botunun Anlık Fiyat Değişikliklerine Canlı Tepki Vermesi
 console.log('\n[3/5] Taverna 24s Otomasyon Botu Anlık Fiyat Taraması Test Ediliyor...');
@@ -140,7 +140,7 @@ console.log('\n[6/8] Teçhizat Dövme (Craft) Anlık Market Fiyatı Test Ediliyo
 const initialWeaponCraft = gs.calculateEquipmentCraftCost('weapon');
 assert(initialWeaponCraft.woodCost > 0, 'Silah dövme odun istemeli');
 assert(initialWeaponCraft.ironCost > 0, 'Silah dövme demir istemeli');
-assert(initialWeaponCraft.adaCost > 0, 'Silah dövme ADA istemeli');
+assert(initialWeaponCraft.adaCost > 0, 'Silah dövme ASTRA istemeli');
 
 // Piyasa fiyatını yükseltelim
 ammMarket.pools.wood.adAstraReserve *= 2.5; // v1.25: derin pazarda oransal artış
@@ -148,14 +148,14 @@ ammMarket.pools.iron.adAstraReserve *= 2.5;
 ammMarket.savePools();
 
 const highWeaponCraft = gs.calculateEquipmentCraftCost('weapon');
-assert(highWeaponCraft.adaCost > initialWeaponCraft.adaCost, 'Piyasa fiyatı artınca silah dövme ADA bedeli hemen artmalı');
+assert(highWeaponCraft.adaCost > initialWeaponCraft.adaCost, 'Piyasa fiyatı artınca silah dövme ASTRA bedeli hemen artmalı');
 const expectedHighCraftAda = ammMarket.calculateResourcesAdAstraValue({
   wood: highWeaponCraft.woodCost,
   iron: highWeaponCraft.ironCost,
   coal: highWeaponCraft.coalCost || 0   // v2: dövme kömür de ister
 }).totalAda;
-assert.equal(highWeaponCraft.adaCost, expectedHighCraftAda, 'Dövme ADA bedeli anlık AMM DEX değerine tam eşit olmalı');
-console.log(`✅ [6. Test Başarılı] Silah Dövme ADA Bedeli ${initialWeaponCraft.adaCost} ADA -> ${highWeaponCraft.adaCost} ADA olarak canlı güncellendi!`);
+assert.equal(highWeaponCraft.adaCost, expectedHighCraftAda, 'Dövme ASTRA bedeli anlık AMM DEX değerine tam eşit olmalı');
+console.log(`✅ [6. Test Başarılı] Silah Dövme ASTRA Bedeli ${initialWeaponCraft.adaCost} ASTRA -> ${highWeaponCraft.adaCost} ASTRA olarak canlı güncellendi!`);
 
 // 7. Teçhizat Yükseltme (Upgrade) ve Onarım (Repair) Anlık Market Fiyatı Testi
 console.log('\n[7/8] Teçhizat Yükseltme ve Onarımında Canlı Pazar Değeri Test Ediliyor...');
@@ -183,10 +183,10 @@ ammMarket.savePools();
 const highUpgradeCost = gs.calculateEquipmentUpgradeCost(testSword);
 const highRepairCost = gs.calculateEquipmentRepairCost(testSword);
 
-assert(highUpgradeCost.adAstraCost > normalUpgradeCost.adAstraCost, 'Piyasa yükselince teçhizat yükseltme ADA bedeli anında artmalı');
-assert(highRepairCost.adaCost > normalRepairCost.adaCost, 'Piyasa yükselince teçhizat onarım ADA bedeli anında artmalı');
+assert(highUpgradeCost.adAstraCost > normalUpgradeCost.adAstraCost, 'Piyasa yükselince teçhizat yükseltme ASTRA bedeli anında artmalı');
+assert(highRepairCost.adaCost > normalRepairCost.adaCost, 'Piyasa yükselince teçhizat onarım ASTRA bedeli anında artmalı');
 
-console.log(`✅ [7. Test Başarılı] Teçhizat Yükseltme: ${normalUpgradeCost.adAstraCost} -> ${highUpgradeCost.adAstraCost} ADA, Onarım: ${normalRepairCost.adaCost} -> ${highRepairCost.adaCost} ADA!`);
+console.log(`✅ [7. Test Başarılı] Teçhizat Yükseltme: ${normalUpgradeCost.adAstraCost} -> ${highUpgradeCost.adAstraCost} ASTRA, Onarım: ${normalRepairCost.adaCost} -> ${highRepairCost.adaCost} ASTRA!`);
 
 // 8. getDynamicEconomyRates Teçhizat & Asker İyileştirme Entegrasyonu Testi
 console.log('\n[8/8] getDynamicEconomyRates Teçhizat & Asker İyileştirme Taraması Test Ediliyor...');

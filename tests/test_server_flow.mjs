@@ -210,11 +210,11 @@ try {
   assert.equal((await call('GET', '/api/state')).status, 401, 'Girişsiz istek reddedilir');
   const s0 = await call('GET', '/api/state', null, tA);
   assert.equal(s0.status, 200);
-  assert.equal(s0.body.player.adAstraBalance, 0, 'Yeni hesap 0 ADA ile başlar');
+  assert.equal(s0.body.player.adAstraBalance, 0, 'Yeni hesap 0 ASTRA ile başlar');
   assert.equal(s0.body.player.inventory.wood, 0, 'Yeni hesap 0 kaynakla başlar');
   engine.mutatePlayer(pidA, gs => { gs.state.adAstraBalance = 250; });
   engine.mutatePlayer(pidB, gs => { gs.state.adAstraBalance = 250; });
-  ok('Girişsiz istek reddediliyor; yeni hesap 0 ADA ve 0 kaynakla başlıyor');
+  ok('Girişsiz istek reddediliyor; yeni hesap 0 ASTRA ve 0 kaynakla başlıyor');
 
   // Oyun işlemleri ve hile denemeleri
   const ex = await call('POST', '/api/action', { name: 'startExpedition', args: ['wood'] }, tA);
@@ -241,7 +241,7 @@ try {
   await world.scanDeposits();
   const sB = await call('GET', '/api/state', null, tB2);
   assert.equal(sB.body.player.adAstraBalance, bobStart + 50000);
-  assert.ok(sB.body.player.lockedAda < 250, 'Yatırılan ADA serbest (kilitsiz)');
+  assert.ok(sB.body.player.lockedAda < 250, 'Yatırılan ASTRA serbest (kilitsiz)');
   await world.scanDeposits();
   assert.equal((await call('GET', '/api/state', null, tB2)).body.player.adAstraBalance, bobStart + 50000, 'Aynı yatırma iki kez işlenmez');
   ok('Yatırma zincirden bulunup bir kez, serbest bakiye olarak işleniyor');
@@ -257,7 +257,7 @@ try {
   const afterReq = (await call('GET', '/api/state', null, tB2)).body.player;
   assert.equal(afterReq.pendingWithdrawAda, 30000);
   const spendPending = await call('POST', '/api/withdraw', { amount: afterReq.adAstraBalance + 1 }, tB2);
-  assert.equal(spendPending.body.success, false, 'Çekime ayrılan ADA tekrar kullanılamaz');
+  assert.equal(spendPending.body.success, false, 'Çekime ayrılan ASTRA tekrar kullanılamaz');
   ok('Çekim talebi serbest bakiyeden ayrılıyor, fazlası reddediliyor');
 
   const noWallet = await call('POST', '/api/withdraw', { amount: 100 }, tA);

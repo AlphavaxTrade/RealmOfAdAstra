@@ -46,7 +46,7 @@ assert.equal(res2.handled, true, 'İşlem başarılı olmalı');
 assert.equal(res2.action, 'sold', 'Aksiyon sold olmalı');
 assert.equal(res2.amountSold, needSell2, `Satılan miktar tam ${needSell2} olmalı, gerçekleşen: ${res2.amountSold}`);
 assert.equal(gs.state.inventory.wood, initWood - needSell2, 'Envanterden tam gereken kadar odun düşülmeli');
-assert(gs.state.adAstraBalance > initAda, 'Satıştan ADA kazanılmış olmalı');
+assert(gs.state.adAstraBalance > initAda, 'Satıştan ASTRA kazanılmış olmalı');
 
 // Hasat eklendiğinde tam 1080 (100% kapasite) olmalı:
 const afterHarvestWood = gs.state.inventory.wood + harvestYield2;

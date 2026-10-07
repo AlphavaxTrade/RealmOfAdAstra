@@ -50,7 +50,7 @@ describe('24 Saatlik Taverna Botu - 50x Önkoşul Kaynak ve Süre Dondurma (Free
   });
 
   it('3. Bot aktifken kaynaklardan biri 50 altına düşerse bot duraklatılmalı ve süresi dondurulmalı', () => {
-    // Kullanıcıya bol kaynak ve ADA ver
+    // Kullanıcıya bol kaynak ve ASTRA ver
     gameState.state.inventory = { iron: 100, wood: 100, wheat: 100 };
     gameState.state.adAstraBalance = 50000;
 
@@ -64,9 +64,9 @@ describe('24 Saatlik Taverna Botu - 50x Önkoşul Kaynak ve Süre Dondurma (Free
     const remainingBeforePause = originalExpiry - Date.now();
     assert.ok(remainingBeforePause > 23 * 3600 * 1000, 'Kalan süre ~24 saat olmalı');
 
-    // Odun miktarını 20ye düşürelim ve ADA kalmasın (satın alamaz -> duraklatılır)
+    // Odun miktarını 20ye düşürelim ve ASTRA kalmasın (satın alamaz -> duraklatılır)
     // v1.25: Bot, 50'nin üstündeki fazlayı satıp eksiği kendisi tamamlayabiliyorsa durmaz (kullanıcı kuralı:
-    // "yetersiz ADA'da malzeme satarak devam et"). Burada satılabilecek fazla yok denecek kadar az → durmalı.
+    // "yetersiz ASTRA'da malzeme satarak devam et"). Burada satılabilecek fazla yok denecek kadar az → durmalı.
     gameState.state.inventory.wood = 20;
     gameState.state.inventory.iron = 52;
     gameState.state.inventory.wheat = 52;
@@ -94,7 +94,7 @@ describe('24 Saatlik Taverna Botu - 50x Önkoşul Kaynak ve Süre Dondurma (Free
     gameState.state.botActiveUntil = Date.now() + oneHourMs;
     gameState.state.tavernaBotExpiresAt = gameState.state.botActiveUntil;
 
-    // Demir 10a düştü ve ADA yok -> Bot duraklatıldı (satılabilecek fazla da yok)
+    // Demir 10a düştü ve ASTRA yok -> Bot duraklatıldı (satılabilecek fazla da yok)
     gameState.state.inventory.iron = 10;
     gameState.state.inventory.wood = 52;
     gameState.state.inventory.wheat = 52;
@@ -109,7 +109,7 @@ describe('24 Saatlik Taverna Botu - 50x Önkoşul Kaynak ve Süre Dondurma (Free
     // Dondurulan süre asla eksilmemeli
     assert.strictEqual(gameState.state.botPausedRemainingMs, frozenMs, 'Dondurulan süre sabit kalmalı');
 
-    // Kullanıcı AMM pazarından veya madenden demir kazandı ve 100 demire ulaştı, ADA sağlandı
+    // Kullanıcı AMM pazarından veya madenden demir kazandı ve 100 demire ulaştı, ASTRA sağlandı
     gameState.state.inventory.iron = 100;
     gameState.state.adAstraBalance = 50000;
     const resumeCheck = gameState.updateBotPauseState();

@@ -5,7 +5,7 @@ import { globalPool } from '../js/globalPool.js';
 import { treasury } from '../js/treasury.js';
 import { GAME_CONFIG } from '../js/config.js';
 
-console.log('--- 🤖 ALET ONARIMINDA EŞİT KAYNAK SATIŞI İLE ADA TEMİNİ TESTİ ---');
+console.log('--- 🤖 ALET ONARIMINDA EŞİT KAYNAK SATIŞI İLE ASTRA TEMİNİ TESTİ ---');
 
 // Mock localStorage
 globalThis.localStorage = {
@@ -19,7 +19,7 @@ globalThis.localStorage = {
 const gs = new GameStateManager();
 
 // 1. Durum Kurulumu:
-// Kasada 0 ADA var! Yeteri kadar ADA kesinlikle yok.
+// Kasada 0 ASTRA var! Yeteri kadar ASTRA kesinlikle yok.
 gs.state.adAstraBalance = 0;
 
 // Depoda eşit ve bol kaynak var
@@ -44,19 +44,19 @@ console.log('Balta Onarım İhtiyacı:', {
   kullaniciAda: gs.state.adAstraBalance
 });
 
-assert(repCost.adAstraCost > 0, 'Onarım için pozitif ADA gerekmeli');
-assert.equal(gs.state.adAstraBalance, 0, 'Başlangıçta hesapta hiç ADA olmamalı');
+assert(repCost.adAstraCost > 0, 'Onarım için pozitif ASTRA gerekmeli');
+assert.equal(gs.state.adAstraBalance, 0, 'Başlangıçta hesapta hiç ASTRA olmamalı');
 
 const prevWood = gs.state.inventory.wood;
 const prevIron = gs.state.inventory.iron;
 const prevWheat = gs.state.inventory.wheat;
 
 // 2. Aleti onarmayı dene (repairTool veya runTavernaAutomationCycle)
-console.log('\n[1/2] Alet Onarımı Tetikleniyor (Hesapta 0 ADA Varken)...');
+console.log('\n[1/2] Alet Onarımı Tetikleniyor (Hesapta 0 ASTRA Varken)...');
 const repairRes = gs.repairTool('axe');
 
 console.log('Onarım Sonucu:', repairRes);
-assert.equal(repairRes.success, true, 'Bot ADA açığını kaynak satarak kapattığı için onarım başarılı olmalı!');
+assert.equal(repairRes.success, true, 'Bot ASTRA açığını kaynak satarak kapattığı için onarım başarılı olmalı!');
 assert.equal(gs.state.tools.axe.durability, maxAxe, 'Balta %100 tam onarılmış olmalı!');
 
 // 3. Eşit Satış Kontrolü:
@@ -76,11 +76,11 @@ assert(wheatDiff > 0, 'Buğday satılmış olmalı');
 assert.equal(woodDiff, ironDiff, 'Odun ve Demir TAMAMEN EŞİT miktarda satılmış olmalı!');
 assert.equal(ironDiff, wheatDiff, 'Demir ve Buğday TAMAMEN EŞİT miktarda satılmış olmalı!');
 
-console.log('✅ [1/2] Bot, alet onarımı için ihtiyaç duyduğu ADA kadar kaynaklardan TAMAMEN EŞİT miktarda sattı!');
+console.log('✅ [1/2] Bot, alet onarımı için ihtiyaç duyduğu ASTRA kadar kaynaklardan TAMAMEN EŞİT miktarda sattı!');
 
 // 4. Otonom Sefer Döngüsü Sırasında Toplu Test:
 console.log('\n[2/2] Otonom Sefer Döngüsünde (runTavernaAutomationCycle) Test Ediliyor...');
-gs.state.adAstraBalance = 0; // Tekrar 0 ADA yapalım
+gs.state.adAstraBalance = 0; // Tekrar 0 ASTRA yapalım
 gs.state.tools.pickaxe.durability = maxAxe - 200;
 gs.state.tools.sickle.durability = maxAxe - 200;
 

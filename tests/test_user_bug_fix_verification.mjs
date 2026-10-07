@@ -38,7 +38,7 @@ const pWheatBefore = ammMarket.getPrice('wheat');
 console.log('Fiyatlar Öncesi: Odun:', pWoodBefore, 'Demir:', pIronBefore, 'Buğday:', pWheatBefore);
 
 // Botu Satın Al
-console.log('\n--- Bot Satın Alınıyor (~46.116 ADA) ---');
+console.log('\n--- Bot Satın Alınıyor (~46.116 ASTRA) ---');
 const buyRes = gs.buyTavernaAutomationBot(false);
 assert.equal(buyRes.success, true, 'Bot satın alınabilmeli');
 
@@ -56,9 +56,9 @@ console.log('Fiyatlar Sonrası: Odun:', pWoodAfter, 'Demir:', pIronAfter, 'Buğd
 // 1. Bot alındığı saniye henüz hiçbir sefer toplanmadığı için depo seviyesi Seviye 1 kalmalıdır!
 assert.equal(gs.state.warehouseLevel, 1, 'Hemen bot alındığı an silo seviye 2 olmamalı, Seviye 1 kalmalı!');
 
-// 2. Kullanıcının kalan parası korunmalı (160 ADA gibi bitmiş olmamalı!)
-// v1.25: Bot ücreti doğal stamina yenilenmesini de hesaba kattığı için Lv.1'de ~800 ADA yüksek (~46.930 ADA).
-assert.ok(gs.state.adAstraBalance >= 2900, `Kalan bakiye >= 2900 ADA olmalı, bulunan: ${gs.state.adAstraBalance}`);
+// 2. Kullanıcının kalan parası korunmalı (160 ASTRA gibi bitmiş olmamalı!)
+// v1.25: Bot ücreti doğal stamina yenilenmesini de hesaba kattığı için Lv.1'de ~800 ASTRA yüksek (~46.930 ASTRA).
+assert.ok(gs.state.adAstraBalance >= 2900, `Kalan bakiye >= 2900 ASTRA olmalı, bulunan: ${gs.state.adAstraBalance}`);
 
 // 3. Fiyatlar bot alındığı an artmamalıdır (çünkü zorla hammadde satın alımı yapılmamıştır)
 assert.ok(pWoodAfter <= pWoodBefore, 'Odun fiyatı bot alımında artmamalı');

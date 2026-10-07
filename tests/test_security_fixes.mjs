@@ -37,8 +37,8 @@ E.withPlayer(P, () => null);
   ok('İsimler temizleniyor (asker, diziliş, eski kayıttaki isimler Kolezyumda)');
 }
 
-// 2) Çark hammaddeyle çevrilince yoktan ADA kaydı oluşmaz. Ödemenin yarısı pazarda satılır (4 Ekim kararı):
-//    Karnaval kasasına giren ADA pazar havuzundan çıkan gerçek ADA'dır; tek "harcama" kaydı pazarın satış komisyonudur.
+// 2) Çark hammaddeyle çevrilince yoktan ASTRA kaydı oluşmaz. Ödemenin yarısı pazarda satılır (4 Ekim kararı):
+//    Karnaval kasasına giren ASTRA pazar havuzundan çıkan gerçek ASTRA'dır; tek "harcama" kaydı pazarın satış komisyonudur.
 {
   const gp = E.globalPool.state;
   const spentBefore = gp.totalSpent || 0;
@@ -55,9 +55,9 @@ E.withPlayer(P, () => null);
   const ammDrop = ammBefore - E.ammMarket.pools.wheat.adAstraReserve;
   assert.ok(bi.soldQty > 0 && bi.carnivalIn > 0, 'Yarısı satılıp Karnaval kasasına girdi');
   assert.ok(Math.abs(E.treasury.getPool('carnival') - carnBefore - bi.carnivalIn - fee * 0.86 * E.GAME_CONFIG.TREASURY_ALLOCATION.carnival) < 1e-6, 'Karnaval kasası satış geliri kadar arttı');
-  assert.ok(Math.abs(ammDrop - bi.carnivalIn - fee) < 1e-6, 'Kasaya giren ADA + komisyon = pazardan çıkan ADA (yoktan para yok)');
-  assert.ok(fee > 0 && fee < 0.05 * bi.carnivalIn, 'Tek harcama kaydı pazarın küçük satış komisyonu (100 ADA değil)');
-  ok('Çark hammaddeyle çevrilince yoktan para oluşmuyor (satılan yarının ADA\'sı pazardan gelir)');
+  assert.ok(Math.abs(ammDrop - bi.carnivalIn - fee) < 1e-6, 'Kasaya giren ASTRA + komisyon = pazardan çıkan ASTRA (yoktan para yok)');
+  assert.ok(fee > 0 && fee < 0.05 * bi.carnivalIn, 'Tek harcama kaydı pazarın küçük satış komisyonu (100 ASTRA değil)');
+  ok('Çark hammaddeyle çevrilince yoktan para oluşmuyor (satılan yarının ASTRA\'sı pazardan gelir)');
 }
 
 // 3) Serbest metin yerine yalnız oyunun tanımladığı değerler
@@ -117,7 +117,7 @@ E.withPlayer(P, () => null);
   ok('Ücretsiz oyuncu payı: şartlar, katkıyla hızlı büyüyen pay, sadakat serisi, kilitli pay (yan hesaplar ~%29 alır)');
 }
 
-// 6) Çark: ADA bedelinin %80'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
+// 6) Çark: ASTRA bedelinin %80'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
 {
   const ep = E.globalPool.state.epochId;
   E.mutatePlayer(P, gs => { gs.state.adAstraBalance = 1e6; gs.state.inventory.wood = 1e6; gs.state.warehouseLevel = 18; });
@@ -130,7 +130,7 @@ E.withPlayer(P, () => null);
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
     const gain = E.treasury.getPool('carnival') - c0;
     assert.ok(Math.abs(gain - (cost * 0.8 + cost * 0.2 * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %80 + kalanın karnaval payı girdi (${gain})`);
-    // Bilet: satın alınmış biletin piyango kasasındaki 98 ADA'sı Karnaval kasasına
+    // Bilet: satın alınmış biletin piyango kasasındaki 98 ASTRA'sı Karnaval kasasına
     assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
     const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ticket']).result.success);
@@ -143,7 +143,7 @@ E.withPlayer(P, () => null);
     assert.equal(okN, 3 - (E.readPlayer(P).dailyCounters.wheelResourceSpins - okN), 'Hammaddeyle günde en çok 3 çevirme');
     assert.ok(!last.success && /günlük sınır/.test(last.message), 'Dördüncü çevirme reddedildi');
   } finally { Math.random = rnd; }
-  ok('Çark: ADA bedelinin %80\'i Karnaval kasasına, bilet parası kasaya, hammaddeyle günde 3 çevirme');
+  ok('Çark: ASTRA bedelinin %80\'i Karnaval kasasına, bilet parası kasaya, hammaddeyle günde 3 çevirme');
 }
 
 // 5) Sunucu açılış kilitleri: deneme modu gerçek anahtarla ya da deneme kayıt dosyası gerçek sunucuda açılmaz

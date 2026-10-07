@@ -69,10 +69,10 @@
           </span>
         </span>
       </button>
-      <div class="hud-wallet" title="$ADASTRA bakiyen">
+      <div class="hud-wallet" title="ASTRA bakiyen">
         <span class="hud-coin" aria-hidden="true"></span>
         <span id="adastra-balance" class="hud-wallet-value">250,00</span>
-        <span class="hud-unit">ADA</span>
+        <span class="hud-unit">ASTRA</span>
       </div>
     </div>
 
@@ -129,13 +129,25 @@
         <span class="res-icon"><img src="/assets/ui/res_wheat.webp" alt="" draggable="false" data-fb="text:🌾"></span>
         <span class="res-body"><span id="res-wheat" class="res-value">0</span><span class="res-cap"><span id="res-cap-wheat"></span></span></span>
       </button>
+      <button type="button" class="top-res-pill res-stone" id="res-pill-stone" title="Taş — Taş Ocağı'nı aç">
+        <span class="res-icon"><img src="/assets/ui/res_stone.webp" alt="" draggable="false" data-fb="text:🪨"></span>
+        <span class="res-body"><span id="res-stone" class="res-value">0</span><span class="res-cap"><span id="res-cap-stone"></span></span></span>
+      </button>
       <button type="button" class="top-res-pill res-wood" id="res-pill-wood" title="Odun — Zümrüt Ormanı'nı aç">
         <span class="res-icon"><img src="/assets/ui/res_wood.webp" alt="" draggable="false" data-fb="text:🌲"></span>
         <span class="res-body"><span id="res-wood" class="res-value">0</span><span class="res-cap"><span id="res-cap-wood"></span></span></span>
       </button>
-      <button type="button" class="top-res-pill res-iron" id="res-pill-iron" title="Demir — Maden Ocağı'nı aç">
+      <button type="button" class="top-res-pill res-coal" id="res-pill-coal" title="Kömür — Kömür Ocağı'nı aç">
+        <span class="res-icon"><img src="/assets/ui/res_coal.webp" alt="" draggable="false" data-fb="text:⚫"></span>
+        <span class="res-body"><span id="res-coal" class="res-value">0</span><span class="res-cap"><span id="res-cap-coal"></span></span></span>
+      </button>
+      <button type="button" class="top-res-pill res-iron" id="res-pill-iron" title="Demir — Demir Madeni'nı aç">
         <span class="res-icon"><img src="/assets/ui/res_iron.webp" alt="" draggable="false" data-fb="text:⛏️"></span>
         <span class="res-body"><span id="res-iron" class="res-value">0</span><span class="res-cap"><span id="res-cap-iron"></span></span></span>
+      </button>
+      <button type="button" class="top-res-pill res-herb" id="res-pill-herb" title="Şifalı Ot — Şifalı Ot Bahçesi'nı aç">
+        <span class="res-icon"><img src="/assets/ui/res_herb.webp" alt="" draggable="false" data-fb="text:🌿"></span>
+        <span class="res-body"><span id="res-herb" class="res-value">0</span><span class="res-cap"><span id="res-cap-herb"></span></span></span>
       </button>
       <button type="button" class="top-res-pill fragment-pill res-frag" id="res-pill-fragments" title="Teçhizat parçası — Pazarı aç">
         <span class="res-icon"><img src="/assets/ui/res_fragments.webp" alt="" draggable="false" data-fb="text:🧩"></span>
@@ -145,7 +157,7 @@
 
     <div class="hud-actions">
       <button type="button" class="hud-icon-btn changelog-pill" id="btn-changelog-pill" title="Sürüm geçmişi">
-        <span class="hud-version">v1.28</span>
+        <span class="hud-version">v2.0a</span>
       </button>
       <button type="button" class="hud-icon-btn notif-bell" id="btn-notif-bell" title="Bildirimler">
         <span>🔔</span>
@@ -212,13 +224,22 @@
         <span id="sidebar-exp-completed-count" class="sidebar-completed-badge hidden">0 Hazır</span>
       </div>
 
-      <!-- Demir Seferi -->
-      <div class="sidebar-exp-card" data-node="iron" id="side-card-iron" title="Demir Madeni Seferi (Tıkla ve Git)">
+      <!-- Buğday Seferi -->
+      <div class="sidebar-exp-card" data-node="wheat" id="side-card-wheat" title="Güneş Tarlası Seferi (Tıkla ve Git)">
         <div class="sidebar-exp-header">
-          <span class="exp-title">⛏️ Demir Madeni</span>
-          <span id="exp-time-iron" class="sidebar-exp-time">BOŞTA</span>
+          <span class="exp-title">🌾 Güneş Tarlası</span>
+          <span id="exp-time-wheat" class="sidebar-exp-time">BOŞTA</span>
         </div>
-        <div class="sidebar-exp-track"><div id="exp-fill-iron" class="sidebar-exp-fill idle"></div></div>
+        <div class="sidebar-exp-track"><div id="exp-fill-wheat" class="sidebar-exp-fill idle"></div></div>
+      </div>
+
+      <!-- Taş Seferi -->
+      <div class="sidebar-exp-card" data-node="stone" id="side-card-stone" title="Taş Ocağı Seferi (Tıkla ve Git)">
+        <div class="sidebar-exp-header">
+          <span class="exp-title">🪨 Taş Ocağı</span>
+          <span id="exp-time-stone" class="sidebar-exp-time">BOŞTA</span>
+        </div>
+        <div class="sidebar-exp-track"><div id="exp-fill-stone" class="sidebar-exp-fill idle"></div></div>
       </div>
 
       <!-- Odun Seferi -->
@@ -230,13 +251,31 @@
         <div class="sidebar-exp-track"><div id="exp-fill-wood" class="sidebar-exp-fill idle"></div></div>
       </div>
 
-      <!-- Buğday Seferi -->
-      <div class="sidebar-exp-card" data-node="wheat" id="side-card-wheat" title="Güneş Tarlası Seferi (Tıkla ve Git)">
+      <!-- Kömür Seferi -->
+      <div class="sidebar-exp-card" data-node="coal" id="side-card-coal" title="Kömür Ocağı Seferi (Tıkla ve Git)">
         <div class="sidebar-exp-header">
-          <span class="exp-title">🌾 Güneş Tarlası</span>
-          <span id="exp-time-wheat" class="sidebar-exp-time">BOŞTA</span>
+          <span class="exp-title">⚫ Kömür Ocağı</span>
+          <span id="exp-time-coal" class="sidebar-exp-time">BOŞTA</span>
         </div>
-        <div class="sidebar-exp-track"><div id="exp-fill-wheat" class="sidebar-exp-fill idle"></div></div>
+        <div class="sidebar-exp-track"><div id="exp-fill-coal" class="sidebar-exp-fill idle"></div></div>
+      </div>
+
+      <!-- Demir Seferi -->
+      <div class="sidebar-exp-card" data-node="iron" id="side-card-iron" title="Demir Madeni Seferi (Tıkla ve Git)">
+        <div class="sidebar-exp-header">
+          <span class="exp-title">⛏️ Demir Madeni</span>
+          <span id="exp-time-iron" class="sidebar-exp-time">BOŞTA</span>
+        </div>
+        <div class="sidebar-exp-track"><div id="exp-fill-iron" class="sidebar-exp-fill idle"></div></div>
+      </div>
+
+      <!-- Şifalı Ot Seferi -->
+      <div class="sidebar-exp-card" data-node="herb" id="side-card-herb" title="Şifalı Ot Bahçesi Seferi (Tıkla ve Git)">
+        <div class="sidebar-exp-header">
+          <span class="exp-title">🌿 Şifalı Ot Bahçesi</span>
+          <span id="exp-time-herb" class="sidebar-exp-time">BOŞTA</span>
+        </div>
+        <div class="sidebar-exp-track"><div id="exp-fill-herb" class="sidebar-exp-fill idle"></div></div>
       </div>
 
       <!-- Hızlı Tümünü Topla Butonu -->
@@ -248,22 +287,34 @@
     <!-- 3. BÖLÜM: Kompakt kota özeti (ayrıntı: Kotalar paneli) -->
     <div class="sidebar-section sidebar-weekly-box">
       <button type="button" id="sidebar-quota-open" class="sidebar-section-title sidebar-quota-head" title="Kota ve sınırların ayrıntısı">
-        <span>📊 KOTA · BUGÜN AÇIK</span>
+        <span>🎫 ÜRETİM HAKKIN · BUGÜN</span>
         <span id="sidebar-reset-timer" class="sidebar-quota-timer">⏳</span>
       </button>
 
       <div class="sidebar-mini-quota-row">
-        <div class="mini-quota-item" title="Dünya kotasından şu an çıkarılabilecek demir / haftalık toplam">
-          <div class="mini-quota-label"><span>⛏️ Demir</span><span id="sidebar-limit-text-iron">0 / 0</span></div>
-          <div class="mini-quota-track"><div id="sidebar-limit-released-iron" class="mini-quota-released"></div><div id="sidebar-limit-fill-iron" class="mini-quota-fill iron"></div></div>
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir buğday / haftalık toplam">
+          <div class="mini-quota-label"><span>🌾 Buğday</span><span id="sidebar-limit-text-wheat">0 / 0</span></div>
+          <div class="mini-quota-track"><div id="sidebar-limit-released-wheat" class="mini-quota-released"></div><div id="sidebar-limit-fill-wheat" class="mini-quota-fill wheat"></div></div>
         </div>
-        <div class="mini-quota-item" title="Dünya kotasından şu an çıkarılabilecek odun / haftalık toplam">
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir taş / haftalık toplam">
+          <div class="mini-quota-label"><span>🪨 Taş</span><span id="sidebar-limit-text-stone">0 / 0</span></div>
+          <div class="mini-quota-track"><div id="sidebar-limit-released-stone" class="mini-quota-released"></div><div id="sidebar-limit-fill-stone" class="mini-quota-fill stone"></div></div>
+        </div>
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir odun / haftalık toplam">
           <div class="mini-quota-label"><span>🌲 Odun</span><span id="sidebar-limit-text-wood">0 / 0</span></div>
           <div class="mini-quota-track"><div id="sidebar-limit-released-wood" class="mini-quota-released"></div><div id="sidebar-limit-fill-wood" class="mini-quota-fill wood"></div></div>
         </div>
-        <div class="mini-quota-item" title="Dünya kotasından şu an çıkarılabilecek buğday / haftalık toplam">
-          <div class="mini-quota-label"><span>🌾 Buğday</span><span id="sidebar-limit-text-wheat">0 / 0</span></div>
-          <div class="mini-quota-track"><div id="sidebar-limit-released-wheat" class="mini-quota-released"></div><div id="sidebar-limit-fill-wheat" class="mini-quota-fill wheat"></div></div>
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir kömür / haftalık toplam">
+          <div class="mini-quota-label"><span>⚫ Kömür</span><span id="sidebar-limit-text-coal">0 / 0</span></div>
+          <div class="mini-quota-track"><div id="sidebar-limit-released-coal" class="mini-quota-released"></div><div id="sidebar-limit-fill-coal" class="mini-quota-fill coal"></div></div>
+        </div>
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir demir / haftalık toplam">
+          <div class="mini-quota-label"><span>⛏️ Demir</span><span id="sidebar-limit-text-iron">0 / 0</span></div>
+          <div class="mini-quota-track"><div id="sidebar-limit-released-iron" class="mini-quota-released"></div><div id="sidebar-limit-fill-iron" class="mini-quota-fill iron"></div></div>
+        </div>
+        <div class="mini-quota-item" title="Üretim Hakkın: şu an alınabilir şifalı ot / haftalık toplam">
+          <div class="mini-quota-label"><span>🌿 Şifalı Ot</span><span id="sidebar-limit-text-herb">0 / 0</span></div>
+          <div class="mini-quota-track"><div id="sidebar-limit-released-herb" class="mini-quota-released"></div><div id="sidebar-limit-fill-herb" class="mini-quota-fill herb"></div></div>
         </div>
       </div>
       <div id="sidebar-personal-limits" class="sidebar-personal-limits"></div>
@@ -384,10 +435,10 @@
       </div>
 
       <div class="dev-modal-body">
-        <!-- 🏛️ 100M $ADASTRA TOHUMU VE VANILLA HESAP SIFIRLAMA (TÜM İLERLEMEYİ VE HAVUZLARI İLK DAĞITIMA SIFIRLAR) -->
+        <!-- 🏛️ 100M ASTRA TOHUMU VE VANILLA HESAP SIFIRLAMA (TÜM İLERLEMEYİ VE HAVUZLARI İLK DAĞITIMA SIFIRLAR) -->
         <div class="dev-group dev-vanilla-reset-box">
-          <button id="btn-dev-vanilla-reset" class="dev-btn dev-btn-red dev-btn-vanilla-reset" data-dev-action="vanilla-reset" title="Tüm ilerlemeyi, AMM 40M havuzlarını, Krallık Hazinesi 40M kasalarını, Piyango 20M havuzunu ve haftalık limitleri 100 Milyon $ADASTRA ilk dağıtım anına sıfırlar.">
-            🏛️ 100M $ADASTRA TOHUMUNA & VANILLA HESABA SIFIRLA
+          <button id="btn-dev-vanilla-reset" class="dev-btn dev-btn-red dev-btn-vanilla-reset" data-dev-action="vanilla-reset" title="Tüm ilerlemeyi, AMM 40M havuzlarını, Krallık Hazinesi 40M kasalarını, Piyango 20M havuzunu ve haftalık limitleri 100 Milyon ASTRA ilk dağıtım anına sıfırlar.">
+            🏛️ 100M ASTRA TOHUMUNA & VANILLA HESABA SIFIRLA
           </button>
         </div>
 
@@ -402,8 +453,11 @@
               <option value="wood">🌲 Odun (wood)</option>
               <option value="iron">⛏️ Demir (iron)</option>
               <option value="wheat">🌾 Buğday (wheat)</option>
+              <option value="stone">🪨 Taş (stone)</option>
+              <option value="coal">⚫ Kömür (coal)</option>
+              <option value="herb">🌿 Şifalı Ot (herb)</option>
               <option value="fragments">🧩 Parça (fragments)</option>
-              <option value="adAstra">🟣 $ADASTRA Token</option>
+              <option value="adAstra">🟣 ASTRA Token</option>
               <option value="stamina">⚡ Stamina</option>
               <option value="level">🧙‍♂️ Karakter Seviyesi</option>
               <option value="arenaKeys">🗝️ Arena Anahtarı</option>
@@ -453,6 +507,36 @@
                 </td>
               </tr>
               <tr>
+                <td class="res-name">🪨 Taş</td>
+                <td><input type="number" id="dev-live-stone" class="dev-mini-input" /></td>
+                <td>
+                  <button class="dev-mini-btn dev-btn-blue" data-dev-quick="stone" data-delta="1000">+1k</button>
+                  <button class="dev-mini-btn dev-btn-blue" data-dev-quick="stone" data-delta="10000">+10k</button>
+                  <button class="dev-mini-btn dev-btn-red" data-dev-quick="stone" data-delta="-1000">-1k</button>
+                  <button class="dev-mini-btn dev-btn-purple" data-dev-quick-zero="stone">Sıfırla</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="res-name">⚫ Kömür</td>
+                <td><input type="number" id="dev-live-coal" class="dev-mini-input" /></td>
+                <td>
+                  <button class="dev-mini-btn dev-btn-blue" data-dev-quick="coal" data-delta="1000">+1k</button>
+                  <button class="dev-mini-btn dev-btn-blue" data-dev-quick="coal" data-delta="10000">+10k</button>
+                  <button class="dev-mini-btn dev-btn-red" data-dev-quick="coal" data-delta="-1000">-1k</button>
+                  <button class="dev-mini-btn dev-btn-purple" data-dev-quick-zero="coal">Sıfırla</button>
+                </td>
+              </tr>
+              <tr>
+                <td class="res-name">🌿 Şifalı Ot</td>
+                <td><input type="number" id="dev-live-herb" class="dev-mini-input" /></td>
+                <td>
+                  <button class="dev-mini-btn dev-btn-green" data-dev-quick="herb" data-delta="1000">+1k</button>
+                  <button class="dev-mini-btn dev-btn-green" data-dev-quick="herb" data-delta="10000">+10k</button>
+                  <button class="dev-mini-btn dev-btn-red" data-dev-quick="herb" data-delta="-1000">-1k</button>
+                  <button class="dev-mini-btn dev-btn-purple" data-dev-quick-zero="herb">Sıfırla</button>
+                </td>
+              </tr>
+              <tr>
                 <td class="res-name">🧩 Parça</td>
                 <td><input type="number" id="dev-live-fragments" class="dev-mini-input" /></td>
                 <td>
@@ -463,7 +547,7 @@
                 </td>
               </tr>
               <tr>
-                <td class="res-name">🟣 $ADASTRA</td>
+                <td class="res-name">🟣 ASTRA</td>
                 <td><input type="number" id="dev-live-adastra" class="dev-mini-input" /></td>
                 <td>
                   <button class="dev-mini-btn dev-btn-gold" data-dev-quick="adAstra" data-delta="5000">+5k</button>
@@ -504,6 +588,9 @@
             <button class="dev-btn dev-btn-blue" data-dev-action="add-iron" data-amount="50000">⛏️ +50k Demir</button>
             <button class="dev-btn dev-btn-yellow" data-dev-action="add-wheat" data-amount="10000">🌾 +10k Buğday</button>
             <button class="dev-btn dev-btn-yellow" data-dev-action="add-wheat" data-amount="50000">🌾 +50k Buğday</button>
+            <button class="dev-btn dev-btn-blue" data-dev-action="add-stone" data-amount="10000">🪨 +10k Taş</button>
+            <button class="dev-btn dev-btn-blue" data-dev-action="add-coal" data-amount="10000">⚫ +10k Kömür</button>
+            <button class="dev-btn dev-btn-green" data-dev-action="add-herb" data-amount="10000">🌿 +10k Şifalı Ot</button>
             <button class="dev-btn dev-btn-purple" data-dev-action="add-fragments" data-amount="1000">🧩 +1k Parça</button>
             <button class="dev-btn dev-btn-purple" data-dev-action="add-fragments" data-amount="5000">🧩 +5k Parça</button>
           </div>
@@ -511,10 +598,10 @@
 
         <!-- 2. BÖLÜM: Token & Bakiye -->
         <div class="dev-group">
-          <div class="dev-group-title">🟣 $ADASTRA & CÜZDAN</div>
+          <div class="dev-group-title">🟣 ASTRA & CÜZDAN</div>
           <div class="dev-btn-grid">
-            <button class="dev-btn dev-btn-purple" data-dev-action="add-adastra" data-amount="10000">🟣 +10,000 $ADASTRA</button>
-            <button class="dev-btn dev-btn-purple" data-dev-action="add-adastra" data-amount="100000">🟣 +100,000 $ADASTRA</button>
+            <button class="dev-btn dev-btn-purple" data-dev-action="add-adastra" data-amount="100">🟣 +100 ASTRA</button>
+            <button class="dev-btn dev-btn-purple" data-dev-action="add-adastra" data-amount="1000">🟣 +1.000 ASTRA</button>
             <button class="dev-btn dev-btn-cyan" data-dev-action="add-keys" data-amount="10">🗝️ +10 Arena Anahtarı</button>
             <button class="dev-btn dev-btn-orange" data-dev-action="add-boxes" data-amount="5">📦 +5 Kilitli Kutu</button>
           </div>

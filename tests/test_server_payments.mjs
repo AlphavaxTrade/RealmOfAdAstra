@@ -53,7 +53,7 @@ try {
   assert.equal(accounts.activeWallet(pid), playerAddr);
   E.withPlayer(pid, () => null);
 
-  // 1) Teklif: 0 ADA'lı oyuncu asker almak ister
+  // 1) Teklif: 0 ASTRA'lı oyuncu asker almak ister
   const qt = payments.quote(pid, 'buySoldierUnit', []);
   assert.ok(qt.ok && qt.needPayment, JSON.stringify(qt));
   assert.ok(qt.amountAda >= qt.cost && qt.cost >= E.GAME_CONFIG.SOLDIER_COST_BASE, 'Eksik tutar askerin bedeli kadar (+%2 pay)');
@@ -106,7 +106,7 @@ try {
   const found = await payments.scanPaid();
   assert.ok(found >= 1, 'Tarama ödemeyi buldu');
   // Önceki adımlarda onaylanmamış (başka cüzdandan / eksik) ama zincirde gerçekten ödenmiş paralar da bakiyeye eklenir: para kaybolmaz
-  assert.ok(E.readPlayer(pid).adAstraBalance >= balR + qtR.amountAda - 1e-6, 'Ödenen ADA bakiyeye eklendi');
+  assert.ok(E.readPlayer(pid).adAstraBalance >= balR + qtR.amountAda - 1e-6, 'Ödenen ASTRA bakiyeye eklendi');
   assert.equal(db.raw.prepare('SELECT status FROM pay_quotes WHERE ref = ?').get(qtR.ref).status, 'credited');
   assert.ok(E.readPlayer(pid).pendingNotices.some(n => /bakiyene eklendi/.test(n.message)), 'Oyuncuya bildirim gitti');
   const late = await payments.confirm(pid, qtR.ref, tR.hash);

@@ -43,7 +43,7 @@ console.log('\n[2/6] Yetersiz Bakiye Kontrolü Test Ediliyor...');
 gs.state.adAstraBalance = 10; // Çok düşük bakiye
 const failBuyRes = gs.buyTavernaAutomationBot(false);
 assert.equal(failBuyRes.success, false, 'Yetersiz bakiyeyle bot satın alınamamalı');
-assert(failBuyRes.message.includes('Yetersiz $ADASTRA'), 'Kullanıcıya net bakiye uyarısı verilmeli');
+assert(failBuyRes.message.includes('Yetersiz ASTRA'), 'Kullanıcıya net bakiye uyarısı verilmeli');
 assert.equal(gs.isAutoCollectorActive(), false, 'Bot aktif olmamalı');
 console.log('✅ [2/6] Yetersiz bakiyede bot alımı başarıyla engellendi ve net mesaj verildi.');
 
@@ -69,7 +69,7 @@ assert(gs.getAutoCollectorExpiry() > Date.now(), 'getAutoCollectorExpiry() geçe
 // Hazineye aktarım kontrolü
 const afterTreasury = treasury.getSummary().totalBalance;
 assert(afterTreasury > prevTreasury, 'Ödenen bot bedeli (%78 pay) doğrudan Hazine Kasalarına aktarılmalı');
-console.log(`✅ [3/6] Bot aktifleştirildi! Kalan Süre: ~24 saat, Hazineye aktarılan pay: +${(afterTreasury - prevTreasury).toFixed(2)} ADA`);
+console.log(`✅ [3/6] Bot aktifleştirildi! Kalan Süre: ~24 saat, Hazineye aktarılan pay: +${(afterTreasury - prevTreasury).toFixed(2)} ASTRA`);
 
 // ══════════════════════════════════════════════════════════════════════════
 // [4/6] SÜRE UZATMA (STACKING) & ÜCRETSİZ ÇARK BOTU TESTİ
@@ -85,7 +85,7 @@ assert(Math.abs((secondExpiry - firstExpiry) - (24 * 3600 * 1000)) < 1000, 'Sür
 // Ücretsiz bot (Karnaval Çarkı amortisi)
 const freeRes = gs.buyTavernaAutomationBot(true);
 assert(freeRes.success, 'Ücretsiz bot eklenebilmeli');
-assert.equal(freeRes.costPaid, 0, 'Ücretsiz bot için 0 ADA tahsil edilmeli');
+assert.equal(freeRes.costPaid, 0, 'Ücretsiz bot için 0 ASTRA tahsil edilmeli');
 const thirdExpiry = gs.state.botActiveUntil;
 assert(Math.abs((thirdExpiry - secondExpiry) - (24 * 3600 * 1000)) < 1000, 'Ücretsiz bot da mevcudun üzerine +24 saat eklemeli');
 console.log('✅ [4/6] Bot süresi 24h -> 48h -> 72h olarak kusursuzca birikti.');
@@ -108,11 +108,11 @@ const prevAda = gs.state.adAstraBalance;
 const spaceRes = gs.handleBotSiloSpace('wood', 180);
 assert(spaceRes.handled, 'Bot silo alanını yönetmeli');
 assert(gs.state.inventory.wood < prevWood, 'Gerektiği kadar odun pazarda satılmış olmalı');
-assert(gs.state.adAstraBalance > prevAda, 'Satıştan kazanılan ADA hesaba geçmiş olmalı');
+assert(gs.state.adAstraBalance > prevAda, 'Satıştan kazanılan ASTRA hesaba geçmiş olmalı');
 
 const newAvailableRoom = woodCap - gs.state.inventory.wood;
 assert(newAvailableRoom >= 180, 'Yeni sefer mahsulünü alacak kadar boş alan açılmış olmalı');
-console.log(`✅ [5/6] Akıllı Satış Devrede: ${spaceRes.amountSold} Odun satıldı, +${spaceRes.earnedAda?.toFixed(2)} ADA kazanıldı, ambarda tam yer açıldı.`);
+console.log(`✅ [5/6] Akıllı Satış Devrede: ${spaceRes.amountSold} Odun satıldı, +${spaceRes.earnedAda?.toFixed(2)} ASTRA kazanıldı, ambarda tam yer açıldı.`);
 
 // ══════════════════════════════════════════════════════════════════════════
 // [6/6] SEFER BİTİMİNDE OTONOM HASAT & ALET TAMİR ENTEGRASYONU

@@ -57,7 +57,7 @@ assert.equal(gs.state.currentXp, reqXp, 'Kullanıcı hesabı yükseltmediği sü
 console.log('✅ XP tankı taşma engeli başarıyla doğrulandı.');
 
 // 3. TEST: SİLO YÜKSELTME HARCAMALARININ HAVUZLARA DAĞILIMI
-console.log('\n[3] Silo Yükseltme ADA Harcamalarının Havuzlara Dağılımı:');
+console.log('\n[3] Silo Yükseltme ASTRA Harcamalarının Havuzlara Dağılımı:');
 gs.state.adAstraBalance = 100000;
 gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 50000]));   // v2: 6 hammadde
 gs.state.warehouseLevel = 1;
@@ -65,19 +65,19 @@ const ubiBefore = globalPool.state.ubiPool || 0;
 const treasuryBefore = treasury.state ? treasury.state.balance : 0;
 
 const upCost = gs.getWarehouseUpgradeCost(1);
-console.log('Silo Seviye 1->2 ADA Maliyeti:', upCost.adAstra);
+console.log('Silo Seviye 1->2 ASTRA Maliyeti:', upCost.adAstra);
 
 const upRes = gs.upgradeWarehouse();
 assert.equal(upRes.success, true, 'Silo yükseltme başarılı olmalı');
 
 const ubiAfter = globalPool.state.ubiPool || 0;
-console.log(`UBI Havuzu: Önce = ${ubiBefore.toFixed(2)}, Sonra = ${ubiAfter.toFixed(2)} (+${(ubiAfter - ubiBefore).toFixed(2)} ADA)`);
-assert.ok(ubiAfter > ubiBefore, 'Silo yükseltme ADA harcamasından %6 UBI havuzuna aktarılmalıdır');
+console.log(`UBI Havuzu: Önce = ${ubiBefore.toFixed(2)}, Sonra = ${ubiAfter.toFixed(2)} (+${(ubiAfter - ubiBefore).toFixed(2)} ASTRA)`);
+assert.ok(ubiAfter > ubiBefore, 'Silo yükseltme ASTRA harcamasından %6 UBI havuzuna aktarılmalıdır');
 
 const vaultSummary = gs.getTreasuryVaultSummary();
-console.log('Hazine ve Havuz Özeti:', vaultSummary.pools.map(p => `${p.name}: ${(p.totalPoolAda || 0).toFixed(2)} ADA`));
+console.log('Hazine ve Havuz Özeti:', vaultSummary.pools.map(p => `${p.name}: ${(p.totalPoolAda || 0).toFixed(2)} ASTRA`));
 const ubiPoolEntry = vaultSummary.pools.find(p => p.id === 'ubi_pool');
 assert.ok(ubiPoolEntry, 'TreasuryVaultSummary içinde UBI Havuzu bulunmalı');
 assert.ok(ubiPoolEntry.totalPoolAda > 0, 'UBI Havuzunda bakiye görünmeli');
 
-console.log('✅ Silo yükseltme ADA dağıtımı ve Hazine/UBI havuz görünürlüğü doğrulandı.');
+console.log('✅ Silo yükseltme ASTRA dağıtımı ve Hazine/UBI havuz görünürlüğü doğrulandı.');

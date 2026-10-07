@@ -59,7 +59,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   const r = gs.spinCarnivalWheel('ada');
   assert.equal(r.success, false, 'Kasa yetersizken çark çevrilmemeli');
   assert.equal(gs.state.adAstraBalance, 1000, 'Kapalı çark para almamalı');
-  // Kasa varken ADA ödülü kasadan düşer
+  // Kasa varken ASTRA ödülü kasadan düşer
   treasury.state.pools.carnival = 1e6;
   const orig = Math.random; Math.random = () => 0.5;
   const saved = GAME_CONFIG.CARNIVAL.WHEEL_REWARDS;
@@ -85,7 +85,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   const res = gs.executeColosseum1v1Match(0);
   const won = gs.state.adAstraBalance - adaBefore;
   if (res && res.isVictory !== false && won > 0) {
-    assert.ok(Math.abs((arenaBefore - treasury.getPool('arena')) - won) < 1e-6, 'Kazanılan ADA arena kasasından düşmeli');
+    assert.ok(Math.abs((arenaBefore - treasury.getPool('arena')) - won) < 1e-6, 'Kazanılan ASTRA arena kasasından düşmeli');
   }
   assert.ok(treasury.getPool('arena') <= arenaBefore, 'Arena kasası artmamalı');
   ok('Kolezyum: ödül arena kasasından çekiliyor');
@@ -226,7 +226,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ok('Rehber: ödül hazineden, tek sefer');
 }
 
-// 14) 3 günlük bot defteri: havadan kaynak ya da ADA üretilmez
+// 14) 3 günlük bot defteri: havadan kaynak ya da ASTRA üretilmez
 {
   const gs = fresh();
   gs.state.warehouseLevel = 4;

@@ -28,24 +28,24 @@ test('Evrensel Temel Gelir (UBI) & %3 Yapımcı Telifi & %5 Yakım Testi', async
 
     const res = globalPool.recordTokenSpend(spendAmount);
 
-    assert.equal(res.burned, 500, '%5 yani 500 ADA yakılmalı');
-    assert.equal(res.creatorRoyalty, 300, '%3 yani 300 ADA yapımcı cüzdanına tahsis edilmeli');
-    assert.equal(res.ubiShare, 600, '%6 yani 600 ADA UBI havuzuna eklenmeli');
-    assert.equal(res.treasuryShare, 8600, '%86 yani 8.600 ADA hazineye gitmeli');
+    assert.equal(res.burned, 500, '%5 yani 500 ASTRA yakılmalı');
+    assert.equal(res.creatorRoyalty, 300, '%3 yani 300 ASTRA yapımcı cüzdanına tahsis edilmeli');
+    assert.equal(res.ubiShare, 600, '%6 yani 600 ASTRA UBI havuzuna eklenmeli');
+    assert.equal(res.treasuryShare, 8600, '%86 yani 8.600 ASTRA hazineye gitmeli');
 
     assert.equal(globalPool.state.totalBurned, initialBurned + 500);
     assert.equal(globalPool.state.creatorRoyaltyTotal, initialCreator + 300);
     assert.equal(globalPool.state.ubiPool, initialUbi + 600);
   });
 
-  // v1.25 UBI modeli (kullanıcı kararı, 29 Eylül 2026): tohum dağıtılmaz. Oyunda harcanan her ADA'nın %6'sı
+  // v1.25 UBI modeli (kullanıcı kararı, 29 Eylül 2026): tohum dağıtılmaz. Oyunda harcanan her ASTRA'nın %6'sı
   // o haftanın kasasında birikir; Pazartesi 00:01 (TSİ) açılır; en az 3. seviye olanlar seviye ağırlığıyla paylaşır;
   // çekilmeyen pay sonraki haftaya devreder.
   await t.test('[3/6] Haftalık birikim ve Pazartesi açılışı: birikim + çekilmeyen pay = yeni kasa', () => {
     assert.equal(openWeek({ accruedLastWeek: 6000, unclaimedCarry: 1500 }), 7500);
     const before = globalPool.state.ubiWeekAccrued || 0;
     globalPool.recordTokenSpend(5000);
-    assert.equal(Math.round((globalPool.state.ubiWeekAccrued - before) * 100) / 100, 300, '5.000 ADA harcamanın %6\'sı (300) bu haftanın kasasına birikmeli');
+    assert.equal(Math.round((globalPool.state.ubiWeekAccrued - before) * 100) / 100, 300, '5.000 ASTRA harcamanın %6\'sı (300) bu haftanın kasasına birikmeli');
     const accrued = globalPool.state.ubiWeekAccrued;
     const carry = globalPool.state.ubiClaimPot || 0;
     globalPool.createNewEpoch(globalPool.state);
@@ -78,7 +78,7 @@ test('Evrensel Temel Gelir (UBI) & %3 Yapımcı Telifi & %5 Yakım Testi', async
     const initialAda = gameState.state.adAstraBalance || 0;
     const claimRes = gameState.claimWeeklyUbi();
     assert.equal(claimRes.success, true, 'İlk claim başarılı olmalı');
-    assert(claimRes.amount > 0, 'Dağıtılan ADA pozitif olmalı');
+    assert(claimRes.amount > 0, 'Dağıtılan ASTRA pozitif olmalı');
     assert.equal(gameState.state.adAstraBalance, initialAda + claimRes.amount, 'ADA bakiyesi artmalı');
     assert.equal(gameState.state.lastClaimedUbiEpoch, globalPool.state.epochId, 'Epoch ID kaydedilmeli');
     assert.ok(globalPool.state.ubiClaimPot <= 10000 - claimRes.amount + 1e-6, 'Çekilen pay kasadan düşmeli');
