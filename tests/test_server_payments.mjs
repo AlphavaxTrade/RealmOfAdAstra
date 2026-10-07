@@ -56,7 +56,7 @@ try {
   // 1) Teklif: 0 ADA'lı oyuncu asker almak ister
   const qt = payments.quote(pid, 'buySoldierUnit', []);
   assert.ok(qt.ok && qt.needPayment, JSON.stringify(qt));
-  assert.ok(qt.amountAda >= qt.cost && qt.cost >= 5000, 'Eksik tutar askerin bedeli kadar (+%2 pay)');
+  assert.ok(qt.amountAda >= qt.cost && qt.cost >= E.GAME_CONFIG.SOLDIER_COST_BASE, 'Eksik tutar askerin bedeli kadar (+%2 pay)');
   assert.equal(E.readPlayer(pid).soldierUnits.length, 0, 'Teklif (deneme çalıştırması) hiçbir şeyi değiştirmedi');
   ok('Teklif: işlemin tutarı ölçüldü, deneme çalıştırması geri alındı');
 
@@ -89,7 +89,7 @@ try {
 
   // 5) Eksik ödeme kabul edilmez
   const qt3 = payments.quote(pid, 'buySoldierUnit', []);
-  const t3 = await pay.connect(playerW).pay(ethers.parseUnits(String(qt3.amountAda - 100), 18), qt3.ref, { value: gasPrice * FEE_GAS, gasPrice });
+  const t3 = await pay.connect(playerW).pay(ethers.parseUnits((qt3.amountAda / 2).toFixed(6), 18), qt3.ref, { value: gasPrice * FEE_GAS, gasPrice });
   await t3.wait();
   const low = await payments.confirm(pid, qt3.ref, t3.hash);
   assert.equal(low.ok, false);

@@ -11,24 +11,29 @@
 import { GAME_CONFIG } from './config.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
-const POOL_IDS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'carnival', 'quest'];
+// v2 (R3): kasalar ve tohumlar config'ten (zindan, kolezyum, boss, geri alım, karnaval, görev, Fatih, Konsey, Universe rezervi)
+const SEEDS = GAME_CONFIG.TREASURY_SEED || { dungeon: 14000000, arena: 8000000, worldBoss: 8000000, ammBuyback: 6000000, carnival: 4000000, quest: 8000000 };
+const POOL_IDS = Object.keys(SEEDS);
+const LOCKED = new Set(GAME_CONFIG.TREASURY_LOCKED_POOLS || []);
+const zeroPools = () => Object.fromEntries(POOL_IDS.map(id => [id, 0]));
+export { POOL_IDS as TREASURY_POOL_IDS };
 
 export class TreasuryLedger {
   constructor() {
-    this.storageKey = 'adastra_treasury_ledger_v3';
+    // v4: v2 kasaları (yeni tohumlar; eski kayıtlar yeniden tohumlanır — deneme aşaması)
+    this.storageKey = 'adastra_treasury_ledger_v4';
     this.state = this.load();
   }
 
   load() {
     const seed = () => ({
-      // Görev kasası 30 Eylül 2026'da eklendi (görev ödülleri + ücretsiz oyuncu havuzu); eski kayıtlara tohumuyla eklenir
-      pools: { dungeon: 14000000, arena: 8000000, worldBoss: 8000000, ammBuyback: 6000000, carnival: 4000000, quest: 8000000 },
+      pools: { ...SEEDS },
       lifetimeDeposited: 0,
       lifetimeWithdrawn: 0,
       lifetimeBurned: 0,
       // Havuz bazında toplam giriş/çıkış — çözünürlük oranı (solvency) için
-      inflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0, quest: 0 },
-      outflow: { dungeon: 0, arena: 0, worldBoss: 0, ammBuyback: 0, carnival: 0, quest: 0 },
+      inflow: zeroPools(),
+      outflow: zeroPools(),
       // Ödül ölçekleme geçmişi (panelde gösterilir)
       lastScaleFactor: 1
     });
@@ -63,10 +68,12 @@ export class TreasuryLedger {
     const amount = Number(treasuryShare);
     if (!isFinite(amount) || amount <= 0) return { allocations: {} };
 
+    // v2: 8 kasa (zindan, kolezyum, boss, geri alım, görev, karnaval, Fatih, Konsey); Universe rezervi pay almaz
     const alloc = GAME_CONFIG.TREASURY_ALLOCATION;
     const allocations = {};
     for (const id of POOL_IDS) {
       const cut = amount * (alloc[id] || 0);
+      if (!(cut > 0)) continue;
       this.state.pools[id] = (this.state.pools[id] || 0) + cut;
       this.state.inflow[id] = (this.state.inflow[id] || 0) + cut;
       allocations[id] = cut;
@@ -99,8 +106,8 @@ export class TreasuryLedger {
   // ---------------------------------------------------------------------
   withdraw(poolId, requested) {
     const want = Number(requested);
-    if (!POOL_IDS.includes(poolId) || !isFinite(want) || want <= 0) {
-      return { granted: 0, requested: Math.max(0, want || 0), scaleFactor: 0, depleted: true };
+    if (!POOL_IDS.includes(poolId) || LOCKED.has(poolId) || !isFinite(want) || want <= 0) {
+      return { granted: 0, requested: Math.max(0, want || 0), scaleFactor: 0, depleted: true, locked: LOCKED.has(poolId) };
     }
 
     const available = this.state.pools[poolId] || 0;

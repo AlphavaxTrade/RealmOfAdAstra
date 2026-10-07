@@ -24,8 +24,8 @@ gs.state.adAstraBalance = 0;
 
 // Depoda eşit ve bol kaynak var
 // v1.25: 3.000'er kaynak silo Lv.1'e sığmaz (fazlası eskiden sessizce siliniyordu); silo Lv.8 kullanılıyor.
-gs.state.warehouseLevel = 8;
-gs.state.inventory = { wood: 3000, iron: 3000, wheat: 3000 };
+gs.state.warehouseLevel = gs.getWarehouseMaxLevel();   // v2: 3.000'er kaynak ancak en üst siloya sığar
+gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 3000]));
 
 // Bot aktif
 gs.state.tavernaBotActive = true;

@@ -3,6 +3,7 @@ import { globalPool } from '../js/globalPool.js';
 import { ammMarket } from '../js/ammMarket.js';
 import { treasury } from '../js/treasury.js';
 import assert from 'assert';
+import { GAME_CONFIG } from '../js/config.js';
 
 globalThis.localStorage = {
   store: {},
@@ -19,14 +20,13 @@ gs.vanillaReset();
 
 // 1. Başlangıç Seviye 1 Kontrolleri
 assert.strictEqual(gs.state.warehouseLevel, 1, 'Silo seviyesi 1 olmalı');
-assert.strictEqual(gs.state.inventory.wood, 60, 'Başlangıç odun 60 olmalı');
-assert.strictEqual(gs.state.inventory.iron, 40, 'Başlangıç demir 40 olmalı');
-assert.strictEqual(gs.state.inventory.wheat, 80, 'Başlangıç buğday 80 olmalı');
+// v2: başlangıç envanteri ve silo kapasiteleri config'ten (6 hammadde)
+const P = GAME_CONFIG.STARTING_PROFILE.inventory;
+for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.strictEqual(gs.state.inventory[k], P[k], `Başlangıç ${k} ${P[k]} olmalı`);
 
 const initCap = gs.getWarehouseCapacity();
-assert.strictEqual(initCap.wood, 1080, 'Lv 1 Odun kapasitesi 1080 olmalı');
-assert.strictEqual(initCap.iron, 720, 'Lv 1 Demir kapasitesi 720 olmalı');
-assert.strictEqual(initCap.wheat, 1800, 'Lv 1 Buğday kapasitesi 1800 olmalı');
+const W = GAME_CONFIG.WAREHOUSE.initialCapacities;
+for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.strictEqual(initCap[k], W[k], `Lv 1 ${k} kapasitesi ${W[k]} olmalı`);
 
 // 2. 50k ADA Yükleme & Bot Satın Alma
 gs.state.adAstraBalance = 50000;
@@ -42,7 +42,7 @@ assert(gs.state.inventory.wheat <= postBuyCap.wheat, 'Bot alımında buğday kap
 
 // 3. Ardışık Sefer Döngüleri Simülasyonu
 for (let round = 1; round <= 15; round++) {
-  for (const n of ['wood', 'iron', 'wheat']) {
+  for (const n of GAME_CONFIG.RESOURCE_KEYS) {
     if (gs.state.activeExpeditions[n]) {
       gs.state.activeExpeditions[n].elapsedSeconds = 1080;
       gs.state.activeExpeditions[n].isCompleted = true;

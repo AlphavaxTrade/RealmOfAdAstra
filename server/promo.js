@@ -18,8 +18,9 @@ CREATE TABLE IF NOT EXISTS promo_codes (
 CREATE TABLE IF NOT EXISTS promo_uses (code TEXT NOT NULL, player TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (code, player));
 CREATE TABLE IF NOT EXISTS promo_pending (player TEXT PRIMARY KEY, code TEXT NOT NULL, at INTEGER NOT NULL);
 `;
-export const PROMO_REWARD_KEYS = ['ada', 'wood', 'iron', 'wheat', 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
-const LIMITS = { ada: 10_000_000, wood: 1_000_000, iron: 1_000_000, wheat: 1_000_000, fragments: 100_000, keys: 1000, boxes: 1000, scroll_heal: 1000, scroll_stamina: 1000 };
+// v2: 6 hammadde
+export const PROMO_REWARD_KEYS = ['ada', 'wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
+const LIMITS = { ada: 10_000_000, wheat: 1_000_000, stone: 1_000_000, wood: 1_000_000, coal: 1_000_000, iron: 1_000_000, herb: 1_000_000, fragments: 100_000, keys: 1000, boxes: 1000, scroll_heal: 1000, scroll_stamina: 1000 };
 // Türkçe klavye: İ ve ı da I sayılır (kodlarda yalnız A-Z, rakam ve tire var)
 const norm = c => String(c || '').trim().replace(/[İıi]/g, 'I').toUpperCase();
 const CODE_RE = /^[A-Z0-9-]{4,32}$/;

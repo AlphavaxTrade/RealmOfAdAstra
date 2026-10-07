@@ -3,20 +3,19 @@ import assert from 'node:assert/strict';
 import { ammMarket, GENESIS_PRICES, BUYBACK_ASSET_WEIGHTS } from '../js/ammMarket.js';
 import { treasury } from '../js/treasury.js';
 import { globalPool } from '../js/globalPool.js';
+import { GAME_CONFIG } from '../js/config.js';
 
 test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t) => {
 
   await t.test('1. Genesis Referans Fiyatları ve %75 Hammadde Ağırlık Dağılımı Doğrulaması', () => {
-    assert.equal(GENESIS_PRICES.wheat, 0.90, 'Buğday Genesis Fiyatı 0.90 ADA olmalı');
-    assert.equal(GENESIS_PRICES.iron, 4.00, 'Demir Genesis Fiyatı 4.00 ADA olmalı');
-    assert.equal(GENESIS_PRICES.wood, 2.50, 'Odun Genesis Fiyatı 2.50 ADA olmalı');
-    assert.equal(GENESIS_PRICES.fragments, 45.00, 'Teçhizat Parçası Genesis Fiyatı 45.00 ADA olmalı');
-    assert.equal(GENESIS_PRICES.keys, 1000.0, 'Arena Anahtarı Genesis Fiyatı 1.000 ADA olmalı');
-    assert.equal(GENESIS_PRICES.boxes, 10000.0, 'Pandora Kutusu Genesis Fiyatı 10.000 ADA olmalı');
+    // v2: Genesis fiyatları koridor varsayılanları (×0,01 ölçek)
+    for (const k of ['wheat', 'iron', 'wood', 'fragments', 'keys', 'boxes']) {
+      assert.equal(GENESIS_PRICES[k], GAME_CONFIG.AMM_CORRIDORS[k].defaultPriceAda, `${k} Genesis fiyatı koridor varsayılanı olmalı`);
+    }
 
-    // Ağırlık kontrolü
-    const hammaddePayi = BUYBACK_ASSET_WEIGHTS.wheat + BUYBACK_ASSET_WEIGHTS.iron + BUYBACK_ASSET_WEIGHTS.wood;
-    assert.equal(Math.round(hammaddePayi * 100), 75, 'Buğday, Demir ve Odun toplam ağırlığı tam %75 olmalı');
+    // Ağırlık kontrolü: 6 hammaddenin toplamı %75
+    const hammaddePayi = GAME_CONFIG.RESOURCE_KEYS.reduce((s, k) => s + (BUYBACK_ASSET_WEIGHTS[k] || 0), 0);
+    assert.equal(Math.round(hammaddePayi * 100), 75, 'Hammaddelerin toplam ağırlığı tam %75 olmalı');
 
     const toplamPay = Object.values(BUYBACK_ASSET_WEIGHTS).reduce((s, w) => s + w, 0);
     assert.equal(Math.round(toplamPay * 100), 100, 'Tüm 6 varlığın ağırlıkları toplamı tam %100 (1.00) olmalı');
@@ -31,7 +30,7 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
 
     const newAmmPool = treasury.getPool('ammBuyback') || 0;
     const gained = newAmmPool - initialAmmPool;
-    const expectedAmmInflow = testSpend * 0.86 * 0.15; // 1.290 ADA
+    const expectedAmmInflow = testSpend * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * GAME_CONFIG.TREASURY_ALLOCATION.ammBuyback; // v2: %86 × %15
 
     assert.ok(Math.abs(gained - expectedAmmInflow) < 0.1, `Harcamanın tam %12,9'u (${expectedAmmInflow} ADA) AMM Kasasına akmalı. Gerçekleşen: ${gained}`);
   });
@@ -71,7 +70,7 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
     ammMarket.savePools();
 
     const wheatPriceBefore = ammMarket.getPrice('wheat');
-    assert.ok(wheatPriceBefore < 0.30, 'Buğday fiyatı sertçe düşürülmüş olmalı');
+    assert.ok(wheatPriceBefore < GENESIS_PRICES.wheat * 0.35, 'Buğday fiyatı sertçe düşürülmüş olmalı');
 
     const initialWheatReserve = ammMarket.pools.wheat.resourceReserve;
     const initialAmmTreasury = treasury.getPool('ammBuyback');

@@ -105,3 +105,17 @@ Koridor taban/tavan · komisyon ve mal yakım oranı · geri alım eşiği ve ha
 6. İlan pazarı: komisyon yüzde 2 (1 yakım, 1 kasa), 7 gün, en çok 10 ilan, pazarlık yok: kabul mü?
 
 Onay gelince R5: nüfus ve ordu (köylüler, kolonist, Kışla askerleri, mürettebat; Universe yokken Realm içindeki rolü).
+
+
+## 10. Düzeltme ve kararlar (7 Ekim, kullanıcı cevapları)
+
+**Kabul edilenler:** tüketilen mallar havuzda, teçhizat ilan pazarında (1); 100 M'nin 90/10 bölüşümü (2); tek işlem sınırı havuzun %5'i (3); ön sipariş (4); Universe satırları ilk günden gri ve açıklamalı (5); ilan pazarı kuralları (6).
+
+**Yeni karar — alet ve teçhizat geri dönüşümü:** Oyuncu, hammaddeyle yaptığı (craft ettiği) her alet ve teçhizatı Demirhane'de geri dönüşüme sokabilir. Geri dönüşüm, o eşyanın yapımında kullanılan hammaddelerin **%70'ini** geri verir (demir, kömür, taş, odun; hangi hammaddeden ne kadar harcandıysa onun %70'i), **%30'u yok olur**. Yapımda ödenen ASTRA geri gelmez. Böylece yanlış yapılan ya da işe yaramayan eşya çöp olmaz, ama her döngüde %30 hammadde yandığı için geri dönüşüm bir "depolama hilesi" olamaz. Satın alınmış (ilan pazarından) eşyalar da geri dönüştürülebilir; tarifesi bilinen her eşya için geçerli. Ekranda eşyanın yanında "Geri dönüştür: +X demir, +Y kömür…" yazar.
+
+**Düzeltme — Hazırlık Deposu tek pazar kuralını bozmaz.** Belgede "Universe tarafı" diye yazdığım ifade yanlış anlaşılmaya açıktı; doğrusu:
+- Pazar TEK. Demirin tek havuzu var; Realm oyuncusu da Universe oyuncusu da aynı havuzdan alır, aynı fiyatı görür. Aynı hammadde için ikinci bir pazar YOK.
+- Hazırlık Deposu bir pazar değil, bir **bekleme ambarı**: oyuncu malını havuza satmak yerine depoya koyar; mal havuza girmediği için bugünkü fiyatı aşağı itmez. Universe açılış günü **Konsey** depodaki malı Universe Tohum Rezervi'ndeki ASTRA ile (10 M'ye kadar) **açılış fiyatından satın alır**, ASTRA oyuncuya gider, mal **aynı tek havuza** konur; Universe oyuncuları o havuzdan alır. Yani Hazırlık Deposu, "ileri tarihli, fiyatı garantili bir satış"tır; alıcısı Konsey'dir, pazar yine tektir.
+- "Universe satırları" yalnız **Universe'de üretilen ve Realm'de olmayan** mallar içindir (alüminyum, titanyum, kristal, çelik, elektronik parça…). Demir, buğday, odun, kömür, taş, şifalı ot için Universe satırı yoktur; onların satırı zaten Realm'de açık olan tek satırdır.
+
+**Destekçi programı:** şimdilik yok (kullanıcı kararı).

@@ -26,7 +26,7 @@ describe('⚔️ Kademeli Artan Asker Satın Alma Maliyeti Testi', () => {
 
   it('1. İlk askerin (1. asker) satın alma maliyeti tam olarak 5.000 $ADASTRA olmalı', () => {
     const cost1 = gameState.getSoldierCost(1);
-    assert.strictEqual(cost1, 5000, 'İlk asker maliyeti 5.000 ADA olmalıdır');
+    assert.strictEqual(cost1, GAME_CONFIG.SOLDIER_COST_BASE, 'İlk asker maliyeti taban (v2: 50 ASTRA) olmalıdır');
   });
 
   it('2. Daha fazla asker aldıkça maliyet kademeli olarak artmalı (cost(n) > cost(n-1))', () => {
@@ -37,8 +37,8 @@ describe('⚔️ Kademeli Artan Asker Satın Alma Maliyeti Testi', () => {
     const cost10 = gameState.getSoldierCost(10);
     const cost18 = gameState.getSoldierCost(18);
 
-    assert.strictEqual(cost1, 5000);
-    assert.strictEqual(cost18, 1800000, '18. asker maliyeti tam olarak 1.800.000 $ADASTRA olmalıdır');
+    assert.strictEqual(cost1, GAME_CONFIG.SOLDIER_COST_BASE);
+    assert.strictEqual(cost18, GAME_CONFIG.SOLDIER_18_TARGET_COST, '18. asker maliyeti hedef (v2: 18.000 ASTRA) olmalıdır');
     assert.ok(cost2 > cost1, `2. asker (${cost2}) 1. askerden (${cost1}) pahalı olmalı`);
     assert.ok(cost3 > cost2, `3. asker (${cost3}) 2. askerden (${cost2}) pahalı olmalı`);
     assert.ok(cost5 > cost3, `5. asker (${cost5}) 3. askerden (${cost3}) pahalı olmalı`);
@@ -55,13 +55,14 @@ describe('⚔️ Kademeli Artan Asker Satın Alma Maliyeti Testi', () => {
   });
 
   it('3. buySoldierUnit fonksiyonu ilk askeri alırken tam 5.000 ADA tahsil etmeli', () => {
-    gameState.state.adAstraBalance = 10000;
+    const base = GAME_CONFIG.SOLDIER_COST_BASE;
+    gameState.state.adAstraBalance = 2 * base;
     assert.strictEqual(gameState.state.soldierUnits.length, 0);
 
     const res = gameState.buySoldierUnit();
     assert.strictEqual(res.success, true, 'İlk asker satın alınabilmeli');
-    assert.strictEqual(res.cost, 5000, 'Satın alma maliyeti 5.000 ADA olmalı');
-    assert.strictEqual(gameState.state.adAstraBalance, 5000, 'Kalan bakiye 5.000 ADA olmalı');
+    assert.strictEqual(res.cost, base, 'Satın alma maliyeti taban kadar olmalı');
+    assert.strictEqual(gameState.state.adAstraBalance, base, 'Kalan bakiye taban kadar olmalı');
     assert.strictEqual(gameState.state.soldierUnits.length, 1, 'Ordu boyutu 1 olmalı');
 
     // Şimdi 2. askeri almaya çalışsın: 5.000 ADA'sı var ama 2. asker ~11.900 ADA

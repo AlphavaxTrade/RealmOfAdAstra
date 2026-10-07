@@ -21,7 +21,8 @@ if (lvlRes.success) {
 }
 console.log('✅ 1. Madde Başarılı: Seviye 81 tavanı korundu.');
 
-// 2. Stamina Buğday Tüketimi (20 Stamina = 63 Buğday)
+// 2. Stamina Buğday Tüketimi (v2: 1 Stamina = WHEAT_PER_STAMINA Buğday)
+const WHEAT_20 = Math.ceil(20 * GAME_CONFIG.WHEAT_PER_STAMINA);
 gm.state.level = 1;
 gm.state.stamina = 50; // max 100
 gm.state.inventory.wheat = 100;
@@ -33,11 +34,11 @@ if (!refillRes.success) {
   throw new Error(`HATA: Stamina doldurulamadı: ${refillRes.message}`);
 }
 const wheatUsed = startWheat - gm.state.inventory.wheat;
-console.log(`20 Stamina için harcanan Buğday: ${wheatUsed} (Beklenen: 63)`);
-if (wheatUsed !== 63) {
-  throw new Error(`HATA: 20 Stamina için 63 Buğday harcanmalıydı fakat ${wheatUsed} harcandı!`);
+console.log(`20 Stamina için harcanan Buğday: ${wheatUsed} (Beklenen: ${WHEAT_20})`);
+if (wheatUsed !== WHEAT_20) {
+  throw new Error(`HATA: 20 Stamina için ${WHEAT_20} Buğday harcanmalıydı fakat ${wheatUsed} harcandı!`);
 }
-console.log('✅ 2. Madde Başarılı: Stamina buğday tüketimi tam 3.15 oranında eşitlendi.');
+console.log(`✅ 2. Madde Başarılı: Stamina buğday tüketimi tam ${GAME_CONFIG.WHEAT_PER_STAMINA} oranında eşitlendi.`);
 
 // 3. Vanilla Reset armoryInventory Testi
 gm.vanillaReset();

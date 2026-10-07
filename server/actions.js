@@ -13,9 +13,10 @@ import { GAME_CONFIG } from '../js/config.js';
 const SLOT_KEYS = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const own = (obj, k) => typeof k === 'string' && !!obj && Object.hasOwn(obj, k);
 const SCROLLS = ['scroll_heal', 'scroll_stamina', 'scroll_teleport', 'scroll_repair'];
-const WHEEL_PAY = ['ada', 'ticket', 'wood', 'iron', 'wheat'];
-const RESOURCE_KEYS = ['wood', 'iron', 'wheat', 'fragments', 'boxes', 'keys'];
-const NODES = ['wood', 'iron', 'wheat'];
+// v2: alanlar ve hammaddeler config'ten (6 kaynak)
+const NODES = GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+const WHEEL_PAY = ['ada', 'ticket', ...NODES];
+const RESOURCE_KEYS = [...NODES, 'fragments', 'boxes', 'keys'];
 
 const T = {
   int: v => Number.isInteger(v) && Math.abs(v) <= 1e9,

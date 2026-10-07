@@ -13,14 +13,16 @@ export const RATE_KEYS = [
   { key: 'creator', label: 'Yapımcı payı', group: 'spend' },
   { key: 'ubi', label: 'Haftalık temel gelir', group: 'spend' },
   { key: 'pools', label: 'Ödül kasaları', group: 'spend' },
-  // 4-9 Ödül kasaları payının kasalara bölünüşü (toplam %100)
+  // 4-11 Ödül kasaları payının kasalara bölünüşü (toplam %100) — v2: 8 kasa
   { key: 'dungeon', label: 'Zindan kasası', group: 'pool' },
   { key: 'arena', label: 'Kolezyum kasası', group: 'pool' },
   { key: 'worldBoss', label: 'Dünya bossu kasası', group: 'pool' },
   { key: 'ammBuyback', label: 'Pazar destek kasası', group: 'pool' },
   { key: 'quest', label: 'Görev ve ücretsiz oyuncu kasası', group: 'pool' },
   { key: 'carnival', label: 'Karnaval kasası', group: 'pool' },
-  // 10-18 Özel kurallar
+  { key: 'fatih', label: 'Fatih Ödülü kasası', group: 'pool' },
+  { key: 'konsey', label: 'Sirius Konseyi kasası', group: 'pool' },
+  // 12-20 Özel kurallar
   { key: 'wheelCarnival', label: 'Şans çarkı: doğrudan karnaval kasasına', group: 'rule', max: 10000 },
   { key: 'dungeonGate', label: 'Zindan kapı harcı: doğrudan zindan kasasına', group: 'rule', max: 10000 },
   { key: 'lotteryAmorti', label: 'Piyango bileti: amorti kasasına', group: 'rule', max: 5000 },
@@ -34,8 +36,9 @@ export const RATE_KEYS = [
 export const RATE_COUNT = RATE_KEYS.length;
 // Oyunun bugünkü oranları (sözleşme kurulmadan ya da oyun sunucusuna bağlanmadan gösterilen değerler).
 // js/config.js ile aynı olmalı: tests/test_rates_contract.mjs denetler.
-export const DEFAULT_RATES = [500, 300, 600, 8600, 3000, 1500, 1500, 1500, 2100, 400, 8000, 10000, 200, 200, 200, 300, 600, 7000, 150];
-export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival'];
+// v2 (7 Ekim 2026): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
+export const DEFAULT_RATES = [500, 300, 600, 8600, 2700, 1400, 1200, 1500, 1800, 400, 500, 500, 8000, 10000, 200, 200, 200, 300, 600, 7000, 150];
+export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey'];
 export const RATE_CHANGE_DELAY_SEC = 24 * 3600;
 
 // Haftalık çekim kurallarının başlangıç değerleri (server/economy.js WEEKLY_RULES ile aynı)
@@ -53,6 +56,7 @@ export function ratesFromConfig(cfg, weekly = WEEKLY_DEFAULTS) {
     pools: bps(cfg.TOKEN_REWARD_POOL_RATE ?? 0.86),
     dungeon: bps(A.dungeon), arena: bps(A.arena), worldBoss: bps(A.worldBoss),
     ammBuyback: bps(A.ammBuyback), quest: bps(A.quest), carnival: bps(A.carnival),
+    fatih: bps(A.fatih), konsey: bps(A.konsey),
     wheelCarnival: bps(cfg.CARNIVAL?.WHEEL_CARNIVAL_SHARE ?? 0.8),
     dungeonGate: bps(cfg.DUNGEON_GATE_POOL_SHARE ?? 1),
     lotteryAmorti: bps(cfg.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02),
@@ -104,7 +108,7 @@ export function applyRates(cfg, weekly, arr) {
   return true;
 }
 
-const POOL_LABEL = { dungeon: 'zindan', arena: 'kolezyum', worldBoss: 'dünya bossu', ammBuyback: 'pazar desteği', quest: 'görev/ücretsiz oyuncu', carnival: 'karnaval' };
+const POOL_LABEL = { dungeon: 'zindan', arena: 'kolezyum', worldBoss: 'dünya bossu', ammBuyback: 'pazar desteği', quest: 'görev/ücretsiz oyuncu', carnival: 'karnaval', fatih: 'Fatih Ödülü', konsey: 'Sirius Konseyi' };
 const pct = v => '%' + (Math.round(v * 100) / 100).toLocaleString('tr-TR');
 
 // "ADA nereye gidiyor" listesi: her oyun alanı için paranın gittiği yerler (yüzdeler harcamanın tamamına göre)

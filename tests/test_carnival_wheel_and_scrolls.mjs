@@ -101,7 +101,7 @@ gs.state.warehouseLevel = 18;
 for (const res of ['wood', 'iron', 'wheat']) {
   gs.state.inventory[res] = 5000;
   const price = ammMarket.getPrice(res) || 1.0;
-  const cost = Math.ceil(100 / price);
+  const cost = Math.ceil(gs.getWheelCostAda() / price);   // v2: çark 1 ASTRA
   const burnedBefore = (gs.state.burnedResources && gs.state.burnedResources[res]) || 0;
   const r = gs.spinCarnivalWheel(res);
   assert(r.success, res + ' ile çark çevirme başarılı olmalı');
@@ -139,25 +139,28 @@ assert.equal(ecoSummary.ubiRatePct, 6, 'UBI havuz payı %6 olmalı');
 assert.equal(ecoSummary.creatorRatePct, 3, 'Yapımcı / Team payı %3 olmalı');
 assert.equal(ecoSummary.treasuryRatePct, 86, 'Hazine payı %86 olmalı');
 // Kasa payları hazine girişinin yüzdesi (toplam 1)
-assert.equal(ecoSummary.allocations.dungeon, 0.30, 'Zindan: hazine payının %30u');
-assert.equal(ecoSummary.allocations.arena, 0.15, 'Kolezyum: hazine payının %15i');
-assert.equal(ecoSummary.allocations.worldBoss, 0.15, 'World Boss: hazine payının %15i');
+// v2 (R3): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
+assert.equal(ecoSummary.allocations.dungeon, 0.27, 'Zindan: hazine payının %27si');
+assert.equal(ecoSummary.allocations.arena, 0.14, 'Kolezyum: hazine payının %14ü');
+assert.equal(ecoSummary.allocations.worldBoss, 0.12, 'World Boss: hazine payının %12si');
 assert.equal(ecoSummary.allocations.ammBuyback, 0.15, 'Pazar geri alımı: hazine payının %15i');
-assert.equal(ecoSummary.allocations.quest, 0.21, 'Görev & ücretsiz oyuncu: hazine payının %21i');
+assert.equal(ecoSummary.allocations.quest, 0.18, 'Görev & ücretsiz oyuncu: hazine payının %18i');
 assert.equal(ecoSummary.allocations.carnival, 0.04, 'Karnaval: hazine payının %4ü');
+assert.equal(ecoSummary.allocations.fatih, 0.05, 'Fatih Ödülü: hazine payının %5i');
+assert.equal(ecoSummary.allocations.konsey, 0.05, 'Sirius Konseyi: hazine payının %5i');
 assert(Math.abs(Object.values(ecoSummary.allocations).reduce((s, v) => s + v, 0) - 1) < 1e-9, 'Kasa payları toplamı 1 olmalı');
-assert(ecoSummary.pools.length === 6, '6 ana hazine havuzu listelenmeli');
+assert(ecoSummary.pools.length === Object.keys(GAME_CONFIG.TREASURY_SEED).length, 'Bütün hazine kasaları listelenmeli (Universe rezervi dahil)');
 const pctSum = ecoSummary.burnRatePct + ecoSummary.ubiRatePct + ecoSummary.creatorRatePct + ecoSummary.pools.reduce((s, p) => s + p.sharePct, 0);
 assert(Math.abs(pctSum - 100) < 0.2, 'Dağılım çubuğu toplamı %100 olmalı (' + pctSum + ')');
 
 ecoSummary.pools.forEach(p => {
   assert(p.balance >= 0, `${p.name} bakiyesi pozitif olmalı`);
-  assert(p.sharePct > 0, `${p.name} dağıtım payı bulunmalı`);
+  assert(p.sharePct > 0 || p.locked, `${p.name} dağıtım payı bulunmalı (kilitli Universe rezervi hariç)`);
   assert(p.actionType, `${p.name} aksiyon butonu tanımlı olmalı`);
 });
 
-assert(ecoSummary.lottery.lotteryPool >= 20000000, 'Piyango kasası 20.000.000+ ADA olmalı');
-assert(ecoSummary.lottery.winnerShare >= 200, 'Piyango kazanan payı 2x bilet çarpanı kuralına göre hesaplanmalı');
+assert(ecoSummary.lottery.lotteryPool >= GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA, 'Piyango kasası tohum tutarının altında olmamalı');
+assert(ecoSummary.lottery.winnerShare >= 2 * gs.getLotteryRules().ticketPrice, 'Piyango kazanan payı 2x bilet çarpanı kuralına göre hesaplanmalı');
 assert(ecoSummary.burnedResources.wood > 0, 'Yakılan odun özette görünmeli');
 assert(ecoSummary.burnedResources.iron > 0, 'Yakılan demir özette görünmeli');
 assert(ecoSummary.burnedResources.wheat > 0, 'Yakılan buğday özette görünmeli');
@@ -193,8 +196,9 @@ assert.equal(gs.state.arenaKeys, 0, 'Anahtar sayısı 1 eksilmeli');
 // AMM Havuz Fiyatları Kontrolü
 const boxPrice = ammMarket.getPrice('boxes');
 const keyPrice = ammMarket.getPrice('keys');
-assert(boxPrice >= 5000 && boxPrice <= 35000, `Pandora kutusu AMM fiyatı 5k-35k ADA aralığında olmalı: ${boxPrice}`);
-assert(keyPrice >= 500 && keyPrice <= 3500, `Anahtar AMM fiyatı 500-3500 ADA aralığında olmalı: ${keyPrice}`);
+const C = GAME_CONFIG.AMM_CORRIDORS;
+assert(boxPrice >= C.boxes.minPriceAda && boxPrice <= C.boxes.maxPriceAda, `Pandora kutusu pazar fiyatı koridor içinde olmalı: ${boxPrice}`);
+assert(keyPrice >= C.keys.minPriceAda && keyPrice <= C.keys.maxPriceAda, `Anahtar pazar fiyatı koridor içinde olmalı: ${keyPrice}`);
 console.log(`✅ Pandora Kutusu AMM Fiyatı: ~${boxPrice.toFixed(0)} ADA, Anahtar: ~${keyPrice.toFixed(0)} ADA doğrulandı.`);
 
 console.log('\n🎉 TÜM ŞANS ÇARKI, PİYANGO 2X VE PANDORA KUTUSU TESTLERİ %100 BAŞARIYLA TAMAMLANDI! 🎉\n');

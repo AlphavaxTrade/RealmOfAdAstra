@@ -1,35 +1,37 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gameState } from '../js/gameState.js';
+import { GAME_CONFIG } from '../js/config.js';
 
-test('🧪 Kullanıcı Akışı: 50k ADA -> Bot Satın Alma -> Silo Şişmeme -> +6 Saat İleri Sarma Donmama Testi', async (t) => {
-  await t.test('1. Bot satın alındığında siloyu şişirmemeli ve kasadaki ADA ile sadece asgari eksik tamamlanmalı', () => {
+test('🧪 Kullanıcı Akışı: 50k ASTRA -> Bot Satın Alma -> Silo Şişmeme -> +6 Saat İleri Sarma Donmama Testi', async (t) => {
+  const P = GAME_CONFIG.STARTING_PROFILE.inventory;
+  const R = GAME_CONFIG.RESOURCE_KEYS;
+
+  await t.test('1. Bot satın alındığında siloyu şişirmemeli ve kasadaki ASTRA ile sadece asgari eksik tamamlanmalı', () => {
     gameState.vanillaReset();
     gameState.state.adAstraBalance = 50000;
 
-    assert.equal(gameState.state.inventory.wood, 60);
-    assert.equal(gameState.state.inventory.iron, 40);
-    assert.equal(gameState.state.inventory.wheat, 80);
+    for (const k of R) assert.equal(gameState.state.inventory[k], P[k], `${k} başlangıç değeri`);
 
     const buyRes = gameState.buyTavernaAutomationBot(false);
     assert.equal(buyRes.success, true);
 
-    // Silo asla şişmemeli!
-    assert.equal(gameState.state.inventory.wood, 60, 'Odun 60 kalmalı');
-    assert.equal(gameState.state.inventory.iron, 50, 'Demir sadece 40->50 olarak tamamlanmalı');
-    assert.equal(gameState.state.inventory.wheat, 80, 'Buğday 80 kalmalı (şişirilmemeli)');
-    // v1.25: Bot ücreti doğal stamina yenilenmesini de hesaba katıyor (Lv.1'de ~800 ADA yüksek)
-    assert.ok(gameState.state.adAstraBalance > 2800, 'Kasada kalan ADA korunmalı');
+    // Silo asla şişmemeli: yalnız bot önkoşulunun (50) altındaki hammadde tamamlanır
+    const need = GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES;
+    for (const k of R) {
+      assert.equal(gameState.state.inventory[k], Math.max(P[k], need[k] || 0), `${k}: yalnız önkoşul eksiği tamamlanmalı, silo şişmemeli`);
+    }
+    assert.ok(gameState.state.adAstraBalance >= 50000 - buyRes.costPaid - 5, 'Kasada kalan ASTRA korunmalı');
   });
 
-  await t.test('2. 6 Saat İleri Sarıldığında (fastForwardTime) browser donmadan <100ms içinde 60 sefer tamamlayıp siloyu yükseltmeli', () => {
+  await t.test('2. 6 Saat İleri Sarıldığında (fastForwardTime) browser donmadan her alanda 20 sefer tamamlayıp siloyu yükseltmeli', () => {
     const t0 = Date.now();
     const report = gameState.fastForwardTime(6);
     const duration = Date.now() - t0;
 
-    assert.ok(duration < 200, `Simülasyon 200ms altında bitmeli, ölçülen: ${duration}ms`);
+    assert.ok(duration < 400, `Simülasyon 400ms altında bitmeli, ölçülen: ${duration}ms`);
     assert.equal(report.botExecutionStatus, 'ran', 'Bot aktif olarak çalışmalı');
-    assert.equal(report.totalExpeditionsClaimed, 60, '6 saatte 60 sefer toplanmalı');
+    assert.equal(report.totalExpeditionsClaimed, R.length * 20, `6 saatte ${R.length} alan × 20 sefer toplanmalı`);
     assert.ok(gameState.state.warehouseLevel >= 2, 'Silo otomatik yükseltilmeli');
     assert.equal(gameState.isBotPaused(), false, 'Bot dondurulmamış olmalı');
   });

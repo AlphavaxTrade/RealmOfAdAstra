@@ -31,24 +31,28 @@ const fresh = () => {
   return gs;
 };
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
+const r3 = v => Math.round(v * 1000) / 1000;   // v2: ASTRA fiyatları 3 basamağa yuvarlanır
 let passed = 0;
 const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 
 // 1) Harcama bölünüşü ve 6 kasa
 {
   fresh();
-  const before = Object.fromEntries(['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival'].map(id => [id, treasury.getPool(id)]));
+  const A = GAME_CONFIG.TREASURY_ALLOCATION;
+  const before = Object.fromEntries(Object.keys(A).map(id => [id, treasury.getPool(id)]));
   const res = globalPool.recordTokenSpend(10000);
   assert.equal(res.burned, 500);
   assert.equal(res.creatorRoyalty, 300);
   assert.equal(res.ubiShare, 600);
   assert.equal(res.treasuryShare, 8600);
-  const expect = { dungeon: 2580, arena: 1290, worldBoss: 1290, ammBuyback: 1290, quest: 1806, carnival: 344 };
+  // v2 (R3): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
+  assert.deepEqual(A, { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 });
+  const expect = Object.fromEntries(Object.entries(A).map(([id, s]) => [id, 8600 * s]));
   for (const [id, v] of Object.entries(expect)) {
     assert.ok(near(treasury.getPool(id) - before[id], v, 1e-3), `${id} kasasına ${v} ADA girmeli`);
   }
   assert.equal(GAME_CONFIG.CREATOR_WALLET_ADDRESS, '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C');
-  ok('Harcama bölünüşü %5/%3/%6/%86, hazine 6 kasaya doğru bölünüyor');
+  ok('Harcama bölünüşü %5/%3/%6/%86, hazine 8 kasaya doğru bölünüyor');
 }
 
 // 2) Kazanç %20 serbest / %80 kilitli; harcamada önce kilitli kısım + %20 ek açılma
@@ -170,10 +174,10 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   globalPool.state.epochId += 1;
   gs.processPriceMultiplierWeek();
   assert.equal(gs.getAdaPriceMultiplier(), 1.05, 'Bir haftada en fazla %5 artmalı');
-  assert.equal(gs.getSoldierCost(1), Math.round(soldier1 * 1.05));
-  assert.equal(gs.getDungeonBaseReward(5).ada, Math.round(reward5 * 1.05));
-  assert.equal(gs.getLotteryRules().ticketPrice, Math.round(ticket * 1.05));
-  assert.equal(gs.getWheelCostAda(), Math.round(100 * 1.05));
+  assert.equal(gs.getSoldierCost(1), r3(soldier1 * 1.05));
+  assert.equal(gs.getDungeonBaseReward(5).ada, reward5, 'v2: ödüller sabit ASTRA, fiyat çarpanı yalnız bedellere');
+  assert.equal(gs.getLotteryRules().ticketPrice, r3(ticket * 1.05));
+  assert.equal(gs.getWheelCostAda(), r3(GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA * 1.05));
 
   globalPool.state.epochId += 30;                   // 30 hafta sonra hedefe ulaşır ve geçmez
   gs.processPriceMultiplierWeek();
@@ -183,7 +187,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   globalPool.state.epochId += 1;
   gs.processPriceMultiplierWeek();
   assert.equal(gs.getAdaPriceMultiplier(), 1.9, 'Aşağı yönde de haftada en fazla %5');
-  ok('Fiyat çarpanı haftada ≤%5 ilerliyor; asker, zindan ödülü, bilet ve çark fiyatı ölçekleniyor');
+  ok('Fiyat çarpanı haftada ≤%5 ilerliyor; asker, bilet ve çark bedeli ölçekleniyor, ödüller sabit');
 }
 
 // 8) Görev ödülü görev kasasından ve çarpanla; ekranda görünen ödül = alınan ödül
@@ -196,11 +200,11 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   const questBefore = treasury.getPool('quest');
   const r = gs.claimOnboardingReward('first_expedition');
   assert.ok(r.success);
-  assert.equal(shown, 150);
+  assert.equal(shown, GAME_CONFIG.ONBOARDING_QUESTS.find(q => q.id === 'first_expedition').rewardAda, 'v2: görev ödülü sabit (çarpan uygulanmaz)');
   assert.equal(r.granted, shown, 'Alınan ödül ekranda görünenle aynı olmalı');
   assert.ok(near(questBefore - treasury.getPool('quest'), r.granted), 'Ödül görev kasasından çıkmalı');
   assert.ok(near(gs.state.lockedAda, r.granted * 0.8), 'Görev ödülünün %80i kilitli');
-  ok('Görev ödülü görev kasasından, çarpanla ve kilitli');
+  ok('Görev ödülü görev kasasından, sabit ve kilitli');
 }
 
 // 9) Eski kayıt: kilitli alan yoksa mevcut bakiye serbest sayılır; kayıt sonrası alanlar korunur

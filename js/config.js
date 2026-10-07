@@ -1,7 +1,84 @@
 // Realm of AdAstra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of AdAstra',
-  GAME_VERSION: '1.35.0',
+  GAME_VERSION: '2.0.0-dev',
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // v2 (7 Ekim 2026) — docs/v2/KARARLAR_KESIN.md: 6 hammadde, ASTRA fiyat ölçeği, Üretim Hakkı, kasalar, kapı
+  // ═══════════════════════════════════════════════════════════════════════
+  // ASTRA bedellerinin ölçeği: bugünkü listenin %1'i (R4 bulgusu: 200 M'lik ekonomi için eski liste 300 kat büyüktü;
+  // kalan ×0,3 üretim hızlarından alındı). Sayısal ASTRA bedelleri bu dosyada ölçekli yazılır; bu sabit yalnız bilgi.
+  ASTRA_SCALE: 0.01,
+  CURRENCY_NAME: 'ASTRA',
+  // Altı hammadde (R2). Sıra ekran sırasıdır. zone: haritadaki yer (R1).
+  RESOURCE_KEYS: ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'],
+  RESOURCE_META: {
+    wheat: { name: 'Buğday',    icon: '🌾', color: '#facc15', tool: 'sickle',    zone: 'farm',       cls: 'A' },
+    stone: { name: 'Taş',       icon: '🪨', color: '#a8a29e', tool: 'chisel',    zone: 'quarry',     cls: 'A' },
+    wood:  { name: 'Odun',      icon: '🌲', color: '#4ade80', tool: 'axe',       zone: 'forest',     cls: 'B' },
+    coal:  { name: 'Kömür',     icon: '⚫', color: '#64748b', tool: 'coalpick',  zone: 'coalmine',   cls: 'B' },
+    iron:  { name: 'Demir',     icon: '⛏️', color: '#38bdf8', tool: 'pickaxe',   zone: 'mine',       cls: 'B' },
+    herb:  { name: 'Şifalı Ot', icon: '🌿', color: '#86efac', tool: 'herbknife', zone: 'herbgarden', cls: 'C' }
+  },
+  // Alet onarımının ASTRA payı: istenen odun+demirin pazar değerinin bu oranı (R3 kararı: %100 → %30)
+  TOOL_REPAIR_ADA_SHARE: 0.30,
+  // Üretim Hakkı (R4): kişi başı haftalık kota = tek alanın kesintisiz haftalık üretiminin bu katı (termostat başlangıcı),
+  // sınırlar, haftalık adım, ağırlık çarpanları ve adalet tavanı. Sunucu dünyası hesaplar; tarayıcı tek oyuncu sayar.
+  URETIM_HAKKI: {
+    QPP_START: 0.40, QPP_MIN: 0.05, QPP_MAX: 1.0, TERMO_STEP: 0.10, TERMO_TARGET: 1.0, ADMIN_MULT: 1,
+    LEVEL_WEIGHT_PER_LEVEL: 0.025, LEVEL_WEIGHT_MAX: 2.0, ACTIVITY_MIN: 0.25, FAIRNESS_CAP: 3,
+    // Katkı kademeleri: haftalık katkı puanı eşiği (fiyat çarpanıyla ölçekli) → Üretim Hakkı çarpanı
+    TIERS: [
+      { id: 'none',     name: 'Yok',    min: 0,    mult: 1.00 },
+      { id: 'bronze',   name: 'Bronz',  min: 50,   mult: 1.05 },
+      { id: 'silver',   name: 'Gümüş',  min: 200,  mult: 1.10 },
+      { id: 'gold',     name: 'Altın',  min: 500,  mult: 1.20 },
+      { id: 'platinum', name: 'Platin', min: 1500, mult: 1.35 },
+      { id: 'diamond',  name: 'Elmas',  min: 5000, mult: 1.50 }
+    ]
+  },
+  // Madencilik Otoritesi (Sirius Konseyi'nde ortak inşaat; R2/R4): seviye başına kapasite ve herkesin hakkı +%5,
+  // çalışma günü 20→24 saat, hafta 6→7 gün; 1. seviye 2 M birim (×1,4), karışım taş %40 demir %20 odun %10 + çelik payı %30
+  // (Universe'e kadar Konsey kasasından 0,05 ASTRA/birim). Ortak kasa: çıkarılan her hammaddenin %5'i.
+  OTORITE: {
+    MAX_LEVEL: 20, BASE_UNITS: 2000000, LEVEL_MULT: 1.4, PER_LEVEL_BONUS: 0.05,
+    HOURS_BASE: 20, HOURS_PER_LEVEL: 0.2, DAYS_BASE: 6, DAYS_PER_LEVEL: 0.05,
+    MIX: { stone: 0.40, iron: 0.20, wood: 0.10 }, STEEL_SHARE: 0.30, STEEL_ASTRA_PER_UNIT: 0.05,
+    COMMON_CHEST_RATE: 0.05
+  },
+  // Konsey projeleri (sırayla, biri açık): 6 M birim hammadde (Otorite karışımı) + 50.000 emek; bitince kalıcı bonus
+  KONSEY_PROJELERI: [
+    { id: 'bridge',   name: 'Nehir Köprüsü',   icon: '🌉', units: 6000000, labor: 50000, bonus: { expeditionTime: -0.02 }, desc: 'Sefer süreleri %2 kısalır.' },
+    { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 6000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.' },
+    { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 6000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.' },
+    { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 6000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.' },
+    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossDamage: -0.10 },   desc: 'Dünya bossunun hasarı %10 azalır.' }
+  ],
+  // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
+  KOY: {
+    HOUSE_BASE_COST: { wood: 400, stone: 200, iron: 50 }, HOUSE_COST_MULT: 1.2, MAX_HOUSES: 20,
+    VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: 2, STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
+    LABOR_PER_VILLAGER_DAY: 1, PROD_BONUS_PER_10: 0.01, PROD_BONUS_MAX: 0.20, VILLAGER_PER_SOLDIER: 1,
+    START_HOUSES: 1, START_VILLAGERS: 10
+  },
+  // Şifahane (R5): şifalı ot iyileşmeyi hızlandırır
+  SIFAHANE: { HP_PER_HERB: 5, ADA_SHARE_WITH_HERB: 0.5 },
+  // Demirhane geri dönüşümü (R4b): alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez
+  RECYCLE_RETURN_RATE: 0.70,
+  // Uzay Limanı hazırlık modu (R6): roket görevi, Hazırlık Deposu, hazırlık ilerlemesi
+  UZAY_LIMANI: {
+    ROCKET_MIN_LEVEL: 3,
+    ROCKET_PARTS: { iron: 2000, coal: 1000, stone: 500, wood: 300, adAstra: 1 },
+    PREP_DEPOT_WEEKS_CAP: 4, PREP_DEPOT_TOTAL_ASTRA: 10000000, PREP_DEPOT_CANCEL_FEE: 0.10,
+    PROGRESS_WEIGHTS: { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 }, PROGRESS_VILLAGERS_REF: 100, PROGRESS_SOLDIERS_REF: 10
+  },
+  // Kapı kuralı (R4/R4c): vatandaş sınırı, kademeli dolar eşikleri, bekleme sırası, pasiflik
+  KAPI: {
+    START_LIMIT: 50, GROWTH_STEP: 0.10, USD_TIERS: [10, 30, 100, 300], AVG_MONTHS: 3,
+    INACTIVE_WARN_DAYS: 14, INACTIVE_SUSPEND_DAYS: 30, ACTIVE_DAYS_PER_WEEK: 3, REGISTRATION_FEE_ADA: 1
+  },
+  // Universe'e geçiş aşamaları (R3): 0 Realm, 1 Hazırlık, 2 Ön sipariş, 3 Universe (yalnız yönetici)
+  UNIVERSE_STAGE: 0,
   // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
   // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
@@ -14,12 +91,12 @@ export const GAME_CONFIG = {
   // başına yakılan buğdayı yalnız STAMINA_EFFICIENCY_PER_LEVEL (%1) azaltır (eskiden 2. seviyede %65, 81'de %94 düşüyordu;
   // orta-üst seviyede stamina için buğday neredeyse hiç yakılmıyordu → buğday enflasyonu).
   // bedel(L) = 20 × (süre(L) / süre(1)) × üretim çarpanı(L) × (1 − 0,01)^(L−1)
-  STAMINA_COST_PER_EXPEDITION: 20,    // 1. seviye (18 dk) sefer bedeli
+  STAMINA_COST_PER_EXPEDITION: 12,    // 1. seviye (18 dk) sefer bedeli (v2: 6 alan aynı anda; 6×12 = 72 ≤ 100 başlangıç staminası)
   STAMINA_EFFICIENCY_PER_LEVEL: 0.01,
-  STAMINA_MAX_HEADROOM: 3.5,          // en yüksek stamina ≥ 3,5 sefer bedeli (3 alanı aynı anda başlatabilmek için)
+  STAMINA_MAX_HEADROOM: 6.5,          // en yüksek stamina ≥ 6,5 sefer bedeli (v2: 6 alanı aynı anda başlatabilmek için)
   STAMINA_NATURAL_REGEN_INTERVAL: 150,
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
-  WHEAT_PER_STAMINA: 3.15,            // 1 Stamina doldurmak için gereken buğday miktarı (Fix 3.15)
+  WHEAT_PER_STAMINA: 1.0,             // 1 Stamina = 1 Buğday (v2: üretim ×0,3 ölçeğinde 6 seferin staminası buğday üretiminin ~%40 kadarı)
 
   // Ekonomi kararı (30 Eylül 2026, token modeli: scripts/model/token_economy_model.mjs):
   // %5 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %86 Hazine.
@@ -72,21 +149,25 @@ export const GAME_CONFIG = {
   // Seviye arttıkça dakika başına üretim hızı ARTMAZ, sabittir.
   // Seviye arttıkça sadece sefer süresi uzar (Lv 1: 18 dk -> Lv 81: 72 saat).
   // =========================================================================
+  // v2: dakikalık üretim ×0,3 (R4 fiyat ölçeğinin miktar payı). Buğday 9, taş 6, odun 5,4, kömür 4,5, demir 3,6, şifalı ot 1,2.
   BASE_PRODUCTION: {
-    wood: 18,  // 18 Odun / dakika (1.080 Odun / saat) - Fix
-    iron: 12,  // 12 Demir / dakika (720 Demir / saat) - Fix
-    wheat: 30  // 30 Buğday / dakika (1.800 Buğday / saat) - Fix (Haftalık 490k kota ve ordu tüketimiyle uyumlu)
+    wheat: 9,
+    stone: 6,
+    wood: 5.4,
+    coal: 4.5,
+    iron: 3.6,
+    herb: 1.2
   },
   TAVERNA_BOT: {
     REQUIRED_PREREQUISITES: {
       iron: 50,
       wood: 50,
       wheat: 50,
-      adAstra: 50
+      adAstra: 0.5
     },
     // v1.25: Bot kasadaki ADA'nın tamamını silo yükseltmeye gömmez; en az bu kadarını ve
-    // (oto-yenileme açıksa) bir sonraki günün bot ücretini her zaman kasada bırakır.
-    MIN_ADA_RESERVE: 500,
+    // (oto-yenileme açıksa) bir sonraki günün bot ücretini her zaman kasada bırakır. (v2: ölçekli)
+    MIN_ADA_RESERVE: 5,
     // Satın alınabilir süreler (saat). Ücret = 24 saatlik tahmini net kârın %50'si × (süre / 24)
     PACKAGE_HOURS: [6, 24],
     // Yeni oyunculara bir kerelik ücretsiz deneme (saat)
@@ -102,12 +183,12 @@ export const GAME_CONFIG = {
 
   // 🧭 v1.25: Yeni oyuncu rehberi — ödüller Zindan Ganimet Kasası'ndan (hazine) çekilir, basılmaz.
   ONBOARDING_QUESTS: [
-    { id: 'first_expedition',   icon: '🚀', title: 'İlk seferini başlat',        desc: 'Ormana, madene ya da tarlaya bir işçi gönder.',              rewardAda: 100 },
-    { id: 'first_harvest',      icon: '🌾', title: 'İlk hasadını topla',         desc: 'Biten bir seferin ürününü ambarına al.',                     rewardAda: 150 },
-    { id: 'three_expeditions',  icon: '⚙️', title: 'Üç alanı birden çalıştır',   desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.',           rewardAda: 200 },
-    { id: 'bot_trial',          icon: '🤖', title: 'Otomasyon botunu dene',      desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.',        rewardAda: 100 },
-    { id: 'first_level_up',     icon: '⭐', title: 'Seviye 2\'ye ulaş',          desc: 'Deneyim barını doldur ve ilk seviyeni atla.',                 rewardAda: 300 },
-    { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 400 }
+    { id: 'first_expedition',   icon: '🚀', title: 'İlk seferini başlat',        desc: 'Ormana, madene ya da tarlaya bir işçi gönder.',              rewardAda: 1 },
+    { id: 'first_harvest',      icon: '🌾', title: 'İlk hasadını topla',         desc: 'Biten bir seferin ürününü ambarına al.',                     rewardAda: 1.5 },
+    { id: 'three_expeditions',  icon: '⚙️', title: 'Üç alanı birden çalıştır',   desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.',           rewardAda: 2 },
+    { id: 'bot_trial',          icon: '🤖', title: 'Otomasyon botunu dene',      desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.',        rewardAda: 1 },
+    { id: 'first_level_up',     icon: '⭐', title: 'Seviye 2\'ye ulaş',          desc: 'Deneyim barını doldur ve ilk seviyeni atla.',                 rewardAda: 3 },
+    { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 4 }
   ],
   // 🏰 ZİNDAN ORDU YORULMASI & STAMİNA MALİYETİ MATRİSİ
   // Her kat için asker başına harcanan stamina: Taban (5) + Canavar Seviyesi (Level)
@@ -139,71 +220,27 @@ export const GAME_CONFIG = {
   EXPEDITION_MIN_DURATION_MINUTES: 18,     // Seviye 1: 18 Dakika (0.3 Saat)
   EXPEDITION_MAX_DURATION_MINUTES: 4320,   // Seviye 81: 72 Saat (4320 Dakika)
 
-  // Kaynak Alanları (Haftalık Limitler & Fix Üretim Hızları)
+  // Kaynak Alanları (v2: 6 alan). totalCap = tarayıcı (tek oyunculu) modda kişi başı haftalık Üretim Hakkı
+  // (taban × 168 saat × QPP_START 0,4); sunucuda dünya kapasitesi aktif oyuncu sayısıyla hesaplanır (server/world.js).
   GLOBAL_RESOURCE_CAPS: {
-    wood: {
-      id: 'wood',
-      name: 'Zümrüt Meşe Odunu',
-      icon: '🌲',
-      color: '#4ade80',
-      totalCap: 180000, // Haftalık Çıkarım Limiti
-      ratePerMinute: 18,
-      baseYieldPerHour: 1080,
-      requiredTool: 'axe'
-    },
-    iron: {
-      id: 'iron',
-      name: 'Derin Demir Cevheri',
-      icon: '⛏️',
-      color: '#94a3b8',
-      totalCap: 130000, // Haftalık Çıkarım Limiti
-      ratePerMinute: 12,
-      baseYieldPerHour: 720,
-      requiredTool: 'pickaxe'
-    },
-    wheat: {
-      id: 'wheat',
-      name: 'Güneş Buğdayı',
-      icon: '🌾',
-      color: '#facc15',
-      totalCap: 490000, // Haftalık Çıkarım Limiti
-      ratePerMinute: 30,
-      baseYieldPerHour: 1800,
-      requiredTool: 'sickle'
-    }
+    wheat: { id: 'wheat', name: 'Güneş Buğdayı',     icon: '🌾', color: '#facc15', totalCap: 36288, ratePerMinute: 9,   baseYieldPerHour: 540, requiredTool: 'sickle' },
+    stone: { id: 'stone', name: 'Vadi Taşı',          icon: '🪨', color: '#a8a29e', totalCap: 24192, ratePerMinute: 6,   baseYieldPerHour: 360, requiredTool: 'chisel' },
+    wood:  { id: 'wood',  name: 'Zümrüt Meşe Odunu',  icon: '🌲', color: '#4ade80', totalCap: 21773, ratePerMinute: 5.4, baseYieldPerHour: 324, requiredTool: 'axe' },
+    coal:  { id: 'coal',  name: 'Kara Kömür',         icon: '⚫', color: '#64748b', totalCap: 18144, ratePerMinute: 4.5, baseYieldPerHour: 270, requiredTool: 'coalpick' },
+    iron:  { id: 'iron',  name: 'Derin Demir Cevheri', icon: '⛏️', color: '#94a3b8', totalCap: 14515, ratePerMinute: 3.6, baseYieldPerHour: 216, requiredTool: 'pickaxe' },
+    herb:  { id: 'herb',  name: 'Şifalı Ot',          icon: '🌿', color: '#86efac', totalCap: 4838,  ratePerMinute: 1.2, baseYieldPerHour: 72,  requiredTool: 'herbknife' }
   },
-  
-  // Aletler & Tamir Maliyetleri (72 saat = 4320 dakika dayanıklılık; dakika başına 1 durability kaybı)
-  // Onarım Kuralı: Dk başı Odun ve Demir üretiminin %25'i / 3 alet + 1 ADA
-  // Balta, Kazma ve Orak için dk başı: 1.5 Odun, 1.0 Demir, 0 Buğday, 1.0 ADA
+
+  // Aletler (v2: 6 alet, ilk sürümde yalnız Acemi kademe; 72 saat = 4320 dakika dayanıklılık, dakikada 1 aşınma)
+  // Onarım kuralı: dakikalık odun ve demir üretiminin %25'i alet sayısına bölünür + bu malzemenin pazar değerinin
+  // TOOL_REPAIR_ADA_SHARE (%30) kadarı ASTRA (gameState.calculateRepairCost). repairCostPerMinute yalnız bilgi.
   TOOLS: {
-    axe: {
-      id: 'axe',
-      name: 'Acemi Baltası',
-      icon: '🪓',
-      maxDurability: 4320, // 72 saat = 4320 dakika
-      durabilityLossPerMinute: 1,
-      producedResource: 'wood',
-      repairCostPerMinute: { wood: 1.5, iron: 1.0, wheat: 0, adAstra: 1.0 }
-    },
-    pickaxe: {
-      id: 'pickaxe',
-      name: 'Bronz Kazma',
-      icon: '⛏️',
-      maxDurability: 4320,
-      durabilityLossPerMinute: 1,
-      producedResource: 'iron',
-      repairCostPerMinute: { wood: 1.5, iron: 1.0, wheat: 0, adAstra: 1.0 }
-    },
-    sickle: {
-      id: 'sickle',
-      name: 'Demir Orak',
-      icon: '🌾',
-      maxDurability: 4320,
-      durabilityLossPerMinute: 1,
-      producedResource: 'wheat',
-      repairCostPerMinute: { wood: 1.5, iron: 1.0, wheat: 0, adAstra: 1.0 }
-    }
+    sickle:    { id: 'sickle',    name: 'Demir Orak',       icon: '🌾', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wheat', repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } },
+    chisel:    { id: 'chisel',    name: 'Taş Keskisi',      icon: '🪨', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'stone', repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } },
+    axe:       { id: 'axe',       name: 'Acemi Baltası',    icon: '🪓', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wood',  repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } },
+    coalpick:  { id: 'coalpick',  name: 'Kömür Kazması',    icon: '⚫', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'coal',  repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } },
+    pickaxe:   { id: 'pickaxe',   name: 'Bronz Kazma',      icon: '⛏️', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'iron',  repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } },
+    herbknife: { id: 'herbknife', name: 'Ot Bıçağı',        icon: '🌿', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'herb',  repairCostPerMinute: { wood: 0.45, iron: 0.3, wheat: 0, adAstra: 0.01 } }
   },
 
   // Teçhizat en fazla 10. seviyeye yükseltilir (maliyet: EQUIPMENT_RECIPES ve gameState)
@@ -219,20 +256,30 @@ export const GAME_CONFIG = {
   //   buğday 490.000/hafta × 0,90 = 441.000 ADA
   //   ────────────────────────────────────────────
   //   Tüm evrenin haftalık emek geliri = 1.411.000 ADA (v1'de 6.264 ADA idi)
+  // v2 (R4b): açılış fiyatları ölçekli (×0,01); koridor taban 0,5×, tavan 2,5× açılış (ASTRA/birim; ekranda 1.000 birim başına)
   AMM_CORRIDORS: {
-    wood:      { minPriceAda: 1.20, maxPriceAda: 6.00,  defaultPriceAda: 2.50 },
-    iron:      { minPriceAda: 2.00, maxPriceAda: 9.00,  defaultPriceAda: 4.00 },
-    wheat:     { minPriceAda: 0.45, maxPriceAda: 2.20,  defaultPriceAda: 0.90 },
-    fragments: { minPriceAda: 20.0, maxPriceAda: 120.0, defaultPriceAda: 45.0 },
-    boxes:     { minPriceAda: 5000, maxPriceAda: 35000, defaultPriceAda: 10000 },
-    keys:      { minPriceAda: 500,  maxPriceAda: 3500,  defaultPriceAda: 1000 },
-    scroll_heal:    { minPriceAda: 15.0, maxPriceAda: 90.0,  defaultPriceAda: 30.0 },
-    scroll_stamina: { minPriceAda: 30.0, maxPriceAda: 180.0, defaultPriceAda: 60.0 }
+    wheat:     { minPriceAda: 0.0045, maxPriceAda: 0.0225, defaultPriceAda: 0.009 },
+    stone:     { minPriceAda: 0.006,  maxPriceAda: 0.03,   defaultPriceAda: 0.012 },
+    wood:      { minPriceAda: 0.0125, maxPriceAda: 0.0625, defaultPriceAda: 0.025 },
+    coal:      { minPriceAda: 0.009,  maxPriceAda: 0.045,  defaultPriceAda: 0.018 },
+    iron:      { minPriceAda: 0.02,   maxPriceAda: 0.10,   defaultPriceAda: 0.04 },
+    herb:      { minPriceAda: 0.04,   maxPriceAda: 0.20,   defaultPriceAda: 0.08 },
+    fragments: { minPriceAda: 0.225,  maxPriceAda: 1.125,  defaultPriceAda: 0.45 },
+    boxes:     { minPriceAda: 50,     maxPriceAda: 250,    defaultPriceAda: 100 },
+    keys:      { minPriceAda: 5,      maxPriceAda: 25,     defaultPriceAda: 10 },
+    scroll_heal:    { minPriceAda: 0.15, maxPriceAda: 0.75, defaultPriceAda: 0.30 },
+    scroll_stamina: { minPriceAda: 0.30, maxPriceAda: 1.50, defaultPriceAda: 0.60 }
   },
+  // v2 (R3/R4b): pazar havuzlarının ASTRA tohumu — 200 M'den 100 M: 6 hammadde 90 M (değer ağırlıklı), tüketilenler 10 M
+  AMM_SEED_ASTRA: { raw: 90000000, fragments: 4000000, keys: 2000000, boxes: 2000000, scroll_heal: 1000000, scroll_stamina: 1000000 },
+  // Tek işlemde havuzdaki malın en çok bu oranı alınıp satılabilir (bugün %50 idi)
+  AMM_SINGLE_TRADE_SHARE: 0.05,
+  // Geri alım (R4): fiyat açılışın (1 − TRIGGER_DROP) altına inince kasanın haftada WEEKLY_RATE'i ile al-yak
+  AMM_BUYBACK: { TRIGGER_DROP: 0.20, WEEKLY_RATE: 0.03 },
 
   // Swap ücreti: %2.00 piyasa komisyonu (Hazine Ödül Kasaları, Kalıcı Yakım & UBI'ye aktarılır)
   AMM_FEE_RATE: 0.02,
-  // v1.25: Hammadde pazar derinliği = haftalık dünya kotasının bu katı (80× → kotanın tamamı satılsa bile %90 düşüş ~3,4 yıl)
+  // (eski derinlik kuralı; v2'de havuz AMM_SEED_ASTRA'dan türetilir, bu değer yalnız yedek)
   AMM_RAW_DEPTH_WEEKS: 80,
   // Hammadde Yakım Ücreti: Alınan ve satılan tüm hammaddelerden (odun, demir, buğday vb.) %2.00 kesilir ve anında yakılır
   AMM_RESOURCE_FEE_RATE: 0.02,
@@ -244,9 +291,9 @@ export const GAME_CONFIG = {
   // SOLDIER & MILITARY SYSTEM (TEK TİP ADASTRA ŞAMPİYONU)
   // =========================================================================
   // Tek bir asker türü: AdAstra Şampiyonu. Level 1'de fix 100 HP ve fix 25 ATK.
-  SOLDIER_COST_BASE: 5000,            // Taban maliyet: 5.000 ADA (1. asker)
-  SOLDIER_COST_EXPONENT: 2.0364522367650437, // Kademeli artış üssü (1. asker: 5.000 ADA, 18. asker: 1.800.000 ADA)
-  SOLDIER_18_TARGET_COST: 1800000,    // 18. asker maliyeti: 1.8 Milyon ADA
+  SOLDIER_COST_BASE: 50,              // Taban maliyet: 50 ASTRA (1. asker; v2 ölçekli)
+  SOLDIER_COST_EXPONENT: 2.0364522367650437, // Kademeli artış üssü (1. asker: 50, 18. asker: 18.000)
+  SOLDIER_18_TARGET_COST: 18000,      // 18. asker maliyeti (v2 ölçekli)
   MAX_SOLDIERS: Infinity,             // Sınırsız ordu ve asker alımı
   SOLDIER_MAX_HP: 100,                // Fix Level 1 HP
   SOLDIER_BASE_ATK: 25,               // Fix Level 1 ATK
@@ -259,7 +306,7 @@ export const GAME_CONFIG = {
   SOLDIER_PASSIVE_HEAL: {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
     wheatPerHp: 0.30,             // 24 saatte 1 HP başına 0.30 Buğday
-    adaPerHp: 0.10                // 24 saatte 1 HP başına 0.10 ADA
+    adaPerHp: 0.001               // 24 saatte 1 HP başına 0.001 ASTRA (v2 ölçekli)
   },
 
   // Hızlı Asker Doyurma (Instant / Fast Heal) Kuralı:
@@ -267,7 +314,7 @@ export const GAME_CONFIG = {
   // Her 1 HP için: 3.0 Buğday (0.30 * 10) + 1.0 ADA (0.10 * 10)
   SOLDIER_FAST_HEAL: {
     wheatPerHp: 3.0,             // 24 saatlik formülün 10 katı (3 Buğday / HP)
-    adAstraPerHp: 1.0            // 24 saatlik formülün 10 katı (1 ADA / HP)
+    adAstraPerHp: 0.01           // 24 saatlik formülün 10 katı (v2 ölçekli)
   },
 
   // =========================================================================
@@ -282,16 +329,24 @@ export const GAME_CONFIG = {
   // =========================================================================
   WAREHOUSE: {
     baseLevels: 18,
-    initialCapacities: {
-      wood: 1080,
-      iron: 720,
-      wheat: 1800,
+    // v2: 13. seviyeden itibaren Universe alüminyumu ister; Universe açılana kadar bu tavan
+    universeGateLevel: 12,
+    initialCapacities: {   // 1 saatlik üretim
+      wheat: 540,
+      stone: 360,
+      wood: 324,
+      coal: 270,
+      iron: 216,
+      herb: 72,
       fragments: 100
     },
-    maxCapacities: {
-      wood: 90000,
-      iron: 65000,
-      wheat: 245000,
+    maxCapacities: {       // ×0,3 ölçekli eski tavanlar + yeni kaynaklar
+      wheat: 73500,
+      stone: 30000,
+      wood: 27000,
+      coal: 22500,
+      iron: 19500,
+      herb: 6000,
       fragments: 2500
     },
     fragmentsPerLevel: 140,     // Parça kapasitesi ara seviyelerde doğrusal artar (Lv 18'de maxCapacities)
@@ -343,7 +398,7 @@ export const GAME_CONFIG = {
       name: 'Günlük Otomatik Toplama & Tamir Botu (24 Saat)',
       icon: '🤖',
       durationSeconds: 24 * 3600,
-      costAdAstra: 1800,
+      costAdAstra: 18,
       desc: 'Seferler bittiğinde kaynakları otomatik toplar, aletleri depodaki hammaddeyle otomatik tamir eder ve seferi kesintisiz sürdürür.'
     },
     auto_collector_weekly: {
@@ -351,7 +406,7 @@ export const GAME_CONFIG = {
       name: 'Haftalık Otomatik Toplama & Tamir Botu (7 Gün)',
       icon: '🤖',
       durationSeconds: 7 * 24 * 3600,
-      costAdAstra: 10700,
+      costAdAstra: 107,
       desc: '7 gün boyunca tüm seferleri otomatik toplar, depodaki hammaddeyle aletleri otomatik onarır ve seferleri sürdürür (%15 İndirimli).'
     },
     auto_collector_monthly: {
@@ -359,7 +414,7 @@ export const GAME_CONFIG = {
       name: 'Aylık Otomatik Toplama & Tamir Botu (30 Gün)',
       icon: '🤖',
       durationSeconds: 30 * 24 * 3600,
-      costAdAstra: 37800,
+      costAdAstra: 378,
       desc: '30 gün boyunca kesintisiz tam otomasyon! Kaynakları toplar, aletleri otomatik tamir eder ve seferleri yönetir (%30 İndirimli).'
     }
   },
@@ -388,7 +443,7 @@ export const GAME_CONFIG = {
       baseAtk: 25,
       baseHp: 0,
       maxDurability: 13,
-      cost: { fragments: 18, iron: 60, wood: 40, adAstra: 50 },
+      cost: { fragments: 18, iron: 60, wood: 40, coal: 20, adAstra: 0.5 },
       desc: 'Yüksek hasar veren, demir ve huş odunuyla dövülmüş efsanevi savaş kılıcı (+25 Saldırı, 13/13 Dayanıklılık).'
     },
     helmet: {
@@ -399,7 +454,7 @@ export const GAME_CONFIG = {
       baseAtk: 10,
       baseHp: 30,
       maxDurability: 13,
-      cost: { fragments: 12, iron: 40, wood: 20, adAstra: 35 },
+      cost: { fragments: 12, iron: 40, wood: 20, coal: 10, adAstra: 0.35 },
       desc: 'Kritik darbeleri savuşturan dövme çelik miğfer (+10 Saldırı, +30 Can, 13/13 Dayanıklılık).'
     },
     armor: {
@@ -410,7 +465,7 @@ export const GAME_CONFIG = {
       baseAtk: 0,
       baseHp: 60,
       maxDurability: 13,
-      cost: { fragments: 20, iron: 80, wood: 30, adAstra: 60 },
+      cost: { fragments: 20, iron: 80, wood: 30, coal: 25, adAstra: 0.6 },
       desc: 'Zindan darbelerini emen kalın demir plaka gövde zırhı (+60 Can, 13/13 Dayanıklılık).'
     },
     legs: {
@@ -421,7 +476,7 @@ export const GAME_CONFIG = {
       baseAtk: 5,
       baseHp: 40,
       maxDurability: 13,
-      cost: { fragments: 14, iron: 50, wood: 25, adAstra: 40 },
+      cost: { fragments: 14, iron: 50, wood: 25, coal: 12, adAstra: 0.4 },
       desc: 'Hareket kabiliyeti sağlayan zırh plakalı pantolon (+5 Saldırı, +40 Can, 13/13 Dayanıklılık).'
     },
     boots: {
@@ -432,7 +487,7 @@ export const GAME_CONFIG = {
       baseAtk: 8,
       baseHp: 20,
       maxDurability: 13,
-      cost: { fragments: 10, iron: 30, wood: 35, adAstra: 30 },
+      cost: { fragments: 10, iron: 30, wood: 35, coal: 8, adAstra: 0.3 },
       desc: 'Hızlı manevra ve zırh desteği veren çelik burunlu çizmeler (+8 Saldırı, +20 Can, 13/13 Dayanıklılık).'
     }
   },
@@ -467,12 +522,16 @@ export const GAME_CONFIG = {
   ],
 
   // Genesis NFT: Tüm 18 Koleksiyon Eserini Toplayınca Basılabilen Efsanevi Mühür
+  // Kullanıcı kuralı (7 Ekim 2026): 18 eseri tamamlayan RoA Genesis NFT basar; Universe'de GEZEGEN SATIN ALMA HAKKI yalnız
+  // Genesis sahiplerindedir (hak NFT ile taşınır; ilan pazarında el değiştirebilir). Hazırlık ilerlemesinin bir parçasıdır.
   GENESIS_NFT: {
     id: 'genesis_champion',
-    name: 'AdAstra Genesis Şampiyonu',
+    name: 'RoA Genesis NFT',
     icon: '🏆',
     requiredArtifacts: 18,
-    adAstraCost: 500
+    adAstraCost: 5,
+    grants: ['universe_planet_purchase'],
+    grantText: 'Universe açılınca gezegen satın alma hakkı (yalnız Genesis sahipleri)'
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -517,10 +576,11 @@ export const GAME_CONFIG = {
     // Harç, o katın temel ADA ödülünün bu oranı kadardır ve %100'ü zindan kasasına gider.
     GATE_FEE_RATE: 0.20,
     // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ADA öder → kasa matematiksel olarak boşalamaz.
-    DAILY_BUDGET_RATE: 0.01,
+    // v2 (R3): haftada %2,5 → günde ~%0,36
+    DAILY_BUDGET_RATE: 0.0036,
     // Zafer ödülü (gameState.getDungeonBaseReward): seviye × taban; Lv.9 ve Lv.18 bosslarında × çarpan.
-    // Canavar bilgileri (can, saldırı, asker XP'si) js/bestiary.js'te.
-    REWARD_ADA_PER_LEVEL: 90,
+    // Canavar bilgileri (can, saldırı, asker XP'si) js/bestiary.js'te. (v2 ölçekli)
+    REWARD_ADA_PER_LEVEL: 0.9,
     REWARD_XP_PER_LEVEL: 200,
     MAJOR_BOSS_REWARD_MULT: 3
   },
@@ -537,11 +597,11 @@ export const GAME_CONFIG = {
     // Ligler (gameState.getColosseumTier), yüksekten düşüğe. rewardMult: maç ödülü çarpanı.
     // weeklyAda / weeklyKeys: ⏳ haftalık lig ödülü — HENÜZ DAĞITILMIYOR (tasarım taslağı).
     LEAGUES: [
-      { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800, weeklyAda: 25000, weeklyKeys: 8 },
-      { id: 'diamond',  name: '💎 Elmas Gladyatör',   color: '#38bdf8', rewardMult: 1.6, minRating: 1500, weeklyAda: 9000,  weeklyKeys: 5 },
-      { id: 'gold',     name: '🥇 Altın Gladyatör',   color: '#eab308', rewardMult: 1.3, minRating: 1300, weeklyAda: 3500,  weeklyKeys: 3 },
-      { id: 'silver',   name: '🥈 Gümüş Gladyatör',   color: '#94a3b8', rewardMult: 1.1, minRating: 1150, weeklyAda: 1200,  weeklyKeys: 2 },
-      { id: 'bronze',   name: '🥉 Bronz Gladyatör',   color: '#b45309', rewardMult: 1.0, minRating: 0,    weeklyAda: 400,   weeklyKeys: 1 }
+      { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800, weeklyAda: 250, weeklyKeys: 8 },
+      { id: 'diamond',  name: '💎 Elmas Gladyatör',   color: '#38bdf8', rewardMult: 1.6, minRating: 1500, weeklyAda: 90,  weeklyKeys: 5 },
+      { id: 'gold',     name: '🥇 Altın Gladyatör',   color: '#eab308', rewardMult: 1.3, minRating: 1300, weeklyAda: 35,  weeklyKeys: 3 },
+      { id: 'silver',   name: '🥈 Gümüş Gladyatör',   color: '#94a3b8', rewardMult: 1.1, minRating: 1150, weeklyAda: 12,  weeklyKeys: 2 },
+      { id: 'bronze',   name: '🥉 Bronz Gladyatör',   color: '#b45309', rewardMult: 1.0, minRating: 0,    weeklyAda: 4,   weeklyKeys: 1 }
     ]
   },
 
@@ -552,7 +612,7 @@ export const GAME_CONFIG = {
     BATTLE_DAY_UTC: 0,          // 0 = Pazar
     BATTLE_HOUR_UTC: 15,        // 15:00 UTC = 18:00 TSİ
     BASE_HP: 1000000,
-    WEEKLY_DISTRIBUTION_RATE: 0.10, // Kasa ne kadar olursa olsun haftalık World Boss etkinliğinde kasanın sadece %10'u o haftaki etkinlikte dağıtılır
+    WEEKLY_DISTRIBUTION_RATE: 0.03, // v2 (R3): haftalık etkinlikte kasanın %3'ü dağıtılır (eskiden %10, en hızlı boşalan kasaydı)
     // Skill Çeşitliliği Katkısı: ilk rolden sonraki her farklı rol (Tank, AoE, Şifa, Kırıcı, Kontrol) için hasar bonusu
     SKILL_DIVERSITY_BONUS_PER_ROLE: 0.06,
     MAX_SKILL_DIVERSITY_BONUS: 0.50
@@ -565,22 +625,35 @@ export const GAME_CONFIG = {
   // Zindan %30, Kolezyum %15, World Boss %15, Pazar geri alımı %15, Görev & ücretsiz oyuncu %21, Karnaval %4
   // Zindan kapı harcının doğrudan zindan kasasına giden kısmı (kalanı her harcama gibi dağıtılır). Oranlar: RealmRates sözleşmesi
   DUNGEON_GATE_POOL_SHARE: 1,
-  TREASURY_ALLOCATION: { dungeon: 0.30, arena: 0.15, worldBoss: 0.15, ammBuyback: 0.15, quest: 0.21, carnival: 0.04 },
+  // v2 (R3): hazine payının 8 kasaya bölünüşü (toplam %100; RealmRates sözleşmesindeki 8 kasa payıyla aynı):
+  // zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
+  TREASURY_ALLOCATION: { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 },
   TREASURY_POOL_NAMES: {
     dungeon: 'Zindan Ganimet Kasası',
-    ammBuyback: 'AMM DEX & Likidite Rezervi',
-    worldBoss: 'World Boss Ödül Havuzu',
+    ammBuyback: 'Pazar Geri Alım Kasası',
+    worldBoss: 'Dünya Bossu Ödül Havuzu',
     arena: 'Kolezyum Şampiyonluk Havuzu',
-    carnival: 'Sirk & Karnaval Ödül Havuzu',
-    quest: 'Görev & Ücretsiz Oyuncu Kasası'
+    carnival: 'Karnaval Ödül Havuzu',
+    quest: 'Görev & Ücretsiz Oyuncu Kasası',
+    fatih: 'Fatih Kasası (18. boss)',
+    konsey: 'Sirius Konseyi Kasası',
+    universe: 'Universe Tohum Rezervi (kilitli)'
   },
-  TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7200000, worldBoss: 6000000, arena: 4000000, carnival: 4000000, quest: 8000000 },
+  // v2 (R3): tohumlar 200 M ASTRA'dan (pazar 100 M ayrı: AMM_SEED_ASTRA)
+  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 7000000, quest: 8000000, carnival: 3000000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  // Hedef rezerv = ~12 aylık ödeme; sağlık = bakiye / hedef
+  TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7000000, worldBoss: 6000000, arena: 4000000, carnival: 3000000, quest: 8000000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3
+  TREASURY_WEEKLY_PAYOUT: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025 },
+  // Kilitli kasalar: hiçbir ödül çekemez (universe yalnız Universe açılışında, fatih yalnız 18. boss)
+  TREASURY_LOCKED_POOLS: ['universe'],
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
   // Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026 — ayrıntı js/economy/faucet.js): en az MIN_LEVEL seviye ve o hafta
   // en az MIN_WEEKLY_CONTRIBUTION katkı puanı (× fiyat çarpanı); pay = katkı^WEIGHT_EXP × sadakat serisi (haftada +STREAK_STEP,
   // en çok STREAK_MAX; kaçırılan hafta seriyi yarıya indirir); kişi başı tavan da ağırlıkla ölçeklenir (tam tavan için
   // FULL_CONTRIBUTION katkı + en yüksek seri); pay tamamen kilitli gelir.
-  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 100, FULL_CONTRIBUTION: 1000, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true },
+  // v2: katkı eşikleri ölçekli (×0,01); haftada kasanın en çok %1,5'i (R3)
+  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 1, FULL_CONTRIBUTION: 10, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true, WEEKLY_POOL_CAP: 0.015 },
   TREASURY_MIN_PAYOUT_RATIO: 0.15,   // havuz boşalsa bile ödül tamamen sıfırlanmaz
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
 
@@ -610,11 +683,11 @@ export const GAME_CONFIG = {
   // F2P/P2E dengesinin en temiz kaldıracı — para EKSTRA alır, ZORUNLU değil.
   SEASON: {
     DURATION_DAYS: 60,
-    PREMIUM_COST_ADA: 12000,
+    PREMIUM_COST_ADA: 120,
     TIERS: 30,
     POINTS_PER_TIER: 150,
-    FREE_TRACK:    { adaPerTier: 60,  keysEvery: 5, fragmentsEvery: 3, boxEvery: 10 },
-    PREMIUM_TRACK: { adaPerTier: 190, keysEvery: 3, fragmentsEvery: 2, boxEvery: 5 }
+    FREE_TRACK:    { adaPerTier: 0.6, keysEvery: 5, fragmentsEvery: 3, boxEvery: 10 },
+    PREMIUM_TRACK: { adaPerTier: 1.9, keysEvery: 3, fragmentsEvery: 2, boxEvery: 5 }
   },
 
   // Prestij: Lv.81'e ulaşan oyuncuya yeni ufuk
@@ -622,16 +695,16 @@ export const GAME_CONFIG = {
     REQUIRED_LEVEL: 81,
     PRODUCTION_BONUS_PER_STAR: 0.05,
     MAX_STARS: 10,
-    COST_ADA: 50000
+    COST_ADA: 500
   },
 
   // ═══════════════════════════════════════════════════════════════════════
   // 🎪 KRALLIK KARNAVALI: ŞANS ÇARKI & HAFTALIK PİYANGO
   // ═══════════════════════════════════════════════════════════════════════
   CARNIVAL: {
-    WHEEL_COST_ADA: 100, // 100 ADA veya dengi hammadde veya 1 Piyango Bileti
+    WHEEL_COST_ADA: 1, // 1 ASTRA veya dengi hammadde veya 1 Piyango Bileti (v2 ölçekli)
     // Karnaval kasasında en az bu kadar ADA yoksa çark geçici olarak kapanır (ödüller asla yoktan ödenmez)
-    WHEEL_MIN_CARNIVAL_BALANCE: 20000,
+    WHEEL_MIN_CARNIVAL_BALANCE: 200,
     // Kullanıcı kararı (4 Ekim 2026): ADA ile çevrilen çarkın bedelinin %80'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
     // kasadan ödenir; eskiden yalnız %3,4'ü giriyordu ve kasa her çevirmede ~50 ADA eriyordu). Kalan %20 her harcama gibi
     // dağıtılır (yakım, yapımcı payı, temel gelir, hazine kasaları).
@@ -642,28 +715,28 @@ export const GAME_CONFIG = {
     // hesaba katılarak). Çevirmelerin ~%31'inde en az bedel geri alınır, ~%10'unda kârla çıkılır; en büyük ödül 50×.
     // Kurallar korunur: bot < %1, teçhizat parçası < %1, anahtar < %0,1, coin analiz kuponu < %1, parşömen yok.
     WHEEL_REWARDS: [
-      { id: 'ada_5000',      name: '💎 5.000 $ADASTRA BÜYÜK İKRAMİYE',  icon: '💎', type: 'ada',      amount: 5000,                   valAda: 5000, weight: 6 },
-      { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 450,  weight: 20 },
-      { id: 'raw_1000_wood', name: '1.000 ADA Değerinde Odun',        icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 1000, valAda: 1000, weight: 30 },
-      { id: 'raw_1000_iron', name: '1.000 ADA Değerinde Demir',       icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 1000, valAda: 1000, weight: 30 },
-      { id: 'raw_1000_wheat',name: '1.000 ADA Değerinde Buğday',      icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 1000, valAda: 1000, weight: 30 },
-      { id: 'raw_100_wood',  name: 'Bedelin Geri: 100 ADA Değerinde Odun',   icon: '🌲', type: 'amm_raw', key: 'wood',  adaVal: 100, valAda: 100, weight: 700 },
-      { id: 'raw_100_iron',  name: 'Bedelin Geri: 100 ADA Değerinde Demir',  icon: '⛏️', type: 'amm_raw', key: 'iron',  adaVal: 100, valAda: 100, weight: 700 },
-      { id: 'raw_100_wheat', name: 'Bedelin Geri: 100 ADA Değerinde Buğday', icon: '🌾', type: 'amm_raw', key: 'wheat', adaVal: 100, valAda: 100, weight: 700 },
-      { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 46000, weight: 2 },
-      { id: 'ada_200',       name: '200 $ADASTRA Nakit Ödül (2×)',    icon: '🟣', type: 'ada',      amount: 200,                    valAda: 200,  weight: 800 },
-      { id: 'ada_1000',      name: '👑 1.000 $ADASTRA İKRAMİYE (10×)',icon: '👑', type: 'ada',      amount: 1000,                   valAda: 1000, weight: 50 },
-      { id: 'ada_50',        name: '50 $ADASTRA Teselli Ödülü',       icon: '🟣', type: 'ada',      amount: 50,                     valAda: 50,   weight: 2900 },
-      { id: 'box_key',       name: '1 Pandora Kutusu Anahtarı',       icon: '🔑', type: 'key',      amount: 1,                      valAda: 1000, weight: 8 },
-      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 33.3, weight: 3974 },
+      { id: 'ada_5000',      name: '💎 50 ASTRA BÜYÜK İKRAMİYE',       icon: '💎', type: 'ada',      amount: 50,                     valAda: 50,   weight: 6 },
+      { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 4.5,  weight: 20 },
+      { id: 'raw_1000_wood', name: '10 ASTRA Değerinde Odun',         icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 10,   valAda: 10,   weight: 30 },
+      { id: 'raw_1000_iron', name: '10 ASTRA Değerinde Demir',        icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 10,   valAda: 10,   weight: 30 },
+      { id: 'raw_1000_wheat',name: '10 ASTRA Değerinde Buğday',       icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 10,   valAda: 10,   weight: 30 },
+      { id: 'raw_100_wood',  name: 'Bedelin Geri: 1 ASTRA Değerinde Odun',   icon: '🌲', type: 'amm_raw', key: 'wood',  adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'raw_100_iron',  name: 'Bedelin Geri: 1 ASTRA Değerinde Demir',  icon: '⛏️', type: 'amm_raw', key: 'iron',  adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'raw_100_wheat', name: 'Bedelin Geri: 1 ASTRA Değerinde Buğday', icon: '🌾', type: 'amm_raw', key: 'wheat', adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 460,  weight: 2 },
+      { id: 'ada_200',       name: '2 ASTRA Nakit Ödül (2×)',         icon: '🟣', type: 'ada',      amount: 2,                      valAda: 2,    weight: 800 },
+      { id: 'ada_1000',      name: '👑 10 ASTRA İKRAMİYE (10×)',       icon: '👑', type: 'ada',      amount: 10,                     valAda: 10,   weight: 50 },
+      { id: 'ada_50',        name: '0,5 ASTRA Teselli Ödülü',         icon: '🟣', type: 'ada',      amount: 0.5,                    valAda: 0.5,  weight: 2900 },
+      { id: 'box_key',       name: '1 Pandora Kutusu Anahtarı',       icon: '🔑', type: 'key',      amount: 1,                      valAda: 10,   weight: 8 },
+      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 0.333, weight: 3974 },
       // v1.25: Kupon kodu kaydedilir; trade sitesi (AlphavaxTrade) bu kodları henüz tanımadığı için ekranda
       // "site bağlantısı kurulunca kullanılabilir" diye açıkça belirtilir (eskiden geçerli bir kodmuş gibi gösteriliyordu).
       { id: 'coin_analysis_code', name: 'AlphAvax Vercel App Özel Coin Analiz Bileti', icon: '🎫', type: 'analysis_code', amount: 1, valAda: 0, weight: 50 }
     ],
     // Haftalık Piyango Sistemi
     LOTTERY: {
-      TICKET_COST_ADA: 100,
-      SEED_POOL_ADA: 20000000,     // 20.000.000 ADA AlphaVax Tohum Kasa
+      TICKET_COST_ADA: 1,          // v2 ölçekli
+      SEED_POOL_ADA: 12000000,     // v2 (R3): 12 M ASTRA tohum (eskiden 20 M; model 2 yılda hiç erimedi)
       // Balina koruması: bir hesap bir haftada en fazla bu kadar bilet satın alabilir.
       // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder.
       MAX_TICKETS_PER_ACCOUNT: 100,  // haftalık alım sınırı (10.000 ADA)
@@ -1094,18 +1167,26 @@ export const GAME_CONFIG = {
     level: 1,
     currentXp: 0,
     stamina: 100,
-    adAstraBalance: 250,
+    adAstraBalance: 2.5,
     inventory: {
-      wood: 60,
-      iron: 50,
       wheat: 80,
+      stone: 40,
+      wood: 60,
+      coal: 20,
+      iron: 50,
+      herb: 10,
       fragments: 0
     },
     tools: {
+      sickle: { durability: 4320, totalGathered: 0 },
+      chisel: { durability: 4320, totalGathered: 0 },
       axe: { durability: 4320, totalGathered: 0 },
+      coalpick: { durability: 4320, totalGathered: 0 },
       pickaxe: { durability: 4320, totalGathered: 0 },
-      sickle: { durability: 4320, totalGathered: 0 }
+      herbknife: { durability: 4320, totalGathered: 0 }
     },
+    // v2 (R5): köy — 1 ev, 10 köylü ile başlar
+    village: { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 },
     army: {
       infantry: 2,
       archer: 1,

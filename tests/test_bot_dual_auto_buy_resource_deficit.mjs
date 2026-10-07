@@ -38,24 +38,32 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
   await t.test('1. getBotDynamicResourceDeficitTargets: Seviye arttıkça (Lv 1, 2, 3) tamirat bedelleri ve +%50 hedef orantılı artmalı', () => {
     const gs = new GameStateManager();
 
+    // v2 ölçeği: hedef = en az 50 ya da (1 seferlik, 3 aletlik aşınmanın 1,5 katı); silo kapasitesinin %80 tavanı
+    const expect = (lvl, res) => {
+      const dur = gs.getExpeditionDurationMinutes(lvl);
+      const perMin = (gs.getResourceRatePerMinute(res) * 0.25) / 3;
+      const one = Math.ceil(3 * dur * perMin);
+      const cap = gs.getWarehouseCapacity()[res];
+      return Math.min(Math.floor(cap * 0.8), Math.max(50, Math.ceil(one * 1.5)));
+    };
     const lv1Data = gs.getBotDynamicResourceDeficitTargets(1);
     assert.equal(lv1Data.durationMinutes, 18, 'Lv 1 sefer süresi 18 dakika olmalı');
-    assert.ok(lv1Data.targets.wood >= 120, `Lv 1 Odun hedefi >= 120 olmalı, bulunan: ${lv1Data.targets.wood}`);
-    assert.ok(lv1Data.targets.iron >= 80, `Lv 1 Demir hedefi >= 80 olmalı, bulunan: ${lv1Data.targets.iron}`);
+    assert.equal(lv1Data.targets.wood, expect(1, 'wood'), `Lv 1 Odun hedefi formülle aynı olmalı, bulunan: ${lv1Data.targets.wood}`);
+    assert.equal(lv1Data.targets.iron, expect(1, 'iron'), `Lv 1 Demir hedefi formülle aynı olmalı, bulunan: ${lv1Data.targets.iron}`);
 
     const lv2Data = gs.getBotDynamicResourceDeficitTargets(2);
     assert.equal(lv2Data.durationMinutes, 72, 'Lv 2 sefer süresi 72 dakika olmalı');
     assert.ok(lv2Data.targets.wood > lv1Data.targets.wood, 'Lv 2 Odun hedefi Lv 1den büyük olmalı');
     assert.ok(lv2Data.targets.iron > lv1Data.targets.iron, 'Lv 2 Demir hedefi Lv 1den büyük olmalı');
-    assert.ok(lv2Data.targets.wood >= 480, `Lv 2 Odun hedefi >= 480 olmalı, bulunan: ${lv2Data.targets.wood}`);
-    assert.ok(lv2Data.targets.iron >= 320, `Lv 2 Demir hedefi >= 320 olmalı, bulunan: ${lv2Data.targets.iron}`);
+    assert.equal(lv2Data.targets.wood, expect(2, 'wood'), `Lv 2 Odun hedefi formülle aynı olmalı, bulunan: ${lv2Data.targets.wood}`);
+    assert.equal(lv2Data.targets.iron, expect(2, 'iron'), `Lv 2 Demir hedefi formülle aynı olmalı, bulunan: ${lv2Data.targets.iron}`);
 
     const lv3Data = gs.getBotDynamicResourceDeficitTargets(3);
     assert.equal(lv3Data.durationMinutes, 126, 'Lv 3 sefer süresi 126 dakika olmalı');
     assert.ok(lv3Data.targets.wood > lv2Data.targets.wood, 'Lv 3 Odun hedefi Lv 2den büyük olmalı');
     assert.ok(lv3Data.targets.iron > lv2Data.targets.iron, 'Lv 3 Demir hedefi Lv 2den büyük olmalı');
-    assert.ok(lv3Data.targets.wood >= 850, `Lv 3 Odun hedefi >= 850 olmalı, bulunan: ${lv3Data.targets.wood}`);
-    assert.ok(lv3Data.targets.iron >= 560, `Lv 3 Demir hedefi >= 560 olmalı, bulunan: ${lv3Data.targets.iron}`);
+    assert.equal(lv3Data.targets.wood, expect(3, 'wood'), `Lv 3 Odun hedefi formülle aynı olmalı, bulunan: ${lv3Data.targets.wood}`);
+    assert.equal(lv3Data.targets.iron, expect(3, 'iron'), `Lv 3 Demir hedefi formülle aynı olmalı, bulunan: ${lv3Data.targets.iron}`);
   });
 
   await t.test('2. Depoda Odun:0, Demir:0, Buğday:0 iken autoBuyBotResourceDeficit AMM pazarından asgari önkoşul miktarını satın alarak botun durmasını engellemeli', () => {
@@ -86,12 +94,8 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     // Depoları Seviye 2 için doldur ve siloyu Seviye 3'e yükselt
     gs.state.warehouseLevel = 2;
     const cap = gs.getWarehouseCapacity(2);
-    gs.state.inventory = {
-      wood: cap.wood,
-      iron: cap.iron,
-      wheat: cap.wheat,
-      fragments: 0
-    };
+    // v2: 6 depo da dolu olsun (silo yükseltmesi hepsinde %80 ister)
+    gs.state.inventory = { ...Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, cap[k]])), fragments: 0 };
     gs.state.adAstraBalance = 30000;
 
     const upRes = gs.upgradeWarehouse();
@@ -119,11 +123,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     gs.state.inventory.wheat = 0;
     gs.state.adAstraBalance = 0; // ADA YOK!
     gs.state.stamina = 100;
-    gs.state.tools = {
-      axe: { durability: 100, maxDurability: 100 },
-      pickaxe: { durability: 100, maxDurability: 100 },
-      sickle: { durability: 100, maxDurability: 100 }
-    };
+    for (const t of Object.values(gs.state.tools)) t.durability = 4320;   // v2: 6 alet, hepsi sağlam
 
     // ADA yokken updateBotPauseState çağrıldığında alım yapamaz ve donuk kalır
     const pauseState = gs.updateBotPauseState();

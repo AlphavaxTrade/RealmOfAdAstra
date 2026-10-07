@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
+import { GAME_CONFIG } from '../js/config.js';
 
 console.log('--- 🤖 TEST: BOT ARTIK MAHSULÜN MARKETTE SATILMASI VE HER SEFER SONU SİLO YÜKSELTME TETİKLEMESİ ---');
 
@@ -28,10 +29,11 @@ gs.state.botSiloAutoUpgrade = true;
 // =========================================================================
 console.log('\n[TEST 1] Artan mahsulün AMM DEX pazarında anında satılması');
 
-// Ambarda 880 odun var -> boş yer = 200 (1080 - 880 = 200)
-gs.state.inventory.wood = 880;
+// v2: boş yer 50 (kapasite 324); 18 dk sefer 97 odun getirir
+gs.state.inventory.wood = woodCap - 50;
 gs.state.inventory.iron = 50;
 gs.state.inventory.wheat = 50;
+const yield1 = Math.floor(gs.getResourceRatePerMinute('wood') * 18);
 const initialAda = 1000;
 gs.state.adAstraBalance = initialAda;
 
@@ -55,7 +57,7 @@ console.log('Claim sonucu:', claimRes);
 assert.equal(gs.state.inventory.wood, woodCap, 'Ambar tam %100 (1080 odun) dolmuş olmalı');
 
 // 2. Artan 124 odun AMM pazarında satılmış olmalı
-assert.equal(claimRes.botSurplusSold, 124, 'Artan 124 odun bot tarafından markette satılmış olmalı');
+assert.equal(claimRes.botSurplusSold, yield1 - 50, `Artan ${yield1 - 50} odun bot tarafından markette satılmış olmalı`);
 assert.ok(claimRes.botSurplusAdaEarned > 0, 'Satıştan ADA kazanılmış olmalı');
 assert.ok(gs.state.adAstraBalance > initialAda, 'Oyuncunun ADA bakiyesi artmış olmalı');
 
@@ -81,14 +83,10 @@ const cap1 = gs.getWarehouseCapacity(1);
 // Depoları %80'in üzerine koyalım (fazlalık olsun: 1050 wood, 700 iron, 1700 wheat)
 // v1.25: Bot yükseltmeden sonra kasada en az 500 ADA güvenlik payı bırakır; bu yüzden açık ~1.130 ADA.
 // Depolar tam dolu: %80 üstü fazlalık ~1.440 ADA eder ve açığı kapatır.
-gs.state.inventory.wood = 1080; // 1080 - 864 = 216 fazlalık (~540 ADA)
-gs.state.inventory.iron = 720;  // 720 - 576 = 144 fazlalık (~576 ADA)
-gs.state.inventory.wheat = 1800; // 1800 - 1440 = 360 fazlalık (~324 ADA)
-
-// ADA bakiyesini kasıtlı olarak açıklı yapalım (Örn: 3131 gerekiyor, 2500 var, açık ~631 ADA)
-// %80 barajı üzerindeki fazlalıklar satılarak bu açık kapatılacak!
-// v1.25: 500 ADA güvenlik payı nedeniyle başlangıç 2.800 (açık = 3.457 + 500 − 2.800 ≈ 1.157 ADA, fazlalık satışıyla kapanır)
-gs.state.adAstraBalance = 2800;
+// v2: 6 depo da tam dolu; %80 üstündeki fazlalık (~7 ASTRA) satılarak açık kapatılacak
+for (const k of GAME_CONFIG.RESOURCE_KEYS) gs.state.inventory[k] = cap1[k];
+const need = gs.getWarehouseUpgradeCost().adAstra + gs.getBotAdaReserve();
+gs.state.adAstraBalance = Math.max(0, need - 4); // 4 ASTRA açık
 
 const costBefore = gs.getWarehouseUpgradeCost();
 console.log('Silo Yükseltme Durumu Öncesi:');

@@ -109,11 +109,12 @@ export function renderDungeonEntryLadder(st) {
 // "Kota ve Sınırlar" panelinin tamamı
 export function renderQuotaTracker({ gameState, globalPool, config }) {
   const caps = config.GLOBAL_RESOURCE_CAPS;
-  const order = ['wood', 'iron', 'wheat'];
+  const order = config.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
   const infos = Object.fromEntries(order.map(k => [k, globalPool.getResourceInfo(k)]));
-  const dayIndex = infos.wood.dayIndex || 0;
+  const first = infos[order[0]] || {};
+  const dayIndex = first.dayIndex || 0;
   const now = Date.now();
-  const nextRelease = infos.wood.nextReleaseAt;
+  const nextRelease = first.nextReleaseAt;
   const weekEnd = globalPool.state.epochEndTime;
   const lot = gameState.getLotteryStatus();
   const dun = gameState.getDungeonDayStatus();

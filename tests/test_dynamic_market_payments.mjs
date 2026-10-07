@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
+import { GAME_CONFIG } from '../js/config.js';
 
 console.log('--- 🧪 ANLIK AMM DEX PAZAR FİYATI VE DİNAMİK ÖDEME SİSTEMİ TESTİ BAŞLATILIYOR ---');
 
@@ -33,12 +34,15 @@ console.log('100 dk Aşınmış Balta Onarım Maliyeti:', {
 assert(initialRepairCost.woodCost > 0, 'Odun bedeli pozitif olmalı');
 assert(initialRepairCost.ironCost > 0, 'Demir bedeli pozitif olmalı');
 
-const expectedAmmValInitial = ammMarket.calculateResourcesAdAstraValue({
+// v2: onarımın ASTRA bedeli = istenen odun + demirin pazar değerinin TOOL_REPAIR_ADA_SHARE (%30) kadarı
+const r3 = v => Math.round(v * 1000) / 1000;
+const SHARE = GAME_CONFIG.TOOL_REPAIR_ADA_SHARE;
+const expectedAmmValInitial = Math.max(0.001, r3(ammMarket.calculateResourcesAdAstraValue({
   wood: initialRepairCost.woodCost,
   iron: initialRepairCost.ironCost
-}).totalAda;
+}).totalAda * SHARE));
 
-assert.equal(initialRepairCost.adAstraCost, expectedAmmValInitial, 'Alet onarım ADA bedeli talep edilen odun ve demirin anlık AMM değerine eşit olmalı');
+assert.equal(initialRepairCost.adAstraCost, expectedAmmValInitial, 'Alet onarım ASTRA bedeli istenen odun ve demirin anlık pazar değerinin %30u olmalı');
 console.log(`✅ [1. Test Başarılı] İlk Balta Onarım Bedeli: ${initialRepairCost.woodCost} Odun + ${initialRepairCost.ironCost} Demir + ${initialRepairCost.adAstraCost} ADA (AMM Değeriyle Tam Eşit)`);
 
 // 2. AMM DEX Pazar Fiyatı Değişince Onarım ADA Bedelinin Anında Değişmesi
@@ -65,11 +69,11 @@ console.log('Piyasa Yükseldikten Sonra Balta Onarım Maliyeti:', {
 });
 
 assert(updatedRepairCost.adAstraCost > initialRepairCost.adAstraCost, 'Piyasa yükselince alet onarım ADA maliyeti de hemen artmalı');
-const expectedNewAmmVal = ammMarket.calculateResourcesAdAstraValue({
+const expectedNewAmmVal = Math.max(0.001, r3(ammMarket.calculateResourcesAdAstraValue({
   wood: updatedRepairCost.woodCost,
   iron: updatedRepairCost.ironCost
-}).totalAda;
-assert.equal(updatedRepairCost.adAstraCost, expectedNewAmmVal, 'Yeni alet onarım ADA maliyeti anlık yükselen AMM değerine tam eşit olmalı');
+}).totalAda * SHARE));
+assert.equal(updatedRepairCost.adAstraCost, expectedNewAmmVal, 'Yeni alet onarım ASTRA maliyeti anlık yükselen pazar değerinin %30una tam eşit olmalı');
 console.log(`✅ [2. Test Başarılı] Balta Onarım ADA Bedeli ${initialRepairCost.adAstraCost} ADA -> ${updatedRepairCost.adAstraCost} ADA olarak anında güncellendi!`);
 
 // 3. Taverna 24s Otomasyon Botunun Anlık Fiyat Değişikliklerine Canlı Tepki Vermesi
@@ -93,8 +97,8 @@ console.log('Normal Fiyat Seviyesinde Bot Finansalları:', {
 });
 
 assert.notEqual(botHighPrice.botCostAda, botNormalPrice.botCostAda, 'Bot fiyatı pazar hareketlerine göre anında değişmeli');
-assert.equal(botNormalPrice.botCostAda, Math.round(botNormalPrice.netProfitAda * 0.5), 'Normal fiyatta bot net kârın %50\'si olmalı');
-assert.equal(botHighPrice.botCostAda, Math.round(botHighPrice.netProfitAda * 0.5), 'Yüksek fiyatta bot net kârın %50\'si olmalı');
+assert.equal(botNormalPrice.botCostAda, Math.max(1, r3(botNormalPrice.netProfitAda * 0.5)), 'Normal fiyatta bot net kârın %50\'si olmalı');
+assert.equal(botHighPrice.botCostAda, Math.max(1, r3(botHighPrice.netProfitAda * 0.5)), 'Yüksek fiyatta bot net kârın %50\'si olmalı');
 console.log('✅ [3. Test Başarılı] Taverna Botu market fiyatlarını tarayarak saf kâr ve bot maliyetini anında güncelliyor!');
 
 // 4. AMM Market Fiyat Değişim Aboneliği (Event Listener / Subscriber) Kontrolü
@@ -147,7 +151,8 @@ const highWeaponCraft = gs.calculateEquipmentCraftCost('weapon');
 assert(highWeaponCraft.adaCost > initialWeaponCraft.adaCost, 'Piyasa fiyatı artınca silah dövme ADA bedeli hemen artmalı');
 const expectedHighCraftAda = ammMarket.calculateResourcesAdAstraValue({
   wood: highWeaponCraft.woodCost,
-  iron: highWeaponCraft.ironCost
+  iron: highWeaponCraft.ironCost,
+  coal: highWeaponCraft.coalCost || 0   // v2: dövme kömür de ister
 }).totalAda;
 assert.equal(highWeaponCraft.adaCost, expectedHighCraftAda, 'Dövme ADA bedeli anlık AMM DEX değerine tam eşit olmalı');
 console.log(`✅ [6. Test Başarılı] Silah Dövme ADA Bedeli ${initialWeaponCraft.adaCost} ADA -> ${highWeaponCraft.adaCost} ADA olarak canlı güncellendi!`);

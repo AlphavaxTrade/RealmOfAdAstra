@@ -33,7 +33,7 @@ console.log('Bot Hesaplama Çıktısı:', {
 
 assert(botCalc.grossRevenueAda > 0, '24 saatlik brüt üretim değeri pozitif olmalı');
 assert(botCalc.netProfitAda > 0, '24 saatlik saf kâr pozitif olmalı');
-assert.equal(botCalc.botCostAda, Math.round(botCalc.netProfitAda * 0.5), 'Bot bedeli net kârın tam %50 si olmalı');
+assert.equal(botCalc.botCostAda, Math.max(1, Math.round(botCalc.netProfitAda * 0.5 * 1000) / 1000), 'Bot bedeli net kârın tam %50 si olmalı');
 console.log('✅ [1/6] Dinamik saf kâr ve %50 ortaklık bedeli başarıyla doğrulandı.');
 
 // ══════════════════════════════════════════════════════════════════════════

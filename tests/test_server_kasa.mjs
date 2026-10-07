@@ -50,7 +50,7 @@ try {
     // Yaralı asker, buğday var; kazanılmış bakiye 3 ADA; kasada 1000 ADA
     E.withPlayer(pid, gs => {
       gs.state.adAstraBalance = 20000; gs.buySoldierUnit();
-      gs.state.adAstraBalance = 3; gs.state.lockedAda = 0;
+      gs.state.adAstraBalance = 0.03; gs.state.lockedAda = 0;   // v2 ölçeği: iyileşme 0,001 ASTRA/HP
       gs.state.inventory.wheat = 5000;
       gs.state.soldierUnits[0].hp = 10;
     });
@@ -77,7 +77,7 @@ try {
     assert.equal(sim.queueSettlements(), 1, '50 ADA eşiği aşılınca aktarım sıraya girer');
     await sim.processOps();
     const k2 = sim.status(pid);
-    assert.ok(near(k2.pending, 0) && k2.ada < 1000 - 60 + 1e-6, 'Aktarım yapıldı, kasadan düştü');
+    assert.ok(near(k2.pending, 0, 0.01) && k2.ada < 1000 - 60 + 1e-6, 'Aktarım yapıldı, kasadan düştü (kuruş altı kalan bekler)');
     assert.equal(sim.withdraw(pid, 'ADA', 1e9).ok, false, 'Kasadakinden fazlası çekilemez');
     const w = sim.withdraw(pid, 'ADA', 100);
     assert.ok(w.ok, w.error);

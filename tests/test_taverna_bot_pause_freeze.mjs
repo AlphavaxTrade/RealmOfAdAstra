@@ -30,7 +30,7 @@ describe('24 Saatlik Taverna Botu - 50x Önkoşul Kaynak ve Süre Dondurma (Free
     assert.strictEqual(prereqs.iron, 50, 'En az 50 demir gerekli');
     assert.strictEqual(prereqs.wood, 50, 'En az 50 odun gerekli');
     assert.strictEqual(prereqs.wheat, 50, 'En az 50 buğday gerekli');
-    assert.strictEqual(prereqs.adAstra, 50, 'En az 50 $ADASTRA gerekli');
+    assert.strictEqual(prereqs.adAstra, 0.5, 'En az 0,5 ASTRA gerekli (v2 ölçekli)');
   });
 
   it('2. checkBotPrerequisites fonksiyonu eksik kaynakları doğru raporlamalı', () => {

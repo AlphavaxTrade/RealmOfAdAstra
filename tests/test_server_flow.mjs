@@ -285,7 +285,7 @@ try {
   const epochBefore = engine.globalPool.state.epochId;
   // Ücretsiz pay şartları (4 Ekim 2026): en az 3. seviye + haftalık katkı eşiği. Alice sağlar, Carol'ın katkısı yetmez.
   const carolPid = 'acc:' + db.raw.prepare("SELECT id FROM accounts WHERE email = 'carol@ornek.com'").get().id;
-  for (const [pid, week] of [[pidA, 300], [carolPid, 50]]) {
+  for (const [pid, week] of [[pidA, 3], [carolPid, 0.5]]) {   // v2 ölçeği: eşik 1 puan
     engine.mutatePlayer(pid, gs => { gs.state.level = 3; gs.state.contribution = { total: week, week, lastWeek: 0, epochId: epochBefore, buyCredit: {} }; });
   }
   engine.globalPool.state.epochEndTime = Date.now() - 1000;

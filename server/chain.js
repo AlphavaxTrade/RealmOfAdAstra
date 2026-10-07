@@ -5,6 +5,7 @@
 // yönetici onayına bırakır.
 // ============================================================================
 import { ethers } from 'ethers';
+import { RATE_COUNT } from '../js/economy/rates.js';
 
 const TOKEN_MANAGER_ABI = [
   'function getTokenParameters(uint256) view returns (tuple(uint128 curveScaler,uint16 a,uint8 b,bool lpDeployed,uint8 lpPercentage,uint8 salePercentage,uint8 creatorFeeBasisPoints,address creatorAddress,address pairAddress,address tokenContractAddress))'
@@ -252,7 +253,7 @@ export function createChain(cfg) {
   }
 
   // RealmRates: geçerli oranlar, bekleyen öneri ve sahibi
-  const RATES_ABI = ['function active() view returns (uint16[19])', 'function pending() view returns (uint16[19] rates, uint64 at)',
+  const RATES_ABI = [`function active() view returns (uint16[${RATE_COUNT}])`, `function pending() view returns (uint16[${RATE_COUNT}] rates, uint64 at)`,
     'function owner() view returns (address)', 'function pendingOwner() view returns (address)'];
   async function readRates(address = cfg.ratesContract) {
     if (!address) return null;

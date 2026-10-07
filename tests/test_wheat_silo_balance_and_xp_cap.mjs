@@ -25,13 +25,13 @@ console.log('Level 1 Kapasiteler:', capLvl1);
 // Odun: 18/dk = 1080/saat -> Kapasite 1080 (Tam 1 saat)
 // Demir: 12/dk = 720/saat -> Kapasite 720 (Tam 1 saat)
 // Buğday: 30/dk = 1800/saat -> Kapasite 1800 (Tam 1 saat - Önceden 900 idi ve 30 dakikada taşıyordu)
-assert.equal(capLvl1.wood, 1080, 'Level 1 Odun kapasitesi 1080 olmalı');
-assert.equal(capLvl1.iron, 720, 'Level 1 Demir kapasitesi 720 olmalı');
-assert.equal(capLvl1.wheat, 1800, 'Level 1 Buğday kapasitesi 1800 olmalı');
+// v2: her hammadde için Lv.1 silo = 1 saatlik üretim (config.WAREHOUSE.initialCapacities)
+const W = GAME_CONFIG.WAREHOUSE.initialCapacities;
+for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.equal(capLvl1[k], W[k], `Level 1 ${k} kapasitesi ${W[k]} olmalı`);
 
 const capLvl18 = gs.getWarehouseCapacity(18);
 console.log('Level 18 Kapasiteler:', capLvl18);
-assert.equal(capLvl18.wheat, 245000, 'Level 18 Buğday kapasitesi 245000 max olmalı');
+assert.equal(capLvl18.wheat, GAME_CONFIG.WAREHOUSE.maxCapacities.wheat, 'Level 18 Buğday kapasitesi config tavanı olmalı');
 
 console.log('✅ Buğday silo kapasitesi diğer kaynaklarla (tam 1 saatlik üretim) kusursuz dengelendi.');
 
@@ -59,7 +59,7 @@ console.log('✅ XP tankı taşma engeli başarıyla doğrulandı.');
 // 3. TEST: SİLO YÜKSELTME HARCAMALARININ HAVUZLARA DAĞILIMI
 console.log('\n[3] Silo Yükseltme ADA Harcamalarının Havuzlara Dağılımı:');
 gs.state.adAstraBalance = 100000;
-gs.state.inventory = { wood: 50000, iron: 50000, wheat: 50000 };
+gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 50000]));   // v2: 6 hammadde
 gs.state.warehouseLevel = 1;
 const ubiBefore = globalPool.state.ubiPool || 0;
 const treasuryBefore = treasury.state ? treasury.state.balance : 0;

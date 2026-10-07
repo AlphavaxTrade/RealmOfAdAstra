@@ -69,31 +69,24 @@ describe('🔥 Evrensel Hammadde Yakımı (Resource Burn) ve Total Arzdan Düş�
   });
 
   it('3. Silo (Ambar) yükseltildiğinde odun, demir ve buğday yakılmalı ve total arzdan silinmeli', () => {
-    const initialWoodCap = globalPool.state.resources.wood.totalCap;
-    const initialIronCap = globalPool.state.resources.iron.totalCap;
-    const initialWheatCap = globalPool.state.resources.wheat.totalCap;
+    // v2: silo 6 hammadde ister; hepsi yakılır ve total arzdan düşer
+    const keys = Object.keys(globalPool.state.resources);
+    const initialCaps = Object.fromEntries(keys.map(k => [k, globalPool.state.resources[k].totalCap]));
 
     gameState.state.warehouseLevel = 1;
-    gameState.state.inventory.wood = 50000;
-    gameState.state.inventory.iron = 50000;
-    gameState.state.inventory.wheat = 50000;
+    for (const k of keys) gameState.state.inventory[k] = 50000;
     gameState.state.adAstraBalance = 100000;
 
     const cost = gameState.getWarehouseUpgradeCost(1);
-    assert.ok(cost.wood > 0);
-    assert.ok(cost.iron > 0);
-    assert.ok(cost.wheat > 0);
+    for (const k of cost.keys) assert.ok(cost.costs[k] > 0, `${k} bedeli pozitif olmalı`);
 
     const res = gameState.upgradeWarehouse();
-    assert.strictEqual(res.success, true);
+    assert.strictEqual(res.success, true, res.message);
 
-    assert.strictEqual(gameState.state.burnedResources.wood, cost.wood);
-    assert.strictEqual(gameState.state.burnedResources.iron, cost.iron);
-    assert.strictEqual(gameState.state.burnedResources.wheat, cost.wheat);
-
-    assert.strictEqual(globalPool.state.resources.wood.totalCap, initialWoodCap - cost.wood);
-    assert.strictEqual(globalPool.state.resources.iron.totalCap, initialIronCap - cost.iron);
-    assert.strictEqual(globalPool.state.resources.wheat.totalCap, initialWheatCap - cost.wheat);
+    for (const k of cost.keys) {
+      assert.strictEqual(gameState.state.burnedResources[k], cost.costs[k], `${k} yakımı kaydedilmeli`);
+      assert.strictEqual(globalPool.state.resources[k].totalCap, initialCaps[k] - cost.costs[k], `${k} total arzdan silinmeli`);
+    }
   });
 
   it('4. Asker anında iyileştirildiğinde buğday yakılmalı ve total arzdan silinmeli', () => {

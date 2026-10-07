@@ -54,7 +54,7 @@ E.withPlayer(P, () => null);
   const fee = (E.globalPool.state.totalSpent || 0) - spentBefore;
   const ammDrop = ammBefore - E.ammMarket.pools.wheat.adAstraReserve;
   assert.ok(bi.soldQty > 0 && bi.carnivalIn > 0, 'Yarısı satılıp Karnaval kasasına girdi');
-  assert.ok(Math.abs(E.treasury.getPool('carnival') - carnBefore - bi.carnivalIn - fee * 0.86 * 0.04) < 1e-6, 'Karnaval kasası satış geliri kadar arttı');
+  assert.ok(Math.abs(E.treasury.getPool('carnival') - carnBefore - bi.carnivalIn - fee * 0.86 * E.GAME_CONFIG.TREASURY_ALLOCATION.carnival) < 1e-6, 'Karnaval kasası satış geliri kadar arttı');
   assert.ok(Math.abs(ammDrop - bi.carnivalIn - fee) < 1e-6, 'Kasaya giren ADA + komisyon = pazardan çıkan ADA (yoktan para yok)');
   assert.ok(fee > 0 && fee < 0.05 * bi.carnivalIn, 'Tek harcama kaydı pazarın küçük satış komisyonu (100 ADA değil)');
   ok('Çark hammaddeyle çevrilince yoktan para oluşmuyor (satılan yarının ADA\'sı pazardan gelir)');
@@ -93,15 +93,15 @@ E.withPlayer(P, () => null);
     });
     return r.playerId;
   };
-  // Tek hesapta 600 puan, 10 haftalık serisi olan sadık oyuncu
-  const loyal = await mk('sadik@ornek.com', { week: 600, streak: { weeks: 10, lastEpoch: ep - 1 } });
-  // Aynı emeği 3 yeni hesaba bölen oyuncu (200'er puan)
-  const split = [await mk('yan1@ornek.com', { week: 200 }), await mk('yan2@ornek.com', { week: 200 }), await mk('yan3@ornek.com', { week: 200 })];
-  const unverified = await mk('sahte@ornek.com', { verify: false, week: 600 });
-  const lowLevel = await mk('dusuk@ornek.com', { level: 2, week: 600 });
-  const lazy = await mk('tembel@ornek.com', { week: 50 });
+  // v2 ölçeği (×0,01): eşik 1 puan, tam pay 10 puan. Tek hesapta 6 puan, 10 haftalık serisi olan sadık oyuncu
+  const loyal = await mk('sadik@ornek.com', { week: 6, streak: { weeks: 10, lastEpoch: ep - 1 } });
+  // Aynı emeği 3 yeni hesaba bölen oyuncu (2'şer puan)
+  const split = [await mk('yan1@ornek.com', { week: 2 }), await mk('yan2@ornek.com', { week: 2 }), await mk('yan3@ornek.com', { week: 2 })];
+  const unverified = await mk('sahte@ornek.com', { verify: false, week: 6 });
+  const lowLevel = await mk('dusuk@ornek.com', { level: 2, week: 6 });
+  const lazy = await mk('tembel@ornek.com', { week: 0.5 });
   // Seri kaçırılmış: 8 haftalık seri, 2 hafta ara → 8/4 = 2, bu hafta +1 = 3
-  const gap = await mk('ara@ornek.com', { week: 200, streak: { weeks: 8, lastEpoch: ep - 3 } });
+  const gap = await mk('ara@ornek.com', { week: 2, streak: { weeks: 8, lastEpoch: ep - 3 } });
   const world = createWorld({ db, engine: E, accounts, cfg, log: { warn() {}, error() {} } });
   const market = { priceUsd: 2e-7, mcapUsd: 2e7, graduated: false, curveSupply: 2e9 };
   const s = world.settleWeek(ep, market);
@@ -125,16 +125,18 @@ E.withPlayer(P, () => null);
   Math.random = () => 0.99;                       // ödül: bilet parçası (kasaya maliyetsiz)
   try {
     const c0 = E.treasury.getPool('carnival');
-    const cost = E.gs.getWheelCostAda ? 100 : 100;
+    const cost = E.GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA;   // v2: 1 ASTRA
+    const carnShare = E.GAME_CONFIG.TREASURY_ALLOCATION.carnival;
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
     const gain = E.treasury.getPool('carnival') - c0;
-    assert.ok(Math.abs(gain - (cost * 0.8 + cost * 0.2 * 0.86 * 0.04)) < 1e-6, `ADA çevirmesinde kasaya 80 + payın %3,44'ü girdi (${gain})`);
+    assert.ok(Math.abs(gain - (cost * 0.8 + cost * 0.2 * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %80 + kalanın karnaval payı girdi (${gain})`);
     // Bilet: satın alınmış biletin piyango kasasındaki 98 ADA'sı Karnaval kasasına
     assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
     const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ticket']).result.success);
-    assert.ok(Math.abs(E.treasury.getPool('carnival') - c1 - 98) < 1e-6, 'Biletin 98 ADA\'sı Karnaval kasasına geçti');
-    assert.ok(Math.abs(l0 - E.lottery().pool - 98) < 1e-6, 'Ortak piyango kasasından düştü');
+    const tkNet = E.GAME_CONFIG.CARNIVAL.LOTTERY.TICKET_COST_ADA * (1 - E.GAME_CONFIG.CARNIVAL.LOTTERY.AMORTI_SHARE);   // v2: 0,98 ASTRA
+    assert.ok(Math.abs(E.treasury.getPool('carnival') - c1 - tkNet) < 1e-6, 'Biletin amorti dışı bedeli Karnaval kasasına geçti');
+    assert.ok(Math.abs(l0 - E.lottery().pool - tkNet) < 1e-6, 'Ortak piyango kasasından düştü');
     // Hammadde: günde 3
     let okN = 0, last = null;
     for (let i = 0; i < 4; i++) { last = E.act(P, 'spinCarnivalWheel', ['wood']).result; if (last.success) okN++; }

@@ -119,7 +119,7 @@ try {
     gs.processSoldierPassiveHealing(86400);
     spentAda = a0 - gs.state.adAstraBalance;
   });
-  assert.ok(spentAda > 1, `iyileşme ADA harcadı (${spentAda})`);
+  assert.ok(spentAda > 0.01, `iyileşme ASTRA harcadı (${spentAda})`);
   assert.ok(near((gp.totalSpent || 0) - before, spentAda, 0.02), `harcanan ADA deftere girdi (${(gp.totalSpent || 0) - before} / ${spentAda})`);
   ok('Kendi kendine iyileşmede harcanan ADA artık kaybolmuyor, her harcama gibi dağıtılıyor');
 

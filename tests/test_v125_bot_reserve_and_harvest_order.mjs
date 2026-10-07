@@ -32,7 +32,7 @@ const botOn = (gs, hours = 24) => {
 {
   const gs = fresh();
   gs.state.adAstraBalance = 5000;
-  gs.state.inventory = { wood: 500, iron: 40, wheat: 900, fragments: 0 };
+  gs.state.inventory = { wood: 300, iron: 40, wheat: 500, fragments: 0 };   // v2: Lv.1 silo 324/216/540
   botOn(gs);
   gs.startExpedition('iron');
   const exp = gs.state.activeExpeditions.iron;
@@ -44,7 +44,7 @@ const botOn = (gs, hours = 24) => {
   gs.runTavernaAutomationCycle();
   ammMarket.executeBuyAmount = b0;
   assert.equal(buys, 0, 'Hasat beklerken pazardan alım yapılmamalı');
-  assert.ok(gs.state.inventory.iron >= 200, `Hasat depoya girmeli (demir ${gs.state.inventory.iron})`);
+  assert.ok(gs.state.inventory.iron >= 40 + 50, `Hasat depoya girmeli (demir ${gs.state.inventory.iron}; 18 dk sefer ~64 demir, tamir birkaçını kullanır)`);
   console.log('✅ Bot hasattan önce pazardan alım yapmıyor');
 }
 
@@ -52,7 +52,7 @@ const botOn = (gs, hours = 24) => {
 {
   const gs = fresh();
   gs.state.adAstraBalance = 5000;
-  gs.state.inventory = { wood: 500, iron: 400, wheat: 900, fragments: 0 };
+  gs.state.inventory = { wood: 300, iron: 200, wheat: 500, stone: 300, coal: 250, herb: 60, fragments: 0 };   // v2: kapasite içinde
   gs.setBotSiloOption(true);
   gs.buyTavernaAutomationBot(true);
   const level0 = gs.state.warehouseLevel;

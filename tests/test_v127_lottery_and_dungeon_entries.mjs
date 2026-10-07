@@ -114,7 +114,7 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
   const adaBefore = gs.state.adAstraBalance;
   const paid = gs.beginDungeonEntry(lvl, false, { soldierCount: 2, payGateFee: true });
   assert.equal(paid.rewarded, true);
-  assert.equal(adaBefore - gs.state.adAstraBalance, t6.fee, 'Harç bakiyeden düşmeli');
+  assert.ok(Math.abs((adaBefore - gs.state.adAstraBalance) - t6.fee) < 1e-9, 'Harç bakiyeden düşmeli');
   assert.equal(gs.getDungeonDayStatus().entriesToday, 7);
   ok('Zindan: her girişte stamina, 1. giriş aşınmasız, 2–5 aşınmalı, 6+ harçlı');
 }

@@ -25,7 +25,7 @@ const P = {
   freeShare: 0.20, unlockWeek: 0.024, unlockSpend: 0.20,
   sat: num('sat', 0.25),                      // serbest bakiyenin haftada satılmak istenen payı
   wdPriceDrop: 0.02, wdFee: 0.03, wdFeeUbi: 0.70,
-  tradeBurn: 0.5,                             // trade girişinin yakılan payı (kalanı kasalara)
+  tradeBurn: 0.2, tradeGame: 0.4, tradeHold: 0.3, tradeReward: 0.1,   // trade gelirinin bolusumu (kullanici 7 Ekim)
   ...S
 };
 // ── zincir ──
@@ -62,7 +62,7 @@ for (W = 1; W <= P.weeks; W++) {
   if (P.kilit) { const un = Math.min(H.locked, spend * P.unlockSpend); H.locked -= un; H.free += un; }
   // 3) alımlar: oyun içi ihtiyaç (alınan ASTRA hemen harcanır), trade girişi (yarısı yakılır, yarısı kasalara), destekçi
   const buyersUsd = N * P.aliciPay * P.aliciUsdAy / 4.33; const gotGame = buyUsd(buyersUsd); T.boughtUsd += buyersUsd; spend += gotGame;
-  const tradeUsd = P.tradeUsdAy / 4.33; if (tradeUsd > 0) { const got = buyUsd(tradeUsd); T.boughtUsd += tradeUsd; burn(got * P.tradeBurn); havuz += got * (1 - P.tradeBurn); }
+  const tradeUsd = P.tradeUsdAy / 4.33; if (tradeUsd > 0) { const got = buyUsd(tradeUsd); T.boughtUsd += tradeUsd; burn(got * P.tradeBurn); havuz += got * P.tradeGame; T.tutulan = (T.tutulan || 0) + got * P.tradeHold; H.free += got * P.tradeReward; }   // kullanici beyani 7 Ekim: %20 yakim, %40 oyun kasalari, %30 kullanici (tutulur, satilmaz), %10 trade odul havuzu (trade kullanicilarina)
   if (P.destekUsd > 0 && Math.ceil(W / 4.33) === P.destekAy && (W % 4 === 1)) { const got = buyUsd(P.destekUsd); T.boughtUsd += P.destekUsd; H.locked += got; }   // destekçi tutar (kilitli sayılır)
   // harcama bölüşümü
   burn(spend * P.burnSpend); ubiNext += spend * P.ubi; havuz += spend * (1 - P.burnSpend - P.creator - P.ubi);

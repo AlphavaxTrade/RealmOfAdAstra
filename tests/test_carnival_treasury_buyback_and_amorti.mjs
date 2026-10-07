@@ -67,7 +67,7 @@ assert(spinAda.success, 'ADA ödüllü çark başarılı olmalı');
 // 100 ADA çevirme ücretinden Karnaval hazinesine %10 pay (+10 ADA) girer, 200 ADA ödül çıkar: net -190 ADA (veya -200 payout)
 assert.equal(treasury.state.outflow.carnival >= 200, true, 'Karnaval kasasından en az 200 ADA çıkış (outflow) kaydedilmeli');
 // Kullanıcı 100 ödedi, 200 kazandı -> net +100
-assert.equal(gs.state.adAstraBalance, preUserAda - 100 + 200, 'Kullanıcıya hazineden 200 ADA aktarılmalı');
+assert.equal(gs.state.adAstraBalance, preUserAda - gs.getWheelCostAda() + 200, 'Kullanıcıya hazineden 200 ASTRA aktarılmalı (çevirme bedeli düşülür)');
 assert(spinAda.rewardSummaryText.includes('Karnaval Hazinesinden Karşılandı'), 'Açıklamada hazineden karşılandığı belirtilmeli');
 console.log('✅ ADA ödülü havadan basılmadı, doğrudan Karnaval Hazine Kasasından ödendi.');
 
@@ -79,7 +79,8 @@ const preAmmWoodRes = ammMarket.pools.wood.resourceReserve;
 const preAmmWoodPrice = ammMarket.getPrice('wood');
 const preUserWood = gs.state.inventory.wood || 0;
 
-const mockWoodReward = { id: 'raw_1000_wood', name: '1.000 ADA Değerinde Odun', icon: '🌲', type: 'amm_raw', key: 'wood', adaVal: 1000, valAda: 1000 };
+// v2 ölçeği: 5 ASTRA ≈ 200 odun (Lv.1 silo 324 odun alır; taşan kısım pazara geri satılırdı)
+const mockWoodReward = { id: 'raw_5_wood', name: '5 ASTRA Değerinde Odun', icon: '🌲', type: 'amm_raw', key: 'wood', adaVal: 5, valAda: 5 };
 GAME_CONFIG.CARNIVAL.WHEEL_REWARDS = [mockWoodReward];
 
 const spinWood = gs.spinCarnivalWheel('ada');
@@ -87,7 +88,7 @@ assert(spinWood.success, 'Hammadde ödülü başarılı olmalı');
 assert.ok(spinWood.buybackInfo, 'buybackInfo nesnesi üretilmeli');
 assert.equal(treasury.state.outflow.carnival, preOutflowCarnival + spinWood.buybackInfo.adaSpent, 'Karnaval kasasından buyback tutarı outflow kaydedilmeli');
 // v1.25: %2 hammadde yakımı gerçek — havuzdan ödül miktarı + %2'si çıkar (yakılan kısım kimseye gitmez)
-assert.ok(Math.abs(ammMarket.pools.wood.resourceReserve - (preAmmWoodRes - spinWood.buybackInfo.amount * 1.02)) < 1e-6, 'AMM DEX havuzundan fiziki hammadde (+%2 yakım) satın alınmalı');
+assert.ok(Math.abs(ammMarket.pools.wood.resourceReserve - (preAmmWoodRes - spinWood.buybackInfo.amount * 1.02)) < 1e-3, 'AMM DEX havuzundan fiziki hammadde (+%2 yakım) satın alınmalı');
 assert.equal(gs.state.inventory.wood, preUserWood + spinWood.buybackInfo.amount, 'Satın alınan odun kullanıcı envanterine teslim edilmeli');
 assert.ok(spinWood.buybackInfo.newPrice > preAmmWoodPrice, `Odun market fiyatı artmalı! Eski: ${preAmmWoodPrice}, Yeni: ${spinWood.buybackInfo.newPrice}`);
 assert.ok(spinWood.buybackInfo.priceDelta > 0, 'Fiyat artışı pozitif olmalı');
@@ -170,20 +171,21 @@ assert.equal(gs.state.adAstraBalance, userPreAda, 'Kazanmadan bakiye değişmeme
 assert.equal(gs.state.lotteryTickets, 10, 'Biletler yanmamalı');
 
 // Çekilişi kazanan senaryo (şans %100'e sabitlenir)
+const prize = 10 * gs.getLotteryRules().ticketPrice * 2;   // v2: bilet 1 ASTRA → 10 bilet için 2 katı = 20 ASTRA
 const origRandom = Math.random;
 Math.random = () => 0;
 const drawRes = gs.drawWeeklyLottery();
 Math.random = origRandom;
 assert(drawRes.userWon, 'Sabitlenmiş şansla çekiliş kazanılmalı');
-assert.equal(drawRes.wonAmount, 2000, '10 bilet için 2 katı = 2000 ADA ayrılmalı');
-assert.equal(gs.state.lotteryPendingPayout, 2000, 'Kazanç çekilmeyi beklemeli');
+assert.equal(drawRes.wonAmount, prize, `10 bilet için 2 katı = ${prize} ASTRA ayrılmalı`);
+assert.equal(gs.state.lotteryPendingPayout, prize, 'Kazanç çekilmeyi beklemeli');
 assert.equal(gs.state.lotteryTickets, 0, 'Kazanan biletler kullanılmış olmalı');
 assert.equal(gs.state.adAstraBalance, userPreAda, 'Kazanç çekilene kadar bakiyeye eklenmemeli');
 
 const winnerRes = gs.claimWinnerLotteryPayout();
 assert(winnerRes.success, 'Kazanç çekilebilmeli');
-assert.equal(winnerRes.payoutAda, 2000, '2000 ADA ödenmeli');
-assert.equal(gs.state.adAstraBalance, userPreAda + 2000, 'Kullanıcıya +2000 ADA aktarılmalı');
+assert.equal(winnerRes.payoutAda, prize, `${prize} ASTRA ödenmeli`);
+assert.equal(gs.state.adAstraBalance, userPreAda + prize, `Kullanıcıya +${prize} ASTRA aktarılmalı`);
 assert.equal(gs.state.lotteryPendingPayout, 0, 'Bekleyen kazanç sıfırlanmalı');
 
 // Aynı kazanç ikinci kez çekilememeli

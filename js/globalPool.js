@@ -6,6 +6,7 @@ import { openWeek, shareOf, isEligible, levelWeight, DEFAULT_UBI_RULES } from '.
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
 const DAY_MS = 24 * 3600 * 1000;
+const zeroRes = () => Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ["wood", "iron", "wheat"]).map(k => [k, 0]));
 const UBI_RULES = { ...DEFAULT_UBI_RULES, minLevel: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3 };
 
 export const MAX_SUPPLY = 10000000000;
@@ -144,7 +145,7 @@ export class GlobalResourceManager {
           parsed.creatorWallet = GAME_CONFIG.CREATOR_WALLET_ADDRESS;
         }
         if (!parsed.totalBurnedResources) {
-          parsed.totalBurnedResources = { wood: 0, iron: 0, wheat: 0 };
+          parsed.totalBurnedResources = zeroRes();
         }
         return parsed;
       } catch (e) {
@@ -208,7 +209,7 @@ export class GlobalResourceManager {
       },
       totalActiveMiners: 342,
       buybackFromBroadcasting: prevState ? (prevState.buybackFromBroadcasting || 0) : 0,
-      totalBurnedResources: prevState ? (prevState.totalBurnedResources || { wood: 0, iron: 0, wheat: 0 }) : { wood: 0, iron: 0, wheat: 0 },
+      totalBurnedResources: prevState ? (prevState.totalBurnedResources || zeroRes()) : zeroRes(),
       totalBurnedItems: prevState ? (prevState.totalBurnedItems || {}) : {}
     };
 
@@ -224,7 +225,7 @@ export class GlobalResourceManager {
     if (qty <= 0) return { burned: 0 };
 
     if (!this.state.totalBurnedResources) {
-      this.state.totalBurnedResources = { wood: 0, iron: 0, wheat: 0 };
+      this.state.totalBurnedResources = zeroRes();
     }
     this.state.totalBurnedResources[resourceKey] = (this.state.totalBurnedResources[resourceKey] || 0) + qty;
 
@@ -341,14 +342,7 @@ export class GlobalResourceManager {
     treasury.recordBurn(burned);
 
     // Geriye dönük uyumluluk
-    this.state.treasury = {
-      dungeon: treasury.getPool('dungeon'),
-      ammBuyback: treasury.getPool('ammBuyback'),
-      arena: treasury.getPool('arena'),
-      worldBoss: treasury.getPool('worldBoss'),
-      carnival: treasury.getPool('carnival'),
-      quest: treasury.getPool('quest')
-    };
+    this.state.treasury = Object.fromEntries(Object.keys(GAME_CONFIG.TREASURY_SEED || {}).map(k => [k, treasury.getPool(k)]));
 
     this.saveState();
     if (typeof window !== 'undefined' && typeof window.updateUbiCardLive === 'function') {
@@ -653,7 +647,7 @@ export class GlobalResourceManager {
     this.state.totalBurned = 0;
     this.state.creatorRoyaltyTotal = 0;
     this.state.buybackFromBroadcasting = 0;
-    this.state.totalBurnedResources = { wood: 0, iron: 0, wheat: 0 };
+    this.state.totalBurnedResources = zeroRes();
     this.saveState();
     return this.state;
   }

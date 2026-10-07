@@ -13,32 +13,26 @@ import { globalPool } from './globalPool.js';
 import { treasury } from './treasury.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
+// v2 (R4b): hammaddeler config'ten (6 kaynak); açılış fiyatları koridorların açılış değeri
+const RAW_RESOURCES = GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+const META = GAME_CONFIG.RESOURCE_META || {};
+const zeroRaw = () => Object.fromEntries(RAW_RESOURCES.map(k => [k, 0]));
+
 // 🏛️ Lansman / Genesis Değişmez Başlangıç Fiyatları (Tüm düşüşler buna göre hesaplanır)
-export const GENESIS_PRICES = {
-  wheat: 0.90,       // 🌾 Buğday
-  iron: 4.00,        // ⛏️ Demir
-  wood: 2.50,        // 🌲 Odun
-  fragments: 45.00,  // 🧩 Teçhizat Parçası
-  keys: 1000.0,      // 🔑 Arena Anahtarı
-  boxes: 10000.0     // 📦 Pandora Kutusu
-};
+export const GENESIS_PRICES = Object.fromEntries(Object.entries(GAME_CONFIG.AMM_CORRIDORS || {}).map(([k, c]) => [k, c.defaultPriceAda]));
 
-// ⚖️ Hazine Dağıtım Öncelik Ağırlıkları (Ana hammadde üçlüsüne %75 aslan payı)
-export const BUYBACK_ASSET_WEIGHTS = {
-  wheat: 0.30,       // %30 Aslan Payı (Stamina & Can tüketimi)
-  iron: 0.25,        // %25 Ağır Sanayi (Teçhizat & Tamirat)
-  wood: 0.20,        // %20 Temel Hammadde (İnşaat & Aletler)
-  fragments: 0.10,   // %10 Teçhizat Parçaları
-  keys: 0.08,        // %8 Arena Anahtarları
-  boxes: 0.07        // %7 Pandora Kutuları
-};
+// ⚖️ Geri alım öncelik ağırlıkları: hammaddeler üretim değerine göre (%75), tüketilenler %25
+export const BUYBACK_ASSET_WEIGHTS = (() => {
+  const w = {};
+  const val = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 1) * ((GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 1);
+  const tot = RAW_RESOURCES.reduce((s, k) => s + val(k), 0) || 1;
+  for (const k of RAW_RESOURCES) w[k] = 0.75 * val(k) / tot;
+  w.fragments = 0.10; w.keys = 0.08; w.boxes = 0.07;
+  return w;
+})();
 
-// Haftalık küresel kotanın fiyatı ne kadar hareket ettireceği
+// Haftalık arzın fiyatı ne kadar hareket ettireceği (yalnız tohumu tanımsız varlıklar için yedek)
 const TARGET_PRICE_IMPACT = 0.07;
-
-// %2 hammadde yakımı yalnızca ham maddelerde (odun, demir, buğday) uygulanır.
-// Parça, anahtar, kutu gibi tekil eşyalar bölünemediği için yakılmaz.
-const RAW_RESOURCES = ['wood', 'iron', 'wheat'];
 function resourceBurnRateOf(key) {
   if (!RAW_RESOURCES.includes(key)) return 0;
   const r = GAME_CONFIG.AMM_RESOURCE_FEE_RATE ?? GAME_CONFIG.AMM_FEE_RATE ?? 0.02;
@@ -64,39 +58,49 @@ function weeklySupplyOf(key) {
 // Böylece kotanın TAMAMI her hafta pazara satılsa bile fiyatın %90 düşmesi ~3,4 yıl sürer;
 // oyunda harcanan (tamir, silah dövme/geliştirme, silo, seviye, stamina) kısım bu süreyi uzatır.
 // Diğer varlıklar (parça, kutu, anahtar, parşömen) eski kuralla: haftalık arzın fiyatı ~%7 oynatacağı derinlik.
+// v2 (R3/R4b): havuzun ASTRA tarafı tohumdan (AMM_SEED_ASTRA): hammaddelere 90 M değer ağırlıklı (üretim hızı × açılış
+// fiyatı), tüketilenlere kendi tohumu; mal tarafı = ASTRA ÷ açılış fiyatı. Tohumu olmayan varlıkta eski derinlik kuralı.
+function rawSeedShare(key) {
+  const val = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 0) * ((GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 0);
+  const tot = RAW_RESOURCES.reduce((s, k) => s + val(k), 0);
+  return tot > 0 ? val(key) / tot : 1 / RAW_RESOURCES.length;
+}
 function derivePool(key, meta) {
   const corridor = GAME_CONFIG.AMM_CORRIDORS[key];
   const price = corridor ? corridor.defaultPriceAda : 1;
-  const supply = weeklySupplyOf(key);
-  const depthWeeks = GAME_CONFIG.AMM_RAW_DEPTH_WEEKS || 80;
-  const resourceReserve = RAW_RESOURCES.includes(key)
-    ? Math.round(supply * depthWeeks)
-    : Math.round(supply * (1 - TARGET_PRICE_IMPACT) / TARGET_PRICE_IMPACT);
-  return {
-    resourceReserve,
-    adAstraReserve: Math.round(resourceReserve * price),
-    ...meta
-  };
+  const seeds = GAME_CONFIG.AMM_SEED_ASTRA || {};
+  let adAstraReserve;
+  if (RAW_RESOURCES.includes(key) && seeds.raw > 0) adAstraReserve = seeds.raw * rawSeedShare(key);
+  else if (seeds[key] > 0) adAstraReserve = seeds[key];
+  else {
+    const supply = weeklySupplyOf(key);
+    const depthWeeks = GAME_CONFIG.AMM_RAW_DEPTH_WEEKS || 80;
+    const resourceReserve = RAW_RESOURCES.includes(key)
+      ? Math.round(supply * depthWeeks)
+      : Math.round(supply * (1 - TARGET_PRICE_IMPACT) / TARGET_PRICE_IMPACT);
+    return { resourceReserve, adAstraReserve: Math.round(resourceReserve * price), ...meta };
+  }
+  const resourceReserve = Math.round(adAstraReserve / price);
+  return { resourceReserve, adAstraReserve: Math.round(adAstraReserve), ...meta };
 }
 
 function buildDefaultPools() {
-  return {
-    wheat: derivePool('wheat', { name: 'Buğday', icon: '🌾' }),
-    wood: derivePool('wood', { name: 'Odun', icon: '🌲' }),
-    iron: derivePool('iron', { name: 'Demir', icon: '⛏️' }),
-    fragments: derivePool('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' }),
-    boxes: derivePool('boxes', { name: 'Pandora Kutusu', icon: '📦' }),
-    keys: derivePool('keys', { name: 'Arena Anahtarı', icon: '🔑' }),
-    scroll_heal: derivePool('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' }),
-    scroll_stamina: derivePool('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' })
-  };
+  const pools = {};
+  for (const k of RAW_RESOURCES) pools[k] = derivePool(k, { name: (META[k] || {}).name || k, icon: (META[k] || {}).icon || '' });
+  pools.fragments = derivePool('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' });
+  pools.boxes = derivePool('boxes', { name: 'Pandora Kutusu', icon: '📦' });
+  pools.keys = derivePool('keys', { name: 'Arena Anahtarı', icon: '🔑' });
+  pools.scroll_heal = derivePool('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' });
+  pools.scroll_stamina = derivePool('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' });
+  return pools;
 }
 
 export class AMMMarketEngine {
   constructor() {
     // v10: 40M $ADASTRA Derin AMM Havuzları (10k ADA Pandora Kutusu, 1k ADA Anahtar)
     // v11: hammadde havuzları haftalık kotanın 80 katına derinleştirildi (eski kayıtlar yeniden tohumlanır)
-    this.storageKey = 'adastra_amm_pools_v11';
+    // v12 (v2): 6 hammadde, 100 M tohum, ölçekli fiyatlar (eski kayıtlar yeniden tohumlanır)
+    this.storageKey = 'adastra_amm_pools_v12';
     this.listeners = [];
     this.pools = this.loadPools();
     this.feeStats = this.loadFeeStats();
@@ -153,24 +157,22 @@ export class AMMMarketEngine {
   }
 
   loadFeeStats() {
-    if (typeof localStorage === 'undefined') return { collected: 0, burned: 0, burnedResources: { wood: 0, iron: 0, wheat: 0 } };
+    if (typeof localStorage === 'undefined') return { collected: 0, burned: 0, burnedResources: zeroRaw() };
     try {
       const data = readJSON(this.storageKey + '_fees').data || { collected: 0, burned: 0 };
-      if (!data.burnedResources) data.burnedResources = { wood: 0, iron: 0, wheat: 0 };
+      data.burnedResources = { ...zeroRaw(), ...(data.burnedResources || {}) };
       return data;
     } catch (_) {
-      return { collected: 0, burned: 0, burnedResources: { wood: 0, iron: 0, wheat: 0 } };
+      return { collected: 0, burned: 0, burnedResources: zeroRaw() };
     }
   }
 
   getBurnedResources() {
     if (!this.feeStats) this.feeStats = this.loadFeeStats();
-    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = { wood: 0, iron: 0, wheat: 0 };
-    return {
-      wood: Math.round((this.feeStats.burnedResources.wood || 0) * 10) / 10,
-      iron: Math.round((this.feeStats.burnedResources.iron || 0) * 10) / 10,
-      wheat: Math.round((this.feeStats.burnedResources.wheat || 0) * 10) / 10
-    };
+    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = zeroRaw();
+    const out = {};
+    for (const k of RAW_RESOURCES) out[k] = Math.round((this.feeStats.burnedResources[k] || 0) * 10) / 10;
+    return out;
   }
 
   savePools() {
@@ -188,7 +190,7 @@ export class AMMMarketEngine {
       removeJSON(this.storageKey + '_fees');
     }
     this.pools = buildDefaultPools();
-    this.feeStats = { collected: 0, burned: 0, burnedResources: { wood: 0, iron: 0, wheat: 0 } };
+    this.feeStats = { collected: 0, burned: 0, burnedResources: zeroRaw() };
     this.savePools();
     return this.pools;
   }
@@ -297,11 +299,12 @@ export class AMMMarketEngine {
         const fallbackPrice = corridor ? corridor.defaultPriceAda : 1.0;
         adaVal = numAmount * fallbackPrice;
       }
-      breakdown[key] = Math.round(adaVal * 100) / 100;
+      breakdown[key] = Math.round(adaVal * 1000) / 1000;
       totalAda += adaVal;
     }
     return {
-      totalAda: Math.max(1, Math.round(totalAda)),
+      // v2: küçük fiyatlar (0,009 ASTRA/buğday) için 1'e yuvarlama kaldırıldı; 3 ondalık
+      totalAda: Math.max(0, Math.round(totalAda * 1000) / 1000),
       breakdown
     };
   }
@@ -325,7 +328,7 @@ export class AMMMarketEngine {
 
   _recordResourceBurnFee(resourceKey, qty) {
     if (!(qty > 0)) return;
-    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = { wood: 0, iron: 0, wheat: 0 };
+    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = zeroRaw();
     this.feeStats.burnedResources[resourceKey] = (this.feeStats.burnedResources[resourceKey] || 0) + qty;
     if (typeof globalPool !== 'undefined' && typeof globalPool.recordResourceBurn === 'function') {
       globalPool.recordResourceBurn(resourceKey, qty);
@@ -333,9 +336,21 @@ export class AMMMarketEngine {
   }
 
   // ── İşlemler ────────────────────────────────────────────────────────
+  // v2 (R4b): tek işlemde havuzdaki malın en çok AMM_SINGLE_TRADE_SHARE'i (%5) alınıp satılabilir
+  getSingleTradeCap(resourceKey) {
+    const pool = this.pools[resourceKey];
+    if (!pool) return 0;
+    return Math.floor(pool.resourceReserve * (GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05));
+  }
+
   executeSell(resourceKey, resourceAmount) {
     const pool = this.pools[resourceKey];
     if (!pool || !(resourceAmount > 0)) return { success: false, message: 'Geçersiz miktar!' };
+
+    const tradeCap = this.getSingleTradeCap(resourceKey);
+    if (resourceAmount > tradeCap) {
+      return { success: false, tradeCapBlocked: true, maxSellable: tradeCap, message: `⛔ Tek işlemde havuzun en fazla %${Math.round((GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05) * 100)}'i satılabilir: şu an ${tradeCap.toLocaleString('tr-TR')} ${pool.name}.` };
+    }
 
     // 🛡️ Taban fiyat koruması: satış fiyatı koridor tabanının altına itemez
     const corridor = this.getCorridor(resourceKey);
@@ -399,8 +414,9 @@ export class AMMMarketEngine {
 
     // Alıcı istediği miktarın tamamını alır; %2 yakım için havuzdan biraz fazlası çıkar
     const grossOut = this.getGrossOutForBuy(resourceKey, resourceAmount);
-    if (grossOut >= pool.resourceReserve * 0.5) {
-      return { success: false, message: `Tek işlemde havuzun yarısından fazlası alınamaz! (Havuz: ${Math.floor(pool.resourceReserve)} ${pool.name})` };
+    const tradeCap = this.getSingleTradeCap(resourceKey);
+    if (grossOut > tradeCap) {
+      return { success: false, tradeCapBlocked: true, maxBuyable: tradeCap, message: `⛔ Tek işlemde havuzun en fazla %${Math.round((GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05) * 100)}'i alınabilir: şu an ${tradeCap.toLocaleString('tr-TR')} ${pool.name}.` };
     }
 
     const corridor = this.getCorridor(resourceKey);
@@ -490,16 +506,18 @@ export class AMMMarketEngine {
   // ── 6 Varlıklı Dinamik Buyback & Burn Analiz Raporu ───────────────────
   // Düşüşler değişmez Genesis Başlangıç Fiyatlarına ($P_{genesis}$) göre hesaplanır.
   // Ağırlık %75 ana hammadde üçlüsüne (Buğday %30, Demir %25, Odun %20), %25 diğerlerine verilir.
-  getBuybackAnalysis(cycleBudgetCap = 0.10) {
+  getBuybackAnalysis(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
     const availableTreasury = (typeof treasury !== 'undefined' && treasury.getPool)
       ? (treasury.getPool('ammBuyback') || 0)
       : 6000000;
 
     const maxCycleFund = availableTreasury * cycleBudgetCap;
-    const assets = ['wheat', 'iron', 'wood', 'fragments', 'keys', 'boxes'];
+    const assets = [...RAW_RESOURCES, 'fragments', 'keys', 'boxes'];
     const details = [];
     let totalScore = 0;
     let maxUrgency = 0;
+    // v2 (R4): yalnız açılışın (1 − TRIGGER_DROP) altına inen varlıklar alınır (eşik %20 düşüş)
+    const trigger = GAME_CONFIG.AMM_BUYBACK?.TRIGGER_DROP ?? 0.2;
 
     for (const key of assets) {
       const pool = this.pools[key];
@@ -508,8 +526,8 @@ export class AMMMarketEngine {
       const genPrice = GENESIS_PRICES[key] || 1.0;
       // Düşüş oranı: sadece başlangıç fiyatının altına indiğinde devreye girer
       const dropRatio = Math.max(0, (genPrice - curPrice) / genPrice);
-      // Kuvvet Yasası: %10 düşüşte binde 3, %90 düşüşte %76.8 harcama yoğunluğu
-      const urgency = Math.pow(dropRatio, 2.5);
+      // Eşiğin altında kalan düşüşte müdahale yok; eşik aşılınca düşüşle orantılı yoğunluk
+      const urgency = dropRatio >= trigger ? Math.min(1, dropRatio) : 0;
       const weight = BUYBACK_ASSET_WEIGHTS[key] || 0.1;
       const score = weight * urgency;
 

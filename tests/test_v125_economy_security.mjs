@@ -146,7 +146,8 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 {
   const gs = fresh();
   gs.state.warehouseLevel = 6;
-  gs.state.inventory = { wood: 2000, iron: 2000, wheat: 3000, fragments: 0 };
+  const c6 = gs.getWarehouseCapacity(6);
+  gs.state.inventory = { ...Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, Math.floor(c6[k] * 0.6)])), fragments: 0 };
   gs.state.adAstraBalance = 20000;
   gs.state.botSiloAutoUpgrade = false;
   const start = Date.now() - 25 * 3600e3;
@@ -161,19 +162,20 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 // 9) Bot parası yetmediğinde yoktan alım yapmaz
 {
   const gs = fresh(); botOn(gs);
-  gs.state.adAstraBalance = 52; gs.state.inventory = { wood: 0, iron: 0, wheat: 0, fragments: 0 };
+  const FLOOR = GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.adAstra;   // v2: 0,5 ASTRA
+  gs.state.adAstraBalance = FLOOR + 0.02; gs.state.inventory = { wood: 0, iron: 0, wheat: 0, fragments: 0 };
   gs.autoBuyBotResourceDeficit(50);
   const inv = gs.state.inventory;
   const boughtValue = inv.wood * ammMarket.getPrice('wood') + inv.iron * ammMarket.getPrice('iron') + inv.wheat * ammMarket.getPrice('wheat');
-  assert.ok(gs.state.adAstraBalance >= 50 - 1e-9, 'Bot 50 ADA önkoşulunu harcamamalı');
-  assert.ok(boughtValue <= 2 + 1e-6, `Harcanabilir 2 ADA'dan fazlası alınmamalı (alınan değer ${boughtValue.toFixed(2)})`);
+  assert.ok(gs.state.adAstraBalance >= FLOOR - 1e-9, 'Bot ASTRA önkoşulunu harcamamalı');
+  assert.ok(boughtValue <= 0.02 + 1e-6, `Harcanabilir 0,02 ASTRA'dan fazlası alınmamalı (alınan değer ${boughtValue.toFixed(3)})`);
   ok('Bot: parası yetmeden alım yok');
 }
 
 // 10) Az para + az malzemede sat-al kısır döngüsü yok
 {
   const gs = fresh(); botOn(gs);
-  gs.state.adAstraBalance = 40; gs.state.inventory = { wood: 30, iron: 700, wheat: 1500, fragments: 0 };
+  gs.state.adAstraBalance = 0.4; gs.state.warehouseLevel = 6; gs.state.inventory = { wood: 30, iron: 700, wheat: 1500, fragments: 0 };   // v2: ASTRA da önkoşulun altında
   let sells = 0, buys = 0, woodSold = 0;
   const s0 = ammMarket.executeSell.bind(ammMarket), b0 = ammMarket.executeBuyAmount.bind(ammMarket);
   ammMarket.executeSell = (k, a) => { sells++; if (k === 'wood') woodSold += a; return s0(k, a); };
@@ -182,7 +184,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ammMarket.executeSell = s0; ammMarket.executeBuyAmount = b0;
   assert.equal(woodSold, 0, 'Eksik olan odun satılmamalı');
   assert.ok(sells + buys <= 6, `600 karede en fazla birkaç işlem olmalı (satış ${sells}, alış ${buys})`);
-  assert.ok(gs.state.inventory.wood >= 50 && gs.state.adAstraBalance >= 50, 'Eksikler kalıcı olarak tamamlanmalı');
+  assert.ok(gs.state.inventory.wood >= 50 && gs.state.adAstraBalance >= GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.adAstra, 'Eksikler kalıcı olarak tamamlanmalı');
   ok(`Bot: sat-al döngüsü yok (satış ${sells}, alış ${buys})`);
 }
 
@@ -190,8 +192,9 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 {
   const gs = fresh(); botOn(gs);
   gs.state.botSiloAutoUpgrade = true;
-  gs.state.inventory = { wood: 1080, iron: 720, wheat: 1800, fragments: 0 };
-  gs.state.adAstraBalance = 3600;
+  const c1 = gs.getWarehouseCapacity(1);
+  gs.state.inventory = { ...Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, c1[k]])), fragments: 0 };
+  gs.state.adAstraBalance = gs.getWarehouseUpgradeCost().adAstra + 2;   // bedel var, güvenlik payı yok: fazlalık satılmalı
   gs.tryAutoUpgradeWarehouseWithAdaFinancing();
   assert.ok(gs.state.adAstraBalance >= gs.getBotAdaReserve() - 1e-6, `Yükseltme sonrası kasada güvenlik payı kalmalı (${gs.state.adAstraBalance.toFixed(0)})`);
   ok('Bot: silo yükseltmede güvenlik payı korunuyor');
@@ -204,7 +207,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   assert.equal(gs.buyTavernBuff('auto_collector_monthly').success, false);
   assert.ok(Math.abs(gs.getLevelProductionMultiplier(10) - 1.09) < 1e-9);   // 5 Ekim 2026: seviye başına %1
   gs.state.level = 10;
-  assert.ok(Math.abs(gs.getResourceRatePerMinute('wood') - 18 * 1.09) < 1e-9);
+  assert.ok(Math.abs(gs.getResourceRatePerMinute('wood') - GAME_CONFIG.BASE_PRODUCTION.wood * 1.09) < 1e-9);
   ok('Eski bot paketleri kapalı, seviye bonusu +%1/seviye');
 }
 
@@ -227,11 +230,12 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 {
   const gs = fresh();
   gs.state.warehouseLevel = 4;
-  gs.state.inventory = { wood: 1500, iron: 1000, wheat: 2000, fragments: 0 };
+  const c4 = gs.getWarehouseCapacity(4);
+  gs.state.inventory = { ...Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, Math.floor(c4[k] * 0.7)])), fragments: 0 };
   gs.state.adAstraBalance = 60000;
   gs.setBotSiloOption(false);
   gs.setBotAutoRenew24h(true);
-  const R = ['wood', 'iron', 'wheat'];
+  const R = GAME_CONFIG.RESOURCE_KEYS;   // v2: 6 hammaddenin tamamı defterde
   const L = { h: {}, b: {}, s: {}, burn: {}, adaSell: 0, adaBuy: 0, adaSpent: 0, adaTreasury: 0 };
   R.forEach(r => { L.h[r] = 0; L.b[r] = 0; L.s[r] = 0; L.burn[r] = 0; });
   const oH = globalPool.harvest.bind(globalPool); globalPool.harvest = (k, a) => { const g = oH(k, a); L.h[k] += g; return g; };

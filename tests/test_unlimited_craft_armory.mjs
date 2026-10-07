@@ -16,7 +16,7 @@ globalThis.localStorage = {
 const gs = new GameStateManager();
 gs.state.warehouseLevel = 18;
 gs.state.adAstraBalance = 2000000;
-gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, fragments: 5000 };
+gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, coal: 500000, stone: 500000, herb: 500000, fragments: 5000 }; // v2: teçhizat kömür de ister
 
 // 1. İlk silahı üret (Krallık ana yuvasına girmeli)
 const c1 = gs.craftEquipment('weapon');
@@ -43,7 +43,7 @@ console.log(`Toplam kayıtlı teçhizat sayısı: ${allList.length}`);
 assert(allList.length >= 6, 'Toplamda en az 6 teçhizat listelenmeli (3 krallık + 3 cephanelik)');
 
 // 5. upgradeAnyEquipment() testi (Cephanelikteki boşta silahı Lv.1 -> Lv.2 yap)
-gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, fragments: 5000 };
+gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, coal: 500000, stone: 500000, herb: 500000, fragments: 5000 }; // v2: teçhizat kömür de ister
 gs.state.adAstraBalance = 2000000;
 const upRes = gs.upgradeAnyEquipment({ source: 'armory', armoryIndex: 0 });
 assert(upRes.success, 'Cephanelikteki eşya tek tıkla seviye atlayabilmeli');

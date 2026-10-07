@@ -17,7 +17,7 @@ globalThis.localStorage = {
 
 const gs = new GameStateManager();
 gs.state.adAstraBalance = 5000000;
-gs.state.inventory = { iron: 1000000, wood: 1000000, wheat: 1000000, fragments: 1000 };
+gs.state.inventory = { iron: 1000000, wood: 1000000, wheat: 1000000, coal: 1000000, stone: 1000000, herb: 1000000, fragments: 1000 }; // v2: 6 hammadde
 
 // ══════════════════════════════════════════════════════════════════════════
 // 1. ASKER SADELEŞTİRMESİ: TEK TİP "ADASTRA ŞAMPİYONU" & HIZLI DOYURMA
@@ -38,12 +38,14 @@ const healInfo = gs.getSoldierHealInfo(0);
 assert.equal(healInfo.missingHp, 50, '50 eksik HP tespit edilmeli');
 
 // 1. 18 Saatlik Otomatik Pasif İyileşme (1 HP = 0.30 Buğday + 0.10 ADA)
-assert.equal(healInfo.passiveWheatNeeded, 15, '18 saatlik otomatik iyileşme: 50 HP için 15 Buğday (0.30 x 50)');
-assert.equal(healInfo.passiveAdaCost, 5, '18 saatlik otomatik iyileşme: 50 HP için 5 ADA (0.10 x 50)');
+const PH = GAME_CONFIG.SOLDIER_PASSIVE_HEAL, FH = GAME_CONFIG.SOLDIER_FAST_HEAL;
+const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+assert.equal(healInfo.passiveWheatNeeded, 15, 'Otomatik iyileşme: 50 HP için 15 Buğday (0.30 x 50)');
+assert.ok(near(healInfo.passiveAdaCost, 50 * PH.adaPerHp), `Otomatik iyileşme: 50 HP için ${50 * PH.adaPerHp} ASTRA (v2 ölçekli), bulunan ${healInfo.passiveAdaCost}`);
 
-// 2. Hızlı Doyurma (18 Saatlik Formülün 10 Katı: 1 HP = 3 Buğday + 1 ADA)
+// 2. Hızlı Doyurma (formülün 10 katı: 1 HP = 3 Buğday + 0,01 ASTRA)
 assert.equal(healInfo.wheatCost, 150, 'Hızlı doyurma (10x): 50 HP için 150 Buğday (3 x 50)');
-assert.equal(healInfo.adAstraCost, 50, 'Hızlı doyurma (10x): 50 HP için 50 ADA (1 x 50)');
+assert.ok(near(healInfo.adAstraCost, 50 * FH.adAstraPerHp), `Hızlı doyurma (10x): 50 HP için ${50 * FH.adAstraPerHp} ASTRA, bulunan ${healInfo.adAstraCost}`);
 
 // 3. Pasif İyileşme Zaman Döngüsü (1 Saatlik Tik Simülasyonu)
 gs.state.inventory.wheat = 100;
@@ -121,7 +123,7 @@ assert.equal(weaponCraftCost.fragCost, 1, 'Lv.1 üretim 1 parça talep etmeli');
 
 gs.state.warehouseLevel = 18;
 gs.state.adAstraBalance = 5000000;
-gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, fragments: 5000 };
+gs.state.inventory = { iron: 500000, wood: 500000, wheat: 500000, coal: 500000, stone: 500000, herb: 500000, fragments: 5000 }; // v2: teçhizat kömür de ister
 const craftW = gs.craftEquipment('weapon');
 assert(craftW.success, 'Silah üretilebilmeli');
 const createdWeapon = gs.state.equipment.weapon;
@@ -168,7 +170,7 @@ console.log('Bot Finansal Tablosu:', {
   botCostAda: botFinancials.botCostAda
 });
 assert(botFinancials.grossRevenueAda > 0, 'Günlük brüt gelir pozitif olmalı');
-assert.equal(botFinancials.botCostAda, Math.round(botFinancials.netProfitAda * 0.5), 'Bot bedeli net kârın tam %50\'si olmalı');
+assert.equal(botFinancials.botCostAda, Math.max(1, Math.round(botFinancials.netProfitAda * 0.5 * 1000) / 1000), 'Bot bedeli net kârın tam %50\'si olmalı');
 
 // Silo Doluluk Seçeneği Testi
 gs.setBotSiloOption(true);
@@ -188,7 +190,7 @@ console.log('✅ Taverna 24s bot saf kâr ve otomasyon yönetimi %100 doğruland
 // ══════════════════════════════════════════════════════════════════════════
 console.log('\n[6/7] Krallık Karnavalı: Şans Çarkı Test Ediliyor...');
 assert(GAME_CONFIG.CARNIVAL.WHEEL_REWARDS.length >= 14, 'Çarkta en az 14 ödül olmalı');
-assert.equal(GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA, 100, 'Çark çevirme bedeli 100 ADA olmalı');
+assert.equal(GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA, 1, 'Çark çevirme bedeli 1 ASTRA olmalı (v2 ölçekli)');
 
 // 100 Çevirme Simülasyonu ile RTP ve Kasa Güvenliği Doğrulaması
 let totalPaidAda = 0;
@@ -200,7 +202,7 @@ Math.random = () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.im
 for (let i = 0; i < 50; i++) {
   const spinRes = gs.spinCarnivalWheel('ada');
   assert(spinRes.success, `Çevirme #${i} başarılı olmalı`);
-  totalPaidAda += 100;
+  totalPaidAda += GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA;
   totalReturnedValueAda += (spinRes.reward.valAda || 0);
 }
 const simulatedRtp = (totalReturnedValueAda / totalPaidAda) * 100;
@@ -217,8 +219,9 @@ gs.state.lotteryTickets = 0;
 gs.state.lotteryPool = GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA;
 const ticketBuyRes = gs.buyLotteryTickets(5);
 assert(ticketBuyRes.success, '5 adet piyango bileti satın alınabilmeli');
-assert.equal(gs.state.lotteryPool + (gs.state.lotteryAmortiPool || 0), GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA + 500, 'Havuz + Amorti toplamı tohum kasa + bilet tutarı kadar olmalı');
-assert.equal(gs.state.lotteryAmortiPool, 10, '%2 amorti payı (10 ADA) ayrılmış olmalı');
+const TK = GAME_CONFIG.CARNIVAL.LOTTERY.TICKET_COST_ADA;   // v2: 1 ASTRA
+assert.ok(near(gs.state.lotteryPool + (gs.state.lotteryAmortiPool || 0), GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA + 5 * TK), 'Havuz + Amorti toplamı tohum kasa + bilet tutarı kadar olmalı');
+assert.ok(near(gs.state.lotteryAmortiPool, 5 * TK * GAME_CONFIG.CARNIVAL.LOTTERY.AMORTI_SHARE), '%2 amorti payı ayrılmış olmalı');
 
 // Piyango Çekiliş Simülasyonu
 const drawRes = gs.drawWeeklyLottery();
@@ -232,7 +235,7 @@ console.log('Piyango Çekiliş Sonucu:', {
 // yalnızca piyango kasası bittiğinde kalan tüm biletlere eşit dağıtılır.
 assert(drawRes.drawn, 'Çekiliş yapılmalı');
 assert(drawRes.rolloverPool > 0, 'Kasa sonraki haftaya devretmeli');
-assert(gs.state.lotteryAmortiPool >= 10, 'Amorti kasası kasa bitene kadar korunmalı');
+assert(gs.state.lotteryAmortiPool >= 5 * TK * GAME_CONFIG.CARNIVAL.LOTTERY.AMORTI_SHARE - 1e-9, 'Amorti kasası kasa bitene kadar korunmalı');
 
 // Elle amorti yakma kapalı: bilet erken kullanılmak istenirse çarkta 1 bilet = 1 çevirme
 const burnRes = gs.burnLotteryTicketsForAmorti(1);

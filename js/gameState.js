@@ -21,6 +21,11 @@ export const cleanName = (s, max = 24) => String(s == null ? '' : s)
   .replace(/\s+/g, ' ').trim().slice(0, max);
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
+// v2 (7 Ekim 2026): hammadde anahtarları config'ten (6 kaynak); eski kayıtlar için yedek üçlü
+const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
+const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
+
 export class GameStateManager {
   constructor() {
     this.storageKey = 'adastra_player_save_v6';
@@ -136,8 +141,10 @@ export class GameStateManager {
       botAutoRenew24h: parsed.botAutoRenew24h !== undefined ? parsed.botAutoRenew24h : false,
       botActiveUntil: parsed.botActiveUntil || 0,
       redeemCodes: Array.isArray(parsed.redeemCodes) ? parsed.redeemCodes : [],
-      burnedResources: parsed.burnedResources || { wood: 0, iron: 0, wheat: 0 },
-      carnivalBurnedResources: parsed.carnivalBurnedResources || { wood: 0, iron: 0, wheat: 0 },
+      burnedResources: { ...zeroRes(), ...(parsed.burnedResources || {}) },
+      carnivalBurnedResources: { ...zeroRes(), ...(parsed.carnivalBurnedResources || {}) },
+      // v2 (R5): köy
+      village: { ...(GAME_CONFIG.STARTING_PROFILE.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }), ...(parsed.village || {}) },
       // Kilitli bakiye eski kayıtlarda yoktu: mevcut bakiye serbest sayılır
       lockedAda: Math.max(0, Number(parsed.lockedAda) || 0),
       lockUnlock: parsed.lockUnlock || null,
@@ -232,11 +239,8 @@ export class GameStateManager {
   }
 
   mergeTools(saved) {
-    const defaults = {
-      axe: { durability: 4320, totalGathered: 0 },
-      pickaxe: { durability: 4320, totalGathered: 0 },
-      sickle: { durability: 4320, totalGathered: 0 }
-    };
+    // v2: 6 alet (config.TOOLS); eski kayıtta olmayan alet tam dayanıklılıkla eklenir
+    const defaults = Object.fromEntries(Object.keys(GAME_CONFIG.TOOLS || { axe: 1, pickaxe: 1, sickle: 1 }).map(k => [k, { durability: (GAME_CONFIG.TOOLS?.[k]?.maxDurability) || 4320, totalGathered: 0 }]));
     if (!saved) return defaults;
     const merged = { ...defaults, ...saved };
     Object.keys(merged).forEach(k => {
@@ -300,7 +304,7 @@ export class GameStateManager {
     if (qty <= 0) return 0;
 
     if (!this.state.burnedResources) {
-      this.state.burnedResources = { wood: 0, iron: 0, wheat: 0 };
+      this.state.burnedResources = zeroRes();
     }
     this.state.burnedResources[resourceKey] = (this.state.burnedResources[resourceKey] || 0) + qty;
 
@@ -330,10 +334,11 @@ export class GameStateManager {
     return qty;
   }
 
-  burnResources({ wood = 0, iron = 0, wheat = 0 } = {}) {
-    if (wood > 0) this.burnResource('wood', wood);
-    if (iron > 0) this.burnResource('iron', iron);
-    if (wheat > 0) this.burnResource('wheat', wheat);
+  // v2: her hammadde için (odun, demir, buğday, taş, kömür, şifalı ot)
+  burnResources(amounts = {}) {
+    for (const [k, v] of Object.entries(amounts || {})) {
+      if (RES_KEYS().includes(k) && Number(v) > 0) this.burnResource(k, Number(v));
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -455,7 +460,8 @@ export class GameStateManager {
   }
 
   adaPrice(base) {
-    return Math.round((Number(base) || 0) * this.getAdaPriceMultiplier());
+    // v2: ASTRA fiyatları küçük (1 ASTRA bilet, 0,5 ASTRA bot önkoşulu); tam sayıya değil 3 basamağa yuvarlanır
+    return round3((Number(base) || 0) * this.getAdaPriceMultiplier());
   }
 
   getAdaPriceMultiplierTarget() {
@@ -500,7 +506,7 @@ export class GameStateManager {
     const qty = Number(amount) || 0;
     if (qty <= 0) return 0;
     if (!this.state.carnivalBurnedResources) {
-      this.state.carnivalBurnedResources = { wood: 0, iron: 0, wheat: 0 };
+      this.state.carnivalBurnedResources = zeroRes();
     }
     this.state.carnivalBurnedResources[resourceKey] = (this.state.carnivalBurnedResources[resourceKey] || 0) + qty;
     this.burnResource(resourceKey, qty);
@@ -519,7 +525,7 @@ export class GameStateManager {
     }
     const exponent = (GAME_CONFIG.SOLDIER_COST_EXPONENT != null) ? GAME_CONFIG.SOLDIER_COST_EXPONENT : 2.0364522367650437;
     const rawCost = base * Math.pow(n, exponent);
-    return this.adaPrice(Math.round(rawCost / 50) * 50);
+    return this.adaPrice(round3(rawCost));
   }
 
   buySoldierUnit() {
@@ -746,7 +752,7 @@ export class GameStateManager {
       if (hpGain > 0) {
         this.state.inventory.wheat = Math.max(0, Math.round((curW - wheatCost) * 100) / 100);
         this.burnResource('wheat', wheatCost);
-        this.state.adAstraBalance = Math.max(0, Math.round((curA - adaCost) * 100) / 100);
+        this.state.adAstraBalance = Math.max(0, Math.round((curA - adaCost) * 1e6) / 1e6);   // v2: 0,001 ASTRA/HP — kuruşa yuvarlamak bedeli siliyordu
         this._onAdaSpent(curA - this.state.adAstraBalance);
         healAdaSpent += curA - this.state.adAstraBalance;
         soldier.hp = Math.min(maxHp, Math.round((currentHp + hpGain) * 100) / 100);
@@ -762,7 +768,7 @@ export class GameStateManager {
     // Artık her harcama gibi dağıtılır. Küçük tutarlar birikir, 1 ADA'yı geçince deftere işlenir (her karede yazmamak için).
     if (healAdaSpent > 0) {
       const due = (Number(this.state.passiveHealAdaPending) || 0) + healAdaSpent;
-      if (due >= 1) {
+      if (due >= 0.01) {   // v2 ölçeği: 0,01 ASTRA biriktikçe deftere (eski eşik 1 ADA idi)
         globalPool.recordTokenSpend(due);
         this.state.passiveHealAdaPending = 0;
       } else {
@@ -1125,8 +1131,7 @@ export class GameStateManager {
     }
 
     const staminaCost = this.getExpeditionStaminaCost();
-    const resourceDisplayNames = { wood: 'Odun', iron: 'Demir', wheat: 'Buğday' };
-    const rName = resourceDisplayNames[nodeId] || (nodeConfig && nodeConfig.name) || nodeId;
+    const rName = this.getResourceNameTr(nodeId) || (nodeConfig && nodeConfig.name) || nodeId;
 
     if (this.state.stamina < staminaCost) {
       return {
@@ -1204,7 +1209,7 @@ export class GameStateManager {
     };
     if (!(totalSeconds > 0)) { report.after = report.before; return report; }
 
-    const nodes = ['wood', 'iron', 'wheat'];
+    const nodes = RES_KEYS();
     const prevSim = this._simNow;
     const wasFF = this._isFastForwarding;
     this._isFastForwarding = true;
@@ -1293,14 +1298,13 @@ export class GameStateManager {
 
   _snapshotEconomy() {
     const inv = this.state.inventory || {};
-    return {
-      wood: Number(inv.wood) || 0,
-      iron: Number(inv.iron) || 0,
-      wheat: Number(inv.wheat) || 0,
+    const snap = {
       ada: Number(this.state.adAstraBalance) || 0,
       warehouseLevel: Number(this.state.warehouseLevel) || 1,
       xp: Number(this.state.currentXp) || 0
     };
+    for (const k of RES_KEYS()) snap[k] = Number(inv[k]) || 0;
+    return snap;
   }
 
   // 🌙 Oyun kapalıyken (veya sekme arka plandayken) geçen süreyi bir kez işler ve
@@ -1396,7 +1400,7 @@ export class GameStateManager {
     const hasBot = this.hasPurchasedBot();
     if (!hasBot) return { active: false, paused: false, actions: [] };
 
-    const nodes = ['wood', 'iron', 'wheat'];
+    const nodes = RES_KEYS();
     const actions = [];
 
     // =========================================================================
@@ -1448,7 +1452,7 @@ export class GameStateManager {
           if (!this._botCanSpend(repCost.adAstraCost)) {
             const fundRes = this.autoFundBotAdaDeficit(repCost.adAstraCost + this.getBotAdaReserve(), { wood: repCost.woodCost, iron: repCost.ironCost });
             if (fundRes && fundRes.funded) {
-              actions.push(`⚖️ Bot Alet Tamir Finansmanı: Tamir için gereken ${repCost.adAstraCost} ADA için kaynaklardan eşit miktarda (${fundRes.toSell?.wood || 0} Odun, ${fundRes.toSell?.iron || 0} Demir, ${fundRes.toSell?.wheat || 0} Buğday) satılarak +${fundRes.totalEarned?.toFixed(1)} ADA temin edildi.`);
+              actions.push(`⚖️ Bot Alet Tamir Finansmanı: Tamir için gereken ${repCost.adAstraCost} ASTRA için kaynaklardan eşit miktarda (${Object.entries(fundRes.toSell || {}).filter(([, q]) => q > 0).map(([k, q]) => `${q} ${this.getResourceNameTr(k)}`).join(', ')}) satılarak +${fundRes.totalEarned?.toFixed(2)} ASTRA temin edildi.`);
             }
           }
           // B) Yeterli kaynak varsa onarımı gerçekleştir (Kaynak eksikse seferlerden gelmesi beklenir, AMM'den alıp fiyat şişirilmez)
@@ -1569,6 +1573,7 @@ export class GameStateManager {
     const inv = this.state.inventory || {};
     const ada = this.state.adAstraBalance || 0;
     const req = 50;
+    const reqAda = Number(GAME_CONFIG.TAVERNA_BOT?.REQUIRED_PREREQUISITES?.adAstra ?? 0.5);
     const missing = [];
 
     if ((inv.iron || 0) < req) {
@@ -1580,8 +1585,8 @@ export class GameStateManager {
     if ((inv.wheat || 0) < req) {
       missing.push({ key: 'wheat', name: 'Buğday', icon: '🌾', current: (inv.wheat || 0), required: req, missing: Math.ceil(req - (inv.wheat || 0)) });
     }
-    if (ada < req) {
-      missing.push({ key: 'adAstra', name: '$ADASTRA', icon: '🟣', current: ada, required: req, missing: Math.ceil(req - ada) });
+    if (ada < reqAda) {
+      missing.push({ key: 'adAstra', name: 'ASTRA', icon: '🟣', current: ada, required: reqAda, missing: round3(reqAda - ada) });
     }
 
     return {
@@ -1610,11 +1615,11 @@ export class GameStateManager {
     }
 
     const deficit = Math.max(0, neededTarget - curAda);
-    // Küçük tampon (+2 ADA ve %3 marj) ekleyerek AMM slippage/fiyat kayması olsa bile hedefe tam ulaş
-    const targetToRaise = Math.max(1, Math.ceil(deficit * 1.03 + 2));
+    // Küçük tampon (%3 marj + 0,02 ASTRA) ekleyerek AMM slippage/fiyat kayması olsa bile hedefe tam ulaş (v2 ölçekli)
+    const targetToRaise = Math.max(0.01, deficit * 1.03 + 0.02);
 
     const inv = this.state.inventory = this.state.inventory || {};
-    const nodes = ['wood', 'iron', 'wheat'];
+    const nodes = RES_KEYS();
 
     // Her malzemenin anlık satış fiyatını al
     const prices = {};
@@ -1641,26 +1646,19 @@ export class GameStateManager {
     // v1.25: Botun çalışma önkoşulu olan 50'lik taban da her zaman korunur; bot hiçbir malzemeyi
     // 50'nin altına satmaz (sat-al kısır döngüsünün kaynağı buydu).
     const floorKeep = 50;
-    const curStocks = {
-      wood: Math.max(0, (Number(inv.wood) || 0) - (preserveResources?.wood || 0) - floorKeep),
-      iron: Math.max(0, (Number(inv.iron) || 0) - (preserveResources?.iron || 0) - floorKeep),
-      wheat: Math.max(0, (Number(inv.wheat) || 0) - (preserveResources?.wheat || 0) - floorKeep)
-    };
+    const curStocks = {};
+    for (const n of nodes) curStocks[n] = Math.max(0, (Number(inv[n]) || 0) - (preserveResources?.[n] || 0) - floorKeep);
 
     // Tüm malzemelerden eşit miktarda satmayı hedefle
-    const toSell = { wood: 0, iron: 0, wheat: 0 };
-    const minStock = Math.min(curStocks.wood, curStocks.iron, curStocks.wheat);
+    const toSell = zeroRes();
+    const minStock = Math.min(...nodes.map(n => curStocks[n]));
 
     if (minStock >= unitsPerNode) {
       // Her malzemede yeterli stok var: tam olarak eşit miktarda sat!
-      toSell.wood = unitsPerNode;
-      toSell.iron = unitsPerNode;
-      toSell.wheat = unitsPerNode;
+      for (const n of nodes) toSell[n] = unitsPerNode;
     } else if (minStock > 0) {
       // Ortak minimum kadar eşit sat, kalan açığı stokları elverenler arasında eşit paylaştır
-      toSell.wood = minStock;
-      toSell.iron = minStock;
-      toSell.wheat = minStock;
+      for (const n of nodes) toSell[n] = minStock;
 
       const raisedSoFar = minStock * sumPrices;
       let remainingToRaise = Math.max(0, targetToRaise - raisedSoFar);
@@ -1692,7 +1690,7 @@ export class GameStateManager {
       }
     }
 
-    const totalUnitsPlanned = toSell.wood + toSell.iron + toSell.wheat;
+    const totalUnitsPlanned = nodes.reduce((s, n) => s + (toSell[n] || 0), 0);
     if (totalUnitsPlanned <= 0) {
       return { funded: false, reason: 'no_inventory_available' };
     }
@@ -1718,7 +1716,7 @@ export class GameStateManager {
       for (const [k, v] of Object.entries(soldBreakdown)) this._onAdaEarned(v.earned, { saleOf: k });
       this.saveState();
 
-      const actionMsg = `⚖️ Bot Oto-Finansman: Alet onarımı / tamir için gereken ADA açığı giderildi. Depodan eşit miktarda (${toSell.wood} Odun, ${toSell.iron} Demir, ${toSell.wheat} Buğday) satılarak pazardan +${totalEarned.toFixed(1)} $ADASTRA elde edildi.`;
+      const actionMsg = `⚖️ Bot Oto-Finansman: Alet onarımı / tamir için gereken ASTRA açığı giderildi. Depodan eşit miktarda (${nodes.filter(n => toSell[n] > 0).map(n => `${toSell[n]} ${this.getResourceNameTr(n)}`).join(', ')}) satılarak pazardan +${totalEarned.toFixed(2)} ASTRA elde edildi.`;
       if (!this.state.lastBotActions) this.state.lastBotActions = [];
       this.state.lastBotActions.push(actionMsg);
 
@@ -1770,7 +1768,7 @@ export class GameStateManager {
     const targetWheat = Math.max(50, Math.ceil(singleExpStaminaWheat * 1.5));
 
     // Ambar kapasitesi sınırını taşmayacak şekilde sınırla (%80 ambar doluluğu tavanı)
-    const cap = this.getWarehouseCapacity ? this.getWarehouseCapacity() : { wood: 1000, iron: 1000, wheat: 1000 };
+    const cap = this.getWarehouseCapacity ? this.getWarehouseCapacity() : Object.fromEntries(RES_KEYS().map(k => [k, 1000]));
 
     return {
       level: lvl,
@@ -1799,9 +1797,9 @@ export class GameStateManager {
 
     const inv = this.state.inventory = this.state.inventory || {};
     let curAda = Number(this.state.adAstraBalance) || 0;
-    // v1.25: Bot, çalışma önkoşulu olan 50 ADA'yı asla harcamaz; yalnızca üstündeki parayla alım yapar.
-    const adaFloor = 50;
-    if (curAda - adaFloor <= 0.5) {
+    // v1.25: Bot, çalışma önkoşulu olan ASTRA'yı asla harcamaz; yalnızca üstündeki parayla alım yapar. (v2 ölçekli)
+    const adaFloor = Number(GAME_CONFIG.TAVERNA_BOT?.REQUIRED_PREREQUISITES?.adAstra ?? 0.5);
+    if (curAda - adaFloor <= 0.005) {
       return { bought: false, reason: 'no_ada_balance', currentBalance: curAda };
     }
 
@@ -1814,7 +1812,7 @@ export class GameStateManager {
       wheat: (customTarget && typeof customTarget === 'object' && customTarget.wheat != null) ? customTarget.wheat : 50
     };
 
-    const nodes = ['wood', 'iron', 'wheat'];
+    const nodes = Object.keys(targets);
     const missingNodes = [];
     for (const node of nodes) {
       const cur = Number(inv[node]) || 0;
@@ -1840,7 +1838,7 @@ export class GameStateManager {
 
     for (const item of missingNodes) {
       const spendable = curAda - adaFloor;
-      if (spendable <= 0.1) break;
+      if (spendable <= 0.001) break;
       const node = item.node;
       let qtyToBuy = item.missing;
 
@@ -1928,15 +1926,16 @@ export class GameStateManager {
     // Artık: satış yalnızca 50'nin ÜSTÜNDEKİ fazladan yapılır, alım yalnızca 50 ADA'nın ÜSTÜNDEKİ parayla yapılır.
     if (!prereq.isMet) {
       const hasAdaMissing = prereq.missing.some(m => m.key === 'adAstra');
-      const resMissing = prereq.missing.filter(m => ['wood', 'iron', 'wheat'].includes(m.key));
+      const resMissing = prereq.missing.filter(m => RES_KEYS().includes(m.key));
+      const adaFloor = Number(GAME_CONFIG.TAVERNA_BOT?.REQUIRED_PREREQUISITES?.adAstra ?? 0.5);
       if (hasAdaMissing || resMissing.length > 0) {
-        // Eksik malzemenin tahmini alım maliyeti + 50 ADA önkoşulu kadar para topla (tek seferde)
+        // Eksik malzemenin tahmini alım maliyeti + ASTRA önkoşulu kadar para topla (tek seferde)
         let buyCost = 0;
         for (const m of resMissing) {
           const c = (ammMarket && ammMarket.getEstimatedCostForBuy) ? ammMarket.getEstimatedCostForBuy(m.key, m.missing) : 0;
           if (isFinite(c)) buyCost += c;
         }
-        const needAda = 50 + Math.ceil(buyCost * 1.03 + 1);
+        const needAda = adaFloor + buyCost * 1.03 + 0.01;
         if ((this.state.adAstraBalance || 0) < needAda) {
           const fundRes = this.autoFundBotAdaDeficit(needAda);
           if (fundRes && fundRes.funded) prereq = this.checkBotPrerequisites();
@@ -1947,8 +1946,8 @@ export class GameStateManager {
     // 2) KULLANICI KURALI: Eğer Hammadde (Odun, Demir, Buğday) < 50 olduğu için duracaksa ve kasada ADA varsa:
     // Pazarından SADECE eksik olan kadar (50'ye tamamlayacak kadar minimal) satın al ve botun durmasını engelle!
     if (!prereq.isMet) {
-      const hasResourceMissing = prereq.missing.some(m => ['wood', 'iron', 'wheat'].includes(m.key));
-      if (hasResourceMissing && (this.state.adAstraBalance || 0) > 50) {
+      const hasResourceMissing = prereq.missing.some(m => RES_KEYS().includes(m.key));
+      if (hasResourceMissing && (this.state.adAstraBalance || 0) > Number(GAME_CONFIG.TAVERNA_BOT?.REQUIRED_PREREQUISITES?.adAstra ?? 0.5)) {
         const buyRes = this.autoBuyBotResourceDeficit(50);
         if (buyRes && buyRes.bought) {
           prereq = this.checkBotPrerequisites();
@@ -2154,8 +2153,7 @@ export class GameStateManager {
     const limit = cap[nodeId];
     const currentAmount = Number(this.state.inventory[nodeId]) || 0;
     const availableRoom = limit != null ? Math.max(0, limit - currentAmount) : accruedInfo.accruedAmount;
-    const resourceDisplayNames = { wood: 'odun', iron: 'demir', wheat: 'buğday' };
-    const rLabel = resourceDisplayNames[nodeId] || nodeConfig.name;
+    const rLabel = (this.getResourceNameTr(nodeId) || nodeConfig.name).toLocaleLowerCase('tr-TR');
 
     // 1. Durum: Depoda HİÇ boş yer yok
     if (limit != null && availableRoom <= 0) {
@@ -2220,7 +2218,7 @@ export class GameStateManager {
   enforceWarehouseLimits() {
     if (!this.state || !this.state.inventory) return;
     const cap = this.getWarehouseCapacity();
-    for (const res of ['wood', 'iron', 'wheat']) {
+    for (const res of RES_KEYS()) {
       const limit = cap[res];
       if (limit != null && typeof limit === 'number' && limit > 0) {
         const cur = Number(this.state.inventory[res]) || 0;
@@ -2324,8 +2322,7 @@ export class GameStateManager {
     const limit = cap[nodeId];
     let currentAmount = Number(this.state.inventory[nodeId]) || 0;
     let availableRoom = limit != null ? Math.max(0, limit - currentAmount) : remainingToClaim;
-    const resourceDisplayNames = { wood: 'odun', iron: 'demir', wheat: 'buğday' };
-    const rLabel = resourceDisplayNames[nodeId] || nodeId;
+    const rLabel = (this.getResourceNameTr(nodeId) || nodeId).toLocaleLowerCase('tr-TR');
 
     // 🤖 Otomasyon Botu Aktifse:
     let botSurplusSold = 0;
@@ -2460,7 +2457,7 @@ export class GameStateManager {
 
   // ✨ 60+ YAŞ ÖZEL: TEK TIKLA TÜM KASABADAN MAHSUL & VERGİ TOPLA (SWEEP HARVEST)
   claimAllHarvests() {
-    const nodes = ['wheat', 'wood', 'iron'];
+    const nodes = RES_KEYS();
     let totalHarvested = 0;
     let totalXp = 0;
     const collectedDetails = [];
@@ -2505,7 +2502,7 @@ export class GameStateManager {
   }
 
   sweepCompletedExpeditions() {
-    const nodes = ['wheat', 'wood', 'iron'];
+    const nodes = RES_KEYS();
     let totalHarvested = 0;
     let totalXp = 0;
     const collectedDetails = [];
@@ -2567,7 +2564,7 @@ export class GameStateManager {
 
     // 1. Hazır bekleyen sefer mahsulü varsa
     let readyExpCount = 0;
-    for (const node of ['wheat', 'wood', 'iron']) {
+    for (const node of RES_KEYS()) {
       if (exp[node] && exp[node].isCompleted) readyExpCount++;
     }
     if (readyExpCount > 0) {
@@ -2593,7 +2590,7 @@ export class GameStateManager {
     }
 
     // 3. İşçiler boştaysa
-    const idleNodes = ['wheat', 'wood', 'iron'].filter(n => !exp[n]);
+    const idleNodes = RES_KEYS().filter(n => !exp[n]);
     if (idleNodes.length > 0) {
       return {
         icon: '⛏️',
@@ -2709,11 +2706,12 @@ export class GameStateManager {
       const sWood = ammMarket.getEstimatedAdAstraForSell('wood', wood);
       const sIron = ammMarket.getEstimatedAdAstraForSell('iron', iron);
       const sWheat = ammMarket.getEstimatedAdAstraForSell('wheat', wheat);
-      adAstra = Math.max(1, Math.round(sWood + sIron + sWheat));
-      ammBreakdown = { wood: Math.round(sWood), iron: Math.round(sIron), wheat: Math.round(sWheat) };
+      adAstra = Math.max(0.001, round3(sWood + sIron + sWheat));
+      ammBreakdown = { wood: round3(sWood), iron: round3(sIron), wheat: round3(sWheat) };
     } else {
-      adAstra = Math.round(wood * 2.5 + iron * 4.0 + wheat * 0.9);
-      ammBreakdown = { wood: Math.round(wood * 2.5), iron: Math.round(iron * 4.0), wheat: Math.round(wheat * 0.9) };
+      const P = k => (GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 0.01;
+      adAstra = round3(wood * P('wood') + iron * P('iron') + wheat * P('wheat'));
+      ammBreakdown = { wood: round3(wood * P('wood')), iron: round3(iron * P('iron')), wheat: round3(wheat * P('wheat')) };
     }
 
     const curFragRate = this.getFragmentDropRate(curLvl);
@@ -2911,22 +2909,23 @@ export class GameStateManager {
     const woodCost = Math.ceil(missingDurability * woodCostPerMin);
     const ironCost = Math.ceil(missingDurability * ironCostPerMin);
 
-    // Kural: Talep edilen odun ve demirin anlık market fiyatlarına (AMM DEX) eşdeğerde $ADASTRA alınır!
+    // Kural (v2, R3): istenen odun ve demirin pazar değerinin TOOL_REPAIR_ADA_SHARE (%30) kadarı ASTRA
+    const adaShare = Number(GAME_CONFIG.TOOL_REPAIR_ADA_SHARE ?? 0.3);
     let adAstraCost = 0;
     let ammBreakdown = { wood: 0, iron: 0 };
     if (missingDurability > 0) {
       if (typeof ammMarket !== 'undefined' && ammMarket && ammMarket.calculateResourcesAdAstraValue) {
         const ammCalc = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost });
-        adAstraCost = Math.max(1, ammCalc.totalAda);
+        adAstraCost = Math.max(0.001, round3(ammCalc.totalAda * adaShare));
         ammBreakdown = ammCalc.breakdown;
       } else {
-        const pWood = (typeof ammMarket !== 'undefined' && ammMarket.getPrice) ? (ammMarket.getPrice('wood') || 2.5) : 2.5;
-        const pIron = (typeof ammMarket !== 'undefined' && ammMarket.getPrice) ? (ammMarket.getPrice('iron') || 4.0) : 4.0;
-        adAstraCost = Math.max(1, Math.round(woodCost * pWood + ironCost * pIron));
-        ammBreakdown = { wood: Math.round(woodCost * pWood), iron: Math.round(ironCost * pIron) };
+        const pWood = (typeof ammMarket !== 'undefined' && ammMarket.getPrice) ? (ammMarket.getPrice('wood') || 0.025) : 0.025;
+        const pIron = (typeof ammMarket !== 'undefined' && ammMarket.getPrice) ? (ammMarket.getPrice('iron') || 0.04) : 0.04;
+        adAstraCost = Math.max(0.001, round3((woodCost * pWood + ironCost * pIron) * adaShare));
+        ammBreakdown = { wood: round3(woodCost * pWood), iron: round3(ironCost * pIron) };
       }
     }
-    const adAstraCostPerMin = missingDurability > 0 ? parseFloat((adAstraCost / missingDurability).toFixed(2)) : 0;
+    const adAstraCostPerMin = missingDurability > 0 ? parseFloat((adAstraCost / missingDurability).toFixed(5)) : 0;
 
     return {
       toolName: toolConfig.name,
@@ -2975,7 +2974,7 @@ export class GameStateManager {
     if (this.state.adAstraBalance < cost.adAstraCost) {
       return {
         success: false,
-        message: `Yetersiz AdAstra! (${cost.adAstraCost} $ADASTRA gerekli, sende: ${Number(this.state.adAstraBalance || 0).toFixed(1)} ADA)`
+        message: `Yetersiz ASTRA! (${cost.adAstraCost} ASTRA gerekli, sende: ${Number(this.state.adAstraBalance || 0).toFixed(2)} ASTRA)`
       };
     }
 
@@ -2994,7 +2993,7 @@ export class GameStateManager {
 
     return {
       success: true,
-      message: `🔧 ${cost.toolName} tamamen onarıldı (${maxDur}/${maxDur} dk)! (-${cost.woodCost} Odun, -${cost.ironCost} Demir, -${cost.adAstraCost} ADA)`
+      message: `🔧 ${cost.toolName} tamamen onarıldı (${maxDur}/${maxDur} dk)! (-${cost.woodCost} Odun, -${cost.ironCost} Demir, -${cost.adAstraCost} ASTRA)`
     };
   }
 
@@ -3019,88 +3018,71 @@ export class GameStateManager {
   //   - Odun: 90.000 (180k haftalık havuz limitinin %50'si)
   //   - Demir: 65.000 (130k haftalık havuz limitinin %50'si)
   //   - Buğday: 245.000 (490k haftalık havuz limitinin %50'si)
+  // v2: 6 hammadde + parça; 13+ seviye Universe açılana kadar kapalı (universeGateLevel)
+  getWarehouseMaxLevel() {
+    const W = GAME_CONFIG.WAREHOUSE || {};
+    const gate = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? (W.baseLevels || 18) : (W.universeGateLevel || W.baseLevels || 18);
+    return Math.min(W.baseLevels || 18, gate);
+  }
+
   getWarehouseCapacity(level = this.state.warehouseLevel) {
     const { baseLevels: maxLevel, initialCapacities: min, maxCapacities: max, fragmentsPerLevel } = GAME_CONFIG.WAREHOUSE;
     const lvl = Math.max(1, Math.min(maxLevel, level));
-    if (lvl === maxLevel) return { ...max };
     const step = lvl - 1;
-    const grow = res => Math.round(min[res] * Math.pow(Math.pow(max[res] / min[res], 1 / (maxLevel - 1)), step));
-
-    return {
-      wood: grow('wood'),
-      iron: grow('iron'),
-      wheat: grow('wheat'),
-      fragments: Math.round(min.fragments + step * fragmentsPerLevel)
-    };
+    const grow = res => (lvl === maxLevel ? max[res] : Math.round(min[res] * Math.pow(Math.pow(max[res] / min[res], 1 / (maxLevel - 1)), step)));
+    const cap = {};
+    for (const k of RES_KEYS()) cap[k] = min[k] != null && max[k] != null ? grow(k) : null;
+    cap.fragments = lvl === maxLevel ? max.fragments : Math.round(min.fragments + step * fragmentsPerLevel);
+    return cap;
   }
 
   getWarehouseUpgradeCost(currentLevel = this.state.warehouseLevel) {
-    const maxLevel = (GAME_CONFIG.WAREHOUSE && GAME_CONFIG.WAREHOUSE.baseLevels) || 18;
+    const maxLevel = this.getWarehouseMaxLevel();
     if (currentLevel >= maxLevel) return null;
 
     const currentCap = this.getWarehouseCapacity(currentLevel);
     const nextCap = this.getWarehouseCapacity(currentLevel + 1);
+    const keys = RES_KEYS().filter(k => currentCap[k] != null);
 
-    // Kural: Her bir kaynak için maksimum silo kapasitesinin yarısı (maxCap / 2)
-    // Başlangıç Seviye 1 için: Odun: 1080/2 = 540, Demir: 720/2 = 360, Buğday: 900/2 = 450
-    const wood = Math.floor(currentCap.wood / 2);
-    const iron = Math.floor(currentCap.iron / 2);
-    const wheat = Math.floor(currentCap.wheat / 2);
+    // Kural: her hammadde için mevcut kapasitenin yarısı
+    const costs = {};
+    for (const k of keys) costs[k] = Math.floor(currentCap[k] / 2);
 
-    // Kural: Tüm bu kaynakların anlık olarak pazarda (AMM DEX) satılsa kaç AdAstra edeceği
+    // Kural: bu hammaddelerin pazarda (havuz) satılsa kaç ASTRA edeceği
     let adAstra = 0;
-    let ammBreakdown = { wood: 0, iron: 0, wheat: 0 };
+    let ammBreakdown = zeroRes();
     if (typeof ammMarket !== 'undefined' && ammMarket && ammMarket.calculateResourcesAdAstraValue) {
-      const calc = ammMarket.calculateResourcesAdAstraValue({ wood, iron, wheat });
+      const calc = ammMarket.calculateResourcesAdAstraValue(costs);
       adAstra = calc.totalAda;
       ammBreakdown = calc.breakdown;
-    } else if (typeof ammMarket !== 'undefined' && ammMarket.getEstimatedAdAstraForSell) {
-      const sellWood = ammMarket.getEstimatedAdAstraForSell('wood', wood);
-      const sellIron = ammMarket.getEstimatedAdAstraForSell('iron', iron);
-      const sellWheat = ammMarket.getEstimatedAdAstraForSell('wheat', wheat);
-      adAstra = Math.max(1, Math.round(sellWood + sellIron + sellWheat));
-      ammBreakdown = { wood: Math.round(sellWood), iron: Math.round(sellIron), wheat: Math.round(sellWheat) };
     } else {
-      const pWood = 2.5;
-      const pIron = 4.0;
-      const pWheat = 0.9;
-      adAstra = Math.round(wood * pWood + iron * pIron + wheat * pWheat);
-      ammBreakdown = { wood: Math.round(wood * pWood), iron: Math.round(iron * pIron), wheat: Math.round(wheat * pWheat) };
+      for (const k of keys) { const p = (GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 0.01; ammBreakdown[k] = round3(costs[k] * p); adAstra += costs[k] * p; }
+      adAstra = round3(adAstra);
     }
 
-    // Kural: Siloyu yükseltmek için tüm kaynak depoları %80 DOLU olmak zorunda!
+    // Kural: Siloyu yükseltmek için tüm hammadde depoları %80 DOLU olmak zorunda!
     const inv = this.state.inventory || {};
-    const curWood = inv.wood || 0;
-    const curIron = inv.iron || 0;
-    const curWheat = inv.wheat || 0;
-
-    const reqWoodFill = Math.round(currentCap.wood * 0.8);
-    const reqIronFill = Math.round(currentCap.iron * 0.8);
-    const reqWheatFill = Math.round(currentCap.wheat * 0.8);
-
-    const isWood80 = curWood >= reqWoodFill;
-    const isIron80 = curIron >= reqIronFill;
-    const isWheat80 = curWheat >= reqWheatFill;
-    const is80PercentFull = isWood80 && isIron80 && isWheat80;
-
-    const canAffordCost = curWood >= wood && curIron >= iron && curWheat >= wheat && (this.state.adAstraBalance || 0) >= adAstra;
+    const fills = {}, fillOk = {};
+    for (const k of keys) { fills[k] = Math.round(currentCap[k] * 0.8); fillOk[k] = (inv[k] || 0) >= fills[k]; }
+    const is80PercentFull = keys.every(k => fillOk[k]);
+    const canAffordCost = keys.every(k => (inv[k] || 0) >= costs[k]) && (this.state.adAstraBalance || 0) >= adAstra;
 
     return {
       currentLevel,
       nextLevel: currentLevel + 1,
+      maxLevel,
       currentCap,
       nextCap,
-      wood,
-      iron,
-      wheat,
+      keys,
+      costs,
+      fills,
+      fillOk,
+      // geriye dönük alanlar (eski ekranlar ve testler)
+      wood: costs.wood || 0, iron: costs.iron || 0, wheat: costs.wheat || 0,
+      reqWoodFill: fills.wood || 0, reqIronFill: fills.iron || 0, reqWheatFill: fills.wheat || 0,
+      isWood80: fillOk.wood !== false, isIron80: fillOk.iron !== false, isWheat80: fillOk.wheat !== false,
       adAstra,
       ammBreakdown,
-      reqWoodFill,
-      reqIronFill,
-      reqWheatFill,
-      isWood80,
-      isIron80,
-      isWheat80,
       is80PercentFull,
       canAffordCost,
       canUpgrade: is80PercentFull && canAffordCost
@@ -3110,16 +3092,14 @@ export class GameStateManager {
   upgradeWarehouse() {
     const cost = this.getWarehouseUpgradeCost();
     if (!cost) {
-      return { success: false, message: 'Deponuz zaten maksimum seviyede!' };
+      const gated = (this.state.warehouseLevel || 1) < ((GAME_CONFIG.WAREHOUSE || {}).baseLevels || 18);
+      return { success: false, message: gated ? '🚀 Silonun 13. seviyesi ve üstü Universe alüminyumu ister; Universe açılınca devam eder.' : 'Deponuz zaten maksimum seviyede!' };
     }
 
-    // 1. ÖN KOŞUL: Tüm kaynak depoları en az %80 dolu olmak zorunda!
+    const inv = this.state.inventory || {};
+    // 1. ÖN KOŞUL: Tüm hammadde depoları en az %80 dolu olmak zorunda!
     if (!cost.is80PercentFull) {
-      const unfulfilled = [];
-      const inv = this.state.inventory || {};
-      if (!cost.isWood80) unfulfilled.push(`🌲 Odun (${(inv.wood || 0).toFixed(0)}/${cost.reqWoodFill})`);
-      if (!cost.isIron80) unfulfilled.push(`⛏️ Demir (${(inv.iron || 0).toFixed(0)}/${cost.reqIronFill})`);
-      if (!cost.isWheat80) unfulfilled.push(`🌾 Buğday (${(inv.wheat || 0).toFixed(0)}/${cost.reqWheatFill})`);
+      const unfulfilled = cost.keys.filter(k => !cost.fillOk[k]).map(k => `${this.getResourceIcon(k)} ${this.getResourceNameTr(k)} (${Math.floor(inv[k] || 0)}/${cost.fills[k]})`);
       return {
         success: false,
         message: `⚠️ Silo yükseltilemez! Tüm depolar en az %80 dolu olmalıdır. Yetersiz olanlar: ${unfulfilled.join(', ')}`
@@ -3127,25 +3107,16 @@ export class GameStateManager {
     }
 
     // 2. MALİYET KONTROLÜ
-    const inv = this.state.inventory;
-    if ((inv.wood || 0) < cost.wood) {
-      return { success: false, message: `Yetersiz Odun! (${cost.wood} Odun gerekli)` };
-    }
-    if ((inv.iron || 0) < cost.iron) {
-      return { success: false, message: `Yetersiz Demir! (${cost.iron} Demir gerekli)` };
-    }
-    if ((inv.wheat || 0) < cost.wheat) {
-      return { success: false, message: `Yetersiz Buğday! (${cost.wheat} Buğday gerekli)` };
+    for (const k of cost.keys) {
+      if ((inv[k] || 0) < cost.costs[k]) return { success: false, message: `Yetersiz ${this.getResourceNameTr(k)}! (${cost.costs[k]} ${this.getResourceNameTr(k)} gerekli)` };
     }
     if ((this.state.adAstraBalance || 0) < cost.adAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstra} $ADASTRA gerekli)` };
+      return { success: false, message: `Yetersiz ASTRA! (${cost.adAstra} ASTRA gerekli)` };
     }
 
     // Maliyetleri düş
-    inv.wood -= cost.wood;
-    inv.iron -= cost.iron;
-    inv.wheat -= cost.wheat;
-    this.burnResources({ wood: cost.wood, iron: cost.iron, wheat: cost.wheat });
+    for (const k of cost.keys) inv[k] -= cost.costs[k];
+    this.burnResources(cost.costs);
     this.state.adAstraBalance -= cost.adAstra;
     this._onAdaSpent(cost.adAstra);
     globalPool.recordTokenSpend(cost.adAstra);
@@ -3158,7 +3129,7 @@ export class GameStateManager {
     const newCap = this.getWarehouseCapacity(this.state.warehouseLevel);
     return {
       success: true,
-      message: `🏰 Silo Seviye ${this.state.warehouseLevel}'e yükseltildi! Yeni Kapasiteler: 🌲 ${newCap.wood} Odun, ⛏️ ${newCap.iron} Demir, 🌾 ${newCap.wheat} Buğday.`
+      message: `🏰 Silo Seviye ${this.state.warehouseLevel}'e yükseltildi! Yeni kapasiteler: ${cost.keys.map(k => `${this.getResourceIcon(k)} ${newCap[k]}`).join(' · ')}.`
     };
   }
 
@@ -3310,8 +3281,9 @@ export class GameStateManager {
     const lvl = Math.max(1, item?.level || 1);
     const atk = item?.baseAtk || (item?.slot === 'weapon' ? 25 : 0);
     const hp = item?.baseHp || (item?.slot !== 'weapon' ? 50 : 0);
-    const baseWood = Math.max(15, atk * (18 * 18) + hp * (21 * 18));
-    const baseIron = Math.max(20, atk * (18 * 12) + hp * (21 * 12));
+    // v2: 1 ATK = 18 dk, 1 HP = 21 dk üretim; dakikalık taban üretimle çarpılır (×0,3 ölçek)
+    const baseWood = Math.max(15, Math.round((atk * 18 + hp * 21) * (GAME_CONFIG.BASE_PRODUCTION?.wood ?? 18)));
+    const baseIron = Math.max(20, Math.round((atk * 18 + hp * 21) * (GAME_CONFIG.BASE_PRODUCTION?.iron ?? 12)));
 
     let totalWood = 0;
     let totalIron = 0;
@@ -3335,18 +3307,24 @@ export class GameStateManager {
       : (recipeOrSlot || {});
     const atk = recipe.baseAtk || 0;
     const hp = recipe.baseHp || 0;
-    const wood = Math.max(15, atk * (18 * 18) + hp * (21 * 18));
-    const iron = Math.max(20, atk * (18 * 12) + hp * (21 * 12));
+    // v2: 1 ATK = 18 dk, 1 HP = 21 dk üretim (dakikalık taban üretimle çarpılır); kömür demirin üçte biri kadar dakika
+    const minutes = atk * 18 + hp * 21;
+    const P = GAME_CONFIG.BASE_PRODUCTION || {};
+    const wood = Math.max(15, Math.round(minutes * (P.wood ?? 18)));
+    const iron = Math.max(20, Math.round(minutes * (P.iron ?? 12)));
+    const coal = P.coal > 0 ? Math.max(10, Math.round(minutes * P.coal / 3)) : 0;
     const fragments = 1;
-    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood, iron }).totalAda;
+    const adaCost = ammMarket.calculateResourcesAdAstraValue(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
 
     return {
       wood,
       iron,
+      coal,
       fragments,
       adAstra: adaCost,
       woodCost: wood,
       ironCost: iron,
+      coalCost: coal,
       fragCost: fragments,
       adaCost: adaCost
     };
@@ -3376,6 +3354,9 @@ export class GameStateManager {
     if ((inv.wood || 0) < cost.wood) {
       return { success: false, message: `Yetersiz Odun! (${cost.wood} Odun gerekli)` };
     }
+    if ((cost.coal || 0) > 0 && (inv.coal || 0) < cost.coal) {
+      return { success: false, message: `Yetersiz Kömür! (${cost.coal} Kömür gerekli)` };
+    }
     if (this.state.adAstraBalance < cost.adAstra) {
       return { success: false, message: `Yetersiz AdAstra! (${cost.adAstra} $ADASTRA gerekli)` };
     }
@@ -3384,7 +3365,8 @@ export class GameStateManager {
     this.burnItem('fragments', cost.fragments);
     inv.iron -= cost.iron;
     inv.wood -= cost.wood;
-    this.burnResources({ wood: cost.wood, iron: cost.iron });
+    if ((cost.coal || 0) > 0) inv.coal = (inv.coal || 0) - cost.coal;
+    this.burnResources({ wood: cost.wood, iron: cost.iron, coal: cost.coal || 0 });
     this.state.adAstraBalance -= cost.adAstra;
     this._onAdaSpent(cost.adAstra);
     globalPool.recordTokenSpend(cost.adAstra);
@@ -3998,62 +3980,64 @@ export class GameStateManager {
     const lvl = this.state.level || 1;
     const mult = this.getLevelProductionMultiplier(lvl);
     const base = GAME_CONFIG.BASE_PRODUCTION;
-    const prod = { wood: base.wood * mult, iron: base.iron * mult, wheat: base.wheat * mult };
-    const woodPrice = ammMarket.getPrice('wood') || 2.50;
-    const ironPrice = ammMarket.getPrice('iron') || 4.00;
-    const wheatPrice = ammMarket.getPrice('wheat') || 0.90;
+    const keys = RES_KEYS();
+    const prod = {}, prices = {};
+    for (const k of keys) {
+      prod[k] = (base[k] || 0) * mult;
+      prices[k] = ammMarket.getPrice(k) || ((GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 0.01);
+    }
+    const woodPrice = prices.wood, ironPrice = prices.iron, wheatPrice = prices.wheat;
 
-    const grossValuePerMin = (prod.wood * woodPrice) + (prod.iron * ironPrice) + (prod.wheat * wheatPrice);
+    const grossValuePerMin = keys.reduce((s, k) => s + prod[k] * prices[k], 0);
     const durMin = Math.max(1, this.getExpeditionDurationMinutes(lvl));
     const regenPerMin = 60 / (GAME_CONFIG.STAMINA_NATURAL_REGEN_INTERVAL || 150);
-    const staminaPerMin = Math.max(0, (3 * this.getExpeditionStaminaCost(lvl)) / durMin - regenPerMin);
+    const staminaPerMin = Math.max(0, (keys.length * this.getExpeditionStaminaCost(lvl)) / durMin - regenPerMin);
     const wheatPerMinForStamina = staminaPerMin * (GAME_CONFIG.WHEAT_PER_STAMINA || 3.15);
     const staminaCostPerMinAda = wheatPerMinForStamina * wheatPrice;
 
     // Alet aşınması: her alet dakikada 1 dayanıklılık; onarım = dakikalık odun/demir üretiminin %25'i
-    // (3 alete bölünmüş) + aynı değerde ADA
+    // (aletlere bölünmüş) + bu malzemenin değerinin TOOL_REPAIR_ADA_SHARE kadarı ASTRA (v2)
     const toolWoodPerMin = prod.wood * 0.25;
     const toolIronPerMin = prod.iron * 0.25;
     const toolMaterialCostPerMinAda = (toolWoodPerMin * woodPrice) + (toolIronPerMin * ironPrice);
-    const toolAdaPerMin = toolMaterialCostPerMinAda;
+    const toolAdaPerMin = toolMaterialCostPerMinAda * Number(GAME_CONFIG.TOOL_REPAIR_ADA_SHARE ?? 0.3);
     const toolCostPerMinAda = toolMaterialCostPerMinAda + toolAdaPerMin;
 
-    // Haftalık dünya kotası: kalan kota bir günlük üretimden azsa, o kaynağın kazancı kotayla sınırlıdır
+    // Üretim Hakkı: kalan hak bir günlük üretimden azsa, o kaynağın kazancı hakla sınırlıdır
     let grossDay = 0;
     let quotaLimited = false;
-    const prices = { wood: woodPrice, iron: ironPrice, wheat: wheatPrice };
-    for (const r of ['wood', 'iron', 'wheat']) {
+    for (const r of keys) {
       const dayProd = prod[r] * 1440;
       const info = (globalPool && globalPool.getResourceInfo) ? globalPool.getResourceInfo(r) : null;
       const remaining = info ? Number(info.remaining) : dayProd;
       if (remaining < dayProd) quotaLimited = true;
       grossDay += prices[r] * Math.min(dayProd, Math.max(0, remaining));
     }
-    const netProfitPerMin = Math.max(1, grossValuePerMin - staminaCostPerMinAda - toolCostPerMinAda);
-    const netProfit24h = Math.max(1, Math.round(Math.min(netProfitPerMin * 1440, grossDay - (staminaCostPerMinAda + toolCostPerMinAda) * 1440)));
-    const botCostAda = Math.max(100, Math.round(netProfit24h * 0.50));
+    const netProfitPerMin = Math.max(0.0001, grossValuePerMin - staminaCostPerMinAda - toolCostPerMinAda);
+    const netProfit24h = Math.max(0.01, round3(Math.min(netProfitPerMin * 1440, grossDay - (staminaCostPerMinAda + toolCostPerMinAda) * 1440)));
+    const botCostAda = Math.max(1, round3(netProfit24h * 0.50));
 
     return {
-      grossValuePerMin: parseFloat(grossValuePerMin.toFixed(2)),
-      staminaCostPerMinAda: parseFloat(staminaCostPerMinAda.toFixed(2)),
-      toolCostPerMinAda: parseFloat(toolCostPerMinAda.toFixed(2)),
-      netProfitPerMin: parseFloat(netProfitPerMin.toFixed(2)),
-      netProfit24h: Math.round(netProfit24h),
-      grossRevenueAda: Math.round(grossValuePerMin * 1440),
-      staminaWheatCostAda: Math.round(staminaCostPerMinAda * 1440),
-      toolRepairCostAda: Math.round(toolCostPerMinAda * 1440),
-      netProfitAda: Math.round(netProfit24h),
+      grossValuePerMin: round3(grossValuePerMin),
+      staminaCostPerMinAda: round3(staminaCostPerMinAda),
+      toolCostPerMinAda: round3(toolCostPerMinAda),
+      netProfitPerMin: round3(netProfitPerMin),
+      netProfit24h: round3(netProfit24h),
+      grossRevenueAda: round3(grossValuePerMin * 1440),
+      staminaWheatCostAda: round3(staminaCostPerMinAda * 1440),
+      toolRepairCostAda: round3(toolCostPerMinAda * 1440),
+      netProfitAda: round3(netProfit24h),
       botCostAda,
-      dailyGrossValAda: Math.round(grossValuePerMin * 1440),
-      dailyStaminaCostAda: Math.round(staminaCostPerMinAda * 1440),
+      dailyGrossValAda: round3(grossValuePerMin * 1440),
+      dailyStaminaCostAda: round3(staminaCostPerMinAda * 1440),
       dailyWheatNeededForStamina: Math.round(wheatPerMinForStamina * 1440),
-      dailyToolRepairAda: Math.round(toolCostPerMinAda * 1440),
-      dailyNetProfitAda: Math.round(netProfit24h),
+      dailyToolRepairAda: round3(toolCostPerMinAda * 1440),
+      dailyNetProfitAda: round3(netProfit24h),
       dailyBotCostAda: botCostAda,
       level: lvl,
       productionMultiplier: mult,
       quotaLimited,
-      livePrices: { wood: woodPrice, iron: ironPrice, wheat: wheatPrice }
+      livePrices: { ...prices }
     };
   }
 
@@ -4061,12 +4045,12 @@ export class GameStateManager {
   getBotPackageCost(hours = 24) {
     const h = Math.max(1, Number(hours) || 24);
     const daily = this.calculateTavernaBotProfitAndCost().botCostAda;
-    return Math.max(50, Math.round(daily * h / 24));
+    return Math.max(0.5, round3(daily * h / 24));
   }
 
-  // 🛡️ Bot güvenlik payı: kasada her zaman bırakılan ADA (oto-yenileme açıksa ertesi günün bot ücreti dahil)
+  // 🛡️ Bot güvenlik payı: kasada her zaman bırakılan ASTRA (oto-yenileme açıksa ertesi günün bot ücreti dahil)
   getBotAdaReserve() {
-    const minRes = (GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.MIN_ADA_RESERVE) || 500;
+    const minRes = (GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.MIN_ADA_RESERVE) || 5;
     const renew = this.state.botAutoRenew24h ? this.calculateTavernaBotProfitAndCost().botCostAda : 0;
     return Math.max(minRes, renew);
   }
@@ -4414,17 +4398,15 @@ export class GameStateManager {
     // Depolar %80 dolu mu fakat ADA (güvenlik payı dahil) eksik mi?
     if (cost.is80PercentFull && !(cost.canAffordCost && this._botCanSpend(cost.adAstra))) {
       const inv = this.state.inventory || {};
-      const hasWood = (inv.wood || 0) >= cost.wood;
-      const hasIron = (inv.iron || 0) >= cost.iron;
-      const hasWheat = (inv.wheat || 0) >= cost.wheat;
+      const hasAllRes = (cost.keys || RES_KEYS()).every(k => (inv[k] || 0) >= ((cost.costs || {})[k] || 0));
 
-      // Hammaddeler yeterli, sadece ADA eksikse:
-      if (hasWood && hasIron && hasWheat) {
+      // Hammaddeler yeterli, sadece ASTRA eksikse:
+      if (hasAllRes) {
         let adaDeficit = Math.max(0, cost.adAstra + this.getBotAdaReserve() - (this.state.adAstraBalance || 0));
 
         if (adaDeficit > 0 && typeof ammMarket !== 'undefined' && ammMarket.executeSell) {
           const cap = cost.currentCap || this.getWarehouseCapacity();
-          const nodes = ['wood', 'iron', 'wheat'];
+          const nodes = cost.keys || RES_KEYS();
           let totalSoldAda = 0;
 
           for (const node of nodes) {
@@ -4435,7 +4417,7 @@ export class GameStateManager {
 
             if (surplus > 0) {
               const price = (ammMarket.getPrice && ammMarket.getPrice(node)) ? ammMarket.getPrice(node) : 1;
-              const neededUnits = Math.max(1, Math.ceil((adaDeficit * 1.03 + 2) / price));
+              const neededUnits = Math.max(1, Math.ceil((adaDeficit * 1.03 + 0.02) / price));
               const amountToSell = Math.min(surplus, neededUnits);
 
               if (amountToSell > 0) {
@@ -4471,14 +4453,25 @@ export class GameStateManager {
   }
 
   // Türkçe Kaynak İsimleri Çevirici
+  getResourceIcon(key) {
+    const m = (GAME_CONFIG.RESOURCE_META || {})[key];
+    if (m && m.icon) return m.icon;
+    return { fragments: '🧩', boxes: '📦', keys: '🔑', scroll_heal: '📜', scroll_stamina: '⚡' }[key] || '';
+  }
+
   getResourceNameTr(key) {
     if (!key) return '';
+    const meta = (GAME_CONFIG.RESOURCE_META || {})[String(key).toLowerCase()];
+    if (meta && meta.name) return meta.name;
     const map = {
       wood: 'Odun',
       iron: 'Demir',
       wheat: 'Buğday',
-      ada: 'ADA',
-      adastra: '$ADASTRA',
+      stone: 'Taş',
+      coal: 'Kömür',
+      herb: 'Şifalı Ot',
+      ada: 'ASTRA',
+      adastra: 'ASTRA',
       ticket: 'Bilet',
       fragments: 'Teçhizat Parçası',
       boxes: 'Pandora Kutusu',
@@ -4499,7 +4492,7 @@ export class GameStateManager {
   // parasıyla pazardan satın alınıp verilir. Kasa yetmezse ya da pazarda yeterli mal yoksa hiçbir şey verilmez.
   // reward: { ada, wood, iron, wheat, fragments, keys, boxes, scroll_heal, scroll_stamina } (tam sayılar)
   applyPromoReward(reward = {}) {
-    const ITEMS = ['wood', 'iron', 'wheat', 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
+    const ITEMS = [...RES_KEYS(), 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
     const ada = Math.max(0, Math.floor(Number(reward.ada) || 0));
     const items = ITEMS.map(k => [k, Math.max(0, Math.floor(Number(reward[k]) || 0))]).filter(([, v]) => v > 0);
     if (!ada && !items.length) return { success: false, message: 'Bu kodun ödülü yok.' };
@@ -4518,7 +4511,7 @@ export class GameStateManager {
       const r = ammMarket.executeBuyAmount(k, v);
       if (!r || !r.success) return { success: false, failedMidway: true, message: (r && r.message) || 'Pazardan alınamadı.' };
       spent += r.cost;
-      if (['wood', 'iron', 'wheat'].includes(k)) this.storeResourceOrSell(k, v, 'Promo kodu');
+      if (RES_KEYS().includes(k)) this.storeResourceOrSell(k, v, 'Promo kodu');
       else if (k === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + v;
       else if (k === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + v;
       else this.state.inventory[k] = (Number(this.state.inventory[k]) || 0) + v;
@@ -4635,7 +4628,7 @@ export class GameStateManager {
       const moved = Math.min(avgPaid * (1 - (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02)), Math.max(0, Number(this.state.lotteryPool) || 0));
       if (moved > 0 && treasury.depositTo) { this.state.lotteryPool -= moved; treasury.depositTo('carnival', moved); }
       this.state.lotteryTickets -= 1;
-    } else if (['wood', 'iron', 'wheat'].includes(paymentMethod)) {
+    } else if (RES_KEYS().includes(paymentMethod)) {
       const resLimit = GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3;
       const dcRes = this.getDailyCounters();
       if ((dcRes.wheelResourceSpins || 0) >= resLimit) {
@@ -4645,7 +4638,7 @@ export class GameStateManager {
       const requiredAmount = Math.ceil(costAda / price);
       const resNameTr = this.getResourceNameTr(paymentMethod);
       if ((inv[paymentMethod] || 0) < requiredAmount) {
-        return { success: false, message: `Yetersiz ${resNameTr}! 100 ADA değerinde hammadde için ${requiredAmount} adet gereklidir.` };
+        return { success: false, message: `Yetersiz ${resNameTr}! ${costAda} ASTRA değerinde hammadde için ${requiredAmount} adet gereklidir.` };
       }
       inv[paymentMethod] -= requiredAmount;
       dcRes.wheelResourceSpins = (dcRes.wheelResourceSpins || 0) + 1;
@@ -4742,7 +4735,7 @@ export class GameStateManager {
       };
       }
 
-    } else if (selectedReward.type === 'amm_raw' || ['wood', 'iron', 'wheat'].includes(selectedReward.key)) {
+    } else if (selectedReward.type === 'amm_raw' || RES_KEYS().includes(selectedReward.key)) {
       // 🏛️ HAMMADDELER (Odun, Demir, Buğday): Havadan basılmaz, Karnaval Hazinesi bütçesiyle AMM marketten fiziki buyback yapılır!
       const resKey = selectedReward.key;
       const oldPrice = ammMarket.getPrice(resKey) || 1.0;
@@ -5593,18 +5586,10 @@ export class GameStateManager {
       level: 1,
       currentXp: 0,
       stamina: 100,
-      adAstraBalance: 250,
-      inventory: {
-        wood: 60,
-        iron: 40,
-        wheat: 80,
-        fragments: 0
-      },
-      tools: {
-        axe: { durability: 4320, totalGathered: 0 },
-        pickaxe: { durability: 4320, totalGathered: 0 },
-        sickle: { durability: 4320, totalGathered: 0 }
-      },
+      // v2: başlangıç bakiyesi, envanter ve aletler tek yerden (STARTING_PROFILE)
+      adAstraBalance: Number(GAME_CONFIG.STARTING_PROFILE?.adAstraBalance ?? 2.5),
+      inventory: { ...zeroRes(), fragments: 0, ...JSON.parse(JSON.stringify(GAME_CONFIG.STARTING_PROFILE?.inventory || { wood: 60, iron: 40, wheat: 80 })) },
+      tools: this.mergeTools(JSON.parse(JSON.stringify(GAME_CONFIG.STARTING_PROFILE?.tools || {}))),
       army: {
         infantry: 2,
         archer: 1,
@@ -5647,7 +5632,8 @@ export class GameStateManager {
       botActiveUntil: 0,
       tavernaBotActive: false,
       redeemCodes: [],
-      burnedResources: { wood: 0, iron: 0, wheat: 0 },
+      burnedResources: zeroRes(),
+      village: { ...(GAME_CONFIG.STARTING_PROFILE.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }) },
       lockedAda: 0,
       lockUnlock: null,
       contribution: null,
@@ -5778,16 +5764,17 @@ export class GameStateManager {
     const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
     const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;
     const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;
-    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : 20000000;
+    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 20000000);
     const amortiPool = state.lotteryAmortiPool || 0;
     const myTickets = state.lotteryTickets || 0;
     const lotteryWinnerMultiplier = GAME_CONFIG.CARNIVAL?.LOTTERY?.WINNER_MULTIPLIER || 2.0;
-    const lotteryWinnerShare = myTickets > 0 ? myTickets * 100 * lotteryWinnerMultiplier : 200;
+    const lotteryTicketPrice = this.getLotteryRules().ticketPrice;
+    const lotteryWinnerShare = myTickets > 0 ? myTickets * lotteryTicketPrice * lotteryWinnerMultiplier : 2 * lotteryTicketPrice;
     const lotteryAmortiShare = Math.round(lotteryPool * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02));
     const lotteryRolloverShare = Math.max(0, lotteryPool - lotteryAmortiShare);
 
     // Sadece Karnaval Çarkında Anında Yakılan Hammaddeler sayacı (genel oyundaki yakımlar hariç)
-    const burnedResources = state.carnivalBurnedResources || { wood: 0, iron: 0, wheat: 0 };
+    const burnedResources = state.carnivalBurnedResources || zeroRes();
     const lifetimeBurnedAda = Math.round((treasury.state?.lifetimeBurned || 0) + (globalPool.state?.totalBurned || 0));
 
     const pools = [
@@ -5889,6 +5876,34 @@ export class GameStateManager {
       }
     ];
 
+    // v2: yeni kasalar (Fatih, Sirius Konseyi, Universe rezervi) da listede
+    const EXTRA_POOL_META = {
+      fatih: { icon: '👑', color: '#f59e0b', description: '18. kat bossunu ilk kez yenen oyuncuya Fatih Ödülü bu kasadan ödenir (ordu harcamalarının bir payıyla dolar).', howToEarn: 'Zindanın 18. katındaki bossu yen.', actionType: 'dungeon', actionText: '💀 Zindana Git' },
+      konsey: { icon: '🏛️', color: '#a78bfa', description: 'Sirius Konseyi kasası: Madencilik Otoritesi\'nin çelik payı, Konsey projeleri ve Universe açılış günü ödülleri buradan.', howToEarn: 'Otorite ve Konsey projelerine katkı yap.', actionType: 'council', actionText: '🏛️ Konsey' },
+      universe: { icon: '🚀', color: '#38bdf8', description: 'Universe Tohum Rezervi: Realm bu kasaya dokunamaz; Universe açılınca Galaksi Pazarı ve Hazırlık Deposu için kullanılır.', howToEarn: 'Kilitli — Universe açılışına kadar.', actionType: 'spaceport', actionText: '🚀 Uzay Limanı' }
+    };
+    const listed = new Set(pools.map(p => p.id));
+    for (const id of Object.keys(GAME_CONFIG.TREASURY_SEED || {})) {
+      if (listed.has(id)) continue;
+      const m = EXTRA_POOL_META[id] || {};
+      pools.push({
+        id,
+        name: (GAME_CONFIG.TREASURY_POOL_NAMES || {})[id] || id,
+        icon: m.icon || '🏦',
+        color: m.color || '#94a3b8',
+        sharePct: Math.round((alloc[id] || 0) * (GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86) * 1000) / 10,
+        balance: Math.round(treasury.getPool(id)),
+        target: GAME_CONFIG.TREASURY_TARGET_RESERVE?.[id] || 0,
+        health: treasury.getPoolHealth(id),
+        inflow: Math.round(treasury.state?.inflow?.[id] || 0),
+        outflow: Math.round(treasury.state?.outflow?.[id] || 0),
+        description: m.description || '',
+        howToEarn: m.howToEarn || '',
+        actionType: m.actionType || null,
+        actionText: m.actionText || '',
+        locked: (GAME_CONFIG.TREASURY_LOCKED_POOLS || []).includes(id)
+      });
+    }
     const totalPoolsBalance = pools.reduce((acc, p) => acc + p.balance, 0) + lotteryPool;
 
     return {
@@ -5903,7 +5918,7 @@ export class GameStateManager {
       burnedResources,
       ammBurnedResources: (typeof ammMarket !== 'undefined' && ammMarket.getBurnedResources)
         ? ammMarket.getBurnedResources()
-        : { wood: 0, iron: 0, wheat: 0 },
+        : zeroRes(),
       lottery: {
         lotteryPool,
         amortiPool,
@@ -6138,10 +6153,9 @@ export class GameStateManager {
     }
 
     // Alet kontrolü ve otomatik onarım desteği (Özellikle orak/sickle kırık kaldığında buğday/wheat seferinin başlamama sorununu çözer)
-    const requiredTools = { wood: 'axe', iron: 'pickaxe', wheat: 'sickle' };
-    for (const nodeId of ['wood', 'iron', 'wheat']) {
-      const toolId = requiredTools[nodeId];
-      const tool = this.state.tools ? this.state.tools[toolId] : null;
+    for (const nodeId of RES_KEYS()) {
+      const toolId = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId] || {}).requiredTool;
+      const tool = toolId && this.state.tools ? this.state.tools[toolId] : null;
       if (tool && tool.durability <= 0) {
         this.repairTool(toolId);
       }
@@ -6150,15 +6164,14 @@ export class GameStateManager {
     const staminaMissingNodes = [];
 
     // Yeniden başlatma dene
-    for (const nodeId of ['wood', 'iron', 'wheat']) {
+    for (const nodeId of RES_KEYS()) {
       if (!this.state.activeExpeditions[nodeId]) {
         const res = this.startExpedition(nodeId);
         if (res.success) {
           results.restarted++;
         } else {
           if (res.isInsufficientStamina) {
-            const resourceDisplayNames = { wood: 'Odun', iron: 'Demir', wheat: 'Buğday' };
-            staminaMissingNodes.push(resourceDisplayNames[nodeId] || nodeId);
+            staminaMissingNodes.push(this.getResourceNameTr(nodeId) || nodeId);
           }
           if (res.message) {
             results.messages.push(res.message);
@@ -6504,12 +6517,13 @@ export class GameStateManager {
     const major = isBoss || lvl === 9 || lvl === 18;
     const { REWARD_ADA_PER_LEVEL, REWARD_XP_PER_LEVEL, MAJOR_BOSS_REWARD_MULT } = GAME_CONFIG.DUNGEON;
     const mult = major ? MAJOR_BOSS_REWARD_MULT : 1;
-    return { ada: this.adaPrice(Math.floor(REWARD_ADA_PER_LEVEL * lvl * mult)), xp: Math.floor(REWARD_XP_PER_LEVEL * lvl * mult), isMajorBoss: major };
+    // v2: ödüller ASTRA olarak sabit (fiyat çarpanı yalnız bedellere); küçük ölçekte tam sayıya yuvarlanmaz
+    return { ada: round3(REWARD_ADA_PER_LEVEL * lvl * mult), xp: Math.floor(REWARD_XP_PER_LEVEL * lvl * mult), isMajorBoss: major };
   }
 
   getDungeonGateFee(level, isBoss = false) {
     const rate = GAME_CONFIG.DUNGEON?.GATE_FEE_RATE ?? 0.2;
-    return Math.max(1, Math.ceil(this.getDungeonBaseReward(level, isBoss).ada * rate));
+    return Math.max(0.01, round3(this.getDungeonBaseReward(level, isBoss).ada * rate));
   }
 
   getDungeonDayStatus() {
@@ -7619,7 +7633,7 @@ export class GameStateManager {
     const ob = this.state.onboarding || {};
     const quests = (GAME_CONFIG.ONBOARDING_QUESTS || []).map(q => ({
       ...q,
-      rewardAda: this.adaPrice(q.rewardAda || 0),
+      rewardAda: q.rewardAda || 0,   // v2: ödüller sabit ASTRA (fiyat çarpanı yalnız bedellere)
       done: !!(ob[q.id] && ob[q.id].done),
       claimed: !!(ob[q.id] && ob[q.id].claimed)
     }));
@@ -7646,7 +7660,7 @@ export class GameStateManager {
     if (entry.claimed) return { success: false, message: 'Bu görevin ödülünü zaten aldın.' };
     let granted = 0;
     if ((q.rewardAda || 0) > 0 && treasury && treasury.withdraw) {
-      const draw = treasury.withdraw('quest', this.adaPrice(q.rewardAda));
+      const draw = treasury.withdraw('quest', q.rewardAda);
       granted = Math.floor(draw.granted || 0);
     }
     entry.claimed = true;
@@ -7675,7 +7689,7 @@ export class GameStateManager {
     else if (resKey === 'keys') this.state.arenaKeys -= amount;
     else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - amount;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.adAstraReceived;
-    if (['wood', 'iron', 'wheat'].includes(resKey)) this._onAdaEarned(res.adAstraReceived, { saleOf: resKey });
+    if (RES_KEYS().includes(resKey)) this._onAdaEarned(res.adAstraReceived, { saleOf: resKey });
     else this._onAdaEarned(res.adAstraReceived);
     this.saveState();
     return { ...res, qty: amount };
@@ -7696,8 +7710,8 @@ export class GameStateManager {
     } else if (kind === 'warehouse') {
       const c = this.getWarehouseUpgradeCost();
       if (!c || c.isMaxLevel) return { ok: false, items: [], reason: 'Silo en üst seviyede.' };
-      // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır
-      target = { wood: Math.max(c.wood, c.reqWoodFill), iron: Math.max(c.iron, c.reqIronFill), wheat: Math.max(c.wheat, c.reqWheatFill) };
+      // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır (v2: bütün hammaddeler)
+      target = Object.fromEntries((c.keys || RES_KEYS()).map(k => [k, Math.max((c.costs || {})[k] || 0, (c.fills || {})[k] || 0)]));
       extraAda = Number(c.adAstra) || 0;
     } else if (String(kind).startsWith('craft:')) {
       const slot = String(kind).slice(6);
@@ -7749,7 +7763,7 @@ export class GameStateManager {
     if ((this.state.adAstraBalance || 0) < est) {
       return { success: false, message: `Yetersiz $ADASTRA! Gereken: ~${est.toFixed(2)} ADA, bakiyen: ${(this.state.adAstraBalance || 0).toFixed(2)} ADA` };
     }
-    if (['wood', 'iron', 'wheat'].includes(resKey)) {
+    if (RES_KEYS().includes(resKey)) {
       const limit = this.getWarehouseCapacity()[resKey];
       const cur = Number(this.state.inventory[resKey]) || 0;
       if (limit != null && cur + amount > limit) {

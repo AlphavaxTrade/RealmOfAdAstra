@@ -17,7 +17,7 @@ globalThis.localStorage = {
 const gs = new GameStateManager();
 gs.state.adAstraBalance = 1000000;
 gs.state.currentXp = 10000;
-gs.state.inventory = { iron: 50000, wood: 50000, wheat: 50000, fragments: 500 };
+gs.state.inventory = { iron: 50000, wood: 50000, wheat: 50000, stone: 50000, coal: 50000, herb: 50000, fragments: 500 }; // v2: 6 hammadde
 
 // 1. Hesap Seviyesi Yükseltme Maliyeti ve AMM DEX Değeri Kontrolü
 const lvlReq = gs.getNextLevelRequirement();
@@ -43,11 +43,8 @@ console.log(`Hesaplanan Silo AMM DEX AdAstra Bedeli: ${whCost.adAstra} ADA`);
 assert(whCost.wood > 0 && whCost.iron > 0 && whCost.wheat > 0, 'Silo kaynak miktarları pozitif olmalı');
 assert(whCost.adAstra > 0, 'Silo AdAstra yükseltme maliyeti pozitif olmalı');
 
-const expectedWhAmm = ammMarket.calculateResourcesAdAstraValue({
-  wood: whCost.wood,
-  iron: whCost.iron,
-  wheat: whCost.wheat
-});
+// v2: silo yükseltmesi 6 hammadde ister (whCost.costs)
+const expectedWhAmm = ammMarket.calculateResourcesAdAstraValue(whCost.costs);
 assert.equal(whCost.adAstra, expectedWhAmm.totalAda, 'Silo yükseltme ADA maliyeti AMM DEX toplam pazar değerine eşit olmalı');
 console.log('✅ Silo yükseltme ADA maliyeti AMM DEX pazar değeriyle %100 örtüşüyor!');
 

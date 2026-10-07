@@ -94,21 +94,19 @@ console.log('✅ [1/3] AMM DEX Havuzları: derivePool ve AMM_CORRIDORS hedef fiy
 
 // B. Krallık Hazinesi Kasaları (Tam 40.000.000 $ADASTRA)
 const t = treasury.state.pools;
-console.log(`Hazine Kasaları: Zindan: ${t.dungeon}, Arena: ${t.arena}, WorldBoss: ${t.worldBoss}, AMMBuyback: ${t.ammBuyback}, Karnaval: ${t.carnival}`);
-assert.equal(t.dungeon, 14000000, 'Hazine Zindan Kasası 14M ADA olmalı');
-assert.equal(t.arena, 8000000, 'Hazine Arena Kasası 8M ADA olmalı');
-assert.equal(t.worldBoss, 8000000, 'Hazine World Boss Kasası 8M ADA olmalı');
-assert.equal(t.ammBuyback, 6000000, 'Hazine AMM Buyback Kasası 6M ADA olmalı');
-assert.equal(t.carnival, 4000000, 'Hazine Karnaval Kasası 4M ADA olmalı');
+// v2 (R3): tohumlar config.TREASURY_SEED (9 kasa, toplam 88M ASTRA)
+const SEED = GAME_CONFIG.TREASURY_SEED;
+console.log(`Hazine Kasaları: ${Object.entries(t).map(([k, v]) => `${k}: ${v}`).join(', ')}`);
+for (const [id, v] of Object.entries(SEED)) assert.equal(t[id], v, `Hazine ${id} kasası tohumu ${v} ASTRA olmalı`);
 
-const totalTreasuryAda = t.dungeon + t.arena + t.worldBoss + t.ammBuyback + t.carnival;
-assert.equal(totalTreasuryAda, 40000000, 'Toplam Krallık Hazinesi Kasaları tam 40.000.000 ADA olmalı');
+const totalTreasuryAda = Object.values(t).reduce((s, v) => s + v, 0);
+assert.equal(totalTreasuryAda, Object.values(SEED).reduce((s, v) => s + v, 0), 'Toplam hazine kasaları tohum toplamına eşit olmalı');
 console.log(`✅ [2/3] Krallık Hazinesi Kasaları: ${totalTreasuryAda.toLocaleString()} $ADASTRA (%40.00) doğrulandı.`);
 
 // C. Krallık Karnavalı Piyangosu (Tam 20.000.000 $ADASTRA)
 const lotteryPoolAda = gs.state.lotteryPool;
 console.log(`Piyango Havuzu: ${lotteryPoolAda} ADA`);
-assert.equal(lotteryPoolAda, 20000000, 'Krallık Piyango Havuzu tam 20M ADA olmalı');
+assert.equal(lotteryPoolAda, GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA, 'Krallık Piyango Havuzu tohum tutarında olmalı (v2: 12M ASTRA)');
 assert.equal(gs.state.lotteryTickets, 0, 'Sıfırlama sonrası piyango biletleri 0 olmalı');
 console.log(`✅ [3/3] Krallık Piyangosu: ${lotteryPoolAda.toLocaleString()} $ADASTRA (%20.00) doğrulandı.`);
 
@@ -118,7 +116,7 @@ const wb = gs.getWorldBossInfo();
 console.log(`World Boss: ${wb.name}, Can: ${wb.bossHp}/${wb.maxBossHp}, Haftalık Havuz: ${wb.weeklyAdaPool} ADA, Kilitli: ${wb.userStaked}`);
 assert.equal(wb.bossHp, 1000000, 'World Boss canı 1M tam can olmalı');
 assert.equal(wb.maxBossHp, 1000000, 'World Boss max can 1M olmalı');
-assert.equal(wb.weeklyAdaPool, 8000000, 'World Boss haftalık ödül havuzu 8M ADA hazine rezervine eşit olmalı');
+assert.equal(wb.weeklyAdaPool, SEED.worldBoss, 'World Boss haftalık ödül havuzu hazine rezervine eşit olmalı');
 assert.equal(wb.userStaked, false, 'Sıfırlama sonrası ordu kilitli olmamalı');
 assert.equal(wb.userDamage, 0, 'Sıfırlama sonrası vurulan hasar 0 olmalı');
 assert.equal(wb.claimableRewardAda, 0, 'Sıfırlama sonrası talep edilebilir ödül 0 olmalı');

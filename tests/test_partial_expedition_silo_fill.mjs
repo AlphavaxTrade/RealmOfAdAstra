@@ -15,15 +15,18 @@ describe('Silo Kısmi Doldurma ve Kalan Mahsulü Seferde Bekletme Mekanizması T
 
   const gs = new GameStateManager();
 
-  it('Kullanıcı Senaryosu: Silo Kapasitesi 1800, Depoda 1307 Buğday varken 540 Mahsulün 493\'ü toplanıp ambar tam doldurulmalı', () => {
-    // 1. Durum Ayarı: Silo kapasitesi 1800, depoda 1307 buğday
-    gs.state.warehouseLevel = 1; // 1800 kapasite
-    gs.state.inventory.wheat = 1307;
+  // v2 ölçeği: Seviye 1 buğday silosu 1 saatlik üretim (540); 18 dakikalık sefer 162 buğday getirir
+  const cap = gs.getWarehouseCapacity(1).wheat;
+  const yieldWheat = Math.floor(gs.getResourceRatePerMinute('wheat') * 18);
+  const room = 100;                 // depoda boş yer
+  const rest = yieldWheat - room;   // seferde bekleyecek kısım
+  assert.ok(rest > 0, 'Sefer mahsulü boş yerden büyük olmalı ki kısmi dolum test edilsin');
 
-    const cap = gs.getWarehouseCapacity();
-    assert.strictEqual(cap.wheat, 1800, 'Seviye 1 ambar kapasitesi 1800 olmalı');
+  it('Kullanıcı Senaryosu: siloda boş yer kadar toplanıp ambar tam doldurulmalı, kalan seferde beklemeli', () => {
+    gs.state.warehouseLevel = 1;
+    gs.state.inventory.wheat = cap - room;
+    assert.strictEqual(gs.getWarehouseCapacity().wheat, cap, `Seviye 1 ambar kapasitesi ${cap} olmalı`);
 
-    // 2. Sefer Ayarı: 18 dakikalık buğday seferi tamamlandı (18 dk * 30 = 540 buğday)
     gs.state.activeExpeditions.wheat = {
       nodeId: 'wheat',
       durationMinutes: 18,
@@ -34,24 +37,21 @@ describe('Silo Kısmi Doldurma ve Kalan Mahsulü Seferde Bekletme Mekanizması T
     };
 
     const accrued = gs.getAccruedExpeditionHarvest('wheat');
-    assert.strictEqual(accrued.accruedAmount, 540, 'Sefer mahsulü 540 buğday olmalı');
+    assert.strictEqual(accrued.accruedAmount, yieldWheat, `Sefer mahsulü ${yieldWheat} buğday olmalı`);
 
-    // 3. Sefer Toplama (Claim) Çağrısı
     const res = gs.claimExpedition('wheat');
-
     assert.strictEqual(res.success, true, 'Kısmi ambar doldurma başarılı olmalı');
     assert.strictEqual(res.isPartialSiloFill, true, 'Kısmi ambar dolum bayrağı true olmalı');
-    assert.strictEqual(res.harvestedAmount, 493, 'Depodaki boş yer kadar (1800 - 1307 = 493) toplanmalı');
-    assert.strictEqual(res.stillRemaining, 47, 'Seferde kalan miktar (540 - 493 = 47) olmalı');
-    assert.strictEqual(gs.state.inventory.wheat, 1800, 'Depodaki buğday tam 1800/1800 (%100) olmalı');
+    assert.strictEqual(res.harvestedAmount, room, `Depodaki boş yer kadar (${room}) toplanmalı`);
+    assert.strictEqual(res.stillRemaining, rest, `Seferde kalan miktar ${rest} olmalı`);
+    assert.strictEqual(gs.state.inventory.wheat, cap, 'Depodaki buğday tam kapasite (%100) olmalı');
 
-    // Sefer silinmemeli, kalan 47 buğdayı tutmaya devam etmeli!
     assert.ok(gs.state.activeExpeditions.wheat, 'Sefer aktif kalmaya devam etmeli');
-    assert.strictEqual(gs.state.activeExpeditions.wheat.claimedAmount, 493, 'Seferden 493 buğday çekildiği kaydedilmeli');
+    assert.strictEqual(gs.state.activeExpeditions.wheat.claimedAmount, room, 'Seferden çekilen miktar kaydedilmeli');
   });
 
-  it('Depo tamamen doluyken (1800/1800) tekrar toplanmak istendiğinde net uyarı verilmeli', () => {
-    assert.strictEqual(gs.state.inventory.wheat, 1800, 'Depo şu an 1800/1800 dolu');
+  it('Depo tamamen doluyken tekrar toplanmak istendiğinde net uyarı verilmeli', () => {
+    assert.strictEqual(gs.state.inventory.wheat, cap, 'Depo şu an tam dolu');
 
     const res = gs.claimExpedition('wheat');
     assert.strictEqual(res.success, false, 'Depo doluyken ek kaynak alınamamalı');
@@ -59,22 +59,20 @@ describe('Silo Kısmi Doldurma ve Kalan Mahsulü Seferde Bekletme Mekanizması T
     assert.ok(res.message.includes('tamamen dolu'), 'Silo tamamen dolu mesajı içermeli');
   });
 
-  it('Depoda yer açıldığında (veya silo yükseltildiğinde) kalan 47 buğday toplanmalı ve sefer tamamlanmalı', () => {
-    // Oyuncu 100 buğday harcasın: Depoda 1700 buğday kalsın (100 boşluk)
-    gs.state.inventory.wheat = 1700;
+  it('Depoda yer açıldığında kalan mahsul toplanmalı ve sefer tamamlanmalı', () => {
+    // Oyuncu buğday harcasın: kalanın tamamı + 40 kadar boş yer olsun
+    gs.state.inventory.wheat = cap - rest - 40;
 
     const accrued = gs.getAccruedExpeditionHarvest('wheat');
-    assert.strictEqual(accrued.accruedAmount, 47, 'Kalan mahsul 47 buğday olarak hesaplanmalı');
+    assert.strictEqual(accrued.accruedAmount, rest, `Kalan mahsul ${rest} buğday olarak hesaplanmalı`);
 
     const res = gs.claimExpedition('wheat');
-
     assert.strictEqual(res.success, true, 'Kalan mahsul toplama başarılı olmalı');
     assert.strictEqual(res.isPartialSiloFill, false, 'Sefer tamamen bittiği için isPartialSiloFill false olmalı');
-    assert.strictEqual(res.harvestedAmount, 47, 'Kalan 47 buğdayın hepsi toplanmalı');
+    assert.strictEqual(res.harvestedAmount, rest, 'Kalan buğdayın hepsi toplanmalı');
     assert.strictEqual(res.stillRemaining, 0, 'Kalan miktar 0 olmalı');
-    assert.strictEqual(gs.state.inventory.wheat, 1747, 'Depo 1700 + 47 = 1747 olmalı');
+    assert.strictEqual(gs.state.inventory.wheat, cap - 40, 'Depo: açılan yerin kalan kadarı dolmalı');
 
-    // Sefer artık tamamen tamamlandı ve silindi!
     assert.strictEqual(gs.state.activeExpeditions.wheat, undefined, 'Sefer silinmiş olmalı ve yeni sefere hazır olmalı');
   });
 });
