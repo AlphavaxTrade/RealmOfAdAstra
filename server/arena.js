@@ -9,6 +9,7 @@
 //  • Haftalık hesaplaşmada ilk 10'a Kolezyum kasasından ödül; sıralama sıfırlanır.
 // ============================================================================
 import { simulateBattle } from '../js/combat.js';
+import { rastgele, tamsayi } from './rastgele.js';
 import { PVP_RULES, explainLoss, weeklyRewards, ranking } from '../js/economy/pvp.js';
 
 const short = a => (String(a).startsWith('acc:') ? '#' + String(a).slice(4) : String(a).slice(0, 6) + '…' + String(a).slice(-4));
@@ -51,7 +52,7 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       const oi = q.findIndex(x => x.address !== me);
       if (oi < 0 && botWhenEmpty) {
         // 🧪 Deneme sunucusu: sırada kimse yoksa antrenman botu (gücü senin takımının %85-115'i)
-        const k = 0.85 + Math.random() * 0.3;
+        const k = 0.85 + rastgele() * 0.3;
         q.push({ address: '0xbot', name: '🤖 Antrenman Botu', units: team.units.map(u => ({ ...u, name: '🤖 ' + u.name, atk: Math.round(u.atk * k), maxHp: Math.round(u.maxHp * k), hp: Math.round(u.maxHp * k) })), at: clock() });
       }
       const oi2 = q.findIndex(x => x.address !== me);
@@ -63,7 +64,7 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       opp = q.splice(oi2, 1)[0];
       const allies = clone(team.units).map((u, i) => ({ ...u, uid: 'a' + i }));
       const enemies = clone(opp.units).map((u, i) => ({ ...u, uid: 'b' + i, sourceIndex: -1 }));
-      const seed = Math.floor(Math.random() * 0xffffffff) >>> 0;
+      const seed = tamsayi(0x100000000);   // maç tohumu tahmin edilemesin (kriptografik)
       const sim = simulateBattle({ allies, enemies, seed });
       const w = decide(sim);
       const pts = PVP_RULES.modes[mode].points;

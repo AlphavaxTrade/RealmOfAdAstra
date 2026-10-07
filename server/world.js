@@ -14,6 +14,7 @@
 import { allocateWithdrawals, brakeState, faucetWeekly, nextMultiplier, withdrawCapTokens, WEEKLY_RULES } from './economy.js';
 import { SYSTEM } from './engine.js';
 import { runDraw } from '../js/economy/lottery.js';
+import { rastgele } from './rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../js/economy/faucet.js';
 import { applyRates, ratesFromConfig, validateRates, toNamed, moneyFlows, RATE_KEYS, RATE_CHANGE_DELAY_SEC } from '../js/economy/rates.js';
 
@@ -357,7 +358,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
         if (t > 0) holders.push({ id: p.address, tickets: t, paid: st.lotteryTicketsPaid != null ? Number(st.lotteryTicketsPaid) : t * rules.ticketPrice });
       }
       const L = E.lottery();
-      const draw = runDraw({ pool: L.pool, amortiPool: L.amortiPool, holders }, Math.random, rules);
+      const draw = runDraw({ pool: L.pool, amortiPool: L.amortiPool, holders }, rastgele, rules);   // gerçek ASTRA ödülü: kriptografik rastgelelik
       if (draw.drawn) {
         for (const h of draw.holders) {
           const mine = draw.payouts.filter(x => x.id === h.id);

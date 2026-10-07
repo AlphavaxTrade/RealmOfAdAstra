@@ -42,6 +42,11 @@ export default [
     rules: { ...ortak, ...guvenlik }
   },
   {
+    // Sunucuda Math.random yasak: gerçek değerli sonuçlar server/rastgele.js'ten gelmeli (kurumsal A2.5)
+    files: ['server/**/*.js'],
+    rules: { 'no-restricted-properties': ['error', { object: 'Math', property: 'random', message: 'Sunucuda server/rastgele.js (rastgele/tamsayi) kullan.' }] }
+  },
+  {
     // Tarayıcıda çalışan yönetici paneli betiği
     files: ['server/admin.js'],
     languageOptions: { ecmaVersion: 2025, sourceType: 'script', globals: { ...globals.browser } }

@@ -8,6 +8,7 @@
 //    senkron olduğu için iki istek birbirine karışamaz.
 // ============================================================================
 import { runAction, ACTIONS } from './actions.js';
+import { guvenliRastgeleKur } from './rastgele.js';
 
 const BACKUP_SUFFIX = '__yedek';
 
@@ -45,6 +46,9 @@ export const playerKey = address => 'player:' + String(address).toLowerCase();
 
 export async function createEngine(db, { clock = () => Date.now(), testMode = false } = {}) {
   installShims(db);
+  // Oyun kodu (js/gameState.js...) çark, zindan ganimeti, kutu gibi sonuçları Math.random ile çözer; sunucuda bunlar
+  // gerçek değerli, o yüzden kriptografik rastgeleliğe geçilir (sahte Math.random koyan testlere dokunulmaz).
+  guvenliRastgeleKur();
   const { GAME_CONFIG } = await import('../js/config.js');
   const { gameState: gs } = await import('../js/gameState.js');
   const { globalPool } = await import('../js/globalPool.js');
