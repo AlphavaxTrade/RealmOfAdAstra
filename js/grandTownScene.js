@@ -35,8 +35,8 @@ export const TOWN_ZONES = [
   { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',                          px: 0.690, py: 0.440, pr: 0.100, color: '#ef4444' },
   { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                              px: 0.875, py: 0.500, pr: 0.070, color: '#facc15' },
   { id: 'herbgarden',  icon: '🌿', name: 'Şifalı Ot Bahçesi', sub: 'Şifalı ot seferleri',                           px: 0.770, py: 0.710, pr: 0.045, color: '#86efac' },
-  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.620, py: 0.790, pr: 0.050, color: '#fbbf24' },
-  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.665, py: 0.890, pr: 0.070, color: '#60a5fa' },
+  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.723, py: 0.805, pr: 0.042, color: '#fbbf24' },   // sağdaki iki katlı ahşap ambar (7 Ekim: ahırla karışıyordu)
+  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.596, py: 0.857, pr: 0.070, color: '#60a5fa' },   // uzun ahır + at eğitim alanı
   { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',                           px: 0.200, py: 0.850, pr: 0.130, color: '#f87171' }
 ];
 
