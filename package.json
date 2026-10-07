@@ -3,6 +3,9 @@
   "version": "2.0.0-alpha.1",
   "description": "Realm of Astra - Web3 GameFi RPG on Avalanche",
   "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5180 --strictPort",
     "build": "vite build",
