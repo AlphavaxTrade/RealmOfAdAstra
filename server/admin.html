@@ -45,6 +45,21 @@
       <button id="logout">Çıkış</button>
     </div>
     <div class="grid" id="cards"></div>
+    <h3>🚪 Kapı kuralı (vatandaş sınırı, bekleme sırası, askı)</h3>
+    <div class="card">
+      <div id="kapiInfo" class="k"></div>
+      <div class="row" style="margin-top:6px;">
+        <input id="kapiLimit" type="number" min="1" class="narrow" placeholder="vatandaş sınırı">
+        <select id="kapiTier"><option value="0">Dönem 1 (eşik 10 $)</option><option value="1">Dönem 2 (eşik 30 $)</option><option value="2">Dönem 3 (eşik 100 $)</option><option value="3">Dönem 4 (eşik 300 $)</option></select>
+        <button id="kapiSave" class="go">💾 Kaydet</button>
+        <button id="kapiRun">⏱️ Kapıyı şimdi işlet</button>
+      </div>
+      <div class="k" style="margin-top:6px;">Bekleme sırası</div>
+      <div class="scroll"><table id="kapiQueue"></table></div>
+      <div class="k" style="margin-top:6px;">Askıdakiler</div>
+      <div class="scroll"><table id="kapiSusp"></table></div>
+      <div id="kapiMsg" class="k"></div>
+    </div>
     <h3>🧊 Yedek cüzdan (Ledger) işlemleri</h3>
     <div class="card">
       <div class="k">Bu düğmeler tarayıcındaki cüzdanla (Ledger'a bağlı MetaMask / Core) çalışır. Sunucu bu cüzdanın anahtarını hiç görmez.</div>

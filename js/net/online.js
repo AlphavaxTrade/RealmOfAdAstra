@@ -76,8 +76,10 @@ function apply(payload) {
     if (w.globalPool) globalPool.state = w.globalPool;
     if (w.serverTime) { globalPool.serverTimeOffset = w.serverTime - Date.now(); globalPool.trustedTimeReady = true; }
     online.economy = w.economy || null;
+    online.kapi = w.kapi || null;          // Kapı: sınır, vatandaş / sıra sayıları, gösterge
     if (Array.isArray(w.rates)) applyRates(GAME_CONFIG, null, w.rates);   // oranlar sunucudan (RealmRates sözleşmesi)
   }
+  online.gate = payload.gate || null;    // bu hesabın kapı durumu: citizen / waiting / suspended
   online.lastSync = Date.now();
   try { gameState.notifyListeners(); } catch { /* arayüz */ }
   try { ctx.onApplied && ctx.onApplied(); } catch { /* arayüz */ }

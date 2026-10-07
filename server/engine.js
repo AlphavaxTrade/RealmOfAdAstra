@@ -150,6 +150,19 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       }
       // Tıklamalı işlemler yalnız kazanılmış bakiyeyi kullanır (yetmezse cüzdandan ödeme; kasa kullanılmaz)
       const result = fn(gs);
+      // Kapı kuralı: kayıt harcı (vatandaş olunca yazılan borç) ilk ASTRA'dan düşer; her harcama gibi dağıtılır
+      const kh = gs.state.kayitHarci;
+      if (kh && current !== SYSTEM && Number(kh.due) > (Number(kh.paid) || 0)) {
+        const rem = Math.round((Number(kh.due) - (Number(kh.paid) || 0)) * 1000) / 1000;
+        const bal = Number(gs.state.adAstraBalance) || 0;
+        if (bal >= rem && rem > 0) {
+          gs.state.adAstraBalance = Math.round((bal - rem) * 1000) / 1000;
+          kh.paid = Number(kh.due); kh.paidAt = clock();
+          if (typeof gs._onAdaSpent === 'function') gs._onAdaSpent(rem);
+          if (typeof globalPool.recordTokenSpend === 'function') globalPool.recordTokenSpend(rem);
+          gs.pushNotice(`🎫 Kayıt harcı ödendi: ${rem} ASTRA. Artık tam vatandaşsın.`, 'info');
+        }
+      }
       mergeLottery();
       // Bildirimler ve "sen yokken olanlar" raporu oyuncuya bir kez teslim edilir, kayıttan silinir
       const notices = Array.isArray(gs.state.pendingNotices) ? gs.state.pendingNotices : [];

@@ -51,7 +51,7 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
@@ -139,7 +139,9 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   function playerPayload(address, state) {
-    return { player: state, world: E.worldSnapshot(), address, epochId: E.globalPool.state.epochId };
+    const world = E.worldSnapshot();
+    if (kapi) world.kapi = kapi.publicSummary();   // Kapı: sınır, vatandaş / sıra sayıları, gösterge (Sirius Konseyi ekranı)
+    return { player: state, world, address, epochId: E.globalPool.state.epochId, gate: kapi ? kapi.statusOf(address) : null };
   }
 
   const routes = {
@@ -165,6 +167,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       if (!r.ok) return [401, { error: r.error }];
       if (r.need2fa) return { need2fa: true, ticket: r.ticket };
       db.event('login', r.playerId);
+      if (kapi) kapi.onLogin(r.playerId);
       return { token: newSession(r.playerId), playerId: r.playerId };
     },
     'POST /api/account/login2fa': async (req) => {
@@ -172,6 +175,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const r = accounts.login2fa(ticket, code);
       if (!r.ok) return [401, { error: r.error }];
       db.event('login', r.playerId, { twoFactor: true });
+      if (kapi) kapi.onLogin(r.playerId);
       return { token: newSession(r.playerId), playerId: r.playerId, backupLeft: r.backupLeft };
     },
     'POST /api/account/verify': async (req) => {
@@ -179,6 +183,8 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       const r = accounts.verifyEmail(token);
       if (!r.ok) return [400, { error: r.error }];
       if (r.playerId) promo.redeemPending(r.playerId);
+      // Kapı: doğrulanmış yeni hesap yer varsa vatandaş olur, yoksa bekleme sırasına girer (misafir gibi gezer)
+      if (r.playerId && kapi) { kapi.admit(r.playerId); if (r.canLogin) kapi.onLogin(r.playerId); }
       return r.canLogin ? { ok: true, token: newSession(r.playerId), playerId: r.playerId } : { ok: true };
     },
     'POST /api/account/resend': async (req) => {
@@ -247,6 +253,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     'POST /api/action': async (req, me) => {
       const { name, args } = await readBody(req);
       if (typeof name !== 'string') return [400, { error: 'İşlem adı gerekli' }];
+      if (kapi && !kapi.isCitizen(me)) {
+        const g = kapi.statusOf(me);
+        return [403, { error: g.status === 'waiting' ? `⏳ Bekleme sırasındasın (${g.position || '?'}. sıra, ${g.citizens}/${g.limit} vatandaş). Vadiyi gezebilirsin; yerin açılınca haber veririz.` : '⏸️ Yerin askıda. Yeniden giriş yaptığında sıranın önüne alınırsın; ilk boşalan yer senin.' }];
+      }
       const res = safePlayer(me, g => E.runAction(g, name, Array.isArray(args) ? args : []));
       if (res.error) return [500, { error: res.result.message }];
       if (res.result && res.result.rejected) return [400, { error: res.result.message }];
@@ -356,6 +366,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
           depositors: players.filter(p => p.deposited_ada > 0).length,
           pendingWithdraw: players.reduce((s, p) => s + (p.pending_withdraw || 0), 0) },
         treasury: E.treasury.state.pools,
+        kapi: kapi ? kapi.adminSummary() : null,
         chainId: cfg.chainId, tokenAddress: cfg.tokenAddress, paymentsContract: cfg.paymentsContract || null,
         reserveWallet: cfg.reserveWallet || null, contractOwner: cfg.contractOwner || null,
         hotWallet: e.hotWallet || null, hotNeed: world.hotWalletNeed ? world.hotWalletNeed() : null,
@@ -372,7 +383,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),
     'POST /api/admin/rates/sync': async () => (world.syncRates ? (await world.syncRates()) || { skipped: 'oran sözleşmesi tanımlı değil' } : { skipped: true }),
-    'POST /api/admin/hotwallet/check': async () => (world.checkHotWallet ? (await world.checkHotWallet()) || { skipped: 'zincir yok' } : { skipped: true })
+    'POST /api/admin/hotwallet/check': async () => (world.checkHotWallet ? (await world.checkHotWallet()) || { skipped: 'zincir yok' } : { skipped: true }),
+    // Kapı kuralı (yönetici kolu): sınır / dönem, şimdi işlet, bir hesabı elle içeri al / sıraya koy / askıya al
+    'POST /api/admin/kapi': async (req) => { if (!kapi) return [404, { error: 'Kapı kapalı' }]; const { limit, tier } = await readBody(req); try { return kapi.adminSet({ limit, tier }); } catch (err) { return [400, { error: err.message }]; } },
+    'POST /api/admin/kapi/run': async () => (kapi ? { ...kapi.run(), ...kapi.publicSummary() } : [404, { error: 'Kapı kapalı' }]),
+    'POST /api/admin/kapi/player': async (req) => { if (!kapi) return [404, { error: 'Kapı kapalı' }]; const { playerId, status } = await readBody(req); try { return kapi.adminSetPlayer(String(playerId || ''), String(status || '')); } catch (err) { return [400, { error: err.message }]; } }
   };
 
   function serveStatic(req, res, pathname) {

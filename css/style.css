@@ -4949,3 +4949,8 @@ body.in-dungeon .royal-advisor-bar {
 .mini-quota-fill.stone { background: #a8a29e; }
 .mini-quota-fill.coal { background: #64748b; }
 .mini-quota-fill.herb { background: #86efac; }
+
+/* ── Kapı kuralı: bekleme sırası / askı şeridi (sunucu modunda, vatandaşa görünmez) ── */
+.gate-banner { display: flex; align-items: center; gap: 10px; margin: 0 12px 8px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(245,158,11,.18), rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.55); color: #fde68a; font-size: .86rem; line-height: 1.4; }
+.gate-banner[hidden] { display: none; }
+.gate-banner-icon { font-size: 1.4rem; }

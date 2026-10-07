@@ -33,6 +33,7 @@ async function load() {
     `<div class="card"><div class="k">Hazine kasaları</div><div style="font-size:0.8rem;margin-top:4px;">${pools}</div></div>`
   ].join('');
   ratesView(s.rates);
+  kapiView(s.kapi);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
   const st = { pending: '⏳ sırada', sending: '⚠️ gönderiliyordu (kontrol et)', sent: '✅ gönderildi' };
   $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ADA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
@@ -40,6 +41,27 @@ async function load() {
   $('events').innerHTML = '<tr><th>Zaman</th><th>Tür</th><th>Adres</th><th>Bilgi</th></tr>' +
     s.events.map(e => `<tr><td>${new Date(e.at).toLocaleString('tr-TR')}</td><td>${esc(e.type)}</td><td>${esc((e.address || '').slice(0, 10))}</td><td>${esc((e.data || '').slice(0, 160))}</td></tr>`).join('');
 }
+// ── Kapı kuralı ─────────────────────────────────────────────────────────
+function kapiView(k) {
+  if (!k) { $('kapiInfo').textContent = 'Kapı kapalı'; return; }
+  const ind = k.indicator || {};
+  $('kapiInfo').innerHTML = `Vatandaş <b>${fmt(k.citizens)} / ${fmt(k.limit)}</b> · sırada ${fmt(k.waiting)} · askıda ${fmt(k.suspended)} · dönem ${k.tier + 1} (eşik ${k.threshold} $) · gösterge: kişi başı aylık ${esc(String(ind.usdPerPlayerMonth || 0))} $ (${ind.weeks || 0} hafta)${k.lastGrowthAt ? ' · son büyüme ' + new Date(k.lastGrowthAt).toLocaleDateString('tr-TR') : ''}. ${k.warnDays} gün uyarı, ${k.suspendDays} gün askı.`;
+  if (!$('kapiLimit').value) $('kapiLimit').value = k.limit;
+  $('kapiTier').value = String(k.tier);
+  const btn = (pid, st, label) => `<button data-pid="${esc(pid)}" data-st="${st}">${label}</button>`;
+  $('kapiQueue').innerHTML = '<tr><th>#</th><th>E-posta</th><th>Sırada beri</th><th>Dönen</th><th></th></tr>' +
+    ((k.queue || []).map(w => `<tr><td>${w.position}</td><td>${esc(w.email || w.playerId)}</td><td>${new Date(w.since).toLocaleString('tr-TR')}</td><td>${w.returning ? '✅' : ''}</td><td>${btn(w.playerId, 'citizen', '👑 İçeri al')} ${btn(w.playerId, 'suspended', '⏸️ Askıya al')}</td></tr>`).join('') || '<tr><td colspan="5">Sıra boş</td></tr>');
+  $('kapiSusp').innerHTML = '<tr><th>E-posta</th><th>Askıya alınma</th><th>Son giriş</th><th></th></tr>' +
+    ((k.suspendedList || []).map(p => `<tr><td>${esc(p.email || p.playerId)}</td><td>${new Date(p.since).toLocaleString('tr-TR')}</td><td>${new Date(p.lastSeen).toLocaleString('tr-TR')}</td><td>${btn(p.playerId, 'citizen', '👑 İçeri al')} ${btn(p.playerId, 'waiting', '⏳ Sıraya koy')}</td></tr>`).join('') || '<tr><td colspan="4">Askıda kimse yok</td></tr>');
+}
+$('kapiSave').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi', { limit: Number($('kapiLimit').value) || null, tier: Number($('kapiTier').value) }); $('kapiLimit').value = ''; $('kapiMsg').textContent = `Kaydedildi: sınır ${r.limit}, dönem ${r.tier + 1}`; });
+$('kapiRun').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi/run'); $('kapiMsg').textContent = `İşletildi: ${r.admitted} içeri alındı, ${(r.warned || []).length} uyarıldı, ${(r.suspended || []).length} askıya alındı${r.grown ? ', sınır ' + r.grown.from + ' → ' + r.grown.to : ''}`; });
+for (const id of ['kapiQueue', 'kapiSusp']) $(id).addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-pid]');
+  if (!b) return;
+  if (!confirm(`${b.textContent} — ${b.dataset.pid}?`)) return;
+  act(() => api('POST', '/api/admin/kapi/player', { playerId: b.dataset.pid, status: b.dataset.st }));
+});
 // ── ADA oranları ────────────────────────────────────────────────────────
 let lastRates = null;
 const pctTr = bps => '%' + (bps / 100).toLocaleString('tr-TR');

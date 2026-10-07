@@ -240,6 +240,20 @@ function runCinematicLoadingSequence() {
 
 
 // Top Bar Render
+// 🚪 Kapı kuralı: bekleme sırasındaki ya da askıdaki hesaba üstte şerit (vatandaşa görünmez)
+function renderGateBanner() {
+  const el = document.getElementById('gate-banner');
+  if (!el) return;
+  const g = online.gate;
+  if (!g || g.status === 'citizen' || g.status === 'new') { el.hidden = true; el.innerHTML = ''; return; }
+  const k = online.kapi || {};
+  const txt = g.status === 'waiting'
+    ? `⏳ <strong>Bekleme sırasındasın: ${g.position || '?'}. sıra.</strong> Vadide şu an ${g.citizens}/${g.limit} vatandaş var. Gezebilir, her yere bakabilirsin; işlem yapmak için yerinin açılmasını bekle. Yerin açılınca e-posta ve oyun içi haber gelir. ${k.suspendDays || 30} gün girmeyen vatandaşın yeri sıradakine geçer.`
+    : `⏸️ <strong>Yerin askıda.</strong> Uzun süre girmediğin için yerin bekleyen bir vatandaşa verildi. Hesabın duruyor; sıranın önündesin, ilk boşalan yer senin.`;
+  el.innerHTML = `<span class="gate-banner-icon">🚪</span><span>${txt}</span>`;
+  el.hidden = false;
+}
+
 function renderTopBar() {
   const state = gameState.state;
   dom.playerLevel.innerText = `Lv.${state.level}`;
@@ -4876,7 +4890,17 @@ function openTreasuryVaultModal() {
       </div>`; })()}
     </div>` : '';
 
-  dom.modalBody.innerHTML = konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  // v2: Kapı durumu (R4/R4c) — vatandaş sınırı, sıra, askı, büyüme göstergesi (sunucudan; çevrimdışı denemede yok)
+  const kp = online.kapi;
+  const kapiHtml = kp ? `
+    <div class="clean-card" style="border-color:#f59e0b;">
+      <div class="card-title-row">
+        <div class="card-title" style="color:#fcd34d;">🚪 Kapı durumu — vatandaş ${fmtInt(kp.citizens)} / ${fmtInt(kp.limit)}</div>
+        <span class="card-badge">sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
+      </div>
+      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)}. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer ve vadiyi gezer. ${kp.warnDays} gün girmeyene uyarı gider; ${kp.suspendDays} gün girmeyenin yeri sıradakine geçer (hesap silinmez, dönünce sıranın önüne alınır). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Eşik geçilince sınır ayda %10 büyür.</div>
+    </div>` : '';
+  dom.modalBody.innerHTML = kapiHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
 
   document.querySelectorAll('.btn-treasury-action').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -8753,6 +8777,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       toast: (m, t) => showToast(m, t),
       onApplied: () => {
         try { renderTopBar(); } catch (e) { /* ilk açılış */ }
+        try { renderGateBanner(); } catch (e) { /* kapı şeridi */ }
         const wb = document.getElementById('btn-online-wallet');
         if (wb) wb.textContent = isLoggedIn() ? '🏦' : '🔐 Giriş';
       }
