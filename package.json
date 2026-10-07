@@ -11,12 +11,16 @@
     "build": "vite build",
     "preview": "vite preview --port 5180 --strictPort",
     "test": "node tests/run_all.mjs",
-    "serve": "node scripts/windows/keep-alive.cjs"
+    "serve": "node scripts/windows/keep-alive.cjs",
+    "olu-kod": "knip --no-progress --reporter compact"
   },
   "devDependencies": {
     "ganache": "^7.9.2",
+    "knip": "^6.40.0",
+    "phaser": "^3.80.1",
     "playwright": "^1.62.1",
     "solc": "^0.8.24",
+    "three": "^0.186.1",
     "vite": "^5.4.0"
   },
   "allowScripts": {
@@ -25,8 +29,6 @@
   "dependencies": {
     "ethers": "^6.17.0",
     "nodemailer": "^6.10.1",
-    "phaser": "^3.80.1",
-    "qrcode": "^1.5.4",
-    "three": "^0.186.1"
+    "qrcode": "^1.5.4"
   }
 }

@@ -67,6 +67,24 @@ const fresh = () => {
   ok('Aşama 1: koyma, kişi başı sınır, silodan düşme, dünya toplamı');
 }
 
+// 2b) Liman Rıhtımı (Konsey projesi, KARARLAR D): bitince kişi başı depo sınırı 2 katına çıkar
+{
+  GAME_CONFIG.UNIVERSE_STAGE = 1;
+  const gs = fresh();
+  const wood0 = gs.getPrepDepotStatus().rows.find(r => r.key === 'wood').cap;
+  for (let i = 0; i < 10; i++) {   // projeler sırayla açılır: Rıhtım dahil, ondan öncekileri de bitir
+    const st = globalPool.getProjectStatus();
+    if (!st.active) break;
+    const isPier = st.active.id === 'pier';
+    globalPool.contributeProject({ stone: st.need.stone, iron: st.need.iron, wood: st.need.wood }, st.active.labor);
+    if (isPier) break;
+  }
+  assert.ok(near(globalPool.getProjectBonus('prepDepotCap'), 2), 'Rıhtım bitti');
+  const wood1 = gs.getPrepDepotStatus().rows.find(r => r.key === 'wood').cap;
+  assert.equal(wood1, wood0 * 2, 'Kişi başı sınır 2 kat');
+  ok('Liman Rıhtımı: Hazırlık Deposu kişi sınırı 2 katına çıkar');
+}
+
 // 3) Dünya toplamı 10 M ASTRA değeri: yer kalmazsa konamaz
 {
   GAME_CONFIG.UNIVERSE_STAGE = 1;
@@ -171,4 +189,4 @@ const fresh = () => {
   } finally { server.close(); }
 }
 
-console.log(`\n${passed}/6 Hazırlık Deposu testi geçti`);
+console.log(`\n${passed}/7 Hazırlık Deposu testi geçti`);

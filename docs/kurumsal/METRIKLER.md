@@ -5,20 +5,24 @@ Her aşamanın başında ve sonunda doldurulur. "Önce" sütunu 8 Ekim 2026'da, 
 
 | Metrik | Önce (Aşama 0) | Aşama 1 | Aşama 2 | Aşama 3 | Aşama 4 | Aşama 5 | Aşama 6 | Aşama 7 | Aşama 8 | Aşama 9 | Aşama 10 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Test dosyası (geçen/toplam) | 76/76 | | | | | | | | | | |
-| `npm test` süresi | 50,6 sn | | | | | | | | | | |
-| Kapsam (satır, `server/`) | ölçülmüyor | | | | | | | | | | |
-| `npm run build` süresi | 9,3 sn | | | | | | | | | | |
-| `dist/` boyutu | 14 MB (en büyük parça: phaser 1,46 MB, gzip 335 KB) | | | | | | | | | | |
-| `node_modules` | 584 MB | | | | | | | | | | |
-| `npm audit` (tümü) | 42 (2 düşük, 9 orta, 26 yüksek, 5 kritik) | | | | | | | | | | |
-| `npm audit --omit=dev` | 31 (1 düşük, 8 orta, 18 yüksek, 4 kritik)* | | | | | | | | | | |
-| Docker imaj boyutu | ölçülemedi (Docker bu makinede kurulu değil) | | | | | | | | | | |
-| Yük testi p95 / bellek | ölçülmedi | | | | | | | | | | |
-| Büyük dosyalar (satır) | `js/app.js` 8687, `js/gameState.js` 7994, `server/world.js` 732, `server/app.js` 495 | | | | | | | | | | |
+| Test dosyası (geçen/toplam) | 76/76 | 76/76 (1 test eklendi: Rıhtım) | | | | | | | | | |
+| `npm test` süresi | 50,6 sn | 46,7 sn | | | | | | | | | |
+| Kapsam (satır, `server/`) | ölçülmüyor | ölçülmüyor | | | | | | | | | |
+| `npm run build` süresi | 9,3 sn | 8,9 sn | | | | | | | | | |
+| `dist/` boyutu | 14 MB (en büyük parça: phaser 1,46 MB, gzip 335 KB) | 14 MB (değişmedi) | | | | | | | | | |
+| Üretim kurulumu (`npm ci --omit=dev`) | 584 MB (three, phaser dahil, ayrım yoktu) | **25 MB**, 38 paket | | | | | | | | | |
+| Geliştirme kurulumu (`node_modules`) | 584 MB | 584 MB (+knip) | | | | | | | | | |
+| `npm audit` (kilit dosyasının tamamı) | 42 (2 düşük, 9 orta, 26 yüksek, 5 kritik) | 42 | | | | | | | | | |
+| **Gerçek üretim açığı**\* | (ölçülmemişti) | **1 yüksek** (`nodemailer`) | | | | | | | | | |
+| Docker imaj boyutu | ölçülemedi (Docker kurulu değil) | ölçülemedi | | | | | | | | | |
+| Yük testi p95 / bellek | ölçülmedi | ölçülmedi | | | | | | | | | |
+| Kullanılmayan dosya (knip) | ölçülmemişti | 0; kullanılmayan paket 0; gereksiz dışa açılmış fonksiyon 18 | | | | | | | | | |
+| Büyük dosyalar (satır) | `js/app.js` 8687, `js/gameState.js` 7994, `server/world.js` 732, `server/app.js` 495 | aynı | | | | | | | | | |
 
-\* `--omit=dev` sayımı `ganache`/`webpack` gibi yalnız test araçlarını da içeriyor (`npm ls webpack --omit=dev` boş döner).
-Gerçekte üretimde çalışan yüksek riskli paket şimdilik `nodemailer@6.10.1` (doğrudan bağımlılık). Ayıklama Aşama 2'de.
+\* `npm audit --omit=dev` bu projede **yanıltıcı**: ganache'ın içine gömülü paketler kilit dosyasında üretim gibi işaretli,
+bu yüzden 31 uyarı gösterir (webpack, mocha vb.), oysa bunlar üretimde kurulu değil. Doğru ölçüm: yalnız üretim
+bağımlılıklarından (`ethers`, `nodemailer`, `qrcode`) kilit dosyası üretip denetlemek. Sonuç: 39 paket, **1 yüksek açık**.
+CI'daki denetim (Aşama 8) bu yöntemi kullanacak.
 
 ## Ortam notları
 - Docker kurulu değil: imaj derleme ve yük testi imaj içinde yapılamaz; CI'da (Aşama 8) ve kurulunca ölçülecek.

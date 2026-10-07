@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "index.html",
+    "server/index.js",
+    "server/admin.js",
+    "tests/test_*.mjs",
+    "tests/run_all.mjs",
+    "contracts/*.mjs",
+    "scripts/**/*.{mjs,cjs}",
+    "public/boot.js"
+  ],
+  "project": ["js/**/*.js", "server/**/*.js", "tests/**/*.mjs", "scripts/**/*.{mjs,cjs}", "contracts/*.mjs", "public/*.js"],
+  "ignore": ["claude-proje-kiti/**", "node_modules/**", "dist/**"],
+  "ignoreDependencies": ["ganache", "solc", "playwright"]
+}

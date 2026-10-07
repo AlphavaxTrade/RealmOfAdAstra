@@ -1,4 +1,7 @@
 // Oyunun dosyalarını Vercel'e yükler: https://realmofadastra.vercel.app (kullanıcı kararı 6 Ekim 2026, "A yolu")
+// KULLANIM DIŞI (kurumsal dönüşüm A1, 8 Ekim 2026): sunucu (server/) kendi dist/ klasörünü zaten sunuyor (SERVE_DIST).
+// Oyunun alan adı kendi sunucuya taşınınca bu betik, server/config.js'teki CORS_ORIGINS notu ve sunucuya-yukle.sh'taki
+// SITE satırı birlikte silinecek. O zamana kadar canlı Vercel yayını için çalışır durumda bırakıldı.
 // ============================================================================
 // Vercel yalnız oyunun dosyalarını sunar; oyun sunucusu (server/) başka bir makinede çalışır. Oyuncunun tarayıcısı
 // sunucuyla doğrudan konuşur, bu yüzden Vercel'in ücretsiz kotası yalnız sayfa açılışlarını sayar.

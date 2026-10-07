@@ -456,7 +456,9 @@ export const gameStateV2Depot = {
     const U = GAME_CONFIG.UZAY_LIMANI || {};
     const stage = Number(GAME_CONFIG.UNIVERSE_STAGE) || 0;
     const d = this._prepDepot();
-    const weeksCap = U.PREP_DEPOT_WEEKS_CAP ?? 4;
+    // Liman Rıhtımı projesi bitince kişi başı sınır çarpılır (bonus değeri çarpandır: 2 = iki kat)
+    const pierMult = Math.max(1, (globalPool.getProjectBonus && globalPool.getProjectBonus('prepDepotCap')) || 1);
+    const weeksCap = (U.PREP_DEPOT_WEEKS_CAP ?? 4) * pierMult;
     const rows = RES_KEYS().map(k => {
       const weekly = this.getUretimHakki ? (Number(this.getUretimHakki(k).weekly) || 0) : 0;
       const cap = Math.floor(weekly * weeksCap);
