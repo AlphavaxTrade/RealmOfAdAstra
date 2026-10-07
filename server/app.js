@@ -350,6 +350,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
         return { result: out.result, ...playerPayload(me, out.state) };
       } catch (err) { E.reloadWorld(); log.error('PvP', err); return [500, { error: 'Sunucu hatası' }]; }
     },
+    // 🧪 Deneme sunucusu: test menüsündeki "vanilla sıfırla" — dünya ve bütün kayıtlar ilk güne (giriş gerekli)
+    'POST /api/dev/vanilla-reset': (req, me) => {
+      if (!cfg.testMode) return [404, { error: 'Yalnız deneme sunucusunda' }];
+      try { return world.vanillaReset(); } catch (err) { return [400, { error: err.message }]; }
+    },
     'POST /api/promo/redeem': async (req, me) => {
       const { code } = await readBody(req);
       const r = promo.redeem(me, code);

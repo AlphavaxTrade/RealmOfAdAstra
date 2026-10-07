@@ -811,6 +811,14 @@ export const pvp = {
 };
 
 // ── İlan pazarı (teçhizat; yalnız sunucuda, server/pazar.js) ────────────
+// 🧪 Deneme sunucusunda vanilla sıfırlama: sunucu dünyayı ve bütün kayıtları ilk güne döndürür, sayfa yenilenir
+export async function devVanillaReset() {
+  if (!token) { requireLogin(); return GUEST_FAIL; }
+  const r = await api('POST', '/api/dev/vanilla-reset');
+  try { ctx.gameState.vanillaReset(); } catch { /* yerel kopya zaten sunucudan gelecek */ }
+  return r;
+}
+
 export const pazar = {
   list: () => api('GET', '/api/pazar'),
   async sell(ref, price) { const r = await api('POST', '/api/pazar/sell', { ref, price }); apply(r); return r.result; },

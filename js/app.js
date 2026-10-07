@@ -15,7 +15,7 @@ import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
-import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -4456,103 +4456,6 @@ function openCollectionModal(initialTab) {
   displayModal();
 }
 
-function openTestMenuModal() {
-  const state = gameState.state;
-
-  dom.modalTitle.innerHTML = `<span>🧪</span> <span>KRALLIK GELİŞTİRİCİ & TEST CHEAT PANELİ</span>`;
-
-  dom.modalBody.innerHTML = `
-    <div class="clean-card" style="border-color: #ec4899; background: #1f0714; margin-bottom: 12px;">
-      <div class="card-title-row">
-        <div class="card-title" style="color: #f472b6;">🧪 Tüm Mekanizmaları Test Et (Dev Cheat Panel)</div>
-        <span class="card-badge" style="color: #f472b6;">Tam Yetkili Test Modu</span>
-      </div>
-      <div class="clean-desc">
-        Oyundaki tüm mekanikleri, ekonomiyi, zindan katlarını, asker donanımlarını, kutuları ve bot otomasyonunu 1-tıkla anında test edebilirsin.
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-      
-      <!-- 1. BAKİYE & KAYNAK HİLELERİ -->
-      <div class="clean-card" style="background: #140b12; border-color: #a855f7;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #c084fc; margin-bottom: 8px;">💰 1. Bakiye & Kaynak Ekleme</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_ada" style="background: #581c87;">🟣 +10.000 ASTRA Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_wood" style="background: #14532d;">🌲 +5.000 Odun Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_iron" style="background: #0369a1;">⛏️ +5.000 Demir Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_wheat" style="background: #854d0e;">🌾 +5.000 Buğday Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_fragments" style="background: #7e22ce;">🧩 +500 Teçhizat Parçaları Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_boxes" style="background: #9a3412;">📦 +50 Pandora Kutusu Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="add_keys" style="background: #ca8a04;">🔑 +50 Arena Anahtarı Ekle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="full_stamina" style="background: #047857;">⚡ Stamina %100 Full Yap</button>
-        </div>
-      </div>
-
-      <!-- 2. ORDU & ŞAMPİYON TESTLERİ -->
-      <div class="clean-card" style="background: #0d1512; border-color: #22c55e;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #4ade80; margin-bottom: 8px;">⚔️ 2. Ordu & Şampiyon Testleri</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="buy_soldier" style="background: #166534;">⚔️ +1 Asker Satın Al</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="heal_all_army" style="background: #15803d;">❤️ Tüm Askerleri İyileştir (%100 HP)</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="max_equip_all" style="background: #854d0e;">🛡️ Tüm Askerlere Lv.10 Master Zırh Kuşandır</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="unequip_all" style="background: #991b1b;">🚫 Tüm Askerlerin Zırhlarını Sök</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="auto_equip" style="background: #1d4ed8;">✨ En İyi Eşyaları Otomatik Dağıt</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="level_up_player" style="background: #6b21a8;">👑 Gezgin Seviyesini +1 Yükselt</button>
-        </div>
-      </div>
-
-      <!-- 3. DEMİRCİ & TEÇHİZAT TESTLERİ -->
-      <div class="clean-card" style="background: #170e0b; border-color: #f97316;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #fb923c; margin-bottom: 8px;">⚒️ 3. Demirci & Ekipman Testleri</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="craft_all_equip" style="background: #9a3412;">🔨 1'er Adet Tüm Ekipmanları Döv</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="upgrade_all_equip" style="background: #c2410c;">✨ Kuşanılan Ekipmanları Seviye Atlattır</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="repair_all_tools" style="background: #0369a1;">🔧 Tüm İşçi Aletlerini Onar (%100)</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="upgrade_warehouse" style="background: #a16207;">📦 Depo Seviyesini +1 Yükselt</button>
-        </div>
-      </div>
-
-      <!-- 4. ZİNDAN & BOSS TESTLERİ -->
-      <div class="clean-card" style="background: #170b0f; border-color: #ef4444;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #f87171; margin-bottom: 8px;">💀 4. Zindan & Boss İlerleme</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="dungeon_lv1" style="background: #991b1b;">👹 Zindan: 1. Kat (Lv.1) Yap</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="dungeon_lv9" style="background: #b91c1c;">🗿 Zindan: 3. Kat Ara Boss (Lv.9) Yap</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="dungeon_lv18" style="background: #7f1d1d;">🐉 Zindan: 6. Kat Final Boss IGNIS (Lv.18) Yap</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="dungeon_next" style="background: #dc2626;">⏩ Sonraki Kata Atla (+1 Kat)</button>
-        </div>
-      </div>
-
-      <!-- 5. KOLEKSİYON & SANDIK TESTLERİ -->
-      <div class="clean-card" style="background: #181308; border-color: #eab308;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #facc15; margin-bottom: 8px;">👑 5. Koleksiyon & Pandora Kutusu Testleri</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="unlock_all_artifacts" style="background: #a16207;">👑 Tüm 18 Koleksiyon Eserini Keşfet (18/18)</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="mint_genesis" style="background: #6b21a8;">🏆 Genesis NFT'yi Ücretsiz Bas</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="open_1_box" style="background: #15803d;">📦 1 Adet Pandora Kutusu Aç</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="open_10_boxes" style="background: #047857;">📦 10 Adet Pandora Kutusu Aç (Toplu)</button>
-        </div>
-      </div>
-
-      <!-- 6. KOLEZYUM & BOT TESTLERİ -->
-      <div class="clean-card" style="background: #0b141a; border-color: #38bdf8;">
-        <div style="font-weight: 800; font-size: 0.9rem; color: #38bdf8; margin-bottom: 8px;">🏟️ 6. Kolezyum, Bot & Sistem</div>
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="stake_boss" style="background: #854d0e;">🛡️ Tüm Orduyu World Boss'a Kilitle</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="attack_boss" style="background: #991b1b;">💥 World Boss'a 500.000 Hasar Vur</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="enable_bot" style="background: #0284c7;">🤖 24 Saatlik Otomasyon Botunu Aktifleştir</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="enable_buffs" style="background: #0369a1;">⚡ Tüm Hız İksirlerini Aktifleştir</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="finish_expeditions" style="background: #0f766e;">⏳ Tüm Seferleri Anında Tamamla</button>
-          <button class="btn-clean btn-clean-sm btn-test-action" data-action="reset_state" style="background: #450a0a; border-color: #ef4444;">🏛️ 100M ASTRA TOHUMU & VANILLA SIFIRLA</button>
-        </div>
-      </div>
-
-    </div>
-  `;
-
-  displayModal();
-}
 
 // =========================================================================
 // 4.9 BİLDİRİM MERKEZİ (NOTIFICATION CENTER)
@@ -5914,7 +5817,7 @@ function initAppEvents() {
 
   // Test & Dev Cheat Paneli Butonu
   const btnTestMenu = document.getElementById('btn-open-test-menu');
-  if (btnTestMenu) btnTestMenu.addEventListener('click', openTestMenuModal);
+  if (btnTestMenu) btnTestMenu.addEventListener('click', openDevModal);   // tek test menüsü (#dev-modal)
 
   // 10B Makro Tokenomics & Canlı Simülatör Butonu
   const btnEconomy = document.getElementById('btn-economy-dashboard');
@@ -6808,160 +6711,6 @@ function initAppEvents() {
       return;
     }
 
-    // 🧪 GELİŞTİRİCİ & TEST CHEAT BUTONLARI
-    const testBtn = e.target.closest('.btn-test-action');
-    if (testBtn) {
-      const act = testBtn.dataset.action;
-      let toastMsg = '⚡ Test eylemi tamamlandı.';
-
-      switch (act) {
-        case 'add_ada':
-          gameState.cheatAddResources(0, 0, 0, 0, 10000, 0, 0);
-          toastMsg = '🟣 +10.000 ASTRA eklendi!';
-          break;
-        case 'add_wood':
-          gameState.cheatAddResources(5000, 0, 0, 0, 0, 0, 0);
-          toastMsg = '🌲 +5.000 Odun eklendi!';
-          break;
-        case 'add_iron':
-          gameState.cheatAddResources(0, 5000, 0, 0, 0, 0, 0);
-          toastMsg = '⛏️ +5.000 Demir eklendi!';
-          break;
-        case 'add_wheat':
-          gameState.cheatAddResources(0, 0, 5000, 0, 0, 0, 0);
-          toastMsg = '🌾 +5.000 Buğday eklendi!';
-          break;
-        case 'add_fragments':
-          gameState.cheatAddResources(0, 0, 0, 500, 0, 0, 0);
-          toastMsg = '🧩 +500 Teçhizat Parçaları eklendi!';
-          break;
-        case 'add_boxes':
-          gameState.cheatAddResources(0, 0, 0, 0, 0, 50, 0);
-          toastMsg = '📦 +50 Pandora Kutusu eklendi!';
-          break;
-        case 'add_keys':
-          gameState.cheatAddResources(0, 0, 0, 0, 0, 0, 50);
-          toastMsg = '🔑 +50 Arena Anahtarı eklendi!';
-          break;
-        case 'full_stamina':
-          gameState.cheatRefillStamina();
-          toastMsg = '⚡ Stamina %100 dolduruldu!';
-          break;
-        case 'buy_soldier':
-          const sRes = gameState.buySoldierUnit();
-          toastMsg = sRes.message;
-          break;
-        case 'heal_all_army':
-          const hRes = gameState.instantHealAllSoldiers();
-          toastMsg = `❤️ Tüm askerler iyileştirildi! (${hRes.healed} asker)`;
-          break;
-        case 'max_equip_all':
-          const mRes = gameState.cheatMaxEquipAllSoldiers();
-          toastMsg = mRes.message;
-          break;
-        case 'unequip_all':
-          const uRes = gameState.unequipAllSoldiers();
-          toastMsg = uRes.message;
-          break;
-        case 'auto_equip':
-          const aRes = gameState.autoEquipBest();
-          toastMsg = aRes.message;
-          break;
-        case 'level_up_player':
-          const lRes = gameState.cheatLevelUpPlayer();
-          toastMsg = lRes.message;
-          break;
-        case 'craft_all_equip':
-          ['weapon', 'helmet', 'armor', 'legs', 'boots'].forEach(s => gameState.craftEquipment(s));
-          toastMsg = '🔨 1\'er Adet Tüm Ekipmanlar Dövüldü!';
-          break;
-        case 'upgrade_all_equip':
-          ['weapon', 'helmet', 'armor', 'legs', 'boots'].forEach(s => gameState.upgradeEquipment(s));
-          toastMsg = '✨ Kuşanılan Ekipmanlar Yükseltildi!';
-          break;
-        case 'repair_all_tools':
-          gameState.repairAllTools();
-          toastMsg = '🔧 Tüm İşçi Aletleri Onarıldı!';
-          break;
-        case 'upgrade_warehouse':
-          const wRes = gameState.upgradeWarehouse();
-          toastMsg = wRes.message;
-          break;
-        case 'dungeon_lv1':
-          gameState.cheatSetDungeonProgress(1);
-          toastMsg = '👹 Zindan 1. Kat (Lv.1) Ayarlandı!';
-          break;
-        case 'dungeon_lv9':
-          gameState.cheatSetDungeonProgress(9);
-          toastMsg = '🗿 Zindan 3. Kat Ara Boss (Lv.9) Ayarlandı!';
-          break;
-        case 'dungeon_lv18':
-          gameState.cheatSetDungeonProgress(18);
-          toastMsg = '🐉 Zindan 6. Kat Final Boss IGNIS (Lv.18) Ayarlandı!';
-          break;
-        case 'dungeon_next':
-          const nLvl = (gameState.state.dungeonProgress || 1) + 1;
-          gameState.cheatSetDungeonProgress(nLvl);
-          toastMsg = `⏩ Zindan Seviye ${nLvl}'e Atlatıldı!`;
-          break;
-        case 'unlock_all_artifacts':
-          gameState.cheatUnlockAllArtifacts();
-          toastMsg = '👑 Tüm 18 Koleksiyon Eseri Keşfedildi!';
-          break;
-        case 'mint_genesis':
-          const gRes = gameState.mintGenesisNft();
-          toastMsg = gRes.message;
-          break;
-        case 'open_1_box':
-          if ((gameState.state.lockedBoxes || 0) <= 0) gameState.state.lockedBoxes = 1;
-          const ob1 = await gameState.unboxMysteryBox();
-          toastMsg = ob1.message;
-          break;
-        case 'open_10_boxes':
-          gameState.cheatAddResources(0, 0, 0, 0, 0, 10, 0);
-          for (let b = 0; b < 10; b++) gameState.unboxMysteryBox();
-          toastMsg = '📦 10 Adet Pandora Kutusu Açıldı ve Koleksiyon Eserleri Eklendi!';
-          break;
-        case 'stake_boss':
-          const stRes = gameState.stakeArmyForWorldBoss();
-          toastMsg = stRes.message;
-          break;
-        case 'simulate_sunday_boss':
-        case 'attack_boss':
-          if (!gameState.state.worldBoss || !gameState.state.worldBoss.userStaked) {
-            gameState.stakeArmyForWorldBoss();
-          }
-          const atkRes = gameState.executeSundayAutoWorldBossBattle();
-          toastMsg = atkRes.message;
-          break;
-        case 'claim_boss':
-          const clRes = gameState.claimWorldBossReward();
-          toastMsg = clRes.message;
-          break;
-        case 'enable_bot':
-          gameState.activateTavernBuff('auto_collector_monthly', 30);
-          toastMsg = '🤖 30 Günlük Otomasyon Botu Aktifleştirildi!';
-          break;
-        case 'enable_buffs':
-          toastMsg = 'ℹ️ Sefer iksirleri sistemden tamamen kaldırılmıştır.';
-          break;
-        case 'finish_expeditions':
-          gameState.cheatFinishAllExpeditions();
-          toastMsg = '⏳ Tüm Sefer Zamanlayıcıları Anında Tamamlandı!';
-          break;
-        case 'reset_state':
-          if (!window.confirm('🏛️ 100M ASTRA İLK DAĞITIMINA & VANILLA HESABA SIFIRLA\n\nTüm hesap ilerlemeni ve ekonomiyi (AMM 40M havuzları, Hazine 40M kasaları, Piyango 20M havuzu ve haftalık limitleri) ilk 100 Milyon ASTRA tohum dağıtım anına sıfırlamak istiyor musun?')) return;
-          gameState.vanillaReset();
-          location.reload();
-          return;
-      }
-
-      showToast(toastMsg, 'success');
-      sound.playLevelUp();
-      renderTopBar();
-      openTestMenuModal();
-      return;
-    }
 
     // ⚔️ Kışla'ya git (ör. Kolezyum'da asker yokken)
     if (e.target.closest('.btn-goto-barracks')) {
@@ -8296,6 +8045,14 @@ function initDevPanelEvents() {
           'Devam etmek istiyor musun?'
         );
         if (!confirmReset) break;
+        if (online.active) {
+          // Çevrimiçi (deneme sunucusu): sunucu dünyayı ve bütün kayıtları ilk güne döndürür
+          devVanillaReset().then(r => {
+            if (r && r.ok) { showToast('🏛️ Sunucu ilk güne döndü: dünya, kasalar, pazar ve bütün hesaplar sıfırlandı. Sayfa yenileniyor...', 'success'); setTimeout(() => location.reload(), 900); }
+            else showToast('Sıfırlama yapılamadı: ' + ((r && r.message) || 'sunucu kabul etmedi'), 'error');
+          }).catch(err => showToast('Sıfırlama yapılamadı: ' + err.message, 'error'));
+          break;
+        }
         gameState.vanillaReset();
         showToast('🏛️ 100M ASTRA başlangıç havuzları ve profil başarıyla ilk anki oranlarına sıfırlandı! Sayfa yenileniyor...', 'success');
         sound.playLevelUp();

@@ -711,5 +711,22 @@ Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de
   }
   const universeStage = () => Number(E.GAME_CONFIG.UNIVERSE_STAGE) || 0;
 
-  return { setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  // 🧪 Vanilla sıfırlama (yalnız deneme sunucusu): bütün oyuncu kayıtları, pazar havuzları, hazine, haftalık dünya,
+  // piyango, kolezyum, dünya bossu, ilan pazarı ve ekonomi kaydı silinir → oyun ilk açılış gününe döner.
+  // Hesaplar, şifreler, vatandaşlık (kapı) ve yönetici ayarları (Universe aşaması, kapı sınırı) KALIR.
+  function vanillaReset() {
+    if (!cfg.testMode) throw new Error('Vanilla sıfırlama yalnız deneme sunucusunda çalışır');
+    db.tx(() => {
+      db.raw.prepare("DELETE FROM kv WHERE key LIKE 'ls:%'").run();          // oyuncu kayıtları + dünya nesneleri (havuz, hazine, kota)
+      for (const k of ['world:economy', 'world:lottery', 'world:arena', 'world:bossLastBattle', 'world:epochProcessed']) db.kvDel(k);
+      for (const t of ['listings', 'kasa_usage', 'pay_quotes']) { try { db.raw.exec(`DELETE FROM ${t}`); } catch { /* tablo yok */ } }
+    });
+    E.reloadWorld();                                                         // bellekteki kopyalar tohum değerleriyle yeniden kurulur
+    db.kvSet('world:epochProcessed', E.globalPool.state.epochId);           // geçmiş hafta için hesaplaşma yapılmasın
+    db.event('vanilla_reset');
+    log.warn('🧪 Vanilla sıfırlama: dünya ve bütün oyuncu kayıtları ilk güne döndü.');
+    return { ok: true, epochId: E.globalPool.state.epochId };
+  }
+
+  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }
