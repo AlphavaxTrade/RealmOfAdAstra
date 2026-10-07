@@ -12,7 +12,9 @@
     "preview": "vite preview --port 5180 --strictPort",
     "test": "node tests/run_all.mjs",
     "serve": "node scripts/windows/keep-alive.cjs",
-    "olu-kod": "knip --no-progress --reporter compact"
+    "olu-kod": "knip --no-progress --reporter compact",
+    "gizli-tara": "node scripts/gizli-tara.mjs",
+    "audit-uretim": "node scripts/audit-uretim.mjs"
   },
   "devDependencies": {
     "ganache": "^7.9.2",
