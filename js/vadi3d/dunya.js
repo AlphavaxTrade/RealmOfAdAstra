@@ -27,13 +27,32 @@ export async function buildWorld(scene, { W, H, toWorld, zones, onProgress }) {
   resetSeed(); seed = 5;
   const out = { zoneGroups: new Map(), zoneTop: new Map(), pickables: [], animated: [] };
 
-  // Zemin: çimen dokusu, hafif dalgalı
-  const geo = new THREE.PlaneGeometry(W * 1.8, H * 2.0, 72, 44);
-  const pos = geo.attributes.position;
-  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i); pos.setZ(i, (Math.sin(x * 0.09) * Math.cos(y * 0.12)) * 0.7 - 0.7); }
-  geo.computeVertexNormals();
-  const gt = grassTexture(); gt.repeat.set(36, 22);
-  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: gt, roughness: 1, metalness: 0 })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+  // ADA: yuvarlatılmış dikdörtgen çimen üst yüzeyi, altında kaya yamacı, çevresinde deniz; kenar boyunca uçurum blokları
+  const M = 9, R = 22;                                  // kenar payı, köşe yuvarlağı
+  const hw = W / 2 + M, hd = H / 2 + M;
+  const shape = new THREE.Shape();
+  shape.moveTo(-hw + R, -hd); shape.lineTo(hw - R, -hd); shape.quadraticCurveTo(hw, -hd, hw, -hd + R); shape.lineTo(hw, hd - R); shape.quadraticCurveTo(hw, hd, hw - R, hd);
+  shape.lineTo(-hw + R, hd); shape.quadraticCurveTo(-hw, hd, -hw, hd - R); shape.lineTo(-hw, -hd + R); shape.quadraticCurveTo(-hw, -hd, -hw + R, -hd);
+  const gt = grassTexture(); gt.repeat.set(1 / 6.5, 1 / 6.5);
+  const topGeo = new THREE.ShapeGeometry(shape, 24);
+  const ground = new THREE.Mesh(topGeo, new THREE.MeshStandardMaterial({ map: gt, roughness: 1, metalness: 0 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.y = -0.05; ground.receiveShadow = true; scene.add(ground);
+  const skirt = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 9, bevelEnabled: true, bevelThickness: 1.5, bevelSize: 1.5, bevelSegments: 2, curveSegments: 24 }), new THREE.MeshStandardMaterial({ color: 0x9a6b45, roughness: 1 }));
+  skirt.rotation.x = Math.PI / 2; skirt.position.y = -1.75; skirt.receiveShadow = true; scene.add(skirt);   // pah üstü çimenin altında kalır
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({ color: 0x3f9ad6, roughness: 0.35, metalness: 0.05 }));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -7; sea.receiveShadow = true; scene.add(sea); out.sea = sea;
+  // Kenar blokları: ada çevresi boyunca uçurum blokları (instancing)
+  const edgeT = []; const edgeCurve = shape.getPoints(160);
+  let acc = 0;
+  for (let i = 0; i < edgeCurve.length; i++) {
+    const p = edgeCurve[i], q = edgeCurve[(i + 1) % edgeCurve.length]; acc += Math.hypot(q.x - p.x, q.y - p.y);
+    if (acc < 4.1) continue; acc = 0;
+    const ang = Math.atan2(q.y - p.y, q.x - p.x); const nx = (q.y - p.y), nz = -(q.x - p.x); const nl = Math.hypot(nx, nz) || 1;
+    const sc = 4.2 * (0.9 + rnd() * 0.25);
+    edgeT.push(xform(p.x + nx / nl * 1.6, -sc - 0.9, p.y + nz / nl * 1.6, -ang, sc));   // adanın hemen dışında, üstü çimenden biraz aşağıda
+  }
+  scene.add(instancedPiece('nature/cliff_block_stone', edgeT));
+  const island = { hw, hd };
 
   // Yollar: meydan kapısından bölgelere yumuşak kenarlı toprak şeritler
   const rt = roadTexture();
@@ -41,6 +60,10 @@ export async function buildWorld(scene, { W, H, toWorld, zones, onProgress }) {
   const cc = toWorld(0.465, 0.47); const gate = { x: cc.x, z: cc.z + 9 * S + 4 };
   for (const id of ['forest', 'spaceport', 'farm', 'barracks', 'battlefield', 'dungeon', 'quarry', 'colosseum', 'warehouse', 'healer', 'herbgarden']) { const z = zones.find(t => t.id === id); if (z) { const p = toWorld(z.px, z.py); road(gate.x, gate.z, p.x, p.z); } }
   road(gate.x, gate.z, cc.x, cc.z - 6 * S, 5);
+  // Yol ayrıntıları: ana yollarda fenerler, kapı önünde tabela ve araba
+  for (const id of ['farm', 'barracks', 'forest', 'battlefield']) { const z = zones.find(t => t.id === id); if (!z) continue; const p = toWorld(z.px, z.py); const n = 3; for (let i = 1; i <= n; i++) { const k = i / (n + 1); scene.add(piece('town/lantern', { x: gate.x + (p.x - gate.x) * k + 3.2, y: 0, z: gate.z + (p.z - gate.z) * k, s: S })); } }
+  scene.add(piece('nature/sign', { x: gate.x + 4.5, z: gate.z + 2, s: S * 1.4, ry: 0.5 })); scene.add(piece('town/cart-high', { x: gate.x - 5, z: gate.z + 3, s: S, ry: -0.4 }));
+  scene.add(piece('nature/plant_bushLarge', { x: gate.x + 7, z: gate.z - 1, s: S })); scene.add(piece('nature/plant_bushLarge', { x: gate.x - 7.5, z: gate.z - 1, s: S }));
 
   // Nehir: sağ taraf, kıvrımlı; kıyıda kaya ve nilüfer; taş köprü
   const pts = [[0.99, -0.05], [0.93, 0.25], [0.86, 0.45], [0.85, 0.6], [0.8, 0.78], [0.82, 1.06]].map(([px, py]) => { const p = toWorld(px, py); return new THREE.Vector3(p.x, 0.2, p.z); });
@@ -54,13 +77,13 @@ export async function buildWorld(scene, { W, H, toWorld, zones, onProgress }) {
   const bridge = piece('nature/bridge_stone', { x: bp.x, y: 0.1, z: bp.z, ry: Math.atan2(tangent.x, tangent.z) + Math.PI / 2, s: 4.2 }); scene.add(bridge);
 
   // Dağlar: sol üst ve üst kenarda büyük kaya kümeleri (gri / kahverengi), yükseklerde karlı tepe
-  const peaks = [[-0.02, -0.04, 7], [0.08, -0.1, 9], [0.19, -0.09, 8], [0.3, -0.1, 7], [0.42, -0.08, 6], [0.55, -0.1, 5], [-0.1, 0.12, 7], [-0.09, 0.32, 6], [-0.08, 0.52, 5], [0.68, -0.09, 4], [-0.06, 0.72, 4]];
+  const peaks = [[0.02, 0.02, 7], [0.12, 0.0, 9], [0.22, 0.0, 8], [0.33, 0.02, 7], [0.44, 0.0, 6], [0.56, 0.02, 5], [-0.01, 0.14, 7], [-0.01, 0.32, 6], [-0.01, 0.8, 5], [0.68, 0.0, 4]];
   const rockKinds = ['nature/rock_tallA', 'nature/rock_tallB', 'nature/stone_tallB', 'nature/stone_largeA', 'nature/rock_largeC'];
   const peakT = Object.fromEntries(rockKinds.map(k => [k, []])); const snowT = [];
   for (const [px, py, hmax] of peaks) {
     const c = toWorld(px, py);
     for (let i = 0; i < 9; i++) {
-      const a = rnd() * Math.PI * 2, r = rnd() * 14; const x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r * 0.8;
+      const a = rnd() * Math.PI * 2, r = rnd() * 11; const x = c.x + Math.cos(a) * r, z = c.z + Math.sin(a) * r * 0.8;
       const sc = (hmax * 2.2) * (0.5 + rnd() * 0.7) * (1 - r / 24);
       const key = rockKinds[Math.floor(rnd() * rockKinds.length)];
       peakT[key].push(xform(x, -0.6, z, rnd() * 6.28, Math.max(5, sc)));
@@ -86,11 +109,11 @@ export async function buildWorld(scene, { W, H, toWorld, zones, onProgress }) {
   }
 
   // Serpili doğa: bölgelerden ve kaleden uzak boş yerlere ağaç, çalı, çiçek, kaya (instancing)
-  const far = (x, z) => zones.every(t => { const p = toWorld(t.px, t.py); return Math.hypot(p.x - x, p.z - z) > Math.max(9, t.pr * W) + 5; }) && !(Math.abs(x - cc.x) < 13.5 * S && Math.abs(z - cc.z) < 10.5 * S) && x < W / 2 - 34 && !(z < -H / 2 + 24 && x < 0) && !(x < -W / 2 + 18);
+  const far = (x, z) => zones.every(t => { const p = toWorld(t.px, t.py); return Math.hypot(p.x - x, p.z - z) > Math.max(9, t.pr * W) + 5; }) && !(Math.abs(x - cc.x) < 13.5 * S && Math.abs(z - cc.z) < 10.5 * S) && x < W / 2 - 30 && !(z < -H / 2 + 16 && x < W * 0.2) && !(x < -W / 2 + 12) && Math.abs(x) < W / 2 + 4 && Math.abs(z) < H / 2 + 4;
   const kinds = { 'nature/tree_default': [], 'nature/tree_pineDefaultA': [], 'nature/tree_oak': [], 'nature/tree_pineRoundA': [], 'nature/tree_default_dark': [], 'nature/plant_bush': [], 'nature/plant_bushLarge': [], 'nature/flower_redA': [], 'nature/flower_yellowA': [], 'nature/rock_largeC': [], 'nature/stone_tallB': [], 'nature/grass_large': [] };
   const keys = Object.keys(kinds);
   for (let i = 0; i < 420; i++) {
-    const x = -W / 2 - 10 + rnd() * (W + 20), z = -H / 2 - 6 + rnd() * (H + 16);
+    const x = -W / 2 - 4 + rnd() * (W + 8), z = -H / 2 - 4 + rnd() * (H + 8);
     if (!far(x, z)) continue;
     const r = rnd(); const key = r < 0.42 ? keys[Math.floor(rnd() * 5)] : r < 0.62 ? keys[5 + Math.floor(rnd() * 2)] : r < 0.8 ? keys[7 + Math.floor(rnd() * 2)] : r < 0.9 ? keys[9 + Math.floor(rnd() * 2)] : keys[11];
     const s = key.includes('tree') ? 2.6 + rnd() * 1.6 : key.includes('rock') || key.includes('stone') ? 2 + rnd() * 1.5 : 1.8 + rnd() * 1.2;
@@ -98,6 +121,6 @@ export async function buildWorld(scene, { W, H, toWorld, zones, onProgress }) {
   }
   for (const [k, t] of Object.entries(kinds)) if (t.length) scene.add(instancedPiece(k, t));
 
-  out.gate = gate;
+  out.gate = gate; out.island = island;
   return out;
 }

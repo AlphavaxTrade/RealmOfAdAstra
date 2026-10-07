@@ -14,7 +14,7 @@ import { GAME_CONFIG } from '../config.js';
 import { sound } from '../audio.js';
 import { TOWN_ZONES } from '../grandTownScene.js';
 
-const W = 200, H = 112;                       // dünya birimleri (harita oranı 2048:1143)
+const W = 168, H = 100;                       // dünya birimleri (harita oranı 2048:1143)
 const toWorld = (px, py) => ({ x: px * W - W / 2, z: py * H - H / 2 });
 const NODE_OF_ZONE = Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [((GAME_CONFIG.RESOURCE_META || {})[k] || {}).zone || k, k]));
 const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
@@ -66,7 +66,7 @@ export function startVadi3D(container) {
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xcfe6ff, 320, 760);
+  scene.fog = new THREE.Fog(0xbfe3ff, 380, 820);
   scene.add(new THREE.HemisphereLight(0xe8f4ff, 0x6a9a4a, 1.0));
   const sun = new THREE.DirectionalLight(0xfff2dc, 1.8); sun.position.set(60, 90, 40); sun.castShadow = true;
   sun.shadow.mapSize.set(isMobile() ? 1024 : 2048, isMobile() ? 1024 : 2048);
@@ -100,7 +100,7 @@ export function startVadi3D(container) {
   const fwd = new THREE.Vector3(-Math.sin(AZ), 0, -Math.cos(AZ));
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 600);
   const target = new THREE.Vector3(0, 0, 10);
-  let zoom = isMobile() ? 0.8 : 1.0; const MIN_ZOOM = 0.55, MAX_ZOOM = 2.8, FRUSTUM = 46;
+  let zoom = isMobile() ? 0.9 : 1.05; const MIN_ZOOM = 0.72, MAX_ZOOM = 2.8, FRUSTUM = 46;
   let size = { w: 1, h: 1 };
   function layout() {
     const w = container.clientWidth || window.innerWidth, h = container.clientHeight || window.innerHeight - 92;
@@ -109,7 +109,10 @@ export function startVadi3D(container) {
     camera.zoom = zoom; camera.updateProjectionMatrix();
   }
   function placeCamera() {
-    target.x = Math.max(-W / 2 - 10, Math.min(W / 2 + 10, target.x)); target.z = Math.max(-H / 2 - 10, Math.min(H / 2 + 14, target.z));
+    // Kamera adanın dışına taşmasın: görünür alan büyüdükçe hedef ortaya çekilir
+    const halfViewH = FRUSTUM / zoom, halfViewW = halfViewH * (size.w / size.h);
+    const lx = Math.max(0, W / 2 + 4 - halfViewW * 0.75), lz = Math.max(0, H / 2 + 4 - halfViewH * 0.95);
+    target.x = Math.max(-lx, Math.min(lx, target.x)); target.z = Math.max(-lz, Math.min(lz + 6, target.z));
     camera.position.copy(target).addScaledVector(dir, 260); camera.lookAt(target); camera.zoom = zoom; camera.updateProjectionMatrix();
   }
   layout(); placeCamera();
