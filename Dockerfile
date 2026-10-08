@@ -28,6 +28,12 @@ RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 FROM node:${NODE_VERSION}-slim AS calisma
 ENV NODE_ENV=production PORT=8080 HOST=0.0.0.0 DB_FILE=/data/realm.db
 WORKDIR /uygulama
+# Güvenlik (ilk CI Trivy taraması: 7 Debian + 7 npm içi paket açığı): (1) taban imajın düzeltmesi yayınlanmış paketleri güncellenir,
+# (2) çalışma zamanında GEREKSİZ paket yöneticileri (npm, yarn, corepack) kaldırılır: sunucu yalnız `node` çalıştırır, bağımlılıklar bir önceki
+# aşamada kuruldu. Hem içlerindeki açıklar hem saldırı yüzeyi (kabuğa düşen biri paket kuramaz) ortadan kalkar.
+RUN apt-get update && apt-get -y upgrade && rm -rf /var/lib/apt/lists/* \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack /opt/yarn-* \
+ && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack /usr/local/bin/yarn /usr/local/bin/yarnpkg
 # Sunucu oyun kuralları için js/ klasörünü de çalıştırır (server/engine.js); dist/ tarayıcıya sunulur
 COPY --from=bagimlilik --chown=node:node /uygulama/node_modules ./node_modules
 COPY --chown=node:node package.json ./

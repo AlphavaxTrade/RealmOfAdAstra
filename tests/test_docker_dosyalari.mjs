@@ -35,6 +35,9 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   assert.ok(!/^ENV[^\n]*(KEY|TOKEN|PASSWORD|SECRET)/mi.test(duz), 'imaja gizli bilgi ENV ile gömülmez');
   assert.match(son, /COPY --from=derle[^\n]*dist/, 'derlenmiş oyun derle aşamasından gelir');
   assert.ok(!/vite|phaser|three/.test(son.replace(/--from=derle[^\n]*/g, '')), 'çalışma aşamasında derleme araçları yok');
+  assert.ok(son.includes('apt-get -y upgrade'), 'taban imajın düzeltilmiş paketleri güncellenir (Trivy bulgusu)');
+  for (const paketYoneticisi of ['/usr/local/lib/node_modules/npm', '/usr/local/lib/node_modules/corepack', '/opt/yarn-']) assert.ok(son.includes(paketYoneticisi), `çalışma imajından ${paketYoneticisi} kaldırılır (kullanılmayan paket yöneticisi = gereksiz açık ve saldırı yüzeyi)`);
+  assert.ok(!son.includes('npm ci') && !son.includes('npm install'), 'çalışma imajı paket kurmaz');
   ok('Dockerfile: 3 aşama, Node sürümü .nvmrc ile aynı, kök olmayan kullanıcı, sağlık denetimi, gizli bilgi/gereksiz dosya yok');
 }
 
