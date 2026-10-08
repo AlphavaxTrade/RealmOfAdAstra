@@ -45,7 +45,7 @@ export const HUB = {
     { k: 'komut', s: '🔎', ad: 'Ara ve git', ac: 'Her yere yazarak git (Ctrl+K)' },
     { k: 'duyurular', s: 'ℹ️', ad: 'Duyurular ve uyarılar', ac: 'Önemli bilgilendirmeler' },
     { k: 'surum', s: '📜', ad: 'Sürüm geçmişi', ac: 'Neler değişti' },
-    { k: 'test', s: '🧪', ad: 'Test menüsü', ac: 'Yalnız deneme sürümünde', yalnizTest: true }
+    { k: 'test', s: '🧪', ad: 'Test laboratuvarı', ac: 'Mekanikleri tek tek dene ve doğrula (yalnız deneme sürümünde)', yalnizTest: true }
   ] }
 };
 

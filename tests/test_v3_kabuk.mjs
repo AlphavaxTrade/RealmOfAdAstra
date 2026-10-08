@@ -5,6 +5,7 @@ import { SEKMELER, HUB, hubHtml, esc } from '../js/ui/v3/hub.js';
 import { gitHaritasi } from '../js/ui/v3/kabuk.js';
 import { istatSatiri, bosDurum, iskelet } from '../js/ui/v3/bilesenler.js';
 import { sadeBaslik, katlaKurali } from '../js/ui/v3/panel.js';
+import { farkSatirlari, farkHtml, sonucHtml, senaryoKartiHtml, gunlukHtml, kayitEkle } from '../js/ui/v3/lab.js';
 import { TUR_ADIMLARI, turBaslamali, sonrakiAdim, TUR_KAYIT_ANAHTARI } from '../js/ui/v3/tur.js';
 import { SOZLUK, terim } from '../js/ui/v3/sozluk.js';
 
@@ -104,3 +105,30 @@ console.log('✅ sözlük');
   assert.equal(sonrakiAdim(99, bos), 99);
 }
 console.log('✅ yeni oyuncu turu');
+
+// 8) Test laboratuvarı: fark, sonuç gösterimi (kaçırma), kayıt noktası listesi
+{
+  const once = { astra: 100, seviye: 1, env: { wood: 10, iron: 5 }, rehberTamam: [] };
+  const sonra = { astra: 90, seviye: 1, env: { wood: 25, iron: 5 }, rehberTamam: ['first_expedition'] };
+  const f = farkSatirlari(once, sonra);
+  assert.deepEqual(f.map((x) => x.alan).sort(), ['ASTRA', 'Envanter: wood', 'Tamamlanan görevler'].sort(), 'yalnız DEĞİŞEN alanlar listelenir');
+  assert.equal(farkSatirlari(once, once).length, 0);
+  assert.match(farkHtml([]), /Değişen bir şey yok/);
+  const sonuc = { id: 'x', gecti: false, adimlar: [{ ad: 'Tamam <b>', tamam: true }, { ad: 'Kötü', tamam: false }], hata: '<script>alert(1)</script>', once, sonra };
+  const html = sonucHtml(sonuc);
+  assert.match(html, /❌ Kaldı/); assert.match(html, /v3-lab-ok/); assert.match(html, /v3-lab-yok/);
+  assert.ok(!html.includes('<script>') && !html.includes('Tamam <b>') && html.includes('Tamam &lt;b&gt;'), 'sonuç metinleri kaçırılmış olmalı');
+  assert.match(sonucHtml({ ...sonuc, gecti: true, adimlar: [], hata: '' }), /✅ Geçti/);
+  assert.equal(sonucHtml(null), '');
+  const kart = senaryoKartiHtml({ id: 'a"b', ad: 'Ad <i>', ne: 'ne' }, null, false);
+  assert.ok(kart.includes('disabled') && !kart.includes('<i>') && !kart.includes('a"b'), 'kapalıyken düğmeler devre dışı, kimlik/ad kaçırılmış');
+  assert.match(gunlukHtml([]), /Günlük boş/);
+  assert.ok(gunlukHtml([{ saat: '1', eylem: '<x>', sonuc: 'y' }]).includes('&lt;x&gt;'));
+  // kayıt noktaları: en yeni başta, en çok `sinir` tane, aynı kimlik tekrarlanmaz
+  let l = [];
+  for (let i = 1; i <= 10; i++) l = kayitEkle(l, { id: `k${i}`, ad: `K${i}` }, 8);
+  assert.equal(l.length, 8); assert.equal(l[0].id, 'k10'); assert.equal(l[7].id, 'k3', 'en eski ikisi atıldı');
+  assert.equal(kayitEkle(l, { id: 'k5', ad: 'yeni ad' }, 8).filter((k) => k.id === 'k5').length, 1);
+  assert.equal(kayitEkle(l, { id: 'k5', ad: 'yeni ad' }, 8)[0].ad, 'yeni ad');
+}
+console.log('✅ test laboratuvarı');

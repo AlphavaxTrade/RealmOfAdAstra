@@ -8820,7 +8820,25 @@ window.addEventListener('DOMContentLoaded', async () => {
       openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
       openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
       duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
-      hesapAnahtari: () => (online.active && online.playerId) || 'yerel'
+      hesapAnahtari: () => (online.active && online.playerId) || 'yerel',
+      cevrimici: () => !!online.active,
+      bildir: (m, t) => showToast(m, t),
+      hudYenile: () => renderTopBar(),
+      // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)
+      vanillaSifirla: async () => {
+        if (online.active) {
+          try {
+            const r = await devVanillaReset();
+            if (r && r.ok) { showToast('🏛️ Sunucu ilk güne döndü; sayfa yenileniyor…', 'success'); setTimeout(() => location.reload(), 1200); }
+            else showToast('Sıfırlama yapılamadı: ' + ((r && r.message) || 'sunucu kabul etmedi'), 'error');
+          } catch (err) { showToast('Sıfırlama yapılamadı: ' + err.message, 'error'); }
+          return;
+        }
+        gameState.vanillaReset();
+        showToast('🏛️ Oyun ilk güne döndü; sayfa yenileniyor…', 'success');
+        renderTopBar();
+        setTimeout(() => location.reload(), 900);
+      }
     });
     renderTopBar();
   }

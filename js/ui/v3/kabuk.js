@@ -7,13 +7,14 @@ import { SEKMELER, HUB, hubHtml, esc } from './hub.js';
 import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
 import { SOZLUK } from './sozluk.js';
 import { kurTur } from './tur.js';
+import { kurLab } from './lab.js';
 
 const $ = (id) => document.getElementById(id);
 const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
-export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat }) {
+export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc }) {
   return {
     merkez: () => api.openDashboard(),
     seferler: () => { api.closeModal(); yanAc(true); },
@@ -41,7 +42,7 @@ export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat }) {
     komut: () => { api.closeModal(); api.openPalette(); },
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
     surum: () => api.openChangelog(),
-    test: () => { api.closeModal(); api.openDev(); }
+    test: () => labAc()
     };
 }
 
@@ -141,7 +142,18 @@ export function kurV3Kabuk(api) {
 
   const uyariMetni = () => (api.duyurular() || []).filter((a) => a.active !== false);
   const tur = kurTur({ gameState: gs, isAnyModalOpen: api.isAnyModalOpen, closeModal: api.closeModal, hesapAnahtari: api.hesapAnahtari });
-  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true) });
+  // Test laboratuvarı yalnız deneme sürümünde var (eski test menüsünün öğeleri o sürümde sayfada bulunur)
+  const lab = $('dev-modal') ? kurLab({ gameState: gs, openPanel: api.openPanel, cevrimici: api.cevrimici, bildir: api.bildir, hudYenile: api.hudYenile, vanillaSifirla: api.vanillaSifirla }) : null;
+  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); } });
+  if (lab) {
+    // T kısayolu v3'te eski test menüsünü değil laboratuvarı açar (yakalama aşaması: eski dinleyiciden önce)
+    window.addEventListener('keydown', (e) => {
+      if ((e.key !== 't' && e.key !== 'T') || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (api.isAnyModalOpen() && document.querySelector('#modal-body .v3-lab')) api.closeModal(); else { sekmeSec('ben'); lab.ac(); }
+    }, true);
+  }
 
   // ---------------------------------------------------------------- olaylar
   alt.addEventListener('click', (e) => {

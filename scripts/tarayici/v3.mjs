@@ -89,6 +89,36 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: konsey ve hazine sade başlıklı`, (await baslik()) === '🏛️ Konsey ve hazine', await baslik());
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Aşama 4: Test laboratuvarı
+  await ust('ben', 'test'); await foto('09_lab_senaryolar');
+  kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());
+  const lab = sel => s.evaluate(q => document.querySelectorAll(`#modal-body ${q}`).length, sel);
+  kontrol(`${ad}: laboratuvarda 23 senaryo kartı`, (await lab('.v3-lab-kart')) === 23, String(await lab('.v3-lab-kart')));
+  await tikla('[data-lab^="calistir:zaman-sefer-hazir"]');
+  kontrol(`${ad}: tek senaryo çalışır ve ✓ gösterir`, await s.evaluate(() => /Geçti/.test(document.querySelector('[data-lab-senaryo="zaman-sefer-hazir"] .v3-lab-sonuc')?.innerText || '')));
+  await tikla('[data-lab="hepsini"]'); await bekle(1500);
+  const ozetMetni = await s.evaluate(() => document.querySelector('.v3-lab-ozet span')?.innerText || '');
+  kontrol(`${ad}: "listeyi çalıştır" 23/23 geçti`, /23\/23 geçti/.test(ozetMetni), ozetMetni);
+  await foto('10_lab_sonuclar');
+  await tikla('[data-lab="sekme:arac"]'); await foto('11_lab_araclar');
+  await tikla('[data-lab="astra:1000"]');
+  await tikla('[data-lab="sekme:gunluk"]');
+  kontrol(`${ad}: yapılan işlem günlükte görünür`, await s.evaluate(() => /ASTRA/.test(document.querySelector('.v3-lab-gunluk')?.innerText || '')));
+  await tikla('[data-lab="sekme:durum"]'); await tikla('[data-lab="karsilastir"]'); 
+  await tikla('[data-lab="sekme:arac"]'); await tikla('[data-lab="astra:1000000"]'); await tikla('[data-lab="sekme:durum"]');
+  kontrol(`${ad}: durum sekmesi karşılaştırmadan beri değişen ASTRA'yı gösterir`, await s.evaluate(() => /ASTRA/.test(document.querySelector('.v3-lab-fark')?.innerText || '')));
+  await tikla('[data-lab="sekme:arac"]');
+  await s.evaluate(() => { document.getElementById('lab-kayit-ad').value = 'deneme kaydı'; });
+  await tikla('[data-lab="kayit-al"]');
+  kontrol(`${ad}: kayıt noktası alınır ve listelenir`, await s.evaluate(() => /deneme kaydı/.test(document.querySelector('#modal-body')?.innerText || '')));
+  await tikla('[data-lab^="kayit-sil:"]');
+  kontrol(`${ad}: kayıt noktası silinir`, await s.evaluate(() => !/deneme kaydı/.test(document.querySelector('#modal-body')?.innerText || '')));
+  await s.keyboard.press('Escape'); await bekle(300);
+  await s.keyboard.press('t'); await bekle(700);
+  kontrol(`${ad}: T kısayolu laboratuvarı açar (eski test menüsünü değil)`, /Test laboratuvarı/.test(await baslik()) && await s.evaluate(() => document.getElementById('dev-modal').classList.contains('hidden')));
+  await s.keyboard.press('t'); await bekle(500);
+  kontrol(`${ad}: T tekrar basınca kapanır`, !(await panelAcik()));
+
   // onay penceresi: Esc vazgeç, Onayla evet
   await s.evaluate(async () => { const m = await import('/js/ui/v3/bilesenler.js'); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; });   // söz döndürmez: evaluate pencere kapanana kadar beklemesin
   await s.evaluate(() => window.__onay({ baslik: 'Silinsin mi?', metin: 'Geri alınamaz.', tamam: 'Sil', tehlikeli: true }));
