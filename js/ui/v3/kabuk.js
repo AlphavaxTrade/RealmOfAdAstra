@@ -4,6 +4,8 @@
 // Panel içerikleri hâlâ eski ekranlardır; Aşama 2'de tek tek bu kabuğun bileşenleriyle yeniden yazılır.
 
 import { SEKMELER, HUB, hubHtml, esc } from './hub.js';
+import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
+import { SOZLUK } from './sozluk.js';
 
 const $ = (id) => document.getElementById(id);
 const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
@@ -163,6 +165,51 @@ export function kurV3Kabuk(api) {
 
   new MutationObserver(() => { if (!$('rpg-modal').classList.contains('active') && !(yan && yan.classList.contains('open'))) sekmeSec('harita'); })
     .observe($('rpg-modal'), { attributes: true, attributeFilter: ['class'] });
+
+  // Eski ekranların sadeleştirilmesi: başlıklar sadeleşir, uzun kart yığınları katlanır, sürüm geçmişi kısalır
+  const baslikEl = $('modal-title'), govde = $('modal-body');
+  new MutationObserver(() => {
+    const spanlar = baslikEl.querySelectorAll('span');
+    const son = spanlar[spanlar.length - 1];
+    if (!son) return;
+    const hepsi = (baslikEl.innerText || '').replace(/\s+/g, ' ').trim();
+    const sade = sadeBaslik(hepsi);
+    if (sade === hepsi) return;
+    const [simge, ...kalan] = sade.split(' ');
+    baslikEl.innerHTML = `<span>${esc(simge)}</span> <span>${esc(kalan.join(' '))}</span>`;
+  }).observe(baslikEl, { childList: true });
+  new MutationObserver((mut) => {
+    // kendi taşımalarımız (katlanır bölüm) yeniden işlemeyi tetiklemesin
+    if (mut.every((m) => [...m.addedNodes].every((n) => n.nodeType !== 1 || n.matches('details.v3-katli, .v3-eski-dugme')))) return;
+    const baslik = (baslikEl.innerText || '').replace(/\s+/g, ' ').trim();
+    const kural = katlaKurali(sadeBaslik(baslik));
+    if (kural) katla(govde, kural.acik, baslik);
+    if (/Sürüm geçmişi/i.test(sadeBaslik(baslik))) eskiSurumleriGizle(govde, 3);
+  }).observe(govde, { childList: true });
+
+  // Terim balonu: sözlükteki "?" düğmelerine dokununca açıklama gösterilir (yakalama aşaması: eski pencere olayları durduruyor)
+  const balon = document.createElement('div');
+  balon.id = 'v3-balon';
+  balon.setAttribute('role', 'tooltip');
+  balon.hidden = true;
+  document.body.appendChild(balon);
+  const balonKapat = () => { balon.hidden = true; };
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('.v3-terim');
+    if (!t) { if (!balon.hidden && !e.target.closest('#v3-balon')) balonKapat(); return; }
+    e.preventDefault(); e.stopPropagation();
+    const s = SOZLUK[t.dataset.v3Terim];
+    if (!s) return;
+    balon.innerHTML = `<b>${esc(s.ad)}</b><span>${esc(s.aciklama)}</span>`;
+    balon.hidden = false;
+    const r = t.getBoundingClientRect();
+    const genis = Math.min(300, window.innerWidth - 20);
+    balon.style.width = `${genis}px`;
+    balon.style.left = `${Math.max(10, Math.min(window.innerWidth - genis - 10, r.left + r.width / 2 - genis / 2))}px`;
+    const yukseklik = balon.offsetHeight;
+    balon.style.top = `${r.bottom + 8 + yukseklik > window.innerHeight ? Math.max(10, r.top - yukseklik - 8) : r.bottom + 8}px`;
+  }, true);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') balonKapat(); }, true);
 
   $('v3-profil').addEventListener('click', () => { tepsiAc(false); api.openInventory(); });
   $('v3-bakiye').addEventListener('click', () => { tepsiAc(false); api.openWallet(); });

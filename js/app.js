@@ -14,6 +14,7 @@ import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatD
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
+import { terim } from './ui/v3/sozluk.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
@@ -66,6 +67,7 @@ window.closeBattleArenaModal = closeBattleArenaModal;
 let barracksActiveTab = 'army';
 let mineActiveTab = 'mining';
 let marketActiveTab = 'resources';
+let marketSelectedRes = 'wheat';   // v3: Al/Sat bölümünde bir seferde tek kart gösterilir
 let selectedSoldierIndex = 0;
 let editingSoldierNameIndex = null;
 let collectionActiveTab = 'koleksiyon';
@@ -2139,7 +2141,7 @@ function openTownZoneModal(zoneId, zoneName) {
 
   // 4. AMM PAZAR YERİ (AUTOMATED MARKET MAKER DEX SWAP & P2P MARKET)
   else if (zoneId === 'market') {
-    const marketTabsHtml = `
+    const marketTabsHtmlEski = `
       <div class="phase2-tab-row">
         <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'resources' ? 'active' : ''}" data-tab="resources">🪙 Hammadde & Pandora Havuzları</button>
         <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'fragments' ? 'active' : ''}" data-tab="fragments">🧩 Teçhizat Parçaları</button>
@@ -2149,7 +2151,35 @@ function openTownZoneModal(zoneId, zoneName) {
       </div>
     `;
 
-    html = `
+    // v3: 5 sekme yerine 3 bölüm (Al/Sat · İlanlar · Yakım); Al/Sat içinde kaynak seçimi, İlanlar içinde iki liste
+    const marketV3Html = () => {
+      const bolum = ['resources', 'fragments'].includes(marketActiveTab) ? 'alsat' : (['ilan', 'p2p_collection'].includes(marketActiveTab) ? 'ilan' : 'yakim');
+      const bolumDugme = (tab, etiket, acik) => `<button type="button" class="phase2-tab-btn market-tab-btn ${acik ? 'active' : ''}" data-tab="${tab}">${etiket}</button>`;
+      let alt = '';
+      if (bolum === 'alsat') {
+        alt = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments', 'boxes', 'keys'].filter(k => k === 'fragments' || ammMarket.pools[k]).map(k => {
+          if (k === 'fragments') return `<button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'fragments' ? 'active' : ''}" data-tab="fragments">🧩 Parça</button>`;
+          const aktif = marketActiveTab === 'resources' && marketSelectedRes === k;
+          return `<button type="button" class="v3-chip ${aktif ? 'active' : ''}" data-v3-res="${k}">${ammMarket.pools[k].name}</button>`;
+        }).join('');
+      } else if (bolum === 'ilan') {
+        alt = `<button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'ilan' ? 'active' : ''}" data-tab="ilan">⚔️ Teçhizat ilanları</button>
+               <button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'p2p_collection' ? 'active' : ''}" data-tab="p2p_collection">👑 Koleksiyon eserleri</button>`;
+      }
+      return `<div class="phase2-tab-row v3-bolumler">${bolumDugme('resources', '💱 Al / Sat', bolum === 'alsat')}${bolumDugme('ilan', '🏷️ İlanlar', bolum === 'ilan')}${bolumDugme('buyback_vault', `🔥 Yakım`, bolum === 'yakim')}</div>${alt ? `<div class="v3-chipler">${alt}</div>` : ''}`;
+    };
+    const marketTabsHtml = V3_ARAYUZ ? marketV3Html() : marketTabsHtmlEski;
+
+    html = V3_ARAYUZ ? `
+      <div class="clean-card v3-ozet-kart">
+        <div class="card-title-row">
+          <div class="card-title">🏪 Pazar</div>
+          <span class="v3-bakiye-rozet">Bakiye: ${state.adAstraBalance.toFixed(1)} ASTRA</span>
+        </div>
+        <div class="clean-desc">Al ve sat. Fiyatı ${terim('amm', 'takas havuzu')} belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde ${terim('yakim', 'yakılır')}, %2 ASTRA ${terim('harc', 'harç')} oyun kasalarına gider.</div>
+      </div>
+      ${marketTabsHtml}
+    ` : `
       <div class="clean-card">
         <div class="card-title-row">
           <div class="card-title">🏪 AMM Pazar Yeri & P2P Koleksiyon Pazarı</div>
@@ -2186,9 +2216,9 @@ function openTownZoneModal(zoneId, zoneName) {
               <span style="width: 44px; height: 44px; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center;">${resImg(resKey, pool.icon, 'width:44px;height:44px;')}</span>
               <div>
                 <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name}</div>
-                <div style="font-size: 0.78rem; color: #94a3b8;">
+                ${V3_ARAYUZ ? '' : `<div style="font-size: 0.78rem; color: #94a3b8;">
                   Havuz: <strong>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name}</strong> • <strong>${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</strong>
-                </div>
+                </div>`}
               </div>
             </div>
             <div style="text-align: right;">
@@ -2204,6 +2234,7 @@ function openTownZoneModal(zoneId, zoneName) {
             </div>
           </div>
 
+          ${V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>${terim('havuz', 'Havuz')} bilgisi</summary><div>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name} • ${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</div></details>` : ''}
           <div class="amm-trade-grid">
             <!-- Satın Al (Buy) -->
             <div class="amm-trade-box">
@@ -2470,9 +2501,9 @@ function openTownZoneModal(zoneId, zoneName) {
     html += `
       <!-- Havuzlar: 6 hammadde + Pandora kutusu + anahtar -->
       <div class="amm-trade-container">
-        ${RES_KEYS().map(k => renderAmmTradeCard(k)).join('')}
-        ${renderAmmTradeCard('boxes')}
-        ${renderAmmTradeCard('keys')}
+        ${V3_ARAYUZ
+          ? renderAmmTradeCard(['boxes', 'keys'].includes(marketSelectedRes) || RES_KEYS().includes(marketSelectedRes) ? marketSelectedRes : 'wheat')
+          : `${RES_KEYS().map(k => renderAmmTradeCard(k)).join('')}${renderAmmTradeCard('boxes')}${renderAmmTradeCard('keys')}`}
       </div>
     `;
   }
@@ -7390,6 +7421,15 @@ function initAppEvents() {
     if (colosseumTabBtn) {
       colosseumActiveTab = colosseumTabBtn.dataset.tab;
       openColosseumModal();
+      return;
+    }
+
+    // v3 Pazar: Al/Sat bölümünde kaynak seçimi
+    const marketResChip = e.target.closest('[data-v3-res]');
+    if (marketResChip) {
+      marketSelectedRes = marketResChip.dataset.v3Res;
+      marketActiveTab = 'resources';
+      openTownZoneModal('market', '🏪 Pazar');
       return;
     }
 

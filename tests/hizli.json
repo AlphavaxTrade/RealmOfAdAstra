@@ -21,5 +21,6 @@
   "test_openapi.mjs",
   "test_git_izleme.mjs",
   "test_pre_push.mjs",
-  "test_v2_savunma_duvari.mjs"
+  "test_v2_savunma_duvari.mjs",
+  "test_v3_kabuk.mjs"
 ]

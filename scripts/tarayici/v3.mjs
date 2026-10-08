@@ -47,7 +47,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   for (const id of ['kralik', 'savas', 'pazar', 'ben']) { await tikla(`[data-v3-sekme="${id}"]`); await foto(`02_${id}`); kontrol(`${ad}: ${id} ana listesi açılır`, (await panelAcik()) && await s.evaluate(() => !!document.querySelector('#modal-body .v3-hub'))); }
 
   await tikla('[data-v3-sekme="kralik"]'); await tikla('[data-v3-git="merkez"]'); await foto('03_kralik_merkez');
-  kontrol(`${ad}: Krallık merkezi açılır`, /KRALLIK MERKEZİ/i.test(await baslik()), await baslik());
+  kontrol(`${ad}: Krallık merkezi açılır`, /Krallık merkezi/i.test(await baslik()), await baslik());
   await tikla('[data-v3-sekme="kralik"]');
   kontrol(`${ad}: aktif sekmeye tekrar dokunmak ana listeye döner`, await s.evaluate(() => !!document.querySelector('#modal-body .v3-hub')));
   await tikla('[data-v3-sekme="kralik"]');
@@ -57,6 +57,36 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: seferler paneli açılır`, await s.evaluate(() => document.getElementById('realm-sidebar').classList.contains('open')));
   await tikla('.v3-yan-kapat');
   kontrol(`${ad}: seferler paneli kapanır`, await s.evaluate(() => !document.getElementById('realm-sidebar').classList.contains('open')));
+
+  // Aşama 2: eski ekranların v3 görünümü (düzey 30 hesapla; ekranlar kilitli olmasın)
+  await s.evaluate(() => { window.gameState.setDevLevel(30); window.gameState.addDevAdAstra(2000000); });
+  const govdeYuk = () => s.evaluate(() => document.getElementById('modal-body').scrollHeight);
+  const ust = async (sekme, git) => { await s.keyboard.press('Escape'); await bekle(300); await tikla(`[data-v3-sekme="${sekme}"]`); await tikla(`[data-v3-git="${git}"]`); await bekle(600); };
+  await ust('pazar', 'pazar'); await foto('06_pazar_alsat');
+  kontrol(`${ad}: Pazar sade başlıkla açılır`, (await baslik()) === '🏪 Pazar', await baslik());
+  kontrol(`${ad}: Pazar'da 3 bölüm var (5 sekme değil)`, await s.evaluate(() => document.querySelectorAll('.v3-bolumler .market-tab-btn').length === 3));
+  kontrol(`${ad}: Pazar'da tek seferde tek kaynak kartı`, await s.evaluate(() => document.querySelectorAll('.amm-card').length === 1));
+  kontrol(`${ad}: Pazar kısa (≤ 1100 px; eskiden ~4000)`, (await govdeYuk()) <= 1100, String(await govdeYuk()));
+  await tikla('[data-v3-res="stone"]');
+  kontrol(`${ad}: kaynak seçici Taş kartını getirir`, await s.evaluate(() => document.querySelector('.amm-card')?.dataset.res === 'stone'));
+  await tikla('.v3-terim');
+  kontrol(`${ad}: terim balonu açılır`, await s.evaluate(() => !document.getElementById('v3-balon').hidden && /Takas havuzu/.test(document.getElementById('v3-balon').innerText)));
+  await s.keyboard.press('Escape'); await bekle(200);
+  kontrol(`${ad}: Esc balonu kapatır`, await s.evaluate(() => document.getElementById('v3-balon').hidden));
+  await tikla('.v3-bolumler [data-tab="ilan"]');
+  kontrol(`${ad}: İlanlar bölümü iki liste seçeneği sunar`, await s.evaluate(() => document.querySelectorAll('.v3-chipler .v3-chip').length === 2));
+  await ust('kralik', 'merkez'); await foto('07_kralik_merkez');
+  kontrol(`${ad}: Krallık merkezinde yan kartlar katlı (≥3 kapalı bölüm)`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli:not([open])').length >= 3));
+  kontrol(`${ad}: Krallık merkezi kısa (≤ 800 px)`, (await govdeYuk()) <= 800, String(await govdeYuk()));
+  await s.evaluate(() => document.querySelector('#modal-body details.v3-katli:not([open]) > summary').click()); await bekle(300);
+  kontrol(`${ad}: katlı bölüm açılır`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli[open]').length >= 3));
+  await ust('ben', 'surum'); await foto('08_surum');
+  kontrol(`${ad}: sürüm geçmişi kısa (≤ 1500 px; eskiden ~17000)`, (await govdeYuk()) <= 1500, String(await govdeYuk()));
+  await s.evaluate(() => document.querySelector('.v3-eski-dugme').click()); await bekle(300);
+  kontrol(`${ad}: "Eski sürümleri göster" hepsini açar`, (await govdeYuk()) > 5000);
+  await ust('ben', 'hazine');
+  kontrol(`${ad}: konsey ve hazine sade başlıklı`, (await baslik()) === '🏛️ Konsey ve hazine', await baslik());
+  await s.keyboard.press('Escape'); await bekle(300);
 
   // onay penceresi: Esc vazgeç, Onayla evet
   await s.evaluate(async () => { const m = await import('/js/ui/v3/bilesenler.js'); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; });   // söz döndürmez: evaluate pencere kapanana kadar beklemesin

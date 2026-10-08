@@ -58,7 +58,7 @@ const yerlesik = Math.random;   // bu dosya yüklendiğinde henüz hiçbir şey 
   const dizin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../server');
   const kalan = [];
   for (const f of fs.readdirSync(dizin).filter(f => f.endsWith('.js') && f !== 'rastgele.js')) {
-    fs.readFileSync(path.join(dizin, f), 'utf8').split('\n').forEach((s, i) => { if (s.replace(/\/\/.*$/, '').includes('Math.random')) kalan.push(`${f}:${i + 1}`); });   // yorum satırları sayılmaz
+    fs.readFileSync(path.join(dizin, f), 'utf8').split(/\r?\n/).forEach((s, i) => { if (s.replace(/\/\/.*$/, '').includes('Math.random')) kalan.push(`${f}:${i + 1}`); });   // yorum satırları sayılmaz
   }
   assert.deepEqual(kalan, [], 'sunucuda Math.random kullanımı kaldı: ' + kalan.join(', '));
   ok('server/*.js içinde Math.random kalmadı');

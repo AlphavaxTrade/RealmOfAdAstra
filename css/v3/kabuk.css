@@ -234,3 +234,41 @@ html.v3 .v3-onay-dugmeler .v3-tehlikeli { background: var(--v3-kotu); color: #ff
 html.v3 .v3-onay-dugmeler button:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
 /* bildirim (toast): tek tip, okunaklı */
 html.v3 .toast { border-radius: 14px !important; font: 600 13.5px/1.4 var(--font-ui) !important; padding: 12px 14px !important; background: rgba(21,26,38,.97) !important; border: 1px solid var(--v3-cizgi-guclu) !important; box-shadow: var(--v3-golge) !important; color: var(--v3-yazi) !important; }
+
+/* 11. PANEL DUZENLEYICILERI VE PAZAR (js/ui/v3/panel.js, sozluk.js, app.js pazar) ---------- */
+/* katlanir kartlar */
+html.v3 details.v3-katli { background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-radius: var(--v3-r); overflow: hidden; }
+html.v3 details.v3-katli > summary { list-style: none; cursor: pointer; display: flex; align-items: center; min-height: var(--v3-tap); padding: 4px 14px; position: relative; padding-right: 40px; }
+html.v3 details.v3-katli > summary::-webkit-details-marker { display: none; }
+html.v3 details.v3-katli > summary::after { content: "›"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 22px; color: var(--v3-yazi-3); transition: transform .15s; }
+html.v3 details.v3-katli[open] > summary::after { transform: translateY(-50%) rotate(-90deg); }
+html.v3 details.v3-katli > summary > * { flex: 1; margin: 0 !important; }
+html.v3 details.v3-katli > .v3-katli-icerik { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+html.v3 details.v3-katli > summary:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: -2px; }
+html.v3 .v3-eski-dugme { all: unset; box-sizing: border-box; cursor: pointer; display: flex; justify-content: center; align-items: center; min-height: var(--v3-tap); border-radius: var(--v3-r); border: 1px dashed var(--v3-cizgi-guclu); color: var(--v3-yazi-2); font: 700 13.5px var(--font-ui); }
+/* terim dugmesi ve balonu */
+html.v3 .v3-terim { all: unset; cursor: pointer; display: inline; border-bottom: 1px dotted var(--v3-yazi-3); color: inherit; }
+html.v3 .v3-terim i { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 3px; border-radius: 50%; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 800 10px/1 var(--font-ui); font-style: normal; color: var(--v3-vurgu-acik); vertical-align: 1px; }
+html.v3 .v3-terim:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; border-radius: 4px; }
+html.v3 #v3-balon { position: fixed; z-index: 100020; padding: 12px 14px; border-radius: 14px; background: #1c2231; border: 1px solid var(--v3-cizgi-guclu); box-shadow: var(--v3-golge); display: flex; flex-direction: column; gap: 4px; box-sizing: border-box; }
+html.v3 #v3-balon[hidden] { display: none; }
+html.v3 #v3-balon b { font: 800 13.5px var(--font-ui); color: var(--v3-vurgu-acik); }
+html.v3 #v3-balon span { font: 500 13px/1.45 var(--font-ui); color: var(--v3-yazi); }
+/* pazar: bolumler (segmentli), kaynak secici, ozet karti, ayrinti */
+html.v3 .phase2-tab-row.v3-bolumler { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-radius: 14px; overflow: visible; }
+html.v3 .v3-bolumler .phase2-tab-btn { min-height: var(--v3-tap); padding: 0 6px; border-radius: 10px; border: 0 !important; background: transparent !important; color: var(--v3-yazi-2) !important; font: 700 13.5px var(--font-ui) !important; white-space: nowrap; }
+html.v3 .v3-bolumler .phase2-tab-btn.active { background: var(--v3-vurgu) !important; color: #1a1405 !important; }
+html.v3 .v3-chipler { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
+html.v3 .v3-chipler::-webkit-scrollbar { display: none; }
+html.v3 .v3-chip { all: unset; box-sizing: border-box; cursor: pointer; flex: none; display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 19px; background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi-guclu); font: 700 13px var(--font-ui); color: var(--v3-yazi-2); white-space: nowrap; }
+html.v3 .v3-chip.active { background: rgba(231,185,76,.16); border-color: var(--v3-vurgu); color: var(--v3-vurgu-acik); }
+html.v3 .v3-chip:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
+html.v3 .v3-bakiye-rozet { font: 800 12.5px var(--font-ui); color: #c9b8ff; white-space: nowrap; }
+html.v3 .v3-ozet-kart .card-title-row { align-items: center; }
+html.v3 details.v3-ayrinti { margin: 2px 0 8px; font: 500 12.5px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
+html.v3 details.v3-ayrinti > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--v3-yazi-3); font-weight: 700; }
+html.v3 details.v3-ayrinti > div { padding: 4px 0 0; }
+
+/* panel govdesinde cocuklar ezilmez (kaydirmali kutular sifira kadar kuculuyordu); hidden her zaman gizler */
+html.v3 .rpg-modal-body > * { flex-shrink: 0; }
+html.v3 .rpg-modal-body [hidden] { display: none !important; }

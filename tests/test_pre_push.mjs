@@ -15,7 +15,9 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
 if (spawnSync('git', ['--version']).status !== 0) { console.log('⏭️  git yok: test atlandı'); process.exit(0); }
 
 const gecici = fs.mkdtempSync(path.join(os.tmpdir(), 'prepush-'));
-const git = (cwd, env, ...args) => spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0', ...env } });
+// GIT_* değişkenleri (kancadan miras) temizlenir: yoksa bu test geçici depo yerine GERÇEK depoda çalışır (dal yeniden adlandırır, ayar yazar, itme yapar)
+const temizEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+const git = (cwd, env, ...args) => spawnSync('git', args, { cwd, encoding: 'utf8', env: { ...temizEnv, GIT_TERMINAL_PROMPT: '0', ...env } });
 try {
   const uzak = path.join(gecici, 'uzak.git'), is = path.join(gecici, 'is');
   git(gecici, {}, 'init', '-q', '--bare', uzak);
