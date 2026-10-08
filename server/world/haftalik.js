@@ -17,7 +17,8 @@ export function olusturHaftalik(w) {
     const T = E.treasury;
     const summary = { epoch: closedEpoch, at: now, players: players.length, brake };
 
-    return atomic(() => {
+    T.bypassBudget = true;   // hesaplaşma ödemeleri (ücretsiz havuz, PvP) KARAR 7 haftalık bütçesine girmez
+    try { return atomic(() => {
       // 1) Çekim
       const rows = [];
       const states = new Map();
@@ -220,8 +221,9 @@ export function olusturHaftalik(w) {
       db.raw.prepare('DELETE FROM prices WHERE at < ?').run(now - 400 * DAY);
       const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
       if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key >= 'pvp:match:' AND key < 'pvp:match;' AND CAST(substr(key, 11) AS INTEGER) <= ?")   /* LIKE yerine aralık: anahtar indeksini kullanır */.run(seq - 5000);
+      T.openWeekBudgets();
       return summary;
-    });
+    }); } finally { T.bypassBudget = false; }
   }
 
   async function runWeekly(closedEpoch) {

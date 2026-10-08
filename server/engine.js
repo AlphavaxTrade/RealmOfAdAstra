@@ -56,6 +56,9 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
   const { ammMarket } = await import('../js/ammMarket.js');
   const { levelWeight } = await import('../js/economy/ubi.js');
 
+  // KARAR 7: haftalık ödeme bütçesi ilk açılışta bir kez kurulur (sonra her hafta hesaplaşmanın sonunda yenilenir)
+  if (!Object.keys(treasury.state.weekBudget || {}).length) treasury.openWeekBudgets();
+
   // Sunucuda "güvenilir saat" sunucunun kendi saatidir
   globalPool.serverTimeOffset = 0;
   globalPool.trustedTimeReady = true;
