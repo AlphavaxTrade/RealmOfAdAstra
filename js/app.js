@@ -145,6 +145,7 @@ const barracksUI = createBarracksUI({
   showToast: (...a) => showToast(...a),
   renderTopBar: () => renderTopBar(),
   reopen: (o) => openBarracksModal(o || {}),
+  compact: V3_ARAYUZ,
   getSelected: () => selectedSoldierIndex, setSelected: (i) => { selectedSoldierIndex = i; },
   getTab: () => barracksActiveTab, setTab: (t) => { barracksActiveTab = t; },
   getEditing: () => editingSoldierNameIndex, setEditing: (i) => { editingSoldierNameIndex = i; },

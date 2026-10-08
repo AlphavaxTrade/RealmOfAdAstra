@@ -149,6 +149,22 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: ?arayuz=3 yeni arayüze döndürür ve tercihi siler`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && localStorage.getItem('roa_arayuz') === null));
   await varsayilan.close();
 
+  // Kışla (compact kip): ikincil işlemler katlı, dokunma hedefleri büyük
+  await s.evaluate(() => { const g = window.gameState; g.setDevLevel(30); g.setDevAdAstra(5e6); g.state.soldierUnits = []; for (let i = 0; i < 4; i++) g.buySoldierUnit(); });
+  await ust('savas', 'kisla'); await foto('14_kisla');
+  const kis = await s.evaluate(() => ({ ana: document.querySelectorAll('.bk-summary-actions .bk-btn:not(.ghost)').length, ekstra: !!document.querySelector('.bk-extra'), asker: document.querySelectorAll('.bk-row').length, aracGizli: document.querySelector('.bk-roster-tools')?.hidden === true }));
+  kontrol(`${ad}: Kışla'da ilk bakışta yalnız 2 ana düğme (Orduyu hazırla, Yeni asker)`, kis.ana === 2 && !kis.ekstra, JSON.stringify(kis));
+  kontrol(`${ad}: kısa listede ara/süz araçları kapalı, asker listesi görünür`, kis.aracGizli && kis.asker === 4, JSON.stringify(kis));
+  await tikla('[data-ne="diger"]');
+  kontrol(`${ad}: "Diğer işlemler" üç işlemi açar`, await s.evaluate(() => document.querySelectorAll('.bk-extra .bk-btn').length === 3));
+  await tikla('[data-ne="arac"]');
+  kontrol(`${ad}: "Ara, süz, sırala" araçları açar`, await s.evaluate(() => document.querySelector('.bk-roster-tools')?.hidden === false && !!document.querySelector('.bk-search')));
+  const kucuk = await s.evaluate(() => [...document.querySelectorAll('.bk :is(.bk-btn:not(.sm), .bk-chip, .bk-tab, .bk-row)')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 43).length);
+  kontrol(`${ad}: Kışla'da ana dokunma hedefleri ≥ 44 px (küçük olan yok)`, kucuk === 0, String(kucuk));
+  await tikla('[data-ne="taktik"]');
+  kontrol(`${ad}: diziliş seçenekleri açılır`, await s.evaluate(() => document.querySelectorAll('.bk-presets [data-bk="preset"]').length >= 1));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // onay penceresi: Esc vazgeç, Onayla evet
   await s.evaluate(async (yol) => { const m = await import(yol); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; }, '/js/ui/v3/bilesenler.js');   // söz döndürmez: evaluate pencere kapanana kadar beklemesin
   await s.evaluate(() => window.__onay({ baslik: 'Silinsin mi?', metin: 'Geri alınamaz.', tamam: 'Sil', tehlikeli: true }));

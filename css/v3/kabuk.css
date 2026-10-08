@@ -206,7 +206,7 @@ html.v3 .sidebar-top-bar, html.v3 #side-btn-repair-all { }
 /* 9. ERİŞİLEBİLİRLİK ----------------------------------------------------- */
 html.v3 :is(#v3-hud button, #v3-tabbar button, .v3-kart, .v3-kaynak, .v3-birincil, .v3-yan-kapat):focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
 @media (pointer: coarse) {
-  html.v3 .rpg-modal-body :is(button, select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"])) { min-height: 40px; }
+  html.v3 .rpg-modal-body :is(button, select, input:not([type="checkbox"]):not([type="radio"]):not([type="range"])) { min-height: var(--v3-tap); }
 }
 @media (prefers-reduced-motion: reduce) {
   html.v3 *, html.v3 *::before, html.v3 *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
@@ -347,3 +347,13 @@ html.v3 body.in-dungeon #btn-dungeon-return-town { position: static !important; 
 html.v3 body.in-dungeon #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 html.v3 body.in-dungeon #dungeon-floor-bar > * { flex: none; min-height: 40px; }
 html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-nav-divider { display: none; }
+
+/* 16. KISLA (js/ui/barracks.js compact kipi) ------------------------------- */
+html.v3 .bk [hidden] { display: none !important; }
+html.v3 .bk-extra { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--v3-cizgi); }
+html.v3 .bk-extra .bk-btn { flex: 1 1 auto; }
+html.v3 .bk-tools-toggle { align-self: stretch; margin: 8px 10px 0; justify-content: space-between; }
+html.v3 .bk :is(.bk-btn, .bk-chip, .bk-tab, .bk-seg, .bk-slot-hit, .bk-icon-btn, .bk-row) { min-height: var(--v3-tap) !important; display: inline-flex; align-items: center; }
+html.v3 .bk .bk-row { display: flex; }
+html.v3 .bk :is(.bk-mini, .bk-btn.sm) { min-height: 40px; padding-left: 12px; padding-right: 12px; }
+html.v3 .bk .bad { color: var(--v3-kotu); font-weight: 700; }

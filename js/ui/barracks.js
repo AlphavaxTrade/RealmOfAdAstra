@@ -45,9 +45,9 @@ function statLine(it) {
 
 export function createBarracksUI(deps) {
   const { gameState, GAME_CONFIG, PLAYER_SKILLS = {}, showToast, renderTopBar, reopen, getSelected, setSelected, getTab, setTab,
-    getEditing, setEditing, openScrapReport } = deps;
+    getEditing, setEditing, openScrapReport, compact = false } = deps;   // compact (arayüz v3): ikincil işlemler, diziliş ve arama araçları açılır bölümlerde
 
-  const ui = { q: '', chip: 'all', sort: 'order', picker: null, pickerFor: -1, aSlot: 'all', aWhere: 'idle', aSort: 'power', aLimit: 48, moveKey: null };
+  const ui = { q: '', chip: 'all', sort: 'order', picker: null, pickerFor: -1, aSlot: 'all', aWhere: 'idle', aSort: 'power', aLimit: 48, moveKey: null, acik: { diger: false, taktik: false, arac: false } };
 
   const st = () => gameState.state;
   const soldiers = () => st().soldierUnits || [];
@@ -257,6 +257,7 @@ export function createBarracksUI(deps) {
     const presets = gameState.getCombatPresets ? gameState.getCombatPresets() : null;
     const activeP = presets?.activePresetId || 1;
     const blocked = gameState.isArmyPassiveHealBlocked ? gameState.isArmyPassiveHealBlocked() : false;
+    const araAcik = ui.acik.arac || !!ui.q || ui.chip !== 'all' || ui.sort !== 'order' || list.length > 10;   // süzgeç etkinse ya da liste uzunsa araçlar açık
     const chip = (id, label, n) => `<button type="button" class="bk-chip ${ui.chip === id ? 'is-on' : ''}" data-bk="chip" data-chip="${id}">${label}${n != null ? ` <span>${n}</span>` : ''}</button>`;
     return `
       ${blocked ? `<div class="bk-alert">Buğday ya da ASTRA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Ambara buğday ekle ve hesabında ASTRA bulundur.</div>` : ''}
@@ -266,19 +267,21 @@ export function createBarracksUI(deps) {
         </div>
         <div class="bk-summary-actions">
           <button type="button" class="bk-btn primary" data-bk="prep" title="Yaralıları doyurur, boş yuvalara en iyi eşyaları takar">Orduyu hazırla</button>
-          <button type="button" class="bk-btn" data-bk="auto">Boş yuvaları doldur</button>
-          <button type="button" class="bk-btn" data-bk="heal-all">Hepsini doyur</button>
+          ${compact ? '' : '<button type="button" class="bk-btn" data-bk="auto">Boş yuvaları doldur</button><button type="button" class="bk-btn" data-bk="heal-all">Hepsini doyur</button>'}
           <button type="button" class="bk-btn" data-bk="buy" ${canBuy ? '' : 'disabled'} title="${num(cost)} ASTRA">Yeni asker · ${num(cost)} ASTRA</button>
-          <button type="button" class="bk-btn ghost" data-bk="unequip-all" title="Bütün askerlerin eşyaları depoya döner">Hepsini soy</button>
+          ${compact ? `<button type="button" class="bk-btn ghost" data-bk="ac" data-ne="diger" aria-expanded="${ui.acik.diger}">Diğer işlemler ${ui.acik.diger ? '▴' : '▾'}</button>` : '<button type="button" class="bk-btn ghost" data-bk="unequip-all" title="Bütün askerlerin eşyaları depoya döner">Hepsini soy</button>'}
         </div>
+        ${compact && ui.acik.diger ? `<div class="bk-extra"><button type="button" class="bk-btn" data-bk="auto">Boş yuvaları doldur</button><button type="button" class="bk-btn" data-bk="heal-all">Hepsini doyur</button><button type="button" class="bk-btn ghost" data-bk="unequip-all" title="Bütün askerlerin eşyaları depoya döner">Hepsini soy</button></div>` : ''}
       </div>
-      ${presets ? `<div class="bk-presets"><span class="bk-dim">Diziliş:</span>${[1, 2, 3].map(pid => {
+      ${presets && compact ? `<div class="bk-presets"><button type="button" class="bk-chip ${ui.acik.taktik ? 'is-on' : ''}" data-bk="ac" data-ne="taktik" aria-expanded="${ui.acik.taktik}">Diziliş: ${esc((presets.presets?.[activeP] || { name: `Taktik ${activeP}` }).name)} ${ui.acik.taktik ? '▴' : '▾'}</button></div>` : ''}
+      ${presets && (!compact || ui.acik.taktik) ? `<div class="bk-presets"><span class="bk-dim">Diziliş:</span>${[1, 2, 3].map(pid => {
         const p = presets.presets?.[pid] || { name: `Taktik ${pid}` };
         return `<button type="button" class="bk-chip ${pid === activeP ? 'is-on' : ''}" data-bk="preset" data-pid="${pid}" title="Bu dizilişi yükle">${esc(p.name)}</button>`;
       }).join('')}<button type="button" class="bk-mini" data-bk="preset-save" title="Şu anki dizilişi seçili yuvaya kaydet">Kaydet</button></div>` : ''}
       <div class="bk-split">
         <aside class="bk-roster" aria-label="Asker listesi">
-          <div class="bk-roster-tools">
+          ${compact ? `<button type="button" class="bk-chip bk-tools-toggle ${araAcik ? 'is-on' : ''}" data-bk="ac" data-ne="arac" aria-expanded="${araAcik}">Ara, süz, sırala ${araAcik ? '▴' : '▾'}${c.hurt ? ` · <span class="bad">${c.hurt} yaralı</span>` : ''}</button>` : ''}
+          <div class="bk-roster-tools" ${compact && !araAcik ? 'hidden' : ''}>
             <input type="search" class="bk-search" data-bk-input="q" placeholder="Asker ara (ad ya da numara)" value="${esc(ui.q)}" aria-label="Asker ara">
             <div class="bk-chips">${chip('all', 'Tümü', c.all)}${chip('hurt', 'Yaralı', c.hurt)}${chip('missing', 'Eksik eşya', c.missing)}${chip('front', 'Ön saf', c.front)}${chip('back', 'Arka saf', c.back)}</div>
             <label class="bk-sort">Sırala
@@ -434,6 +437,7 @@ export function createBarracksUI(deps) {
         return reopen();
       }
       case 'auto': return done(gameState.autoEquipBest());
+      case 'ac': ui.acik[el.dataset.ne] = !ui.acik[el.dataset.ne]; return reopen();
       case 'heal-all': return done(gameState.instantHealAllSoldiers());
       case 'buy': return done(gameState.buySoldierUnit());
       case 'unequip-all': if (!confirm('Bütün askerlerin eşyaları depoya dönsün mü?')) return; return done(gameState.unequipAllSoldiers());
