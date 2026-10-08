@@ -147,8 +147,6 @@ const devArgOk = v => v == null || ['number', 'string', 'boolean'].includes(type
   (Array.isArray(v) && v.length <= 20 && v.every(x => ['number', 'string', 'boolean'].includes(typeof x))) ||
   (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 && Object.values(v).every(x => x == null || ['number', 'string', 'boolean'].includes(typeof x)));
 
-// Tarayıcı modu işareti: bu işlemler sunucuya gönderilir ama sonucu yerelde de hesaplanabilir
-export const RANDOM_ACTIONS = Object.keys(ACTIONS).filter(k => ACTIONS[k].random);
 
 // Yalnız listede birebir tanımlı adlar (__proto__, constructor gibi nesne iç adları geçemez)
 const specOf = name => (typeof name === 'string' && Object.hasOwn(ACTIONS, name) ? ACTIONS[name] : null);

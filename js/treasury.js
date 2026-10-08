@@ -16,7 +16,6 @@ const SEEDS = GAME_CONFIG.TREASURY_SEED || { dungeon: 14000000, arena: 8000000, 
 const POOL_IDS = Object.keys(SEEDS);
 const LOCKED = new Set(GAME_CONFIG.TREASURY_LOCKED_POOLS || []);
 const zeroPools = () => Object.fromEntries(POOL_IDS.map(id => [id, 0]));
-export { POOL_IDS as TREASURY_POOL_IDS };
 
 export class TreasuryLedger {
   constructor() {

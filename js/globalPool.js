@@ -17,7 +17,6 @@ export const MAX_SUPPLY = 10000000000;
 // Fazladan hane kaldırıldı. GERÇEK sözleşme adresiyle değiştirilmelidir.
 export const CONTRACT_ADDRESS = '0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CeBeB0';
 
-export const isValidEvmAddress = (a) => /^0x[a-fA-F0-9]{40}$/.test(String(a || ''));
 
 // Dolaşımdaki arz varsayımı — deflasyon anlatısı MAX_SUPPLY üzerinden değil,
 // dolaşım üzerinden kurulmalıdır (F-11). Gerçek rakamla değiştirin.

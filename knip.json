@@ -8,9 +8,26 @@
     "tests/run_all.mjs",
     "contracts/*.mjs",
     "scripts/**/*.{mjs,cjs}",
-    "public/boot.js"
+    "public/boot.js",
+    "tests/altin/*.mjs"
   ],
-  "project": ["js/**/*.js", "server/**/*.js", "tests/**/*.mjs", "scripts/**/*.{mjs,cjs}", "contracts/*.mjs", "public/*.js"],
-  "ignore": ["claude-proje-kiti/**", "node_modules/**", "dist/**"],
-  "ignoreDependencies": ["ganache", "solc", "playwright"]
+  "project": [
+    "js/**/*.js",
+    "server/**/*.js",
+    "tests/**/*.mjs",
+    "scripts/**/*.{mjs,cjs}",
+    "contracts/*.mjs",
+    "public/*.js"
+  ],
+  "ignore": [
+    "claude-proje-kiti/**",
+    "node_modules/**",
+    "dist/**"
+  ],
+  "ignoreDependencies": [
+    "ganache",
+    "solc",
+    "playwright"
+  ],
+  "ignoreExportsUsedInFile": true
 }

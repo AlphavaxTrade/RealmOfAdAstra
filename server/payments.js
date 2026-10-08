@@ -19,8 +19,6 @@ CREATE TABLE IF NOT EXISTS pay_quotes (
   created INTEGER NOT NULL, expires INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open', tx_hash TEXT UNIQUE, paid REAL
 );`;
 
-const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ADA)\b/i;
-export const isInsufficientAda = msg => INSUFFICIENT_RE.test(String(msg || ''));
 
 export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, clock = () => Date.now(), log = console }) {
   db.raw.exec(SCHEMA);

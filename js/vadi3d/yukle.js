@@ -43,8 +43,6 @@ export function piece(key, { x = 0, y = 0, z = 0, ry = 0, s = 1, sx = null, sy =
   return obj;
 }
 
-export const sizeOf = key => (cache.get(key) || {}).size || new THREE.Vector3(1, 1, 1);
-export const hasPiece = key => cache.has(key);
 
 // Çok sayıda kopya (ağaç, kaya, uçurum bloğu): her alt ağ için InstancedMesh; transforms = Matrix4 listesi
 export function instancedPiece(key, transforms) {
