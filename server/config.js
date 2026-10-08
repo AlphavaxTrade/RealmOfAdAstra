@@ -1,9 +1,16 @@
 // Realm of AdAstra sunucusu — ayarlar (hepsi ortam değişkenlerinden; bkz. server/.env.example)
 export function loadConfig(env = process.env) {
-  const num = (k, d) => (env[k] != null && env[k] !== '' ? Number(env[k]) : d);
+  // Sayı ayarları: boş = varsayılan; sayı olmayan değer sessizce NaN olmaz, başlatmayı AÇIK hatayla durdurur (A3.2)
+  const num = (k, d, { min = -Infinity, max = Infinity } = {}) => {
+    if (env[k] == null || env[k] === '') return d;
+    const v = Number(env[k]);
+    if (!Number.isFinite(v)) throw new Error(`Ayar hatası: ${k} bir sayı olmalı (verilen: "${String(env[k]).slice(0, 40)}")`);
+    if (v < min || v > max) throw new Error(`Ayar hatası: ${k} ${min} ile ${max} arasında olmalı (verilen: ${v})`);
+    return v;
+  };
   const key = (env.GAME_WALLET_PRIVATE_KEY || '').trim();
   return {
-    port: num('PORT', 8080),
+    port: num('PORT', 8080, { min: 0, max: 65535 }),
     host: env.HOST || '0.0.0.0',
     dbFile: env.DB_FILE || './data/realm.db',
     adminToken: (env.ADMIN_TOKEN || '').trim(),
@@ -33,8 +40,8 @@ export function loadConfig(env = process.env) {
     sessionDays: num('SESSION_DAYS', 30),
     // Oyun dosyaları başka bir adresten sunuluyorsa (ör. https://realmofadastra.vercel.app) o adres(ler) buraya:
     // tarayıcı yalnız bu adreslerden gelen oyun isteklerine izin verir. Virgülle birden çok yazılabilir.
-    corsOrigins: (env.CORS_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(o => /^https?:\/\/[^/]+$/.test(o)),
-    publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080)}`).trim(),   // e-postadaki bağlantılar bu adrese gider
+    corsOrigins: (env.CORS_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(o => /^https?:\/\/[^/\s]+$/.test(o)),
+    publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080, { min: 0, max: 65535 })}`).trim(),   // e-postadaki bağlantılar bu adrese gider
     smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
     mailFrom: env.MAIL_FROM || 'Realm of AdAstra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
