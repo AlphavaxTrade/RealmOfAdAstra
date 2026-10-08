@@ -99,7 +99,7 @@ export async function uret() {
   const rotalar = await rotalariAl();
   const paths = {};
   const ekle = ({ yol, yontem, op }) => { (paths[yol] ??= {})[yontem] = op; };
-  const etiketSirasi = ['Genel', 'Hesap', 'Oyun', 'Cüzdan ve Kasa', 'Kolezyum', 'İlan pazarı', 'Yönetim', 'Sayfalar'];
+  const etiketSirasi = ['Genel', 'Hesap', 'Oyun', 'Cüzdan ve Kasa', 'Kolezyum', 'İlan pazarı', 'Sponsorluk', 'Yönetim', 'Sayfalar'];
   const sirali = [...rotalar].sort((p, q) => etiketSirasi.indexOf(a[p.anahtar]?.etiket) - etiketSirasi.indexOf(a[q.anahtar]?.etiket));   // sort kararlı: etiket içinde kod sırası
   for (const r of sirali) { if (!a[r.anahtar]) throw new Error(`docs/openapi/aciklamalar.json içinde "${r.anahtar}" yok`); ekle(islem(r, a)); }
   for (const o of OZEL_YOLLAR) ekle(ozelIslem(o));

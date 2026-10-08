@@ -857,6 +857,14 @@ export async function devVanillaReset() {
   return r;
 }
 
+export const sponsor = {
+  tablo: () => api('GET', '/api/sponsor/tablo'),
+  benim: () => api('GET', '/api/sponsor/benim'),
+  async ol(hedef, miktar) { const r = await api('POST', '/api/sponsor/ol', { hedef, miktar }); await sync(); return r; },
+  feragat: id => api('POST', '/api/sponsor/feragat', { id }),
+  kapat: id => api('POST', '/api/sponsor/kapat', { id })
+};
+
 export const pazar = {
   list: () => api('GET', '/api/pazar'),
   async sell(ref, price) { const r = await api('POST', '/api/pazar/sell', { ref, price }); apply(r); return r.result; },

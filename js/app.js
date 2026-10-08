@@ -16,7 +16,7 @@ import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { terim } from './ui/v3/sozluk.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
-import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
 // Arayüz v3 (yeni kabuk) varsayılandır. Eski görünüm: adrese ?arayuz=eski (tarayıcı hatırlar), yeniye dönüş: ?arayuz=3.
 // Sınıf en başta konur ki ilk çizimde eski çubuk görünmesin.
@@ -4958,7 +4958,9 @@ function openTreasuryVaultModal() {
         ${ko.sonUyari ? '<br>🚨 Son uyarı: izin hakkın bitti, katılımını artırmazsan yerin bekleyen birine geçer.' : ''}
       </div>
     </div>` : '';
-  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  const sponsorHtml = online.active && isLoggedIn() ? '<div id="sponsor-box" class="clean-card" style="border-color:#f472b6;"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Yükleniyor…</div></div>' : '';
+  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  if (sponsorHtml) loadSponsorBox();
   const izinBitirBtn = document.getElementById('btn-izin-bitir');
   if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };
 
@@ -4978,6 +4980,32 @@ function openTreasuryVaultModal() {
   });
 
   displayModal();
+}
+
+// Sponsorluk kutusu (server/sponsor.js): tablo + benim sözleşmelerim + sponsor ol formu
+async function loadSponsorBox() {
+  const box = document.getElementById('sponsor-box');
+  if (!box) return;
+  let t, m;
+  try { [t, m] = await Promise.all([sponsor.tablo(), sponsor.benim()]); } catch (e) { box.innerHTML = `<div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Alınamadı: ${escHtml(e.message)}</div>`; return; }
+  const c = m.config, pct = Math.round(c.share * 100);
+  const sat = x => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:0.8rem;padding:3px 0;border-top:1px solid rgba(255,255,255,0.06);"><span>${escHtml(x.sponsor === 'Vatandaş #' + String(online.playerId || '').slice(4) ? x.target : x.sponsor)} · ${fmtInt(x.principal)} ASTRA · getiri ${fmtInt(x.returned)}/${fmtInt(x.cap)} · ${x.status}</span>`;
+  const given = m.given.map(x => sat(x) + (x.status === 'active' ? `<button class="btn-clean btn-clean-outline sp-feragat" data-id="${x.id}" style="width:auto;padding:2px 8px;font-size:0.74rem;">Vazgeç</button>` : '') + '</div>').join('');
+  const received = m.received.map(x => sat(x) + (x.status === 'active' && x.returned >= x.principal ? `<button class="btn-clean btn-clean-outline sp-kapat" data-id="${x.id}" style="width:auto;padding:2px 8px;font-size:0.74rem;">Kapat</button>` : '') + '</div>').join('');
+  const opts = t.rows.filter(r => r.id !== online.playerId && !r.izinde).slice(0, 100).map(r => `<option value="${escHtml(r.id)}">${escHtml(r.ad)} · Sv.${r.level} · bu hafta ${r.haftaKategori} kategori · ort. net çekim ${fmtInt(r.ortNetCekim4Hafta)} · ${r.sponsorSayisi} sponsor</option>`).join('');
+  box.innerHTML = `
+    <div class="card-title-row"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><span class="card-badge">sponsorlu paran: ${fmtInt(m.sponsoredBalance)} ASTRA</span></div>
+    <div class="clean-desc">Bir vatandaşa ASTRA ile sponsor olursun; o para <strong>çekilemez</strong>, yalnız oyunda harcanır. Karşılığında o oyuncunun her haftalık <strong>net çekiminin %${pct}'i</strong> (toplam getirin anaparanın ${c.returnCap} katına ya da ${c.days} güne dek) bakiyene eklenir. Anaparayı geri alamazsın; getiri vaadi yoktur — oyuncu çekim yapmazsa pay çıkmaz.</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;"><select id="sp-hedef" style="flex:1 1 260px;min-width:0;">${opts || '<option value="">Sponsor olunabilecek vatandaş yok</option>'}</select><input id="sp-miktar" type="number" min="${c.minAmount}" step="100" placeholder="en az ${c.minAmount}" style="width:120px;"><button id="sp-ol" class="btn-clean" style="width:auto;padding:4px 12px;">Sponsor ol</button></div>
+    ${given ? `<div style="margin-top:6px;font-weight:600;font-size:0.82rem;">Verdiğim</div>${given}` : ''}
+    ${received ? `<div style="margin-top:6px;font-weight:600;font-size:0.82rem;">Aldığım</div>${received}` : ''}`;
+  document.getElementById('sp-ol').onclick = () => {
+    const hedef = document.getElementById('sp-hedef').value, miktar = Number(document.getElementById('sp-miktar').value);
+    if (!hedef) return showToast('Bir vatandaş seç.', 'error');
+    sponsor.ol(hedef, miktar).then(r => { showToast(r.message, 'success'); renderTopBar(); loadSponsorBox(); }).catch(e => showToast('Sponsor olunamadı: ' + e.message, 'error'));
+  };
+  box.querySelectorAll('.sp-feragat').forEach(b => { b.onclick = () => sponsor.feragat(Number(b.dataset.id)).then(r => { showToast(r.message, 'info'); loadSponsorBox(); }).catch(e => showToast(e.message, 'error')); });
+  box.querySelectorAll('.sp-kapat').forEach(b => { b.onclick = () => sponsor.kapat(Number(b.dataset.id)).then(r => { showToast(r.message, 'success'); loadSponsorBox(); }).catch(e => showToast(e.message, 'error')); });
 }
 
 // =========================================================================

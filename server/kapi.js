@@ -385,6 +385,8 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     return statusOf(address);
   }
 
-  return { admit, onLogin, run, fillSeats, kabulEtDavet, davetSuresiGecenler, haftalikKatilimDegerlendir, katilimSuresiGecenler,
+  const citizenAddresses = () => q.citizens.all().map(p => p.address);
+
+  return { citizenAddresses, admit, onLogin, run, fillSeats, kabulEtDavet, davetSuresiGecenler, haftalikKatilimDegerlendir, katilimSuresiGecenler,
     activeCitizens, recordWeek, indicator, growth, statusOf, isCitizen, publicSummary, adminSummary, adminSet, adminSetPlayer, state, counts, playerIdOf };
 }

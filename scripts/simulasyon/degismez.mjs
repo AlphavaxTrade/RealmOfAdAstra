@@ -21,6 +21,9 @@ export function anlikFoto(W) {
     f.bossBekleyen += Number(st.worldBoss && st.worldBoss.claimableRewardAda) || 0;
     if (!Number.isFinite(bal) || bal < -1e-6) f.bozuk.push(`${a}: bakiye ${bal}`);
     if (kilit > bal + 1e-6 || kilit < -1e-6) f.bozuk.push(`${a}: kilitli ${kilit} > bakiye ${bal}`);
+    const spon = Number(st.sponsorAda) || 0;
+    if (spon > bal + 1e-6 || spon < -1e-6) f.bozuk.push(`${a}: sponsorlu ${spon} > bakiye ${bal}`);
+    f.sponsorluToplam = (f.sponsorluToplam || 0) + spon;
   }
   f.kasalar = topla(E.treasury.state.pools);
   f.amm = Object.values(E.ammMarket.pools).reduce((s, p) => s + (Number(p.adAstraReserve) || 0), 0);
@@ -36,6 +39,7 @@ export function kumulatifEkle(cum, ozet) {
   const w = ozet.withdraw || {};
   cum.cekimNet += Number(w.sent) || 0;
   cum.cekimYakim += Number(w.feeBurn) || 0;
+  cum.sponsorPay = (cum.sponsorPay || 0) + (Number(w.sponsorShare) || 0);
   cum.savunmaYakim += Number(ozet.defenseBurn) || 0;
   cum.haftaSayisi++;
 }
@@ -47,6 +51,15 @@ export function haftalikDegismezler(W, ctx) {
   const kayit = (kod, agirlik, mesaj) => ih.push({ kod, agirlik, mesaj });
   const foto = anlikFoto(W);
   const gp = E.globalPool.state, T = E.treasury.state;
+
+  // S1-S3: sponsorluk. Sponsorlu para hiçbir oyuncuda bakiyeyi aşamaz; toplamı verilen anaparayı aşamaz; ödenen sponsor payı deftere yazılan getiriyle aynı.
+  if (W.sponsor) {
+    const items = W.sponsor.ledger().items;
+    const verilen = items.reduce((s, x) => s + x.principal, 0), getiri = items.reduce((s, x) => s + x.returned, 0);
+    if ((foto.sponsorluToplam || 0) > verilen + 1e-6) kayit('S1', 'kritik', `sponsorlu para toplamı ${foto.sponsorluToplam} > verilen anapara ${verilen}`);
+    if (!yakin(getiri, ctx.cum.sponsorPay || 0, 0.05 * items.length + 1)) kayit('S2', 'kritik', `sponsor payı: deftere yazılan getiri ${getiri.toFixed(2)} ≠ hesaplaşmada ödenen ${(ctx.cum.sponsorPay || 0).toFixed(2)}`);
+    for (const x of items) if (x.returned > x.cap + 1e-6) kayit('S3', 'kritik', `sözleşme #${x.id}: getiri ${x.returned} > tavan ${x.cap}`);
+  }
 
   // K2: bozuk oyuncu bakiyeleri
   for (const b of foto.bozuk.slice(0, 5)) kayit('K2', 'kritik', 'oyuncu kaydı bozuk: ' + b);

@@ -709,6 +709,9 @@ export const GAME_CONFIG = {
   // haftanın ortalama haftalık girişinin INFLOW_SHARE'i. Hesaplaşma anındaki ödemeler (ücretsiz havuz, PvP sıralaması) kendi
   // kurallarıyla sınırlıdır ve bu bütçeye girmez. Bütçe yalnız sunucuda açılır (treasury.openWeekBudgets); tarayıcı tek oyunculuda yok.
   TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15 },
+  // Sponsorluk (docs/v2/SPONSORLUK_TASARIMI.md): B, A'ya ASTRA bağışlar; A bunu çekemez, yalnız oyunda harcar; A her haftalık net çekiminin
+  // SHARE oranını (tüm sponsorlara toplam, anapara oranında bölünür) sponsorlara öder; sözleşme DAYS gün ya da toplam getiri anaparanın RETURN_CAP katına ulaşana dek.
+  SPONSORLUK: { MIN_AMOUNT: 1000, SHARE: 0.30, DAYS: 365, RETURN_CAP: 2, MAX_PER_TARGET: 5, MAX_PER_SPONSOR: 20 },
   TREASURY_LOCKED_POOLS: ['universe'],
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
   // Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026 — ayrıntı js/economy/faucet.js): en az MIN_LEVEL seviye ve o hafta

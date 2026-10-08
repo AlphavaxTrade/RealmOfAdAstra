@@ -1,0 +1,2090 @@
+{
+ "durumOzeti": {
+  "oyuncu": 99,
+  "seviye": {
+   "ort": 2.6,
+   "medyan": 3,
+   "max": 5
+  },
+  "xp": {
+   "ort": 972.7,
+   "medyan": 1103,
+   "max": 2412
+  },
+  "astra": {
+   "ort": 23489.96,
+   "medyan": 740.2976631568592,
+   "max": 425012.939108
+  },
+  "kilitli": {
+   "ort": 17806.87,
+   "medyan": 569.8476609782721,
+   "max": 186878.34176839195
+  },
+  "asker": {
+   "ort": 6.04,
+   "medyan": 4,
+   "max": 10
+  },
+  "stamina": {
+   "ort": 441.14,
+   "medyan": 358,
+   "max": 1010
+  },
+  "odun": {
+   "ort": 597.69,
+   "medyan": 589,
+   "max": 1966
+  },
+  "buğday": {
+   "ort": 711.48,
+   "medyan": 709.39,
+   "max": 2184.69
+  },
+  "cekilen": {
+   "ort": 7037.31,
+   "medyan": 0,
+   "max": 58287.689999999995
+  }
+ },
+ "faz": {
+  "tick": 295.2,
+  "aday": 24.3,
+  "oturum": 963.7,
+  "cekim": 11.1,
+  "degismez": 1.6
+ },
+ "senaryo": "taban",
+ "hafta": 52,
+ "vatandas": 100,
+ "aday": 30,
+ "tohum": 7,
+ "sureSn": 1303.5,
+ "ihlalSayac": {},
+ "ihlalOrnek": {},
+ "sunucuHata": [],
+ "hataOrnekleri": [],
+ "haftalar": [
+  {
+   "hafta": 0,
+   "epoch": 2,
+   "vatandas": 100,
+   "aktif": 81,
+   "ekranAktif": 0,
+   "bekleyen": 30,
+   "askida": 0,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.05,
+    "weeks": 1
+   },
+   "izinde": 0,
+   "kasalar": 87999982,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 8,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1,
+    "orta": 1,
+    "balina": 1
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 1,
+   "epoch": 3,
+   "vatandas": 100,
+   "aktif": 88,
+   "ekranAktif": 0,
+   "bekleyen": 30,
+   "askida": 0,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 2
+   },
+   "izinde": 0,
+   "kasalar": 88000081,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 20,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1,
+    "orta": 1,
+    "balina": 1.2
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 2,
+   "epoch": 4,
+   "vatandas": 100,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 30,
+   "askida": 0,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 3
+   },
+   "izinde": 0,
+   "kasalar": 88000320,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 37,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1,
+    "orta": 1.1,
+    "balina": 1.2
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 3,
+   "epoch": 5,
+   "vatandas": 100,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 24,
+   "askida": 6,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 4
+   },
+   "izinde": 1,
+   "kasalar": 88000957,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 81,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1,
+    "orta": 1.3,
+    "balina": 1.5
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 4,
+   "epoch": 6,
+   "vatandas": 100,
+   "aktif": 96,
+   "ekranAktif": 0,
+   "bekleyen": 24,
+   "askida": 6,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 5
+   },
+   "izinde": 1,
+   "kasalar": 87881526,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 123,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.2,
+    "orta": 1.4,
+    "balina": 1.5
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 5,
+   "epoch": 7,
+   "vatandas": 100,
+   "aktif": 98,
+   "ekranAktif": 0,
+   "bekleyen": 23,
+   "askida": 7,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 6
+   },
+   "izinde": 0,
+   "kasalar": 87882320,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 177,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.3,
+    "orta": 1.7,
+    "balina": 1.7
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 6,
+   "epoch": 8,
+   "vatandas": 100,
+   "aktif": 96,
+   "ekranAktif": 0,
+   "bekleyen": 22,
+   "askida": 8,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 7
+   },
+   "izinde": 0,
+   "kasalar": 87765731,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 243,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.4,
+    "orta": 1.8,
+    "balina": 1.7
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 7,
+   "epoch": 9,
+   "vatandas": 100,
+   "aktif": 94,
+   "ekranAktif": 0,
+   "bekleyen": 22,
+   "askida": 8,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 8
+   },
+   "izinde": 0,
+   "kasalar": 87651478,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 306,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.5,
+    "orta": 1.8,
+    "balina": 1.8
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 8,
+   "epoch": 10,
+   "vatandas": 100,
+   "aktif": 96,
+   "ekranAktif": 0,
+   "bekleyen": 22,
+   "askida": 8,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 9
+   },
+   "izinde": 0,
+   "kasalar": 87539707,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 379,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.6,
+    "orta": 1.8,
+    "balina": 1.8
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 9,
+   "epoch": 11,
+   "vatandas": 100,
+   "aktif": 95,
+   "ekranAktif": 0,
+   "bekleyen": 21,
+   "askida": 9,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 10
+   },
+   "izinde": 0,
+   "kasalar": 87430396,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 465,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.7,
+    "orta": 1.8,
+    "balina": 1.8
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 10,
+   "epoch": 12,
+   "vatandas": 99,
+   "aktif": 95,
+   "ekranAktif": 0,
+   "bekleyen": 21,
+   "askida": 10,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 11
+   },
+   "izinde": 0,
+   "kasalar": 87323623,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 568,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1.7,
+    "orta": 1.8,
+    "balina": 2
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 11,
+   "epoch": 13,
+   "vatandas": 100,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 19,
+   "askida": 11,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 12
+   },
+   "izinde": 0,
+   "kasalar": 87098772,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 1,
+    "toplam": 120014
+   },
+   "yakilan": 656,
+   "kasaOmruAy": 167.6,
+   "seviye": {
+    "ucretsiz": 1.7,
+    "orta": 1.9,
+    "balina": 2
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 12,
+   "epoch": 14,
+   "vatandas": 100,
+   "aktif": 89,
+   "ekranAktif": 0,
+   "bekleyen": 18,
+   "askida": 12,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 86881942,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 4,
+    "toplam": 118228
+   },
+   "yakilan": 985,
+   "kasaOmruAy": 169.7,
+   "seviye": {
+    "ucretsiz": 1.8,
+    "orta": 1.9,
+    "balina": 2
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 13,
+   "epoch": 15,
+   "vatandas": 100,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 13,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 86671447,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 8,
+    "toplam": 116476
+   },
+   "yakilan": 1460,
+   "kasaOmruAy": 171.9,
+   "seviye": {
+    "ucretsiz": 1.8,
+    "orta": 2,
+    "balina": 2
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 14,
+   "epoch": 16,
+   "vatandas": 98,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 15,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 3,
+   "kasalar": 86469945,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 11,
+    "toplam": 114765
+   },
+   "yakilan": 2242,
+   "kasaOmruAy": 174,
+   "seviye": {
+    "ucretsiz": 1.8,
+    "orta": 2.2,
+    "balina": 2
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 15,
+   "epoch": 17,
+   "vatandas": 98,
+   "aktif": 94,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 15,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 2,
+   "kasalar": 86283694,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 1637,
+    "gonderilen": 1588
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 16,
+    "toplam": 113111
+   },
+   "yakilan": 3701,
+   "kasaOmruAy": 176.2,
+   "seviye": {
+    "ucretsiz": 1.8,
+    "orta": 2.3,
+    "balina": 2.3
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 16,
+   "epoch": 18,
+   "vatandas": 98,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 15,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 86108130,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 7538,
+    "gonderilen": 7312
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 19,
+    "toplam": 111501
+   },
+   "yakilan": 5579,
+   "kasaOmruAy": 178.4,
+   "seviye": {
+    "ucretsiz": 1.9,
+    "orta": 2.4,
+    "balina": 2.5
+   },
+   "korunumFarki": -0.01,
+   "ihlal": []
+  },
+  {
+   "hafta": 17,
+   "epoch": 19,
+   "vatandas": 98,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 15,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 85945952,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 8711,
+    "gonderilen": 8450
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 24,
+    "toplam": 109940
+   },
+   "yakilan": 7986,
+   "kasaOmruAy": 180.5,
+   "seviye": {
+    "ucretsiz": 2,
+    "orta": 2.4,
+    "balina": 2.5
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 18,
+   "epoch": 20,
+   "vatandas": 97,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 16,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 85770514,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 9720,
+    "gonderilen": 9428
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 29,
+    "toplam": 108353
+   },
+   "yakilan": 9323,
+   "kasaOmruAy": 182.8,
+   "seviye": {
+    "ucretsiz": 2.1,
+    "orta": 2.4,
+    "balina": 2.5
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 19,
+   "epoch": 21,
+   "vatandas": 97,
+   "aktif": 94,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 16,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 85593283,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 6104,
+    "gonderilen": 5921
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 34,
+    "toplam": 106771
+   },
+   "yakilan": 10267,
+   "kasaOmruAy": 185.1,
+   "seviye": {
+    "ucretsiz": 2.2,
+    "orta": 2.4,
+    "balina": 2.5
+   },
+   "korunumFarki": -0.02,
+   "ihlal": []
+  },
+  {
+   "hafta": 20,
+   "epoch": 22,
+   "vatandas": 97,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 16,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 85464133,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 10724,
+    "gonderilen": 10402
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 37,
+    "toplam": 105331
+   },
+   "yakilan": 13748,
+   "kasaOmruAy": 187.4,
+   "seviye": {
+    "ucretsiz": 2.3,
+    "orta": 2.6,
+    "balina": 2.5
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  },
+  {
+   "hafta": 21,
+   "epoch": 23,
+   "vatandas": 97,
+   "aktif": 95,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 16,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 85319753,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 20319,
+    "gonderilen": 19659
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 37,
+    "toplam": 103860
+   },
+   "yakilan": 16088,
+   "kasaOmruAy": 189.7,
+   "seviye": {
+    "ucretsiz": 2.3,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 22,
+   "epoch": 24,
+   "vatandas": 97,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 16,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 85164510,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 17623,
+    "gonderilen": 17059
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 39,
+    "toplam": 102369
+   },
+   "yakilan": 17544,
+   "kasaOmruAy": 192.1,
+   "seviye": {
+    "ucretsiz": 2.4,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 23,
+   "epoch": 25,
+   "vatandas": 96,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 17,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 85021622,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 15611,
+    "gonderilen": 15143
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 41,
+    "toplam": 100923
+   },
+   "yakilan": 19482,
+   "kasaOmruAy": 194.6,
+   "seviye": {
+    "ucretsiz": 2.4,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.02,
+   "ihlal": []
+  },
+  {
+   "hafta": 24,
+   "epoch": 26,
+   "vatandas": 96,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 17,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 84889881,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 17611,
+    "gonderilen": 17043
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 40,
+    "toplam": 99519
+   },
+   "yakilan": 21842,
+   "kasaOmruAy": 197,
+   "seviye": {
+    "ucretsiz": 2.4,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 25,
+   "epoch": 27,
+   "vatandas": 94,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 19,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 84754874,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 16185,
+    "gonderilen": 15700
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 41,
+    "toplam": 98117
+   },
+   "yakilan": 23792,
+   "kasaOmruAy": 199.5,
+   "seviye": {
+    "ucretsiz": 2.4,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.06,
+   "ihlal": []
+  },
+  {
+   "hafta": 26,
+   "epoch": 28,
+   "vatandas": 93,
+   "aktif": 87,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 84617732,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 20786,
+    "gonderilen": 20108
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 41,
+    "toplam": 96720
+   },
+   "yakilan": 25404,
+   "kasaOmruAy": 202,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.6,
+    "balina": 2.7
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 27,
+   "epoch": 29,
+   "vatandas": 93,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 84500666,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 15176,
+    "gonderilen": 14721
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 42,
+    "toplam": 95389
+   },
+   "yakilan": 27985,
+   "kasaOmruAy": 204.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.6,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.06,
+   "ihlal": []
+  },
+  {
+   "hafta": 28,
+   "epoch": 30,
+   "vatandas": 93,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 2,
+   "kasalar": 84376152,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 12626,
+    "gonderilen": 12247
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 43,
+    "toplam": 94049
+   },
+   "yakilan": 29935,
+   "kasaOmruAy": 207.2,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.6,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.05,
+   "ihlal": []
+  },
+  {
+   "hafta": 29,
+   "epoch": 31,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 1,
+   "kasalar": 84253821,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 22339,
+    "gonderilen": 21647
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 44,
+    "toplam": 92725
+   },
+   "yakilan": 31823,
+   "kasaOmruAy": 209.8,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 30,
+   "epoch": 32,
+   "vatandas": 93,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 84131801,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 18265,
+    "gonderilen": 17717
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 45,
+    "toplam": 91415
+   },
+   "yakilan": 33544,
+   "kasaOmruAy": 212.5,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.05,
+   "ihlal": []
+  },
+  {
+   "hafta": 31,
+   "epoch": 33,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 84018433,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 12977,
+    "gonderilen": 12575
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 45,
+    "toplam": 90138
+   },
+   "yakilan": 35591,
+   "kasaOmruAy": 215.3,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 32,
+   "epoch": 34,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83908058,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 20260,
+    "gonderilen": 19652
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 88882
+   },
+   "yakilan": 37642,
+   "kasaOmruAy": 218,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.02,
+   "ihlal": []
+  },
+  {
+   "hafta": 33,
+   "epoch": 35,
+   "vatandas": 93,
+   "aktif": 89,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83798074,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 20176,
+    "gonderilen": 19571
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 87637
+   },
+   "yakilan": 39549,
+   "kasaOmruAy": 220.8,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.02,
+   "ihlal": []
+  },
+  {
+   "hafta": 34,
+   "epoch": 36,
+   "vatandas": 93,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83685787,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 21404,
+    "gonderilen": 20762
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 86397
+   },
+   "yakilan": 41160,
+   "kasaOmruAy": 223.7,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.06,
+   "ihlal": []
+  },
+  {
+   "hafta": 35,
+   "epoch": 37,
+   "vatandas": 93,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83573432,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 19306,
+    "gonderilen": 18727
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 85168
+   },
+   "yakilan": 42607,
+   "kasaOmruAy": 226.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 36,
+   "epoch": 38,
+   "vatandas": 93,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83460180,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 21659,
+    "gonderilen": 21009
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 83948
+   },
+   "yakilan": 43848,
+   "kasaOmruAy": 229.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.07,
+   "ihlal": []
+  },
+  {
+   "hafta": 37,
+   "epoch": 39,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83346856,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 20611,
+    "gonderilen": 19992
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 82740
+   },
+   "yakilan": 44933,
+   "kasaOmruAy": 232.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.03,
+   "ihlal": []
+  },
+  {
+   "hafta": 38,
+   "epoch": 40,
+   "vatandas": 93,
+   "aktif": 90,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83236568,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 21963,
+    "gonderilen": 21304
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 81550
+   },
+   "yakilan": 46048,
+   "kasaOmruAy": 235.7,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.08,
+   "ihlal": []
+  },
+  {
+   "hafta": 39,
+   "epoch": 41,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83130770,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 27454,
+    "gonderilen": 26630
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 80384
+   },
+   "yakilan": 47282,
+   "kasaOmruAy": 238.8,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.08,
+   "ihlal": []
+  },
+  {
+   "hafta": 40,
+   "epoch": 42,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 83018309,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 18793,
+    "gonderilen": 18229
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 79211
+   },
+   "yakilan": 47988,
+   "kasaOmruAy": 242,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.07,
+   "ihlal": []
+  },
+  {
+   "hafta": 41,
+   "epoch": 43,
+   "vatandas": 93,
+   "aktif": 91,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82909827,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 21136,
+    "gonderilen": 20502
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 78060
+   },
+   "yakilan": 48788,
+   "kasaOmruAy": 245.3,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.02,
+   "ihlal": []
+  },
+  {
+   "hafta": 42,
+   "epoch": 44,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82800731,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 24125,
+    "gonderilen": 23402
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 47,
+    "toplam": 76919
+   },
+   "yakilan": 49419,
+   "kasaOmruAy": 248.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.06,
+   "ihlal": []
+  },
+  {
+   "hafta": 43,
+   "epoch": 45,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82695172,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 26886,
+    "gonderilen": 26079
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 47,
+    "toplam": 75798
+   },
+   "yakilan": 50129,
+   "kasaOmruAy": 252,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 44,
+   "epoch": 46,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82584823,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 14228,
+    "gonderilen": 13801
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 47,
+    "toplam": 74675
+   },
+   "yakilan": 50430,
+   "kasaOmruAy": 255.4,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.08,
+   "ihlal": []
+  },
+  {
+   "hafta": 45,
+   "epoch": 47,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82477286,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 24445,
+    "gonderilen": 23712
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 47,
+    "toplam": 73571
+   },
+   "yakilan": 50771,
+   "kasaOmruAy": 258.9,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.04,
+   "ihlal": []
+  },
+  {
+   "hafta": 46,
+   "epoch": 48,
+   "vatandas": 93,
+   "aktif": 93,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82372099,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 24049,
+    "gonderilen": 23313
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 72484
+   },
+   "yakilan": 51127,
+   "kasaOmruAy": 262.5,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.07,
+   "ihlal": []
+  },
+  {
+   "hafta": 47,
+   "epoch": 49,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82278825,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 24301,
+    "gonderilen": 23548
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 46,
+    "toplam": 71440
+   },
+   "yakilan": 52061,
+   "kasaOmruAy": 266,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.06,
+   "ihlal": []
+  },
+  {
+   "hafta": 48,
+   "epoch": 50,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82178558,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 30646,
+    "gonderilen": 29726
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 47,
+    "toplam": 70387
+   },
+   "yakilan": 52472,
+   "kasaOmruAy": 269.6,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.08,
+   "ihlal": []
+  },
+  {
+   "hafta": 49,
+   "epoch": 51,
+   "vatandas": 93,
+   "aktif": 88,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 82084275,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 28335,
+    "gonderilen": 27485
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 48,
+    "toplam": 69362
+   },
+   "yakilan": 53122,
+   "kasaOmruAy": 273.3,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.07,
+   "ihlal": []
+  },
+  {
+   "hafta": 50,
+   "epoch": 52,
+   "vatandas": 93,
+   "aktif": 92,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 81988022,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 28473,
+    "gonderilen": 27619
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 49,
+    "toplam": 68341
+   },
+   "yakilan": 53548,
+   "kasaOmruAy": 277.1,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.11,
+   "ihlal": []
+  },
+  {
+   "hafta": 51,
+   "epoch": 53,
+   "vatandas": 93,
+   "aktif": 89,
+   "ekranAktif": 0,
+   "bekleyen": 17,
+   "askida": 20,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "izinde": 0,
+   "kasalar": 81892142,
+   "cekim": {
+    "cap": 4286541,
+    "talep": 24490,
+    "gonderilen": 23755
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 49,
+    "toplam": 67332
+   },
+   "yakilan": 53888,
+   "kasaOmruAy": 280.9,
+   "seviye": {
+    "ucretsiz": 2.5,
+    "orta": 2.7,
+    "balina": 2.8
+   },
+   "korunumFarki": -0.09,
+   "ihlal": []
+  }
+ ],
+ "eylemToplam": {
+  "claimAllHarvests": {
+   "ok": 23082,
+   "red": 809,
+   "http": 14,
+   "neden": {
+    "Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# ": 809
+   }
+  },
+  "startExpedition": {
+   "ok": 44379,
+   "red": 98889,
+   "http": 84,
+   "neden": {
+    "Bu alanda zaten aktif bir sefer devam ediyor!": 98641,
+    "⚠️ Taş seferini başlatmak için yeteri kadar staminanız bulun": 35,
+    "⚠️ Odun seferini başlatmak için yeteri kadar staminanız bulu": 44,
+    "⚠️ Buğday seferini başlatmak için yeteri kadar staminanız bu": 36,
+    "⚠️ Demir seferini başlatmak için yeteri kadar staminanız bul": 34,
+    "⚠️ Şifalı Ot seferini başlatmak için yeteri kadar staminanız": 33,
+    "⚠️ Kömür seferini başlatmak için yeteri kadar staminanız bul": 32,
+    "Gereken alet (Ot Bıçağı) kırık! Önce tamir etmelisin#": 34
+   }
+  },
+  "claimWeeklyUbi": {
+   "ok": 1510,
+   "red": 3136,
+   "http": 8,
+   "neden": {
+    "Haftalık temel gelir # seviyeden itibaren alınabilir#": 3114,
+    "İzindeyken haftalık temel gelir alınmaz; izin bitince yenide": 4,
+    "Bu haftaki Evrensel Temel Gelir (UBI) ödülünüzü zaten talep ": 15,
+    "Bu haftanın temel gelir kasası boş# Kasa# oyunda harcanan he": 3
+   }
+  },
+  "upgradeWarehouse": {
+   "ok": 590,
+   "red": 22979,
+   "http": 6,
+   "neden": {
+    "⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır# ": 20251,
+    "Yetersiz ASTRA! (# ASTRA gerekli)": 2728
+   }
+  },
+  "marketSell": {
+   "ok": 23822,
+   "red": 0,
+   "http": 7,
+   "neden": {}
+  },
+  "levelUp": {
+   "ok": 163,
+   "red": 23147,
+   "http": 7,
+   "neden": {
+    "Yetersiz Buğday! (# Buğday gerekli)": 2759,
+    "Yetersiz AdAstra! (# ASTRA gerekli)": 1061,
+    "Yetersiz Odun! (# Odun gerekli)": 17802,
+    "Yetersiz XP! (#/# XP)": 1384,
+    "Yetersiz Demir! (# Demir gerekli)": 141
+   }
+  },
+  "repairAllTools": {
+   "ok": 6505,
+   "red": 947,
+   "http": 3,
+   "neden": {
+    "⚠️ Hesapta yeteri kadar ASTRA yok!": 63,
+    "Tamir edilecek alet yok (Tüm aletler tam sağlam)#": 783,
+    "Yetersiz Odun! (# Odun gerekli# ambarında: #)": 99,
+    "Yetersiz Demir! (# Demir gerekli# ambarında: #)": 2
+   }
+  },
+  "carnivalCheer": {
+   "ok": 6793,
+   "red": 0,
+   "http": 2,
+   "neden": {}
+  },
+  "claimOnboardingReward": {
+   "ok": 628,
+   "red": 40717,
+   "http": 30,
+   "neden": {
+    "Bu görev henüz tamamlanmadı#": 17574,
+    "Bu görevin ödülünü zaten aldın#": 23143
+   }
+  },
+  "contributeToOtorite": {
+   "ok": 2993,
+   "red": 3431,
+   "http": 1,
+   "neden": {
+    "Bu hammadde için sıradaki seviyede yer kalmadı#": 3431
+   }
+  },
+  "buySoldierUnit": {
+   "ok": 603,
+   "red": 4254,
+   "http": 0,
+   "neden": {
+    "Yetersiz ASTRA! # asker için # ASTRA gerekir#": 2040,
+    "🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske": 2214
+   }
+  },
+  "fightDungeon": {
+   "ok": 5061,
+   "red": 15,
+   "http": 2,
+   "neden": {
+    "⚠️ Yetersiz Stamina! Bu savaşa # askerle girmek için # ⚡ Sta": 15
+   }
+  },
+  "setSoldierRow": {
+   "ok": 4671,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "stakeArmyForWorldBoss": {
+   "ok": 2593,
+   "red": 0,
+   "http": 1,
+   "neden": {}
+  },
+  "buyLotteryTickets": {
+   "ok": 411,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "craftEquipment": {
+   "ok": 14,
+   "red": 205,
+   "http": 0,
+   "neden": {
+    "Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli)": 204,
+    "Yetersiz Odun! (# Odun gerekli)": 1
+   }
+  },
+  "autoEquipBest": {
+   "ok": 6,
+   "red": 199,
+   "http": 0,
+   "neden": {
+    "Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#": 199
+   }
+  },
+  "cekim": {
+   "ok": 512,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "buyTavernaAutomationBot": {
+   "ok": 582,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "cevaplaIzinSorusu": {
+   "ok": 8,
+   "red": 0,
+   "http": 2,
+   "neden": {}
+  }
+ },
+ "son": {
+  "vatandas": {
+   "limit": 100,
+   "citizens": 93,
+   "active": 30,
+   "izinde": 0,
+   "waiting": 17,
+   "suspended": 20,
+   "tier": 0,
+   "threshold": 50,
+   "indicator": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.04,
+    "weeks": 13
+   },
+   "lastGrowthAt": 0,
+   "growthLocked": true,
+   "inviteHours": 72,
+   "izinYillikGun": 30
+  },
+  "foto": {
+   "oyuncuBakiye": 2325832.9947233284,
+   "bekleyenCekim": 0,
+   "piyangoBekleyen": 432,
+   "bossBekleyen": 3286172.4154255483,
+   "kasalar": 81892177.82074271,
+   "amm": 99721715.0131376,
+   "piyango": 12000211.99999989,
+   "ubi": 1244.2651544306013,
+   "bozuk": [],
+   "toplam": 199227786.50918347
+  },
+  "gonderilen": 616
+ }
+}

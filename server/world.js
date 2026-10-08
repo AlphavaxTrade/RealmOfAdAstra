@@ -22,7 +22,7 @@ import { olusturOrtakGelir } from './world/ortakGelir.js';
 import { olusturSicakCuzdan } from './world/sicakCuzdan.js';
 import { DAY } from './world/yardimci.js';
 
-export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, mailer = null, kapi = null, pazar = null, cfg, clock = () => Date.now(), log = console }) {
+export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, mailer = null, kapi = null, pazar = null, sponsor = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
   const econ = () => db.kvJson('world:economy', {});
   const setEcon = patch => { const next = { ...econ(), ...patch }; db.kvSetJson('world:economy', next); return next; };
@@ -31,7 +31,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   const atomic = fn => { try { return db.tx(fn); } catch (err) { E.reloadWorld(); throw err; } };
 
   // Dünya işleri alan bazlı modüllerde (server/world/*); her biri öncekilerin ürettiklerine `w` üzerinden erişir
-  const w = { db, E, chain, arena, accounts, kasa, mailer, kapi, pazar, cfg, clock, log, econ, setEcon, creatorWallet, atomic };
+  const w = { db, E, chain, arena, accounts, kasa, mailer, kapi, pazar, sponsor, cfg, clock, log, econ, setEcon, creatorWallet, atomic };
   Object.assign(w, olusturOranlar(w));
   Object.assign(w, olusturPiyasa(w));
   Object.assign(w, olusturYatirma(w));

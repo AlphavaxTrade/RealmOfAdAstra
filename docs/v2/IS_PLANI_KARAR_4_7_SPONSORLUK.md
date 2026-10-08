@@ -1,6 +1,6 @@
 # İş Planı — KARAR 4-7 ve Sponsorluk (taslak, onay bekliyor)
 
-Tarih: 9 Ekim 2026 · Dal: `kurumsal` · Durum: **kodlamaya başlanmadı; sizin onayınızı bekliyor.**
+Tarih: 9 Ekim 2026 · Dal: `kurumsal` · Durum: **UYGULANDI (9 Ekim 2026, "sen karar ver" yetkisiyle): Faz 1-4 ve sponsorluk kodlandı.** Faz 0'da "dış alım" ölçümü zincirdeki net token akışı + trade sitesi payı olarak tanımlandı (sunucuda günlük kutular, `world:economy.flow`).
 Kararların içeriği `docs/v2/E_PLANI_DURUM_2026-10-08.md` dosyasında. Bu belge yalnız "nasıl, hangi sırayla, neyle doğrulayarak" sorusunu cevaplar.
 
 ## Çalışma kuralları (bu plan için de geçerli)

@@ -187,6 +187,21 @@ try {
     kontrol('Konsey: "Katılım karnem" kartı — puan/eşik, 10 kategori, düşük hafta uyarısı, izin hakkı', /Katılım karnem/.test(m) && /bu hafta 0\/2/.test(m) && /☐ 🌾 Sefer/.test(m) && /2 haftadır düşük/.test(m) && /Yıllık izin hakkın: 30 gün/.test(m), (m.match(/Katılım karnem[\s\S]{0,260}/) || [''])[0].replace(/\s+/g, ' '));
     await ekran(o.sayfa, 'karne_uyarili');
     await o.kapat();
+    // Sponsorluk: zengin vatandaş Konsey'deki kutudan bir vatandaşa sponsor olur; sunucuda sözleşme ve A'da çekilemez kalem oluşur
+    const sp = await sayfaAc('deneyimli');
+    await paletle(sp.sayfa, 'treasury'); await bekle(1500);
+    const ms = await modalMetni(sp.sayfa);
+    kontrol('Konsey: "Sponsorluk" kutusu (açıklama, form) görünüyor', /Sponsorluk/.test(ms) && /Sponsor ol/.test(ms) && /çekilemez/.test(ms) && !/NaN|undefined/.test(ms), (ms.match(/Sponsorluk[\s\S]{0,160}/) || [''])[0].replace(/\s+/g, ' '));
+    await sp.sayfa.evaluate(() => { const sel = document.getElementById('sp-hedef'); sel.selectedIndex = 0; document.getElementById('sp-miktar').value = '1500'; });
+    const hedefId = await sp.sayfa.evaluate(() => document.getElementById('sp-hedef').value);
+    await sp.sayfa.click('#sp-ol'); await bekle(2500);
+    const bn = await api('GET', '/api/sponsor/benim', null, sp.g.token);
+    kontrol('Sponsor ol: sunucuda sözleşme oluştu (1500 ASTRA)', bn.status === 200 && bn.body.given.length === 1 && bn.body.given[0].principal === 1500, JSON.stringify(bn.body.given));
+    const ms2 = await modalMetni(sp.sayfa);
+    kontrol('Sponsor ol: kutu "Verdiğim" listesini gösteriyor', /Verdiğim/.test(ms2) && /1\.500 ASTRA/.test(ms2), (ms2.match(/Verdiğim[\s\S]{0,120}/) || [''])[0].replace(/\s+/g, ' '));
+    kontrol('Sponsor ol: hedef tablo satırı kimlik içermiyor ve sponsor sayısı 1', (await api('GET', '/api/sponsor/tablo', null, sp.g.token)).body.rows.some(r => r.id === hedefId && r.sponsorSayisi === 1 && !('wallet' in r) && !('email' in r)));
+    await sp.sayfa.keyboard.press('Escape');
+    await sp.kapat();
     const i = await sayfaAc('izinde');
     const b = await bannerMetni(i.sayfa);
     kontrol('izinde: şeritte "İzindesin — N gün kaldı" ve erken bitirme düğmesi', /İzindesin/.test(b.metin) && /btn-izin-bitir-serit/.test(b.html), b.metin.slice(0, 100));

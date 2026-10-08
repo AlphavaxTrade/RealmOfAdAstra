@@ -6,7 +6,11 @@ Kaynak: plan dosyasinin "Ek" bolumunun kalici kopyasi (KARAR 4-7 ayrintilari bas
 
 **Bitti (commit'ler `kurumsal` dalında):** Faz 0 `a50fa06` `af38cc7` `702800b` · Faz 1 `f3351be` `68e2ce9` (GitHub'da) · Faz 2 `cec4f80` `4ab2082` `c65d1bd` · Faz 3 adım 1 `b5d686e` (bu 4'ü GitHub'a GÖNDERİLMEDİ).
 
-**Kesinleşti ama henüz kodda değil (KARARLAR_KESIN.md'de de yok):**
+**GÜNCEL (9 Ekim 2026): KARAR 4, 5, 6, 7 ve sponsorluk KODLANDI (yerel, zincire dokunmadan; commit'ler `c8371f8` KARAR 4, `9700e68` KARAR 5+6, `2221984` KARAR 7, sponsorluk sonraki commit).**
+Ayrıntı ve ölçümler: `docs/v2/YEREL_TEST_RAPORU_2026-10.md` (ek bölüm), tasarım: `docs/v2/SPONSORLUK_TASARIMI.md`.
+Aşağıdaki liste tarihsel kayıt olarak durur.
+
+**Kesinleşti ama (9 Ekim öncesi) kodda değildi (KARARLAR_KESIN.md'de de yok):**
 - **KARAR 4** — Çekim ücretinin yakım payı %30 → **%50** (ücretin yarısı yakılır, yarısı temel gelir havuzuna).
 - **KARAR 5** — İkili çekim tavanı: haftalık tavan = min(fiyatı %2 düşürecek miktar [bugünkü kural], **son 4 haftadaki dış alımın %50'si**), ama **asla bugünkü kuralın %20'sinden az değil** (dış alım sıfırsa da çekim tamamen kilitlenmesin). "Dış alım" = oyuncunun doğrudan ASTRA alımı **+ trade sitesinden oyuna gelen pay** (o müşteri de dolarla almış sayılır — kullanıcı düzeltmesi).
 - **KARAR 6** — Tek fiyat-duyarlılık çarpanı **k = piyasa değeri / 30 günlük zirve, 0,5-1,5 aralığında**; **iki yere** uygulanır: kilit açılma tabanı (haftalık %1 × k) ve çekim tavanı (× k). Giriş günü primi (%1,4) kalır, k'den etkilenmez.

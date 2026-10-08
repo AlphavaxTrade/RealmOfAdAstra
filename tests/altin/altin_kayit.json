@@ -2,16 +2,16 @@
  {
   "adim": "kurulum",
   "oyuncu": [
-   "66d6132c5f904c8c",
-   "66d6132c5f904c8c",
-   "66d6132c5f904c8c"
+   "76add8f312bfb1fe",
+   "76add8f312bfb1fe",
+   "76add8f312bfb1fe"
   ],
   "dunya": "84f1af88c0e0f9ca"
  },
  {
   "adim": "seferler basladi",
   "oyuncu": [
-   "6bab792b7805c68b"
+   "d12480d83b532b1e"
   ],
   "dunya": "84f1af88c0e0f9ca",
   "sonuc": [
@@ -26,7 +26,7 @@
  {
   "adim": "3 saat sonra toplandi",
   "oyuncu": [
-   "c5893701910053a3"
+   "38bc6bbba7b31684"
   ],
   "dunya": "4b87bc134dc8fd76",
   "sonuc": [
@@ -36,7 +36,7 @@
  {
   "adim": "tamir",
   "oyuncu": [
-   "5723e8844e5d4d49"
+   "0d66b548352f94ad"
   ],
   "dunya": "4b87bc134dc8fd76",
   "sonuc": [
@@ -46,7 +46,7 @@
  {
   "adim": "ordu",
   "oyuncu": [
-   "5cc6b50f15f4c5b4"
+   "dc1f70e0c6c309bc"
   ],
   "dunya": "9f88c1e24edb8702",
   "sonuc": [
@@ -59,7 +59,7 @@
  {
   "adim": "teçhizat",
   "oyuncu": [
-   "5c40f4469ea6e5fe"
+   "70cdeb545ac0968c"
   ],
   "dunya": "595ed615aceac81a",
   "sonuc": [
@@ -76,7 +76,7 @@
  {
   "adim": "silo",
   "oyuncu": [
-   "75764cf64468c406"
+   "f6edadd9ea0962f5"
   ],
   "dunya": "745a3437fe7a76bc",
   "sonuc": [
@@ -87,7 +87,7 @@
  {
   "adim": "pazar",
   "oyuncu": [
-   "192cb993a4f90936"
+   "5184b5a2604e771a"
   ],
   "dunya": "0dbeb4539150866a",
   "sonuc": [
@@ -99,7 +99,7 @@
  {
   "adim": "bot alindi",
   "oyuncu": [
-   "2a1cbb549bdf61e0"
+   "04f1b08690983b14"
   ],
   "dunya": "48c13215e6d447e4",
   "sonuc": [
@@ -110,7 +110,7 @@
  {
   "adim": "bot 12 saat calisti",
   "oyuncu": [
-   "e298485aa8e3eeaf"
+   "8b5bd26e821d8825"
   ],
   "dunya": "13edfb951af79273",
   "sonuc": [
@@ -120,7 +120,7 @@
  {
   "adim": "zindan",
   "oyuncu": [
-   "ae76801fd289a8bb"
+   "6b77d40f0496b399"
   ],
   "dunya": "e2be7f7cefeeeb02",
   "sonuc": [
@@ -132,7 +132,7 @@
  {
   "adim": "karnaval",
   "oyuncu": [
-   "a06b316f74523f0f"
+   "905f00fba9911679"
   ],
   "dunya": "ca2d09a96148e404",
   "sonuc": [
@@ -145,8 +145,8 @@
  {
   "adim": "piyango bileti",
   "oyuncu": [
-   "110a62d0ebc6d26c",
-   "64407670fa13f1f2"
+   "345e8bd9f9748d8d",
+   "8327c85d69651ff4"
   ],
   "dunya": "cf5817098c90abe4",
   "sonuc": [
@@ -157,7 +157,7 @@
  {
   "adim": "B ordu",
   "oyuncu": [
-   "6c876d6954aef4f2"
+   "e4de9692eadc186b"
   ],
   "dunya": "2dbd733d862137e2",
   "sonuc": [
@@ -169,7 +169,7 @@
  {
   "adim": "C ordu",
   "oyuncu": [
-   "2a4078b3a61e7822"
+   "d6e9a777f60cb859"
   ],
   "dunya": "17becf8be75154b3",
   "sonuc": [
@@ -180,8 +180,8 @@
  {
   "adim": "kolezyum",
   "oyuncu": [
-   "dcc0712bb2673b41",
-   "f4719f5d5f5c6ab6"
+   "91245bbf06715785",
+   "5b28db0f5befc3f9"
   ],
   "dunya": "fb32ce66198e826d",
   "sonuc": {
@@ -193,8 +193,8 @@
  {
   "adim": "gun 1",
   "oyuncu": [
-   "b122d62b5001c855",
-   "317e800d1856c1bb"
+   "e0f531ea3a59896b",
+   "a042cc3676bdfc3c"
   ],
   "dunya": "35c5b096ebe87d91",
   "sonuc": [
@@ -206,8 +206,8 @@
  {
   "adim": "gun 2",
   "oyuncu": [
-   "1567383b3c42c969",
-   "5f1b494bff8599f1"
+   "d3a5fde8e4c931e8",
+   "1f898fa7ee06566c"
   ],
   "dunya": "111d5130c4a3670e",
   "sonuc": [
@@ -219,8 +219,8 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "82eb81fa5da9058f",
-   "de0ecfff11cfb780"
+   "9a1282c3bd412b26",
+   "62f7ae0cefc98c6c"
   ],
   "dunya": "8b4a65f5889c91e6",
   "sonuc": [
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "b9440566ea7ff8b7",
-   "83ba5e189d7f4e0a",
-   "f4719f5d5f5c6ab6"
+   "8b2f7af4bcc4b983",
+   "fb53ab819383b50a",
+   "5b28db0f5befc3f9"
   ],
-  "dunya": "6d2d978a8c423935",
+  "dunya": "0b8f178f14f0b526",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,11 +245,11 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "ff9982c523e7373b",
-   "abd5bb887ac32735",
-   "f4719f5d5f5c6ab6"
+   "2be0168e86240e0d",
+   "459912df34176a80",
+   "5b28db0f5befc3f9"
   ],
-  "dunya": "5850d56304273c30",
+  "dunya": "df6780cc28c639e2",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",

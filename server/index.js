@@ -16,6 +16,7 @@ import { createPayments } from './payments.js';
 import { createKasa } from './kasa.js';
 import { createKapi } from './kapi.js';
 import { createPazar } from './pazar.js';
+import { createSponsor } from './sponsor.js';
 import { createLogger } from './log.js';
 import { olumculKur } from './olumcul.js';
 import { createKapanis } from './kapanis.js';
@@ -75,10 +76,11 @@ if (!kasa.enabled) log.warn('🏦 Oyun Kasası kapalı (KASA_MASTER_KEY ve PAYME
 else if (kasa.simulated) log.warn('🏦 Deneme modu: Oyun Kasası taklit (zincire bağlı değil; gerçek ADA yatırılamaz).');
 const kapi = createKapi({ db, engine, accounts, mailer, cfg, log });
 const pazar = createPazar({ db, engine, log });
-const world = createWorld({ db, engine, chain, arena, accounts, kasa, mailer, kapi, pazar, cfg, log });
+const sponsor = createSponsor({ db, engine, kapi, accounts, log });
+const world = createWorld({ db, engine, chain, arena, accounts, kasa, mailer, kapi, pazar, sponsor, cfg, log });
 if (cfg.chainEnabled && !cfg.testMode && !/^0x[0-9a-fA-F]{40}$/.test(cfg.reserveWallet)) log.warn('🧊 RESERVE_WALLET yok: oyun cüzdanındaki fazla ADA yedek (donanım) cüzdana aktarılmaz. Önerilir!');
 const payments = createPayments({ db, engine, accounts, chain, kasa, cfg, log });
-const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, chain, cfg, log });
+const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, sponsor, chain, cfg, log });
 if (!cfg.paymentsContract) log.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) log.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');
 

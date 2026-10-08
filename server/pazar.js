@@ -98,11 +98,14 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
       const item = JSON.parse(r.item);
       const out = E.withPlayer(me, gs => {
         const bal = Number(gs.state.adAstraBalance) || 0;
-        if (bal < price) throw userError(`⚠️ Yetersiz ASTRA: ${price} gerekli, ${round3(bal)} var.`);
+        // Sponsorlu para oyuncudan oyuncuya geçemez (yoksa ortak ilanıyla "çekilebilir" paraya dönüşürdü): yalnız kendi bakiyesiyle ödenir
+        const own = bal - Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), bal);
+        if (own < price) throw userError(`⚠️ Yetersiz ASTRA: ${price} gerekli, ${round3(own)} var${own < bal ? ' (sponsorlu para ilan pazarında kullanılamaz)' : ''}.`);
         const locked = Math.max(0, Number(gs.state.lockedAda) || 0);
         gs.state.lockedAda = round3(Math.max(0, locked - price));          // önce kilitliden
         gs.state.adAstraBalance = round3(bal - price);
         gs.state.lockedAda = Math.min(gs.state.lockedAda, gs.state.adAstraBalance);
+        gs.state.sponsorAda = Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), gs.state.adAstraBalance);
         giveItem(gs, item);
         if (typeof gs._addContribution === 'function') gs._addContribution(price * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
         return { success: true };
