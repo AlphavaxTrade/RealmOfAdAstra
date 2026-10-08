@@ -1,0 +1,8 @@
+{
+  "toplam": { "lines": 88.3, "branches": 65, "functions": 85 },
+  "dosyalar": {
+    "server/index.js": { "lines": 40 },
+    "server/chain.js": { "lines": 75 },
+    "server/app.js": { "lines": 86 }
+  }
+}
