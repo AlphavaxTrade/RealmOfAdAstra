@@ -8,7 +8,7 @@ import { globalPoolV2, globalPoolV2Depot } from './v2/koyVeKonsey.js';
 
 const DAY_MS = 24 * 3600 * 1000;
 const zeroRes = () => Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ["wood", "iron", "wheat"]).map(k => [k, 0]));
-const UBI_RULES = { ...DEFAULT_UBI_RULES, minLevel: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3 };
+const UBI_RULES = { ...DEFAULT_UBI_RULES, minLevel: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3, maxSingleShare: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MAX_SINGLE_CLAIM_SHARE) || 0 };
 
 export const MAX_SUPPLY = 10000000000;
 

@@ -41,7 +41,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   Object.assign(w, olusturBoss(w));
   Object.assign(w, olusturOrtakGelir(w));
   Object.assign(w, olusturSicakCuzdan(w));
-  const { currentRates, syncRates, ratesStatus, snapshotMarket, currentCap, requestWithdraw, cancelWithdraw, withdrawStatus, scanDeposits, creditDeposits, processPayouts, reconcilePayouts, refreshUretim, refreshLive, settleWeek, runWeekly, runWorldBoss, creditPartnerIncome, scanPartnerIncome, partnerIncomeStatus, hotWalletNeed, checkHotWallet } = w;
+  const { currentRates, syncRates, ratesStatus, snapshotMarket, currentCap, externalBuy, requestWithdraw, cancelWithdraw, withdrawStatus, scanDeposits, creditDeposits, processPayouts, reconcilePayouts, refreshUretim, refreshLive, settleWeek, runWeekly, runWorldBoss, creditPartnerIncome, scanPartnerIncome, partnerIncomeStatus, hotWalletNeed, checkHotWallet } = w;
 
   const last = { market: 0, deposits: 0, live: 0, payouts: 0 };
   let ticking = false;
@@ -133,5 +133,5 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   }
 
 
-  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, externalBuy, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

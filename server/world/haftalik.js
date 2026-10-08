@@ -8,7 +8,7 @@ import { fmt, DAY } from './yardimci.js';
 import { izindeMiState } from '../aktiflik.js';
 
 export function olusturHaftalik(w) {
-  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
+  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, externalBuy, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
   function settleWeek(closedEpoch, market) {
     const now = clock();
     const e = econ();
@@ -17,7 +17,8 @@ export function olusturHaftalik(w) {
     const T = E.treasury;
     const summary = { epoch: closedEpoch, at: now, players: players.length, brake };
 
-    return atomic(() => {
+    T.bypassBudget = true;   // hesaplaşma ödemeleri (ücretsiz havuz, PvP) KARAR 7 haftalık bütçesine girmez
+    try { return atomic(() => {
       // 1) Çekim
       const rows = [];
       const states = new Map();
@@ -66,7 +67,7 @@ export function olusturHaftalik(w) {
       gp.state.ubiWeekAccrued = (Number(gp.state.ubiWeekAccrued) || 0) + alloc.totals.feeToUbi;
       gp.state.ubiPool = (Number(gp.state.ubiClaimPot) || 0) + gp.state.ubiWeekAccrued;
       let burn = alloc.totals.feeBurn;
-      summary.withdraw = { cap, ...alloc.totals };
+      summary.withdraw = { cap, k: Number(econ().k) || 1, externalBuy4w: externalBuy(), ...alloc.totals };
 
       // 2) Fiyat savunma yakımı (fren açıkken)
       let defense = 0;
@@ -220,8 +221,9 @@ export function olusturHaftalik(w) {
       db.raw.prepare('DELETE FROM prices WHERE at < ?').run(now - 400 * DAY);
       const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
       if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key >= 'pvp:match:' AND key < 'pvp:match;' AND CAST(substr(key, 11) AS INTEGER) <= ?")   /* LIKE yerine aralık: anahtar indeksini kullanır */.run(seq - 5000);
+      T.openWeekBudgets();
       return summary;
-    });
+    }); } finally { T.bypassBudget = false; }
   }
 
   async function runWeekly(closedEpoch) {

@@ -54,7 +54,7 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   const { WEEKLY_RULES } = await import('../server/economy.js');
   assert.equal(WEEKLY_RULES.maxPriceDrop, 0.02, 'haftalık çekim: fiyatı en çok %2 düşürecek miktar');
   assert.equal(WEEKLY_RULES.fee, 0.03); assert.equal(WEEKLY_RULES.feeBrake, 0.06);
-  assert.equal(WEEKLY_RULES.feeUbiShare, 0.70, 'çekim ücretinin %70\'i UBI\'ye, %30\'u yakılır');
+  assert.equal(WEEKLY_RULES.feeUbiShare, 0.50, 'çekim ücretinin %50\'si UBI\'ye, %50\'si yakılır (KARAR 4)');
   assert.equal(WEEKLY_RULES.brakeOnRatio, 0.75); assert.equal(WEEKLY_RULES.brakeOffRatio, 0.85);
   assert.equal(WEEKLY_RULES.defenseBurnWeekly, 0.01, 'fren açıkken kasalar haftada %1 yakılır');
   assert.equal(WEEKLY_RULES.faucetMaxPoolShare, 0.015, 'ücretsiz oyuncu payı kasanın haftada en çok %1,5\'i (E-planı S3)');

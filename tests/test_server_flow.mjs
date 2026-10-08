@@ -37,7 +37,7 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
   assert.ok(near(r.A.fee, 700 * 0.03) && near(r.A.rent, 450 * 0.015));
   const rent = Object.fromEntries(al.rentPayouts.map(x => [x.id, x.amount]));
   assert.ok(near(rent.B, 6.75 * 250 / 450) && near(rent.C, 6.75 * 200 / 450), 'Kira kullanılmayan paya göre');
-  assert.ok(near(al.totals.feeToUbi, 21 * 0.7 + 9 * 0.7) && near(al.totals.feeBurn, 30 * 0.3));
+  assert.ok(near(al.totals.feeToUbi, 21 * 0.5 + 9 * 0.5) && near(al.totals.feeBurn, 30 * 0.5));
   const brakeFee = allocateWithdrawals([{ id: 'A', requested: 100, score: 1 }], 1000, { brake: true });
   assert.ok(near(brakeFee.rows[0].fee, 6), 'Frende ücret %6');
 

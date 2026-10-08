@@ -37,7 +37,12 @@ export class TreasuryLedger {
       lastScaleFactor: 1,
       // E-planı Faz 2 (KARAR 1, 8 Ekim): bu hafta kasalardan vatandaşlara GERÇEKTEN ödenen toplam (geri alım hariç;
       // ammBuyback bir ödül değil, piyasa savunması). server/kapi.js recordWeek() her hafta okur ve sıfırlar.
-      weekGrantedToCitizens: 0
+      weekGrantedToCitizens: 0,
+      // KARAR 7: haftalık ödeme bütçesi (kasa → bu hafta çekilebilecek tavan / harcanan) ve son haftaların girişi
+      weekBudget: {},
+      weekSpent: {},
+      inflowMark: {},
+      inflowHistory: []
     });
 
     if (typeof localStorage === 'undefined') return seed();
@@ -113,6 +118,8 @@ export class TreasuryLedger {
     }
 
     const available = this.state.pools[poolId] || 0;
+    const budgetLeft = this._budgetLeft(poolId);
+    if (budgetLeft <= 0) return { granted: 0, requested: want, scaleFactor: 0, depleted: true, budgetExhausted: true };
     const floorRatio = GAME_CONFIG.TREASURY_MIN_PAYOUT_RATIO;
 
     // Bir tek ödül havuzun tamamını süpüremez: tek seferde en fazla %2'si.
@@ -125,7 +132,7 @@ export class TreasuryLedger {
       granted *= Math.max(floorRatio, health);
     }
 
-    granted = Math.max(0, Math.min(granted, available));
+    granted = Math.max(0, Math.min(granted, available, budgetLeft));
     if (granted <= 0) {
       return { granted: 0, requested: want, scaleFactor: 0, depleted: true };
     }
@@ -134,6 +141,7 @@ export class TreasuryLedger {
     this.state.outflow[poolId] = (this.state.outflow[poolId] || 0) + granted;
     this.state.lifetimeWithdrawn += granted;
     this.state.lastScaleFactor = granted / want;
+    if (this._budgeted(poolId)) this.state.weekSpent[poolId] = (this.state.weekSpent[poolId] || 0) + granted;
     // ammBuyback vatandaşa ödenmez (fiyat savunması); diğer her kasa bir oyuncunun bakiyesine gider.
     if (poolId !== 'ammBuyback') this.state.weekGrantedToCitizens = (Number(this.state.weekGrantedToCitizens) || 0) + granted;
     this.save();
@@ -156,6 +164,7 @@ export class TreasuryLedger {
     this.state.pools[poolId] = (this.state.pools[poolId] || 0) + v;
     this.state.outflow[poolId] = Math.max(0, (this.state.outflow[poolId] || 0) - v);
     this.state.lifetimeWithdrawn = Math.max(0, this.state.lifetimeWithdrawn - v);
+    if (this._budgeted(poolId)) this.state.weekSpent[poolId] = Math.max(0, (this.state.weekSpent[poolId] || 0) - v);
     if (poolId !== 'ammBuyback') this.state.weekGrantedToCitizens = Math.max(0, (Number(this.state.weekGrantedToCitizens) || 0) - v);
     this.save();
     return v;
@@ -169,6 +178,40 @@ export class TreasuryLedger {
     const rest = r.granted - whole;
     if (rest > 1e-12) this.refund(poolId, rest);
     return { ...r, granted: whole, scaleFactor: r.requested > 0 ? whole / r.requested : 0 };
+  }
+
+  // KARAR 7 — haftalık ödeme bütçesi
+  _budgeted(poolId) {
+    return !this.bypassBudget && this.state.weekBudget && this.state.weekBudget[poolId] != null;
+  }
+
+  _budgetLeft(poolId) {
+    if (!this._budgeted(poolId)) return Infinity;
+    return Math.max(0, this.state.weekBudget[poolId] - (this.state.weekSpent[poolId] || 0));
+  }
+
+  // Yeni haftanın bütçelerini açar (sunucuda haftalık hesaplaşmanın sonunda; ilk açılışta da bir kez). Giriş = havuzun
+  // kümülatif girişindeki artış; son INFLOW_WEEKS haftanın ortalaması bütçeye INFLOW_SHARE oranında eklenir.
+  openWeekBudgets() {
+    const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
+    if (!B) return {};
+    const st = this.state;
+    const mark = st.inflowMark || {};
+    const delta = {};
+    const firstTime = !Object.keys(mark).length;   // ilk açılış: o ana dek biriken giriş bir haftanın girişi sayılmaz
+    for (const id of Object.keys(B.RATES)) { delta[id] = firstTime ? 0 : Math.max(0, (st.inflow[id] || 0) - (Number(mark[id]) || 0)); }
+    if (!firstTime) st.inflowHistory = [...(st.inflowHistory || []), delta].slice(-B.INFLOW_WEEKS);
+    st.inflowMark = Object.fromEntries(Object.keys(B.RATES).map(id => [id, st.inflow[id] || 0]));
+    st.weekBudget = {};
+    st.weekSpent = {};
+    for (const [id, rate] of Object.entries(B.RATES)) {
+      const hist = st.inflowHistory;
+      const avgIn = hist.reduce((s, h) => s + (h[id] || 0), 0) / Math.max(1, hist.length);
+      const health = Math.max(B.HEALTH_MIN, this.getPoolHealth(id));
+      st.weekBudget[id] = (st.pools[id] || 0) * rate * health + avgIn * B.INFLOW_SHARE;
+    }
+    this.save();
+    return { ...st.weekBudget };
   }
 
   // Bu haftanın vatandaşa-dağıtılan toplamını okur ve sıfırlar (haftalık hesaplaşmada bir kez çağrılır).

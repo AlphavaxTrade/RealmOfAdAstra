@@ -5,19 +5,23 @@
 //    düşürecek miktardır. Havuz oyunculara katkı puanına göre paylaşılır.
 //  • Kullanılmayan çekim hakkını başkaları kullanır; kullanan, fazladan çektiği miktarın %1,5'ini "hak kirası"
 //    olarak hakkı kullanılmayan oyunculara öder (kullanılmayan paylarına göre).
-//  • Çekim ücreti %3 (fren açıkken %6). Ücretin %70'i haftalık temel gelire (UBI), %30'u yakılır.
+//  • Çekim ücreti %3 (fren açıkken %6). Ücretin %50'si haftalık temel gelire (UBI), %50'si yakılır (KARAR 4, 8 Ekim 2026: yakım payı %30 → %50).
 //  • Fren: piyasa değeri son 30 günün zirvesinin %75'inin altına düşerse açılır; zirvenin %85'ine dönünce ya da
 //    4 hafta yeni dip yapılmazsa kapanır. Fren açıkken hazine kasalarının haftalık %1'i yakılır (fiyat savunması).
 //  • Ücretsiz oyuncu havuzu: ayda piyasa değerinin %1'i, kişi başı en fazla 100$; görev kasasından ödenir.
 //  • Fiyat çarpanı: fiyat açılış fiyatının altındaysa p0/p (dolar maliyeti korunur), üstündeyse (p0/p)^0,6;
 //    kasalar 12 aydan kısa dayanıyorsa düşmez, 36/60 aydan uzun dayanıyorsa %10/%20 daha düşer; haftada ≤%5.
+//  • KARAR 5 (8 Ekim 2026): ikili çekim tavanı — haftalık tavan = min(fiyatı %2 düşürecek miktar, son 4 haftadaki dış alımın %50'si),
+//    ama bugünkü kuralın %20'sinden asla az değil. Dış alım = piyasadan net token alımı + trade sitesinden oyuna gelen pay.
+//  • KARAR 6 (8 Ekim 2026): tek fiyat çarpanı k = piyasa değeri / 30 günlük zirve (0,5–1,5); kilit açılma tabanına (haftalık %1 × k)
+//    ve çekim tavanına (× k) uygulanır. Giriş günü primi (%1,4) k'den etkilenmez.
 // ============================================================================
 
 export const WEEKLY_RULES = {
   maxPriceDrop: 0.02,
   fee: 0.03,
   feeBrake: 0.06,
-  feeUbiShare: 0.70,
+  feeUbiShare: 0.50,
   rent: 0.015,
   brakeOnRatio: 0.75,
   brakeOffRatio: 0.85,
@@ -33,7 +37,12 @@ export const WEEKLY_RULES = {
   multExp: 0.6,
   multStep: 0.05,
   multMin: 0.05,
-  multMax: 20
+  multMax: 20,
+  kMin: 0.5,
+  kMax: 1.5,
+  externalBuyShare: 0.5,
+  capFloorShare: 0.2,
+  externalWindowDays: 28
 };
 
 const r2 = v => Math.floor(v * 100) / 100;
@@ -141,4 +150,29 @@ export function nextMultiplier({ current = 1, priceUsd, launchPriceUsd, runwayMo
   target = Math.max(rules.multMin, Math.min(rules.multMax, target));
   const next = Math.max(current * (1 - rules.multStep), Math.min(current * (1 + rules.multStep), target));
   return Math.round(next * 10000) / 10000;
+}
+
+
+// KARAR 6: tek fiyat-duyarlılık çarpanı. cur/peak: son günlerin ortalama piyasa değeri / 30 günlük zirve. Veri yoksa 1.
+export function priceFactorK({ cur, peak }, rules = WEEKLY_RULES) {
+  if (!(peak > 0) || !(cur >= 0)) return 1;
+  return Math.round(Math.max(rules.kMin, Math.min(rules.kMax, cur / peak)) * 10000) / 10000;
+}
+
+// KARAR 5 + 6: ikili çekim tavanı (token). baseCap = fiyatı maxDrop düşürecek miktar (withdrawCapTokens).
+// Taban: baseCap × capFloorShare — dış alım sıfır olsa bile çekim tamamen kilitlenmez.
+export function dualWithdrawCap({ baseCap, k = 1, externalBuy = 0 }, rules = WEEKLY_RULES) {
+  const base = Math.max(0, Number(baseCap) || 0);
+  const priceCap = base * (Number(k) > 0 ? Number(k) : 1);
+  const buyCap = Math.max(0, Number(externalBuy) || 0) * rules.externalBuyShare;
+  return Math.max(base * rules.capFloorShare, Math.min(priceCap, buyCap));
+}
+
+// İki piyasa fotoğrafı arasındaki net token alımı (alım +, satım −). Borsaya geçmeden önce Arena eğrisinin arzı, geçtikten sonra
+// havuzdaki token rezervi (alıcı token çekerse rezerv azalır). Geçiş anında (biri öncesi, biri sonrası) ölçüm yapılmaz: 0.
+export function netTokenFlow(prev, cur) {
+  if (!prev || !cur) return 0;
+  if (!prev.graduated && !cur.graduated) return (Number(cur.curveSupply) || 0) - (Number(prev.curveSupply) || 0);
+  if (prev.graduated && cur.graduated) return (Number(prev.poolTokenReserve) || 0) - (Number(cur.poolTokenReserve) || 0);
+  return 0;
 }

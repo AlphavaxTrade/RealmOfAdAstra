@@ -704,6 +704,11 @@ export const GAME_CONFIG = {
   //    kendini finanse eder (R3 §Çark) — buraya tahmini bir sayı eklemek yanıltıcı olurdu.
   TREASURY_WEEKLY_PAYOUT: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.015 },
   // Kilitli kasalar: hiçbir ödül çekemez (universe yalnız Universe açılışında, fatih yalnız 18. boss)
+  // KARAR 7 (E-planı, 8 Ekim 2026): girişe bağlı haftalık ödeme bütçesi. Oyuncu hareketiyle yapılan ödemeler bir hafta içinde
+  // en çok şu kadar olabilir: kasa × oran × sağlık çarpanı (bakiye/hedef rezerv, en az HEALTH_MIN, en çok 1) + son INFLOW_WEEKS
+  // haftanın ortalama haftalık girişinin INFLOW_SHARE'i. Hesaplaşma anındaki ödemeler (ücretsiz havuz, PvP sıralaması) kendi
+  // kurallarıyla sınırlıdır ve bu bütçeye girmez. Bütçe yalnız sunucuda açılır (treasury.openWeekBudgets); tarayıcı tek oyunculuda yok.
+  TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15 },
   TREASURY_LOCKED_POOLS: ['universe'],
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
   // Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026 — ayrıntı js/economy/faucet.js): en az MIN_LEVEL seviye ve o hafta

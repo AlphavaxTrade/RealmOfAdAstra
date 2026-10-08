@@ -23,14 +23,14 @@ const SEN = {
   taban: {},
   uzun: {},
   fiyatcokus: { fiyat: g => (g < 20 ? 1 : g < 50 ? 1 - 0.5 * (g - 20) / 30 : 0.5) },     // 20. günden sonra 30 günde %50 düşer
-  toplucekim: { topluCekimHafta: 10, topluCekimKisi: 30 },
+  toplucekim: { topluCekimHafta: 10, topluCekimKisi: 30, topluCekimBakiye: 20000, arz: 3e7 },     // küçük arz: haftalık çekim tavanı ≈ 300 K, talep ≈ 600 K → tavan BAĞLAR
   balinalar: { balinaDepozito: 5e6, balinaSayisi: 10 },
   disgelir: { ortakGelir: true, ortakHaftalik: 250000, kilitAcik: true },
   sahtehesap: { dalgaHafta: 8, dalgaKisi: 100 }
 }[SENARYO] || {};
 
 const rng = tohumlu(TOHUM * 7919);
-const W = await dunyaKur({ tohum: TOHUM, ortakGelir: SEN.ortakGelir, fiyat: SEN.fiyat, limit: Number(arg.limit) || (VATANDAS >= 100 ? undefined : VATANDAS) });
+const W = await dunyaKur({ tohum: TOHUM, ortakGelir: SEN.ortakGelir, fiyat: SEN.fiyat, arz: SEN.arz, limit: Number(arg.limit) || (VATANDAS >= 100 ? undefined : VATANDAS) });
 const { E, kapi, world, db, zaman } = W;
 const t0 = performance.now();
 
@@ -152,6 +152,13 @@ try {
         const kalan = Number(E.globalPool.state.epochEndTime) - zaman.T;
         if (kalan > 0 && kalan <= 24 * SAAT) {
           const topluSimdi = SEN.topluCekimHafta === hafta;
+          if (topluSimdi && !ctx.topluYapildi) {   // 30 cüzdanlı vatandaşa serbest bakiye (dış giriş sayılır): hepsi tüm serbest bakiyesini çekmek ister
+            ctx.topluYapildi = true;
+            for (const P of oyuncular.filter(x => !x.aday && x.cuzdan).slice(0, SEN.topluCekimKisi)) {
+              E.mutatePlayer(P.pid, gs => { gs.state.adAstraBalance += SEN.topluCekimBakiye; });
+              ctx.dis.depozito += SEN.topluCekimBakiye;
+            }
+          }
           let n = 0;
           for (const P of oyuncular) {
             if (P.aday || !P.cuzdan) continue;

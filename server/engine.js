@@ -56,6 +56,9 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
   const { ammMarket } = await import('../js/ammMarket.js');
   const { levelWeight } = await import('../js/economy/ubi.js');
 
+  // KARAR 7: haftalık ödeme bütçesi ilk açılışta bir kez kurulur (sonra her hafta hesaplaşmanın sonunda yenilenir)
+  if (!Object.keys(treasury.state.weekBudget || {}).length) treasury.openWeekBudgets();
+
   // Sunucuda "güvenilir saat" sunucunun kendi saatidir
   globalPool.serverTimeOffset = 0;
   globalPool.trustedTimeReady = true;
@@ -90,6 +93,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     const w = world();
     const m = Number(w.priceMultiplier) > 0 ? Number(w.priceMultiplier) : 1;
     gs.state.adaPriceMultiplier = m;
+    gs.state.unlockK = Number(w.k) > 0 ? Number(w.k) : 1;   // KARAR 6: kilit açılma tabanı (haftalık %1) × k
     gs.state.adaPriceMultiplierTarget = m;
     gs.state.adaPriceMultiplierEpoch = globalPool.state.epochId;
     const L = lottery();

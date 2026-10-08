@@ -178,17 +178,18 @@ try {
   // dokunduruluyor (Sv.1 eşiği 2; dokunmazsa activeCitizens() onu saymaz, gösterge hep 0 kalır).
   const J = await register('jale@ornek.com'); kapi.adminSetPlayer(J.pid, 'citizen');
   engine.mutatePlayer(J.pid, gs => { gs._katilim().touched = { sefer: true, pazar: true }; });
+  const EP = engine.globalPool.state.epochId;   // kapanan hafta = Jale'nin dokunduğu hafta (recordWeek o haftanın kaydını okur)
   assert.equal(engine.GAME_CONFIG.KAPI.GROWTH_LOCKED, true, 'Varsayılan kilitli');
   engine.treasury.depositTo('quest', 100000);
   engine.treasury.withdraw('quest', 30);                            // bu hafta GERÇEKTEN dağıtılan: 30 ASTRA → 15 $/hafta ≈ 65 $/ay (eşik 50 $ geçer)
-  kapi.recordWeek({ epoch: 1, withdraw: { cap: 2 } }, 0.5);          // çekim tavanı 2 ASTRA → 1 $/hafta ≈ 4,3 $/ay (eşik ≈16,7 $ geçMEZ)
+  kapi.recordWeek({ epoch: EP, withdraw: { cap: 2 } }, 0.5);          // çekim tavanı 2 ASTRA → 1 $/hafta ≈ 4,3 $/ay (eşik ≈16,7 $ geçMEZ)
   assert.equal(kapi.growth(), null, 'Kilitliyken gösterge ikisi de geçse de büyümez');
   const unlock = await call('POST', '/api/admin/kapi', { growthLocked: false }, ADMIN);
   assert.equal(unlock.status, 200, JSON.stringify(unlock.body));
   assert.equal(unlock.body.growthLocked, false);
   assert.equal(kapi.growth(), null, 'Kilit açık ama çekilebilen eşiğin üçte birinin altında: dağıtılan tek başına yetmez');
   engine.treasury.withdraw('quest', 30);
-  kapi.recordWeek({ epoch: 2, withdraw: { cap: 50 } }, 0.5);         // 2. hafta çekim tavanı 50 ASTRA → ortalama çekilebilen eşiği de geçer
+  kapi.recordWeek({ epoch: EP, withdraw: { cap: 50 } }, 0.5);         // 2. hafta çekim tavanı 50 ASTRA → ortalama çekilebilen eşiği de geçer
   const grew = kapi.growth();
   assert.ok(grew && grew.to > grew.from, 'Kilit açık VE dağıtılan+çekilebilen ikisi de eşiği geçince büyür');
   ok('Büyüme Faz 2 göstergesi: GROWTH_LOCKED ile kilitli; açılınca dağıtılan VE çekilebilen (eşiğin üçte biri) birlikte gerekir');

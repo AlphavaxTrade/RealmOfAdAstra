@@ -66,7 +66,7 @@ const fight = (gs, monster, indices) => {
   assert.equal(outcome.victory, true);
   const after = reload();
   assert.ok(after.state.dungeonProgress >= 2, 'Kat ilerlemesi kayıtta olmalı');
-  assert.ok(after.state.adAstraBalance - adaBefore === outcome.adaReward, 'ADA ödülü kayıtta olmalı');
+  assert.ok(Math.abs(after.state.adAstraBalance - adaBefore - outcome.adaReward) < 1e-9, 'ADA ödülü kayıtta olmalı');   // ödül artık kesirli olabilir: kayan nokta farkı payı
   assert.ok(outcome.adaReward > 0);
   ok('Zindan zaferi ve ödülü animasyondan önce kaydedilir');
 }

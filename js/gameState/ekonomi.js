@@ -66,7 +66,8 @@ export const ekonomiYontemleri = {
   getLockedUnlockForecast() {
     const L = GAME_CONFIG.LOCKED_BALANCE || {};
     const { locked, free, total } = this.getLockedBalanceInfo();
-    const base = L.WEEKLY_UNLOCK_BASE ?? 0.01, active = L.WEEKLY_UNLOCK_ACTIVE ?? 0.014, spend = L.UNLOCK_ON_SPEND ?? 0.2;
+    const k = Number(this.state.unlockK) > 0 ? Number(this.state.unlockK) : 1;   // KARAR 6: yalnız taban k ile ölçeklenir; giriş günü primi sabit
+    const base = (L.WEEKLY_UNLOCK_BASE ?? 0.01) * k, active = L.WEEKLY_UNLOCK_ACTIVE ?? 0.014, spend = L.UNLOCK_ON_SPEND ?? 0.2;
     const dayBase = 1 - Math.pow(1 - base, 1 / 7);          // zamanla (oyuna girmesen de) günlük
     const dayActive = active / 7;                            // o gün oyuna girersen ek
     const tomorrowActive = locked * (1 - (1 - dayBase) * (1 - dayActive));
@@ -125,7 +126,8 @@ export const ekonomiYontemleri = {
     let locked = Math.max(0, Number(this.state.lockedAda) || 0);
     const days = Math.max(0, (now - (ls.lastAt || now)) / 86400000);
     if (days >= 1 / 24) {
-      locked *= Math.pow(1 - (L.WEEKLY_UNLOCK_BASE ?? 0.01), days / 7);
+      const k = Number(this.state.unlockK) > 0 ? Number(this.state.unlockK) : 1;
+      locked *= Math.pow(1 - (L.WEEKLY_UNLOCK_BASE ?? 0.01) * k, days / 7);
       ls.lastAt = now;
     }
     const today = new Date(now + 3 * 3600 * 1000).toISOString().slice(0, 10);
