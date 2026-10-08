@@ -17,3 +17,10 @@ Geçiş kararını siz verirsiniz; karar verdiğinizde Claude bu listeyi önün�
 - [ ] **Kanal A gerçek ayarı (sizin eyleminiz):** `PARTNER_INCOME_FROM/TO` ve trade sitesindeki Bot Kasası `oyunKasasi` adresi.
 - [ ] **Kasa güvenliği kararları:** günlük çekim sınırı (%10) son kararı; dağıtıcı anahtarı için izleme/uyarı (fark edilmezse günlerce akabilir).
 - [ ] **Kanarya** (küçük miktar) → ancak sonra gerçek 200 M: sırayla, her adım sizin onayınızla.
+
+## C) KARAR 4-7 ve sponsorluktan kalan küçük işler (9 Ekim 2026)
+- [ ] **Gerçek oyuncu yoğunluğunda ödeme bütçesi izlenmeli:** `treasury.state.lastWeekBudget / lastWeekSpent` her hafta kaydedilir; bütçe sık doluyorsa oranları/ mesajı gözden geçir. Bütçe dolunca oyuncuya ayrı "bu haftaki bütçe doldu" mesajı yok (şimdilik "kasa boş" benzeri yanıt).
+- [ ] **k üst sınırı (1,5) pratikte çalışmıyor** (zirve ≥ güncel): kullanıcı isterse "30 günlük ortalamaya bölme" ile anlam kazanır.
+- [ ] **Sağlık yumuşatması çift sayılıyor** (tek ödeme + haftalık bütçe): kullanıcı karar verirse birini kaldır.
+- [ ] **Sponsorluk, ikinci sürüm:** doğrudan zincirden sponsor yatırma, sözleşmenin zincirde tutulması, sponsorlu harcamanın katkı puanındaki etkisinin gerçek davranışla ölçülmesi, hukuki nitelendirme (kullanıcıda).
+- [ ] **İlk 4 hafta ısınma:** çekim tavanı alım geçmişi birikene dek taban değerinde (bugünkü kuralın %20'si) kalır; canlıya yakın bir denemede bunun oyuncuya anlatımı düşünülmeli.

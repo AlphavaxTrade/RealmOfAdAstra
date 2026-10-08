@@ -202,6 +202,8 @@ export class TreasuryLedger {
     for (const id of Object.keys(B.RATES)) { delta[id] = firstTime ? 0 : Math.max(0, (st.inflow[id] || 0) - (Number(mark[id]) || 0)); }
     if (!firstTime) st.inflowHistory = [...(st.inflowHistory || []), delta].slice(-B.INFLOW_WEEKS);
     st.inflowMark = Object.fromEntries(Object.keys(B.RATES).map(id => [id, st.inflow[id] || 0]));
+    // İzleme: biten haftanın bütçesi ve harcananı (bağlayıcı olup olmadığı ölçülebilsin)
+    if (Object.keys(st.weekBudget || {}).length) { st.lastWeekBudget = st.weekBudget; st.lastWeekSpent = st.weekSpent; }
     st.weekBudget = {};
     st.weekSpent = {};
     for (const [id, rate] of Object.entries(B.RATES)) {
