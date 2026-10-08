@@ -39,6 +39,20 @@ assert.deepEqual(basarisiz, [], 'başarısız senaryolar:\n' + basarisiz.join('\
   console.log('✅ ilerlemiş oyuncuda (seviye 30) arka arkaya hepsi geçti');
 }
 
+// Şansa bağlı eylemler (zindan savaşı, arena maçı) içeren senaryolar KARARSIZ olmamalı: beklentiler yalnız sonuçtan bağımsız kuralları sınar.
+// (Bir senaryo yalnız bazı zarlarda kırmızı olursa, ya senaryo ya da oyunun bir kuralı yanlış anlaşılmıştır: ör. zaferde geri verilen arena anahtarı.)
+{
+  const sorunlar = {};
+  for (let tur = 0; tur < 25; tur++) {
+    const gs = new GameStateManager();
+    gs.vanillaReset();
+    if (tur % 2) { gs.setDevLevel(30); gs.setDevAdAstra(2e6); }
+    for (const s of SENARYOLAR.filter((x) => ['zindan', 'kolezyum', 'ordu'].includes(x.kategori))) { const r = senaryoCalistir(gs, s); if (!r.gecti) sorunlar[s.id] = (sorunlar[s.id] || 0) + 1; }
+  }
+  assert.deepEqual(sorunlar, {}, 'şansa bağlı senaryolar kararsız (kaç turda kırmızı): ' + JSON.stringify(sorunlar));
+  console.log('✅ zindan/kolezyum/ordu senaryoları 25 tekrarda kararlı');
+}
+
 // Senaryo çalıştırıcı bir hatayı yutmaz, "başarısız" diye raporlar
 {
   const gs = new GameStateManager(); gs.vanillaReset();
@@ -58,5 +72,10 @@ assert.deepEqual(basarisiz, [], 'başarısız senaryolar:\n' + basarisiz.join('\
   assert.equal(bozuk('ordu-astra-yok', (gs) => { gs.getSoldierCost = () => 0; }).gecti, false, 'asker bedeli sıfırlanırsa senaryo kırmızı olmalı');
   assert.equal(bozuk('pazar-al-sat-kayip', (gs) => { gs.marketSell = () => ({ success: true }); }).gecti, false, 'satım hiç ödeme almazsa/çalışmazsa senaryo kırmızı olmalı');
   assert.equal(bozuk('sefer-ikinci-sefer', (gs) => { const orijinal = gs.startExpedition.bind(gs); gs.startExpedition = (n) => { const r = orijinal(n); return r.success === false ? { ...r, success: true } : r; }; }).gecti, false, 'ikinci sefer kabul edilirse senaryo kırmızı olmalı');
-  console.log('✅ kural bozulunca ilgili senaryolar kırmızı olur (5 kontrol deneyi)');
+  assert.equal(bozuk('zindan-stamina-yok', (gs) => { gs.deductDungeonStamina = () => ({ success: true }); }).gecti, false, 'zindan stamina kontrolü kalkarsa senaryo kırmızı olmalı');
+  assert.equal(bozuk('zindan-kat-kilidi', (gs) => { gs.setDungeonProgress = () => { gs.state.dungeonProgress = 18; }; }).gecti, false, 'kat kilidi kalkarsa senaryo kırmızı olmalı');
+  assert.equal(bozuk('zindan-harc-ve-antrenman', (gs) => { gs.getDungeonGateFee = () => 5; }).gecti, false, 'harç kuralı bozulursa senaryo kırmızı olmalı');
+  assert.equal(bozuk('kolezyum-anahtar-yok', (gs) => { const o = gs.executeColosseum1v1Match.bind(gs); gs.executeColosseum1v1Match = (i) => { gs.state.arenaKeys = 5; return o(i); }; }).gecti, false, 'anahtar şartı kalkarsa senaryo kırmızı olmalı');
+  assert.equal(bozuk('ordu-koylu-siniri', (gs) => { gs.getVillageInfo = () => ({ soldierCap: 99, villagers: 99 }); }).gecti, false, 'köylü sınırı bozulursa senaryo kırmızı olmalı');
+  console.log('✅ kural bozulunca ilgili senaryolar kırmızı olur (10 kontrol deneyi)');
 }
