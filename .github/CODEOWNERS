@@ -1,15 +1,15 @@
 # Para, kimlik ve altyapı yolları: değişiklik sahibinin incelemesinden geçer (dal korumasında "kod sahibi incelemesi" açıksa zorunlu olur).
-# DOĞRULA: sahip adı depo sahibinden türetildi; kişisel hesap adı ya da takım (@alphavaxtrade/ekip) ise düzeltin.
-*                       @alphavaxtrade
-server/payments.js      @alphavaxtrade
-server/kasa.js          @alphavaxtrade
-server/chain.js         @alphavaxtrade
-server/world/odemeler.js @alphavaxtrade
-server/accounts.js      @alphavaxtrade
-server/oturum.js        @alphavaxtrade
-server/parola.js        @alphavaxtrade
-contracts/              @alphavaxtrade
-.github/                @alphavaxtrade
-Dockerfile              @alphavaxtrade
-docker-compose*.yml     @alphavaxtrade
-deploy/                 @alphavaxtrade
+# Sahip: depo yöneticisi GitHub hesabı (gh ile doğrulandı: blockchainary). Organizasyon adı (@AlphavaxTrade) tek başına geçerli sahip değildir; ekip kurulursa @AlphavaxTrade/ekip-adı yazın.
+*                       @blockchainary
+server/payments.js      @blockchainary
+server/kasa.js          @blockchainary
+server/chain.js         @blockchainary
+server/world/odemeler.js @blockchainary
+server/accounts.js      @blockchainary
+server/oturum.js        @blockchainary
+server/parola.js        @blockchainary
+contracts/              @blockchainary
+.github/                @blockchainary
+Dockerfile              @blockchainary
+docker-compose*.yml     @blockchainary
+deploy/                 @blockchainary

@@ -7,7 +7,7 @@ Oyunun statik dosyaları `realmofadastra.vercel.app` adresinden, API ise ayrı b
 
 ## Karar
 - Üretim yolu: tek sunucu hem `dist/` dosyalarını (ön sıkıştırılmış, doğru önbellek başlıklarıyla) hem API'yi sunar (`SERVE_DIST=1`, varsayılan). Aynı kaynak olduğu için CORS gerekmez.
-- `scripts/vercel-yukle.mjs` "kullanımdan kaldırıldı" işaretlendi, silinmedi (silme yalnız sahibinin onayıyla; aday listesinde).
+- Statik dosyaları Vercel'e yükleyen betik (vercel-yukle) 8 Ekim 2026'da, sahibinin onayıyla silindi; git geçmişinde durur.
 - `CORS_ORIGINS` ayarı, geçiş sürerken eski adresin çalışmaya devam etmesi için duruyor.
 
 ## Sonuç ve açık iş

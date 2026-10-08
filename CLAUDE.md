@@ -33,11 +33,9 @@ OYUN-SUNUCUSU-BASLAT.bat     # local TRIAL server at http://localhost:8080 under
                              #   log logs/online-server.log, pid logs/online-server.pid, registered in Windows Startup
 OYUN-SUNUCUSU-DURDUR.bat     # stops it (kills the pid and whatever listens on 8080). After a code change: stop, then
                              #   wscript scripts\windows\online-hidden.vbs  and wait for GET /api/health (the watchdog rebuilds first)
-OYUNU-BASLAT.bat             # the older Vite-only watchdog on :5180 (keep-alive.cjs)
 
 node contracts/compile.mjs   # solc -> contracts/build/<Name>.json (gitignored)
 node contracts/deploy.mjs    # env-driven: DEPLOY_RPC, DEPLOYER_PRIVATE_KEY, OWNER_ADDRESS, TREASURY...; mainnet needs CONFIRM_MAINNET=1
-node scripts/vercel-yukle.mjs [https://server]   # static game files -> realmofadastra.vercel.app (token in ~/.realm_vercel_token[.txt])
 bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (user realm, /srv/realm, 127.0.0.1:8090 behind Caddy, TEST_MODE)
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/generate_doc_tables.mjs             # regenerates docs/LEVEL_PROGRESSION_TABLES.md from the engine

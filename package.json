@@ -11,7 +11,6 @@
     "build": "vite build && node scripts/sikistir.mjs",
     "preview": "vite preview --port 5180 --strictPort",
     "test": "node tests/run_all.mjs",
-    "serve": "node scripts/windows/keep-alive.cjs",
     "olu-kod": "knip --no-progress --reporter compact",
     "lint": "eslint server js scripts tests contracts eslint.config.js --max-warnings=94",
     "gizli-tara": "node scripts/gizli-tara.mjs",

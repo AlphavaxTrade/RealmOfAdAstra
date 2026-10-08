@@ -1,6 +1,6 @@
 # Realm of AdAstra — tek komutla çalıştırma (kurumsal A6.6). Kurulum ve işletme: docs/DEPLOY.md
 #   docker compose up -d --build                         → yalnız oyun sunucusu (127.0.0.1:8080; önüne kendi Caddy/Nginx'ini koy)
-#   docker compose --profile https up -d --build         → Caddy ile otomatik HTTPS de (DOMAIN=oyun.alanadin.com .env'de)
+#   docker compose --profile https up -d --build         → Caddy ile otomatik HTTPS de (DOMAIN=roa.alphavaxtrade.com .env'de)
 #   docker compose --profile yedek up -d                 → saatlik otomatik yedek servisi de
 # Gizli bilgiler (şifre, anahtar) için: docker compose -f docker-compose.yml -f docker-compose.gizli.yml up -d  (Docker secrets, dosyadan)
 # Ayarlar server/.env dosyasından okunur (örnek: docs/kurumsal/env.ornek.txt, ayrıntı: docs/kurumsal/ORTAM.md)
@@ -54,7 +54,7 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      - DOMAIN=${DOMAIN:?DOMAIN (ör. oyun.alanadin.com) .env dosyasında tanımlı olmalı}
+      - DOMAIN=${DOMAIN:?DOMAIN (ör. roa.alphavaxtrade.com) .env dosyasında tanımlı olmalı}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_veri:/data

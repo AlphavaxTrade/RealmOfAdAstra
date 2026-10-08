@@ -54,7 +54,7 @@ En önemlileri:
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.gizli.yml up -d --build            # oyun
 docker compose -f docker-compose.yml -f docker-compose.gizli.yml --profile yedek up -d    # + saatlik yedek
-DOMAIN=oyun.alanadin.com docker compose --profile https up -d                             # + Caddy (otomatik HTTPS)
+DOMAIN=roa.alphavaxtrade.com docker compose --profile https up -d                             # + Caddy (otomatik HTTPS)
 docker compose logs -f realm          # "Realm of AdAstra sunucusu çalışıyor" satırı (JSON günlük)
 curl http://127.0.0.1:8080/api/health ; curl http://127.0.0.1:8080/api/ready
 ```
@@ -76,7 +76,7 @@ Birim dosyalarının başındaki yorumlar gizli bilgi (`LoadCredential`) ve şif
 Docker'da `--profile https` yeterli (`deploy/Caddyfile`: otomatik sertifika, sıkıştırma, 1 MB gövde sınırı, yeniden başlatmada 502 yerine 10 sn bekleme). Elle Caddy kullanıyorsan:
 
 ```
-oyun.alanadin.com {
+roa.alphavaxtrade.com {
     reverse_proxy localhost:8080 {
         lb_try_duration 10s
     }
@@ -86,7 +86,7 @@ oyun.alanadin.com {
 
 ## 5. Yönetici paneli
 
-`https://oyun.alanadin.com/admin` (şifre `ADMIN_TOKEN`; sayfa herkese açık, uçları şifresiz çalışmaz). Panel: oyun cüzdanındaki ADA, fiyat, fren, haftalık sınır, oyuncu sayıları, bekleyen çekimler, hazine, bütün ödemeler (işlem bağlantısıyla), olaylar.
+`https://roa.alphavaxtrade.com/admin` (şifre `ADMIN_TOKEN`; sayfa herkese açık, uçları şifresiz çalışmaz). Panel: oyun cüzdanındaki ADA, fiyat, fren, haftalık sınır, oyuncu sayıları, bekleyen çekimler, hazine, bütün ödemeler (işlem bağlantısıyla), olaylar.
 
 - **⏸️ Durdur:** çekim ve zincir ödemeleri hemen durur. Bir sorun görürsen ilk bunu kullan. **▶️ Devam ettir:** kaldırır.
 - **📤 Bekleyen ödemeleri şimdi gönder:** `manual` modda ödemeler bu düğmeyle gider.
