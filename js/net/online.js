@@ -8,7 +8,7 @@
 //  • Pazar, hazine ve haftalık kota bütün oyuncular için ortaktır ve sunucudan gelir.
 // Sunucu yoksa (bilgisayardaki deneme modu) hiçbir şey değişmez: oyun eskisi gibi tarayıcıda çalışır.
 // ============================================================================
-import { ACTIONS, DEV_ACTIONS } from '../../server/actions.js';
+import { ACTIONS, DEV_ACTIONS, MISAFIR_ACTIONS } from '../../server/actions.js';
 import { GAME_CONFIG } from '../config.js';
 import { applyRates } from '../economy/rates.js';
 
@@ -170,6 +170,21 @@ function installProxies() {
         return r;
       };
     }
+  }
+  // 🚪 Sırada bekleyen (misafir modu) adayın tek yapabildiği şey: hazır aday onayı. Vatandaşlık gerektirmez,
+  // DEV_ACTIONS'ın tersine her zaman çalışır (test modu şartı yok).
+  for (const name of Object.keys(MISAFIR_ACTIONS)) {
+    const orig = gs[name];
+    if (typeof orig !== 'function') continue;
+    gs[name] = function (...a) {
+      if (depth > 0) return orig.apply(gs, a);
+      if (!token) { requireLogin(); return GUEST_FAIL; }
+      depth++;
+      let r;
+      try { r = orig.apply(gs, a); } finally { depth--; }
+      send(name, a.map(v => (v === undefined ? null : v)), { wait: true });
+      return r;
+    };
   }
   // Tarayıcıdaki kayıt yalnız önbellek: sunucuya gitmeyen değişiklikler bir sonraki eşitlemede düzelir
 }

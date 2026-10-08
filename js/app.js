@@ -245,17 +245,42 @@ function runCinematicLoadingSequence() {
 
 // Top Bar Render
 // 🚪 Kapı kuralı: bekleme sırasındaki ya da askıdaki hesaba üstte şerit (vatandaşa görünmez)
+// Sırada beklerken onaylanacak 3 basit adım (misafir modu; oyun aksiyonu değil) — E-planı Faz 1
+const HAZIR_ADAY_ETIKET = { rehber: '📖 Nasıl oynanır rehberini okudum', kurallar: '📜 Vadi kurallarını okudum', hazirim: '✅ Hazırım, yerim açılsın' };
+
 function renderGateBanner() {
   const el = document.getElementById('gate-banner');
   if (!el) return;
   const g = online.gate;
-  if (!g || g.status === 'citizen' || g.status === 'new') { el.hidden = true; el.innerHTML = ''; return; }
-  const txt = g.status === 'waiting'
-    ? `⏳ <strong>Bekleme sırasındasın: ${g.position || '?'}. sıra.</strong> Vadide şu an ${g.citizens}/${g.limit} vatandaş var. Gezebilir, her yere bakabilirsin; işlem yapmak için yerinin açılmasını bekle. Sırada beklerken "hazır aday" onaylarını verirsen yer açılınca önce sana gelir. Yer açılınca e-posta ve oyun içi haber gelir; 72 saat içinde ilk hareketini yapman gerekir.`
-    : `⏸️ <strong>Yerin askıda.</strong> Katılımın düşük kaldığı için yerin bekleyen bir vatandaşa verildi. Hesabın ve her şeyin duruyor; giriş yaptığında yeniden sıraya girersin.`;
-  el.innerHTML = `<span class="gate-banner-icon">🚪</span><span>${txt}</span>`;
+  const k = gameState.state && gameState.state.katilim;
+  const parcalar = [];
+
+  // 🏖️ İzin sorusu: katılımı düşük kalan vatandaşa sorulur, gate durumundan bağımsız (yalnız vatandaşta olur)
+  if (k && k.izinSorusu && Date.now() < Number(k.izinSorusu.sonTarih)) {
+    const saat = Math.max(0, Math.round((Number(k.izinSorusu.sonTarih) - Date.now()) / 3600000));
+    parcalar.push(`<div class="gate-banner-row">🏖️ <strong>Katılımın düşük; izin hakkını kullanmak ister misin?</strong> ${saat} saat içinde cevap ver, yoksa yerin bekleyen bir vatandaşa geçer (izinde yer kaybı yok; cevapsız kalırsan dönüşte sıranın önüne alınırsın). <button id="btn-izin-evet" class="btn-clean">✅ Evet, izin kullan</button> <button id="btn-izin-hayir" class="btn-clean">Hayır</button></div>`);
+  }
+
+  if (!g || g.status === 'citizen' || g.status === 'new') {
+    if (!parcalar.length) { el.hidden = true; el.innerHTML = ''; return; }
+  } else if (g.status === 'waiting') {
+    const hazir = (gameState.state && gameState.state.candidateReady) || {};
+    const idler = GAME_CONFIG.KAPI.READY_TASK_IDS || [];
+    const gorevler = idler.map(id => `<button class="btn-clean" data-misafir-gorev="${id}" ${hazir[id] ? 'disabled' : ''}>${hazir[id] ? '✅' : '☐'} ${HAZIR_ADAY_ETIKET[id] || id}</button>`).join(' ');
+    const davetTxt = g.davet ? ' 📨 <strong>Yerin açıldı! Herhangi bir hareket yaparsan (bir görevi onaylaman da yeter) vatandaş olursun.</strong>' : ' Aşağıdaki adımları onaylarsan yer açılınca önce sana gelir.';
+    parcalar.push(`<div class="gate-banner-row"><span class="gate-banner-icon">🚪</span><span>⏳ <strong>Bekleme sırasındasın: ${g.position || '?'}. sıra.</strong> Vadide şu an ${g.citizens}/${g.limit} vatandaş var. Gezebilir, her yere bakabilirsin; işlem yapmak için yerinin açılmasını bekle.${davetTxt}</span></div><div class="gate-banner-row">${gorevler}</div>`);
+  } else {
+    parcalar.push(`<div class="gate-banner-row"><span class="gate-banner-icon">🚪</span><span>⏸️ <strong>Yerin askıda.</strong> Katılımın düşük kaldığı için yerin bekleyen bir vatandaşa verildi. Hesabın ve her şeyin duruyor; giriş yaptığında yeniden sıraya girersin.</span></div>`);
+  }
+  el.innerHTML = parcalar.join('');
   el.hidden = false;
 }
+document.getElementById('gate-banner')?.addEventListener('click', e => {
+  const gorev = e.target.closest('[data-misafir-gorev]');
+  if (gorev && !gorev.disabled) { gameState.misafirGorevTamamla(gorev.dataset.misafirGorev); renderGateBanner(); return; }
+  if (e.target.closest('#btn-izin-evet')) { gameState.cevaplaIzinSorusu(true); renderGateBanner(); return; }
+  if (e.target.closest('#btn-izin-hayir')) { gameState.cevaplaIzinSorusu(false); renderGateBanner(); }
+});
 
 // 🏷️ İlan pazarı (teçhizat; yalnız sunucuda): ilanlar sunucudan ayrıca çekilir, kabuk hemen çizilir
 function renderIlanPazariShell() {
