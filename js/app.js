@@ -4841,9 +4841,9 @@ function openTreasuryVaultModal() {
     <div class="clean-card" style="border-color:#f59e0b;">
       <div class="card-title-row">
         <div class="card-title" style="color:#fcd34d;">🚪 Kapı durumu — vatandaş ${fmtInt(kp.citizens)} / ${fmtInt(kp.limit)}</div>
-        <span class="card-badge">sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
+        <span class="card-badge">aktif ${fmtInt(kp.active || 0)} · sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
       </div>
-      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)}. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer ve vadiyi gezer. ${kp.warnDays} gün girmeyene uyarı gider; ${kp.suspendDays} gün girmeyenin yeri sıradakine geçer (hesap silinmez, dönünce sıranın önüne alınır). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Eşik geçilince sınır ayda %10 büyür.</div>
+      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)}; bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi son 7 günde en az ${kp.activeDays || 3} gün sefer tamamlayarak aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer ve vadiyi gezer. ${kp.warnDays} gün girmeyene uyarı gider; ${kp.suspendDays} gün girmeyenin yeri sıradakine geçer (hesap silinmez, dönünce sıranın önüne alınır). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Eşik geçilince sınır ayda %10 büyür.</div>
     </div>` : '';
   dom.modalBody.innerHTML = kapiHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
 

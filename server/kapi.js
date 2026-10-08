@@ -10,6 +10,7 @@
 // Oyunun kendi kurallarına (gameState) dokunmaz: yalnız sunucu katmanı.
 // ============================================================================
 import { playerIdOf } from './accounts.js';
+import { isActiveCitizen } from './aktiflik.js';
 
 const DAY = 86400000;
 const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
@@ -179,11 +180,27 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     return { from: s.limit, to: limit };
   }
 
+  // v2 düzeltmesi (E-planı S7, 8 Ekim 2026): "aktif vatandaş" sayısı — her citizen'ın JSON durumunu okumak gerektiği
+  // için (counts() gibi tek SQL sorgusu değil) saatlik run()'da hesaplanıp dünya durumuna yazılır; publicSummary()
+  // bunu CANLI hesaplamadan, ucuzca okur.
+  function activeCitizens() {
+    const now = clock();
+    const minDays = Number(K().ACTIVE_DAYS_PER_WEEK) || 3;
+    let n = 0;
+    for (const p of q.citizens.all()) {
+      const st = E.readPlayer(p.address);
+      if (st && isActiveCitizen(st, now, minDays)) n++;
+    }
+    return n;
+  }
+
   function run() {
     const inactivity = checkInactivity();
     const grown = growth();
     const admitted = fillSeats();
-    return { ...inactivity, admitted, grown };
+    const activeCount = activeCitizens();
+    setState({ activeCount });
+    return { ...inactivity, admitted, grown, activeCount };
   }
 
   function statusOf(address) {
@@ -201,7 +218,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   // Herkese açık özet (Sirius Konseyi ekranı)
   function publicSummary() {
     const s = state(), c = countsGoster(), tiers = K().USD_TIERS || [10, 30, 100, 300];
-    return { limit: s.limit, citizens: c.citizen, waiting: c.waiting, suspended: c.suspended, tier: s.tier,
+    return { limit: s.limit, citizens: c.citizen, active: s.activeCount || 0, activeDays: Number(K().ACTIVE_DAYS_PER_WEEK) || 3, waiting: c.waiting, suspended: c.suspended, tier: s.tier,
       threshold: tiers[Math.min(s.tier, tiers.length - 1)], indicator: indicator(), lastGrowthAt: s.lastGrowthAt || 0,
       warnDays: Number(K().INACTIVE_WARN_DAYS) || 14, suspendDays: Number(K().INACTIVE_SUSPEND_DAYS) || 30 };
   }
@@ -237,5 +254,5 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     return statusOf(address);
   }
 
-  return { admit, onLogin, run, fillSeats, checkInactivity, recordWeek, indicator, growth, statusOf, isCitizen, publicSummary, adminSummary, adminSet, adminSetPlayer, state, counts, playerIdOf };
+  return { admit, onLogin, run, fillSeats, checkInactivity, activeCitizens, recordWeek, indicator, growth, statusOf, isCitizen, publicSummary, adminSummary, adminSet, adminSetPlayer, state, counts, playerIdOf };
 }
