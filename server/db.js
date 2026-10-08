@@ -2,6 +2,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
+import { eskiOturumlariOzetle } from './oturum.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -39,6 +40,7 @@ export function openDb(file) {
   db.exec(SCHEMA);
   // Eski kayıt dosyaları için ek sütunlar
   for (const col of ['raw_tx TEXT', 'tx_nonce INTEGER']) { try { db.exec('ALTER TABLE payouts ADD COLUMN ' + col); } catch { /* zaten var */ } }
+  eskiOturumlariOzetle(db);   // eski kayıt dosyalarındaki düz oturum anahtarları bir kez özetlenir (A2.7)
   const q = {};
   const prep = (name, sql) => { q[name] = db.prepare(sql); };
   prep('kvGet', 'SELECT value FROM kv WHERE key = ?');

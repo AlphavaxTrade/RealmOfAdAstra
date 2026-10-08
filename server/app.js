@@ -27,6 +27,7 @@
 // ============================================================================
 import http from 'node:http';
 import { createPromo } from './promo.js';
+import { tokenOzeti } from './oturum.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -81,7 +82,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
 
   function newSession(playerId) {
     const token = crypto.randomBytes(32).toString('hex');
-    db.q.sessionAdd.run(token, playerId, clock() + cfg.sessionDays * 86400000);
+    db.q.sessionAdd.run(tokenOzeti(token), playerId, clock() + cfg.sessionDays * 86400000);   // tabloda özet saklanır (oturum.js)
     db.q.sessionsPurge.run(clock());
     db.q.playerSeen.run(clock(), playerId);
     return token;
@@ -112,7 +113,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     const h = req.headers.authorization || '';
     const token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
     if (!token) return null;
-    const s = db.q.sessionGet.get(token);
+    const s = db.q.sessionGet.get(tokenOzeti(token));
     if (!s || s.expires < clock()) return null;
     const p = db.q.playerGet.get(s.address);
     if (!p || p.banned) return null;
@@ -248,7 +249,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     },
     'POST /api/account/logout': (req) => {
       const h = req.headers.authorization || '';
-      db.raw.prepare('DELETE FROM sessions WHERE token = ?').run(h.slice(7).trim());
+      db.raw.prepare('DELETE FROM sessions WHERE token = ?').run(tokenOzeti(h.slice(7).trim()));
       return { ok: true };
     },
 
