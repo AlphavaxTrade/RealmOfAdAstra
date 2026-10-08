@@ -100,7 +100,7 @@ jobs:
       - name: İmaj derle (yayınlanmaz)
         run: docker build -t realm-ci:${{ github.sha }} .
       - name: Açık taraması (Trivy; düzeltmesi olan yüksek/kritik açık varsa kırılır)
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           image-ref: realm-ci:${{ github.sha }}
           severity: HIGH,CRITICAL

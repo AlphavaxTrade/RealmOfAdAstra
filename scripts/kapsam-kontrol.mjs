@@ -7,7 +7,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const dosyaKaydi = (ozet, dosya) => Object.entries(ozet).find(([k]) => k !== 'total' && k.split(path.sep).join('/').endsWith('/' + dosya));
+// Yol ayırıcısı işletim sisteminden bağımsız normalleştirilir (Windows'ta üretilen özet Linux'ta da okunabilsin; test verisi her iki biçimi taşır)
+const duzYol = k => k.split(String.fromCharCode(92)).join('/');
+const dosyaKaydi = (ozet, dosya) => Object.entries(ozet).find(([k]) => k !== 'total' && duzYol(k).endsWith('/' + dosya));
 
 // Saf yardımcı (testlenir): ölçülen özet ve eşikten ihlal listesi çıkarır
 export function ihlaller(ozet, esik) {
