@@ -60,9 +60,19 @@ Köy Evleri: 1. ev 400 odun + 200 taş + 50 demir, her ev ×1,2, en çok 20, ev 
 
 Zindan, kolezyum, piyango, çark, Taverna botu, UBI, rehber görevleri, "Sen yokken olanlar", bildirimler aynen taşınır; ASTRA bedelleri ×0,01; bot 6 alanı işletir ve izin dolunca bekler; rehber görevleri yeni yerleri (Köy Evleri, Konsey, Uzay Limanı) kapsar; hazine paneli Sirius Konseyi ekranına dönüşür (kasalar, göstergeler, Otorite, projeler, ortak kasa, kapı durumu). Hesap seviyesi 81, bedelli (bugünkü).
 
-## J. Kapı kuralı (R4/R4c)
+## J. Kapı kuralı (E-planı Faz 1, 8 Ekim 2026 — "ilk döngü" kararı, R4/R4c'nin yerini aldı)
 
-Vatandaş sınırı açılış 50; göstergeler (son 3 ay kişi başı aylık dağıtılan kazanç, dolar) eşiği geçince sınır ayda %10: eşikler 10 → 30 → 100 → 300 $ (her eşik ayrı bir büyüme dönemi; yönetici kolu). Kayıt her zaman açık → bekleme sırası (misafir gezer). Pasiflik 14 gün uyarı, 30 gün askı (yer sıradakine, hesap saklanır, dönüşte sıranın önü). Aktif = haftada ≥3 gün giriş ve ≥1 sefer. Cüzdan başına tek hesap; kayıt harcı 1 ASTRA (ölçekli). Göstergeler Konsey ekranında.
+**İlk döngü: 100 vatandaş sabit.** Vatandaş sınırı açılış **100**; büyüme Faz 2'nin "dağıtılan ASTRA ≥ hedef $ **VE** çekilebilen ≥ hedefin üçte biri" göstergesi kurulana dek **kilitli** (yönetici kolu, varsayılan kilitli). Kilit açılınca: gösterge eşiği geçince sınır ayda %10 büyür; eşikler **50 → 100 → 300 $** (her eşik ayrı bir büyüme dönemi; yönetici kolu).
+
+**Kayıt ve hazır aday.** Kayıt her zaman açık → yer yoksa bekleme sırası (misafir gezer, işlem yapamaz). Sırada bekleyen aday 3 küçük onay adımını (`KAPI.READY_TASK_IDS`: rehber, kurallar, hazırım — oyun aksiyonu değil, ekonomiye dokunmaz) tamamlarsa **hazır** sayılır; yer açılınca sıra numarası geride olsa da önce hazır adaylara davet gider.
+
+**72 saatlik davet.** Yer açılınca sıradaki (önce hazır) adaya **72 saatlik davet** gider (henüz vatandaş değil); ilk gerçek oyun aksiyonu daveti kabul eder. Süresi geçerse davet bir sonraki hazır adaya geçer, cevapsız kalan **3 sıra geri** düşer (elenmez). Bekleyen davetler de doluluktan sayılır (yeni kayıt sırayı atlayamaz).
+
+**Katılım puanı (eski "haftada ≥3 gün giriş + ≥1 sefer" kuralının yerini aldı — kullanıcı: "1 hafta girmeyip 1 gün sefer yapınca hafif kalıyor").** "Aktif vatandaş" artık `KATILIM_PUANI.KATEGORILER` listesindeki (10 kategori: sefer, bakım, Kışla, zindan, kolezyum, dünya bossu, pazar, Konsey, karnaval, rehber görevi) kaçına o hafta dokunulduğuna bakar; aynı kategoriyi tekrarlamak ek puan getirmez. Eşik seviyeyle büyür (`ESIK_TABAN` 2 → `ESIK_TAVAN` 6, her `ESIK_SEVIYE_ARALIGI` (10) seviyede +1).
+
+**Düşük katılım merdiveni.** `UYARI_HAFTA` (2) hafta düşük kalınca bildirim; `IZIN_SORUSU_HAFTA` (3) hafta düşük kalınca "izin ister misin?" sorusu, `IZIN_CEVAP_SAAT` (72 saat) içinde cevap. Evet → yıllık `IZIN_YILLIK_GUN` (30 gün) hakkından bir blok (en çok 14 gün) kullanılır; izindeyken yer korunur ama Üretim Hakkı/UBI payı alınmaz, değerlendirme durur. Cevapsız kalırsa **askı, dönüşte sıranın önüne** (öncelik korunur). İzin hakkı tükenmişken yine düşük kalırsa `SON_UYARI_SAAT` (72 saat) son uyarı; düzelmezse **askı, dönüşte öncelik YOK** (tek seferlik ceza; bir sonraki normal askıda öncelik geri gelir). Hesap verisi hiçbir zaman silinmez.
+
+Cüzdan başına tek hesap; kayıt harcı 1 ASTRA (ölçekli). Göstergeler (vatandaş/100, aktif, sırada bekleyen, izinde olan) Konsey ekranında. Telegram bildirimi henüz yok (yalnız e-posta + oyun içi); ayrı bir entegrasyon işi.
 
 ## K. Universe'e geçiş aşamaları (R3)
 

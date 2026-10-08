@@ -84,16 +84,28 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   ok('hazine çekimi: tek ödül %2 tavanı, taban ödeme %15');
 }
 
-// 9) Kapı kuralı (§J): açılış sınırı 50 (henüz Faz 1'e kadar — 100'e çıkış ayrı onay ister), eşikler 10/30/100/300 $,
-//    büyüme adımı %10, pasiflik 14/30 gün, aktiflik haftada 3 gün, kayıt harcı 1 ASTRA
+// 9) Kapı kuralı (E-planı Faz 1, 8 Ekim 2026 — §J'nin yerini aldı): ilk döngü 100 vatandaş, eşikler 50/100/300 $,
+//    büyüme Faz 2'ye kadar kilitli, kayıt harcı 1 ASTRA, hazır aday 3 adım, davet 72 saat / 3 sıra ceza
 {
-  assert.equal(G.KAPI.START_LIMIT, 50, 'açılış sınırı 50 (100\'e çıkış Faz 1\'de, ayrı onayla)');
-  assert.deepEqual(G.KAPI.USD_TIERS, [10, 30, 100, 300], 'dolar eşikleri kademeli 10→30→100→300');
+  assert.equal(G.KAPI.START_LIMIT, 100, 'ilk döngü: açılış sınırı 100 (Faz 1, kullanıcı kararı)');
+  assert.deepEqual(G.KAPI.USD_TIERS, [50, 100, 300], 'dolar eşikleri kademeli 50→100→300 (KARAR 1)');
   assert.equal(G.KAPI.GROWTH_STEP, 0.10, 'büyüme adımı ayda %10');
-  assert.equal(G.KAPI.INACTIVE_WARN_DAYS, 14); assert.equal(G.KAPI.INACTIVE_SUSPEND_DAYS, 30);
-  assert.equal(G.KAPI.ACTIVE_DAYS_PER_WEEK, 3, 'aktif = haftada ≥3 gün (E-planı S7: server/aktiflik.js bunu kullanır)');
+  assert.equal(G.KAPI.GROWTH_LOCKED, true, 'büyüme Faz 2 göstergesi (dağıtılan+çekilebilen) kurulana dek kilitli');
   assert.equal(G.KAPI.REGISTRATION_FEE_ADA, 1, 'kayıt harcı 1 ASTRA');
-  ok('kapı kuralı: sınır 50, eşikler 10/30/100/300 $, büyüme %10/ay, pasiflik 14/30 gün, aktiflik 3 gün/hafta, harç 1 ASTRA');
+  assert.equal(G.KAPI.READY_TASK_IDS.length, 3, 'hazır aday: 3 onay adımı');
+  assert.equal(G.KAPI.INVITE_HOURS, 72); assert.equal(G.KAPI.INVITE_PENALTY_POSITIONS, 3);
+  ok('kapı kuralı: ilk döngü sınır 100, eşikler 50/100/300 $, büyüme kilitli, hazır aday 3 adım, davet 72 sa / 3 sıra ceza');
+}
+
+// 9b) Katılım puanı (E-planı Faz 1, 8 Ekim 2026 — eski "haftada ≥3 gün giriş" kuralının yerini aldı; kullanıcı
+//     "1 hafta girmeyip 1 gün sefer yapınca hafif kalıyor" dedi): 10 kategori, seviyeyle büyüyen eşik, yıllık izin
+{
+  const KP = G.KATILIM_PUANI;
+  assert.equal(KP.KATEGORILER.length, 10, '10 kategori (oyunun bütün ana eylemleri)');
+  assert.equal(KP.ESIK_TABAN, 2); assert.equal(KP.ESIK_TAVAN, 6); assert.equal(KP.ESIK_SEVIYE_ARALIGI, 10);
+  assert.equal(KP.UYARI_HAFTA, 2); assert.equal(KP.IZIN_SORUSU_HAFTA, 3);
+  assert.equal(KP.IZIN_YILLIK_GUN, 30, 'yıllık toplam izin hakkı 30 gün');
+  ok('katılım puanı: 10 kategori, eşik 2→6 (seviyeyle), 2 hafta uyarı / 3 hafta izin sorusu, yıllık 30 gün izin');
 }
 
 // 10) Üretim Hakkı (R2/R4): kişi başı kota başlangıcı %40 (0,05-1,0 arası, ±%10/hafta), adalet tavanı 3×, seviye ağırlığı ×2 tavanlı
@@ -127,4 +139,4 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   ok('alet onarımı ASTRA payı %30; geri dönüşüm %70 hammadde iadesi');
 }
 
-console.log(`\n${passed}/13 ekonomi karar-kod kayma kontrolü geçti`);
+console.log(`\n${passed}/14 ekonomi karar-kod kayma kontrolü geçti`);

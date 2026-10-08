@@ -250,10 +250,9 @@ function renderGateBanner() {
   if (!el) return;
   const g = online.gate;
   if (!g || g.status === 'citizen' || g.status === 'new') { el.hidden = true; el.innerHTML = ''; return; }
-  const k = online.kapi || {};
   const txt = g.status === 'waiting'
-    ? `⏳ <strong>Bekleme sırasındasın: ${g.position || '?'}. sıra.</strong> Vadide şu an ${g.citizens}/${g.limit} vatandaş var. Gezebilir, her yere bakabilirsin; işlem yapmak için yerinin açılmasını bekle. Yerin açılınca e-posta ve oyun içi haber gelir. ${k.suspendDays || 30} gün girmeyen vatandaşın yeri sıradakine geçer.`
-    : `⏸️ <strong>Yerin askıda.</strong> Uzun süre girmediğin için yerin bekleyen bir vatandaşa verildi. Hesabın duruyor; sıranın önündesin, ilk boşalan yer senin.`;
+    ? `⏳ <strong>Bekleme sırasındasın: ${g.position || '?'}. sıra.</strong> Vadide şu an ${g.citizens}/${g.limit} vatandaş var. Gezebilir, her yere bakabilirsin; işlem yapmak için yerinin açılmasını bekle. Sırada beklerken "hazır aday" onaylarını verirsen yer açılınca önce sana gelir. Yer açılınca e-posta ve oyun içi haber gelir; 72 saat içinde ilk hareketini yapman gerekir.`
+    : `⏸️ <strong>Yerin askıda.</strong> Katılımın düşük kaldığı için yerin bekleyen bir vatandaşa verildi. Hesabın ve her şeyin duruyor; giriş yaptığında yeniden sıraya girersin.`;
   el.innerHTML = `<span class="gate-banner-icon">🚪</span><span>${txt}</span>`;
   el.hidden = false;
 }
@@ -4843,7 +4842,7 @@ function openTreasuryVaultModal() {
         <div class="card-title" style="color:#fcd34d;">🚪 Kapı durumu — vatandaş ${fmtInt(kp.citizens)} / ${fmtInt(kp.limit)}</div>
         <span class="card-badge">aktif ${fmtInt(kp.active || 0)} · sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
       </div>
-      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)}; bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi son 7 günde en az ${kp.activeDays || 3} gün sefer tamamlayarak aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer ve vadiyi gezer. ${kp.warnDays} gün girmeyene uyarı gider; ${kp.suspendDays} gün girmeyenin yeri sıradakine geçer (hesap silinmez, dönünce sıranın önüne alınır). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Eşik geçilince sınır ayda %10 büyür.</div>
+      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)} (ilk döngü); bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi bu hafta katılım puanını (sefer, zindan, kolezyum, pazar, Konsey, çark, rehber görevi gibi alanlardan yeterince çeşitli) sağladığı için aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer, vadiyi gezer, hazır aday onaylarını verebilir. Katılımı düşük kalan önce uyarılır, sonra izin hakkını kullanmaya davet edilir; cevapsız kalırsa yeri sıradaki hazır adaya geçer (hesap silinmez). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Büyüme ${kp.growthLocked ? '<strong>şimdilik kilitli</strong> (gerçek gelir göstergesi kurulana dek)' : 'eşik geçilince ayda %10'}.</div>
     </div>` : '';
   dom.modalBody.innerHTML = kapiHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
 

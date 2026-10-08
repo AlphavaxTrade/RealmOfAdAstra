@@ -1,30 +1,85 @@
-// Realm of AdAstra sunucusu — "aktif vatandaş" tek tanımı (E-planı S7, 8 Ekim 2026)
+// Realm of AdAstra sunucusu — Katılım Puanı: "aktif vatandaş"ın KESİN tanımı (E-planı Faz 1, 8 Ekim 2026)
 // ============================================================================
-// docs/v2/KARARLAR_KESIN.md kapı bölümünde KAPI.ACTIVE_DAYS_PER_WEEK = 3 zaten tanımlıydı ama hiçbir yerde
-// okunmuyordu; kapı ekranında "aktif vatandaş" diye bir sayı da yoktu (yalnız vatandaş/sırada/askıda sayılıyordu).
-// Tanım: oyuncunun son 7 günde GERÇEKTEN hasat yaptığı (bir sefer tamamlayıp topladığı) farklı gün sayısı
-// ACTIVE_DAYS_PER_WEEK'i (varsayılan 3) geçer veya eşitlerse "aktif vatandaş" sayılır.
+// Kullanıcı kararı: eski "son 7 günde ≥3 gün giriş + ≥1 sefer" kuralı YETERSİZ bulundu ("1 hafta girmeyip 1 gün
+// sefer yapınca hafif kalıyor"). Yerine: oyunun KATILIM_PUANI.KATEGORILER listesindeki (js/config.js) her alana
+// o hafta dokunulup dokunulmadığına bakan bir puan. Aynı kategoriyi tekrarlamak ek puan getirmez — amaç ÇEŞİTLİLİK,
+// bir eylemi botlamak işe yaramasın. Beklenen eşik seviyeyle büyür (üst seviyeden daha fazla katılım beklenir).
 //
-// Veri kaynağı: js/gameState/ekonomi.js _recordUretimUse'un zaten tuttuğu state.uretim.activeDays (yeni bir
-// izleme eklenmedi) — bir gün ancak sefer TAMAMLANIP toplanınca bu listeye girer, salt girişle girmez. Bu yüzden
-// "≥3 gün VE ≥1 sefer" şartının ikinci yarısı ("≥1 sefer") otomatik sağlanır; ayrı bir sayaç gerekmez.
-//
-// BİLEREK dokunulmayanlar (bunlar farklı amaçlar için farklı eşikler kullanır, "tek tanım" bunları birleştirmez):
-//  • Üretim Hakkı ağırlığı (js/gameState/ekonomi.js getUretimActivity): 0,25-1 arası SÜREKLİ bir oran (aynı
-//    activeDays verisinden, ama eşiksiz) — kişisel hak hesaplamasının girdisi, boolean bir "aktif mi" değil.
-//  • UBI hak sahipliği (server/world/haftalik.js): son 14 gün görülme — "hâlâ oyunda mı" sorusu, kapının
-//    "gerçekten oynuyor mu" sorusundan ayrı ve daha gevşek bir eşik.
-//  • Ücretsiz oyuncu havuzu (js/economy/faucet.js): son 7 gün görülme — sahte hesap karşıtı kendi kuralları var.
-const DAY = 86400000;
+// Bu dosya SAF fonksiyonlardır: veritabanına, saate, oyuncuya dokunmaz. Durumu tutan ve haftalık değerlendirmeyi
+// yürüten taraf server/kapi.js'tir (haftalikKatilimDegerlendir); oyuncunun hangi kategoriye dokunduğunu işaretleyen
+// taraf js/gameState/katilim.js'tir (markKatilimKategori, her başarılı işlemden sonra server/rotalar/oyun.js çağırır).
+// ============================================================================
+import { GAME_CONFIG } from '../js/config.js';
+import { ACTIONS } from './actions.js';
 
-// Oyuncunun son 7 günde (bugün dahil) sefer tamamlayıp topladığı farklı gün sayısı
-export function activeDaysInLast7(playerState, now = Date.now()) {
-  const days = (playerState && playerState.uretim && Array.isArray(playerState.uretim.activeDays)) ? playerState.uretim.activeDays : [];
-  const today = Math.floor(Number(now) / DAY);
-  return days.filter(d => Number(d) > today - 7 && Number(d) <= today).length;
+// İşlem adı → kategori. ACTIONS (server/actions.js) beyaz listesindeki her gerçek işlem elle eşlenir; eşlenmeyen
+// işlemler (ör. levelUp, claimWeeklyUbi, bot paketi satın alma) katılım puanına girmez — bunlar ya pasif bir ödülün
+// toplanması (UBI) ya da zaten başka bir kategorinin doğal sonucudur (seviye, sefer sonucu yükselir).
+const KATEGORI_ESLEME = {
+  // sefer / hasat
+  startExpedition: 'sefer', claimExpedition: 'sefer', claimPartialExpedition: 'sefer',
+  claimAllHarvests: 'sefer', claimAllCompletedExpeditions: 'sefer', claimAndRestartAllExpeditions: 'sefer',
+  sweepCompletedExpeditions: 'sefer',
+  // alet / teçhizat bakımı (onarım, üretim, geliştirme, taverna optimizasyonu)
+  repairTool: 'bakim', repairAllTools: 'bakim', craftEquipment: 'bakim', upgradeEquipment: 'bakim',
+  upgradeEquipmentByTypeAndLevel: 'bakim', upgradeAnyEquipment: 'bakim', upgradeAllEquipmentInKingdom: 'bakim',
+  repairEquipment: 'bakim', repairAllEquipmentInKingdom: 'bakim', scrapAllLowTierEquipment: 'bakim',
+  equipSoldierSlot: 'bakim', unequipSoldierSlot: 'bakim', equipSoldierFromDepot: 'bakim',
+  unequipSoldierToArmory: 'bakim', unequipAllSoldiers: 'bakim', autoEquipBest: 'bakim', recycleEquipment: 'bakim',
+  useScroll: 'bakim', refillStaminaWithWheat: 'bakim', refillStaminaExact: 'bakim', refillStaminaToMaxWithWheat: 'bakim',
+  buyTavernaAutomationBot: 'bakim', startBotTrial: 'bakim', setBotSiloOption: 'bakim', setBotAutoRenew24h: 'bakim',
+  buyTavernBuff: 'bakim',
+  // Kışla (asker, nüfus)
+  buySoldierUnit: 'kisla', instantHealSoldierUnit: 'kisla', instantHealAllSoldiers: 'kisla',
+  renameSoldierUnit: 'kisla', setSoldierRow: 'kisla', saveCombatPreset: 'kisla', applyCombatPreset: 'kisla',
+  healSoldierWithHerb: 'kisla', healAllWithHerb: 'kisla', buildHouse: 'kisla',
+  // zindan
+  fightDungeon: 'zindan',
+  // kolezyum
+  executeColosseum1v1Match: 'kolezyum',
+  // dünya bossu
+  stakeArmyForWorldBoss: 'boss', emergencyUnstakeWorldBossArmy: 'boss', claimWorldBossReward: 'boss',
+  // pazar (hammadde + Hazırlık Deposu)
+  marketSell: 'pazar', marketBuy: 'pazar', depositToPrepDepot: 'pazar', withdrawFromPrepDepot: 'pazar',
+  // Konsey / Otorite / Uzay Limanı hazırlığı
+  contributeToOtorite: 'konsey', contributeToProject: 'konsey', buildRocket: 'konsey',
+  // karnaval (çark, kutu, piyango, koleksiyon)
+  spinCarnivalWheel: 'karnaval', unboxMysteryBox: 'karnaval', carnivalCheer: 'karnaval',
+  buyLotteryTickets: 'karnaval', claimWinnerLotteryPayout: 'karnaval', useLotteryTicketForWheel: 'karnaval',
+  mintGenesisNft: 'karnaval',
+  // rehber görevi
+  claimOnboardingReward: 'rehber'
+};
+
+// Eşlemenin ACTIONS beyaz listesiyle tutarlılığını kendi kendine denetler (test_aktiflik.mjs bunu çağırır):
+// eşlemedeki her ad gerçek bir işlem olmalı; gerçek bir işlemi eşlemede olmayabilir (kasıtlı, yukarıdaki not).
+export function eslemeGecerliMi() {
+  return Object.keys(KATEGORI_ESLEME).every(ad => Object.hasOwn(ACTIONS, ad));
 }
 
-// Kapı kuralının "aktif vatandaş" tanımı: son 7 günde ≥ minDays gün sefer tamamlanmış
-export function isActiveCitizen(playerState, now = Date.now(), minDays = 3) {
-  return activeDaysInLast7(playerState, now) >= (Number(minDays) || 3);
+export function kategoriOf(islemAdi) {
+  return KATEGORI_ESLEME[islemAdi] || null;
+}
+
+// Beklenen haftalık eşik: seviye arttıkça büyür (taban..tavan arası), KATILIM_PUANI config'inden
+export function esikSeviye(level, cfg = GAME_CONFIG.KATILIM_PUANI) {
+  const taban = Number(cfg?.ESIK_TABAN) || 0, tavan = Number(cfg?.ESIK_TAVAN) || taban, aralik = Math.max(1, Number(cfg?.ESIK_SEVIYE_ARALIGI) || 10);
+  const lvl = Math.max(1, Number(level) || 1);
+  return Math.min(tavan, taban + Math.floor((lvl - 1) / aralik));
+}
+
+// Bu haftanın sonucu: touched = { kategori: true, ... } (dokunulan kategoriler); puan = dokunulan kategori sayısı
+export function haftaSonucu({ touched = {}, level = 1 } = {}, cfg = GAME_CONFIG.KATILIM_PUANI) {
+  const kategoriler = Array.isArray(cfg?.KATEGORILER) ? cfg.KATEGORILER : [];
+  const puan = kategoriler.reduce((s, k) => s + (touched[k] ? 1 : 0), 0);
+  const esik = esikSeviye(level, cfg);
+  return { puan, esik, saglikli: puan >= esik, kategoriSayisi: kategoriler.length };
+}
+
+// Hazır aday mı (sırada beklerken onayladığı adımlar) — ham JSON durumundan okur, GameStateManager örneği gerekmez.
+// Oyuncunun kendi örneğinde aynı mantık js/gameState/katilim.js hazirMi()'dedir (tek kaynak: KAPI.READY_TASK_IDS).
+export function hazirMiState(playerState, kapiCfg = GAME_CONFIG.KAPI) {
+  const idler = Array.isArray(kapiCfg?.READY_TASK_IDS) ? kapiCfg.READY_TASK_IDS : [];
+  const c = (playerState && playerState.candidateReady) || {};
+  return idler.length > 0 && idler.every(id => !!c[id]);
 }

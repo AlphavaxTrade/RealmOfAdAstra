@@ -81,10 +81,32 @@ export const GAME_CONFIG = {
     PREP_DEPOT_WEEKS_CAP: 4, PREP_DEPOT_TOTAL_ASTRA: 10000000, PREP_DEPOT_CANCEL_FEE: 0.10,
     PROGRESS_WEIGHTS: { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 }, PROGRESS_VILLAGERS_REF: 100, PROGRESS_SOLDIERS_REF: 10
   },
-  // Kapı kuralı (R4/R4c): vatandaş sınırı, kademeli dolar eşikleri, bekleme sırası, pasiflik
+  // Kapı kuralı (E-planı Faz 1, 8 Ekim 2026 — "ilk döngü" 100 vatandaş kararı): vatandaş sınırı, kademeli dolar
+  // eşikleri, bekleme sırası, hazır aday, davet. Eski last_seen tabanlı "14 gün uyarı / 30 gün askı" kuralı
+  // (ACTIVE_DAYS_PER_WEEK, INACTIVE_WARN_DAYS, INACTIVE_SUSPEND_DAYS) kullanıcı tarafından yetersiz bulundu
+  // ("1 hafta girmeyip 1 gün sefer yapınca hafif kalıyor") ve KATILIM_PUANI (aşağıda) ile değiştirildi.
   KAPI: {
-    START_LIMIT: 50, GROWTH_STEP: 0.10, USD_TIERS: [10, 30, 100, 300], AVG_MONTHS: 3,
-    INACTIVE_WARN_DAYS: 14, INACTIVE_SUSPEND_DAYS: 30, ACTIVE_DAYS_PER_WEEK: 3, REGISTRATION_FEE_ADA: 1
+    START_LIMIT: 100, GROWTH_STEP: 0.10, USD_TIERS: [50, 100, 300], AVG_MONTHS: 3,
+    // Büyüme Faz 2'ye kadar kilitli: gerçek "dağıtılan ≥ 50$ VE çekilebilen ≥ 15$" göstergesi kurulana dek
+    // otomatik büyüme açılmaz (yalnız yönetici elle sınır değiştirebilir). growth() bu bayrağa bakar.
+    GROWTH_LOCKED: true,
+    REGISTRATION_FEE_ADA: 1,
+    READY_TASK_IDS: ['rehber', 'kurallar', 'hazirim'],   // sırada bekleyen adayın onaylayacağı 3 basit adım (misafir modu, oyun aksiyonu değil)
+    INVITE_HOURS: 72, INVITE_PENALTY_POSITIONS: 3   // yer açılınca davet süresi; cevapsızlıkta kaç sıra geri
+  },
+  // Katılım puanı (E-planı Faz 1, 8 Ekim — kullanıcı tasarımı): "aktif vatandaş" artık tek bir eşik değil, oyunun
+  // KATEGORILER listesindeki her bir alana o hafta dokunulup dokunulmadığına bakan bir puan. Aynı kategoriyi
+  // tekrarlamak ek puan getirmez (çeşitlilik önemli, bir eylemi botlamak işe yaramaz). Eşik seviyeyle büyür:
+  // eşik = min(ESIK_TAVAN, ESIK_TABAN + taban(seviye / ESIK_SEVIYE_ARALIGI)). Kategori → işlem eşlemesi
+  // server/aktiflik.js'te (ACTIONS beyaz listesine bağlı, tek kaynak). Sayılar ilk öneridir; oynanışla ayarlanır.
+  KATILIM_PUANI: {
+    KATEGORILER: ['sefer', 'bakim', 'kisla', 'zindan', 'kolezyum', 'boss', 'pazar', 'konsey', 'karnaval', 'rehber'],
+    ESIK_TABAN: 2, ESIK_TAVAN: 6, ESIK_SEVIYE_ARALIGI: 10,
+    UYARI_HAFTA: 2,            // eşiğin altında bu kadar hafta birikince (üst üste olması şart değil) → ilk uyarı
+    IZIN_SORUSU_HAFTA: 3,      // bu kadar hafta birikince → "izin ister misin?" sorusu
+    IZIN_CEVAP_SAAT: 72,       // izin sorusuna cevap süresi
+    IZIN_YILLIK_GUN: 30,       // yıllık toplam izin hakkı (gün, bölünebilir)
+    SON_UYARI_SAAT: 72         // izin hakkı tükendikten sonraki son uyarı süresi
   },
   // İlan pazarı (teçhizat; server/pazar.js): komisyon %2 (yarısı yakım, yarısı kasalar), 7 gün, en çok 10 açık ilan,
   // alıcı önce kilitli ASTRA'sından öder, satıcıya gelen paranın %80'i kilitli gelir

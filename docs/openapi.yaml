@@ -1932,3 +1932,8 @@ x-islemler:
     argumanlar: []
   mintGenesisNft:
     argumanlar: []
+  cevaplaIzinSorusu:
+    argumanlar:
+      - bool
+  bitirIzin:
+    argumanlar: []

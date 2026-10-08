@@ -135,8 +135,28 @@ export const ACTIONS = {
   // Görevler, temel gelir, koleksiyon
   claimOnboardingReward: A(['quest']),
   claimWeeklyUbi: A([]),
-  mintGenesisNft: A([])
+  mintGenesisNft: A([]),
+  // Katılım puanı: izin sorusuna cevap, izni erken bitirme (E-planı Faz 1)
+  cevaplaIzinSorusu: A(['bool']),
+  bitirIzin: A([])
 };
+
+// 🚪 Kapıda SIRADA BEKLEYEN (misafir modu) bir adayın yapabildiği TEK şey: hazır aday onayı. Oyun aksiyonu
+// değildir, ekonomiye dokunmaz; bu yüzden server/rotalar/oyun.js'te vatandaşlık kontrolünü atlar (E-planı Faz 1).
+export const MISAFIR_ACTIONS = { misafirGorevTamamla: A(['str']) };
+
+export function runMisafirAction(gs, name, args) {
+  if (!Object.hasOwn(MISAFIR_ACTIONS, name)) return { success: false, message: 'Bilinmeyen ya da izin verilmeyen adım.', rejected: true };
+  const spec = MISAFIR_ACTIONS[name];
+  if (!Array.isArray(args) || args.length > spec.types.length) return { success: false, message: 'Argümanlar liste olmalı', rejected: true };
+  for (let i = 0; i < spec.types.length; i++) {
+    const t = spec.types[i], optional = t.endsWith('?'), check = T[optional ? t.slice(0, -1) : t], v = args[i];
+    if (v === undefined || v === null) { if (optional) continue; return { success: false, message: `${i + 1}. argüman eksik`, rejected: true }; }
+    if (!check(v)) return { success: false, message: `${i + 1}. argüman geçersiz`, rejected: true };
+  }
+  if (typeof gs[name] !== 'function') return { success: false, message: 'İşlem bu sürümde yok', rejected: true };
+  return gs[name](...args);
+}
 
 // 🧪 Yalnız DENEME sunucusunda (TEST_MODE=1) açılan test menüsü işlemleri. Gerçek sunucuda hep kapalı.
 export const DEV_ACTIONS = ['cheatAddResources', 'setDevResource', 'addDevResource', 'setDevLevel', 'setDevAdAstra', 'addDevAdAstra',

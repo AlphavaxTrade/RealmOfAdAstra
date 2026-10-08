@@ -27,6 +27,7 @@ import { p2pYontemleri } from './gameState/p2p.js';
 import { askerGelisimYontemleri } from './gameState/askerGelisim.js';
 import { rehberYontemleri } from './gameState/rehber.js';
 import { pazarYontemleri } from './gameState/pazar.js';
+import { katilimYontemleri } from './gameState/katilim.js';
 
 // Oyuncunun yazdığı isimler için temizleyici dışarı da açıktır (sunucu ve testler kullanır)
 export { cleanName } from './gameState/ortak.js';
@@ -355,6 +356,7 @@ Object.assign(GameStateManager.prototype, p2pYontemleri);
 Object.assign(GameStateManager.prototype, askerGelisimYontemleri);
 Object.assign(GameStateManager.prototype, rehberYontemleri);
 Object.assign(GameStateManager.prototype, pazarYontemleri);
+Object.assign(GameStateManager.prototype, katilimYontemleri);
 
 // v2 (R5/R6/R2): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Konsey katkıları, Genesis hakkı (js/v2/koyVeKonsey.js)
 Object.assign(GameStateManager.prototype, gameStateV2);

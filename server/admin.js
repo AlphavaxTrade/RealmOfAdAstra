@@ -47,18 +47,19 @@ async function load() {
 function kapiView(k) {
   if (!k) { $('kapiInfo').textContent = 'Kapı kapalı'; return; }
   const ind = k.indicator || {};
-  $('kapiInfo').innerHTML = `Vatandaş <b>${fmt(k.citizens)} / ${fmt(k.limit)}</b> · sırada ${fmt(k.waiting)} · askıda ${fmt(k.suspended)} · dönem ${k.tier + 1} (eşik ${k.threshold} $) · gösterge: kişi başı aylık ${esc(String(ind.usdPerPlayerMonth || 0))} $ (${ind.weeks || 0} hafta)${k.lastGrowthAt ? ' · son büyüme ' + new Date(k.lastGrowthAt).toLocaleDateString('tr-TR') : ''}. ${k.warnDays} gün uyarı, ${k.suspendDays} gün askı.`;
+  $('kapiInfo').innerHTML = `Vatandaş <b>${fmt(k.citizens)} / ${fmt(k.limit)}</b> (aktif ${fmt(k.active || 0)}) · sırada ${fmt(k.waiting)} · askıda ${fmt(k.suspended)} · dönem ${k.tier + 1} (eşik ${k.threshold} $) · gösterge: kişi başı aylık ${esc(String(ind.usdPerPlayerMonth || 0))} $ (${ind.weeks || 0} hafta)${k.lastGrowthAt ? ' · son büyüme ' + new Date(k.lastGrowthAt).toLocaleDateString('tr-TR') : ''}. Büyüme ${k.growthLocked ? '🔒 kilitli (Faz 2 bekliyor)' : '🔓 açık'}. Davet süresi ${k.inviteHours} saat, yıllık izin hakkı ${k.izinYillikGun} gün.`;
   if (!$('kapiLimit').value) $('kapiLimit').value = k.limit;
   $('kapiTier').value = String(k.tier);
+  $('kapiGrowthLocked').checked = !!k.growthLocked;
   const btn = (pid, st, label) => `<button data-pid="${esc(pid)}" data-st="${st}">${label}</button>`;
   $('kapiQueue').innerHTML = '<tr><th>#</th><th>E-posta</th><th>Sırada beri</th><th>Dönen</th><th></th></tr>' +
     ((k.queue || []).map(w => `<tr><td>${w.position}</td><td>${esc(w.email || w.playerId)}</td><td>${new Date(w.since).toLocaleString('tr-TR')}</td><td>${w.returning ? '✅' : ''}</td><td>${btn(w.playerId, 'citizen', '👑 İçeri al')} ${btn(w.playerId, 'suspended', '⏸️ Askıya al')}</td></tr>`).join('') || '<tr><td colspan="5">Sıra boş</td></tr>');
   $('kapiSusp').innerHTML = '<tr><th>E-posta</th><th>Askıya alınma</th><th>Son giriş</th><th></th></tr>' +
     ((k.suspendedList || []).map(p => `<tr><td>${esc(p.email || p.playerId)}</td><td>${new Date(p.since).toLocaleString('tr-TR')}</td><td>${new Date(p.lastSeen).toLocaleString('tr-TR')}</td><td>${btn(p.playerId, 'citizen', '👑 İçeri al')} ${btn(p.playerId, 'waiting', '⏳ Sıraya koy')}</td></tr>`).join('') || '<tr><td colspan="4">Askıda kimse yok</td></tr>');
 }
-$('kapiSave').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi', { limit: Number($('kapiLimit').value) || null, tier: Number($('kapiTier').value) }); $('kapiLimit').value = ''; $('kapiMsg').textContent = `Kaydedildi: sınır ${r.limit}, dönem ${r.tier + 1}`; });
+$('kapiSave').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi', { limit: Number($('kapiLimit').value) || null, tier: Number($('kapiTier').value), growthLocked: $('kapiGrowthLocked').checked }); $('kapiLimit').value = ''; $('kapiMsg').textContent = `Kaydedildi: sınır ${r.limit}, dönem ${r.tier + 1}, büyüme ${r.growthLocked ? 'kilitli' : 'açık'}`; });
 $('uniSave').onclick = () => confirm('Universe aşaması ' + $('uniStage').value + ' yapılsın mı? (oyuncuların gördüğü kilitler değişir)') && act(() => api('POST', '/api/admin/universe-stage', { stage: Number($('uniStage').value) }));
-$('kapiRun').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi/run'); $('kapiMsg').textContent = `İşletildi: ${r.admitted} içeri alındı, ${(r.warned || []).length} uyarıldı, ${(r.suspended || []).length} askıya alındı${r.grown ? ', sınır ' + r.grown.from + ' → ' + r.grown.to : ''}`; });
+$('kapiRun').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi/run'); $('kapiMsg').textContent = `İşletildi: ${r.admitted} içeri alındı, davet süresi geçen ${(r.davetBitenler?.gecen || []).length}, katılım düşüklüğünden askıya alınan ${(r.katilimAskiya?.askiyaAlindi || []).length}${r.grown ? ', sınır ' + r.grown.from + ' → ' + r.grown.to : ''}`; });
 for (const id of ['kapiQueue', 'kapiSusp']) $(id).addEventListener('click', ev => {
   const b = ev.target.closest('button[data-pid]');
   if (!b) return;
