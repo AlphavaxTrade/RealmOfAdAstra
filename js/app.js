@@ -7,7 +7,7 @@ import { ammMarket } from './ammMarket.js';
 import { sound } from './audio.js';
 import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
-import { startVadi3D, VadiBootScene } from './vadi3d/vadi.js';   // 3B vadi (kampuse tarzı); ?harita=2d eski haritayı açar
+// 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
 import { createUnit, simulateBattle, DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from './combat.js';
 import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleArena.js';
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
@@ -18,8 +18,16 @@ import { terim } from './ui/v3/sozluk.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
-// Arayüz v3 (yeni kabuk): ?arayuz=3 ile açılır, varsayılan değildir. Sınıf en başta konur ki ilk çizimde eski çubuk görünmesin.
-const V3_ARAYUZ = new URLSearchParams(location.search).get('arayuz') === '3';
+// Arayüz v3 (yeni kabuk) varsayılandır. Eski görünüm: adrese ?arayuz=eski (tarayıcı hatırlar), yeniye dönüş: ?arayuz=3.
+// Sınıf en başta konur ki ilk çizimde eski çubuk görünmesin.
+const V3_ARAYUZ = (() => {
+  const istek = new URLSearchParams(location.search).get('arayuz');
+  try {
+    if (istek === 'eski') localStorage.setItem('roa_arayuz', 'eski');
+    else if (istek === '3') localStorage.removeItem('roa_arayuz');
+    return istek === 'eski' ? false : (istek === '3' ? true : localStorage.getItem('roa_arayuz') !== 'eski');
+  } catch (e) { return istek !== 'eski'; }   // depolama kapalı: yalnız adres belirler
+})();
 if (V3_ARAYUZ) document.documentElement.classList.add('v3');
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
@@ -8663,7 +8671,7 @@ function getStageSize() {
 }
 window.getStageSize = getStageSize;
 
-function initPhaser() {
+async function initPhaser() {
   const { w: W, h: H } = getStageSize();
 
   const config = {
@@ -8686,9 +8694,11 @@ function initPhaser() {
   // 2B piksel harita varsayılan (kullanıcı kararı 7 Ekim: 3B vadi rafa kalktı); 3B deneme ?harita=3d ile ya da localStorage 'harita'='3d' ile
   let use3D = false;
   try { use3D = /[?&]harita=3d/.test(location.search) || localStorage.getItem('harita') === '3d'; } catch (e) { /* depolama kapalı */ }
+  let vadiModulu = null;
   if (use3D) {
+    vadiModulu = await import('./vadi3d/vadi.js');
     document.body.classList.add('map-3d');
-    config.scene = [VadiBootScene, DungeonScene];   // zindan Phaser'da kalır; kasaba sahnesi hiç açılmaz
+    config.scene = [vadiModulu.VadiBootScene, DungeonScene];   // zindan Phaser'da kalır; kasaba sahnesi hiç açılmaz
   }
 
   phaserGame = new Phaser.Game(config);
@@ -8696,7 +8706,7 @@ function initPhaser() {
     const host = document.getElementById('vadi3d-container');
     const gal = /[?&]galeri=(\w+)/.exec(location.search);   // geliştirici: model galerisi
     if (gal && host) { import('./vadi3d/galeri.js').then(m => gal[1] === 'binalar' ? m.startBinaGalerisi(host) : m.startGaleri(host, gal[1], Number((/[?&]sayfa=(\d+)/.exec(location.search) || [])[1] || 0))); return; }
-    if (host) { try { window.__vadi3d = startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.removeItem('harita'); } catch (e2) { /* yoksay */ } location.reload(); } }
+    if (host) { try { window.__vadi3d = vadiModulu.startVadi3D(host); } catch (e) { console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', e); document.body.classList.remove('map-3d'); try { localStorage.removeItem('harita'); } catch (e2) { /* yoksay */ } location.reload(); } }
   }
 
   // Force canvas to fill area below top header strip & ticker
@@ -8822,6 +8832,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
       hesapAnahtari: () => (online.active && online.playerId) || 'yerel',
       cevrimici: () => !!online.active,
+      senkronYasi: () => (online.active && online.lastSync ? Date.now() - online.lastSync : 0),
       bildir: (m, t) => showToast(m, t),
       hudYenile: () => renderTopBar(),
       // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)

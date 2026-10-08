@@ -43,6 +43,7 @@ export const HUB = {
     { k: 'tur', s: '🎓', ad: 'Oyun turu', ac: 'Oyunu baştan, adım adım tanıt' },
     { k: 'rehber', s: '🧭', ad: 'Rehber ve yardım', ac: 'Görevler ve ödüller' },
     { k: 'komut', s: '🔎', ad: 'Ara ve git', ac: 'Her yere yazarak git (Ctrl+K)' },
+    { k: 'ayarlar', s: '⚙️', ad: 'Ayarlar ve kısayollar', ac: 'Yazı boyutu, hareket, klavye kısayolları' },
     { k: 'duyurular', s: 'ℹ️', ad: 'Duyurular ve uyarılar', ac: 'Önemli bilgilendirmeler' },
     { k: 'surum', s: '📜', ad: 'Sürüm geçmişi', ac: 'Neler değişti' },
     { k: 'test', s: '🧪', ad: 'Test laboratuvarı', ac: 'Mekanikleri tek tek dene ve doğrula (yalnız deneme sürümünde)', yalnizTest: true }

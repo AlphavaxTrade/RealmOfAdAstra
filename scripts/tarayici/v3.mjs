@@ -119,8 +119,38 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.keyboard.press('t'); await bekle(500);
   kontrol(`${ad}: T tekrar basınca kapanır`, !(await panelAcik()));
 
+  // Aşama 5: ayarlar, zindan geçişi, varsayılan arayüz
+  await ust('ben', 'ayarlar'); await foto('12_ayarlar');
+  kontrol(`${ad}: ayarlar paneli açılır`, /Ayarlar/.test(await baslik()), await baslik());
+  await tikla('[data-v3-ayar="yazi:cokbuyuk"]');
+  kontrol(`${ad}: yazı boyutu "çok büyük" olunca kök yazı 20 px olur`, await s.evaluate(() => getComputedStyle(document.documentElement).fontSize === '20px'), await s.evaluate(() => getComputedStyle(document.documentElement).fontSize));
+  await tikla('[data-v3-ayar="hareket:ac"]');
+  kontrol(`${ad}: hareketi azalt açılır`, await s.evaluate(() => document.documentElement.classList.contains('v3-azalt')));
+  await s.reload({ waitUntil: 'load' }); await s.waitForFunction(() => window.__v3, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: ayarlar sayfa yenilenince kalır`, await s.evaluate(() => document.documentElement.classList.contains('v3-azalt') && getComputedStyle(document.documentElement).fontSize === '20px'));
+  await s.evaluate(() => { window.gameState.setDevLevel(30); });
+  await ust('ben', 'ayarlar'); await tikla('[data-v3-ayar="yazi:normal"]'); await tikla('[data-v3-ayar="hareket:kapat"]');
+  kontrol(`${ad}: ayarlar geri alınır`, await s.evaluate(() => !document.documentElement.classList.contains('v3-azalt') && getComputedStyle(document.documentElement).fontSize === '16px'));
+  await s.keyboard.press('Escape'); await bekle(300);
+  await ust('savas', 'zindan'); await bekle(1200); await foto('13_zindan');
+  const zin = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, eskiSerit: getComputedStyle(document.getElementById('top-nav-strip')).display, katlar: document.querySelectorAll('#dungeon-floor-bar .floor-tab').length }));
+  kontrol(`${ad}: zindana girilir; v3 çubuğu gizlenir, zindanın kendi kat çubuğu görünür`, zin.iceride && zin.hud === 'none' && zin.eskiSerit !== 'none' && zin.katlar >= 6, JSON.stringify(zin));
+  await s.evaluate(() => document.getElementById('btn-dungeon-return-town').click()); await bekle(1200);
+  const don = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, tab: getComputedStyle(document.getElementById('v3-tabbar')).display }));
+  kontrol(`${ad}: kasabaya dönünce v3 çubukları geri gelir`, !don.iceride && don.hud !== 'none' && don.tab !== 'none', JSON.stringify(don));
+  const varsayilan = await baglam.newPage();
+  await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: adres parametresi olmadan da yeni arayüz açılır (varsayılan)`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar')));
+  await varsayilan.goto(BASE + '/?arayuz=eski', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: ?arayuz=eski eski arayüzü açar`, await varsayilan.evaluate(() => !document.documentElement.classList.contains('v3') && !document.getElementById('v3-tabbar')));
+  await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: eski tercih tarayıcıda hatırlanır`, await varsayilan.evaluate(() => !document.documentElement.classList.contains('v3')));
+  await varsayilan.goto(BASE + '/?arayuz=3', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: ?arayuz=3 yeni arayüze döndürür ve tercihi siler`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && localStorage.getItem('roa_arayuz') === null));
+  await varsayilan.close();
+
   // onay penceresi: Esc vazgeç, Onayla evet
-  await s.evaluate(async () => { const m = await import('/js/ui/v3/bilesenler.js'); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; });   // söz döndürmez: evaluate pencere kapanana kadar beklemesin
+  await s.evaluate(async (yol) => { const m = await import(yol); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; }, '/js/ui/v3/bilesenler.js');   // söz döndürmez: evaluate pencere kapanana kadar beklemesin
   await s.evaluate(() => window.__onay({ baslik: 'Silinsin mi?', metin: 'Geri alınamaz.', tamam: 'Sil', tehlikeli: true }));
   await foto('05_onay');
   kontrol(`${ad}: tehlikeli onayda odak Vazgeç düğmesinde`, await s.evaluate(() => document.activeElement?.hasAttribute('data-v3-vazgec')));

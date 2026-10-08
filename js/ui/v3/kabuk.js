@@ -8,13 +8,14 @@ import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
 import { SOZLUK } from './sozluk.js';
 import { kurTur } from './tur.js';
 import { kurLab } from './lab.js';
+import { ayarOku, ayarYaz, ayarDogrula, ayarUygula, ayarlarHtml, baglantiDurumu, BAGLANTI_METNI } from './ayarlar.js';
 
 const $ = (id) => document.getElementById(id);
 const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
-export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc }) {
+export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc }) {
   return {
     merkez: () => api.openDashboard(),
     seferler: () => { api.closeModal(); yanAc(true); },
@@ -40,6 +41,7 @@ export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
     rehber: () => { api.closeModal(); sekmeSec('harita'); document.querySelector('#guide-widget [data-guide-toggle]')?.click(); },
     komut: () => { api.closeModal(); api.openPalette(); },
+    ayarlar: () => ayarlarAc(),
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
     surum: () => api.openChangelog(),
     test: () => labAc()
@@ -103,7 +105,11 @@ export function kurV3Kabuk(api) {
   alt.setAttribute('aria-label', 'Ana gezinme');
   alt.innerHTML = SEKMELER.map((t) => `<button type="button" data-v3-sekme="${t.id}" class="${t.id === aktif ? 'active' : ''}"><span aria-hidden="true">${t.simge}</span><small>${t.ad}</small></button>`).join('');
 
-  document.body.append(hud, tepsi, uyari, dock, alt);
+  const baglanti = document.createElement('div');
+  baglanti.id = 'v3-baglanti';
+  baglanti.setAttribute('role', 'status');
+  baglanti.hidden = true;
+  document.body.append(hud, tepsi, uyari, baglanti, dock, alt);
 
   // Panel (eski #rpg-modal): kapatma düğmesi ve erişilebilirlik
   const kapat = $('btn-close-modal');
@@ -144,7 +150,21 @@ export function kurV3Kabuk(api) {
   const tur = kurTur({ gameState: gs, isAnyModalOpen: api.isAnyModalOpen, closeModal: api.closeModal, hesapAnahtari: api.hesapAnahtari });
   // Test laboratuvarı yalnız deneme sürümünde var (eski test menüsünün öğeleri o sürümde sayfada bulunur)
   const lab = $('dev-modal') ? kurLab({ gameState: gs, openPanel: api.openPanel, cevrimici: api.cevrimici, bildir: api.bildir, hudYenile: api.hudYenile, vanillaSifirla: api.vanillaSifirla }) : null;
-  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); } });
+  // Ayarlar (hareketi azalt, yazı boyutu): tarayıcı deposunda; açılışta uygulanır
+  let ayar = ayarOku(localStorage);
+  ayarUygula(ayar, document.documentElement);
+  const ayarlarAc = () => api.openPanel(['⚙️', 'Ayarlar ve kısayollar'], ayarlarHtml(ayar, api.cevrimici()));
+  $('rpg-modal')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-v3-ayar]');
+    if (!b) return;
+    e.stopPropagation(); e.preventDefault();
+    const [grup, deger] = b.dataset.v3Ayar.split(':');
+    ayar = ayarDogrula({ ...ayar, ...(grup === 'yazi' ? { yaziBoyutu: deger } : { hareketAzalt: deger === 'ac' }) });
+    ayarYaz(localStorage, ayar);
+    ayarUygula(ayar, document.documentElement);
+    ayarlarAc();
+  }, true);
+  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc });
   if (lab) {
     // T kısayolu v3'te eski test menüsünü değil laboratuvarı açar (yakalama aşaması: eski dinleyiciden önce)
     window.addEventListener('keydown', (e) => {
@@ -282,6 +302,10 @@ export function kurV3Kabuk(api) {
       if (simge && !simge.firstChild) { const kaynakSimge = pill?.querySelector('.res-icon'); if (kaynakSimge) simge.innerHTML = kaynakSimge.innerHTML; }
     }
     $('v3-kaynak-uyari').hidden = !doluVar;
+
+    const bd = baglantiDurumu(api.cevrimici(), api.senkronYasi());
+    baglanti.hidden = !BAGLANTI_METNI[bd];
+    if (BAGLANTI_METNI[bd]) { yaz(baglanti, BAGLANTI_METNI[bd]); baglanti.dataset.durum = bd; }
 
     const botDugme = $('btn-top-taverna-bot-status');
     $('v3-bot').dataset.state = botDugme?.dataset.state || 'off';

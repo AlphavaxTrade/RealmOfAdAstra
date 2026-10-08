@@ -14,6 +14,7 @@ const SADE_BASLIKLAR = [
   [/GLADYATÖR KOLEZYUMU/i, '🏟️ Kolezyum'],
   [/KARNAVALI/i, '🎪 Karnaval'],
   [/NFT KOLEKSİYONU/i, '👑 Sandıklar ve koleksiyon'],
+  [/SEN YOKKEN OLANLAR/i, '🌙 Sen yokken olanlar'],
   [/AMM Pazar|Meydan Pazarı|^📍?\s*🏪\s*Pazar/i, '🏪 Pazar']
 ];
 

@@ -6,6 +6,7 @@ import { gitHaritasi } from '../js/ui/v3/kabuk.js';
 import { istatSatiri, bosDurum, iskelet } from '../js/ui/v3/bilesenler.js';
 import { sadeBaslik, katlaKurali } from '../js/ui/v3/panel.js';
 import { farkSatirlari, farkHtml, sonucHtml, senaryoKartiHtml, gunlukHtml, kayitEkle } from '../js/ui/v3/lab.js';
+import { AYAR_ANAHTARI, AYAR_VARSAYILAN, ayarDogrula, ayarOku, ayarYaz, ayarUygula, yaziOlcegi, baglantiDurumu, ayarlarHtml, KISAYOLLAR } from '../js/ui/v3/ayarlar.js';
 import { TUR_ADIMLARI, turBaslamali, sonrakiAdim, TUR_KAYIT_ANAHTARI } from '../js/ui/v3/tur.js';
 import { SOZLUK, terim } from '../js/ui/v3/sozluk.js';
 
@@ -55,6 +56,7 @@ assert.equal(sadeBaslik('📈 EKONOMİK DENGE, 10B TOKENOMICS & SİMÜLATÖR'), 
 assert.equal(sadeBaslik('🏛️ Sirius Konseyi & Hazine'), '🏛️ Konsey ve hazine');
 assert.equal(sadeBaslik('📜 ADASTRA REALM SÜRÜM GEÇMİŞİ & GÜNCELLEME LOGU'), '📜 Sürüm geçmişi');
 assert.equal(sadeBaslik('📍 🌿 Şifahane'), '🌿 Şifahane');
+assert.equal(sadeBaslik('🌙 SEN YOKKEN OLANLAR'), '🌙 Sen yokken olanlar');
 assert.equal(sadeBaslik('🏰 Krallık'), '🏰 Krallık', 'zaten sade olan değişmez');
 assert.equal(sadeBaslik(''), '');
 // Katlama yalnız bilinen yoğun panellerde; ilk kartlar açık kalır
@@ -132,3 +134,36 @@ console.log('✅ yeni oyuncu turu');
   assert.equal(kayitEkle(l, { id: 'k5', ad: 'yeni ad' }, 8)[0].ad, 'yeni ad');
 }
 console.log('✅ test laboratuvarı');
+
+// 9) Ayarlar ve bağlantı durumu
+{
+  assert.deepEqual(ayarDogrula(null), AYAR_VARSAYILAN);
+  assert.deepEqual(ayarDogrula({ hareketAzalt: 'evet', yaziBoyutu: 'dev' }), AYAR_VARSAYILAN, 'bozuk değerler varsayılana döner');
+  assert.deepEqual(ayarDogrula({ hareketAzalt: true, yaziBoyutu: 'buyuk', baska: 1 }), { hareketAzalt: true, yaziBoyutu: 'buyuk' }, 'bilinmeyen alan atılır');
+  const depo = { m: {}, getItem(k) { return this.m[k] ?? null; }, setItem(k, v) { this.m[k] = String(v); } };
+  assert.deepEqual(ayarOku(depo), AYAR_VARSAYILAN, 'depo boşken varsayılan');
+  assert.equal(ayarYaz(depo, { hareketAzalt: true, yaziBoyutu: 'cokbuyuk' }), true);
+  assert.deepEqual(ayarOku(depo), { hareketAzalt: true, yaziBoyutu: 'cokbuyuk' });
+  depo.m[AYAR_ANAHTARI] = '{bozuk json';
+  assert.deepEqual(ayarOku(depo), AYAR_VARSAYILAN, 'bozuk kayıt çökertmez');
+  assert.equal(ayarYaz({ setItem() { throw new Error('dolu'); } }, AYAR_VARSAYILAN), false, 'depo yazılamazsa false (çökmez)');
+  assert.equal(yaziOlcegi('buyuk'), 1.125); assert.equal(yaziOlcegi('yok'), 1);
+  const siniflar = new Set(); const stil = {};
+  const kok = { classList: { toggle(c, v) { if (v) siniflar.add(c); else siniflar.delete(c); } }, style: { setProperty(k, v) { stil[k] = v; } } };
+  ayarUygula({ hareketAzalt: true, yaziBoyutu: 'cokbuyuk' }, kok);
+  assert.ok(siniflar.has('v3-azalt')); assert.equal(stil['--v3-yazi-olcek'], '1.25');
+  ayarUygula({ hareketAzalt: false, yaziBoyutu: 'normal' }, kok);
+  assert.ok(!siniflar.has('v3-azalt')); assert.equal(stil['--v3-yazi-olcek'], '1');
+  // bağlantı durumu eşikleri
+  assert.equal(baglantiDurumu(false, 999999), 'yerel');
+  assert.equal(baglantiDurumu(true, 0), 'iyi'); assert.equal(baglantiDurumu(true, 44999), 'iyi');
+  assert.equal(baglantiDurumu(true, 45000), 'gecikmeli'); assert.equal(baglantiDurumu(true, 119999), 'gecikmeli');
+  assert.equal(baglantiDurumu(true, 120000), 'kopuk');
+  assert.equal(baglantiDurumu(true, NaN), 'iyi', 'ölçüm yoksa yanlış alarm verilmez');
+  // ayar sayfası: seçili düğme işaretli, kısayol listesi dolu
+  const html = ayarlarHtml({ hareketAzalt: true, yaziBoyutu: 'buyuk' }, false);
+  assert.match(html, /data-v3-ayar="yazi:buyuk"[^>]*aria-pressed="true"/); assert.match(html, /data-v3-ayar="yazi:normal"[^>]*aria-pressed="false"/);
+  assert.match(html, /data-v3-ayar="hareket:ac"[^>]*aria-pressed="true"/); assert.match(html, /data-v3-ayar="hareket:kapat"[^>]*aria-pressed="false"/);
+  assert.equal((html.match(/<kbd>/g) || []).length, KISAYOLLAR.length);
+}
+console.log('✅ ayarlar ve bağlantı');

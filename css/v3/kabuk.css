@@ -41,7 +41,7 @@ html.v3 #btn-sidebar-toggle { display: none !important; }
 /* zindan kendi kat çubuğunu eski üst şeritte taşıyor (Aşama 2'de yenilenecek): zindandayken eski şerit açık, v3 kabuk kapalı */
 html.v3 body:not(.in-dungeon) #top-nav-strip { display: none !important; }
 html.v3 body.in-dungeon :is(#v3-hud, #v3-tabbar, #v3-dock, #v3-kaynak-tepsi, #v3-uyari) { display: none !important; }
-html.v3 body.in-dungeon { --hud-h: 92px; --tabbar-h: 0px; }
+html.v3 body.in-dungeon { --hud-h: var(--v3-hud-h); --tabbar-h: 0px; }
 html.v3 .gate-banner { top: calc(var(--v3-hud-h) + 8px); z-index: 1100; }
 
 /* 3. ÜST ÇUBUK ----------------------------------------------------------- */
@@ -324,3 +324,26 @@ html.v3 .v3-lab-gunluk > div { display: grid; grid-template-columns: auto 1fr; g
 html.v3 .v3-lab-gunluk time { color: var(--v3-yazi-3); font-variant-numeric: tabular-nums; }
 html.v3 .v3-lab-gunluk small { grid-column: 2; color: var(--v3-yazi-2); font-weight: 500; }
 html.v3 .v3-lab-ham { max-height: 320px; overflow: auto; margin: 6px 0 0; padding: 10px; border-radius: 10px; background: #0a0d14; color: #b9c2d8; font: 500 11.5px/1.4 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+
+/* 14. AYARLAR VE BAGLANTI (js/ui/v3/ayarlar.js) ---------------------------- */
+html.v3 { font-size: calc(16px * var(--v3-yazi-olcek, 1)); }
+html.v3.v3-azalt *, html.v3.v3-azalt *::before, html.v3.v3-azalt *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+html.v3 .v3-ayarlar { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+html.v3 .v3-ayarlar h3 { margin: 0 0 8px; font: 800 14px var(--font-ui); color: var(--v3-vurgu-acik); }
+html.v3 .v3-ayarlar section { display: flex; flex-direction: column; gap: 6px; }
+html.v3 .v3-kisayol { display: grid; gap: 6px; }
+html.v3 .v3-kisayol > div { display: flex; align-items: center; gap: 12px; font: 500 13.5px var(--font-ui); color: var(--v3-yazi-2); }
+html.v3 .v3-kisayol kbd { min-width: 78px; text-align: center; padding: 4px 8px; border-radius: 8px; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 700 12px ui-monospace, Consolas, monospace; color: var(--v3-yazi); }
+html.v3 #v3-baglanti { position: fixed; top: var(--v3-hud-h); left: 0; right: 0; z-index: calc(var(--v3-z-hud) + 1); padding: 8px 14px; font: 700 12.5px/1.35 var(--font-ui); text-align: center; color: #fff; }
+html.v3 #v3-baglanti[hidden] { display: none; }
+html.v3 #v3-baglanti[data-durum="gecikmeli"] { background: #8a5a00; }
+html.v3 #v3-baglanti[data-durum="kopuk"] { background: #9b1c1c; }
+
+/* 15. ZINDAN BASLIGI: zindandayken eski seridin yalniz kat cubugu kalir (sade, kaydirilabilir) ------------ */
+html.v3 body.in-dungeon #top-nav-strip { display: flex !important; align-items: center; position: fixed; top: 0; left: 0; right: 0; height: var(--v3-hud-h); padding: 6px max(10px, env(safe-area-inset-left)); gap: var(--v3-gap-2); box-sizing: border-box; background: rgba(9,12,19,.94); border-bottom: 1px solid var(--v3-cizgi-guclu); z-index: var(--v3-z-hud); }
+html.v3 body.in-dungeon #top-nav-strip > :not(#dungeon-floor-bar) { display: none !important; }
+html.v3 body.in-dungeon #dungeon-floor-bar:not(.hidden) { display: flex !important; position: static !important; transform: none !important; justify-content: flex-start !important; flex: 1; min-width: 0; max-width: none !important; max-height: none !important; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 0; padding: 0; background: transparent; border: 0; box-shadow: none; }
+html.v3 body.in-dungeon #btn-dungeon-return-town { position: static !important; }
+html.v3 body.in-dungeon #dungeon-floor-bar::-webkit-scrollbar { display: none; }
+html.v3 body.in-dungeon #dungeon-floor-bar > * { flex: none; min-height: 40px; }
+html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-nav-divider { display: none; }
