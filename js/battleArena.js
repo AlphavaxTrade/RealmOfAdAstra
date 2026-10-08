@@ -2,6 +2,9 @@
 // Zindan (Dungeon) ve Kolezyum (Colosseum) Canlı Savaş Görselleştirmesi
 import { sound } from './audio.js';
 
+// Savaş kaydı innerHTML ile yazılır; asker adları başka oyunculardan gelebilir (kaynakta cleanName ile temizlenir, burası ek savunma katmanı)
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export function getMonsterAvatar(level, name) {
   const n = (name || '').toLowerCase();
   if (level === 1 || n.includes('balçık') || n.includes('balcik') || n.includes('slime')) {
@@ -253,11 +256,11 @@ export class AdAstraBattleArena {
       el.innerHTML = `
         <div class="shield-ring ${u.shieldPts > 0 ? 'show' : ''}" id="aa-shield-${u.id}"></div>
         <div class="icon-badge">
-          <img src="${avatarSrc}" class="unit-avatar-img" alt="${u.name}" data-fb="next" />
+          <img src="${avatarSrc}" class="unit-avatar-img" alt="${esc(u.name)}" data-fb="next" />
           <span class="avatar-fallback" style="display:none; font-size:1.4rem;">${fallbackIcon}</span>
         </div>
         <div class="hp-track"><div class="hp-fill ${hpClass}" style="width:${Math.round(pct * 100)}%"></div></div>
-        <div class="unit-name" title="${u.name}">${u.name}</div>
+        <div class="unit-name" title="${esc(u.name)}">${esc(u.name)}</div>
         <div class="unit-hp-text" style="font-size:0.68rem; color:#cbd5e1; text-align:center; font-weight:700; margin-top:1px;">${u.hp}/${u.maxHp}</div>
       `;
       return el;
@@ -288,9 +291,9 @@ export class AdAstraBattleArena {
         c.className = 'queue-chip' + (i === 0 ? ' next' : '') + (u.side === 'ally' ? ' chip-ally' : ' chip-enemy');
         const avatarSrc = getUnitAvatar(u);
         c.innerHTML = `
-          <img src="${avatarSrc}" class="queue-avatar-img" alt="${u.name}" data-fb="text:${u.icon || (u.side === 'ally' ? '⚔️' : '💀')}" />
+          <img src="${avatarSrc}" class="queue-avatar-img" alt="${esc(u.name)}" data-fb="text:${u.icon || (u.side === 'ally' ? '⚔️' : '💀')}" />
         `;
-        c.title = `${u.name} (Atk: ${u.atk}, HP: ${u.hp}/${u.maxHp})`;
+        c.title = `${esc(u.name)} (Atk: ${u.atk}, HP: ${u.hp}/${u.maxHp})`;
         queueTrack.appendChild(c);
       });
     }
@@ -366,7 +369,7 @@ export class AdAstraBattleArena {
       target.hp = Math.max(0, target.hp - dmg);
       if (target.hp <= 0 && !target.dead) {
         target.dead = true;
-        log(`💀 <b>${target.name}</b> yere serildi!`, 'dmg');
+        log(`💀 <b>${esc(target.name)}</b> yere serildi!`, 'dmg');
         if (sound && sound.playBreakWarning) sound.playBreakWarning();
       } else {
         if (sound && sound.playPickaxe) sound.playPickaxe();
@@ -415,36 +418,36 @@ export class AdAstraBattleArena {
           const target = allies.filter(a => !a.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
           if (target) {
             const h = healUnit(target, u.atk * usable.mult + target.maxHp * 0.12);
-            log(`✨ <b>${u.name}</b> ${target.name}'i <b class="num">+${h}</b> iyileştirdi.`, 'heal skill');
+            log(`✨ <b>${esc(u.name)}</b> ${esc(target.name)}'i <b class="num">+${h}</b> iyileştirdi.`, 'heal skill');
           }
         } else if (usable.aoe) {
           const targets = enemies.filter(e => !e.dead).slice(0, 3);
-          log(`💥 <b>${u.name}</b> ${usable.name} kullandı — ${targets.length} hedef etkilendi!`, 'skill');
+          log(`💥 <b>${esc(u.name)}</b> ${usable.name} kullandı — ${targets.length} hedef etkilendi!`, 'skill');
           targets.forEach(t => dealDamage(t, u.atk * usable.mult));
         } else if (usable.shield) {
           u.shieldPts = Math.round(u.maxHp * usable.shield);
           const sr = root.querySelector('#aa-shield-' + u.id);
           if (sr) sr.classList.add('show');
-          log(`🛡️ <b>${u.name}</b> kalkan ördü (+${u.shieldPts} emici zırh).`, 'skill');
+          log(`🛡️ <b>${esc(u.name)}</b> kalkan ördü (+${u.shieldPts} emici zırh).`, 'skill');
         } else if (usable.stun) {
           const t = pickTarget(enemies);
           if (t) {
             t.stunned = true;
-            log(`😱 <b>${u.name}</b> ${t.name}'i sersemletti!`, 'skill');
+            log(`😱 <b>${esc(u.name)}</b> ${esc(t.name)}'i sersemletti!`, 'skill');
           }
         } else {
           const t = pickTarget(enemies, { pierce: usable.pierce });
           if (t) {
             const isCrit = Math.random() < 0.22;
             const d = dealDamage(t, u.atk * usable.mult * (isCrit ? 1.6 : 1), isCrit);
-            log(`${usable.icon} <b>${u.name}</b> ${usable.name} ile ${t.name}'e <b class="num">-${d}</b> hasar verdi.`, 'dmg skill');
+            log(`${usable.icon} <b>${esc(u.name)}</b> ${usable.name} ile ${esc(t.name)}'e <b class="num">-${d}</b> hasar verdi.`, 'dmg skill');
           }
         }
         return;
       }
 
       if (u.stunned) {
-        log(`😵 <b>${u.name}</b> sersemlemiş durumda, hamle yapamadı.`, 'system');
+        log(`😵 <b>${esc(u.name)}</b> sersemlemiş durumda, hamle yapamadı.`, 'system');
         u.stunned = false;
         return;
       }
@@ -454,7 +457,7 @@ export class AdAstraBattleArena {
       const isCrit = Math.random() < 0.16;
       const raw = u.atk * (0.85 + Math.random() * 0.3) * (isCrit ? 1.7 : 1);
       const d = dealDamage(t, raw, isCrit);
-      log(`${isCrit ? '💥 <b>KRİTİK!</b> ' : '⚔️ '}<b>${u.name}</b> ${t.name}'e <b class="num">-${d}</b> hasar verdi.`, 'dmg');
+      log(`${isCrit ? '💥 <b>KRİTİK!</b> ' : '⚔️ '}<b>${esc(u.name)}</b> ${esc(t.name)}'e <b class="num">-${d}</b> hasar verdi.`, 'dmg');
     }
 
     function tickCooldowns() {
@@ -573,8 +576,8 @@ export class AdAstraBattleArena {
           }
           const how = ev.label && ev.label !== 'Saldırı' ? ` <span class="muted">(${ev.label})</span>` : '';
           const shieldTxt = ev.absorbed > 0 ? ` <span class="muted">· kalkan ${ev.absorbed} emdi</span>` : '';
-          log(`${ev.isCrit ? '💥 <b>KRİTİK!</b> ' : '⚔️ '}<b>${ev.actor}</b> → ${ev.target} <b class="num">-${ev.amount}</b>${how}${shieldTxt}`, 'dmg');
-          if (target && target.dead) log(`💀 <b>${ev.target}</b> yere serildi!`, 'dmg');
+          log(`${ev.isCrit ? '💥 <b>KRİTİK!</b> ' : '⚔️ '}<b>${esc(ev.actor)}</b> → ${esc(ev.target)} <b class="num">-${ev.amount}</b>${how}${shieldTxt}`, 'dmg');
+          if (target && target.dead) log(`💀 <b>${esc(ev.target)}</b> yere serildi!`, 'dmg');
           break;
         }
         case 'heal': {
@@ -582,7 +585,7 @@ export class AdAstraBattleArena {
             target.hp = Math.max(0, ev.targetHp);
             if (animate) { updateUnitDom(target); spawnDmg(target.id, '+' + ev.amount, 'heal'); }
           }
-          log(`✨ <b>${ev.actor}</b> → ${ev.target} <b class="num">+${ev.amount}</b> iyileştirdi.`, 'heal skill');
+          log(`✨ <b>${esc(ev.actor)}</b> → ${esc(ev.target)} <b class="num">+${ev.amount}</b> iyileştirdi.`, 'heal skill');
           break;
         }
         case 'ability': {
@@ -595,7 +598,7 @@ export class AdAstraBattleArena {
               if (sr) sr.classList.add('show');
             }
           }
-          log(ev.text || `${ev.icon || '✨'} <b>${ev.actor}</b> ${ev.ability}`, 'skill');
+          log(ev.text || `${ev.icon || '✨'} <b>${esc(ev.actor)}</b> ${ev.ability}`, 'skill');
           break;
         }
         case 'phase': {
@@ -612,7 +615,7 @@ export class AdAstraBattleArena {
           log(ev.text, 'system');
           break;
         case 'stunned':
-          log(`😵 <b>${ev.actor}</b> sersemlemiş, hamle yapamadı.`, 'system');
+          log(`😵 <b>${esc(ev.actor)}</b> sersemlemiş, hamle yapamadı.`, 'system');
           break;
         case 'dot': {
           if (target) {
@@ -620,7 +623,7 @@ export class AdAstraBattleArena {
             if (ev.died || target.hp <= 0) target.dead = true;
             if (animate) { updateUnitDom(target); spawnDmg(target.id, '-' + ev.amount, 'dmg'); }
           }
-          log(`🔥 ${ev.target} <b class="num">-${ev.amount}</b> (${ev.dotType === 'poison' ? 'zehir' : 'yanma'})`, 'dmg');
+          log(`🔥 ${esc(ev.target)} <b class="num">-${ev.amount}</b> (${ev.dotType === 'poison' ? 'zehir' : 'yanma'})`, 'dmg');
           break;
         }
         default:

@@ -176,7 +176,10 @@ function showToast(message, type = 'info') {
   let icon = '✨';
   if (type === 'error') icon = '⚠️';
 
-  toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+  // Mesaj DÜZ YAZI olarak konur (innerHTML değil): bildirimler başka oyuncuların adlarını içerebilir (savunma katmanı, A2.11)
+  const iconEl = document.createElement('span'); iconEl.textContent = icon;
+  const msgEl = document.createElement('span'); msgEl.textContent = String(message ?? '');
+  toast.append(iconEl, ' ', msgEl);
   dom.toastContainer.appendChild(toast);
 
   setTimeout(() => {
@@ -4218,7 +4221,7 @@ function openColosseumModal() {
 
       arena.startBattle({
         mode: 'colosseum',
-        context: `Haftalık Kolezyum · <strong>${res.opponentName}</strong> ile 1v1 Düello`,
+        context: `Haftalık Kolezyum · <strong>${escHtml(res.opponentName)}</strong> ile 1v1 Düello`,
         rank: `ELO ${res.newRating} · ${res.tier ? res.tier.name : 'Lig Maçı'}`,
         allies: [allyUnit],
         enemies: [enemyUnit],
