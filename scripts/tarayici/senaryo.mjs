@@ -76,6 +76,12 @@ try {
     kontrol('Konsey: "Gelir motoru" kartı hedefleri gösteriyor', /Gelir motoru/.test(m) && /hedef 50 \$/.test(m) && /hedef 16\.7 \$/.test(m) && /şimdilik kilitli/.test(m));
     kontrol('Konsey metninde NaN/undefined yok', !/NaN|undefined/.test(m));
     await ekran(o.sayfa, 'yeni_konsey');
+    await o.sayfa.keyboard.press('Escape'); await bekle(300);
+    await o.sayfa.evaluate(() => window.gameState.startExpedition('wheat'));    // oyuncu bir sefer başlatır
+    await bekle(2500);
+    await paletle(o.sayfa, 'treasury');
+    const m2 = await modalMetni(o.sayfa);
+    kontrol('karne: yapılan sefer hazine ekranında hemen ✅ görünüyor', /✅ 🌾 Sefer/.test(m2), (m2.match(/Katılım karnem[\s\S]{0,200}/) || [''])[0].replace(/\s+/g, ' '));
     await o.sayfa.keyboard.press('Escape');
     await o.kapat();
     const ob = await sayfaAc('yeni', { mobil: true });

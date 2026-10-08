@@ -48,7 +48,8 @@ export async function dunyaKur(opts = {}) {
   const E = await createEngine(db, { clock, testMode: true });
 
   // ── Sahte zincir: fiyat senaryoya göre değişir; gönderimler kaydedilir; trade sitesi girişi kuyruğa konabilir ──
-  const zincir = { fiyatUsd: 2e-7, avaxUsd: 11.4, arz: 2.1325e9, olu: 1.65e8, blok: 1000, ortakKuyruk: [], gonderilen: [], ortakSayac: 0 };
+  const arz = opts.arz || 2.1325e9;   // küçük arz = çekim tavanı (fiyatı %2 düşürecek miktar) gerçekten bağlar
+  const zincir = { fiyatUsd: 2e-7, avaxUsd: 11.4, arz, olu: arz * 0.0774, blok: 1000, ortakKuyruk: [], gonderilen: [], ortakSayac: 0 };
   const chain = {
     gameWallet: OYUN_CUZDANI, canSend: true,
     async readMarket() {

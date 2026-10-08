@@ -1,0 +1,68 @@
+{
+  "secenek": {
+    "oyuncu": 200,
+    "baglanti": [
+      50
+    ],
+    "sure": 10,
+    "senaryo": [
+      "state",
+      "karma"
+    ],
+    "heap": 12288,
+    "port": 18400,
+    "cpuProf": false,
+    "soak": 0,
+    "json": "docs/v2/sim/yuk_200.json"
+  },
+  "makine": {
+    "cpu": 12,
+    "bellekGB": 40,
+    "node": "v24.18.1",
+    "platform": "win32"
+  },
+  "senaryolar": [
+    {
+      "ad": "state",
+      "baglanti": 50,
+      "istek": 2571,
+      "hata": 0,
+      "rps": 252.4,
+      "p50": 142.9,
+      "p95": 529.8,
+      "p99": 1625.8,
+      "max": 2332.3,
+      "sunucu": {
+        "ornek": 8,
+        "rssMax": 120.2,
+        "heapIlk": 16.4,
+        "heapSon": 19.4,
+        "heapMax": 19.5,
+        "olayP99Max": 1753.22,
+        "olayKullanimMax": 1
+      }
+    },
+    {
+      "ad": "karma",
+      "baglanti": 50,
+      "istek": 2382,
+      "hata": 0,
+      "rps": 233,
+      "p50": 190.1,
+      "p95": 405.8,
+      "p99": 554.7,
+      "max": 601,
+      "sunucu": {
+        "ornek": 13,
+        "rssMax": 140.8,
+        "heapIlk": 16.4,
+        "heapSon": 19.7,
+        "heapMax": 19.7,
+        "olayP99Max": 1753.22,
+        "olayKullanimMax": 1
+      }
+    }
+  ],
+  "oyuncuOlusturmaSn": 5.6,
+  "sunucuOlcumCsv": "saniye,rss_mb,heap_kullanilan_mb,heap_toplam_mb,dis_mb,olay_dongusu_p99_ms,olay_dongusu_kullanim\n3,91.8,16.4,35.3,4.4,0,1\n5,93.9,17.5,35.5,4.2,242.35,0.61\n7,99.6,18.1,36.8,4.2,1150.29,1\n9,107.6,18.9,53.8,4.2,224.26,1\n12,116.2,19.2,54.5,4.2,1753.22,0.99\n14,119.5,19.5,55.3,4.2,207.62,1\n16,119.9,19.4,55.5,4.3,176.29,1\n18,120.2,19.4,55.8,4.3,179.96,1\n20,121.9,19.5,56,4.3,216.92,0.99\n22,122.9,19.6,55.3,4.3,246.28,1\n24,125.9,19.7,87.3,4.2,413.66,1\n27,140.7,19.7,87.5,4.2,446.17,1\n29,140.8,19.7,87.5,4.3,317.72,1\n"
+}

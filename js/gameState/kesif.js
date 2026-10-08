@@ -33,7 +33,7 @@ export const kesifYontemleri = {
     let adAstraGained = 0;
     if (targetAdAstra > 0) {
       const draw = (typeof treasury !== 'undefined' && treasury && treasury.withdraw)
-        ? treasury.withdrawWhole('dungeon', targetAdAstra)
+        ? treasury.withdraw('dungeon', targetAdAstra)   // yuvarlama yok: kasadan çıkan tam miktar oyuncuya gider (1 ASTRA altı ödül sıfıra inmesin, ASTRA yoktan oluşmasın)
         : { granted: targetAdAstra };
       adAstraGained = Math.max(0, draw.granted != null ? draw.granted : targetAdAstra);
       this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + adAstraGained;
