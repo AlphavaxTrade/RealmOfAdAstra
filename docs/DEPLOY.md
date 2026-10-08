@@ -4,6 +4,8 @@ Oyunu bir sunucuda çevrimiçi (gerçek ADASTRA ile) çalıştırmak için. Sunu
 
 Diğer belgeler: mimari `docs/architecture.md` · bütün ayarlar `docs/kurumsal/ORTAM.md` · yedek ve kurtarma `docs/kurumsal/FELAKET_KURTARMA.md` · izleme `docs/kurumsal/GOZLEM.md` · API `docs/openapi.yaml`, `docs/api/index.html`.
 
+> **Durum (8 Ekim 2026):** oyun sunucusu şu an hiçbir uzak makinede KURULU DEĞİL. Trade sitesinin AWS makinesi 7 Ekim'de değişti (50.17.123.38, `/srv/realm` ve `realm` servisi yok); eski `scripts/sunucuya-yukle.sh` hâlâ eski adresi (54.81.201.200) gösterir ve çalışmaz. Oyunun alan adı `roa.alphavaxtrade.com` olacak; yayına almak için bu belgedeki adımlar + DNS kaydı + Caddy'ye bir `roa.alphavaxtrade.com` bloğu gerekir. Bunlar sunucuya dokunan, sizin onayınızla yapılacak işlerdir.
+
 ## Ne gerekiyor?
 
 - Linux sunucu (en az 1 işlemci, 1 GB bellek; önerilen 2 GB+). **Docker** *ya da* Node 24 + systemd.

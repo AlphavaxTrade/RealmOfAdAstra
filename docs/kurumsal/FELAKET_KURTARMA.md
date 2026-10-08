@@ -40,12 +40,13 @@ systemctl list-timers realm-yedek.timer ; journalctl -u realm-yedek -n 20
 ```
 Şifreleme için `deploy/realm-yedek.service` başındaki talimata bakın (iki "ŞİFRELİ" satırının `#` işaretini kaldırın).
 
-### Dışarı kopya (ŞART)
-Yedekler aynı diskte kalırsa disk/sunucu gidince onlar da gider. `YEDEK_SONRASI_KOMUT` her başarılı yedekten sonra çalışır; yedek dosyası `$YEDEK_DOSYA`, manifesti `$YEDEK_MANIFEST` olarak verilir. Örnek (rclone, başka bir bulut/sunucu; hedefi siz seçersiniz):
-```
-YEDEK_SONRASI_KOMUT=rclone copy "$YEDEK_DOSYA" uzak:realm-yedek && rclone copy "$YEDEK_MANIFEST" uzak:realm-yedek
-```
-Komut, gizli anahtarları (`YEDEK_ANAHTAR`, `KASA_MASTER_KEY`, `ADMIN_TOKEN`...) **görmez**. Komut hata verirse yedek geçerli kalır ama alarm çalar (`RealmYedekBasarisiz`).
+### Dışarı kopya (ŞART) — KARAR: bilgisayarınız çeker + Proton Drive
+Yedekler sunucuda kalırsa disk/sunucu gidince onlar da gider. Seçilen düzen (8 Ekim 2026), trade sitesindeki "AlphAvax Yedek" görevinin aynısı:
+1. **Sizin bilgisayarınız sunucudan ÇEKER** (sunucuda bilgisayarınıza erişen hiçbir anahtar durmaz). `scripts/windows/yedek-indir.ps1` saatte bir yeni yedekleri `C:UsersAlphAvaxRealmYedek` klasörüne indirir, boyut+sha256 doğrular, saklama planına göre budar (48 saat + 14 gün + 8 hafta). Sunucu anahtarı yine kasadan, yalnız bellekte açılır.
+2. En yeni yedek **Proton Drive** klasörüne de kopyalanır (ikinci kopya; Proton uçtan uca şifreler, son 14 tutulur).
+3. Yedekler `YEDEK_ANAHTAR` ile **şifrelidir**; bilgisayardaki ve bulutdaki kopyalar anahtarsız okunamaz. Anahtarı yedeklerden AYRI saklayın.
+Kurulum: görev `scripts/windows/yedek-gorev-kur.ps1` ile kuruldu (`Realm Yedek`, saatlik, bilgisayar kapalıysa açılınca kaçırılan çalışma yapılır). Sunucuda oyun kurulu olmadığı sürece betik günlüğe "atlandı" yazar, hata vermez. Günlük: `RealmYedekindirme.log`.
+**Sınır:** bilgisayarınız kapalıyken yeni yedek inmez; en kötü durumda dışarıdaki kopya, bilgisayarın son açık olduğu saate kadardır (sunucudaki saatlik yedek bundan bağımsız sürer). Sunucuda çalıştırılan `YEDEK_SONRASI_KOMUT` (rclone/scp ile başka bir buluta) ek güvence olarak hâlâ kullanılabilir.
 
 ## 3. Günlük işletim
 
@@ -119,7 +120,7 @@ DB_FILE=/tmp/tatbikat/realm.db PORT=8099 CHAIN_ENABLED=0 node server/index.js   
 
 ## 7. Sınırlar (dürüst liste)
 - **Yedek anından sonra zincire giden ödemeler için otomatik uzlaştırma aracı yok.** Bölüm 5, adım 3 elle yapılır. En kötü durum haftalık gönderim sınırıyla (`WEEKLY_SEND_CAP_ADA`) ve ödemelerin 5 dakikalık turlarıyla sınırlıdır; yine de bu araç ileride yazılmalıdır (öneri: her ödeme turundan hemen sonra ek yedek almak da pencereyi daralır).
-- Dışarı kopya hedefi sizin seçiminizdir; bu depo bir bulut hesabı kurmaz. Hedef seçilmeden "sunucu kaybı" senaryosu (B) korunmaz.
+- Dışarı kopya bilgisayarınızın açık olmasına bağlıdır (yukarıdaki "Sınır"). Sunucuya oyun henüz kurulmadığı için bu hat uçtan uca henüz **gerçek yedekle denenmedi**: anahtar kasası, bağlantı ve sunucu tarafı adımı denendi ("atlandı" yazdı); indirme, doğrulama ve budama adımlarının parçaları (dogrula.js, buda.js) testlidir, birleşik akış ilk yedekle görülecek.
 - Docker bu geliştirme makinesinde yok: `yedek` servisinin konteyner içinde çalıştığı **denenmedi** (aynı kod gerçek süreç olarak denendi, compose dosyası politika testiyle denetlendi).
 - Yedek, çalışan sunucuyla aynı makinede alınırken disk dolarsa yedek başarısız olur (alarm çalar); disk izleme ayrıca gerekir.
 - Sunucu çalışırken geri yükleme **reddedilir** (araç hedef veritabanının açık olup olmadığını denetler; "kullanımda" hatası verir ve canlı dosyaya dokunmaz). Önce sunucuyu durdurun. Açılmayan/bozuk dosya bu denetimi engellemez.

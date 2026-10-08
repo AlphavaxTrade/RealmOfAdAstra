@@ -274,9 +274,35 @@ try {
     const geri = openDb(bozuk); assert.equal(geri.raw.prepare('SELECT COUNT(*) AS n FROM players').get().n, 4); geri.close();
     ok('hedef veritabanı kullanımdayken (sunucu çalışıyor) geri yükleme reddedilir; bozuk/açılmayan hedef engel olmaz');
   }
+
+  // 14) Bilgisayardaki kopya klasörünü budama aracı (cli/buda.js): saklama planı uygulanır, yetim manifest ve tanınmayan dosyalar doğru ele alınır, --kuru silmez
+  {
+    const klasor = yeniKlasor('y14');
+    const simdi = Date.now();
+    const damga = ms => { const iso = new Date(ms).toISOString(); return iso.slice(0, 10).split('-').join('') + '-' + iso.slice(11, 19).split(':').join(''); };
+    for (let sa = 0; sa < 24 * 40; sa++) { const ad = `realm-${damga(simdi - sa * SAAT)}.db.gz.enc`; fs.writeFileSync(path.join(klasor, ad), 'x'); fs.writeFileSync(path.join(klasor, ad + '.json'), '{}'); }
+    fs.writeFileSync(path.join(klasor, 'realm-20200101-000000.db.gz.enc.json'), '{}');   // yetim manifest (yedek dosyası yok)
+    fs.writeFileSync(path.join(klasor, 'notlarim.txt'), 'bana ait');                       // yedek olmayan dosyaya DOKUNULMAZ
+    const say = () => fs.readdirSync(klasor).filter(f => f.endsWith('.db.gz.enc')).length;
+    const once = say();
+    const kuru = spawnSync(process.execPath, ['server/yedek/cli/buda.js', klasor, '--kuru'], { encoding: 'utf8' });
+    assert.equal(kuru.status, 0, kuru.stdout + kuru.stderr); assert.equal(say(), once, '--kuru hiçbir şey silmez'); assert.match(kuru.stdout, /silinecek/);
+    const gercek = spawnSync(process.execPath, ['server/yedek/cli/buda.js', klasor], { encoding: 'utf8' });
+    assert.equal(gercek.status, 0, gercek.stdout + gercek.stderr);
+    const kalan = yedekleriListele(klasor);
+    assert.ok(kalan.length < once && kalan.length >= 48 && kalan.length <= 70, `saklama planı uygulandı: ${once} → ${kalan.length}`);
+    for (let sa = 0; sa < 48; sa++) assert.ok(kalan.some(x => Math.floor(x.t / SAAT) === Math.floor((simdi - sa * SAAT) / SAAT)), 'son 48 saat duruyor: ' + sa);
+    assert.ok(!fs.existsSync(path.join(klasor, 'realm-20200101-000000.db.gz.enc.json')), 'yetim manifest silindi');
+    assert.ok(fs.existsSync(path.join(klasor, 'notlarim.txt')), 'tanınmayan dosyaya dokunulmadı');
+    const jsonlar = fs.readdirSync(klasor).filter(f => f.endsWith('.json')).length;
+    assert.equal(jsonlar, kalan.length, 'her yedeğin tek manifesti kaldı');
+    const bos = spawnSync(process.execPath, ['server/yedek/cli/buda.js', path.join(gecici, 'yok-klasor')], { encoding: 'utf8' });
+    assert.equal(bos.status, 1, 'olmayan klasör açık hatayla reddedilir');
+    ok('buda aracı: saklama planı bilgisayardaki kopyaya uygulanır, yetim manifest silinir, yabancı dosyaya dokunulmaz, --kuru güvenli');
+  }
 } finally {
   // Windows'ta bir doğrulama patlayınca açık kalan veritabanı dosyası silmeyi engeller; bu temizlik hatası asıl hatayı GİZLEMESİN
   try { fs.rmSync(gecici, { recursive: true, force: true, maxRetries: 3 }); } catch (e) { console.warn('geçici klasör silinemedi (asıl hata yukarıda):', e.code); }
 }
 
-console.log(`\n${passed}/13 yedekleme testi geçti`);
+console.log(`\n${passed}/14 yedekleme testi geçti`);

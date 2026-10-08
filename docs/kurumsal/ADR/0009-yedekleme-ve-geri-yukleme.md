@@ -6,7 +6,7 @@ Tarih: 8 Ekim 2026 · Durum: **Kabul edildi, uygulandı**
 - **Tutarlı kopya:** kayıt dosyası salt okunur açılıp `node:sqlite` `backup()` ile kopyalanır (WAL modunda `cp` bozuk yedek verir). Kopya `integrity_check`'ten geçmeden yedek sayılmaz.
 - **Mühür:** gzip + (varsa) AES-256-GCM, her yedeğin yanında `sha256`, boyut, şema sürümü, oyuncu sayısı, son ödeme numarasını içeren manifest.
 - **Saklama:** saatlik 48 / günlük 14 / haftalık 8 (saf işlev, birim testli). Hedef: RPO ≤ 1 saat.
-- **Dışarı kopya:** `YEDEK_SONRASI_KOMUT` kancası; gizli anahtarlar kancaya verilmez. Hedefi sahibi seçer.
+- **Dışarı kopya:** karar (8 Ekim 2026): sahibinin bilgisayarı sunucudan saatte bir çeker (`scripts/windows/yedek-indir.ps1`, 'Realm Yedek' görevi), sha256 doğrular, budar ve en yeniyi Proton Drive'a kopyalar. Çekme yönü seçildi çünkü sunucuda bilgisayara erişen anahtar durmaz; yedekler şifreli olduğundan kopyalar anahtarsız okunamaz. `YEDEK_SONRASI_KOMUT` (bulutlara itme) ek seçenek olarak durur; gizli anahtarlar kancaya verilmez.
 - **Geri yükleme:** önce doğrula (sha256, çözme, bütünlük), sonra eski dosyayı silmeden yanına al, çalışan sunucu varsa reddet, **ödemeleri ve çekimleri otomatik durdur**.
 
 ## Neden ödemeler durur
