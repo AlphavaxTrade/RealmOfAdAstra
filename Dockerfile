@@ -13,6 +13,8 @@ COPY vite.config.js index.html ./
 COPY css ./css
 COPY js ./js
 COPY public ./public
+# tarayıcı kodu (js/net/online.js) sunucuyla AYNI işlem beyaz listesini içe alır: yalnız bu tek dosya gerekir
+COPY server/actions.js ./server/actions.js
 COPY scripts/sikistir.mjs ./scripts/sikistir.mjs
 RUN npm run build
 

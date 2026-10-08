@@ -122,4 +122,29 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   ok('Caddyfile (HTTPS, 502 koruması, gövde sınırı) ve systemd birimi (sertleştirme, kaynak sınırı, gizli bilgi dosyadan)');
 }
 
-console.log(`\n${passed}/5 dağıtım dosyası politika testi geçti`);
+// 6) Derleme aşaması, tarayıcı kodunun js/ DIŞINA uzanan her içe aktarmasını kopyalıyor (ilk gerçek CI imaj derlemesi bunu yakaladı:
+//    js/net/online.js ../../server/actions.js dosyasını içe alıyor ama Dockerfile kopyalamıyordu → "Could not resolve")
+{
+  const d = oku('Dockerfile');
+  const derle = d.slice(d.indexOf(' AS derle'), d.indexOf(' AS bagimlilik'));
+  const kopyalananlar = derle.split(String.fromCharCode(10)).filter(s => s.startsWith('COPY ') && !s.includes('--from')).flatMap(s => s.split(' ').slice(1, -1)).map(s => (s.startsWith('./') ? s.slice(2) : s).replace(/[/]$/, ''));
+  const jsKokleri = [];
+  const gez = d2 => { for (const e of fs.readdirSync(path.join(kok, d2), { withFileTypes: true })) { const y = d2 + '/' + e.name; if (e.isDirectory()) gez(y); else if (y.endsWith('.js')) jsKokleri.push(y); } };
+  gez('js');
+  const disari = new Set();
+  for (const dosya of jsKokleri) {
+    for (const satir of oku(dosya).split(String.fromCharCode(10))) {
+      const bas = satir.indexOf("from '");
+      if (bas < 0) continue;
+      const hedef = satir.slice(bas + 6, satir.indexOf("'", bas + 6));
+      if (!hedef.startsWith('.')) continue;
+      const cozulen = path.posix.normalize(path.posix.join(path.posix.dirname(dosya), hedef));
+      if (!cozulen.startsWith('js/')) disari.add(cozulen);
+    }
+  }
+  assert.ok(disari.has('server/actions.js'), 'beklenen: tarayıcı kodu server/actions.js dosyasını içe alıyor');
+  for (const h of disari) assert.ok(kopyalananlar.some(k => h === k || h.startsWith(k + '/')), `derle aşaması ${h} dosyasını kopyalamıyor (tarayıcı kodu içe alıyor): Dockerfile'a COPY ekleyin`);
+  ok(`derleme aşaması js/ dışına uzanan ${disari.size} içe aktarmayı kopyalıyor`);
+}
+
+console.log(`\n${passed}/6 dağıtım dosyası politika testi geçti`);
