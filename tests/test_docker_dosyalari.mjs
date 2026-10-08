@@ -72,7 +72,12 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   assert.deepEqual(c.services.yedek.profiles, ['yedek']);
   assert.ok(c.services.caddy.depends_on.realm.condition === 'service_healthy', 'Caddy sunucu sağlıklı olunca başlar');
   assert.deepEqual(c.services.caddy.cap_drop, ['ALL']);
-  assert.ok(fs.existsSync(path.join(kok, 'server/yedek/dongu.js')) || true, 'yedek betiği Aşama 9\'da eklenir');
+  const yedekKomut = c.services.yedek.command;
+  assert.ok(fs.existsSync(path.join(kok, yedekKomut[1])), 'yedek servisinin komutu gerçek bir dosya: ' + yedekKomut.join(' '));
+  assert.ok(c.services.yedek.volumes.some(v => String(v).endsWith(':/yedek')) && c.services.yedek.volumes.some(v => String(v).endsWith(':/data')), 'yedek servisi veriyi okur, yedekleri yazar');
+  assert.ok(r.volumes.includes('./yedek:/yedek:ro'), 'oyun sunucusu yedek klasörünü yalnız OKUR (yedek yaşı ölçüsü için), yazamaz');
+  assert.ok(c.services.yedek.environment.some(e => e === 'YEDEK_KLASORU=/yedek') && r.environment.some(e => e === 'YEDEK_KLASORU=/yedek'));
+  assert.ok(Number.parseInt(c.services.yedek.mem_limit, 10) <= 1024 || /m$/.test(c.services.yedek.mem_limit), 'yedek servisinin bellek sınırı küçük');
   ok('docker-compose.yml: salt okunur dosya sistemi, tüm yetkiler kapalı, kaynak sınırı, yalnız yerel port, günlük döndürme, profiller');
 }
 
@@ -80,12 +85,12 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
 {
   const g = YAML.parse(oku('docker-compose.gizli.yml'));
   const gizliAdlar = DEGISKENLER.filter(d => d[4].includes('G')).map(d => d[1]);
-  const envler = g.services.realm.environment.map(e => e.split('='));
+  const envler = Object.values(g.services).flatMap(s => s.environment).map(e => e.split('='));
   assert.ok(envler.length >= 4);
   for (const [ad, yol] of envler) {
     assert.ok(ad.endsWith('_FILE') && gizliAdlar.includes(ad.replace(/_FILE$/, '')), `${ad} belgelenmiş bir gizli değişkenin _FILE'ı olmalı`);
     const secretAdi = yol.replace('/run/secrets/', '');
-    assert.ok(g.services.realm.secrets.includes(secretAdi), `${secretAdi} servise bağlı olmalı`);
+    assert.ok(Object.values(g.services).some(s => s.secrets.includes(secretAdi)), `${secretAdi} bir servise bağlı olmalı`);
     assert.match(g.secrets[secretAdi].file, /^\.\/secrets\/.+\.txt$/, 'secret dosyaları ./secrets/ altında');
   }
   const gitignore = oku('.gitignore');
@@ -107,6 +112,13 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   assert.ok(!/^MemoryDenyWriteExecute=true/m.test(u), 'V8 JIT için MemoryDenyWriteExecute AÇILMAMALI');
   assert.equal(yonerge('KillSignal'), 'SIGTERM');
   assert.ok((u.match(/^LoadCredential=/gm) || []).length >= 4 && (u.match(/_FILE=\/run\/credentials\/realm\.service\//g) || []).length >= 4, 'gizli bilgiler LoadCredential ile dosyadan');
+  const y = oku('deploy/realm-yedek.service'), z = oku('deploy/realm-yedek.timer');
+  const yy = ad => { const s = y.split(String.fromCharCode(10)).find(x => x.startsWith(ad + '=')); return s ? s.slice(ad.length + 1) : undefined; };
+  assert.equal(yy('Type'), 'oneshot'); assert.equal(yy('User'), 'realm'); assert.equal(yy('NoNewPrivileges'), 'true'); assert.equal(yy('ProtectSystem'), 'strict');
+  assert.ok(yy('ExecStart').endsWith('server/yedek/cli/yedekle.js') && fs.existsSync(path.join(kok, 'server/yedek/cli/yedekle.js')), 'yedek birimi gerçek betiği çalıştırır');
+  assert.ok(yy('ReadWritePaths').includes('/srv/realm/yedek') && yy('MemoryMax'), 'yazılabilir yol ve kaynak sınırı');
+  assert.ok(/^OnCalendar=hourly$/m.test(z) && /^Persistent=true$/m.test(z), 'saatlik ve kaçan yedek açılışta alınır');
+  assert.ok(!/^LoadCredential=yedek/m.test(y), 'şifreli yedek varsayılan KAPALI (anahtar dosyası yoksa birim açılmaz); açmak için yorum satırı');
   ok('Caddyfile (HTTPS, 502 koruması, gövde sınırı) ve systemd birimi (sertleştirme, kaynak sınırı, gizli bilgi dosyadan)');
 }
 

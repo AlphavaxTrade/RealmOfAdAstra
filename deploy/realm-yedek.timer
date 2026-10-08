@@ -1,0 +1,13 @@
+# Saatlik yedek zamanlayıcısı (kurumsal A9.5). Etkinleştir: sudo systemctl enable --now realm-yedek.timer
+# Durum: systemctl list-timers realm-yedek.timer ; son çalışma: journalctl -u realm-yedek -n 50
+[Unit]
+Description=Realm of AdAstra saatlik yedek
+
+[Timer]
+OnCalendar=hourly
+# Sunucu kapalıyken kaçan yedek açılışta hemen alınır
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target

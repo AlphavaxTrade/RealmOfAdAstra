@@ -1,0 +1,40 @@
+# systemd birimi — saatlik yedek (kurumsal A9.5), Docker KULLANMAYAN kurulum için. realm-yedek.timer çağırır. Yol: /etc/systemd/system/realm-yedek.service
+#   sudo install -d -o realm -g realm -m 700 /srv/realm/yedek
+# Şifreli yedek istiyorsanız (önerilir; anahtarı veritabanından AYRI bir yerde de saklayın):
+#   openssl rand -hex 32 | sudo tee /etc/realm/yedek_anahtar >/dev/null && sudo chmod 600 /etc/realm/yedek_anahtar
+#   ve aşağıdaki iki "ŞİFRELİ" satırının başındaki # işaretini kaldırın.
+# Dışarı kopyalama (sunucu kaybına karşı ŞART): Environment=YEDEK_SONRASI_KOMUT=rclone copy "$YEDEK_DOSYA" uzak:realm-yedek  (ve aynısını "$YEDEK_MANIFEST" için)
+[Unit]
+Description=Realm of AdAstra tutarlı yedek
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=realm
+Group=realm
+WorkingDirectory=/srv/realm
+Environment=NODE_ENV=production
+Environment=DB_FILE=/srv/realm/data/realm.db
+Environment=YEDEK_KLASORU=/srv/realm/yedek
+#ŞİFRELİ LoadCredential=yedek_anahtar:/etc/realm/yedek_anahtar
+#ŞİFRELİ Environment=YEDEK_ANAHTAR_FILE=/run/credentials/realm-yedek.service/yedek_anahtar
+ExecStart=/usr/bin/node server/yedek/cli/yedekle.js
+TimeoutStartSec=15min
+
+# ── Sertleştirme ── (kayıt dosyası salt okunur açılır ama WAL modunda -shm dosyasına yazılabilmesi için klasörü yazılabilir)
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/realm/data /srv/realm/yedek
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+MemoryMax=1G
+TasksMax=64

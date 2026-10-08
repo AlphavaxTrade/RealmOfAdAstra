@@ -4,6 +4,7 @@
 #   printf '%s' 'smtp://kullanici:sifre@posta.ornek.com:587' > secrets/smtp_url.txt
 #   printf '%s' '0x<oyun cüzdanı özel anahtarı>' > secrets/game_wallet_private_key.txt   # yoksa bu secret'ı aşağıdan sil (ödemeler elle onaylanır)
 #   openssl rand -hex 32 > secrets/kasa_master_key.txt      # KAYBETME: yedeğini AYRI bir yerde sakla (veritabanıyla birlikte değil)
+#   openssl rand -hex 32 > secrets/yedek_anahtar.txt         # isteğe bağlı: yedekleri şifreler. KAYBETME: veritabanından AYRI yerde de sakla; yoksa bu secret'ı sil
 #   chmod 600 secrets/*
 #   docker compose -f docker-compose.yml -f docker-compose.gizli.yml up -d --build
 # secrets/ klasörü .gitignore ve .dockerignore'dadır; asla depoya girmez. Bu dosyada kullanmadığın secret varsa HEM environment HEM secrets bölümünden sil.
@@ -19,6 +20,11 @@ services:
       - smtp_url
       - game_wallet_private_key
       - kasa_master_key
+  yedek:
+    environment:
+      - YEDEK_ANAHTAR_FILE=/run/secrets/yedek_anahtar
+    secrets:
+      - yedek_anahtar
 
 secrets:
   admin_token:
@@ -29,3 +35,5 @@ secrets:
     file: ./secrets/game_wallet_private_key.txt
   kasa_master_key:
     file: ./secrets/kasa_master_key.txt
+  yedek_anahtar:
+    file: ./secrets/yedek_anahtar.txt

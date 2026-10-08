@@ -81,3 +81,27 @@ groups:
         annotations:
           ozet: "Veritabanı 5 GB'ı aştı"
           yapilacak: "docs/kurumsal/ADR/0001-veritabani-sqlite.md eşikleri: PostgreSQL geçişini değerlendir; olay/fiyat saklama sürelerini kontrol et."
+
+  - name: realm-yedek
+    rules:
+      - alert: RealmYedekEski
+        expr: realm_yedek_son_yas_saniye > 7200
+        for: 5m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "Son başarılı yedek 2 saatten eski (hedef: en çok 1 saatlik veri kaybı)"
+          yapilacak: "Yedek servisini kontrol et: docker compose logs yedek / systemctl status realm-yedek.timer. Disk dolu olabilir; son-durum.json içindeki sonHata'ya bak."
+      - alert: RealmYedekBasarisiz
+        expr: realm_yedek_son_deneme_basarili == 0
+        for: 10m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "Son yedek denemesi başarısız (yedek alınamadı ya da dışarı kopyalama komutu hata verdi)"
+          yapilacak: "klasördeki son-durum.json: sonHata (yedek alınamadı) ya da hookHata (kopyalama komutu). Dışarı kopya yoksa sunucu kaybında yedekler de gider."
+      - alert: RealmYedekHicYok
+        expr: absent(realm_yedek_son_yas_saniye)
+        for: 3h
+        labels: { onem: kritik }
+        annotations:
+          ozet: "Yedek ölçüsü yok: YEDEK_KLASORU tanımsız ya da hiç yedek alınmamış"
+          yapilacak: "docs/kurumsal/FELAKET_KURTARMA.md → kurulum. Yedeksiz çalışmak tek disk arızasında bütün oyuncu verisini ve ödeme kayıtlarını kaybettirir."

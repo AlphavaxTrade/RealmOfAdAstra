@@ -88,7 +88,14 @@ export function loadConfig(env = process.env) {
     testMode: env.TEST_MODE === '1',                               // 🧪 deneme sunucusu: test menüsü + bot rakip (GERÇEKTE KAPALI)
     rateLimitPerSec: num('RATE_LIMIT_PER_SEC', 15),
     ipRateLimitPerSec: num('IP_RATE_LIMIT_PER_SEC', 40),            // IP başına tüm istekler (kimlik denetiminden önce)
-    publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5)        // giriş/kayıt sayfaları (IP başına)
+    publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5),       // giriş/kayıt sayfaları (IP başına)
+    // Yedekleme (server/yedek/, docs/kurumsal/FELAKET_KURTARMA.md): klasör boşsa otomatik yedek ve yedek ölçüleri kapalı
+    yedek: {
+      klasor: (env.YEDEK_KLASORU || '').trim(),
+      aralikDk: num('YEDEK_ARALIK_DK', 60, { min: 1, max: 1440 }),
+      anahtar: gizli('YEDEK_ANAHTAR'),                              // 64 hex: doluysa yedekler AES-256-GCM ile şifrelenir (KAYBEDİLMEMELİ)
+      sonrasiKomut: (env.YEDEK_SONRASI_KOMUT || '').trim()          // her yedekten sonra çalışır (dışarı kopyalama); YEDEK_DOSYA ve YEDEK_MANIFEST verilir
+    }
   };
 }
 
@@ -109,6 +116,8 @@ export function dogrula(cfg, env = process.env) {
   if (cfg.kasaMasterKey && !/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey)) hatalar.push('KASA_MASTER_KEY 64 haneli onaltılık olmalı (openssl rand -hex 32)');
   if (cfg.paymentsContract && !cfg.kasaMasterKey) hatalar.push('KASA_MASTER_KEY gerekli: PAYMENTS_CONTRACT tanımlı (Oyun Kasası anahtarları şifrelenemez)');
   if (cfg.reserveWallet && !adres(cfg.reserveWallet)) hatalar.push('RESERVE_WALLET geçerli bir adres değil');
+  if (!cfg.yedek.klasor) uyarilar.push('YEDEK_KLASORU yok: otomatik yedek ve yedek ölçüleri KAPALI (felaket durumunda veri kaybı riski)');
+  if (cfg.yedek.anahtar && !/^[0-9a-fA-F]{64}$/.test(cfg.yedek.anahtar)) hatalar.push('YEDEK_ANAHTAR 64 haneli onaltılık olmalı (openssl rand -hex 32)');
   if (!cfg.reserveWallet && cfg.chainEnabled && cfg.gameWalletKey) uyarilar.push('RESERVE_WALLET yok: oyun cüzdanındaki fazla ADA yedek (donanım) cüzdana aktarılmaz');
   return { hatalar, uyarilar };
 }

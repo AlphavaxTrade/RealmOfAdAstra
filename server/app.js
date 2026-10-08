@@ -31,6 +31,7 @@ import http from 'node:http';
 import { createPromo } from './promo.js';
 import { tokenOzeti } from './oturum.js';
 import { createMetrik } from './metrik.js';
+import { sonYedekYasiSn, sonDenemeBasarili } from './yedek/yedekle.js';
 import { istekBaglami } from './log.js';
 import { createStatic } from './statik.js';
 import genelRotalar from './rotalar/genel.js';
@@ -179,6 +180,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   metrik.gauge('realm_db_dosya_bayt', 'Ana veritabanı dosyasının boyutu (WAL hariç)', () => db.raw.prepare('PRAGMA page_count').get().page_count * db.raw.prepare('PRAGMA page_size').get().page_size);
   metrik.gauge('realm_odeme_bekleyen', 'Gönderilmeyi bekleyen çekim/ödeme sayısı', sayiSorgu("SELECT COUNT(*) AS n FROM payouts WHERE status = 'pending'"));
   metrik.gauge('realm_kasa_islem_bekleyen', 'Oyun Kasası kuyruğunda bekleyen işlem sayısı', sayiSorgu("SELECT COUNT(*) AS n FROM kasa_ops WHERE status = 'pending'"));
+  if (cfg.yedek?.klasor) {   // yedek klasörü görünüyorsa (realm kapsayıcısına salt okunur bağlanır) yedek sağlığı da ölçülür
+    metrik.gauge('realm_yedek_son_yas_saniye', 'Son BAŞARILI yedeğin üstünden geçen süre (yedek alınmıyorsa büyür; hiç yedek yoksa ölçü yok)', () => sonYedekYasiSn(cfg.yedek.klasor, clock()));
+    metrik.gauge('realm_yedek_son_deneme_basarili', 'Son yedek denemesi başarılı mı (1/0; sonrası komutu hatası da 0)', () => sonDenemeBasarili(cfg.yedek.klasor));
+  }
   if (typeof world.tickDurumu === 'function') {
     const tur = f => () => { const t = world.tickDurumu(); return t ? f(t) : null; };
     metrik.gauge('realm_zamanlayici_tur_toplam', 'Biten dünya zamanlayıcı turu sayısı', tur(t => t.tur), 'counter');

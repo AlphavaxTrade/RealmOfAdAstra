@@ -2,6 +2,7 @@
 // her kuralda önem + özet + yapılacak var, adlar tekil. (Ölçü adı kodda değişirse alarm sessizce ölürdü: bu test onu yakalar.)
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
@@ -17,7 +18,9 @@ const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const kurallar = YAML.parse(fs.readFileSync(path.join(kok, 'deploy/alarm-kurallari.yml'), 'utf8'));
 
 // Gerçek uygulamanın ölçü adları (TYPE satırları); histogramın bucket/sum/count ekleri de geçerli
-const cfg = { ...loadConfig({}), dbFile: ':memory:', testMode: true };
+const yedekKlasor = fs.mkdtempSync(path.join(os.tmpdir(), 'alarm-yedek-'));
+fs.writeFileSync(path.join(yedekKlasor, 'son-durum.json'), JSON.stringify({ sonBasariMs: Date.now() - 1000 }));   // yedek ölçüleri değer üretsin
+const cfg = { ...loadConfig({}), dbFile: ':memory:', testMode: true, yedek: { klasor: yedekKlasor, aralikDk: 60, anahtar: '', sonrasiKomut: '' } };
 const db = openDb(':memory:');
 const engine = await createEngine(db, { testMode: true });
 const world = createWorld({ db, engine, chain: null, cfg, log: { log() {}, warn() {}, error() {} } });
@@ -25,12 +28,13 @@ const app = createApp({ db, engine, world, accounts: null, chain: null, cfg, log
 app.metrik.istek('GET /api/health', 200, 0.01);
 const metin = app.metrik.metin();
 app.metrik.durdur();
+fs.rmSync(yedekKlasor, { recursive: true, force: true });
 const adlar = new Set([...metin.matchAll(/^# TYPE (\S+) /gm)].map(m => m[1]));
 for (const h of [...adlar].filter(a => /sure_saniye$/.test(a))) for (const ek of ['_bucket', '_sum', '_count']) adlar.add(h + ek);
 
 {
   const tum = kurallar.groups.flatMap(g => g.rules);
-  assert.ok(tum.length >= 8, 'en az 8 kural');
+  assert.ok(tum.length >= 13, 'en az 13 kural');
   const adlari = tum.map(k => k.alert);
   assert.equal(new Set(adlari).size, adlari.length, 'uyarı adları tekil');
   for (const k of tum) {

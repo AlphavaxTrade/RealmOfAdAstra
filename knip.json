@@ -9,7 +9,8 @@
     "contracts/*.mjs",
     "scripts/**/*.{mjs,cjs}",
     "public/boot.js",
-    "tests/altin/*.mjs"
+    "tests/altin/*.mjs",
+    "server/yedek/cli/*.js"
   ],
   "project": [
     "js/**/*.js",

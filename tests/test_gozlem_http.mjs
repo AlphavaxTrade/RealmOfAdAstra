@@ -1,6 +1,9 @@
 // Gözlemlenebilirlik uçları (kurumsal A7.3, A7.6, A7.7): istek kimliği (X-Request-Id), istek günlüğü, 500'de kimlik,
 // /api/ready (veritabanı + zamanlayıcı nabzı), /metrics (yönetici ya da yalnız yerel adres; vekil arkasında kapalı).
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import http from 'node:http';
 import { openDb } from '../server/db.js';
 import { createEngine } from '../server/engine.js';
@@ -171,4 +174,24 @@ async function baslat({ seviye = 'debug', worldEk = null, cfgEk = {} } = {}) {
   ok('zamanlayıcı nabzı: tur/süre/hata sayacı, hata sonrası kilit açılır, yaş büyür');
 }
 
-console.log(`\n${passed}/7 gözlem ucu testi geçti`);
+// 8) Yedek ölçüleri (yalnız YEDEK_KLASORU tanımlıysa): son başarılı yedeğin yaşı ve son denemenin sonucu
+{
+  const klasor = fs.mkdtempSync(path.join(os.tmpdir(), 'gozlem-yedek-'));
+  const s0 = await baslat();
+  assert.ok(!(await iste(s0.base, '/metrics')).govde.includes('realm_yedek_'), 'klasör tanımsızken yedek ölçüsü yok');
+  s0.kapat();
+  const s = await baslat({ cfgEk: { yedek: { klasor, aralikDk: 60, anahtar: '', sonrasiKomut: '' } } });
+  assert.ok(!(await iste(s.base, '/metrics')).govde.includes('realm_yedek_son_yas_saniye'), 'hiç yedek yokken ölçü yazılmaz (alarm absent() ile yakalar)');
+  fs.writeFileSync(path.join(klasor, 'son-durum.json'), JSON.stringify({ sonBasariMs: Date.now() - 120_000 }));
+  let m = (await iste(s.base, '/metrics')).govde;
+  const yas = Number(m.match(/^realm_yedek_son_yas_saniye ([0-9]+)$/m)[1]);
+  assert.ok(yas >= 119 && yas <= 125, 'yaş ≈ 120 sn: ' + yas);
+  assert.match(m, /^realm_yedek_son_deneme_basarili 1$/m);
+  fs.writeFileSync(path.join(klasor, 'son-durum.json'), JSON.stringify({ sonBasariMs: Date.now() - 120_000, sonHataMs: Date.now(), sonHata: 'disk dolu' }));
+  m = (await iste(s.base, '/metrics')).govde;
+  assert.match(m, /^realm_yedek_son_deneme_basarili 0$/m, 'son deneme hatalıysa 0');
+  s.kapat(); fs.rmSync(klasor, { recursive: true, force: true });
+  ok('yedek ölçüleri: klasör tanımsızken yok; yaş ve son deneme sonucu doğru');
+}
+
+console.log(`\n${passed}/8 gözlem ucu testi geçti`);

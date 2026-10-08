@@ -25,6 +25,15 @@
 | `LOG_FORMAT` | Günlük biçimi: json (makine okur, üretim için) \| duz (geliştirici: saat SEVİYE ileti) | json |
 | `SENTRY_DSN` | İsteğe bağlı hata izleme. Doluysa ve sunucuda npm i @sentry/node yapılmışsa hatalar Sentry hizmetine de gider; paket yoksa yalnız uyarılır | (boş: kapalı) |
 
+## Yedekleme
+
+| Değişken | Açıklama | Varsayılan |
+|---|---|---|
+| `YEDEK_KLASORU` | Yedeklerin yazıldığı klasör (Docker içinde /yedek). Boşsa otomatik yedek ve yedek ölçüleri kapalı; üretimde uyarı verilir | (boş: kapalı) |
+| `YEDEK_ARALIK_DK` | Yedekler arası dakika (1-1440). Hedef: en çok 1 saatlik veri kaybı (RPO) | 60 |
+| 🔒 `YEDEK_ANAHTAR` | 64 hex: doluysa yedekler AES-256-GCM ile şifrelenir. KAYBEDERSENİZ şifreli yedekler açılamaz: veritabanından AYRI bir yerde saklayın | (boş: şifresiz) |
+| `YEDEK_SONRASI_KOMUT` | Her başarılı yedekten sonra çalışan kabuk komutu (dışarı kopyalama: rclone/scp). YEDEK_DOSYA ve YEDEK_MANIFEST ortamda verilir; gizli anahtarlar verilmez | (boş) |
+
 ## Hız sınırı
 
 | Değişken | Açıklama | Varsayılan |

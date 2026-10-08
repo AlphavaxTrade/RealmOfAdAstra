@@ -16,12 +16,14 @@ services:
     environment:
       - NODE_ENV=production
       - DB_FILE=/data/realm.db      # kayıt dosyası kalıcı hacimde (yeniden kurulumda silinmez)
+      - YEDEK_KLASORU=/yedek        # yalnız OKUR: /metrics'te yedek yaşı ve son deneme sonucu (yedekleri yazan 'yedek' servisidir)
     ports:
       # Yalnız aynı makinedeki HTTPS katmanına açık; dışarıdan doğrudan erişilemez.
       # (Böylece ziyaretçi adresi sahtelenip hız sınırları atlatılamaz; TRUST_PROXY=1 ile birlikte kullan.)
       - "127.0.0.1:8080:8080"
     volumes:
       - ./data:/data
+      - ./yedek:/yedek:ro
     # ── Sertleştirme: yazılabilir tek yer /data (+ /tmp RAM'de); tüm Linux yetkileri kapalı; yetki yükseltme yasak ──
     read_only: true
     tmpfs:

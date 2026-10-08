@@ -37,7 +37,7 @@ try {
   const port = 18500 + Math.floor(Math.random() * 400);
   const yonetici = crypto.randomBytes(24).toString('hex');
   const env = { ...process.env, NODE_ENV: 'production', PORT: String(port), HOST: '127.0.0.1', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', ADMIN_TOKEN: yonetici,
-    SMTP_URL: 'smtp://k:s@127.0.0.1:2525', DB_FILE: path.join(tmp, 'veri', 'realm.db'), CHAIN_ENABLED: '0',
+    SMTP_URL: 'smtp://k:s@127.0.0.1:2525', DB_FILE: path.join(tmp, 'veri', 'realm.db'), YEDEK_KLASORU: path.join(tmp, 'yedek'), CHAIN_ENABLED: '0',
     TEST_MODE: '', PAROLA_HAFIF: '', GAME_WALLET_PRIVATE_KEY: '', KASA_MASTER_KEY: '', PAYMENTS_CONTRACT: '', RESERVE_WALLET: '', ADMIN_EMAIL: '' };
   sunucu = spawn(process.execPath, ['server/index.js'], { cwd: tmp, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let cikti = ''; sunucu.stdout.on('data', d => { cikti += d; }); sunucu.stderr.on('data', d => { cikti += d; });
@@ -59,6 +59,12 @@ try {
     const adm2 = await fetch(`http://127.0.0.1:${port}/api/admin/status`, { headers: { Authorization: 'Bearer ' + yonetici } });
     kontrol('yönetici ucu doğru şifreyle 200', adm2.status === 200); await adm2.arrayBuffer();
     kontrol('günlükte gizli değer yok', !cikti.includes(yonetici) && !/smtp:\/\/k:s@/.test(cikti));
+    // Yedek araçları üretim ağacında, ÇALIŞAN sunucunun veritabanıyla: yedekle → derin doğrula → /metrics'te yedek yaşı
+    const cli = ad => spawnSync(process.execPath, ['server/yedek/cli/' + ad], { cwd: tmp, env, encoding: 'utf8', timeout: 120000 });
+    const y = cli('yedekle.js'), dg = cli('dogrula.js');
+    kontrol('yedek aracı üretim ağacında çalışan sunucunun verisini yedekler ve derin doğrular', y.status === 0 && dg.status === 0, y.status === 0 && dg.status === 0 ? '' : (y.stdout + y.stderr + dg.stdout + dg.stderr).slice(0, 300));
+    const met = await fetch(`http://127.0.0.1:${port}/metrics`, { headers: { Authorization: 'Bearer ' + yonetici } }); const metin = await met.text();
+    kontrol('/metrics yedek yaşını gösterir', met.status === 200 && /^realm_yedek_son_yas_saniye [0-9]+$/m.test(metin));
   }
 } catch (e) {
   kontrol('betik hatasız çalıştı', false, e.message);

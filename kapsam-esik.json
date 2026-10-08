@@ -1,8 +1,8 @@
 {
   "toplam": {
-    "lines": 90.2,
-    "branches": 68.7,
-    "functions": 86.2
+    "lines": 90.3,
+    "branches": 69,
+    "functions": 86.5
   },
   "dosyalar": {
     "server/index.js": {
@@ -46,6 +46,21 @@
     },
     "server/izleme.js": {
       "lines": 98
+    },
+    "server/yedek/saklama.js": {
+      "lines": 98
+    },
+    "server/yedek/sifre.js": {
+      "lines": 98
+    },
+    "server/yedek/yedekle.js": {
+      "lines": 98
+    },
+    "server/yedek/geriyukle.js": {
+      "lines": 98
+    },
+    "server/yedek/dongu.js": {
+      "lines": 68
     }
   }
 }

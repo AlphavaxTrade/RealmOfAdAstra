@@ -15,6 +15,7 @@ Group=realm
 WorkingDirectory=/srv/realm
 Environment=NODE_ENV=production
 Environment=DB_FILE=/srv/realm/data/realm.db
+Environment=YEDEK_KLASORU=/srv/realm/yedek
 EnvironmentFile=-/srv/realm/server/.env
 # Gizli değerler dosyadan: systemd bunları /run/credentials/realm.service/ altına yalnız bu servise açar
 LoadCredential=admin_token:/etc/realm/admin_token

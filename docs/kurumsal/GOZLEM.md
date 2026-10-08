@@ -32,6 +32,7 @@ Erişim: **yönetici şifresiyle** (`Authorization: Bearer …`) ya da **yalnız
 | `realm_odeme_bekleyen`, `realm_kasa_islem_bekleyen` | ölçü | para kuyrukları |
 | `realm_zamanlayici_tur_toplam`, `_hata_toplam` | sayaç | |
 | `realm_zamanlayici_son_sure_saniye`, `_son_bitis_yas_saniye` | ölçü | yaş büyüyorsa tur takılmış |
+| `realm_yedek_son_yas_saniye`, `realm_yedek_son_deneme_basarili` | ölçü | yalnız `YEDEK_KLASORU` tanımlıysa; hiç yedek yoksa ölçü yazılmaz (alarm `absent()` ile yakalar). Bkz. `FELAKET_KURTARMA.md` |
 
 Rota çeşidi en çok 80 ile sınırlıdır (fazlası `diger`), bellek ve tarama boyutu sınırsız büyümez.
 
@@ -41,7 +42,7 @@ Rota çeşidi en çok 80 ile sınırlıdır (fazlası `diger`), bellek ve tarama
 
 ## 5. Uyarılar
 - **E-posta:** dünya zamanlayıcısı üst üste 2 tur hata verirse `ADMIN_EMAIL`'e uyarı gider; aynı konu **saatte en çok bir** kez (`server/uyari.js`). Adres boşsa kapalıdır.
-- **Prometheus kuralları:** `deploy/alarm-kurallari.yml` (10 kural: sunucu kapalı, zamanlayıcı takıldı/hata veriyor, %5xx oranı, yavaş istek, olay döngüsü, ödeme/kasa kuyruğu birikti, bellek, veritabanı boyutu). Her kuralın baktığı ölçü adı `tests/test_alarm_kurallari.mjs` ile gerçek `/metrics` çıktısına karşı denetlenir; ölçü adı değişirse test kırılır, alarm sessizce ölmez.
+- **Prometheus kuralları:** `deploy/alarm-kurallari.yml` (13 kural: sunucu kapalı, zamanlayıcı takıldı/hata veriyor, %5xx oranı, yavaş istek, olay döngüsü, ödeme/kasa kuyruğu birikti, bellek, veritabanı boyutu, yedek eski/başarısız/hiç yok). Her kuralın baktığı ölçü adı `tests/test_alarm_kurallari.mjs` ile gerçek `/metrics` çıktısına karşı denetlenir; ölçü adı değişirse test kırılır, alarm sessizce ölmez.
 - **Hata izleme (isteğe bağlı):** `SENTRY_DSN` dolu ve sunucuda `npm i @sentry/node` yapılmışsa hatalar Sentry hizmetine de gider (kişisel veri ve performans izi kapalı). Paket yoksa yalnız uyarı yazılır, sunucu düşmez. Paket bilerek repo bağımlılığı değildir (üretim kurulumu küçük kalsın).
 
 ## 6. Pratik komutlar

@@ -91,7 +91,7 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
 // 5) Üretimde başlatma doğrulaması (kurumsal A6.2): eksik/yanlış ayar sessizce çalışmaz, başlamadan açık hata verir
 {
   const iyi = { NODE_ENV: 'production', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', ADMIN_TOKEN: 'a'.repeat(48), SMTP_URL: 'smtp://k:s@posta.ornek.com:587', DB_FILE: '/data/realm.db',   // gizli-tara: izin
-    GAME_WALLET_PRIVATE_KEY: '0x' + 'ab'.repeat(32), KASA_MASTER_KEY: 'cd'.repeat(32), PAYMENTS_CONTRACT: '0x' + '12'.repeat(20), RESERVE_WALLET: '0x' + '34'.repeat(20) };   // gizli-tara: izin
+    GAME_WALLET_PRIVATE_KEY: '0x' + 'ab'.repeat(32), KASA_MASTER_KEY: 'cd'.repeat(32), PAYMENTS_CONTRACT: '0x' + '12'.repeat(20), RESERVE_WALLET: '0x' + '34'.repeat(20), YEDEK_KLASORU: '/yedek' };   // gizli-tara: izin
   const d0 = dogrula(loadConfig(iyi), iyi);
   assert.deepEqual(d0.hatalar, [], 'tam ayarlı üretim yapılandırması hatasız: ' + d0.hatalar.join('; '));
   assert.deepEqual(d0.uyarilar, []);
@@ -106,10 +106,13 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   hata({ GAME_WALLET_PRIVATE_KEY: '0x123' }, /GAME_WALLET_PRIVATE_KEY.*biçim/);
   hata({ RESERVE_WALLET: 'adres-degil' }, /RESERVE_WALLET/);
   hata({ TEST_MODE: '1' }, /TEST_MODE.*üretim/i);
+  hata({ YEDEK_ANAHTAR: 'kisa' }, /YEDEK_ANAHTAR.*64/);
+  assert.throws(() => loadConfig({ YEDEK_ARALIK_DK: '0' }), /YEDEK_ARALIK_DK/, 'yedek aralığı 1-1440 dakika');
   // Uyarılar (başlamayı engellemez)
   assert.ok(dene({ TRUST_PROXY: null }).uyarilar.some(u => /TRUST_PROXY/.test(u)), 'https ama TRUST_PROXY yok: uyarı');
   assert.ok(dene({ RESERVE_WALLET: null }).uyarilar.some(u => /RESERVE_WALLET/.test(u)));
   assert.ok(dene({ ADMIN_TOKEN: null }).uyarilar.some(u => /ADMIN_TOKEN/.test(u)), 'yönetici şifresi yoksa panel kapalı: uyarı');
+  assert.ok(dene({ YEDEK_KLASORU: null }).uyarilar.some(u => /YEDEK_KLASORU/.test(u)), 'yedek klasörü yoksa otomatik yedek kapalı: uyarı');
   // NODE_ENV=production DEĞİLSE (geliştirme/deneme) hiçbir üretim kuralı uygulanmaz
   const gelistirme = { PUBLIC_URL: 'http://localhost:8080', DB_FILE: ':memory:' };
   assert.deepEqual(dogrula(loadConfig(gelistirme), gelistirme), { hatalar: [], uyarilar: [] });
