@@ -21,7 +21,10 @@
     "yuk-kontrol": "node scripts/yuk/kontrol.mjs",
     "kontrol": "node scripts/kontrol.mjs",
     "hizli": "node scripts/kontrol.mjs --hizli",
-    "hook-kur": "node scripts/hook-kur.mjs"
+    "hook-kur": "node scripts/hook-kur.mjs",
+    "sim": "node scripts/simulasyon/yil.mjs",
+    "senaryo-kur": "node scripts/senaryo/kur.mjs",
+    "tarayici": "node scripts/tarayici/senaryo.mjs"
   },
   "devDependencies": {
     "acorn": "^8.19.0",
