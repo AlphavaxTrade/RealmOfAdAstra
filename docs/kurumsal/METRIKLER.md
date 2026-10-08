@@ -5,24 +5,26 @@ Her aşamanın başında ve sonunda doldurulur. "Önce" sütunu 8 Ekim 2026'da, 
 
 | Metrik | Önce (Aşama 0) | Aşama 1 | Aşama 2 | Aşama 3 | Aşama 4 | Aşama 5 | Aşama 6 | Aşama 7 | Aşama 8 | Aşama 9 | Aşama 10 |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Test dosyası (geçen/toplam) | 76/76 | 76/76 (1 test eklendi: Rıhtım) | | | | | | | | | |
-| `npm test` süresi | 50,6 sn | 46,7 sn | | | | | | | | | |
-| Kapsam (satır, `server/`) | ölçülmüyor | ölçülmüyor | | | | | | | | | |
-| `npm run build` süresi | 9,3 sn | 8,9 sn | | | | | | | | | |
-| `dist/` boyutu | 14 MB (en büyük parça: phaser 1,46 MB, gzip 335 KB) | 14 MB (değişmedi) | | | | | | | | | |
-| Üretim kurulumu (`npm ci --omit=dev`) | 584 MB (three, phaser dahil, ayrım yoktu) | **25 MB**, 38 paket | | | | | | | | | |
-| Geliştirme kurulumu (`node_modules`) | 584 MB | 584 MB (+knip) | | | | | | | | | |
-| `npm audit` (kilit dosyasının tamamı) | 42 (2 düşük, 9 orta, 26 yüksek, 5 kritik) | 42 | | | | | | | | | |
-| **Gerçek üretim açığı**\* | (ölçülmemişti) | **1 yüksek** (`nodemailer`) | | | | | | | | | |
-| Docker imaj boyutu | ölçülemedi (Docker kurulu değil) | ölçülemedi | | | | | | | | | |
-| Yük testi p95 / bellek | ölçülmedi | ölçülmedi | | | | | | | | | |
-| Kullanılmayan dosya (knip) | ölçülmemişti | 0; kullanılmayan paket 0; gereksiz dışa açılmış fonksiyon 18 | | | | | | | | | |
-| Büyük dosyalar (satır) | `js/app.js` 8687, `js/gameState.js` 7994, `server/world.js` 732, `server/app.js` 495 | aynı | | | | | | | | | |
+| Test dosyası (geçen/toplam) | 76/76 | 76/76 (1 test eklendi: Rıhtım) | | | | | | | | | **115/115** |
+| `npm test` süresi | 50,6 sn | 46,7 sn | | | | | | | | | ≈115 sn (kapsam ölçümüyle) |
+| Kapsam (satır, `server/`) | ölçülmüyor | ölçülmüyor | | | | | | | | | **%90,3** satır · %69,5 dal · %86,5 işlev (tüm ölçülen kod; eşikler `kapsam-esik.json`) |
+| `npm run build` süresi | 9,3 sn | 8,9 sn | | | | | | | | | 7-16 sn (ön sıkıştırma dahil) |
+| `dist/` boyutu | 14 MB (en büyük parça: phaser 1,46 MB, gzip 335 KB) | 14 MB (değişmedi) | | | | | | | | | 15 MB (.br/.gz kopyalarla; istemciye ≈4,7 MB daha az gider) |
+| Üretim kurulumu (`npm ci --omit=dev`) | 584 MB (three, phaser dahil, ayrım yoktu) | **25 MB**, 38 paket | | | | | | | | | **21 MB** `node_modules` (39 paket); dist dahil çalışma ağacı 36,6 MB |
+| Geliştirme kurulumu (`node_modules`) | 584 MB | 584 MB (+knip) | | | | | | | | | 628 MB |
+| `npm audit` (kilit dosyasının tamamı) | 42 (2 düşük, 9 orta, 26 yüksek, 5 kritik) | 42 | | | | | | | | | ölçülmedi (yöntem değişti: dipnot) |
+| **Gerçek üretim açığı**\* | (ölçülmemişti) | **1 yüksek** (`nodemailer`) | | | | | | | | | **0** (39 paket; `nodemailer` 6→10) |
+| Docker imaj boyutu | ölçülemedi (Docker kurulu değil) | ölçülemedi | | | | | | | | | ölçülemedi (Docker yok); CI `imaj` işi ve Trivy ilk çalışmada |
+| Yük testi p95 / bellek | ölçülmedi | ölçülmedi | | | | | | | | | 500 eşzamanlı: durum ucu 828 istek/sn (+%30), karma 722; 2.000 eşzamanlı: 0 hata, RSS ≤ 427 MB; 30 dk: 0 hata, RSS düz ≈229 MB |
+| Kullanılmayan dosya (knip) | ölçülmemişti | 0; kullanılmayan paket 0; gereksiz dışa açılmış fonksiyon 18 | | | | | | | | | 0; kullanılmayan paket 0; gereksiz dışa açılmış fonksiyon 0 |
+| Büyük dosyalar (satır) | `js/app.js` 8687, `js/gameState.js` 7994, `server/world.js` 732, `server/app.js` 495 | aynı | | | | | | | | | `js/app.js` 8690 (ADR 0005), `js/gameState.js` **363**, `server/world.js` **137**, `server/app.js` **320** |
 
 \* `npm audit --omit=dev` bu projede **yanıltıcı**: ganache'ın içine gömülü paketler kilit dosyasında üretim gibi işaretli,
 bu yüzden 31 uyarı gösterir (webpack, mocha vb.), oysa bunlar üretimde kurulu değil. Doğru ölçüm: yalnız üretim
 bağımlılıklarından (`ethers`, `nodemailer`, `qrcode`) kilit dosyası üretip denetlemek. Sonuç: 39 paket, **1 yüksek açık**.
-CI'daki denetim (Aşama 8) bu yöntemi kullanacak.
+CI'daki denetim (Aşama 8) bu yöntemi kullanıyor (`npm run audit-uretim`).
+
+Ara aşama sütunları (2-9) boştur: aşama bazlı değerler aşağıdaki **Aşama ölçüm günlüğü** tablosundadır; bu tablo yalnız başlangıç, Aşama 1 ve **son durumu** (Aşama 10) karşılaştırır.
 
 ## Ortam notları
 - Docker kurulu değil: imaj derleme ve yük testi imaj içinde yapılamaz; CI'da (Aşama 8) ve kurulunca ölçülecek.
@@ -42,3 +44,4 @@ CI'daki denetim (Aşama 8) bu yöntemi kullanacak.
 | 7 | **111/111** (+ günlük, kapanış, metrik, uyarı, izleme, ölümcül hata, gözlem uçları, alarm kuralları) | ≈145 sn (kapsam ölçümüyle ≈172 sn) | 0 hata / 94 uyarı | 0 | **Kapsam: satır %90,26, dal %68,83** (eşikler yukarı çekildi, yeni 6 modül ≥%98); JSON günlük + gizli bilgi maskeleme, istek kimliği, `/api/ready`, `/metrics` (10 ölçü ailesi), düzgün kapanış, ölümcül hata → çıkış 1, 10 alarm kuralı (ölçü adları testle bağlı); belge `GOZLEM.md` |
 | 8 | 113/113 (+ CI dosyaları politikası) | ≈120 sn (kapsam ölçümüyle) | 0 hata / 94 uyarı | 0 | Yerel kapı `npm run hizli` 15 sn (kanca her commit'te çalışır), `npm run kontrol` = CI'ın 7 kapısı; CI 5 iş (kalite, test+kapsam, derleme, güvenlik = üretim açığı + gitleaks, imaj + Trivy), elle GHCR yayını, dependabot, CODEOWNERS, dal koruma komutları; **iş akışları GitHub'da çalıştırılamadı** (yalnız YAML + politika testi) |
 | 9 | **113/113** (+ 13 yedekleme senaryosu) | ≈120 sn | 0 hata / 94 uyarı | 0 | **Kapsam: satır %90,37, dal %69,17**; tutarlı yedek (SQLite backup API, yazma sürerken), sha256+manifest, AES-256-GCM, saatlik 48/günlük 14/haftalık 8, sonrası komutu (gizli anahtarsız), geri yükleme tatbikatı (ödemeler otomatik durur, eski dosya saklanır, çalışan sunucuya karşı korumalı), yedek yaşı ölçüsü + 3 alarm; üretim ağacında çalışan sunucudan yedek+derin doğrulama geçti (12/12); **yedek sonrası zincire giden ödemeler için otomatik uzlaştırma aracı YOK** (belgede elle adımlar) |
+| 10 | **115/115** (+ API belgesi kayma testi, belge sağlığı testi) | ≈115 sn (kapsam ölçümüyle) | 0 hata / 94 uyarı | **0** | `npm run kontrol` 7 kapı yeşil; `docs/openapi.yaml` (53 rota + 4 sayfa + 66 oyun işlemi, yetkiler koddan) ve `docs/api/index.html` koddan üretilir ve testle korunur; README baştan, `architecture.md` (4 şema), `DEPLOY.md`, ADR 0001-0009, belgelerdeki 102 depo yolu ve bağlantılar testle doğrulanır; mermaid şemaları **çizilerek görülemedi** (çizici yok), yalnız sözdizimi biçimi denetlendi |

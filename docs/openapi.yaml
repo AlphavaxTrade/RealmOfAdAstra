@@ -1,0 +1,1934 @@
+# Otomatik üretildi: node scripts/openapi-uret.mjs (elle düzenlemeyin; açıklamalar docs/openapi/aciklamalar.json içinde)
+openapi: 3.1.0
+info:
+  title: Realm of AdAstra API
+  version: 2.0.0-alpha.1
+  description: "Oyun sunucusunun HTTP arayüzü. Hepsi JSON; hata gövdesi { error }. Oturum anahtarı giriş yanıtındaki token'dır (Authorization: Bearer …). Yönetici uçları ADMIN_TOKEN ister. Her yanıtta X-Request-Id başlığı vardır; 500 yanıtında aynı kimlik gövdede de döner (günlükte aranır). Bu dosya koddan üretilir: node scripts/openapi-uret.mjs"
+servers:
+  - url: /
+    description: Aynı kaynak
+tags:
+  - name: Genel
+  - name: Hesap
+  - name: Oyun
+  - name: Cüzdan ve Kasa
+  - name: Kolezyum
+  - name: İlan pazarı
+  - name: Yönetim
+  - name: Sayfalar
+paths:
+  /api/ready:
+    get:
+      tags:
+        - Genel
+      summary: "Hazır mı: veritabanı yanıt veriyor ve dünya zamanlayıcısı canlı"
+      operationId: get_api_ready
+      security: &a1 []
+      responses:
+        "200":
+          description: "{ hazir, kontroller: { veritabani, zamanlayici }, zamanlayiciTur, zamanlayiciHata, zamanlayiciYasSn }. Hazır değilse 503 ve aynı gövde."
+          content:
+            application/json:
+              schema:
+                type: object
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+        "503":
+          $ref: "#/components/responses/Hata503"
+  /api/rates:
+    get:
+      tags:
+        - Genel
+      summary: Oyundaki ADA oranları (RealmRates sözleşmesinden; herkese açık)
+      operationId: get_api_rates
+      security: *a1
+      responses:
+        "200":
+          description: Oran sözleşmesi kapalıysa 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/health:
+    get:
+      tags:
+        - Genel
+      summary: Süreç ayakta mı (canlılık)
+      operationId: get_api_health
+      security: *a1
+      responses:
+        "200":
+          description: "{ ok, time, version, chain, payoutMode, testMode, payments }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/register:
+    post:
+      tags:
+        - Hesap
+      summary: Kayıt (e-posta + parola); doğrulama e-postası gider, oturum AÇILMAZ
+      operationId: post_api_account_register
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                  description: En az güvenlik kuralları hesap modülünde
+                promo:
+                  type: string
+                  description: İsteğe bağlı promo kodu; doğrulamadan sonra uygulanır
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: "{ ok, sent, message, devLink }. E-posta kayıtlı olsun olmasın yanıt aynıdır (hesap varlığı sızdırılmaz). devLink yalnız deneme modunda dolu."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/login:
+    post:
+      tags:
+        - Hesap
+      summary: Giriş (e-posta ve parola)
+      operationId: post_api_account_login
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              required:
+                - email
+                - password
+      responses:
+        "200":
+          description: "{ token, playerId } ya da iki adımlı doğrulama açıksa { need2fa: true, ticket }. Yanlış bilgi 401 (zamanlama farkı yok)."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/login2fa:
+    post:
+      tags:
+        - Hesap
+      summary: İki adımlı doğrulama ile girişi tamamla
+      operationId: post_api_account_login2fa
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticket:
+                  type: string
+                code:
+                  type: string
+                  description: Uygulama kodu ya da yedek kod
+              required:
+                - ticket
+                - code
+      responses:
+        "200":
+          description: "{ token, playerId, backupLeft }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/verify:
+    post:
+      tags:
+        - Hesap
+      summary: E-posta doğrulama (e-postadaki bağlantı)
+      operationId: post_api_account_verify
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+                - token
+      responses:
+        "200":
+          description: "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/resend:
+    post:
+      tags:
+        - Hesap
+      summary: Doğrulama e-postasını yeniden gönder
+      operationId: post_api_account_resend
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        "200":
+          description: Hesap varlığını sızdırmayan sabit yanıt.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/2fa/setup:
+    post:
+      tags:
+        - Hesap
+      summary: İki adımlı doğrulama kurulumu başlat
+      operationId: post_api_account_2fa_setup
+      security: &a2
+        - bearerAuth: []
+      responses:
+        "200":
+          description: "{ ok, secret, uri, qr } (qr: SVG data URL)"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/2fa/enable:
+    post:
+      tags:
+        - Hesap
+      summary: İki adımlı doğrulamayı aç (ilk kodu doğrula)
+      operationId: post_api_account_2fa_enable
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+              required:
+                - code
+      responses:
+        "200":
+          description: "{ ok, backupCodes } — 10 yedek kod yalnız bu yanıtta bir kez gösterilir."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/2fa/disable:
+    post:
+      tags:
+        - Hesap
+      summary: İki adımlı doğrulamayı kapat
+      operationId: post_api_account_2fa_disable
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+              required:
+                - code
+      responses:
+        "200":
+          description: "403 ve need2fa: kod gerekli/yanlış."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/forgot:
+    post:
+      tags:
+        - Hesap
+      summary: Parola sıfırlama e-postası iste
+      operationId: post_api_account_forgot
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+              required:
+                - email
+      responses:
+        "200":
+          description: Hesap varlığını sızdırmayan sabit yanıt.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/reset:
+    post:
+      tags:
+        - Hesap
+      summary: Yeni parola belirle (e-postadaki anahtarla)
+      operationId: post_api_account_reset
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+              required:
+                - token
+                - password
+      responses:
+        "200":
+          description: "{ ok, twoFactor }. Başarılı sıfırlama eski oturumları iptal eder."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/me:
+    get:
+      tags:
+        - Hesap
+      summary: Hesap özeti ve bağlı cüzdan durumu
+      operationId: get_api_account_me
+      security: *a2
+      responses:
+        "200":
+          description: Hesap yoksa 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/wallet/nonce:
+    post:
+      tags:
+        - Hesap
+      summary: Cüzdana imzalatılacak mesajı al
+      operationId: post_api_account_wallet_nonce
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: 0x… cüzdan adresi
+              required:
+                - address
+      responses:
+        "200":
+          description: "{ message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/wallet/link:
+    post:
+      tags:
+        - Hesap
+      summary: İmzayı gönder; e-posta onayı istenir
+      operationId: post_api_account_wallet_link
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signature:
+                  type: string
+                code:
+                  type: string
+                  description: İki adımlı doğrulama açıksa gerekli
+              required:
+                - signature
+      responses:
+        "200":
+          description: İmza geçerliyse onay e-postası gider.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/wallet/confirm:
+    post:
+      tags:
+        - Hesap
+      summary: Cüzdan bağlamayı onayla (e-postadaki bağlantı)
+      operationId: post_api_account_wallet_confirm
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+                - token
+      responses:
+        "200":
+          description: "{ ok }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/wallet/cancel:
+    post:
+      tags:
+        - Hesap
+      summary: Bekleyen cüzdan değişikliğini iptal et
+      operationId: post_api_account_wallet_cancel
+      security: *a2
+      responses:
+        "200":
+          description: "{ ok }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/account/logout:
+    post:
+      tags:
+        - Hesap
+      summary: Bu cihazdan çıkış (oturum anahtarı silinir)
+      operationId: post_api_account_logout
+      security: *a2
+      responses:
+        "200":
+          description: "{ ok }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/state:
+    get:
+      tags:
+        - Oyun
+      summary: Oyuncu kaydı + dünya görüntüsü (zamanla ilerleyen işler sunucuda işlenir)
+      operationId: get_api_state
+      security: *a2
+      responses:
+        "200":
+          description: "{ player, world, address, epochId, gate }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/action:
+    post:
+      tags:
+        - Oyun
+      summary: Oyun işlemi (yalnız beyaz listedekiler; bkz. x-islemler)
+      operationId: post_api_action
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: x-islemler anahtarlarından biri
+                args:
+                  type: array
+                  description: İşlemin argüman türleri x-islemler[name].argumanlar'da
+              required:
+                - name
+      responses:
+        "200":
+          description: "{ result, player, world, address, epochId, gate }. Reddedilen/geçersiz işlem 400; vatandaş olmayan hesap 403 (bekleme sırası)."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/dev/vanilla-reset:
+    post:
+      tags:
+        - Oyun
+      summary: "YALNIZ deneme sunucusu: dünyayı ve kayıtları ilk güne döndür"
+      operationId: post_api_dev_vanilla_reset
+      security: *a2
+      responses:
+        "200":
+          description: Gerçek sunucuda 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/promo/redeem:
+    post:
+      tags:
+        - Oyun
+      summary: Promo kodunu kullan
+      operationId: post_api_promo_redeem
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+              required:
+                - code
+      responses:
+        "200":
+          description: "{ ok, message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/wallet:
+    get:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Yatırma adresi, çekim durumu, geçmiş
+      operationId: get_api_wallet
+      security: *a2
+      responses:
+        "200":
+          description: "{ account, gameWallet, tokenAddress, deposits, withdraw }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/withdraw:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Çekim talebi (serbest bakiyeden)
+      operationId: post_api_withdraw
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                code:
+                  type: string
+                  description: İki adımlı doğrulama açıksa gerekli
+              required:
+                - amount
+      responses:
+        "200":
+          description: "{ success, message, ... }. E-posta doğrulanmamış ya da cüzdan bağlı değilse success:false."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/withdraw/cancel:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Bekleyen çekim talebini geri al
+      operationId: post_api_withdraw_cancel
+      security: *a2
+      responses:
+        "200":
+          description: "{ success, message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/kasa:
+    get:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Oyun Kasası durumu
+      operationId: get_api_kasa
+      security: *a2
+      responses:
+        "200":
+          description: "Kasa kapalıysa { enabled: false }."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/kasa/refresh:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Kasa zincir bakiyesini yenile
+      operationId: post_api_kasa_refresh
+      security: *a2
+      responses:
+        "200":
+          description: Kasa durumu. Zincir okunamazsa 503.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+        "503":
+          $ref: "#/components/responses/Hata503"
+  /api/kasa/withdraw:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Kasa bakiyesini bağlı cüzdana çek
+      operationId: post_api_kasa_withdraw
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                asset:
+                  type: string
+                  description: ADA | AVAX (büyük harf)
+                amount:
+                  type: number
+                code:
+                  type: string
+                  description: İki adımlı doğrulama açıksa gerekli
+              required:
+                - asset
+                - amount
+      responses:
+        "200":
+          description: "{ ok, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/kasa/test-deposit:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: "YALNIZ deneme sunucusu: sahte Kasa yatırması"
+      operationId: post_api_kasa_test_deposit
+      security: *a2
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ada:
+                  type: number
+                avax:
+                  type: number
+      responses:
+        "200":
+          description: Gerçek sunucuda 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pay/quote:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Cüzdandan ödeme teklifi al (kazanılmış bakiye yetmeyince)
+      operationId: post_api_pay_quote
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Ödenecek oyun işlemi
+                args:
+                  type: array
+              required:
+                - name
+      responses:
+        "200":
+          description: "{ ok, ref, amount, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pay/confirm:
+    post:
+      tags:
+        - Cüzdan ve Kasa
+      summary: Zincirdeki ödemeyi doğrula ve işlemi uygula
+      operationId: post_api_pay_confirm
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ref:
+                  type: string
+                txHash:
+                  type: string
+              required:
+                - ref
+                - txHash
+      responses:
+        "200":
+          description: "{ paid, result, player, world, ... }. Zincirde henüz görünmüyorsa 409 ve retry:true."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pvp/queue:
+    post:
+      tags:
+        - Kolezyum
+      summary: Kolezyum sırasına gir (gerçek rakip aranır)
+      operationId: post_api_pvp_queue
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mode:
+                  type: string
+                  description: 1v1 | 3v3
+                indices:
+                  type: array
+                  description: En çok 3 asker sırası (0-63)
+              required:
+                - mode
+                - indices
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pvp/leave:
+    post:
+      tags:
+        - Kolezyum
+      summary: Sıradan çık
+      operationId: post_api_pvp_leave
+      security: *a2
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pvp/status:
+    get:
+      tags:
+        - Kolezyum
+      summary: Sıra ve son maç durumu
+      operationId: get_api_pvp_status
+      security: *a2
+      responses:
+        "200":
+          description: Kolezyum kapalıysa 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pvp/match:
+    get:
+      tags:
+        - Kolezyum
+      summary: "Maç tekrarı (herkese açık tekrar: giriş yapmış herkes görür, bilinçli tasarım)"
+      operationId: get_api_pvp_match
+      security: *a2
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Maç numarası
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Maç kaydı.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pazar:
+    get:
+      tags:
+        - İlan pazarı
+      summary: Açık ilanlar ve benim ilanlarım
+      operationId: get_api_pazar
+      security: *a2
+      responses:
+        "200":
+          description: İlan pazarı kapalıysa 404.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pazar/sell:
+    post:
+      tags:
+        - İlan pazarı
+      summary: Teçhizatı ilana koy (yalnız vatandaşlar)
+      operationId: post_api_pazar_sell
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ref:
+                  type: object
+                  description: Eşya konumu { source, slotKey, armoryIndex, soldierIndex, itemId }; eşyanın kendisi gönderilemez
+                price:
+                  type: number
+              required:
+                - ref
+                - price
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pazar/cancel:
+    post:
+      tags:
+        - İlan pazarı
+      summary: İlanı geri çek
+      operationId: post_api_pazar_cancel
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+              required:
+                - id
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/pazar/buy:
+    post:
+      tags:
+        - İlan pazarı
+      summary: İlanı satın al
+      operationId: post_api_pazar_buy
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+              required:
+                - id
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/status:
+    get:
+      tags:
+        - Yönetim
+      summary: Sunucu, kasa, ödeme, oyuncu ve olay özeti
+      operationId: get_api_admin_status
+      security: &a3
+        - adminAuth: []
+      responses:
+        "200":
+          description: Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/promo:
+    get:
+      tags:
+        - Yönetim
+      summary: Promo kodlarını listele
+      operationId: get_api_admin_promo
+      security: *a3
+      responses:
+        "200":
+          description: "{ codes }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/promo/create:
+    post:
+      tags:
+        - Yönetim
+      summary: Promo kodu oluştur
+      operationId: post_api_admin_promo_create
+      security: *a3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                reward:
+                  type: object
+                maxUses:
+                  type: integer
+                expires:
+                  type: integer
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Oluşan kod.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/promo/active:
+    post:
+      tags:
+        - Yönetim
+      summary: Promo kodunu aç/kapat
+      operationId: post_api_admin_promo_active
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                active:
+                  type: boolean
+              required:
+                - code
+                - active
+      responses:
+        "200":
+          description: Güncel kod.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/pause:
+    post:
+      tags:
+        - Yönetim
+      summary: Çekim ve zincir ödemelerini durdur / başlat
+      operationId: post_api_admin_pause
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paused:
+                  type: boolean
+              required:
+                - paused
+      responses:
+        "200":
+          description: "{ paused }. Geri yüklemeden sonra otomatik durdurulur (FELAKET_KURTARMA.md)."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/payouts/run:
+    post:
+      tags:
+        - Yönetim
+      summary: Bekleyen ödemeleri şimdi gönder
+      operationId: post_api_admin_payouts_run
+      security: *a3
+      responses:
+        "200":
+          description: Gönderim özeti. Duraklatılmışsa gönderilmez.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/weekly/run:
+    post:
+      tags:
+        - Yönetim
+      summary: Haftalık hesaplaşmayı elle çalıştır
+      operationId: post_api_admin_weekly_run
+      security: *a3
+      responses:
+        "200":
+          description: Hesaplaşma özeti.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/rates/sync:
+    post:
+      tags:
+        - Yönetim
+      summary: Oran sözleşmesini şimdi oku
+      operationId: post_api_admin_rates_sync
+      security: *a3
+      responses:
+        "200":
+          description: Oranlar ya da { skipped }.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/hotwallet/check:
+    post:
+      tags:
+        - Yönetim
+      summary: Sıcak cüzdan bakiyesini şimdi denetle
+      operationId: post_api_admin_hotwallet_check
+      security: *a3
+      responses:
+        "200":
+          description: Denetim sonucu ya da { skipped }.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/kapi:
+    post:
+      tags:
+        - Yönetim
+      summary: "Kapı kuralı: vatandaş sınırı ve dönem"
+      operationId: post_api_admin_kapi
+      security: *a3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                limit:
+                  type: integer
+                tier:
+                  type: integer
+      responses:
+        "200":
+          description: Güncel kapı özeti.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/universe-stage:
+    post:
+      tags:
+        - Yönetim
+      summary: Universe aşamasını değiştir (0-3)
+      operationId: post_api_admin_universe_stage
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stage:
+                  type: integer
+              required:
+                - stage
+      responses:
+        "200":
+          description: "{ universeStage }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/kapi/run:
+    post:
+      tags:
+        - Yönetim
+      summary: Kapı kuralını şimdi işlet
+      operationId: post_api_admin_kapi_run
+      security: *a3
+      responses:
+        "200":
+          description: İşletme sonucu + kapı özeti.
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/kapi/player:
+    post:
+      tags:
+        - Yönetim
+      summary: Bir hesabı elle içeri al / sıraya koy / askıya al
+      operationId: post_api_admin_kapi_player
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                playerId:
+                  type: string
+                status:
+                  type: string
+              required:
+                - playerId
+                - status
+      responses:
+        "200":
+          description: Güncel durum.
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /admin:
+    get:
+      tags:
+        - Sayfalar
+      summary: Yönetici paneli sayfası
+      description: Sayfanın kendisi herkese açıktır; şifre sayfada sorulur ve yönetici uçları (/api/admin/*) şifresiz çalışmaz.
+      operationId: get_admin
+      security: []
+      responses:
+        "200":
+          description: İçerik
+          content:
+            text/html:
+              schema:
+                type: string
+        "429":
+          $ref: "#/components/responses/Hata429"
+  /admin.js:
+    get:
+      tags:
+        - Sayfalar
+      summary: Yönetici paneli betiği
+      description: Panel sayfasının betiği.
+      operationId: get_admin_js
+      security: []
+      responses:
+        "200":
+          description: İçerik
+          content:
+            text/javascript:
+              schema:
+                type: string
+        "429":
+          $ref: "#/components/responses/Hata429"
+  /metrics:
+    get:
+      tags:
+        - Genel
+      summary: Prometheus ölçümleri (metin biçimi)
+      description: "Yönetici şifresiyle ya da YALNIZ aynı makineden (vekil başlığı olmayan yerel istek). Önünde Caddy varsa dışarıdan gelen her istek şifre ister. Ölçü listesi: docs/kurumsal/GOZLEM.md"
+      operationId: get_metrics
+      security:
+        - adminAuth: []
+      responses:
+        "200":
+          description: İçerik
+          content:
+            text/plain:
+              schema:
+                type: string
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+  /{dosya}:
+    get:
+      tags:
+        - Sayfalar
+      summary: Oyunun derlenmiş dosyaları (dist/)
+      description: "Hash'li dosyalar bir yıl önbelleklenir; sıkıştırılmış (br/gz) kopyalar istemci destekliyorsa sunulur. Bilinmeyen yol ana sayfaya düşmez: 404."
+      operationId: get_dosya
+      security: []
+      parameters:
+        - name: dosya
+          in: path
+          required: true
+          description: Dosya yolu
+          schema:
+            type: string
+      responses:
+        "200":
+          description: İçerik
+          content:
+            "*/*":
+              schema:
+                type: string
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Oyuncu oturum anahtarı (giriş yanıtındaki token; sunucuda yalnız özeti saklanır)
+    adminAuth:
+      type: http
+      scheme: bearer
+      description: ADMIN_TOKEN (en az 24 karakter). 10 yanlış deneme IP başına 10 dakika bekletir
+  schemas:
+    Hata:
+      type: object
+      properties:
+        error:
+          type: string
+        istekKimligi:
+          type: string
+          description: Yalnız 500 yanıtında
+      required:
+        - error
+  responses:
+    Hata400:
+      description: Geçersiz istek / kural reddi
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata401:
+      description: Giriş (oturum anahtarı) ya da yönetici yetkisi gerekli
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata403:
+      description: İzin yok (iki adımlı doğrulama kodu, vatandaşlık vb.)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata404:
+      description: Bulunamadı ya da bu sunucuda kapalı
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata409:
+      description: Çakışma (yeniden denenebilir)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata429:
+      description: Çok hızlı istek; biraz yavaşla
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata500:
+      description: Sunucu hatası (gövdede istekKimligi; günlükte aranır)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+    Hata503:
+      description: Hazır değil
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Hata"
+x-argüman-tipleri:
+  int: Tam sayı (mutlak değeri en çok 1e9)
+  idx: Sıra numarası, 0-63
+  qty: Pozitif sayı (en çok 1e12)
+  bool: true ya da false
+  str: En çok 64 karakterlik metin
+  name: En çok 24 karakterlik ad
+  slot: "Teçhizat yuvası: weapon, helmet, armor, legs, boots"
+  node: Kaynak alanı / hammadde adı (js/config.js RESOURCE_KEYS)
+  res: Hammadde adı ya da fragments, boxes, keys
+  idxArr: 1-18 sıra numarasından oluşan dizi (her biri 0-63)
+  ref: "Eşya konumu { source: armory|kingdom|soldier, slotKey, armoryIndex, soldierIndex, itemId } (eşyanın kendisi gönderilemez)"
+  buff: Taverna güçlendirmesi adı (js/config.js TAVERN_BUFFS)
+  tool: Alet adı (js/config.js TOOLS)
+  scroll: "Parşömen: scroll_heal, scroll_stamina, scroll_teleport, scroll_repair"
+  row: "Savaş sırası: front ya da back"
+  wheelPay: "Çark ödeme türü: ada, ticket ya da bir hammadde"
+  quest: Rehber görevi kimliği
+  fightOpts: "Seçenekler { payGateFee?: boolean }"
+  amounts: "Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)"
+x-islemler:
+  startExpedition:
+    argumanlar:
+      - node
+  claimExpedition:
+    argumanlar:
+      - node
+  claimPartialExpedition:
+    argumanlar:
+      - node
+  claimAllHarvests:
+    argumanlar: []
+  claimAllCompletedExpeditions:
+    argumanlar: []
+  claimAndRestartAllExpeditions:
+    argumanlar: []
+  sweepCompletedExpeditions:
+    argumanlar: []
+  refillStaminaWithWheat:
+    argumanlar:
+      - qty?
+  refillStaminaExact:
+    argumanlar:
+      - qty
+  refillStaminaToMaxWithWheat:
+    argumanlar: []
+  levelUp:
+    argumanlar: []
+  upgradeWarehouse:
+    argumanlar: []
+  repairTool:
+    argumanlar:
+      - tool
+  repairAllTools:
+    argumanlar: []
+  buildHouse:
+    argumanlar: []
+  healSoldierWithHerb:
+    argumanlar:
+      - idx
+  healAllWithHerb:
+    argumanlar: []
+  recycleEquipment:
+    argumanlar:
+      - ref
+  buildRocket:
+    argumanlar: []
+  contributeToOtorite:
+    argumanlar:
+      - amounts
+  contributeToProject:
+    argumanlar:
+      - amounts
+      - int?
+  depositToPrepDepot:
+    argumanlar:
+      - amounts
+  withdrawFromPrepDepot:
+    argumanlar:
+      - node
+      - int
+  buySoldierUnit:
+    argumanlar: []
+  instantHealSoldierUnit:
+    argumanlar:
+      - idx
+  instantHealAllSoldiers:
+    argumanlar: []
+  renameSoldierUnit:
+    argumanlar:
+      - idx
+      - name
+  setSoldierRow:
+    argumanlar:
+      - idx
+      - row
+  saveCombatPreset:
+    argumanlar:
+      - idx
+      - name?
+  applyCombatPreset:
+    argumanlar:
+      - idx
+  craftEquipment:
+    argumanlar:
+      - slot
+    rastgele: true
+  upgradeEquipment:
+    argumanlar:
+      - slot
+      - idx?
+  upgradeEquipmentByTypeAndLevel:
+    argumanlar:
+      - slot
+      - int
+  upgradeAnyEquipment:
+    argumanlar:
+      - ref
+  upgradeAllEquipmentInKingdom:
+    argumanlar: []
+  repairEquipment:
+    argumanlar:
+      - slot
+      - idx?
+  repairAllEquipmentInKingdom:
+    argumanlar: []
+  scrapAllLowTierEquipment:
+    argumanlar:
+      - int?
+  equipSoldierSlot:
+    argumanlar:
+      - idx
+      - slot
+  unequipSoldierSlot:
+    argumanlar:
+      - idx
+      - slot
+  equipSoldierFromDepot:
+    argumanlar:
+      - idx
+      - ref
+  unequipSoldierToArmory:
+    argumanlar:
+      - idx
+      - slot
+  unequipAllSoldiers:
+    argumanlar: []
+  autoEquipBest:
+    argumanlar: []
+  buyTavernaAutomationBot:
+    argumanlar:
+      - int
+  startBotTrial:
+    argumanlar: []
+  setBotSiloOption:
+    argumanlar:
+      - bool
+  setBotAutoRenew24h:
+    argumanlar:
+      - bool
+  buyTavernBuff:
+    argumanlar:
+      - buff
+  marketSell:
+    argumanlar:
+      - res
+      - qty
+  marketBuy:
+    argumanlar:
+      - res
+      - qty
+  fightDungeon:
+    argumanlar:
+      - int
+      - idxArr
+      - fightOpts?
+    rastgele: true
+  executeColosseum1v1Match:
+    argumanlar:
+      - idx
+    rastgele: true
+  stakeArmyForWorldBoss:
+    argumanlar: []
+  emergencyUnstakeWorldBossArmy:
+    argumanlar: []
+  claimWorldBossReward:
+    argumanlar: []
+  spinCarnivalWheel:
+    argumanlar:
+      - wheelPay
+    rastgele: true
+  unboxMysteryBox:
+    argumanlar: []
+    rastgele: true
+  useScroll:
+    argumanlar:
+      - scroll
+      - str?
+  carnivalCheer:
+    argumanlar: []
+  buyLotteryTickets:
+    argumanlar:
+      - int
+  claimWinnerLotteryPayout:
+    argumanlar: []
+  useLotteryTicketForWheel:
+    argumanlar: []
+    rastgele: true
+  claimOnboardingReward:
+    argumanlar:
+      - quest
+  claimWeeklyUbi:
+    argumanlar: []
+  mintGenesisNft:
+    argumanlar: []

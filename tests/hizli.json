@@ -1,6 +1,22 @@
 [
-  "test_log.mjs", "test_metrik.mjs", "test_kapanis.mjs", "test_uyari.mjs", "test_izleme.mjs", "test_olumcul.mjs",
-  "test_alarm_kurallari.mjs", "test_env_belge.mjs", "test_gizli_tara.mjs", "test_config.mjs", "test_gecis.mjs",
-  "test_oturum_ozet.mjs", "test_saklama.mjs", "test_kapsam_kontrol.mjs", "test_docker_dosyalari.mjs", "test_db.mjs",
-  "test_rastgele.mjs", "test_ci_dosyalari.mjs"
+  "test_log.mjs",
+  "test_metrik.mjs",
+  "test_kapanis.mjs",
+  "test_uyari.mjs",
+  "test_izleme.mjs",
+  "test_olumcul.mjs",
+  "test_alarm_kurallari.mjs",
+  "test_env_belge.mjs",
+  "test_gizli_tara.mjs",
+  "test_config.mjs",
+  "test_gecis.mjs",
+  "test_oturum_ozet.mjs",
+  "test_saklama.mjs",
+  "test_kapsam_kontrol.mjs",
+  "test_docker_dosyalari.mjs",
+  "test_db.mjs",
+  "test_rastgele.mjs",
+  "test_ci_dosyalari.mjs",
+  "test_belgeler.mjs",
+  "test_openapi.mjs"
 ]

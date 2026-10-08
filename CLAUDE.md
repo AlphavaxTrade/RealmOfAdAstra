@@ -8,7 +8,7 @@ Realm of AdAstra (RoA): a browser strategy / RPG for the Avalanche ADASTRA token
 
 - **Active branch `roa-v2`**: the v2 rewrite, done as a gradual transformation of working code (server plumbing, accounts, payments and tests kept; game core, config, screens and map converted step by step). `main` is the v1.34/1.35 line. `vanilla-stable` + tag `v1.34-vanilla` and the folder `..\adastra-realm-VANILLA-v1.34` are the pre-v2 backup: never edit that folder.
 - Decisions the code is written against: `docs/v2/KARARLAR_KESIN.md`. Where the code stands and what is left: `docs/v2/DURUM_2026-10-07.md`. Design history: `docs/ROA_V2_PLAN.md`, `docs/v2/R1…R5*.md`, the economy constitution `docs/v2/EKONOMI_ILKELERI.md`.
-- `README.md` describes v1 (three resources, world quota, 2D map, `npm run dev` only); do not take v2 layout or numbers from it.
+- **Branch `kurumsal`** (from `roa-v2`) is the production-readiness programme (10 stages: audit, OWASP, tests/refactor, load, DB migrations, Docker, observability, CI/CD, disaster recovery, docs). Its numbers and decisions: `docs/kurumsal/METRIKLER.md`, `docs/kurumsal/ADR/`, `docs/kurumsal/MIMARI-KARARLAR.md`. The `README.md` (rewritten in stage 10) and `docs/architecture.md`, `docs/DEPLOY.md` describe the current layout; `docs/openapi.yaml` is generated from the code and drift-tested. Game numbers still come from `docs/v2/`.
 - Private, machine-specific rules (the user, trial accounts, server details, push restrictions, pending decisions) live in `CLAUDE.local.md` and the memory files; `.git/info/exclude` keeps that file, `HANDOVER_SUMMARY.md`, `.claude/` and two audit docs out of git. Keep them out of this file.
 - The sibling repo `..\megalodon-live-deck` (the trade site) is a different project with its own CLAUDE.md; only `scripts/sunucuya-yukle.sh` reaches into it (the SSH key vault).
 
@@ -18,8 +18,14 @@ Realm of AdAstra (RoA): a browser strategy / RPG for the Avalanche ADASTRA token
 npm install
 npm run dev                  # Vite on :5180 (--strictPort). No /api, so the game runs in single-player localStorage mode; test menu (T) is on
 npm run build                # dist/ (manual chunks: phaser, three)
-npm test                     # node tests/run_all.mjs: every tests/test_*.mjs in its own process; exit 1 lists the failures
+npm test                     # node tests/run_all.mjs: every tests/test_*.mjs in its own process; exit 1 lists the failures (~2 min)
 node tests/test_v2_kapi.mjs  # one test file (plain node:assert scripts, no framework)
+npm run hizli                # ~15 s gate: secret scan + lint + the fast tests in tests/hizli.json (the pre-commit hook runs the same; install once: npm run hook-kur)
+npm run kontrol              # everything CI runs: lint (0 errors, warning ceiling 94), olu-kod (knip), gizli-tara, kapsam (tests under c8) + kapsam-kontrol (floors only go up, kapsam-esik.json), build, audit-uretim (prod deps only)
+node scripts/openapi-uret.mjs   # regenerates docs/openapi.yaml + docs/api/index.html; new route/action => also docs/openapi/aciklamalar.json (tests/test_openapi.mjs fails until done)
+node scripts/env-belge.mjs      # regenerates docs/kurumsal/ORTAM.md + env.ornek.txt; every env var the code reads must be in scripts/env-belge.mjs (test_env_belge)
+npm run yuk / yuk-kontrol    # load test / regression gate (docs/kurumsal/PERFORMANS.md)
+node server/yedek/cli/yedekle.js | dogrula.js [--derin] | geri-yukle.js <file>   # backup / verify / restore (docs/kurumsal/FELAKET_KURTARMA.md); restore auto-PAUSES payouts and refuses while the server runs
 
 node server/index.js         # the game server; reads server/.env (see server/.env.example). TEST_MODE=1 CHAIN_ENABLED=0 for a trial
 OYUN-SUNUCUSU-BASLAT.bat     # local TRIAL server at http://localhost:8080 under a watchdog (scripts/windows/online-keep-alive.cjs):
@@ -33,7 +39,7 @@ node contracts/compile.mjs   # solc -> contracts/build/<Name>.json (gitignored)
 node contracts/deploy.mjs    # env-driven: DEPLOY_RPC, DEPLOYER_PRIVATE_KEY, OWNER_ADDRESS, TREASURY...; mainnet needs CONFIRM_MAINNET=1
 node scripts/vercel-yukle.mjs [https://server]   # static game files -> realmofadastra.vercel.app (token in ~/.realm_vercel_token[.txt])
 bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (user realm, /srv/realm, 127.0.0.1:8090 behind Caddy, TEST_MODE)
-docker compose up -d --build                     # production packaging (Dockerfile; docs/SUNUCU_KURULUM.md)
+docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/generate_doc_tables.mjs             # regenerates docs/LEVEL_PROGRESSION_TABLES.md from the engine
 python scripts/gorsel_isle.py ikon <in.jpg> <out.webp>   # Gemini image -> transparent 256x256 webp icon (video_edit venv python)
 ```
@@ -51,8 +57,8 @@ Releases and chain deploys happen only at the user's request, local first (see `
 
 ### Server (`server/`)
 
-- `index.js` wires, in order: `config.js` (every env var) → `db.js` (sqlite, WAL; tables kv, players, nonces, sessions, deposits, payouts, prices, events, listings, ...) → `engine.js` → `chain.js` (Arena bonding-curve / DEX price, Chainlink AVAX/USD, transfer scans, sends) → `mailer.js` → `accounts.js` (e-mail + password with scrypt, verification / reset links, wallet linking by signature + e-mail confirmation with a 48 h change delay, optional TOTP) → `arena.js` (real PvP queue) → `kasa.js` (per-player server-managed wallet, keys AES-GCM under `KASA_MASTER_KEY`) → `kapi.js` (citizen gate: limit, waiting queue, inactivity warn / suspend, registration fee, growth indicator) → `pazar.js` (equipment listing market) → `world.js` → `payments.js` (quote, `RealmPayments.pay`, on-chain verify) → `app.js`. Startup locks: `TEST_MODE` refuses real keys or a mainnet payments contract, and a DB ever opened in test mode refuses to open in real mode.
-- `app.js` is a plain `http` server. Routes are a `'METHOD /api/path'` map; `PUBLIC_ROUTES` need no login, everything else needs the Bearer session, `/api/admin/*` needs `ADMIN_TOKEN` (under 24 chars = panel off), `/admin` serves `admin.html` + `admin.js`. `GET /api/state` = player save + world snapshot; `POST /api/action {name, args}` goes through `actions.js`; non-citizens (gate) get 403 on actions and market operations.
+- `index.js` first builds the structured logger (`log.js`: one JSON line, secrets masked, request id via AsyncLocalStorage; `LOG_LEVEL`, `LOG_FORMAT`), the optional error hook (`izleme.js`, Sentry only if `SENTRY_DSN` and the package are present) and the fatal handler (`olumcul.js`: uncaught error or unhandled rejection → log, exit 1); it ends with the timers and `kapanis.js` (graceful SIGTERM: in-flight requests and the running world round ≤ 10 s, db closed last). Between: `config.js` (every env var, `*_FILE` secrets, production validation) → `db.js` (sqlite, WAL; schema only through the sealed forward-only migrations in `gecis/`, never inline `CREATE`/`ALTER`; tables kv, players, nonces, sessions, deposits, payouts, prices, events, listings, ...) → `engine.js` → `chain.js` (Arena bonding-curve / DEX price, Chainlink AVAX/USD, transfer scans, sends) → `mailer.js` → `accounts.js` (e-mail + password with scrypt, verification / reset links, wallet linking by signature + e-mail confirmation with a 48 h change delay, optional TOTP) → `arena.js` (real PvP queue) → `kasa.js` (per-player server-managed wallet, keys AES-GCM under `KASA_MASTER_KEY`) → `kapi.js` (citizen gate: limit, waiting queue, inactivity warn / suspend, registration fee, growth indicator) → `pazar.js` (equipment listing market) → `world.js` → `payments.js` (quote, `RealmPayments.pay`, on-chain verify) → `app.js`. Startup locks: `TEST_MODE` refuses real keys or a mainnet payments contract, and a DB ever opened in test mode refuses to open in real mode.
+- `app.js` is a plain `http` server (252 lines; the routes live in `server/rotalar/{genel,hesap,oyun,cuzdan,pvp,ilan,yonetim}.js`, the world work in `server/world/*`, static files in `statik.js`). Routes are a `'METHOD /api/path'` map; the authority of a route comes from one function (`yetkiOf`: `acik` = `PUBLIC_ROUTES`, `yonetici` = `/api/admin/*` needs `ADMIN_TOKEN` (under 24 chars = panel off), otherwise the Bearer session) and the OpenAPI file is checked against it. Every response carries `X-Request-Id`; a 500 body carries the same id (`istekKimligi`), details only in the log. `GET /api/ready` (db + world-timer heartbeat, 503 when stuck) and `GET /metrics` (Prometheus text; admin token or loopback without `X-Forwarded-For`) are observability endpoints, `/admin` serves `admin.html` + `admin.js`. `GET /api/state` = player save + world snapshot; `POST /api/action {name, args}` goes through `actions.js`; non-citizens (gate) get 403 on actions and market operations.
 - `server/actions.js` is the whitelist, `name: A([argTypes], { random })`. Only listed names run, args are shape-checked by `T`, `DEV_ACTIONS` (cheat / setDev / fast-forward / reset) only in test mode. `random: true` actions (`fightDungeon`, `craftEquipment`, `spinCarnivalWheel`, `unboxMysteryBox`, the PvP match, the lottery ticket) are resolved on the server only; the browser waits. Time-driven work (expeditions, bot, stamina, healing, economy tick) is recomputed server-side on every request and is `LOCAL_ONLY` display work in the browser.
 - `world.js`: the minute tick from `index.js` drives the weekly settlement (Monday 00:01 TR; pure rules in `server/economy.js`: shared withdrawal pool capped at 2 % price impact, 3 / 6 % fee, brake, faucet, price multiplier), hourly `kapi.run()` + `pazar.expire()`, the Sunday world boss, payouts `pending → sending → sent` (a row left in `sending` is never resent; the admin panel reconciles), the rates sync, and the Universe stage (`world:universeStage`, admin-set, sent to players in the snapshot).
 
@@ -70,8 +76,10 @@ Releases and chain deploys happen only at the user's request, local first (see `
 
 - Engine tests: set `globalThis.localStorage` to a tiny mock, `new GameStateManager()`, drive it with a simulated clock, assert with `node:assert/strict`, print ✅ lines.
 - Server tests: `openDb(':memory:')`, `createEngine(db, { testMode: true })`, `createMailer / createAccounts / createKapi / createWorld / createApp` with a fake `clock: () => now` and a quiet `log`, `app.server().listen(0)`, then `fetch` against it. Register with `POST /api/account/register`, read the verification link from the kv outbox `dev:outbox`, verify, keep the Bearer token. Tweak `engine.GAME_CONFIG.*` for small scenarios (e.g. `KAPI.START_LIMIT = 2`).
-- Never use real user data, keys or production DB files; tests must not touch the chain.
-- Done means `npm test` (all files) and `npm run build` pass, and for UI work the built game was opened on the local trial server.
+- Never use real user data, keys or production DB files; tests must not touch the chain (fake Avalanche node / ganache, fake SMTP; payments and the payout queue have characterisation tests).
+- Golden-record tests (`tests/altin/`): fixed clock + seeded RNG (`TEST_RASTGELE=1`), SHA-256 state digests; a refactor of game code is only accepted when they are unchanged. Server code never uses `Math.random` (lint rule): `server/rastgele.js`.
+- Several tests start the real `server/index.js` or the CLI tools as child processes; on Windows an open SQLite handle makes `rmSync` fail with EPERM and hides the real assertion, so cleanup in tests is tolerant.
+- Done means `npm run kontrol` (or at least `npm test` + `npm run build` + `npm run lint`) passes, coverage floors hold, and for UI work the built game was opened on the local trial server.
 
 ## Conventions and gotchas
 
@@ -81,7 +89,10 @@ Releases and chain deploys happen only at the user's request, local first (see `
 - The map stays static: animated decorations (villagers, clouds, birds, smoke, blinking rings) were removed on request; don't re-add them. Building hover shows the designed info card (`.map-card`, `.map-label`), not rings.
 - three.js 0.186 has no `PCFSoftShadowMap`; use `PCFShadowMap`. Kenney tile scale is `S = 2.3`, world 168 × 100 units, wall panels sit on the +x edge of a tile (`cx = 0.45`, `ry = dir × 90°`, dir 0 east / 1 north / 2 west / 3 south).
 - `npm run dev` never exercises the server path; anything touching accounts, the gate, listings or payouts must be checked against `node server/index.js` or the :8080 trial server, which serves `dist/` (rebuild first).
-- `data/`, `logs/`, `dist/`, `server/.env`, `*.db`, `contracts/build/` are gitignored; `server/.env.example` lists every env var.
+- `data/`, `logs/`, `dist/`, `yedek/`, `secrets/`, `coverage/`, `server/.env`, `*.db`, `contracts/build/` are gitignored; `docs/kurumsal/ORTAM.md` (generated) documents every env var and `docs/kurumsal/env.ornek.txt` is the example file (the Claude project kit denies reading `server/.env.example`).
+- Backslashes in text pushed through some tool layers (heredocs, `node -e`) get eaten (`\d`, `\n`, ` `): write regexes with character classes or `String.fromCharCode`, and prefer the file tools over shell heredocs for code that contains them.
+- On the `kurumsal` branch the commit title format is `kurumsal A<stage>: <plain-word list of what changed>`; the stage 7-9 commits were written in English by mistake (the rule above says Turkish without Turkish letters); history is not rewritten, use the Turkish form from now on.
+- Branch protection, CI runs, Docker image builds and the GHCR release are NOT verifiable from this machine (no `gh`, no Docker): `docs/kurumsal/DAL_KORUMASI.md` has the commands for the owner; the CI/Docker files are covered by policy tests only.
 
 ## Çalışma kuralları (Claude proje kiti)
 

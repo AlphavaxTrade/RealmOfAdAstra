@@ -59,6 +59,8 @@ const HSTS = 'max-age=31536000; includeSubDomains';
 // vekil sunucu bağlantıyı HER ZAMAN önce kapatsın (aksi halde "connection reset" 502'leri).
 const HTTP_ZAMAN = { headers: 20000, request: 30000, keepAlive: 150000, interval: 5000, maxHeader: 16384 };
 const ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+// Rota yetkisi (TEK kaynak: hem istek işleme hem API belgesi bunu kullanır): acik = giriş gerekmez, yonetici = ADMIN_TOKEN, oyuncu = oturum anahtarı
+const yetkiOf = key => (key.startsWith('GET /api/admin') || key.startsWith('POST /api/admin') ? 'yonetici' : PUBLIC_ROUTES.includes(key) ? 'acik' : 'oyuncu');
 const userError = msg => Object.assign(new Error(msg), { userError: true });
 
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
@@ -238,10 +240,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     const adminYazma = key.startsWith('POST /api/admin');   // değiştiren yönetici işlemleri denetim izine yazılır (salt okunur GET yazılmaz)
     try {
       let me = null;
-      if (key.startsWith('GET /api/admin') || key.startsWith('POST /api/admin')) {
+      if (yetkiOf(key) === 'yonetici') {
         if (adminBlocked(ip)) return send(res, 429, { error: 'Çok fazla hatalı deneme; 10 dakika sonra tekrar dene.' });
         if (!isAdmin(req)) { adminFail(ip); denetimIzi('admin-yetkisiz', key, ip); return send(res, 401, { error: 'Yönetici yetkisi gerekli' }); }
-      } else if (!PUBLIC_ROUTES.includes(key)) {
+      } else if (yetkiOf(key) === 'oyuncu') {
         me = auth(req);
         if (!me) return send(res, 401, { error: 'Giriş gerekli' });
         req.oyuncu = me;
@@ -312,5 +314,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     headersTimeout: zaman.headers, requestTimeout: zaman.request, keepAliveTimeout: zaman.keepAlive,
     connectionsCheckingInterval: zaman.interval, maxHeaderSize: zaman.maxHeader
   }, handle);
-  return { handle, server: sunucu, metrik };
+  // API belgesi ve kayma testi için: koddaki gerçek rotalar ve yetkileri (scripts/openapi-uret.mjs, tests/test_openapi.mjs)
+  const rotalar = () => Object.keys(routes).map(anahtar => ({ anahtar, yetki: yetkiOf(anahtar) }));
+  return { handle, server: sunucu, metrik, rotalar };
 }
