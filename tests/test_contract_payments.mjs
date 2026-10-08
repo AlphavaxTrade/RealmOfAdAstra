@@ -8,7 +8,8 @@ let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
 const c = compile();
 const chainProvider = ganache.provider({ logging: { quiet: true }, wallet: { totalAccounts: 6, defaultBalance: 1000 }, chain: { chainId: 43114 } });
-const provider = new ethers.BrowserProvider(chainProvider);
+// cacheTimeout: -1 → ethers aynı isteği 250 ms önbellekler; hızlı makinede "ödeme öncesi" ve "sonrası" bakiye okuması aynı önbellekten gelip fark 0 çıkıyordu (CI yakaladı)
+const provider = new ethers.BrowserProvider(chainProvider, undefined, { cacheTimeout: -1 });
 const [owner, treasury, feeRx, player, player2, attacker] = await Promise.all([0, 1, 2, 3, 4, 5].map(i => provider.getSigner(i)));
 const addr = s => s.getAddress();
 

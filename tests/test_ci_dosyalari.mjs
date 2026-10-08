@@ -80,6 +80,8 @@ const komutlar = wf => Object.values(wf.jobs).flatMap(j => adimlar(j).map(s => s
   const im = JSON.stringify(wf.jobs.imaj);
   assert.ok(/docker\/build-push-action|docker build/.test(im), 'imaj derlenir');
   assert.ok(/trivy/i.test(im), 'Trivy taraması');
+  const trivySurum = im.match(/aquasec[/]trivy:([0-9][0-9.]*)/);
+  assert.ok(trivySurum, 'Trivy imajı sürüm etiketiyle sabitlenmiş olmalı (latest yok)');
   assert.ok(/"push":false|push: false|"load":true/.test(im.replace(/\s/g, '')) || !/push":true/.test(im.replace(/\s/g, '')), 'CI imajı yayınlamaz');
   ok('güvenlik işi: audit-uretim + gitleaks (tam geçmiş); imaj işi: derleme + Trivy, yayın yok');
 }
