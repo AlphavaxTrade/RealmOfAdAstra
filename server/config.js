@@ -61,6 +61,9 @@ export function loadConfig(env = process.env) {
     mailFrom: env.MAIL_FROM || 'Realm of AdAstra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
     paymentsContract: (env.PAYMENTS_CONTRACT || '').trim(),        // RealmPayments sözleşmesinin adresi (boşsa cüzdandan ödeme kapalı)
+    // Oyun Kasası sözleşmesi (contracts/OyunKasasi.sol, tek yönlü kilit): doluysa oyunun ASTRA'sı kasada durur; çekim, yakım ve
+    // yapımcı payı kasadan çıkar (oyun cüzdanı yalnız "dağıtıcı" anahtardır, para tutmaz). Boşsa düz oyun cüzdanı kullanılır.
+    vaultContract: (env.VAULT_CONTRACT || '').trim().toLowerCase(),
     payFeeGas: num('PAY_FEE_GAS', 100000),
     // RealmRates sözleşmesi (kullanıcı kararı 6 Ekim 2026): oyundaki bütün ADA oranları burada durur; sunucu 5 dakikada bir okur.
     // Boşsa oyunun kendi ayarları (js/config.js) kullanılır.
@@ -115,6 +118,8 @@ export function dogrula(cfg, env = process.env) {
   if (cfg.gameWalletKey && !/^(0x)?[0-9a-fA-F]{64}$/.test(cfg.gameWalletKey)) hatalar.push('GAME_WALLET_PRIVATE_KEY biçimi geçersiz (64 onaltılık hane, başında 0x olabilir)');
   if (cfg.kasaMasterKey && !/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey)) hatalar.push('KASA_MASTER_KEY 64 haneli onaltılık olmalı (openssl rand -hex 32)');
   if (cfg.paymentsContract && !cfg.kasaMasterKey) hatalar.push('KASA_MASTER_KEY gerekli: PAYMENTS_CONTRACT tanımlı (Oyun Kasası anahtarları şifrelenemez)');
+  if (cfg.vaultContract && !adres(cfg.vaultContract)) hatalar.push('VAULT_CONTRACT geçerli bir adres değil');
+  if (cfg.vaultContract && !cfg.gameWalletKey) hatalar.push('GAME_WALLET_PRIVATE_KEY gerekli: VAULT_CONTRACT tanımlı (kasadan ödemeyi tetikleyen dağıtıcı anahtar budur)');
   if (cfg.reserveWallet && !adres(cfg.reserveWallet)) hatalar.push('RESERVE_WALLET geçerli bir adres değil');
   if (!cfg.yedek.klasor) uyarilar.push('YEDEK_KLASORU yok: otomatik yedek ve yedek ölçüleri KAPALI (felaket durumunda veri kaybı riski)');
   if (cfg.yedek.anahtar && !/^[0-9a-fA-F]{64}$/.test(cfg.yedek.anahtar)) hatalar.push('YEDEK_ANAHTAR 64 haneli onaltılık olmalı (openssl rand -hex 32)');

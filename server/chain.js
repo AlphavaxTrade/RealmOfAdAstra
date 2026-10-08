@@ -16,6 +16,13 @@ const ERC20_ABI = [
   'function transfer(address,uint256) returns (bool)',
   'event Transfer(address indexed from, address indexed to, uint256 value)'
 ];
+// Oyun Kasası (contracts/OyunKasasi.sol): tek yönlü kilit; çıkış yalnız bu üç fonksiyonla ve dağıtıcı anahtarıyla
+const VAULT_ABI = [
+  'function payPlayer(address to, uint256 amount, bytes32 ref)', 'function burn(uint256 amount, bytes32 ref)', 'function payCreator(uint256 amount, bytes32 ref)',
+  'function singleDrawCap() view returns (uint256)', 'function dailyRemaining() view returns (uint256)', 'function paused() view returns (bool)',
+  'function activeConfig() view returns (tuple(address dagitici, address creator, uint16 singleDrawBps, uint16 dailyLimitBps))',
+  'function deadAddress() view returns (address)', 'function token() view returns (address)'
+];
 const FEED_ABI = ['function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)', 'function decimals() view returns (uint8)'];
 const PAIR_ABI = ['function getReserves() view returns (uint112,uint112,uint32)', 'function token0() view returns (address)'];
 
@@ -38,6 +45,9 @@ export function createChain(cfg, { providerFactory } = {}) {
   }
   const wallet = cfg.gameWalletKey ? new ethers.Wallet(cfg.gameWalletKey) : null;
   const gameWallet = (wallet ? wallet.address : cfg.gameWalletAddress || '').toLowerCase() || null;
+  // Kasa modu (VAULT_CONTRACT): oyunun ASTRA'sı düz cüzdanda değil Oyun Kasası sözleşmesinde durur; ödemeler sözleşmeden çıkar.
+  const vaultAddr = /^0x[0-9a-fA-F]{40}$/.test(String(cfg.vaultContract || '')) ? String(cfg.vaultContract).toLowerCase() : '';
+  const holder = vaultAddr || gameWallet;     // piyasa okumasında "oyunun elindeki ASTRA" kimde
 
   async function readMarket() {
     return withProvider(async p => {
@@ -46,7 +56,7 @@ export function createChain(cfg, { providerFactory } = {}) {
       const feed = new ethers.Contract(cfg.avaxUsdFeed, FEED_ABI, p);
       const [prm, supplyW, deadW, round, feedDec, walletW] = await Promise.all([
         tm.getTokenParameters(cfg.tokenId), token.totalSupply(), token.balanceOf(cfg.deadAddress),
-        feed.latestRoundData(), feed.decimals(), gameWallet ? token.balanceOf(gameWallet) : Promise.resolve(0n)
+        feed.latestRoundData(), feed.decimals(), holder ? token.balanceOf(holder) : Promise.resolve(0n)
       ]);
       const avaxUsd = Number(round[1]) / 10 ** Number(feedDec);
       const supply = toAda(supplyW), dead = toAda(deadW);
@@ -116,6 +126,7 @@ export function createChain(cfg, { providerFactory } = {}) {
   }
 
   const erc20 = new ethers.Interface(ERC20_ABI);
+  const vaultIface = new ethers.Interface(VAULT_ABI);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   // ADASTRA gönderimi — ÇİFT ÖDEME OLMAYACAK şekilde:
@@ -163,6 +174,43 @@ export function createChain(cfg, { providerFactory } = {}) {
       catch (e) { lastErr = e; if (/already known|nonce too low|known transaction/i.test(String(e.message))) return; }
     }
     if (lastErr) throw lastErr;
+  }
+
+  // Oyun Kasası: canlı durum (bakiye, tek ödeme tavanı, günlük kalan, durdurma, dağıtıcı/yapımcı) — bakiyeler wei olarak da verilir
+  async function readVault() {
+    if (!vaultAddr) return null;
+    return withProvider(async p => {
+      const v = new ethers.Contract(vaultAddr, VAULT_ABI, p);
+      const token = new ethers.Contract(cfg.tokenAddress, ERC20_ABI, p);
+      const [cfgNow, capWei, remainingWei, paused, dead, tokenOf, balanceWei] = await Promise.all([v.activeConfig(), v.singleDrawCap(), v.dailyRemaining(), v.paused(), v.deadAddress(), v.token(), token.balanceOf(vaultAddr)]);
+      return { address: vaultAddr, dagitici: cfgNow.dagitici.toLowerCase(), creator: cfgNow.creator.toLowerCase(), singleDrawBps: Number(cfgNow.singleDrawBps), dailyLimitBps: Number(cfgNow.dailyLimitBps),
+        capWei, remainingWei, balanceWei, balance: toAda(balanceWei), paused, dead: dead.toLowerCase(), token: tokenOf.toLowerCase(), at: Date.now() };
+    });
+  }
+
+  // Kasa bu sunucuya uygun mu: aynı token, aynı ölü adres, dağıtıcı = oyun cüzdanı, yapımcı = oyunun yapımcı cüzdanı
+  async function checkVault(creatorWallet) {
+    const v = await readVault();
+    const problems = [];
+    if (v.token !== String(cfg.tokenAddress).toLowerCase()) problems.push('kasanın token adresi oyundaki ASTRA adresiyle aynı değil');
+    if (v.dead !== String(cfg.deadAddress).toLowerCase()) problems.push('kasanın yakım adresi oyundakiyle aynı değil');
+    if (!gameWallet || v.dagitici !== gameWallet) problems.push('kasadaki dağıtıcı anahtar oyun cüzdanı değil');
+    if (creatorWallet && v.creator !== String(creatorWallet).toLowerCase()) problems.push('kasadaki yapımcı adresi oyunun yapımcı cüzdanı değil');
+    return { ok: problems.length === 0, problems, vault: v };
+  }
+
+  // Kasadan ödeme: çekim → payPlayer, yakım → burn, yapımcı → payCreator. Aynı güvenli akış (imzala → kaydet → yay → bekle);
+  // ref = ödeme satırı numarası (zincirdeki olaylardan eşleştirilsin).
+  function sendVault(kind, to, amountAda, refId, onSigned = () => {}) {
+    if (!wallet) return Promise.reject(new Error('Oyun cüzdanı anahtarı tanımlı değil (GAME_WALLET_PRIVATE_KEY)'));
+    if (!vaultAddr) return Promise.reject(new Error('Kasa sözleşmesi tanımlı değil (VAULT_CONTRACT)'));
+    const value = ethers.parseUnits(Number(amountAda).toFixed(6), 18);
+    const ref = ethers.zeroPadValue(ethers.toBeHex(Number(refId) || 0), 32);
+    const data = kind === 'withdraw' ? vaultIface.encodeFunctionData('payPlayer', [to, value, ref])
+      : kind === 'burn' ? vaultIface.encodeFunctionData('burn', [value, ref])
+        : kind === 'creator' ? vaultIface.encodeFunctionData('payCreator', [value, ref]) : null;
+    if (!data) return Promise.reject(new Error('Kasa modunda bu ödeme türü yok: ' + kind));
+    return sendTx(wallet, { to: vaultAddr, data }, onSigned);
   }
 
   // "Gönderiliyor" kalmış bir ödemenin zincirdeki durumu: 'sent' | 'failed' (tekrar gönderilebilir) | 'waiting'
@@ -267,5 +315,5 @@ export function createChain(cfg, { providerFactory } = {}) {
     });
   }
 
-  return { readRates, scanTransfers, readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
+  return { vaultEnabled: !!vaultAddr, vaultAddress: vaultAddr, readVault, checkVault, sendVault, readRates, scanTransfers, readPaymentsAdmin, scanPaid, sendTx, balances, gasPrice, verifyPayment, readMarket, latestBlock, scanDeposits, sendAda, checkPayout, verifyLogin, gameWallet, canSend: !!wallet };
 }

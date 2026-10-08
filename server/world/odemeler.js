@@ -1,9 +1,10 @@
 // Realm of AdAstra sunucusu — dünya: zincir ödeme kuyruğu (pending → sending → sent; "sending" tekrar gönderilmez)
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
+import { ethers } from 'ethers';
 import { DAY } from './yardimci.js';
 
 export function olusturOdemeler(w) {
-  const { db, E, chain, cfg, clock, econ } = w;
+  const { db, E, chain, cfg, clock, econ, creatorWallet } = w;
   // ── Haftalık hesaplaşma ─────────────────────────────────────────────────
   function queuePayout(epoch, kind, address, amount) {
     if (!(amount >= 1)) return;
@@ -21,6 +22,7 @@ export function olusturOdemeler(w) {
     paying = true;
     const out = { sent: 0, failed: 0 };
     try {
+      if (chain.vaultEnabled) { await processVault(out); return out; }
       const since = Number(E.globalPool.state.epochStartTime) || clock() - 7 * DAY;
       const rows = db.q.payoutsPending.all();
       let sentWithdraw = db.raw.prepare("SELECT COALESCE(SUM(amount),0) AS t FROM payouts WHERE kind='withdraw' AND status IN ('sent','sending') AND sent_at >= ?").get(since).t;
@@ -53,6 +55,76 @@ export function olusturOdemeler(w) {
       paying = false;
     }
     return out;
+  }
+
+
+  // ── Kasa modu (VAULT_CONTRACT): çekim/yakım/yapımcı ödemeleri Oyun Kasası sözleşmesinden çıkar ──────────────────
+  // Sözleşme tek ödemeyi kasanın %singleDrawBps'iyle, 24 saatlik toplamı %dailyLimitBps'iyle sınırlar ve durdurulabilir.
+  // İmzadan ÖNCE canlı sınırlar okunur (yoksa estimateGas geri döner, satır sonsuza dek yeniden denenirdi); sığmayan satır
+  // işlem anında parçalanır: gönderilen parça kendi satırı olur (imzala-kaydet-yayınla çift ödeme güvenliği parça başına),
+  // artan kısım yeni "pending" satırı. Günlük bütçe üç çıkışa ortaktır; sıra: oyuncu çekimi, yakım, yapımcı.
+  const KASA_SIRA = { withdraw: 0, burn: 1, creator: 2 };
+  const KASA_ADIM = 10n ** 16n;                         // 0,01 ASTRA (ödeme satırları 2 ondalıklıdır)
+  let kasaKontrol = { at: 0, sonuc: null };
+  async function vaultKontrol() {
+    if (kasaKontrol.sonuc && clock() - kasaKontrol.at < 60000) return kasaKontrol.sonuc;
+    try { kasaKontrol = { at: clock(), sonuc: await chain.checkVault(creatorWallet()) }; }
+    catch (err) { kasaKontrol = { at: clock(), sonuc: { ok: false, problems: ['kasa okunamadı: ' + String(err.message).slice(0, 120)] } }; }
+    return kasaKontrol.sonuc;
+  }
+  const bekle = (id, mesaj) => db.q.payoutMark.run('pending', null, mesaj, null, id);
+
+  async function processVault(out) {
+    const kontrol = await vaultKontrol();
+    if (!kontrol.ok) { out.skipped = 'vault: ' + kontrol.problems.join('; '); return; }
+    const todo = db.q.payoutsPending.all().sort((a, b) => (KASA_SIRA[a.kind] ?? 9) - (KASA_SIRA[b.kind] ?? 9) || a.id - b.id);
+    const since = Number(E.globalPool.state.epochStartTime) || clock() - 7 * DAY;
+    let sentWithdraw = db.raw.prepare("SELECT COALESCE(SUM(amount),0) AS t FROM payouts WHERE kind='withdraw' AND status IN ('sent','sending') AND sent_at >= ?").get(since).t;
+    for (let guard = 0; todo.length && guard < 500; guard++) {
+      if (econ().paused) break;
+      const p = todo.shift();
+      if (!(p.kind in KASA_SIRA)) { bekle(p.id, 'Kasa modunda bu ödeme türü yok: ' + p.kind); continue; }
+      const v = await chain.readVault();
+      if (v.paused) { bekle(p.id, 'Kasa durdurulmuş (acil fren); açılınca devam eder'); out.skipped = 'vault-paused'; break; }
+      if (p.kind === 'creator' && String(p.address).toLowerCase() !== v.creator) { bekle(p.id, 'Yapımcı adresi kasadakiyle uyuşmuyor'); continue; }
+      const wantWei = ethers.parseUnits(Number(p.amount).toFixed(6), 18);
+      let chunkWei = [wantWei, v.capWei, v.remainingWei].reduce((m, x) => (x < m ? x : m));
+      chunkWei = chunkWei / KASA_ADIM * KASA_ADIM;
+      if (chunkWei <= 0n) { bekle(p.id, 'Kasanın günlük ödeme bütçesi dolu; 24 saat sonra devam eder'); out.skipped = 'vault-budget'; break; }
+      const chunk = Number(ethers.formatUnits(chunkWei, 18));
+      if (p.kind === 'withdraw' && sentWithdraw + chunk > cfg.weeklySendCapAda) { bekle(p.id, 'Haftalık güvenlik sınırı dolu; gelecek hafta ya da yönetici onayıyla'); continue; }
+      let rest = null;
+      if (chunkWei < wantWei) {
+        const restWei = wantWei - chunkWei;
+        if (restWei >= KASA_ADIM) {
+          rest = db.tx(() => {
+            db.raw.prepare('UPDATE payouts SET amount = ? WHERE id = ?').run(chunk, p.id);
+            const id = Number(db.q.payoutAdd.run(p.epoch, p.kind, p.address, Number(ethers.formatUnits(restWei, 18)), p.created_at).lastInsertRowid);
+            return db.q.payoutGet.get(id);
+          });
+          p.amount = chunk;
+        } else {
+          db.event('payout-dust', null, { id: p.id, kind: p.kind, dust: Number(ethers.formatUnits(restWei, 18)) });
+          db.raw.prepare('UPDATE payouts SET amount = ? WHERE id = ?').run(chunk, p.id);
+          p.amount = chunk;
+        }
+      }
+      db.q.payoutMark.run('sending', null, null, clock(), p.id);
+      if (p.kind === 'withdraw') sentWithdraw += chunk;
+      try {
+        const hash = await chain.sendVault(p.kind, p.address, chunk, p.id, s => db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id));
+        db.q.payoutMark.run('sent', hash, null, clock(), p.id);
+        out.sent++;
+        if (rest) todo.unshift(rest);
+      } catch (err) {
+        const msg = String(err.shortMessage || err.message).slice(0, 300);
+        const row = db.q.payoutGet.get(p.id);
+        if (row && row.tx_hash && !err.reverted) db.q.payoutSetStatus.run('sending', 'Onay bekleniyor: ' + msg, p.id);
+        else { bekle(p.id, msg); if (p.kind === 'withdraw') sentWithdraw -= chunk; }
+        out.failed++;
+        break;                                     // bir gönderim başarısızsa bu tur biter; kalanlar sonraki turda (satırlar kayıtlı)
+      }
+    }
   }
 
   // "Gönderiliyor" kalmış ödemeleri zincirden sonuçlandır: işlendiyse 'sent', hiç işlenmeyecekse yeniden sıraya

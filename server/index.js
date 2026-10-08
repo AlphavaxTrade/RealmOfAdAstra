@@ -50,6 +50,7 @@ const stopWith = msg => { log.error('⛔ ' + msg); process.exit(1); };
 }
 if (cfg.testMode && (cfg.gameWalletKey || cfg.kasaMasterKey)) stopWith('TEST_MODE=1 iken GAME_WALLET_PRIVATE_KEY ya da KASA_MASTER_KEY kullanılamaz (deneme menüsü gerçek parayı tehlikeye atar).');
 if (cfg.testMode && cfg.paymentsContract && cfg.chainId === 43114) stopWith('TEST_MODE=1 iken gerçek ağdaki ödeme sözleşmesi kullanılamaz (Fuji için CHAIN_ID=43113).');
+if (cfg.testMode && cfg.vaultContract && cfg.chainId === 43114) stopWith('TEST_MODE=1 iken gerçek ağdaki Oyun Kasası sözleşmesi kullanılamaz (Fuji için CHAIN_ID=43113).');
 if (!cfg.testMode && process.env.PAROLA_HAFIF === '1') stopWith('PAROLA_HAFIF=1 yalnız testler içindir (parola özetini zayıflatır); gerçek sunucuda kullanılamaz.');
 if (cfg.adminToken && cfg.adminToken.length < 24) log.warn('⚠️  ADMIN_TOKEN 24 karakterden kısa: yönetici paneli KAPALI. (openssl rand -hex 32)');
 

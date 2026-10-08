@@ -47,6 +47,7 @@ export const DEGISKENLER = [
   ['Zincir (Avalanche)', 'LEGACY_DEPOSITS', '1: eski düzen, oyun cüzdanına doğrudan gönderilen ADASTRA bakiyeye yazılır (varsayılan kapalı)', '0', ''],
   ['Zincir (Avalanche)', 'PAYMENTS_CONTRACT', 'RealmPayments sözleşme adresi. Boşsa cüzdandan ödeme ve Oyun Kasası kapalı', '(boş)', ''],
   ['Zincir (Avalanche)', 'RATES_CONTRACT', 'RealmRates sözleşme adresi (ADA oranları; 5 dakikada bir okunur). Boşsa oyunun kendi ayarları', '(boş)', ''],
+  ['Zincir (Avalanche)', 'VAULT_CONTRACT', 'Oyun Kasası sözleşme adresi (tek yönlü kilit; çekim/yakım/yapımcı payı kasadan çıkar, oyun cüzdanı yalnız dağıtıcı anahtardır). Boşsa düz oyun cüzdanı', '(boş)', ''],
   ['Zincir (Avalanche)', 'PAY_FEE_GAS', 'Ödeme komisyonu gaz çarpanı (sözleşmedeki feeGas ile aynı olmalı)', '100000', ''],
   ['Zincir (Avalanche)', 'TREASURY_ADDRESS', 'Sözleşmedeki hazine adresi (boşsa oyun cüzdanı)', '(boş)', ''],
   ['Zincir (Avalanche)', 'CONTRACT_OWNER', 'Ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı); panelde doğrulanır', '(boş)', ''],

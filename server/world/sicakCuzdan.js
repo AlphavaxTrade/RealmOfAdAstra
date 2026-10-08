@@ -3,7 +3,7 @@
 import { fmt, DAY } from './yardimci.js';
 
 export function olusturSicakCuzdan(w) {
-  const { db, E, chain, mailer, cfg, clock, log, econ, setEcon, snapshotMarket, queuePayout } = w;
+  const { db, E, chain, mailer, cfg, clock, log, econ, setEcon, snapshotMarket, queuePayout, creatorWallet } = w;
   // ── Sıcak / soğuk cüzdan (kullanıcı kararı 4 Ekim 2026) ─────────────────
   // Oyun cüzdanında (anahtarı sunucuda = "sıcak") yalnız bir haftalık ihtiyaç kadar ADA durur. İhtiyaç: son 4 haftanın
   // en yüksek haftalık gönderimi, bu haftaki bekleyen çekim talepleri ve HOT_WALLET_MIN_ADA'nın büyüğü; üstüne sırada
@@ -19,8 +19,43 @@ export function olusturSicakCuzdan(w) {
     const weekly = Math.max(histMax, requests, Number(cfg.hotWalletMinAda) || 0);
     return { weekly, queued, need: weekly * (Number(cfg.hotWalletWeeks) || 1) + queued };
   }
+  // Kasa modunda (VAULT_CONTRACT) oyun cüzdanı para tutmaz: yedek cüzdana aktarım YOK (kasanın böyle bir çıkışı bilerek yok).
+  // Günlük denetim: kasa bu sunucuya uygun mu, durmuş mu, dağıtıcı anahtarın işlem ücreti için AVAX'ı yetiyor mu.
+  async function checkVaultWallet() {
+    const st = { at: clock(), vault: true, swept: 0, low: false, weekly: 0, queued: 0, need: 0 };
+    const sorunlar = [];
+    try {
+      const k = await chain.checkVault(creatorWallet());
+      sorunlar.push(...k.problems);
+      Object.assign(st, { walletAda: k.vault.balance, vaultAddress: k.vault.address, vaultPaused: k.vault.paused, vaultOk: k.ok });
+      if (k.vault.paused) sorunlar.push('kasa durdurulmuş (acil fren açık)');
+    } catch (err) { sorunlar.push('kasa okunamadı: ' + String(err.message).slice(0, 120)); st.vaultOk = false; }
+    try {
+      const b = await chain.balances(chain.gameWallet);
+      st.gameAvax = b.avax;
+      if (b.avax < 0.05) sorunlar.push(`dağıtıcı anahtarın AVAX'ı az (${b.avax.toFixed(4)}); ödemelerin işlem ücreti karşılanamayabilir`);   // 0,05 AVAX ≈ yüzlerce ödeme
+    } catch (err) { log.warn('Dağıtıcı AVAX bakiyesi:', err.message); }
+    st.problems = sorunlar;
+    const prev = econ().hotWallet || {};
+    st.alertAt = prev.alertAt || 0;
+    if (sorunlar.length && clock() - st.alertAt > DAY) {
+      st.alertAt = clock();
+      db.event('vault-problem', null, { sorunlar });
+      if (mailer && cfg.adminEmail) {
+        await mailer.send({ to: cfg.adminEmail, subject: 'Realm of AdAstra — Oyun Kasası uyarısı', text: `Oyun Kasası denetiminde sorun var:
+
+- ${sorunlar.join('\n- ')}
+
+Kasa: ${chain.vaultAddress}` })
+          .catch(err => log.warn('Uyarı e-postası:', err.message));
+      }
+    }
+    setEcon({ hotWallet: st });
+    return st;
+  }
   async function checkHotWallet() {
     if (!chain || !chain.gameWallet) return null;
+    if (chain.vaultEnabled) return checkVaultWallet();
     const m = (await snapshotMarket().catch(() => null)) || econ().market;
     if (!m || m.walletAda == null) return null;
     const n = hotWalletNeed();

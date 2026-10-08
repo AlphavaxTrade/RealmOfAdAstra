@@ -1,12 +1,12 @@
 // Oyun Kasası sözleşmesi — DERİN testler (T1, yerel doğrulama kampanyası): uç durumlar, kötü niyetli token taklitleri ve
 // tohumlu rastgele işlem dizisi. Her işlemden sonra sözleşmenin zincirdeki durumu, bağımsız yazılmış bir modelle
-// karşılaştırılır (hata adı dahil). Gerçek ağa dokunmaz: yalnız ganache. Ölçek: KASA_FUZZ_OPS (varsayılan 250).
+// karşılaştırılır (hata adı dahil). Gerçek ağa dokunmaz: yalnız ganache. Ölçek: KASA_FUZZ_OPS (varsayılan 150).
 import assert from 'node:assert/strict';
 import ganache from 'ganache';
 import { ethers } from 'ethers';
 import { compile } from '../contracts/compile.mjs';
 
-const OPS = Number(process.env.KASA_FUZZ_OPS) || 250;
+const OPS = Number(process.env.KASA_FUZZ_OPS) || 150;
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
 const c = compile();

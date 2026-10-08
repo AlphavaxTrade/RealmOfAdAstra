@@ -66,6 +66,7 @@
 | `LEGACY_DEPOSITS` | 1: eski düzen, oyun cüzdanına doğrudan gönderilen ADASTRA bakiyeye yazılır (varsayılan kapalı) | 0 |
 | `PAYMENTS_CONTRACT` | RealmPayments sözleşme adresi. Boşsa cüzdandan ödeme ve Oyun Kasası kapalı | (boş) |
 | `RATES_CONTRACT` | RealmRates sözleşme adresi (ADA oranları; 5 dakikada bir okunur). Boşsa oyunun kendi ayarları | (boş) |
+| `VAULT_CONTRACT` | Oyun Kasası sözleşme adresi (tek yönlü kilit; çekim/yakım/yapımcı payı kasadan çıkar, oyun cüzdanı yalnız dağıtıcı anahtardır). Boşsa düz oyun cüzdanı | (boş) |
 | `PAY_FEE_GAS` | Ödeme komisyonu gaz çarpanı (sözleşmedeki feeGas ile aynı olmalı) | 100000 |
 | `TREASURY_ADDRESS` | Sözleşmedeki hazine adresi (boşsa oyun cüzdanı) | (boş) |
 | `CONTRACT_OWNER` | Ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı); panelde doğrulanır | (boş) |
