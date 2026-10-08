@@ -7,9 +7,6 @@ export function olusturOrtakGelir(w) {
   // ── Ortak gelir: trade sitesinden gelen ADASTRA (kullanıcı kararı 6 Ekim 2026) ──
   // PARTNER_INCOME_FROM cüzdan(lar)ından PARTNER_INCOME_TO (boşsa oyun cüzdanı) adresine gelen her ADASTRA transferi
   // bir kez işlenir ve oyundaki her harcama gibi dağıtılır (%5 yakım, %6 temel gelir, %3 yapımcı, %86 ödül kasaları).
-  db.raw.exec(`CREATE TABLE IF NOT EXISTS partner_income (
-    tx_hash TEXT NOT NULL, log_index INTEGER NOT NULL, sender TEXT NOT NULL, amount REAL NOT NULL, block INTEGER, at INTEGER NOT NULL,
-    PRIMARY KEY (tx_hash, log_index))`);
   const piAdd = db.raw.prepare('INSERT OR IGNORE INTO partner_income (tx_hash, log_index, sender, amount, block, at) VALUES (?, ?, ?, ?, ?, ?)');
   const partnerTo = () => (cfg.partnerIncomeTo || (chain && chain.gameWallet) || '').toLowerCase();
 

@@ -14,11 +14,12 @@ export function eskiOturumlariOzetle(db) {
   if (var_) return 0;
   const satirlar = db.prepare('SELECT token FROM sessions').all();
   const guncelle = db.prepare('UPDATE sessions SET token = ? WHERE token = ?');
-  db.exec('BEGIN');
+  const disIslem = db.isTransaction;   // geçiş çalıştırıcısı zaten işlem açtıysa iç içe işlem olmaz
+  if (!disIslem) db.exec('BEGIN');
   try {
     for (const s of satirlar) guncelle.run(tokenOzeti(s.token), s.token);
     db.prepare('INSERT INTO kv (key, value) VALUES (?, ?)').run(ISARET, '1');
-    db.exec('COMMIT');
-  } catch (e) { db.exec('ROLLBACK'); throw e; }
+    if (!disIslem) db.exec('COMMIT');
+  } catch (e) { if (!disIslem) db.exec('ROLLBACK'); throw e; }
   return satirlar.length;
 }

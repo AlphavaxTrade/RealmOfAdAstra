@@ -1,11 +1,13 @@
 // Realm of AdAstra sunucusu — oyunun derlenmiş dosyalarını (dist/) sunar
-// (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi)
+// A4.5 (yük testi bulgusu): ön-sıkıştırılmış .br/.gz kopyaları (scripts/sikistir.mjs) tarayıcı kabul ediyorsa doğrudan sunulur,
+// yanıtlara Content-Length eklenir, dosya bilgisi 5 sn önbelleklenir (her istekte eşzamanlı dosya sistemi sorgusu yok).
 import fs from 'node:fs';
 import path from 'node:path';
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.woff2': 'font/woff2' };
+const SIKISTIRILIR = new Set(['.js', '.mjs', '.css', '.html', '.json', '.svg', '.txt', '.xml']);
 
 // Vite'ın içerik özetli dosya adları (index-AbCd1234.js): içerik değişince ad değişir, bu yüzden 1 yıl "immutable" önbellek güvenli
 const OZETLI_DOSYA = /-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
@@ -14,8 +16,45 @@ const OZETLI_DOSYA = /-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
 // veriler yalnız kendi sunucumuza gönderilebilir (Google yazı tipleri hariç). Cüzdan eklentileri (Core/MetaMask) etkilenmez.
 const GAME_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
+const BILGI_OMRU_MS = 5000;
+const BILGI_EN_COK = 2000;
+
+// Accept-Encoding başlığından kabul edilen kodlamalar (q=0 olanlar kabul değildir)
+export function kabulEdilenKodlamalar(baslik) {
+  const out = new Set();
+  for (const parca of String(baslik || '').split(',')) {
+    const [ad, ...ek] = parca.trim().toLowerCase().split(';');
+    if (!ad) continue;
+    const q = ek.map(x => x.trim()).find(x => x.startsWith('q='));
+    if (q && !(Number(q.slice(2)) > 0)) continue;
+    out.add(ad);
+  }
+  return out;
+}
+
 // secHeaders: createApp'in hesapladığı güvenlik başlıkları (HSTS https yayınında eklenir)
 export function createStatic({ cfg, secHeaders: SEC_HEADERS }) {
+  const bilgiOnbellek = new Map();   // dosya yolu → { at, v }  (v: null = dosya yok ya da klasör)
+  function bilgi(file) {
+    const simdi = Date.now();
+    const c = bilgiOnbellek.get(file);
+    if (c && simdi - c.at < BILGI_OMRU_MS) return c.v;
+    let v = null;
+    try {
+      const st = fs.statSync(file);
+      if (st.isFile()) {
+        v = { boyut: st.size };
+        // Sıkıştırılmış kopya yalnız orijinalden YENİ ya da aynı yaştaysa geçerli (derleme sonrası bayat kopya sunulmaz)
+        for (const [uz, ad] of [['.br', 'br'], ['.gz', 'gzip']]) {
+          try { const s2 = fs.statSync(file + uz); if (s2.isFile() && s2.mtimeMs >= st.mtimeMs) v[ad] = { yol: file + uz, boyut: s2.size }; } catch { /* kopya yok */ }
+        }
+      }
+    } catch { /* dosya yok */ }
+    if (bilgiOnbellek.size >= BILGI_EN_COK) bilgiOnbellek.clear();
+    bilgiOnbellek.set(file, { at: simdi, v });
+    return v;
+  }
+
   function serveStatic(req, res, pathname) {
     if (!cfg.serveDist) { res.writeHead(404, SEC_HEADERS); return res.end(); }
     const root = path.resolve(cfg.distDir);
@@ -24,12 +63,25 @@ export function createStatic({ cfg, secHeaders: SEC_HEADERS }) {
     if (p.includes('\0')) { res.writeHead(400, SEC_HEADERS); return res.end(); }
     let file = path.resolve(root, '.' + p);
     if (file !== root && !file.startsWith(root + path.sep)) { res.writeHead(403, SEC_HEADERS); return res.end(); }
-    if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(root, 'index.html');
-    if (!fs.existsSync(file)) { res.writeHead(404); return res.end('Oyun dosyaları bulunamadı: önce "npm run build" çalıştırın.'); }
+    let b = bilgi(file);
+    if (!b) { file = path.join(root, 'index.html'); b = bilgi(file); }   // bilinmeyen yol / klasör → oyunun ana sayfası
+    if (!b) { res.writeHead(404); return res.end('Oyun dosyaları bulunamadı: önce "npm run build" çalıştırın.'); }
     const ext = path.extname(file).toLowerCase();
-    const s = fs.createReadStream(file);
+    const sikistirilabilir = SIKISTIRILIR.has(ext);
+    let gonderilecek = file, boyut = b.boyut, kodlama = null;
+    if (sikistirilabilir) {
+      const kabul = kabulEdilenKodlamalar(req.headers['accept-encoding']);
+      if (kabul.has('br') && b.br) { gonderilecek = b.br.yol; boyut = b.br.boyut; kodlama = 'br'; }
+      else if (kabul.has('gzip') && b.gzip) { gonderilecek = b.gzip.yol; boyut = b.gzip.boyut; kodlama = 'gzip'; }
+    }
+    const s = fs.createReadStream(gonderilecek);
     s.on('error', () => { if (!res.headersSent) res.writeHead(500, SEC_HEADERS); res.end(); });
-    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : OZETLI_DOSYA.test(file) ? 'public, max-age=31536000, immutable' : 'public, max-age=86400', ...(ext === '.html' ? { 'Content-Security-Policy': GAME_CSP } : {}) });
+    res.writeHead(200, {
+      ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Content-Length': boyut,
+      'Cache-Control': ext === '.html' ? 'no-cache' : OZETLI_DOSYA.test(file) ? 'public, max-age=31536000, immutable' : 'public, max-age=86400',
+      ...(sikistirilabilir ? { Vary: 'Accept-Encoding' } : {}), ...(kodlama ? { 'Content-Encoding': kodlama } : {}),
+      ...(ext === '.html' ? { 'Content-Security-Policy': GAME_CSP } : {})
+    });
     s.pipe(res);
   }
 

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5180 --strictPort",
-    "build": "vite build",
+    "build": "vite build && node scripts/sikistir.mjs",
     "preview": "vite preview --port 5180 --strictPort",
     "test": "node tests/run_all.mjs",
     "serve": "node scripts/windows/keep-alive.cjs",
@@ -17,7 +17,8 @@
     "gizli-tara": "node scripts/gizli-tara.mjs",
     "audit-uretim": "node scripts/audit-uretim.mjs",
     "kapsam": "c8 node tests/run_all.mjs",
-    "kapsam-kontrol": "node scripts/kapsam-kontrol.mjs"
+    "kapsam-kontrol": "node scripts/kapsam-kontrol.mjs",
+    "yuk": "node scripts/yuk/yuk.mjs"
   },
   "devDependencies": {
     "c8": "^12.0.0",

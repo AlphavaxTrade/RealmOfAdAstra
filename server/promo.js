@@ -10,14 +10,7 @@
 // ============================================================================
 import crypto from 'node:crypto';
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS promo_codes (
-  code TEXT PRIMARY KEY, reward TEXT NOT NULL, max_uses INTEGER NOT NULL DEFAULT 0, used INTEGER NOT NULL DEFAULT 0,
-  expires INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1, note TEXT, created INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS promo_uses (code TEXT NOT NULL, player TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY (code, player));
-CREATE TABLE IF NOT EXISTS promo_pending (player TEXT PRIMARY KEY, code TEXT NOT NULL, at INTEGER NOT NULL);
-`;
+
 // v2: 6 hammadde
 export const PROMO_REWARD_KEYS = ['ada', 'wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
 const LIMITS = { ada: 10_000_000, wheat: 1_000_000, stone: 1_000_000, wood: 1_000_000, coal: 1_000_000, iron: 1_000_000, herb: 1_000_000, fragments: 100_000, keys: 1000, boxes: 1000, scroll_heal: 1000, scroll_stamina: 1000 };
@@ -26,7 +19,6 @@ const norm = c => String(c || '').trim().replace(/[İıi]/g, 'I').toUpperCase();
 const CODE_RE = /^[A-Z0-9-]{4,32}$/;
 
 export function createPromo({ db, engine, clock = () => Date.now(), log = console }) {
-  db.raw.exec(SCHEMA);
   const E = engine;
   const q = {
     add: db.raw.prepare('INSERT INTO promo_codes (code, reward, max_uses, expires, note, created) VALUES (?, ?, ?, ?, ?, ?)'),

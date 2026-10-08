@@ -19,27 +19,6 @@ import crypto from 'node:crypto';
 import QRCode from 'qrcode';
 import { parolaOzetle, parolaDogrula } from './parola.js';
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS accounts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT NOT NULL UNIQUE,
-  pass_hash TEXT NOT NULL,
-  email_verified INTEGER NOT NULL DEFAULT 0,
-  created_at INTEGER NOT NULL,
-  wallet TEXT UNIQUE,
-  wallet_set_at INTEGER,
-  pending_wallet TEXT,
-  pending_confirmed INTEGER NOT NULL DEFAULT 0,
-  pending_active_at INTEGER
-);
-CREATE TABLE IF NOT EXISTS email_tokens (
-  token TEXT PRIMARY KEY, account_id INTEGER NOT NULL, kind TEXT NOT NULL, data TEXT, expires INTEGER NOT NULL
-);
-CREATE TABLE IF NOT EXISTS wallet_nonces (account_id INTEGER PRIMARY KEY, address TEXT NOT NULL, message TEXT NOT NULL, expires INTEGER NOT NULL);
-`;
-
-const MIGRATIONS = ['totp_secret TEXT', 'totp_pending TEXT', 'totp_enabled INTEGER NOT NULL DEFAULT 0', 'totp_step INTEGER NOT NULL DEFAULT 0', 'backup_codes TEXT'];
-
 // ── TOTP (doğrulama uygulaması kodları) ─────────────────────────────────────
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 export function base32(buf) {
@@ -79,8 +58,6 @@ let sahteOzet = null;
 const sahteParolaOzeti = () => (sahteOzet ||= parolaOzetle('zamanlama-esitleme-icin'));
 
 export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), verifyMessage }) {
-  db.raw.exec(SCHEMA);
-  for (const col of MIGRATIONS) { try { db.raw.exec('ALTER TABLE accounts ADD COLUMN ' + col); } catch { /* sütun zaten var */ } }
   const q = {
     byEmail: db.raw.prepare('SELECT * FROM accounts WHERE email = ?'),
     byId: db.raw.prepare('SELECT * FROM accounts WHERE id = ?'),

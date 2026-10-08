@@ -2,45 +2,13 @@
 import { DatabaseSync } from 'node:sqlite';
 import fs from 'node:fs';
 import path from 'node:path';
-import { eskiOturumlariOzetle } from './oturum.js';
-
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS players (
-  address TEXT PRIMARY KEY,
-  created_at INTEGER NOT NULL,
-  last_seen INTEGER NOT NULL,
-  deposited_ada REAL NOT NULL DEFAULT 0,
-  withdrawn_ada REAL NOT NULL DEFAULT 0,
-  pending_withdraw REAL NOT NULL DEFAULT 0,
-  banned INTEGER NOT NULL DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS nonces (address TEXT PRIMARY KEY, nonce TEXT NOT NULL, expires INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, address TEXT NOT NULL, expires INTEGER NOT NULL);
-CREATE TABLE IF NOT EXISTS deposits (
-  tx_hash TEXT NOT NULL, log_index INTEGER NOT NULL, address TEXT NOT NULL, amount REAL NOT NULL,
-  block INTEGER NOT NULL, credited_at INTEGER, PRIMARY KEY (tx_hash, log_index)
-);
-CREATE TABLE IF NOT EXISTS payouts (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, epoch INTEGER NOT NULL, kind TEXT NOT NULL, address TEXT NOT NULL,
-  amount REAL NOT NULL, status TEXT NOT NULL DEFAULT 'pending', tx_hash TEXT, error TEXT,
-  created_at INTEGER NOT NULL, sent_at INTEGER, raw_tx TEXT, tx_nonce INTEGER
-);
-CREATE TABLE IF NOT EXISTS withdraw_log (
-  epoch INTEGER NOT NULL, address TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (epoch, address)
-);
-CREATE TABLE IF NOT EXISTS prices (at INTEGER PRIMARY KEY, price_usd REAL, mcap_usd REAL, supply REAL, dead REAL, avax_usd REAL, graduated INTEGER);
-CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, at INTEGER NOT NULL, address TEXT, type TEXT NOT NULL, data TEXT);
-`;
+import { gecisleriCalistir } from './gecis/index.js';
 
 export function openDb(file) {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
-  db.exec(SCHEMA);
-  // Eski kayıt dosyaları için ek sütunlar
-  for (const col of ['raw_tx TEXT', 'tx_nonce INTEGER']) { try { db.exec('ALTER TABLE payouts ADD COLUMN ' + col); } catch { /* zaten var */ } }
-  eskiOturumlariOzetle(db);   // eski kayıt dosyalarındaki düz oturum anahtarları bir kez özetlenir (A2.7)
+  gecisleriCalistir(db);   // şema: server/gecis/ (sıralı, tek seferlik, işlem içinde; kurumsal A5)
   const q = {};
   const prep = (name, sql) => { q[name] = db.prepare(sql); };
   prep('kvGet', 'SELECT value FROM kv WHERE key = ?');

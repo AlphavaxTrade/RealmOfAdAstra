@@ -11,10 +11,6 @@ const DAY = 86400000;
 export function createPazar({ db, engine, clock = () => Date.now(), log = console }) {
   const E = engine;
   const P = () => ({ FEE: 0.02, FEE_BURN_SHARE: 0.5, DAYS: 7, MAX_LISTINGS: 10, SELLER_LOCKED_SHARE: 0.8, MIN_PRICE: 0.01, MAX_PRICE: 1e9, ...(E.GAME_CONFIG.ILAN_PAZARI || {}) });
-  db.raw.exec(`CREATE TABLE IF NOT EXISTS listings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT, seller TEXT NOT NULL, item TEXT NOT NULL, price REAL NOT NULL,
-    created_at INTEGER NOT NULL, expires INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'active', buyer TEXT, closed_at INTEGER)`);
-  db.raw.exec('CREATE INDEX IF NOT EXISTS listings_status ON listings (status, expires)');
   const q = {
     add: db.raw.prepare('INSERT INTO listings (seller, item, price, created_at, expires) VALUES (?, ?, ?, ?, ?)'),
     get: db.raw.prepare('SELECT * FROM listings WHERE id = ?'),

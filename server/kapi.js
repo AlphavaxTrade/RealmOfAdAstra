@@ -17,9 +17,6 @@ const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
 export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {}, clock = () => Date.now(), log = console }) {
   const E = engine;
   const K = () => E.GAME_CONFIG.KAPI || {};
-  for (const col of ["gate TEXT NOT NULL DEFAULT 'new'", 'gate_at INTEGER', 'gate_prio INTEGER NOT NULL DEFAULT 0', 'warned_at INTEGER']) {
-    try { db.raw.exec('ALTER TABLE players ADD COLUMN ' + col); } catch { /* sütun zaten var */ }
-  }
   const q = {
     get: db.raw.prepare('SELECT address, last_seen, created_at, gate, gate_at, gate_prio, warned_at FROM players WHERE address = ?'),
     set: db.raw.prepare('UPDATE players SET gate = ?, gate_at = ?, gate_prio = ?, warned_at = ? WHERE address = ?'),
@@ -44,10 +41,23 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   const setState = patch => { const next = { ...state(), ...patch }; db.kvSetJson('world:kapi', next); return next; };
   state();
 
+  // KESİN sayım: kararlar (admit, fillSeats, geçmiş kaydı) bunu kullanır
   function counts() {
     const out = { citizen: 0, waiting: 0, suspended: 0, new: 0 };
     for (const r of q.count.all()) out[r.gate] = (out[r.gate] || 0) + r.n;
     return out;
+  }
+  // GÖSTERİM sayımı: statusOf / publicSummary her istekte çağrılır ve tablo büyüdükçe pahalıdır (yük testinde CPU'nun %8'i).
+  // 2 saniyelik önbellek + kapıyı değiştiren her yazmada anında geçersiz kılma (aşağıda q.set / q.migrate sarılır).
+  let sayimOnbellek = null;
+  function countsGoster() {
+    const now = clock();
+    if (!sayimOnbellek || now - sayimOnbellek.at >= 2000) sayimOnbellek = { at: now, v: counts() };
+    return sayimOnbellek.v;
+  }
+  for (const ad of ['set', 'migrate']) {
+    const st = q[ad]; const calistir = st.run.bind(st);
+    st.run = (...a) => { sayimOnbellek = null; return calistir(...a); };
   }
 
   // ── Oyuncuya haber: oyun içi bildirim (bir sonraki girişte görünür) + e-posta ──
@@ -178,7 +188,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
 
   function statusOf(address) {
     const p = q.get.get(address);
-    const s = state(), c = counts();
+    const s = state(), c = countsGoster();
     const base = { status: p ? p.gate : 'new', limit: s.limit, citizens: c.citizen, waiting: c.waiting };
     if (p && p.gate === 'waiting') {
       const pos = q.waiting.all().findIndex(w => w.address === address);
@@ -190,7 +200,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
 
   // Herkese açık özet (Sirius Konseyi ekranı)
   function publicSummary() {
-    const s = state(), c = counts(), tiers = K().USD_TIERS || [10, 30, 100, 300];
+    const s = state(), c = countsGoster(), tiers = K().USD_TIERS || [10, 30, 100, 300];
     return { limit: s.limit, citizens: c.citizen, waiting: c.waiting, suspended: c.suspended, tier: s.tier,
       threshold: tiers[Math.min(s.tier, tiers.length - 1)], indicator: indicator(), lastGrowthAt: s.lastGrowthAt || 0,
       warnDays: Number(K().INACTIVE_WARN_DAYS) || 14, suspendDays: Number(K().INACTIVE_SUSPEND_DAYS) || 30 };

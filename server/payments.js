@@ -13,15 +13,10 @@
 import crypto from 'node:crypto';
 import { validateArgs } from './actions.js';
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS pay_quotes (
-  ref TEXT PRIMARY KEY, player TEXT NOT NULL, name TEXT NOT NULL, args TEXT NOT NULL, amount REAL NOT NULL,
-  created INTEGER NOT NULL, expires INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'open', tx_hash TEXT UNIQUE, paid REAL
-);`;
+
 
 
 export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, clock = () => Date.now(), log = console }) {
-  db.raw.exec(SCHEMA);
   const q = {
     add: db.raw.prepare('INSERT INTO pay_quotes (ref, player, name, args, amount, created, expires) VALUES (?, ?, ?, ?, ?, ?, ?)'),
     get: db.raw.prepare('SELECT * FROM pay_quotes WHERE ref = ?'),

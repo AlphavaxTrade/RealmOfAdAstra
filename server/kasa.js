@@ -17,25 +17,13 @@
 import crypto from 'node:crypto';
 import { ethers } from 'ethers';
 
-const SCHEMA = `
-CREATE TABLE IF NOT EXISTS kasa (
-  player TEXT PRIMARY KEY, address TEXT NOT NULL UNIQUE, key_enc TEXT NOT NULL, created INTEGER NOT NULL,
-  pending REAL NOT NULL DEFAULT 0, settled REAL NOT NULL DEFAULT 0, approved INTEGER NOT NULL DEFAULT 0,
-  ada REAL NOT NULL DEFAULT 0, avax REAL NOT NULL DEFAULT 0, bal_at INTEGER NOT NULL DEFAULT 0, last_settle INTEGER NOT NULL DEFAULT 0
-);
-CREATE TABLE IF NOT EXISTS kasa_ops (
-  id INTEGER PRIMARY KEY AUTOINCREMENT, player TEXT NOT NULL, kind TEXT NOT NULL, amount REAL NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending', tx_hash TEXT, raw_tx TEXT, tx_nonce INTEGER, error TEXT, created INTEGER NOT NULL, done_at INTEGER
-);
-CREATE TABLE IF NOT EXISTS kasa_usage (player TEXT NOT NULL, day TEXT NOT NULL, ada REAL NOT NULL, PRIMARY KEY (player, day));
-`;
+
 
 const ERC20 = new ethers.Interface(['function approve(address,uint256) returns (bool)', 'function transfer(address,uint256) returns (bool)']);
 const PAY = new ethers.Interface(['function pay(uint256 amount, bytes32 ref) payable']);
 const dayKey = t => new Date(t + 3 * 3600000).toISOString().slice(0, 10);   // TSİ günü
 
 export function createKasa({ db, chain = null, accounts = null, cfg, clock = () => Date.now(), log = console, priceMultiplier = () => 1, notify = null }) {
-  db.raw.exec(SCHEMA);
   const simulated = !!cfg.testMode;
   let master = null;
   if (/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey || '')) master = Buffer.from(cfg.kasaMasterKey, 'hex');
