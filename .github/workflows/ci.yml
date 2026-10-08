@@ -89,7 +89,7 @@ jobs:
       - name: Üretim bağımlılıkları açık denetimi
         run: npm run audit-uretim
       - name: Gizli bilgi taraması, geçmişin tamamı (gitleaks)
-        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect --source /repo --no-banner --redact
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source /repo --no-banner --redact
 
   imaj:
     name: imaj
@@ -100,7 +100,7 @@ jobs:
       - name: İmaj derle (yayınlanmaz)
         run: docker build -t realm-ci:${{ github.sha }} .
       - name: Açık taraması (Trivy; düzeltmesi olan yüksek/kritik açık varsa kırılır)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: realm-ci:${{ github.sha }}
           severity: HIGH,CRITICAL

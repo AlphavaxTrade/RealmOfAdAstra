@@ -18,5 +18,6 @@
   "test_rastgele.mjs",
   "test_ci_dosyalari.mjs",
   "test_belgeler.mjs",
-  "test_openapi.mjs"
+  "test_openapi.mjs",
+  "test_git_izleme.mjs"
 ]

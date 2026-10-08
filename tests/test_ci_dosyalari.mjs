@@ -70,6 +70,13 @@ const komutlar = wf => Object.values(wf.jobs).flatMap(j => adimlar(j).map(s => s
   const co = adimlar(wf.jobs.guvenlik).find(s => /actions\/checkout/.test(s.uses || ''));
   assert.equal(co.with['fetch-depth'], 0, 'gitleaks için tam geçmiş');
   assert.ok(gl, 'gitleaks adımı');
+  const gitleaksSurum = JSON.stringify(wf.jobs.guvenlik).match(/gitleaks:(v[0-9.]+)/);
+  assert.ok(gitleaksSurum, 'gitleaks sürümü sabitlenmiş olmalı (latest yok)');
+  assert.ok(fs.existsSync(path.join(kok, '.gitleaks.toml')), 'bilinen sahte değerler .gitleaks.toml içinde nedenleriyle izinli');
+  const gtoml = oku('.gitleaks.toml');
+  assert.ok(gtoml.includes('useDefault = true'), 'varsayılan gitleaks kuralları açık kalmalı');
+  const yolSatirlari = gtoml.split(String.fromCharCode(10)).filter(s => s.trim().startsWith('paths'));
+  assert.ok(yolSatirlari.every(s => s.includes('^tests/') && s.split('^').length === 2) && yolSatirlari.length >= 1, 'yol izni yalnız tests/ için: kaynak klasörleri (server, js, scripts, deploy) kapsanmaz');
   const im = JSON.stringify(wf.jobs.imaj);
   assert.ok(/docker\/build-push-action|docker build/.test(im), 'imaj derlenir');
   assert.ok(/trivy/i.test(im), 'Trivy taraması');

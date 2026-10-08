@@ -94,7 +94,7 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
     assert.match(g.secrets[secretAdi].file, /^\.\/secrets\/.+\.txt$/, 'secret dosyaları ./secrets/ altında');
   }
   const gitignore = oku('.gitignore');
-  assert.ok(/^secrets\/?$/m.test(gitignore), 'secrets/ .gitignore\'da olmalı');
+  assert.ok(/^[/]?secrets[/]?$/m.test(gitignore), "secrets/ .gitignore içinde olmalı");
   ok('gizli bilgi bindirmesi: her _FILE belgelenmiş gizli değişkene ve gerçek bir secret\'a bağlı; secrets/ git dışı');
 }
 

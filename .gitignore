@@ -55,5 +55,5 @@ data/
 contracts/build/
 
 # Dağıtım: Docker secrets ve yedekler (kurumsal A6/A9)
-secrets/
-yedek/
+/secrets/
+/yedek/

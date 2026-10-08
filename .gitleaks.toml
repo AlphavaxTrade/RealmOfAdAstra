@@ -1,0 +1,26 @@
+# gitleaks ayarı (CI "guvenlik" işi bunu kendiliğinden okur; sürüm ci.yml'de sabit: v8.30.1). Varsayılan kurallar AÇIK; yalnız aşağıdaki
+# BİLİNEN SAHTE değerler izinlidir. İlk CI koşusunda bulunan 19 bulgunun hepsi incelendi ve sahte çıktı (8 Ekim 2026): testlerde uydurma
+# yönetici şifresi/parolalar, yük aracının sanal parolası ve herkese açık ADASTRA token sözleşme adresi. Buraya GERÇEK bir anahtar eklemeyin;
+# yeni bir sahte değer eklerken nedenini yazın.
+title = "Realm of AdAstra gitleaks"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Bilinen sahte değerler ve herkese açık sözleşme adresi (bütün kurallar için)"
+regexes = [
+  # testlerde kullanılan uydurma yönetici şifresi (loadConfig({ adminToken: ... }))
+  '''yonetici-test-anahtari-uzun-1234567890''',
+  # yük aracının sanal oyuncu parolası
+  '''Yuk-Parola-123''',
+  # ADASTRA token sözleşmesi (Avalanche C-Chain'de herkese açık adres, sır değil)
+  '''0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CebEb0''',
+]
+
+# Testler uydurma parola dizeleri içerir (ör. 'Yeni-Parola-123'); "genel anahtar" kuralı bunlara takılır. YALNIZ tests/ yolunda ve yalnız bu kural için.
+# Özel anahtar, bulut anahtarı, GitHub belirteci gibi diğer bütün kurallar tests/ içinde de AÇIKTIR.
+[[allowlists]]
+description = "tests/ içindeki uydurma parolalar (yalnız generic-api-key)"
+targetRules = ["generic-api-key"]
+paths = ['''^tests/''']
