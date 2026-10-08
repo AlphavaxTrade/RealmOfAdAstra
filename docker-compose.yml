@@ -1,16 +1,98 @@
-# Realm of Astra — tek komutla çalıştırma:  docker compose up -d --build
-# Ayarlar server/.env dosyasından okunur (örnek: server/.env.example)
+# Realm of AdAstra — tek komutla çalıştırma (kurumsal A6.6). Kurulum ve işletme: docs/DEPLOY.md
+#   docker compose up -d --build                         → yalnız oyun sunucusu (127.0.0.1:8080; önüne kendi Caddy/Nginx'ini koy)
+#   docker compose --profile https up -d --build         → Caddy ile otomatik HTTPS de (DOMAIN=oyun.alanadin.com .env'de)
+#   docker compose --profile yedek up -d                 → saatlik otomatik yedek servisi de
+# Gizli bilgiler (şifre, anahtar) için: docker compose -f docker-compose.yml -f docker-compose.gizli.yml up -d  (Docker secrets, dosyadan)
+# Ayarlar server/.env dosyasından okunur (örnek: docs/kurumsal/env.ornek.txt, ayrıntı: docs/kurumsal/ORTAM.md)
 services:
   realm:
     build: .
+    image: realm-of-adastra:${SURUM:-yerel}
+    init: true                      # PID 1 sorunu: sinyaller doğru iletilir, zombi süreç kalmaz
     restart: unless-stopped
-    ports:
-      # Yalnız aynı makinedeki HTTPS katmanına (Caddy/Nginx) açık; dışarıdan doğrudan erişilemez.
-      # (Böylece ziyaretçi adres bilgisini sahteleyip hız sınırlarını atlatamaz; TRUST_PROXY=1 ile birlikte kullan.)
-      - "127.0.0.1:8080:8080"
     env_file:
       - server/.env
     environment:
-      - DB_FILE=/data/realm.db        # kayıt dosyası kalıcı klasörde (yeniden kurulumda silinmez)
+      - NODE_ENV=production
+      - DB_FILE=/data/realm.db      # kayıt dosyası kalıcı hacimde (yeniden kurulumda silinmez)
+    ports:
+      # Yalnız aynı makinedeki HTTPS katmanına açık; dışarıdan doğrudan erişilemez.
+      # (Böylece ziyaretçi adresi sahtelenip hız sınırları atlatılamaz; TRUST_PROXY=1 ile birlikte kullan.)
+      - "127.0.0.1:8080:8080"
     volumes:
       - ./data:/data
+    # ── Sertleştirme: yazılabilir tek yer /data (+ /tmp RAM'de); tüm Linux yetkileri kapalı; yetki yükseltme yasak ──
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # ── Kaynak sınırı: 16 GB'lık makinede işletim sistemi, Caddy ve yedek için pay bırakır ──
+    mem_limit: 12g
+    memswap_limit: 12g
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # Otomatik HTTPS (Let's Encrypt). Profil: https
+  caddy:
+    profiles: ["https"]
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      realm:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:?DOMAIN (ör. oyun.alanadin.com) .env dosyasında tanımlı olmalı}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_veri:/data
+      - caddy_ayar:/config
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Saatlik tutarlı yedek (SQLite backup API; kod: server/yedek/). Kayıt dosyasını SALT OKUNUR AÇAR ama hacim yazılabilir bağlanır:
+  # WAL modunda okuyucu bile -shm dosyasına yazar. Yedekler ./yedek klasörüne gider. Profil: yedek
+  yedek:
+    profiles: ["yedek"]
+    image: realm-of-adastra:${SURUM:-yerel}
+    restart: unless-stopped
+    init: true
+    command: ["node", "server/yedek/dongu.js"]
+    environment:
+      - DB_FILE=/data/realm.db
+      - YEDEK_KLASORU=/yedek
+    volumes:
+      - ./data:/data
+      - ./yedek:/yedek
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    depends_on:
+      - realm
+
+volumes:
+  caddy_veri:
+  caddy_ayar:

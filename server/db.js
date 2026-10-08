@@ -7,7 +7,11 @@ import { gecisleriCalistir } from './gecis/index.js';
 export function openDb(file) {
   if (file !== ':memory:') fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
   const db = new DatabaseSync(file);
-  db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;');
+  // WAL: okuyucular yazarı beklemez. NORMAL: her işlemde disk senkronu yok (işletim sistemi çökerse en çok son birkaç yazma kaybolur,
+  // veritabanı bozulmaz). busy_timeout: yedek betiği ya da başka süreç kilit tutarken hemen "database is locked" yerine 5 sn bekle.
+  // journal_size_limit: WAL dosyası kontrol noktasından sonra en çok 64 MB'a küçülür. temp_store: geçici sıralama tabloları bellekte.
+  // cache_size (-KB): 64 MB sayfa önbelleği.
+  db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA busy_timeout = 5000; PRAGMA journal_size_limit = 67108864; PRAGMA temp_store = MEMORY; PRAGMA cache_size = -65536;');
   gecisleriCalistir(db);   // şema: server/gecis/ (sıralı, tek seferlik, işlem içinde; kurumsal A5)
   const q = {};
   const prep = (name, sql) => { q[name] = db.prepare(sql); };
@@ -65,7 +69,8 @@ export function openDb(file) {
       db.exec('BEGIN');
       try { const r = fn(); db.exec('COMMIT'); return r; } catch (e) { db.exec('ROLLBACK'); throw e; }
     },
-    close() { db.close(); }
+    // Kapanışta SQLite'ın istatistiklerini tazele (sorgu planlayıcı doğru indeksi seçsin)
+    close() { try { db.exec('PRAGMA optimize'); } catch { /* salt okunur ya da zaten kapalı: önemsiz */ } db.close(); }
   };
   return api;
 }

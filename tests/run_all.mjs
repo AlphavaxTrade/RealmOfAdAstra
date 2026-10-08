@@ -10,11 +10,14 @@ import { dirname, join } from 'node:path';
 const dir = dirname(fileURLToPath(import.meta.url));
 const files = readdirSync(dir).filter(f => /^test_.*\.mjs$/.test(f)).sort();
 const failed = [];
+const sureler = [];
 const t0 = Date.now();
 
 for (const f of files) {
   // PAROLA_HAFIF=1: testlerde parola özeti hafif ayarla (yüzlerce kayıt test süresini uzatmasın); güçlü ayar tests/test_parola.mjs'te sınanır
+  const t1 = Date.now();
   const r = spawnSync(process.execPath, [join(dir, f)], { encoding: 'utf8', env: { ...process.env, PAROLA_HAFIF: '1' } });
+  sureler.push([f, Date.now() - t1]);
   if (r.status === 0) {
     console.log(`✅ ${f}`);
   } else {
@@ -25,6 +28,8 @@ for (const f of files) {
   }
 }
 
+// En yavaş 6 test (yavaşlama fark edilsin)
+console.log('En yavaş testler: ' + sureler.sort((a, b) => b[1] - a[1]).slice(0, 6).map(([ad, ms]) => `${ad} ${(ms / 1000).toFixed(1)}sn`).join(' · '));
 console.log(`\n${files.length - failed.length}/${files.length} test dosyası geçti (${((Date.now() - t0) / 1000).toFixed(1)} sn).`);
 if (failed.length) {
   console.log(`Kalanlar: ${failed.join(', ')}`);

@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadConfig } from './config.js';
+import { loadConfig, dogrula } from './config.js';
 import { openDb } from './db.js';
 import { createEngine } from './engine.js';
 import { createChain } from './chain.js';
@@ -27,10 +27,16 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-const cfg = loadConfig();
+let cfg;
+try { cfg = loadConfig(); } catch (err) { console.error('⛔ ' + err.message); process.exit(1); }
 
 // 🔒 Güvenlik kilitleri: deneme modu gerçek para ile asla birlikte çalışmaz
 const stopWith = msg => { console.error('⛔ ' + msg); process.exit(1); };
+{
+  const d = dogrula(cfg, process.env);   // üretimde (NODE_ENV=production) eksik/yanlış ayar → başlamadan açık hata (docs/kurumsal/ORTAM.md)
+  for (const u of d.uyarilar) console.warn('⚠️  ' + u);
+  if (d.hatalar.length) { console.error('⛔ Üretim yapılandırması geçersiz:'); for (const h of d.hatalar) console.error('   - ' + h); process.exit(1); }
+}
 if (cfg.testMode && (cfg.gameWalletKey || cfg.kasaMasterKey)) stopWith('TEST_MODE=1 iken GAME_WALLET_PRIVATE_KEY ya da KASA_MASTER_KEY kullanılamaz (deneme menüsü gerçek parayı tehlikeye atar).');
 if (cfg.testMode && cfg.paymentsContract && cfg.chainId === 43114) stopWith('TEST_MODE=1 iken gerçek ağdaki ödeme sözleşmesi kullanılamaz (Fuji için CHAIN_ID=43113).');
 if (!cfg.testMode && process.env.PAROLA_HAFIF === '1') stopWith('PAROLA_HAFIF=1 yalnız testler içindir (parola özetini zayıflatır); gerçek sunucuda kullanılamaz.');

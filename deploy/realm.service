@@ -1,0 +1,58 @@
+# systemd birimi — Docker KULLANMAYAN kurulum için sertleştirilmiş (kurumsal A6.7). Yol: /etc/systemd/system/realm.service
+# Varsayım: uygulama /srv/realm altında (server/, js/, dist/, node_modules/), kayıtlar /srv/realm/data, kullanıcı `realm`.
+#   sudo useradd --system --home /srv/realm --shell /usr/sbin/nologin realm
+#   sudo install -d -o realm -g realm -m 700 /srv/realm/data
+# Gizli bilgiler (LoadCredential): sudo install -d -m 700 /etc/realm && echo -n '...' | sudo tee /etc/realm/admin_token  (chmod 600)
+[Unit]
+Description=Realm of AdAstra oyun sunucusu
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=realm
+Group=realm
+WorkingDirectory=/srv/realm
+Environment=NODE_ENV=production
+Environment=DB_FILE=/srv/realm/data/realm.db
+EnvironmentFile=-/srv/realm/server/.env
+# Gizli değerler dosyadan: systemd bunları /run/credentials/realm.service/ altına yalnız bu servise açar
+LoadCredential=admin_token:/etc/realm/admin_token
+LoadCredential=smtp_url:/etc/realm/smtp_url
+LoadCredential=game_wallet_private_key:/etc/realm/game_wallet_private_key
+LoadCredential=kasa_master_key:/etc/realm/kasa_master_key
+Environment=ADMIN_TOKEN_FILE=/run/credentials/realm.service/admin_token
+Environment=SMTP_URL_FILE=/run/credentials/realm.service/smtp_url
+Environment=GAME_WALLET_PRIVATE_KEY_FILE=/run/credentials/realm.service/game_wallet_private_key
+Environment=KASA_MASTER_KEY_FILE=/run/credentials/realm.service/kasa_master_key
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=3
+# Düzgün kapanış: SIGTERM, bekleyen işler bitsin (en çok 30 sn), sonra zorla
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# ── Sertleştirme ──
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/realm/data
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+# V8 JIT yazılabilir+çalıştırılabilir bellek ister: MemoryDenyWriteExecute AÇILMAMALI
+
+# ── Kaynak sınırı (16 GB makine: işletim sistemi, Caddy ve yedek için pay bırakır) ──
+MemoryMax=12G
+TasksMax=256
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

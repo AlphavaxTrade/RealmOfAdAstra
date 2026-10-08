@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { yuzdelik, ozetle, csvOzeti, secenekler, senaryoIstegi } from '../scripts/yuk/yuk.mjs';
 import { ozetle as cpuOzetle } from '../scripts/yuk/cpu-ozet.mjs';
+import { kontrolEt } from '../scripts/yuk/kontrol.mjs';
 
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
@@ -81,4 +82,18 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   ok('CPU özeti: aynı işlev birleşir, yüzde ve satır doğru');
 }
 
-console.log(`\n${passed}/6 yük aracı testi geçti`);
+// 7) Regresyon kapısı: eşik altı yavaşlama, hata ve bellek şişmesi yakalanır
+{
+  const esik = { state: { rpsMin: 350, p95MaxMs: 400 }, karma: { rpsMin: 300, p95MaxMs: 450 }, hataMax: 0, heapBuyumeMaxMB: 40 };
+  const iyi = { senaryolar: [{ ad: 'state', rps: 800, p95: 80, hata: 0, sunucu: { heapIlk: 20, heapSon: 24 } }, { ad: 'karma', rps: 700, p95: 90, hata: 0, sunucu: { heapIlk: 20, heapSon: 25 } }] };
+  assert.deepEqual(kontrolEt(iyi, esik), []);
+  const kotu = { senaryolar: [{ ad: 'state', rps: 200, p95: 500, hata: 3, sunucu: { heapIlk: 20, heapSon: 20 } }, { ad: 'karma', rps: 700, p95: 90, hata: 0, sunucu: { heapIlk: 20, heapSon: 90 } }] };
+  const ih = kontrolEt(kotu, esik);
+  assert.equal(ih.length, 4, ih.join(' | '));
+  assert.ok(ih.some(x => /state: 200 istek/.test(x)) && ih.some(x => /p95 500/.test(x)) && ih.some(x => /3 hatalı/.test(x)) && ih.some(x => /bellek/.test(x)));
+  assert.ok(kontrolEt({ senaryolar: [] }, esik).some(x => /koşulmadı/.test(x)));
+  ok('regresyon kapısı: yavaşlama, p95, hata ve bellek şişmesi yakalanır');
+}
+
+console.log(`
+${passed}/7 yük aracı testi geçti`);

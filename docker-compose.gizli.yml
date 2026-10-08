@@ -1,0 +1,31 @@
+# Docker secrets bindirmesi (kurumsal A6.6): gizli değerler ortamda / `docker inspect`te DEĞİL, dosyada (/run/secrets/...) taşınır.
+#   mkdir -p secrets && chmod 700 secrets
+#   openssl rand -hex 32 > secrets/admin_token.txt          # yönetici paneli şifresi
+#   printf '%s' 'smtp://kullanici:sifre@posta.ornek.com:587' > secrets/smtp_url.txt
+#   printf '%s' '0x<oyun cüzdanı özel anahtarı>' > secrets/game_wallet_private_key.txt   # yoksa bu secret'ı aşağıdan sil (ödemeler elle onaylanır)
+#   openssl rand -hex 32 > secrets/kasa_master_key.txt      # KAYBETME: yedeğini AYRI bir yerde sakla (veritabanıyla birlikte değil)
+#   chmod 600 secrets/*
+#   docker compose -f docker-compose.yml -f docker-compose.gizli.yml up -d --build
+# secrets/ klasörü .gitignore ve .dockerignore'dadır; asla depoya girmez. Bu dosyada kullanmadığın secret varsa HEM environment HEM secrets bölümünden sil.
+services:
+  realm:
+    environment:
+      - ADMIN_TOKEN_FILE=/run/secrets/admin_token
+      - SMTP_URL_FILE=/run/secrets/smtp_url
+      - GAME_WALLET_PRIVATE_KEY_FILE=/run/secrets/game_wallet_private_key
+      - KASA_MASTER_KEY_FILE=/run/secrets/kasa_master_key
+    secrets:
+      - admin_token
+      - smtp_url
+      - game_wallet_private_key
+      - kasa_master_key
+
+secrets:
+  admin_token:
+    file: ./secrets/admin_token.txt
+  smtp_url:
+    file: ./secrets/smtp_url.txt
+  game_wallet_private_key:
+    file: ./secrets/game_wallet_private_key.txt
+  kasa_master_key:
+    file: ./secrets/kasa_master_key.txt

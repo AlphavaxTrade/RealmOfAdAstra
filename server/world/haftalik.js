@@ -201,10 +201,11 @@ export function olusturHaftalik(w) {
         faucetPerPlayer: summary.faucet.perPlayer, lastWeekly: summary
       });
       db.event('weekly', null, summary);
-      // Kayıt şişmesin: 90 günden eski olaylar ve en son 5.000 dışındaki maç kayıtları silinir
+      // Kayıt şişmesin: 90 günden eski olaylar, 400 günden eski fiyat örnekleri ve en son 5.000 dışındaki maç kayıtları silinir
       db.raw.prepare('DELETE FROM events WHERE at < ?').run(now - 90 * DAY);
+      db.raw.prepare('DELETE FROM prices WHERE at < ?').run(now - 400 * DAY);
       const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
-      if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key LIKE 'pvp:match:%' AND CAST(substr(key, 11) AS INTEGER) <= ?").run(seq - 5000);
+      if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key >= 'pvp:match:' AND key < 'pvp:match;' AND CAST(substr(key, 11) AS INTEGER) <= ?")   /* LIKE yerine aralık: anahtar indeksini kullanır */.run(seq - 5000);
       return summary;
     });
   }

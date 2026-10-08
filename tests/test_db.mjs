@@ -49,6 +49,13 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   try {
     const db = openDb(dosya);
     assert.equal(db.raw.prepare('PRAGMA journal_mode').get().journal_mode, 'wal');
+    // Üretim ayarları (kurumsal A5.7): yedek betiği/başka süreç yazmayı kilitlerse hemen hata yerine 5 sn bekle; WAL dosyası şişmesin
+    const p = ad => Object.values(db.raw.prepare('PRAGMA ' + ad).get())[0];
+    assert.equal(p('busy_timeout'), 5000, 'kilitli veritabanında 5 sn bekler (yedek alınırken oyun durmaz)');
+    assert.equal(p('synchronous'), 1, 'WAL + NORMAL (veri kaybı yalnız işletim sistemi çökmesinde son birkaç yazma)');
+    assert.equal(p('journal_size_limit'), 67108864, 'WAL en çok 64 MB’a küçülür');
+    assert.equal(p('temp_store'), 2, 'geçici tablolar bellekte');
+    assert.equal(p('cache_size'), -65536, '64 MB sayfa önbelleği');
     db.kvSet('kalici', 'evet');
     db.event('deneme', 'acc:1', { n: 1 });
     db.close();

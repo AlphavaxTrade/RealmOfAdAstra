@@ -1,5 +1,20 @@
-// Realm of AdAstra sunucusu — ayarlar (hepsi ortam değişkenlerinden; bkz. server/.env.example)
+// Realm of AdAstra sunucusu — ayarlar (hepsi ortam değişkenlerinden; bkz. server/.env.example ve docs/kurumsal/ORTAM.md)
+import fs from 'node:fs';
+
 export function loadConfig(env = process.env) {
+  // Gizli değerler iki yoldan verilebilir: ORTAM DEĞİŞKENİ ya da <AD>_FILE (Docker secrets / systemd LoadCredential: değer dosyada,
+  // ortamda ve `docker inspect`te görünmez). İkisi birlikte verilirse belirsizlik olmasın diye hata. Hata mesajları İÇERİĞİ yazmaz.
+  const gizli = ad => {
+    const duz = (env[ad] || '').trim();
+    const dosya = (env[ad + '_FILE'] || '').trim();
+    if (duz && dosya) throw new Error(`Ayar hatası: ${ad} ve ${ad}_FILE birlikte tanımlı; yalnız birini kullan`);
+    if (!dosya) return duz;
+    let icerik;
+    try { icerik = fs.readFileSync(dosya, 'utf8'); } catch (e) { throw new Error(`Ayar hatası: ${ad}_FILE okunamadı (${dosya}): ${e.code || 'hata'}`); }
+    icerik = icerik.trim();
+    if (!icerik) throw new Error(`Ayar hatası: ${ad}_FILE boş (${dosya})`);
+    return icerik;
+  };
   // Sayı ayarları: boş = varsayılan; sayı olmayan değer sessizce NaN olmaz, başlatmayı AÇIK hatayla durdurur (A3.2)
   const num = (k, d, { min = -Infinity, max = Infinity } = {}) => {
     if (env[k] == null || env[k] === '') return d;
@@ -8,12 +23,12 @@ export function loadConfig(env = process.env) {
     if (v < min || v > max) throw new Error(`Ayar hatası: ${k} ${min} ile ${max} arasında olmalı (verilen: ${v})`);
     return v;
   };
-  const key = (env.GAME_WALLET_PRIVATE_KEY || '').trim();
+  const key = gizli('GAME_WALLET_PRIVATE_KEY');
   return {
     port: num('PORT', 8080, { min: 0, max: 65535 }),
     host: env.HOST || '0.0.0.0',
     dbFile: env.DB_FILE || './data/realm.db',
-    adminToken: (env.ADMIN_TOKEN || '').trim(),
+    adminToken: gizli('ADMIN_TOKEN'),
     serveDist: env.SERVE_DIST !== '0',
     distDir: env.DIST_DIR || './dist',
     // Zincir
@@ -42,7 +57,7 @@ export function loadConfig(env = process.env) {
     // tarayıcı yalnız bu adreslerden gelen oyun isteklerine izin verir. Virgülle birden çok yazılabilir.
     corsOrigins: (env.CORS_ORIGINS || '').split(',').map(s => s.trim().replace(/\/+$/, '')).filter(o => /^https?:\/\/[^/\s]+$/.test(o)),
     publicUrl: (env.PUBLIC_URL || `http://localhost:${num('PORT', 8080, { min: 0, max: 65535 })}`).trim(),   // e-postadaki bağlantılar bu adrese gider
-    smtpUrl: (env.SMTP_URL || '').trim(),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
+    smtpUrl: gizli('SMTP_URL'),                          // boşsa e-postalar sunucu günlüğüne yazılır (deneme)
     mailFrom: env.MAIL_FROM || 'Realm of AdAstra <no-reply@localhost>',
     trustProxy: env.TRUST_PROXY === '1',                           // önünde Caddy/Nginx varsa 1
     paymentsContract: (env.PAYMENTS_CONTRACT || '').trim(),        // RealmPayments sözleşmesinin adresi (boşsa cüzdandan ödeme kapalı)
@@ -50,7 +65,7 @@ export function loadConfig(env = process.env) {
     // RealmRates sözleşmesi (kullanıcı kararı 6 Ekim 2026): oyundaki bütün ADA oranları burada durur; sunucu 5 dakikada bir okur.
     // Boşsa oyunun kendi ayarları (js/config.js) kullanılır.
     ratesContract: (env.RATES_CONTRACT || '').trim(),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
-    kasaMasterKey: (env.KASA_MASTER_KEY || '').trim(),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
+    kasaMasterKey: gizli('KASA_MASTER_KEY'),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
     kasaMinAvax: num('KASA_MIN_AVAX', 0.003),                      // kasada en az bu kadar AVAX yoksa kasa kullanılmaz (aktarım ücreti)
     kasaMinSettle: num('KASA_MIN_SETTLE', 50),                     // bu kadar birikince (ya da 24 saatte bir) kasadan oyuna aktarım
     // Kasa üst sınırı: kasada "günlük ortalama harcama × bu kadar gün"den fazlası birikirse fazlası oyuncunun bağlı
@@ -75,4 +90,25 @@ export function loadConfig(env = process.env) {
     ipRateLimitPerSec: num('IP_RATE_LIMIT_PER_SEC', 40),            // IP başına tüm istekler (kimlik denetiminden önce)
     publicRateLimitPerSec: num('PUBLIC_RATE_LIMIT_PER_SEC', 5)        // giriş/kayıt sayfaları (IP başına)
   };
+}
+
+// Üretimde (NODE_ENV=production) başlatma doğrulaması: eksik/yanlış ayar sessizce yarım çalışmasın, başlamadan açık hata versin.
+// Geliştirme/deneme ortamında (NODE_ENV=production DEĞİLKEN) hiçbir kural uygulanmaz. { hatalar: [...], uyarilar: [...] }
+export function dogrula(cfg, env = process.env) {
+  const hatalar = [], uyarilar = [];
+  if (env.NODE_ENV !== 'production') return { hatalar, uyarilar };
+  const adres = a => /^0x[0-9a-fA-F]{40}$/.test(String(a || ''));
+  if (cfg.testMode) hatalar.push('TEST_MODE=1 üretimde (NODE_ENV=production) kullanılamaz');
+  if (!String(cfg.publicUrl).startsWith('https://')) hatalar.push(`PUBLIC_URL https:// ile başlamalı (cüzdan bağlama ve e-posta bağlantıları için; şu an: ${cfg.publicUrl})`);
+  else if (!cfg.trustProxy) uyarilar.push('TRUST_PROXY=1 değil: Caddy/Nginx arkasındaysan istemci adresleri yanlış görünür (hız sınırları herkese ortak olur)');
+  if (cfg.dbFile === ':memory:') hatalar.push('DB_FILE bellek içi (:memory:) olamaz: kayıtlar kalıcı olmalı');
+  if (!cfg.smtpUrl) hatalar.push('SMTP_URL tanımlı değil: doğrulama e-postaları gitmez, kimse giriş yapamaz');
+  if (!cfg.adminToken) uyarilar.push('ADMIN_TOKEN yok: yönetici paneli kapalı');
+  else if (cfg.adminToken.length < 24) hatalar.push('ADMIN_TOKEN en az 24 karakter olmalı (kısaysa yönetici paneli kapalı kalır; openssl rand -hex 32)');
+  if (cfg.gameWalletKey && !/^(0x)?[0-9a-fA-F]{64}$/.test(cfg.gameWalletKey)) hatalar.push('GAME_WALLET_PRIVATE_KEY biçimi geçersiz (64 onaltılık hane, başında 0x olabilir)');
+  if (cfg.kasaMasterKey && !/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey)) hatalar.push('KASA_MASTER_KEY 64 haneli onaltılık olmalı (openssl rand -hex 32)');
+  if (cfg.paymentsContract && !cfg.kasaMasterKey) hatalar.push('KASA_MASTER_KEY gerekli: PAYMENTS_CONTRACT tanımlı (Oyun Kasası anahtarları şifrelenemez)');
+  if (cfg.reserveWallet && !adres(cfg.reserveWallet)) hatalar.push('RESERVE_WALLET geçerli bir adres değil');
+  if (!cfg.reserveWallet && cfg.chainEnabled && cfg.gameWalletKey) uyarilar.push('RESERVE_WALLET yok: oyun cüzdanındaki fazla ADA yedek (donanım) cüzdana aktarılmaz');
+  return { hatalar, uyarilar };
 }

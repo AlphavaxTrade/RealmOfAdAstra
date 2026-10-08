@@ -18,9 +18,11 @@
     "audit-uretim": "node scripts/audit-uretim.mjs",
     "kapsam": "c8 node tests/run_all.mjs",
     "kapsam-kontrol": "node scripts/kapsam-kontrol.mjs",
-    "yuk": "node scripts/yuk/yuk.mjs"
+    "yuk": "node scripts/yuk/yuk.mjs",
+    "yuk-kontrol": "node scripts/yuk/kontrol.mjs"
   },
   "devDependencies": {
+    "acorn": "^8.19.0",
     "c8": "^12.0.0",
     "eslint": "^10.12.0",
     "eslint-plugin-security": "^4.2.0",
@@ -31,7 +33,8 @@
     "playwright": "^1.62.1",
     "solc": "^0.8.24",
     "three": "^0.186.1",
-    "vite": "^5.4.0"
+    "vite": "^5.4.0",
+    "yaml": "^2.9.1"
   },
   "allowScripts": {
     "esbuild@0.21.5": true

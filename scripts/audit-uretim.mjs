@@ -40,7 +40,8 @@ export function uretimKlasoru(kaynak = kok) {
 }
 
 function npm(args, cwd) {
-  return spawnSync('npm', args, { cwd, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024 });
+  // Windows'ta npm.cmd kabuk gerektirir; argümanlar sabit olduğundan komut tek metin olarak verilir (kabuk + argüman listesi uyarısı yok)
+  return spawnSync('npm ' + args.join(' '), { cwd, encoding: 'utf8', shell: true, maxBuffer: 64 * 1024 * 1024 });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

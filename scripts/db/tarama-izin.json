@@ -1,0 +1,50 @@
+[
+  {
+    "sql": "SELECT id, epoch, kind, address, amount, status, tx_hash, error, created_at, sent_at FROM payouts ORDER BY id DESC LIMIT ?",
+    "neden": "en yeni N ödeme (ORDER BY id DESC LIMIT): rowid sırası, taramak değil uçtan okumak; yalnız yönetici paneli"
+  },
+  {
+    "sql": "SELECT * FROM prices ORDER BY at DESC LIMIT 1",
+    "neden": "en yeni fiyat (ORDER BY at DESC LIMIT 1): rowid sırası, O(1)"
+  },
+  {
+    "sql": "SELECT * FROM events ORDER BY id DESC LIMIT ?",
+    "neden": "en yeni N olay (ORDER BY id DESC LIMIT): rowid sırası; yönetici paneli"
+  },
+  {
+    "sql": "UPDATE players SET gate = 'citizen', gate_at = created_at WHERE gate = 'new'",
+    "neden": "kapı ilk kurulumunda BİR KEZ çalışır (eski hesapları vatandaş yapar)"
+  },
+  {
+    "sql": "SELECT * FROM kasa WHERE pending >= ? OR (pending > 0 AND last_settle < ?)",
+    "neden": "dakikada bir Kasa aktarım turu; kasa tablosu oyuncu başına en çok 1 satır (küçük, sınırlı)"
+  },
+  {
+    "sql": "SELECT k.* FROM kasa k JOIN players p ON p.address = k.player WHERE p.last_seen >= ? OR k.pending > 0 ORDER BY k.bal_at LIMIT ?",
+    "neden": "dakikada bir Kasa bakiye turu; LIMIT’li, kasa tablosu oyuncu başına 1 satır"
+  },
+  {
+    "sql": "SELECT * FROM kasa WHERE ada > 0",
+    "neden": "dakikada bir Kasa turu; oyuncu başına 1 satır"
+  },
+  {
+    "sql": "SELECT * FROM promo_codes ORDER BY created DESC LIMIT 200",
+    "neden": "yönetici promo listesi (en çok 200 satır gösterilir; promo kodu sayısı küçük)"
+  },
+  {
+    "sql": "DELETE FROM events WHERE at < ?",
+    "neden": "haftada BİR kez (olay temizliği); indeks her olay yazımını yavaşlatırdı"
+  },
+  {
+    "sql": "SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS t FROM partner_income",
+    "neden": "yönetici durum kartı; ortak gelir kaydı küçük (haftalık-aylık birkaç satır)"
+  },
+  {
+    "sql": "SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at >= ?",
+    "neden": "yönetici durum kartı; ortak gelir kaydı küçük"
+  },
+  {
+    "sql": "DELETE FROM kv WHERE key LIKE 'ls:%'",
+    "neden": "YALNIZ deneme sunucusu \"vanilla sıfırla\" (TEST_MODE); gerçek sunucuda çalışmaz"
+  }
+]

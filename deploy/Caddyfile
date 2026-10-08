@@ -1,0 +1,29 @@
+# Caddy (otomatik HTTPS) — docker compose --profile https (kurumsal A6.6)
+# DOMAIN ve (isteğe bağlı) ACME_EMAIL ortam değişkenleri .env'den gelir.
+{
+	email {$ACME_EMAIL:}
+}
+
+{$DOMAIN} {
+	# Sıkıştırma: oyun dosyaları sunucuda ZATEN ön-sıkıştırılmış gelir (Content-Encoding varsa Caddy dokunmaz); API yanıtları sıkıştırılır
+	encode zstd gzip
+
+	# Gövde sınırı sunucudaki sınırla uyumlu (sunucu zaten 64 KB üstünü reddeder)
+	request_body {
+		max_size 1MB
+	}
+
+	header {
+		-Server
+	}
+
+	reverse_proxy realm:8080 {
+		# Sunucu yeniden başlarken (güncelleme) 502 yerine 10 sn bekle
+		lb_try_duration 10s
+		lb_try_interval 250ms
+		health_uri /api/health
+		health_interval 15s
+	}
+	# Not: Caddy'nin boştaki yukarı akış bağlantıları ~2 dk yaşar; sunucunun keepAlive süresi 150 sn ayarlıdır
+	# ki bağlantıyı HER ZAMAN önce Caddy kapatsın ("connection reset" 502'leri olmasın).
+}

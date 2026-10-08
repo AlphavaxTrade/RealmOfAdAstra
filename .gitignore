@@ -53,3 +53,7 @@ data/
 
 # Sözleşme derleme çıktısı
 contracts/build/
+
+# Dağıtım: Docker secrets ve yedekler (kurumsal A6/A9)
+secrets/
+yedek/

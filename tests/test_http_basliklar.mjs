@@ -45,12 +45,12 @@ async function baslat(ek = {}) {
   const r1 = await get(http1.base + '/api/health');
   assert.equal(r1.headers.get('strict-transport-security'), null, 'http yayında HSTS olmaz');
   assert.equal(r1.headers.get('cross-origin-opener-policy'), 'same-origin-allow-popups');
-  http1.server.close();
+  http1.server.close(); http1.server.closeAllConnections();
   const https1 = await baslat({ publicUrl: 'https://oyun.ornek.com' });
   const r2 = await get(https1.base + '/api/health');
   assert.match(r2.headers.get('strict-transport-security') || '', /max-age=31536000/);
   assert.equal((await get(https1.base + '/')).headers.get('strict-transport-security') !== null, true, 'sayfalarda da HSTS');
-  https1.server.close();
+  https1.server.close(); https1.server.closeAllConnections();
   ok('HSTS yalnız https PUBLIC_URL ile; COOP her yanıtta');
 }
 
@@ -64,7 +64,7 @@ async function baslat(ek = {}) {
   assert.equal(jpg.headers.get('cache-control'), 'public, max-age=86400', 'hash\'siz dosya immutable olmaz');
   const html = await get(s.base + '/');
   assert.equal(html.headers.get('cache-control'), 'no-cache');
-  s.server.close();
+  s.server.close(); s.server.closeAllConnections();
   ok('önbellek: hash\'li js immutable, hash\'siz görsel 1 gün, html no-cache');
 }
 
@@ -88,7 +88,7 @@ async function baslat(ek = {}) {
     setTimeout(() => { sock.destroy(); resolve(veri); }, 3000);
   });
   assert.match(cevap, /^HTTP\/1\.1 431/, 'aşırı büyük başlık 431 ile reddedilmeli: ' + cevap.slice(0, 40));
-  s.server.close();
+  s.server.close(); s.server.closeAllConnections();
   ok('yavaş istemci kesilir, aşırı büyük başlık 431');
 }
 

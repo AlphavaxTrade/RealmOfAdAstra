@@ -1,6 +1,9 @@
 // server/config.js: varsayılanlar, ortamdan okuma, bozuk değerlerde AÇIK hata (kurumsal A3.2)
 import assert from 'node:assert/strict';
-import { loadConfig } from '../server/config.js';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { loadConfig, dogrula } from '../server/config.js';
 
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
@@ -55,4 +58,62 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   ok('boş değer varsayılan; bozuk sayı ve port aralığı açık hata verir');
 }
 
-console.log(`\n${passed}/3 yapılandırma testi geçti`);
+// 4) Docker/systemd gizli bilgi dosyaları: X_FILE (kurumsal A6.1)
+{
+  const NL = String.fromCharCode(10), CRLF = String.fromCharCode(13, 10);
+  const dizin = fs.mkdtempSync(path.join(os.tmpdir(), 'gizli-'));
+  const yaz = (ad, icerik) => { const y = path.join(dizin, ad); fs.writeFileSync(y, icerik); return y; };
+  try {
+    const anahtar = '0x' + 'ab'.repeat(32);   // gizli-tara: izin
+    const c = loadConfig({
+      GAME_WALLET_PRIVATE_KEY_FILE: yaz('anahtar', anahtar + NL),
+      ADMIN_TOKEN_FILE: yaz('yonetici', ' ' + 'k'.repeat(40) + ' ' + CRLF),
+      KASA_MASTER_KEY_FILE: yaz('kasa', 'cd'.repeat(32)),
+      SMTP_URL_FILE: yaz('smtp', 'smtp://kullanici:sifre@posta.ornek.com:587' + NL)
+    });
+    assert.equal(c.gameWalletKey, anahtar, 'dosya içeriği okunur, sondaki satır sonu/boşluk kırpılır');
+    assert.equal(c.adminToken, 'k'.repeat(40));
+    assert.equal(c.kasaMasterKey, 'cd'.repeat(32));
+    assert.equal(c.smtpUrl, 'smtp://kullanici:sifre@posta.ornek.com:587');
+    assert.equal(c.payoutMode, 'auto', 'dosyadan gelen anahtar da otomatik ödeme modunu açar');
+    // Normal değişken yine çalışır
+    assert.equal(loadConfig({ ADMIN_TOKEN: 'x'.repeat(30) }).adminToken, 'x'.repeat(30));
+    // Hata durumları: aynı anda ikisi, olmayan dosya, boş dosya
+    assert.throws(() => loadConfig({ ADMIN_TOKEN: 'a', ADMIN_TOKEN_FILE: yaz('y2', 'b') }), /ADMIN_TOKEN.*ADMIN_TOKEN_FILE.*birlikte/);
+    assert.throws(() => loadConfig({ KASA_MASTER_KEY_FILE: path.join(dizin, 'yok') }), /KASA_MASTER_KEY_FILE.*okunamadı/);
+    assert.throws(() => loadConfig({ ADMIN_TOKEN_FILE: yaz('bos', '  ' + NL) }), /ADMIN_TOKEN_FILE.*boş/);
+    // Hata mesajı gizli içeriği SIZDIRMAZ
+    try { loadConfig({ ADMIN_TOKEN: 'a', ADMIN_TOKEN_FILE: yaz('y3', 'cok-gizli-icerik') }); } catch (e) { assert.ok(!e.message.includes('cok-gizli-icerik')); }
+    ok('X_FILE: dosyadan gizli bilgi okunur (kırpılır), çift kaynak/eksik/boş dosya açık hata, mesaj sızdırmaz');
+  } finally { fs.rmSync(dizin, { recursive: true, force: true }); }
+}
+
+// 5) Üretimde başlatma doğrulaması (kurumsal A6.2): eksik/yanlış ayar sessizce çalışmaz, başlamadan açık hata verir
+{
+  const iyi = { NODE_ENV: 'production', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', ADMIN_TOKEN: 'a'.repeat(48), SMTP_URL: 'smtp://k:s@posta.ornek.com:587', DB_FILE: '/data/realm.db',   // gizli-tara: izin
+    GAME_WALLET_PRIVATE_KEY: '0x' + 'ab'.repeat(32), KASA_MASTER_KEY: 'cd'.repeat(32), PAYMENTS_CONTRACT: '0x' + '12'.repeat(20), RESERVE_WALLET: '0x' + '34'.repeat(20) };   // gizli-tara: izin
+  const d0 = dogrula(loadConfig(iyi), iyi);
+  assert.deepEqual(d0.hatalar, [], 'tam ayarlı üretim yapılandırması hatasız: ' + d0.hatalar.join('; '));
+  assert.deepEqual(d0.uyarilar, []);
+  const dene = ek => { const e = { ...iyi, ...ek }; for (const k of Object.keys(ek)) if (ek[k] === null) delete e[k]; return dogrula(loadConfig(e), e); };
+  const hata = (ek, desen) => { const d = dene(ek); assert.ok(d.hatalar.some(h => desen.test(h)), JSON.stringify(ek).slice(0, 60) + ' → hatalar: ' + JSON.stringify(d.hatalar)); };
+  hata({ PUBLIC_URL: 'http://oyun.ornek.com' }, /PUBLIC_URL.*https/);
+  hata({ ADMIN_TOKEN: 'kisa' }, /ADMIN_TOKEN.*24/);
+  hata({ SMTP_URL: null }, /SMTP_URL/);
+  hata({ DB_FILE: ':memory:' }, /DB_FILE/);
+  hata({ KASA_MASTER_KEY: 'kisa' }, /KASA_MASTER_KEY.*64/);
+  hata({ KASA_MASTER_KEY: null }, /KASA_MASTER_KEY.*PAYMENTS_CONTRACT/);
+  hata({ GAME_WALLET_PRIVATE_KEY: '0x123' }, /GAME_WALLET_PRIVATE_KEY.*biçim/);
+  hata({ RESERVE_WALLET: 'adres-degil' }, /RESERVE_WALLET/);
+  hata({ TEST_MODE: '1' }, /TEST_MODE.*üretim/i);
+  // Uyarılar (başlamayı engellemez)
+  assert.ok(dene({ TRUST_PROXY: null }).uyarilar.some(u => /TRUST_PROXY/.test(u)), 'https ama TRUST_PROXY yok: uyarı');
+  assert.ok(dene({ RESERVE_WALLET: null }).uyarilar.some(u => /RESERVE_WALLET/.test(u)));
+  assert.ok(dene({ ADMIN_TOKEN: null }).uyarilar.some(u => /ADMIN_TOKEN/.test(u)), 'yönetici şifresi yoksa panel kapalı: uyarı');
+  // NODE_ENV=production DEĞİLSE (geliştirme/deneme) hiçbir üretim kuralı uygulanmaz
+  const gelistirme = { PUBLIC_URL: 'http://localhost:8080', DB_FILE: ':memory:' };
+  assert.deepEqual(dogrula(loadConfig(gelistirme), gelistirme), { hatalar: [], uyarilar: [] });
+  ok('üretim doğrulaması: zorunlu ayarlar, biçimler, uyarılar; geliştirmede kural yok');
+}
+
+console.log(`${passed}/5 yapılandırma testi geçti`);

@@ -14,7 +14,7 @@ const gecici = fs.mkdtempSync(path.join(os.tmpdir(), 'baslatma-'));
 
 // Yerel server/.env bu testi etkilemesin: ilgili bütün anahtarlar BOŞ dizeyle tanımlanır (index.js tanımlıları ezmez)
 const BOS = Object.fromEntries(['GAME_WALLET_PRIVATE_KEY', 'KASA_MASTER_KEY', 'PAYMENTS_CONTRACT', 'RATES_CONTRACT', 'RESERVE_WALLET', 'ADMIN_TOKEN', 'ADMIN_EMAIL', 'SMTP_URL',
-  'PARTNER_INCOME_FROM', 'PARTNER_INCOME_TO', 'CORS_ORIGINS', 'PUBLIC_URL', 'TRUST_PROXY', 'PAROLA_HAFIF', 'PAYOUT_MODE', 'CHAIN_ID', 'TEST_MODE', 'SCHEDULER'].map(k => [k, '']));
+  'PARTNER_INCOME_FROM', 'PARTNER_INCOME_TO', 'CORS_ORIGINS', 'PUBLIC_URL', 'TRUST_PROXY', 'PAROLA_HAFIF', 'PAYOUT_MODE', 'CHAIN_ID', 'TEST_MODE', 'SCHEDULER', 'NODE_ENV', 'ADMIN_TOKEN_FILE', 'SMTP_URL_FILE', 'GAME_WALLET_PRIVATE_KEY_FILE', 'KASA_MASTER_KEY_FILE'].map(k => [k, '']));
 
 function calistir(ek, { bekle = 'cik', zaman = 15000 } = {}) {
   return new Promise(resolve => {
@@ -86,6 +86,25 @@ try {
     assert.match(r.cikti, /ADMIN_TOKEN 24 karakterden kısa/);
     ok('deneme modu açılır; kısa ADMIN_TOKEN uyarılır');
   }
+
+  // 7) Üretim doğrulaması (NODE_ENV=production): eksik/yanlış ayar başlamadan açık hata verir (kurumsal A6.2)
+  {
+    const r = await calistir({ NODE_ENV: 'production', PUBLIC_URL: 'http://oyun.ornek.com', ADMIN_TOKEN: 'kisa' });
+    assert.equal(r.kod, 1, r.cikti);
+    assert.match(r.cikti, /Üretim yapılandırması geçersiz/);
+    for (const k of ['PUBLIC_URL', 'SMTP_URL', 'ADMIN_TOKEN']) assert.ok(r.cikti.includes(k), k + ' hata listesinde olmalı: ' + r.cikti);
+    ok('NODE_ENV=production + eksik/yanlış ayar → hepsi listelenerek başlamaz');
+  }
+
+  // 8) Doğru üretim yapılandırması açılır; gizli bilgiler DOSYADAN (X_FILE) okunabilir
+  {
+    const yaz = (ad, icerik) => { const y = path.join(gecici, ad); fs.writeFileSync(y, icerik); return y; };
+    const r = await calistir({ NODE_ENV: 'production', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', SMTP_URL_FILE: yaz('smtp.txt', 'smtp://k:s@127.0.0.1:2525'),
+      ADMIN_TOKEN_FILE: yaz('yonetici.txt', 'y'.repeat(48)) }, { bekle: 'calisiyor' });
+    assert.ok(/sunucusu çalışıyor/.test(r.cikti), r.cikti.slice(0, 600));
+    assert.ok(!r.cikti.includes('y'.repeat(48)), 'gizli değer çıktıya yazılmamalı');
+    ok('doğru üretim yapılandırması açılır (gizli bilgiler dosyadan), değerler günlüğe yazılmaz');
+  }
 } finally { fs.rmSync(gecici, { recursive: true, force: true }); }
 
-console.log(`\n${passed}/6 başlatma kilidi testi geçti`);
+console.log(`\n${passed}/8 başlatma kilidi testi geçti`);

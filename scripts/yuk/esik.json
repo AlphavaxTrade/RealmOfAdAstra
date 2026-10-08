@@ -1,0 +1,7 @@
+{
+  "aciklama": "Yük regresyon eşikleri: ölçülen değerin yaklaşık yarısı (CI makineleri yavaş/değişken olabilir). Eşiği ancak bilinçli performans kazanımından sonra YÜKSELT.",
+  "state": { "rpsMin": 350, "p95MaxMs": 400 },
+  "karma": { "rpsMin": 300, "p95MaxMs": 450 },
+  "hataMax": 0,
+  "heapBuyumeMaxMB": 40
+}
