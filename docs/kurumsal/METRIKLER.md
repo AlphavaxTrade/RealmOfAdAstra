@@ -27,3 +27,11 @@ CI'daki denetim (Aşama 8) bu yöntemi kullanacak.
 ## Ortam notları
 - Docker kurulu değil: imaj derleme ve yük testi imaj içinde yapılamaz; CI'da (Aşama 8) ve kurulunca ölçülecek.
 - `server/.env.example` dosyası Claude'un okuma izninde engelli (`.claude/settings.json` içindeki `Read(**/.env.*)` kuralı).
+
+## Aşama ölçüm günlüğü (her aşama sonunda eklenir; tablo Aşama 10'da tamamlanır)
+
+| Aşama | Test dosyası | `npm test` | Lint | Üretim açığı | Not |
+|---|---|---|---|---|---|
+| 0 (başlangıç) | 76/76 | 50,6 sn | yok | 1 yüksek (nodemailer) | |
+| 1 | 76/76 | 46,7 sn | yok | 1 yüksek | üretim kurulumu 584 → 25 MB |
+| 2 | **86/86** | 76 sn (fuzz + güçlü-parola testleri eklendi) | 0 hata / 94 uyarı (tavan 94) | **0** | parola özeti ≈ 370 ms (iş parçacığı havuzunda, sunucuyu bloklamaz; 4 paralelde olay döngüsü boşluğu 24 ms) |
