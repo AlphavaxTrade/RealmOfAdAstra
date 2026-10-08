@@ -49,7 +49,7 @@ const yakala = (ayar = {}) => { const satirlar = []; const l = createLogger({ ci
   assert.ok(s.includes('[GİZLİ]'));
   l.warn('İstek Authorization: Bearer abcdef0123456789abcdef0123456789 ile geldi');
   assert.ok(!satirlar.at(-1).includes('abcdef0123456789abcdef0123456789'), 'ileti içindeki Bearer maskelenir');
-  l.error('SMTP hatası smtps://kullanici:cokgizli@posta.ornek.com:465 bağlanamadı');
+  l.error('SMTP hatası smtps://kullanici:cokgizli@posta.ornek.com:465 bağlanamadı'); // gizli-tara: izin
   assert.ok(!satirlar.at(-1).includes('cokgizli') && satirlar.at(-1).includes('posta.ornek.com'), 'adresteki şifre maskelenir, sunucu adı kalır');
   l.info('hesap ayse.yilmaz@ornek.com giriş yaptı', { email: 'bora@ornek.com' });
   const son = satirlar.at(-1);

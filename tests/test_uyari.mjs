@@ -6,7 +6,7 @@ import { createUyari } from '../server/uyari.js';
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
 const kayit = { info() {}, warn() {}, error() {}, log() {} };
-const yapay = (ek = {}) => { const giden = []; let t = 1_000_000; const mailer = { send: async m => { if (ek.hata) throw new Error('smtp koptu: smtps://k:gizlisifre@posta.ornek.com'); giden.push(m); } };
+const yapay = (ek = {}) => { const giden = []; let t = 1_000_000; const mailer = { send: async m => { if (ek.hata) throw new Error('smtp koptu: smtps://k:gizlisifre@posta.ornek.com'); giden.push(m); } }; // gizli-tara: izin
   const u = createUyari({ mailer, cfg: { adminEmail: ek.adres ?? 'yonetici@ornek.com' }, log: ek.log || kayit, clock: () => t });
   return { u, giden, ilerle: ms => { t += ms; } }; };
 
@@ -42,7 +42,7 @@ const yapay = (ek = {}) => { const giden = []; let t = 1_000_000; const mailer =
 // 3) Gövde: gizli bilgi maskelenir, çok uzun metin kırpılır
 {
   const { u, giden } = yapay();
-  await u.bildir('a', 'konu', 'Bağlantı smtps://kul:cokgizli@posta.ornek.com koptu. Authorization: Bearer abcdef0123456789abcdef0123456789 ' + 'x'.repeat(10000));
+  await u.bildir('a', 'konu', 'Bağlantı smtps://kul:cokgizli@posta.ornek.com koptu. Authorization: Bearer abcdef0123456789abcdef0123456789 ' + 'x'.repeat(10000)); // gizli-tara: izin
   assert.ok(!giden[0].text.includes('cokgizli') && !giden[0].text.includes('abcdef0123456789abcdef0123456789'));
   assert.ok(giden[0].text.length < 3000);
   ok('e-posta gövdesinde gizli bilgi maskelenir, uzun metin kırpılır');
