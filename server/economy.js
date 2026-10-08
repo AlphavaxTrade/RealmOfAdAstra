@@ -5,7 +5,7 @@
 //    düşürecek miktardır. Havuz oyunculara katkı puanına göre paylaşılır.
 //  • Kullanılmayan çekim hakkını başkaları kullanır; kullanan, fazladan çektiği miktarın %1,5'ini "hak kirası"
 //    olarak hakkı kullanılmayan oyunculara öder (kullanılmayan paylarına göre).
-//  • Çekim ücreti %3 (fren açıkken %6). Ücretin %70'i haftalık temel gelire (UBI), %30'u yakılır.
+//  • Çekim ücreti %3 (fren açıkken %6). Ücretin %50'si haftalık temel gelire (UBI), %50'si yakılır (KARAR 4, 8 Ekim 2026: yakım payı %30 → %50).
 //  • Fren: piyasa değeri son 30 günün zirvesinin %75'inin altına düşerse açılır; zirvenin %85'ine dönünce ya da
 //    4 hafta yeni dip yapılmazsa kapanır. Fren açıkken hazine kasalarının haftalık %1'i yakılır (fiyat savunması).
 //  • Ücretsiz oyuncu havuzu: ayda piyasa değerinin %1'i, kişi başı en fazla 100$; görev kasasından ödenir.
@@ -17,7 +17,7 @@ export const WEEKLY_RULES = {
   maxPriceDrop: 0.02,
   fee: 0.03,
   feeBrake: 0.06,
-  feeUbiShare: 0.70,
+  feeUbiShare: 0.50,
   rent: 0.015,
   brakeOnRatio: 0.75,
   brakeOffRatio: 0.85,
