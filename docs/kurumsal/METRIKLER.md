@@ -35,3 +35,4 @@ CI'daki denetim (Aşama 8) bu yöntemi kullanacak.
 | 0 (başlangıç) | 76/76 | 50,6 sn | yok | 1 yüksek (nodemailer) | |
 | 1 | 76/76 | 46,7 sn | yok | 1 yüksek | üretim kurulumu 584 → 25 MB |
 | 2 | **86/86** | 76 sn (fuzz + güçlü-parola testleri eklendi) | 0 hata / 94 uyarı (tavan 94) | **0** | parola özeti ≈ 370 ms (iş parçacığı havuzunda, sunucuyu bloklamaz; 4 paralelde olay döngüsü boşluğu 24 ms) |
+| 3 | **94/94** (+ altın kayıt, config, db, başlatma kilitleri, HTTP hataları, zincir, ödeme kuyruğu...) | ≈122 sn (kapsam ölçümüyle ≈157 sn) | 0 hata / 94 uyarı | 0 | **Kapsam: satır %88,9 → %89,9, dal %65,6 → %67,5**; `server/app.js` 495→252, `server/world.js` 732→129, `js/gameState.js` 7994→364 satır; knip tamamen temiz; `js/app.js` bilinçli ertelendi (ADR 0005) |
