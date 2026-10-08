@@ -40,6 +40,7 @@ export const HUB = {
     { k: 'hesap', s: '🔐', ad: 'Hesap ve cüzdan', ac: 'Giriş, yatırma ve çekim' },
     { k: 'kotalar', s: '📊', ad: 'Kotalarım', ac: 'Haftalık ve günlük sınırların' },
     { k: 'hazine', s: '🏛️', ad: 'Hazine ve gelir panosu', ac: 'Kasalar, kapı durumu, katılım karnen' },
+    { k: 'tur', s: '🎓', ad: 'Oyun turu', ac: 'Oyunu baştan, adım adım tanıt' },
     { k: 'rehber', s: '🧭', ad: 'Rehber ve yardım', ac: 'Görevler ve ödüller' },
     { k: 'komut', s: '🔎', ad: 'Ara ve git', ac: 'Her yere yazarak git (Ctrl+K)' },
     { k: 'duyurular', s: 'ℹ️', ad: 'Duyurular ve uyarılar', ac: 'Önemli bilgilendirmeler' },

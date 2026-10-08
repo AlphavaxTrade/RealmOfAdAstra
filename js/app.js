@@ -8819,7 +8819,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
       openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
       openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
-      duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || []
+      duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
+      hesapAnahtari: () => (online.active && online.playerId) || 'yerel'
     });
     renderTopBar();
   }

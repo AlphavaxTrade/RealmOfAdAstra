@@ -23,6 +23,7 @@ const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU
 const hatalar = [];
 for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, false]]) {
   const baglam = await tarayici.newContext({ viewport: { width: w, height: h }, hasTouch: mobil, isMobile: mobil });
+  await baglam.addInitScript(() => { try { localStorage.setItem('roa_v3_tur_yerel', '{"atlandi":true}'); } catch { /* */ } });   // tur ayrı denenir
   const s = await baglam.newPage();
   s.on('pageerror', e => hatalar.push(`${ad} pageerror: ${e.message}`));
   s.on('console', m => { if (m.type() === 'error') hatalar.push(`${ad} console.error: ${m.text().slice(0, 200)}`); });
@@ -98,6 +99,50 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.evaluate(() => window.__onay({ baslik: 'Devam?' }));
   await tikla('[data-v3-tamam]');
   kontrol(`${ad}: Onayla = evet (true)`, await s.evaluate(() => window.__sonuc === true));
+  await baglam.close();
+}
+
+// ---- Yeni oyuncu turu: temiz tarayıcı, yepyeni oyuncu (telefon boyutu)
+{
+  const baglam = await tarayici.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const s = await baglam.newPage();
+  s.on('pageerror', e => hatalar.push(`tur pageerror: ${e.message}`));
+  s.on('console', m => { if (m.type() === 'error') hatalar.push(`tur console.error: ${m.text().slice(0, 200)}`); });
+  const yukle = async () => { await s.goto(BASE + '/?arayuz=3', { waitUntil: 'load' }); await s.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); };
+  const kart = () => s.evaluate(() => ({ gorunur: !document.getElementById('v3-tur').hidden, baslik: document.getElementById('v3-tur-baslik').textContent, say: document.getElementById('v3-tur-say').textContent }));
+  const dokun = async sel => { await s.locator(sel).first().click({ timeout: 5000 }); await bekle(800); };
+  const kayit = () => s.evaluate(() => localStorage.getItem('roa_v3_tur_yerel'));
+  await yukle(); await bekle(6000);
+  let k = await kart();
+  kontrol('tur: yepyeni oyuncuda kendiliğinden başlar', k.gorunur && /hoş geldin/i.test(k.baslik), JSON.stringify(k));
+  await s.screenshot({ path: path.join(EKRAN, 'tur_1_hos.png') });
+  await dokun('#v3-tur-devam'); await dokun('#v3-tur-devam');
+  k = await kart();
+  kontrol('tur: Devam adımları ilerler (Hammaddelerin)', /Hammadde/i.test(k.baslik), k.baslik);
+  await dokun('#v3-tur-devam'); await bekle(600);
+  k = await kart();
+  kontrol('tur: Krallık adımı gerçek dokunuşu bekler (Devam düğmesi yok)', /^Krallık$/.test(k.baslik) && await s.evaluate(() => document.getElementById('v3-tur-devam').hidden), k.baslik);
+  await s.screenshot({ path: path.join(EKRAN, 'tur_2_kralik.png') });
+  await dokun('[data-v3-sekme="kralik"]'); await bekle(800);
+  k = await kart();
+  kontrol('tur: Krallık sekmesine dokununca Krallık merkezi adımına geçer', /Krallık merkezi/i.test(k.baslik), k.baslik);
+  await dokun('[data-v3-git="merkez"]'); await bekle(900);
+  k = await kart();
+  kontrol('tur: merkez açılınca İlk seferin adımına geçer', /İlk seferin/i.test(k.baslik), k.baslik);
+  await s.screenshot({ path: path.join(EKRAN, 'tur_3_sefer.png') });
+  await dokun('.btn-1click-claim-restart-exp'); await bekle(1200);
+  k = await kart();
+  kontrol('tur: sefer başlayınca İşçilerin yolda adımına geçer ve panel kapanır', /yolda/i.test(k.baslik) && await s.evaluate(() => !document.getElementById('rpg-modal').classList.contains('active')), k.baslik);
+  await dokun('#v3-tur-devam'); await dokun('#v3-tur-devam'); await dokun('#v3-tur-devam');
+  k = await kart();
+  kontrol('tur: bitince kapanır ve "bitti" diye kaydedilir', !k.gorunur && /"bitti":true/.test(await kayit()), await kayit());
+  await yukle(); await bekle(5500);
+  kontrol('tur: sayfa yenilenince tekrar başlamaz', !(await kart()).gorunur);
+  await dokun('[data-v3-sekme="ben"]'); await dokun('[data-v3-git="tur"]'); await bekle(500);
+  k = await kart();
+  kontrol('tur: Ben → Oyun turu ile yeniden oynatılır (1. adım)', k.gorunur && /hoş geldin/i.test(k.baslik) && await s.evaluate(() => !document.getElementById('rpg-modal').classList.contains('active')), JSON.stringify(k));
+  await dokun('#v3-tur-atla');
+  kontrol('tur: Atla turu kapatır ve "atlandı" diye kaydeder', !(await kart()).gorunur && /"atlandi":true/.test(await kayit()), await kayit());
   await baglam.close();
 }
 await tarayici.close();

@@ -5,6 +5,7 @@ import { SEKMELER, HUB, hubHtml, esc } from '../js/ui/v3/hub.js';
 import { gitHaritasi } from '../js/ui/v3/kabuk.js';
 import { istatSatiri, bosDurum, iskelet } from '../js/ui/v3/bilesenler.js';
 import { sadeBaslik, katlaKurali } from '../js/ui/v3/panel.js';
+import { TUR_ADIMLARI, turBaslamali, sonrakiAdim, TUR_KAYIT_ANAHTARI } from '../js/ui/v3/tur.js';
 import { SOZLUK, terim } from '../js/ui/v3/sozluk.js';
 
 // 1) Alt çubuk: tam 5 sekme (CSS ızgarası repeat(5)), kimlikler benzersiz, Harita ilk
@@ -16,7 +17,7 @@ console.log('✅ sekmeler');
 
 // 2) Her liste öğesinin bir eylemi var; anahtarlar bütün listelerde benzersiz; ölü eylem yok
 const sahteApi = new Proxy({}, { get: (_, ad) => (ad === 'duyurular' ? () => [] : () => {}) });
-const git = gitHaritasi(sahteApi, { yanAc() {}, sekmeSec() {}, uyariMetni: () => [] });
+const git = gitHaritasi(sahteApi, { yanAc() {}, sekmeSec() {}, uyariMetni: () => [], turBaslat() {} });
 const anahtarlar = Object.values(HUB).flatMap((h) => h.ogeler.map((o) => o.k));
 assert.equal(new Set(anahtarlar).size, anahtarlar.length, 'öğe anahtarları benzersiz olmalı');
 for (const k of anahtarlar) assert.equal(typeof git[k], 'function', `${k} öğesinin eylemi yok`);
@@ -70,3 +71,36 @@ assert.match(terim('amm', 'takas <b>'), /data-v3-terim="amm".*takas &lt;b&gt;/s)
 assert.equal(terim('yok-boyle-terim', '<x>'), '&lt;x&gt;', 'bilinmeyen terim düz metin döner');
 assert.match(terim('havuz'), />Havuz</, 'etiket verilmezse sözlük adı kullanılır');
 console.log('✅ sözlük');
+
+// 7) Yeni oyuncu turu: kimlere başlar, nasıl ilerler
+{
+  const yeni = { seviye: 1, askerSayisi: 0, ilkSeferYapildi: false, kayit: null };
+  assert.equal(turBaslamali(yeni), true, 'yepyeni oyuncuya başlar');
+  assert.equal(turBaslamali({ ...yeni, seviye: 2 }), false, 'ilerlemiş (seviye 2+) hesaba başlamaz');
+  assert.equal(turBaslamali({ ...yeni, askerSayisi: 1 }), false, 'askeri olana başlamaz');
+  assert.equal(turBaslamali({ ...yeni, ilkSeferYapildi: true }), false, 'ilk seferini yapmış hesaba başlamaz');
+  assert.equal(turBaslamali({ ...yeni, kayit: { bitti: true } }), false, 'bitirene tekrar başlamaz');
+  assert.equal(turBaslamali({ ...yeni, kayit: { atlandi: true } }), false, 'atlayana tekrar başlamaz');
+  assert.equal(turBaslamali({ ...yeni, seviye: 1, ilkSeferYapildi: true, kayit: { adim: 4 } }), true, 'yarım kalan tur, ilk sefer yapılmış olsa da devam eder');
+  assert.equal(turBaslamali({ ...yeni, seviye: 3, kayit: { adim: 999 } }), false, 'geçersiz adım kaydı ilerlemiş hesabı tura sokmaz')
+  assert.equal(TUR_KAYIT_ANAHTARI('0xabc'), 'roa_v3_tur_0xabc');
+  assert.equal(TUR_KAYIT_ANAHTARI(''), 'roa_v3_tur_yerel');
+  // adımlar: benzersiz kimlik, başlık+metin; ya "Devam" düğmesi ya da eylem koşulu var (ikisi birden değil, ikisi de yok değil)
+  assert.equal(new Set(TUR_ADIMLARI.map((a) => a.id)).size, TUR_ADIMLARI.length);
+  for (const a of TUR_ADIMLARI) {
+    assert.ok(a.baslik && a.metin, `${a.id}: başlık ve metin`);
+    assert.ok(!!a.dugme !== !!a.tamam, `${a.id}: ya Devam düğmesi ya eylem koşulu olmalı`);
+    if (a.tamam) assert.ok(a.hedef, `${a.id}: eylem adımı parlatılacak bir hedef göstermeli`);
+  }
+  // eylem koşulları
+  const idx = (id) => TUR_ADIMLARI.findIndex((a) => a.id === id);
+  const bos = { sekme: 'harita', panelAcik: false, baslik: '', seferSayisi: 0 };
+  assert.equal(sonrakiAdim(idx('kralik'), bos), idx('kralik'));
+  assert.equal(sonrakiAdim(idx('kralik'), { ...bos, sekme: 'kralik', panelAcik: true }), idx('kralik') + 1);
+  assert.equal(sonrakiAdim(idx('merkez'), { ...bos, baslik: '🏰 Krallık merkezi' }), idx('merkez') + 1);
+  assert.equal(sonrakiAdim(idx('merkez'), { ...bos, baslik: '🏰 Krallık' }), idx('merkez'), '"Krallık" ana listesi merkez adımını geçirmez');
+  assert.equal(sonrakiAdim(idx('sefer'), { ...bos, seferSayisi: 2 }), idx('sefer') + 1);
+  assert.equal(sonrakiAdim(idx('hos'), { ...bos, seferSayisi: 9 }), idx('hos'), 'Devam adımı kendiliğinden ilerlemez');
+  assert.equal(sonrakiAdim(99, bos), 99);
+}
+console.log('✅ yeni oyuncu turu');
