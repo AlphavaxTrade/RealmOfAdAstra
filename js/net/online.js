@@ -538,7 +538,25 @@ async function confirmWalletLink(t) {
 }
 
 // ── Hesap ve cüzdan ekranı ─────────────────────────────────────────────
-let lockOpen = false;
+// E-planı Faz 2, Kanal B (8 Ekim): oyun içinde ASTRA almanın nasıl olacağı bilgi kutusu. Arena TokenManager'ın
+// buyAndCreateLpIfPossible fonksiyonunu doğrudan kodlamadım — parametrelerin (amount) tam anlamı ve msg.value
+// ilişkisi doğrulanamadı (Snowtrace'de ABI var ama kaynak metni erişilemedi); gerçek parayla yanlış kodlanmış bir
+// zincir çağrısı denemektense oyuncuyu doğrulanmış sözleşme adresi + Snowtrace bağlantısıyla bilgilendirmek daha
+// güvenli. Aldığı ASTRA'yı kasasına/cüzdanına gönderince zaten var olan tarama (scanDeposits/kasa) otomatik işler.
+function astraAlPanelHtml(tokenAddress) {
+  return `<div style="${boxCss};font-size:0.8rem;color:#cbd5e1;line-height:1.55;">
+    <div style="font-weight:800;color:#86efac;margin-bottom:6px;">💎 ASTRA nereden alınır?</div>
+    <div>Avalanche ağında (C-Chain) bir cüzdanın (Core/MetaMask) ve içinde biraz AVAX olmalı. Arena üzerinden (token adı <strong>AdAstra</strong>, Token ID <strong>106334</strong>) ya da bu sözleşme adresini destekleyen bir yerden AVAX ile ASTRA alabilirsin.</div>
+    <div style="font-family:monospace;font-size:0.76rem;word-break:break-all;color:#86efac;margin-top:6px;">${esc(tokenAddress)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+      <button id="aa-copy" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">📋 Sözleşme adresini kopyala</button>
+      <a href="https://snowtrace.io/token/${esc(tokenAddress)}" target="_blank" rel="noopener" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#93c5fd;text-decoration:none;font-size:0.78rem;">🔍 Snowtrace'de gör</a>
+    </div>
+    <div style="margin-top:6px;color:#94a3b8;">Aldığın ASTRA'yı Oyun Kasası adresine ya da hesabına bağlı cüzdanına gönder; oyun otomatik işler.</div>
+  </div>`;
+}
+
+let lockOpen = false, astraAlOpen = false;
 export async function openWalletPanel() {
   if (!online.active) return;
   if (!token && !(await requireLogin())) return;
@@ -569,6 +587,8 @@ export async function openWalletPanel() {
       <button type="button" id="wp-lock-toggle" title="Kilitli ASTRA nasıl açılır? Tıkla" style="background:none;border:0;color:#fbbf24;font:inherit;font-weight:800;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">🔒 Kilitli ⓘ<br>${fmt(wd.locked)}</button>
       <span style="color:#38bdf8;">🏦 Çekimde<br>${fmt(wd.pending)}</span>
     </div>
+    <div style="text-align:center;margin:-2px 0 6px;"><button type="button" id="aa-toggle" style="background:none;border:0;color:#86efac;font-size:0.78rem;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">💎 ASTRA nereden alınır? ⓘ</button></div>
+    <div id="aa-panel" style="display:${astraAlOpen ? 'block' : 'none'};">${astraAlPanelHtml(w.tokenAddress)}</div>
     <div id="wp-lock-panel" style="display:${lockOpen ? 'block' : 'none'};">${lockPanelHtml()}</div>
     <div style="${boxCss}">
       <div style="font-weight:800;color:#c4b5fd;margin-bottom:4px;">🦊 Bağlı Cüzdan</div>
@@ -602,6 +622,8 @@ export async function openWalletPanel() {
   const $ = id => document.getElementById(id);
   $('wp-close').onclick = closeOverlay;
   $('wp-lock-toggle').onclick = () => { lockOpen = !lockOpen; $('wp-lock-panel').style.display = lockOpen ? 'block' : 'none'; };
+  $('aa-toggle').onclick = () => { astraAlOpen = !astraAlOpen; $('aa-panel').style.display = astraAlOpen ? 'block' : 'none'; };
+  if ($('aa-copy')) $('aa-copy').onclick = () => { navigator.clipboard?.writeText(w.tokenAddress); ctx.toast('Sözleşme adresi kopyalandı', 'success'); };
   $('wp-logout').onclick = e => { e.preventDefault(); logout(); };
   if ($('wp-resend')) $('wp-resend').onclick = async e => {
     e.preventDefault();
