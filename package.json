@@ -19,7 +19,10 @@
     "kapsam": "c8 node tests/run_all.mjs",
     "kapsam-kontrol": "node scripts/kapsam-kontrol.mjs",
     "yuk": "node scripts/yuk/yuk.mjs",
-    "yuk-kontrol": "node scripts/yuk/kontrol.mjs"
+    "yuk-kontrol": "node scripts/yuk/kontrol.mjs",
+    "kontrol": "node scripts/kontrol.mjs",
+    "hizli": "node scripts/kontrol.mjs --hizli",
+    "hook-kur": "node scripts/hook-kur.mjs"
   },
   "devDependencies": {
     "acorn": "^8.19.0",

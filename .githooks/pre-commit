@@ -1,0 +1,3 @@
+#!/bin/sh
+# Commit öncesi hızlı kapı (kurumsal A8). Kurulum: npm run hook-kur. Atlamak (acil durum): git commit --no-verify
+exec node scripts/pre-commit.mjs

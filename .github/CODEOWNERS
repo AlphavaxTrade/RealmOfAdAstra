@@ -1,0 +1,15 @@
+# Para, kimlik ve altyapı yolları: değişiklik sahibinin incelemesinden geçer (dal korumasında "kod sahibi incelemesi" açıksa zorunlu olur).
+# DOĞRULA: sahip adı depo sahibinden türetildi; kişisel hesap adı ya da takım (@alphavaxtrade/ekip) ise düzeltin.
+*                       @alphavaxtrade
+server/payments.js      @alphavaxtrade
+server/kasa.js          @alphavaxtrade
+server/chain.js         @alphavaxtrade
+server/world/odemeler.js @alphavaxtrade
+server/accounts.js      @alphavaxtrade
+server/oturum.js        @alphavaxtrade
+server/parola.js        @alphavaxtrade
+contracts/              @alphavaxtrade
+.github/                @alphavaxtrade
+Dockerfile              @alphavaxtrade
+docker-compose*.yml     @alphavaxtrade
+deploy/                 @alphavaxtrade

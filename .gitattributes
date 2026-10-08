@@ -4,3 +4,5 @@
 *.vbs text eol=crlf
 *.jpg binary
 *.png binary
+.githooks/* text eol=lf
+*.sh text eol=lf

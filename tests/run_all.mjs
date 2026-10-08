@@ -2,13 +2,15 @@
 // tests/ klasöründeki test_*.mjs dosyalarının HEPSİNİ ayrı süreçlerde sırayla çalıştırır.
 // (v1.25 öncesinde test listesi package.json'da elle tutuluyordu; 10 dosya listede yoktu ve
 // ikisi bozuk olduğu hâlde kimse fark etmiyordu.)
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const dir = dirname(fileURLToPath(import.meta.url));
-const files = readdirSync(dir).filter(f => /^test_.*\.mjs$/.test(f)).sort();
+// --hizli: yalnız tests/hizli.json'daki hızlı grup (commit öncesi kanca ve `npm run hizli`); varsayılan hepsi
+const hizli = process.argv.includes('--hizli');
+const files = hizli ? JSON.parse(readFileSync(join(dir, 'hizli.json'), 'utf8')) : readdirSync(dir).filter(f => /^test_.*\.mjs$/.test(f)).sort();
 const failed = [];
 const sureler = [];
 const t0 = Date.now();

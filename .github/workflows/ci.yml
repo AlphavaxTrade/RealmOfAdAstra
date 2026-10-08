@@ -1,29 +1,108 @@
+# Sürekli doğrulama (kurumsal A8). Yerelde aynısı: `npm run kontrol`. Gizli bilgi KULLANMAZ (fork PR'ları güvenle çalışır).
 name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, kurumsal]
   pull_request:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
 jobs:
-  test-and-build:
+  kalite:
+    name: kalite
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - name: Bağımlılıkları kur
-        run: npm ci
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-      - name: Sözdizimi kontrolü
+      - run: npm ci
+      - name: Sözdizimi (tarayıcı kodu)
         run: for f in js/*.js js/*/*.js scripts/windows/*.cjs; do node --check "$f"; done
-      - name: Testler
-        run: npm test
-      - name: Yayın paketi
+      - name: Lint (hata 0, uyarı tavanı)
+        run: npm run lint
+      - name: Ölü kod ve kullanılmayan paket
+        run: npm run olu-kod
+      - name: Gizli bilgi taraması
+        run: npm run gizli-tara
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Testler (kapsam ölçümüyle)
+        run: npm run kapsam
+      - name: Kapsam eşikleri (yalnız yukarı)
+        run: npm run kapsam-kontrol
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kapsam
+          path: coverage/
+          retention-days: 14
+
+  derleme:
+    name: derleme
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Yayın paketi (vite + ön sıkıştırma)
         run: npm run build
+      - name: Çıktı sağlam mı
+        run: test -s dist/index.html
+
+  guvenlik:
+    name: guvenlik
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Üretim bağımlılıkları açık denetimi
+        run: npm run audit-uretim
+      - name: Gizli bilgi taraması, geçmişin tamamı (gitleaks)
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.21.2 detect --source /repo --no-banner --redact
+
+  imaj:
+    name: imaj
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: İmaj derle (yayınlanmaz)
+        run: docker build -t realm-ci:${{ github.sha }} .
+      - name: Açık taraması (Trivy; düzeltmesi olan yüksek/kritik açık varsa kırılır)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: realm-ci:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
