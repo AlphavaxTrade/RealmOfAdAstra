@@ -442,6 +442,12 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   const adminBlocked = ip => { const f = adminFails.get(ip); return !!(f && clock() - f.t < 600000 && f.n >= 10); };
   const adminFail = ip => { const now = clock(); let f = adminFails.get(ip); if (!f || now - f.t >= 600000) f = { t: now, n: 0 }; f.n++; adminFails.set(ip, f); if (adminFails.size > 10000) adminFails.clear(); };
 
+  // Yönetici denetim izi: ne, ne zaman, hangi adresten, sonucu ne. İstek gövdesi ve denenen şifre ASLA yazılmaz.
+  function denetimIzi(tip, route, ip, status) {
+    try { db.event(tip, null, status == null ? { route, ip } : { route, ip, status }); }
+    catch (err) { log.error('Denetim izi yazılamadı', route, err); }
+  }
+
   async function handleInner(req, res) {
     const url = new URL(req.url, 'http://x');
     const key = `${req.method} ${url.pathname}`;
@@ -471,11 +477,12 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     if (limited('ip:' + ip, cfg.ipRateLimitPerSec || 40)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
     const route = Object.hasOwn(routes, key) ? routes[key] : null;
     if (!route) return send(res, 404, { error: 'Bulunamadı' });
+    const adminYazma = key.startsWith('POST /api/admin');   // değiştiren yönetici işlemleri denetim izine yazılır (salt okunur GET yazılmaz)
     try {
       let me = null;
       if (key.startsWith('GET /api/admin') || key.startsWith('POST /api/admin')) {
         if (adminBlocked(ip)) return send(res, 429, { error: 'Çok fazla hatalı deneme; 10 dakika sonra tekrar dene.' });
-        if (!isAdmin(req)) { adminFail(ip); return send(res, 401, { error: 'Yönetici yetkisi gerekli' }); }
+        if (!isAdmin(req)) { adminFail(ip); denetimIzi('admin-yetkisiz', key, ip); return send(res, 401, { error: 'Yönetici yetkisi gerekli' }); }
       } else if (!PUBLIC_ROUTES.includes(key)) {
         me = auth(req);
         if (!me) return send(res, 401, { error: 'Giriş gerekli' });
@@ -483,9 +490,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       if (limited(me || ip)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       if (PUBLIC_ROUTES.includes(key) && key !== 'GET /api/health' && limited('pub:' + ip, cfg.publicRateLimitPerSec || 5)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       const out = await route(req, me);
+      if (adminYazma) denetimIzi('admin', key, ip, Array.isArray(out) ? out[0] : 200);
       if (Array.isArray(out)) return send(res, out[0], out[1]);
       return send(res, 200, out);
     } catch (err) {
+      if (adminYazma) denetimIzi('admin', key, ip, err && err.userError ? 400 : 500);
       if (err && err.userError) return send(res, 400, { error: err.message });
       log.error('İstek hatası', key, err);
       return send(res, 500, { error: 'Sunucu hatası' });   // iç ayrıntı dışarı verilmez
