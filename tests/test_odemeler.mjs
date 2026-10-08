@@ -9,7 +9,6 @@ import { loadConfig } from '../server/config.js';
 
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
-const quiet = { log() {}, warn() {}, error() {} };
 const ADRES = i => '0x' + String(i).padStart(2, '0').repeat(20);
 
 async function kur({ chain, cfgEk = {} } = {}) {
