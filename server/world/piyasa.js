@@ -90,10 +90,13 @@ export function olusturPiyasa(w) {
     const live = e.live || {};
     const myScore = weekScore(st, E.globalPool.state.epochId);
     const cap = currentCap();
+    const bal = Number(st.adAstraBalance) || 0;
+    const sponsored = Math.min(Math.max(0, bal - Math.min(Number(st.lockedAda) || 0, bal)), Math.max(0, Number(st.sponsorAda) || 0));
     return {
       pending: Number(st.pendingWithdrawAda) || 0,
-      free: Math.max(0, (Number(st.adAstraBalance) || 0) - Math.min(Number(st.lockedAda) || 0, Number(st.adAstraBalance) || 0)),
+      free: Math.max(0, (Number(st.adAstraBalance) || 0) - Math.min(Number(st.lockedAda) || 0, Number(st.adAstraBalance) || 0) - sponsored),
       locked: Math.min(Number(st.lockedAda) || 0, Number(st.adAstraBalance) || 0),
+      sponsored,
       weekScore: myScore,
       scoreTotal: live.scoreTotal || 0,
       weeklyCap: cap,

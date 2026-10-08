@@ -26,7 +26,8 @@ const SEN = {
   toplucekim: { topluCekimHafta: 10, topluCekimKisi: 30, topluCekimBakiye: 20000, arz: 3e7 },     // küçük arz: haftalık çekim tavanı ≈ 300 K, talep ≈ 600 K → tavan BAĞLAR
   balinalar: { balinaDepozito: 5e6, balinaSayisi: 10 },
   disgelir: { ortakGelir: true, ortakHaftalik: 250000, kilitAcik: true },
-  sahtehesap: { dalgaHafta: 8, dalgaKisi: 100 }
+  sahtehesap: { dalgaHafta: 8, dalgaKisi: 100 },
+  sponsor: { sponsorHafta: 3, sponsorCift: 12, sponsorMiktar: 20000, sponsorKasa: 100000 }
 }[SENARYO] || {};
 
 const rng = tohumlu(TOHUM * 7919);
@@ -98,7 +99,7 @@ function haftaKaydi() {
     hafta, epoch: gp.epochId, vatandas: ks.citizens, aktif: ((kapi.state().history || []).at(-1) || {}).citizens ?? 0, ekranAktif: ks.active, bekleyen: ks.waiting, askida: ks.suspended, sinir: ks.limit,
     gosterge: ks.indicator, izinde: oyuncular.filter(P => { const k = (E.readPlayer(P.pid) || {}).katilim; return k && k.izinModu && zaman.T < Number(k.izinModu.bitis); }).length,
     kasalar: Math.round(anlikFoto(W).kasalar), cekim: ozet.withdraw ? { cap: Math.round(ozet.withdraw.cap), talep: Math.round(ozet.withdraw.requested), gonderilen: Math.round(ozet.withdraw.sent) } : null,
-    ucretsizHavuz: ozet.faucet ? { oyuncu: ozet.faucet.players, toplam: Math.round(ozet.faucet.totalAda) } : null, yakilan: Math.round(Number(gp.totalBurned) || 0), kasaOmruAy: ozet.runwayMonths ?? null,
+    ucretsizHavuz: ozet.faucet ? { oyuncu: ozet.faucet.players, toplam: Math.round(ozet.faucet.totalAda) } : null, yakilan: Math.round(Number(gp.totalBurned) || 0), sponsorPay: Math.round(ctx.cum.sponsorPay || 0), kasaOmruAy: ozet.runwayMonths ?? null,
     seviye: { ucretsiz: sinifOrt('ucretsiz'), orta: sinifOrt('orta'), balina: sinifOrt('balina') }, korunumFarki: Math.round(ctx.korunumFarki * 100) / 100
   };
 }
@@ -151,6 +152,20 @@ try {
         // Haftanın son 24 saatinde çekim talepleri
         const kalan = Number(E.globalPool.state.epochEndTime) - zaman.T;
         if (kalan > 0 && kalan <= 24 * SAAT) {
+          if (SEN.sponsorHafta === hafta && !ctx.sponsorYapildi) {   // zengin vatandaşlar (dış giriş sayılır) aktif vatandaşlara sponsor olur
+            ctx.sponsorYapildi = true;
+            const vat = oyuncular.filter(x => !x.aday && x.cuzdan);
+            let ok = 0;
+            ctx.sponsorHedef = new Set();
+            for (let i = 0; i < SEN.sponsorCift; i++) {
+              const B = vat[vat.length - 1 - i], A = vat[i];
+              if (!B || !A || B === A) continue;
+              E.mutatePlayer(B.pid, gs => { gs.state.adAstraBalance += SEN.sponsorKasa; });
+              ctx.dis.depozito += SEN.sponsorKasa;
+              try { await W.sponsor.give(B.pid, A.pid, SEN.sponsorMiktar); ctx.sponsorHedef.add(A.pid); ok++; } catch (e) { log(`  [sponsor] reddedildi: ${e.message}`); }
+            }
+            log(`  [hafta ${hafta}] ${ok} sponsorluk başladı`);
+          }
           const topluSimdi = SEN.topluCekimHafta === hafta;
           if (topluSimdi && !ctx.topluYapildi) {   // 30 cüzdanlı vatandaşa serbest bakiye (dış giriş sayılır): hepsi tüm serbest bakiyesini çekmek ister
             ctx.topluYapildi = true;
@@ -162,6 +177,11 @@ try {
           let n = 0;
           for (const P of oyuncular) {
             if (P.aday || !P.cuzdan) continue;
+            if (ctx.sponsorHedef && ctx.sponsorHedef.has(P.pid) && hafta > SEN.sponsorHafta) {   // sponsorlu oyuncular her hafta kendi parasından çekim ister (sponsorlu paraya dokunulamaz)
+              E.mutatePlayer(P.pid, gs => { gs.state.adAstraBalance += 5000; gs.state.lockedAda = Math.min(gs.state.lockedAda || 0, 0); });
+              ctx.dis.depozito += 5000;
+              await cekimTalebi(P, rng, hafta, { oran: 1, zorla: true });
+            } else
             if (topluSimdi) { if (n < SEN.topluCekimKisi && await cekimTalebi(P, rng, hafta, { oran: 1, zorla: true })) n++; }
             else await olc('cekim', () => cekimTalebi(P, rng, hafta));
           }

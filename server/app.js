@@ -40,6 +40,7 @@ import oyunRotalari from './rotalar/oyun.js';
 import cuzdanRotalari from './rotalar/cuzdan.js';
 import pvpRotalari from './rotalar/pvp.js';
 import ilanRotalari from './rotalar/ilan.js';
+import sponsorRotalari from './rotalar/sponsor.js';
 import yonetimRotalari from './rotalar/yonetim.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -66,7 +67,7 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
   metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
@@ -172,10 +173,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir
-  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, newSession, clientIp };
+  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, newSession, clientIp };
   const routes = {
     ...genelRotalar(ctx), ...hesapRotalari(ctx), ...oyunRotalari(ctx), ...cuzdanRotalari(ctx),
-    ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...yonetimRotalari(ctx)
+    ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...yonetimRotalari(ctx)
   };
   const serveStatic = createStatic({ cfg, secHeaders: SEC_HEADERS });
 

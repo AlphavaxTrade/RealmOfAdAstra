@@ -8,7 +8,7 @@ import { fmt, DAY } from './yardimci.js';
 import { izindeMiState } from '../aktiflik.js';
 
 export function olusturHaftalik(w) {
-  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, externalBuy, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
+  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, externalBuy, sponsor, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
   function settleWeek(closedEpoch, market) {
     const now = clock();
     const e = econ();
@@ -42,19 +42,24 @@ export function olusturHaftalik(w) {
       }
       const cap = currentCap(market);
       const alloc = allocateWithdrawals(rows, cap, { brake });
+      let sponsorTotal = 0;
       for (const r of alloc.rows) {
         if (!(r.requested > 0)) continue;
+        // Sponsor payı: net çekimin SHARE'i sponsorların oyun bakiyesine gider (atomik), kalanı oyuncunun cüzdanına
+        const sp = sponsor && r.net > 0 ? sponsor.settleShares(r.id, r.net) : { total: 0, parts: [] };
+        sponsorTotal += sp.total;
+        const toWallet = r.net - sp.total;
         E.mutatePlayer(r.id, gs => {
           gs.state.pendingWithdrawAda = 0;
           if (r.returned > 0) gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + r.returned;
           gs.state.withdrawnAda = (Number(gs.state.withdrawnAda) || 0) + r.total;
-          gs.pushNotice(`🏦 Haftalık çekim: ${fmt(r.net)} ADA cüzdanına gönderiliyor (ücret ${fmt(r.fee)}, hak kirası ${fmt(r.rent)}).` +
+          gs.pushNotice(`🏦 Haftalık çekim: ${fmt(toWallet)} ADA cüzdanına gönderiliyor (ücret ${fmt(r.fee)}, hak kirası ${fmt(r.rent)}${sp.total > 0 ? `, sponsor payı ${fmt(sp.total)}` : ''}).` +
             (r.returned > 0 ? ` ${fmt(r.returned)} ADA bu haftaki havuza sığmadı, bakiyene döndü.` : ''), 'success');
         });
         db.q.playerSetPending.run(0, r.id);
         if (r.total > 0) db.q.playerAddWithdrawn.run(r.total, r.id);
         // Ödeme hesabın ETKİN cüzdanına (48 saati dolmamış değişiklik etkin değildir)
-        queuePayout(closedEpoch, 'withdraw', walletOf(r.id), r.net);
+        queuePayout(closedEpoch, 'withdraw', walletOf(r.id), toWallet);
         db.q.withdrawLogSet.run(closedEpoch, r.id, JSON.stringify(r));
       }
       for (const rp of alloc.rentPayouts) {
@@ -68,6 +73,8 @@ export function olusturHaftalik(w) {
       gp.state.ubiPool = (Number(gp.state.ubiClaimPot) || 0) + gp.state.ubiWeekAccrued;
       let burn = alloc.totals.feeBurn;
       summary.withdraw = { cap, k: Number(econ().k) || 1, externalBuy4w: externalBuy(), ...alloc.totals };
+      summary.withdraw.sponsorShare = sponsorTotal;
+      summary.withdraw.sent -= sponsorTotal;   // zincire giden = net − sponsor payı (pay oyun içinde kalır)
 
       // 2) Fiyat savunma yakımı (fren açıkken)
       let defense = 0;

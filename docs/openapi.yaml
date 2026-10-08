@@ -14,6 +14,7 @@ tags:
   - name: Cüzdan ve Kasa
   - name: Kolezyum
   - name: İlan pazarı
+  - name: Sponsorluk
   - name: Yönetim
   - name: Sayfalar
 paths:
@@ -1204,6 +1205,158 @@ paths:
           $ref: "#/components/responses/Hata401"
         "403":
           $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/sponsor/tablo:
+    get:
+      tags:
+        - Sponsorluk
+      summary: "Vatandaşların gelişim tablosu (kimlik yok): seviye, bu hafta kategori, ortalama net çekim, sponsor sayısı"
+      operationId: get_api_sponsor_tablo
+      security: *a2
+      responses:
+        "200":
+          description: "{ rows[], config }; sponsorluk kapalıysa 404."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/sponsor/benim:
+    get:
+      tags:
+        - Sponsorluk
+      summary: "Benim sponsorluklarım: verdiğim, aldığım, sponsorlu bakiyem"
+      operationId: get_api_sponsor_benim
+      security: *a2
+      responses:
+        "200":
+          description: "{ config, sponsoredBalance, given[], received[] }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/sponsor/ol:
+    post:
+      tags:
+        - Sponsorluk
+      summary: Bir vatandaşa ASTRA ile sponsor ol (para çekilemez sponsorlu kalem olarak hedefe geçer)
+      operationId: post_api_sponsor_ol
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                hedef:
+                  type: string
+                miktar:
+                  type: number
+              required:
+                - hedef
+                - miktar
+      responses:
+        "200":
+          description: "{ success, id, message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/sponsor/feragat:
+    post:
+      tags:
+        - Sponsorluk
+      summary: Sponsor payından vazgeç (anapara geri gelmez)
+      operationId: post_api_sponsor_feragat
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+              required:
+                - id
+      responses:
+        "200":
+          description: "{ success, message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/sponsor/kapat:
+    post:
+      tags:
+        - Sponsorluk
+      summary: "Hedef: getiri anaparaya ulaşan sponsorluğu kapat"
+      operationId: post_api_sponsor_kapat
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+              required:
+                - id
+      responses:
+        "200":
+          description: "{ success, message }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
         "404":
           $ref: "#/components/responses/Hata404"
         "429":

@@ -59,7 +59,9 @@ export const ekonomiYontemleri = {
   getLockedBalanceInfo() {
     const total = Math.max(0, Number(this.state.adAstraBalance) || 0);
     const locked = Math.min(total, Math.max(0, Number(this.state.lockedAda) || 0));
-    return { total, locked, free: total - locked };
+    // Sponsorlu para (SPONSORLUK_TASARIMI.md): bakiyenin içindedir, hiçbir zaman çekilemez; kilitliden bağımsız ve zamanla açılmaz
+    const sponsored = Math.min(total - locked, Math.max(0, Number(this.state.sponsorAda) || 0));
+    return { total, locked, sponsored, free: total - locked - sponsored };
   },
 
   // 🔓 Kilit açılma tahmini (panel için): kurallar processLockedUnlock ve _onAdaSpent ile aynı
@@ -103,13 +105,20 @@ export const ekonomiYontemleri = {
   // Oyunda harcanan ASTRA: önce kilitli kısım kullanılır, üstüne harcananın UNLOCK_ON_SPEND'i kadar kilit açılır.
   // boughtResource: pazardan hammadde alımı — puan vermez, aynı hammaddenin sonraki satışından düşülür.
   _onAdaSpent(amount, { boughtResource = null } = {}) {
-    const v = Number(amount) || 0;
+    let v = Number(amount) || 0;
     if (!(v > 0)) return;
     const L = GAME_CONFIG.LOCKED_BALANCE || {};
+    // Önce sponsorlu para harcanır (oyuna girsin; A'nın kendi parası çekilebilir kalsın). Kilit açılma payı yalnız kendi paradan harcamaya uygulanır.
+    const spon = Math.min(Math.max(0, Number(this.state.sponsorAda) || 0), v);
+    if (spon > 0) { this.state.sponsorAda = Math.max(0, (Number(this.state.sponsorAda) || 0) - spon); v -= spon; }
     let locked = Math.max(0, Number(this.state.lockedAda) || 0);
-    locked -= Math.min(locked, v);
-    locked -= Math.min(locked, v * (L.UNLOCK_ON_SPEND ?? 0.2));
-    this.state.lockedAda = Math.min(locked, Math.max(0, Number(this.state.adAstraBalance) || 0));
+    if (v > 0) {
+      locked -= Math.min(locked, v);
+      locked -= Math.min(locked, v * (L.UNLOCK_ON_SPEND ?? 0.2));
+    }
+    const bal = Math.max(0, Number(this.state.adAstraBalance) || 0);
+    this.state.sponsorAda = Math.min(Math.max(0, Number(this.state.sponsorAda) || 0), bal);
+    this.state.lockedAda = Math.min(locked, Math.max(0, bal - this.state.sponsorAda));
     if (boughtResource) {
       const credit = this._contribution().buyCredit;
       credit[boughtResource] = (credit[boughtResource] || 0) + v;

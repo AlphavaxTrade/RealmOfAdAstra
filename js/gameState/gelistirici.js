@@ -329,6 +329,7 @@ export const gelistiriciYontemleri = {
       burnedResources: zeroRes(),
       village: { ...(GAME_CONFIG.STARTING_PROFILE.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }) },
       lockedAda: 0,
+      sponsorAda: 0,
       lockUnlock: null,
       contribution: null,
       adaPriceMultiplier: GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1,

@@ -72,8 +72,10 @@ export async function dunyaKur(opts = {}) {
   if (opts.limit) E.GAME_CONFIG.KAPI.START_LIMIT = opts.limit;
   const kapi = createKapi({ db, engine: E, accounts, mailer, cfg, clock, log: sessiz });
   const arena = createArena({ db, engine: E, clock });
-  const world = createWorld({ db, engine: E, chain, arena, accounts, mailer, kapi, cfg, clock, log: sessiz });
-  const app = createApp({ db, engine: E, world, accounts, kapi, arena, chain, cfg, clock, log: sessiz });
+  const { createSponsor } = await import('../../server/sponsor.js');
+  const sponsor = createSponsor({ db, engine: E, kapi, accounts, clock, log: sessiz });
+  const world = createWorld({ db, engine: E, chain, arena, accounts, mailer, kapi, sponsor, cfg, clock, log: sessiz });
+  const app = createApp({ db, engine: E, world, accounts, kapi, arena, sponsor, chain, cfg, clock, log: sessiz });
   const server = app.server();
   server.on('connection', sk => sk.setNoDelay(true));
   server.listen(0, '127.0.0.1');
@@ -82,7 +84,7 @@ export async function dunyaKur(opts = {}) {
   const base = `http://127.0.0.1:${server.address().port}`;
 
   const dunya = {
-    E, db, cfg, world, kapi, accounts, arena, chain, zincir, app, server, base, SYSTEM, zaman, hatalar: [],
+    E, db, cfg, world, kapi, sponsor, accounts, arena, chain, zincir, app, server, base, SYSTEM, zaman, hatalar: [],
     oyuncular: [], ADMIN: cfg.adminToken,
     // Taşıma: kalıcı bağlantı + Nagle kapalı (Windows'ta fetch her istekte ~13 ms bekliyordu; bu yol ~1 ms)
     call(method, p, body, token) {

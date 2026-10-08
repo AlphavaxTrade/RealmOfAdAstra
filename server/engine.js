@@ -154,6 +154,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
         const used = total >= kasaAvail ? 0 : kasaAvail - total;
         gs.state.adAstraBalance = Math.max(0, total - kasaAvail);
         gs.state.lockedAda = Math.min(Number(gs.state.lockedAda) || 0, gs.state.adAstraBalance);
+        gs.state.sponsorAda = Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), gs.state.adAstraBalance);
         if (used > 0) kasa.consume(current, used);
       }
       // Tıklamalı işlemler yalnız kazanılmış bakiyeyi kullanır (yetmezse cüzdandan ödeme; kasa kullanılmaz)

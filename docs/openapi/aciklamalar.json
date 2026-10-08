@@ -1,69 +1,688 @@
 {
   "_not": "Elle yazılan kısım: her rota için özet, istek alanları ve yanıt notu. Rotanın kendisi, yöntemi ve YETKİSİ koddan gelir (server/app.js rotalar()); burada olmayan ya da fazla olan rota tests/test_openapi.mjs'i kırar. Üretim: node scripts/openapi-uret.mjs",
-  "GET /api/health": { "etiket": "Genel", "ozet": "Süreç ayakta mı (canlılık)", "yanit": "{ ok, time, version, chain, payoutMode, testMode, payments }" },
-  "GET /api/ready": { "etiket": "Genel", "ozet": "Hazır mı: veritabanı yanıt veriyor ve dünya zamanlayıcısı canlı", "yanit": "{ hazir, kontroller: { veritabani, zamanlayici }, zamanlayiciTur, zamanlayiciHata, zamanlayiciYasSn }. Hazır değilse 503 ve aynı gövde.", "kodlar": [503] },
-  "GET /api/rates": { "etiket": "Genel", "ozet": "Oyundaki ADA oranları (RealmRates sözleşmesinden; herkese açık)", "yanit": "Oran sözleşmesi kapalıysa 404." , "kodlar": [404] },
-
-  "POST /api/account/register": { "etiket": "Hesap", "ozet": "Kayıt (e-posta + parola); doğrulama e-postası gider, oturum AÇILMAZ",
-    "govde": { "email": { "tur": "string", "zorunlu": true }, "password": { "tur": "string", "zorunlu": true, "aciklama": "En az güvenlik kuralları hesap modülünde" }, "promo": { "tur": "string", "aciklama": "İsteğe bağlı promo kodu; doğrulamadan sonra uygulanır" } },
-    "yanit": "{ ok, sent, message, devLink }. E-posta kayıtlı olsun olmasın yanıt aynıdır (hesap varlığı sızdırılmaz). devLink yalnız deneme modunda dolu." },
-  "POST /api/account/login": { "etiket": "Hesap", "ozet": "Giriş (e-posta ve parola)", "govde": { "email": { "tur": "string", "zorunlu": true }, "password": { "tur": "string", "zorunlu": true } },
-    "yanit": "{ token, playerId } ya da iki adımlı doğrulama açıksa { need2fa: true, ticket }. Yanlış bilgi 401 (zamanlama farkı yok).", "kodlar": [401] },
-  "POST /api/account/login2fa": { "etiket": "Hesap", "ozet": "İki adımlı doğrulama ile girişi tamamla", "govde": { "ticket": { "tur": "string", "zorunlu": true }, "code": { "tur": "string", "zorunlu": true, "aciklama": "Uygulama kodu ya da yedek kod" } },
-    "yanit": "{ token, playerId, backupLeft }", "kodlar": [401] },
-  "POST /api/account/verify": { "etiket": "Hesap", "ozet": "E-posta doğrulama (e-postadaki bağlantı)", "govde": { "token": { "tur": "string", "zorunlu": true } },
-    "yanit": "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer." },
-  "POST /api/account/resend": { "etiket": "Hesap", "ozet": "Doğrulama e-postasını yeniden gönder", "govde": { "email": { "tur": "string", "zorunlu": true } }, "yanit": "Hesap varlığını sızdırmayan sabit yanıt." },
-  "POST /api/account/2fa/setup": { "etiket": "Hesap", "ozet": "İki adımlı doğrulama kurulumu başlat", "yanit": "{ ok, secret, uri, qr } (qr: SVG data URL)", "kodlar": [400] },
-  "POST /api/account/2fa/enable": { "etiket": "Hesap", "ozet": "İki adımlı doğrulamayı aç (ilk kodu doğrula)", "govde": { "code": { "tur": "string", "zorunlu": true } }, "yanit": "{ ok, backupCodes } — 10 yedek kod yalnız bu yanıtta bir kez gösterilir." },
-  "POST /api/account/2fa/disable": { "etiket": "Hesap", "ozet": "İki adımlı doğrulamayı kapat", "govde": { "code": { "tur": "string", "zorunlu": true } }, "yanit": "403 ve need2fa: kod gerekli/yanlış.", "kodlar": [403] },
-  "POST /api/account/forgot": { "etiket": "Hesap", "ozet": "Parola sıfırlama e-postası iste", "govde": { "email": { "tur": "string", "zorunlu": true } }, "yanit": "Hesap varlığını sızdırmayan sabit yanıt." },
-  "POST /api/account/reset": { "etiket": "Hesap", "ozet": "Yeni parola belirle (e-postadaki anahtarla)", "govde": { "token": { "tur": "string", "zorunlu": true }, "password": { "tur": "string", "zorunlu": true } }, "yanit": "{ ok, twoFactor }. Başarılı sıfırlama eski oturumları iptal eder." },
-  "GET /api/account/me": { "etiket": "Hesap", "ozet": "Hesap özeti ve bağlı cüzdan durumu", "yanit": "Hesap yoksa 404.", "kodlar": [404] },
-  "POST /api/account/wallet/nonce": { "etiket": "Hesap", "ozet": "Cüzdana imzalatılacak mesajı al", "govde": { "address": { "tur": "string", "zorunlu": true, "aciklama": "0x… cüzdan adresi" } }, "yanit": "{ message }" },
-  "POST /api/account/wallet/link": { "etiket": "Hesap", "ozet": "İmzayı gönder; e-posta onayı istenir", "govde": { "signature": { "tur": "string", "zorunlu": true }, "code": { "tur": "string", "aciklama": "İki adımlı doğrulama açıksa gerekli" } }, "yanit": "İmza geçerliyse onay e-postası gider.", "kodlar": [403] },
-  "POST /api/account/wallet/confirm": { "etiket": "Hesap", "ozet": "Cüzdan bağlamayı onayla (e-postadaki bağlantı)", "govde": { "token": { "tur": "string", "zorunlu": true } }, "yanit": "{ ok }" },
-  "POST /api/account/wallet/cancel": { "etiket": "Hesap", "ozet": "Bekleyen cüzdan değişikliğini iptal et", "yanit": "{ ok }" },
-  "POST /api/account/logout": { "etiket": "Hesap", "ozet": "Bu cihazdan çıkış (oturum anahtarı silinir)", "yanit": "{ ok }" },
-
-  "GET /api/state": { "etiket": "Oyun", "ozet": "Oyuncu kaydı + dünya görüntüsü (zamanla ilerleyen işler sunucuda işlenir)", "yanit": "{ player, world, address, epochId, gate }" },
-  "POST /api/action": { "etiket": "Oyun", "ozet": "Oyun işlemi (yalnız beyaz listedekiler; bkz. x-islemler)", "govde": { "name": { "tur": "string", "zorunlu": true, "aciklama": "x-islemler anahtarlarından biri" }, "args": { "tur": "array", "aciklama": "İşlemin argüman türleri x-islemler[name].argumanlar'da" } },
-    "yanit": "{ result, player, world, address, epochId, gate }. Reddedilen/geçersiz işlem 400; vatandaş olmayan hesap 403 (bekleme sırası).", "kodlar": [403] },
-  "POST /api/promo/redeem": { "etiket": "Oyun", "ozet": "Promo kodunu kullan", "govde": { "code": { "tur": "string", "zorunlu": true } }, "yanit": "{ ok, message }" },
-  "POST /api/dev/vanilla-reset": { "etiket": "Oyun", "ozet": "YALNIZ deneme sunucusu: dünyayı ve kayıtları ilk güne döndür", "yanit": "Gerçek sunucuda 404.", "kodlar": [404] },
-
-  "GET /api/wallet": { "etiket": "Cüzdan ve Kasa", "ozet": "Yatırma adresi, çekim durumu, geçmiş", "yanit": "{ account, gameWallet, tokenAddress, deposits, withdraw }" },
-  "POST /api/withdraw": { "etiket": "Cüzdan ve Kasa", "ozet": "Çekim talebi (serbest bakiyeden)", "govde": { "amount": { "tur": "number", "zorunlu": true }, "code": { "tur": "string", "aciklama": "İki adımlı doğrulama açıksa gerekli" } },
-    "yanit": "{ success, message, ... }. E-posta doğrulanmamış ya da cüzdan bağlı değilse success:false.", "kodlar": [403] },
-  "POST /api/withdraw/cancel": { "etiket": "Cüzdan ve Kasa", "ozet": "Bekleyen çekim talebini geri al", "yanit": "{ success, message }" },
-  "GET /api/kasa": { "etiket": "Cüzdan ve Kasa", "ozet": "Oyun Kasası durumu", "yanit": "Kasa kapalıysa { enabled: false }." },
-  "POST /api/kasa/refresh": { "etiket": "Cüzdan ve Kasa", "ozet": "Kasa zincir bakiyesini yenile", "yanit": "Kasa durumu. Zincir okunamazsa 503.", "kodlar": [503] },
-  "POST /api/kasa/withdraw": { "etiket": "Cüzdan ve Kasa", "ozet": "Kasa bakiyesini bağlı cüzdana çek", "govde": { "asset": { "tur": "string", "zorunlu": true, "aciklama": "ADA | AVAX (büyük harf)" }, "amount": { "tur": "number", "zorunlu": true }, "code": { "tur": "string", "aciklama": "İki adımlı doğrulama açıksa gerekli" } }, "yanit": "{ ok, ... }", "kodlar": [403, 404] },
-  "POST /api/kasa/test-deposit": { "etiket": "Cüzdan ve Kasa", "ozet": "YALNIZ deneme sunucusu: sahte Kasa yatırması", "govde": { "ada": { "tur": "number" }, "avax": { "tur": "number" } }, "yanit": "Gerçek sunucuda 404.", "kodlar": [404] },
-  "POST /api/pay/quote": { "etiket": "Cüzdan ve Kasa", "ozet": "Cüzdandan ödeme teklifi al (kazanılmış bakiye yetmeyince)", "govde": { "name": { "tur": "string", "zorunlu": true, "aciklama": "Ödenecek oyun işlemi" }, "args": { "tur": "array" } }, "yanit": "{ ok, ref, amount, ... }", "kodlar": [404] },
-  "POST /api/pay/confirm": { "etiket": "Cüzdan ve Kasa", "ozet": "Zincirdeki ödemeyi doğrula ve işlemi uygula", "govde": { "ref": { "tur": "string", "zorunlu": true }, "txHash": { "tur": "string", "zorunlu": true } }, "yanit": "{ paid, result, player, world, ... }. Zincirde henüz görünmüyorsa 409 ve retry:true.", "kodlar": [404, 409] },
-
-  "POST /api/pvp/queue": { "etiket": "Kolezyum", "ozet": "Kolezyum sırasına gir (gerçek rakip aranır)", "govde": { "mode": { "tur": "string", "zorunlu": true, "aciklama": "1v1 | 3v3" }, "indices": { "tur": "array", "zorunlu": true, "aciklama": "En çok 3 asker sırası (0-63)" } }, "yanit": "{ result, player, world, ... }", "kodlar": [404] },
-  "POST /api/pvp/leave": { "etiket": "Kolezyum", "ozet": "Sıradan çık", "yanit": "{ result, player, world, ... }", "kodlar": [404] },
-  "GET /api/pvp/status": { "etiket": "Kolezyum", "ozet": "Sıra ve son maç durumu", "yanit": "Kolezyum kapalıysa 404.", "kodlar": [404] },
-  "GET /api/pvp/match": { "etiket": "Kolezyum", "ozet": "Maç tekrarı (herkese açık tekrar: giriş yapmış herkes görür, bilinçli tasarım)", "parametreler": [{ "ad": "id", "tur": "integer", "zorunlu": true, "aciklama": "Maç numarası" }], "yanit": "Maç kaydı.", "kodlar": [404] },
-
-  "GET /api/pazar": { "etiket": "İlan pazarı", "ozet": "Açık ilanlar ve benim ilanlarım", "yanit": "İlan pazarı kapalıysa 404.", "kodlar": [404] },
-  "POST /api/pazar/sell": { "etiket": "İlan pazarı", "ozet": "Teçhizatı ilana koy (yalnız vatandaşlar)", "govde": { "ref": { "tur": "object", "zorunlu": true, "aciklama": "Eşya konumu { source, slotKey, armoryIndex, soldierIndex, itemId }; eşyanın kendisi gönderilemez" }, "price": { "tur": "number", "zorunlu": true } }, "yanit": "{ result, player, world, ... }", "kodlar": [403, 404] },
-  "POST /api/pazar/cancel": { "etiket": "İlan pazarı", "ozet": "İlanı geri çek", "govde": { "id": { "tur": "integer", "zorunlu": true } }, "yanit": "{ result, player, world, ... }", "kodlar": [403, 404] },
-  "POST /api/pazar/buy": { "etiket": "İlan pazarı", "ozet": "İlanı satın al", "govde": { "id": { "tur": "integer", "zorunlu": true } }, "yanit": "{ result, player, world, ... }", "kodlar": [403, 404] },
-
-  "GET /api/admin/status": { "etiket": "Yönetim", "ozet": "Sunucu, kasa, ödeme, oyuncu ve olay özeti", "yanit": "Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)" },
-  "GET /api/admin/promo": { "etiket": "Yönetim", "ozet": "Promo kodlarını listele", "yanit": "{ codes }" },
-  "POST /api/admin/promo/create": { "etiket": "Yönetim", "ozet": "Promo kodu oluştur", "govde": { "code": { "tur": "string" }, "reward": { "tur": "object" }, "maxUses": { "tur": "integer" }, "expires": { "tur": "integer" }, "note": { "tur": "string" } }, "yanit": "Oluşan kod." },
-  "POST /api/admin/promo/active": { "etiket": "Yönetim", "ozet": "Promo kodunu aç/kapat", "govde": { "code": { "tur": "string", "zorunlu": true }, "active": { "tur": "boolean", "zorunlu": true } }, "yanit": "Güncel kod." },
-  "POST /api/admin/pause": { "etiket": "Yönetim", "ozet": "Çekim ve zincir ödemelerini durdur / başlat", "govde": { "paused": { "tur": "boolean", "zorunlu": true } }, "yanit": "{ paused }. Geri yüklemeden sonra otomatik durdurulur (FELAKET_KURTARMA.md)." },
-  "POST /api/admin/payouts/run": { "etiket": "Yönetim", "ozet": "Bekleyen ödemeleri şimdi gönder", "yanit": "Gönderim özeti. Duraklatılmışsa gönderilmez." },
-  "POST /api/admin/weekly/run": { "etiket": "Yönetim", "ozet": "Haftalık hesaplaşmayı elle çalıştır", "yanit": "Hesaplaşma özeti." },
-  "POST /api/admin/rates/sync": { "etiket": "Yönetim", "ozet": "Oran sözleşmesini şimdi oku", "yanit": "Oranlar ya da { skipped }." },
-  "POST /api/admin/hotwallet/check": { "etiket": "Yönetim", "ozet": "Sıcak cüzdan bakiyesini şimdi denetle", "yanit": "Denetim sonucu ya da { skipped }." },
-  "POST /api/admin/kapi": { "etiket": "Yönetim", "ozet": "Kapı kuralı: vatandaş sınırı ve dönem", "govde": { "limit": { "tur": "integer" }, "tier": { "tur": "integer" } }, "yanit": "Güncel kapı özeti.", "kodlar": [404] },
-  "POST /api/admin/kapi/run": { "etiket": "Yönetim", "ozet": "Kapı kuralını şimdi işlet", "yanit": "İşletme sonucu + kapı özeti.", "kodlar": [404] },
-  "POST /api/admin/kapi/player": { "etiket": "Yönetim", "ozet": "Bir hesabı elle içeri al / sıraya koy / askıya al", "govde": { "playerId": { "tur": "string", "zorunlu": true }, "status": { "tur": "string", "zorunlu": true } }, "yanit": "Güncel durum.", "kodlar": [404] },
-  "POST /api/admin/universe-stage": { "etiket": "Yönetim", "ozet": "Universe aşamasını değiştir (0-3)", "govde": { "stage": { "tur": "integer", "zorunlu": true } }, "yanit": "{ universeStage }" }
+  "GET /api/health": {
+    "etiket": "Genel",
+    "ozet": "Süreç ayakta mı (canlılık)",
+    "yanit": "{ ok, time, version, chain, payoutMode, testMode, payments }"
+  },
+  "GET /api/ready": {
+    "etiket": "Genel",
+    "ozet": "Hazır mı: veritabanı yanıt veriyor ve dünya zamanlayıcısı canlı",
+    "yanit": "{ hazir, kontroller: { veritabani, zamanlayici }, zamanlayiciTur, zamanlayiciHata, zamanlayiciYasSn }. Hazır değilse 503 ve aynı gövde.",
+    "kodlar": [
+      503
+    ]
+  },
+  "GET /api/rates": {
+    "etiket": "Genel",
+    "ozet": "Oyundaki ADA oranları (RealmRates sözleşmesinden; herkese açık)",
+    "yanit": "Oran sözleşmesi kapalıysa 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/account/register": {
+    "etiket": "Hesap",
+    "ozet": "Kayıt (e-posta + parola); doğrulama e-postası gider, oturum AÇILMAZ",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "password": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "En az güvenlik kuralları hesap modülünde"
+      },
+      "promo": {
+        "tur": "string",
+        "aciklama": "İsteğe bağlı promo kodu; doğrulamadan sonra uygulanır"
+      }
+    },
+    "yanit": "{ ok, sent, message, devLink }. E-posta kayıtlı olsun olmasın yanıt aynıdır (hesap varlığı sızdırılmaz). devLink yalnız deneme modunda dolu."
+  },
+  "POST /api/account/login": {
+    "etiket": "Hesap",
+    "ozet": "Giriş (e-posta ve parola)",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "password": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ token, playerId } ya da iki adımlı doğrulama açıksa { need2fa: true, ticket }. Yanlış bilgi 401 (zamanlama farkı yok).",
+    "kodlar": [
+      401
+    ]
+  },
+  "POST /api/account/login2fa": {
+    "etiket": "Hesap",
+    "ozet": "İki adımlı doğrulama ile girişi tamamla",
+    "govde": {
+      "ticket": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "code": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "Uygulama kodu ya da yedek kod"
+      }
+    },
+    "yanit": "{ token, playerId, backupLeft }",
+    "kodlar": [
+      401
+    ]
+  },
+  "POST /api/account/verify": {
+    "etiket": "Hesap",
+    "ozet": "E-posta doğrulama (e-postadaki bağlantı)",
+    "govde": {
+      "token": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
+  },
+  "POST /api/account/resend": {
+    "etiket": "Hesap",
+    "ozet": "Doğrulama e-postasını yeniden gönder",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "Hesap varlığını sızdırmayan sabit yanıt."
+  },
+  "POST /api/account/2fa/setup": {
+    "etiket": "Hesap",
+    "ozet": "İki adımlı doğrulama kurulumu başlat",
+    "yanit": "{ ok, secret, uri, qr } (qr: SVG data URL)",
+    "kodlar": [
+      400
+    ]
+  },
+  "POST /api/account/2fa/enable": {
+    "etiket": "Hesap",
+    "ozet": "İki adımlı doğrulamayı aç (ilk kodu doğrula)",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok, backupCodes } — 10 yedek kod yalnız bu yanıtta bir kez gösterilir."
+  },
+  "POST /api/account/2fa/disable": {
+    "etiket": "Hesap",
+    "ozet": "İki adımlı doğrulamayı kapat",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "403 ve need2fa: kod gerekli/yanlış.",
+    "kodlar": [
+      403
+    ]
+  },
+  "POST /api/account/forgot": {
+    "etiket": "Hesap",
+    "ozet": "Parola sıfırlama e-postası iste",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "Hesap varlığını sızdırmayan sabit yanıt."
+  },
+  "POST /api/account/reset": {
+    "etiket": "Hesap",
+    "ozet": "Yeni parola belirle (e-postadaki anahtarla)",
+    "govde": {
+      "token": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "password": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok, twoFactor }. Başarılı sıfırlama eski oturumları iptal eder."
+  },
+  "GET /api/account/me": {
+    "etiket": "Hesap",
+    "ozet": "Hesap özeti ve bağlı cüzdan durumu",
+    "yanit": "Hesap yoksa 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/account/wallet/nonce": {
+    "etiket": "Hesap",
+    "ozet": "Cüzdana imzalatılacak mesajı al",
+    "govde": {
+      "address": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "0x… cüzdan adresi"
+      }
+    },
+    "yanit": "{ message }"
+  },
+  "POST /api/account/wallet/link": {
+    "etiket": "Hesap",
+    "ozet": "İmzayı gönder; e-posta onayı istenir",
+    "govde": {
+      "signature": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "code": {
+        "tur": "string",
+        "aciklama": "İki adımlı doğrulama açıksa gerekli"
+      }
+    },
+    "yanit": "İmza geçerliyse onay e-postası gider.",
+    "kodlar": [
+      403
+    ]
+  },
+  "POST /api/account/wallet/confirm": {
+    "etiket": "Hesap",
+    "ozet": "Cüzdan bağlamayı onayla (e-postadaki bağlantı)",
+    "govde": {
+      "token": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok }"
+  },
+  "POST /api/account/wallet/cancel": {
+    "etiket": "Hesap",
+    "ozet": "Bekleyen cüzdan değişikliğini iptal et",
+    "yanit": "{ ok }"
+  },
+  "POST /api/account/logout": {
+    "etiket": "Hesap",
+    "ozet": "Bu cihazdan çıkış (oturum anahtarı silinir)",
+    "yanit": "{ ok }"
+  },
+  "GET /api/state": {
+    "etiket": "Oyun",
+    "ozet": "Oyuncu kaydı + dünya görüntüsü (zamanla ilerleyen işler sunucuda işlenir)",
+    "yanit": "{ player, world, address, epochId, gate }"
+  },
+  "POST /api/action": {
+    "etiket": "Oyun",
+    "ozet": "Oyun işlemi (yalnız beyaz listedekiler; bkz. x-islemler)",
+    "govde": {
+      "name": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "x-islemler anahtarlarından biri"
+      },
+      "args": {
+        "tur": "array",
+        "aciklama": "İşlemin argüman türleri x-islemler[name].argumanlar'da"
+      }
+    },
+    "yanit": "{ result, player, world, address, epochId, gate }. Reddedilen/geçersiz işlem 400; vatandaş olmayan hesap 403 (bekleme sırası).",
+    "kodlar": [
+      403
+    ]
+  },
+  "POST /api/promo/redeem": {
+    "etiket": "Oyun",
+    "ozet": "Promo kodunu kullan",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok, message }"
+  },
+  "POST /api/dev/vanilla-reset": {
+    "etiket": "Oyun",
+    "ozet": "YALNIZ deneme sunucusu: dünyayı ve kayıtları ilk güne döndür",
+    "yanit": "Gerçek sunucuda 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "GET /api/wallet": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Yatırma adresi, çekim durumu, geçmiş",
+    "yanit": "{ account, gameWallet, tokenAddress, deposits, withdraw }"
+  },
+  "POST /api/withdraw": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Çekim talebi (serbest bakiyeden)",
+    "govde": {
+      "amount": {
+        "tur": "number",
+        "zorunlu": true
+      },
+      "code": {
+        "tur": "string",
+        "aciklama": "İki adımlı doğrulama açıksa gerekli"
+      }
+    },
+    "yanit": "{ success, message, ... }. E-posta doğrulanmamış ya da cüzdan bağlı değilse success:false.",
+    "kodlar": [
+      403
+    ]
+  },
+  "POST /api/withdraw/cancel": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Bekleyen çekim talebini geri al",
+    "yanit": "{ success, message }"
+  },
+  "GET /api/kasa": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Oyun Kasası durumu",
+    "yanit": "Kasa kapalıysa { enabled: false }."
+  },
+  "POST /api/kasa/refresh": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Kasa zincir bakiyesini yenile",
+    "yanit": "Kasa durumu. Zincir okunamazsa 503.",
+    "kodlar": [
+      503
+    ]
+  },
+  "POST /api/kasa/withdraw": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Kasa bakiyesini bağlı cüzdana çek",
+    "govde": {
+      "asset": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "ADA | AVAX (büyük harf)"
+      },
+      "amount": {
+        "tur": "number",
+        "zorunlu": true
+      },
+      "code": {
+        "tur": "string",
+        "aciklama": "İki adımlı doğrulama açıksa gerekli"
+      }
+    },
+    "yanit": "{ ok, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
+  "POST /api/kasa/test-deposit": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "YALNIZ deneme sunucusu: sahte Kasa yatırması",
+    "govde": {
+      "ada": {
+        "tur": "number"
+      },
+      "avax": {
+        "tur": "number"
+      }
+    },
+    "yanit": "Gerçek sunucuda 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/pay/quote": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Cüzdandan ödeme teklifi al (kazanılmış bakiye yetmeyince)",
+    "govde": {
+      "name": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "Ödenecek oyun işlemi"
+      },
+      "args": {
+        "tur": "array"
+      }
+    },
+    "yanit": "{ ok, ref, amount, ... }",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/pay/confirm": {
+    "etiket": "Cüzdan ve Kasa",
+    "ozet": "Zincirdeki ödemeyi doğrula ve işlemi uygula",
+    "govde": {
+      "ref": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "txHash": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ paid, result, player, world, ... }. Zincirde henüz görünmüyorsa 409 ve retry:true.",
+    "kodlar": [
+      404,
+      409
+    ]
+  },
+  "POST /api/pvp/queue": {
+    "etiket": "Kolezyum",
+    "ozet": "Kolezyum sırasına gir (gerçek rakip aranır)",
+    "govde": {
+      "mode": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "1v1 | 3v3"
+      },
+      "indices": {
+        "tur": "array",
+        "zorunlu": true,
+        "aciklama": "En çok 3 asker sırası (0-63)"
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/pvp/leave": {
+    "etiket": "Kolezyum",
+    "ozet": "Sıradan çık",
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      404
+    ]
+  },
+  "GET /api/pvp/status": {
+    "etiket": "Kolezyum",
+    "ozet": "Sıra ve son maç durumu",
+    "yanit": "Kolezyum kapalıysa 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "GET /api/pvp/match": {
+    "etiket": "Kolezyum",
+    "ozet": "Maç tekrarı (herkese açık tekrar: giriş yapmış herkes görür, bilinçli tasarım)",
+    "parametreler": [
+      {
+        "ad": "id",
+        "tur": "integer",
+        "zorunlu": true,
+        "aciklama": "Maç numarası"
+      }
+    ],
+    "yanit": "Maç kaydı.",
+    "kodlar": [
+      404
+    ]
+  },
+  "GET /api/pazar": {
+    "etiket": "İlan pazarı",
+    "ozet": "Açık ilanlar ve benim ilanlarım",
+    "yanit": "İlan pazarı kapalıysa 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/pazar/sell": {
+    "etiket": "İlan pazarı",
+    "ozet": "Teçhizatı ilana koy (yalnız vatandaşlar)",
+    "govde": {
+      "ref": {
+        "tur": "object",
+        "zorunlu": true,
+        "aciklama": "Eşya konumu { source, slotKey, armoryIndex, soldierIndex, itemId }; eşyanın kendisi gönderilemez"
+      },
+      "price": {
+        "tur": "number",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
+  "POST /api/pazar/cancel": {
+    "etiket": "İlan pazarı",
+    "ozet": "İlanı geri çek",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
+  "POST /api/pazar/buy": {
+    "etiket": "İlan pazarı",
+    "ozet": "İlanı satın al",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
+  "GET /api/admin/status": {
+    "etiket": "Yönetim",
+    "ozet": "Sunucu, kasa, ödeme, oyuncu ve olay özeti",
+    "yanit": "Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)"
+  },
+  "GET /api/admin/promo": {
+    "etiket": "Yönetim",
+    "ozet": "Promo kodlarını listele",
+    "yanit": "{ codes }"
+  },
+  "POST /api/admin/promo/create": {
+    "etiket": "Yönetim",
+    "ozet": "Promo kodu oluştur",
+    "govde": {
+      "code": {
+        "tur": "string"
+      },
+      "reward": {
+        "tur": "object"
+      },
+      "maxUses": {
+        "tur": "integer"
+      },
+      "expires": {
+        "tur": "integer"
+      },
+      "note": {
+        "tur": "string"
+      }
+    },
+    "yanit": "Oluşan kod."
+  },
+  "POST /api/admin/promo/active": {
+    "etiket": "Yönetim",
+    "ozet": "Promo kodunu aç/kapat",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "active": {
+        "tur": "boolean",
+        "zorunlu": true
+      }
+    },
+    "yanit": "Güncel kod."
+  },
+  "POST /api/admin/pause": {
+    "etiket": "Yönetim",
+    "ozet": "Çekim ve zincir ödemelerini durdur / başlat",
+    "govde": {
+      "paused": {
+        "tur": "boolean",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ paused }. Geri yüklemeden sonra otomatik durdurulur (FELAKET_KURTARMA.md)."
+  },
+  "POST /api/admin/payouts/run": {
+    "etiket": "Yönetim",
+    "ozet": "Bekleyen ödemeleri şimdi gönder",
+    "yanit": "Gönderim özeti. Duraklatılmışsa gönderilmez."
+  },
+  "POST /api/admin/weekly/run": {
+    "etiket": "Yönetim",
+    "ozet": "Haftalık hesaplaşmayı elle çalıştır",
+    "yanit": "Hesaplaşma özeti."
+  },
+  "POST /api/admin/rates/sync": {
+    "etiket": "Yönetim",
+    "ozet": "Oran sözleşmesini şimdi oku",
+    "yanit": "Oranlar ya da { skipped }."
+  },
+  "POST /api/admin/hotwallet/check": {
+    "etiket": "Yönetim",
+    "ozet": "Sıcak cüzdan bakiyesini şimdi denetle",
+    "yanit": "Denetim sonucu ya da { skipped }."
+  },
+  "POST /api/admin/kapi": {
+    "etiket": "Yönetim",
+    "ozet": "Kapı kuralı: vatandaş sınırı ve dönem",
+    "govde": {
+      "limit": {
+        "tur": "integer"
+      },
+      "tier": {
+        "tur": "integer"
+      }
+    },
+    "yanit": "Güncel kapı özeti.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/admin/kapi/run": {
+    "etiket": "Yönetim",
+    "ozet": "Kapı kuralını şimdi işlet",
+    "yanit": "İşletme sonucu + kapı özeti.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/admin/kapi/player": {
+    "etiket": "Yönetim",
+    "ozet": "Bir hesabı elle içeri al / sıraya koy / askıya al",
+    "govde": {
+      "playerId": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "status": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "Güncel durum.",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/admin/universe-stage": {
+    "etiket": "Yönetim",
+    "ozet": "Universe aşamasını değiştir (0-3)",
+    "govde": {
+      "stage": {
+        "tur": "integer",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ universeStage }"
+  },
+  "GET /api/sponsor/tablo": {
+    "etiket": "Sponsorluk",
+    "ozet": "Vatandaşların gelişim tablosu (kimlik yok): seviye, bu hafta kategori, ortalama net çekim, sponsor sayısı",
+    "yanit": "{ rows[], config }; sponsorluk kapalıysa 404.",
+    "kodlar": [
+      404
+    ]
+  },
+  "GET /api/sponsor/benim": {
+    "etiket": "Sponsorluk",
+    "ozet": "Benim sponsorluklarım: verdiğim, aldığım, sponsorlu bakiyem",
+    "yanit": "{ config, sponsoredBalance, given[], received[] }",
+    "kodlar": [
+      404
+    ]
+  },
+  "POST /api/sponsor/ol": {
+    "etiket": "Sponsorluk",
+    "ozet": "Bir vatandaşa ASTRA ile sponsor ol (para çekilemez sponsorlu kalem olarak hedefe geçer)",
+    "govde": {
+      "hedef": {
+        "tur": "string",
+        "zorunlu": true
+      },
+      "miktar": {
+        "tur": "number",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ success, id, message }",
+    "kodlar": [
+      400,
+      404
+    ]
+  },
+  "POST /api/sponsor/feragat": {
+    "etiket": "Sponsorluk",
+    "ozet": "Sponsor payından vazgeç (anapara geri gelmez)",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ success, message }",
+    "kodlar": [
+      400,
+      404
+    ]
+  },
+  "POST /api/sponsor/kapat": {
+    "etiket": "Sponsorluk",
+    "ozet": "Hedef: getiri anaparaya ulaşan sponsorluğu kapat",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ success, message }",
+    "kodlar": [
+      400,
+      404
+    ]
+  }
 }

@@ -158,6 +158,7 @@ export class GameStateManager {
       village: { ...(GAME_CONFIG.STARTING_PROFILE.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }), ...(parsed.village || {}) },
       // Kilitli bakiye eski kayıtlarda yoktu: mevcut bakiye serbest sayılır
       lockedAda: Math.max(0, Number(parsed.lockedAda) || 0),
+      sponsorAda: Math.max(0, Number(parsed.sponsorAda) || 0),
       lockUnlock: parsed.lockUnlock || null,
       contribution: parsed.contribution || null,
       adaPriceMultiplier: Number(parsed.adaPriceMultiplier) > 0 ? Number(parsed.adaPriceMultiplier) : (GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1),
