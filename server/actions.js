@@ -142,7 +142,7 @@ export const ACTIONS = {
 export const DEV_ACTIONS = ['cheatAddResources', 'setDevResource', 'addDevResource', 'setDevLevel', 'setDevAdAstra', 'addDevAdAstra',
   'cheatSetDungeonProgress', 'setDungeonProgress', 'unlockAllDevArtifacts', 'repairAllDevTools', 'refillDevStamina', 'healAllDevSoldiers',
   'completeAllExpeditionsNow', 'cheatUnlockAllArtifacts', 'cheatRefillStamina', 'cheatMaxEquipAllSoldiers', 'cheatLevelUpPlayer',
-  'cheatFinishAllExpeditions', 'addArenaKey', 'activateTavernBuff', 'executeSundayAutoWorldBossBattle', 'fastForwardTime'];
+  'cheatFinishAllExpeditions', 'addArenaKey', 'activateTavernBuff', 'executeSundayAutoWorldBossBattle', 'fastForwardTime', 'devFinishCouncilProjects', 'devResetCouncilProjects'];
 const devArgOk = v => v == null || ['number', 'string', 'boolean'].includes(typeof v) ||
   (Array.isArray(v) && v.length <= 20 && v.every(x => ['number', 'string', 'boolean'].includes(typeof x))) ||
   (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 && Object.values(v).every(x => x == null || ['number', 'string', 'boolean'].includes(typeof x)));

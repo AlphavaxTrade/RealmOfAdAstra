@@ -46,6 +46,14 @@ export const dunyaBossuYontemleri = {
     return this.state.worldBoss;
   },
 
+  // Erken çekilme cezası oranı: taban (%18) + biten Konsey projelerinin etkisi. Savunma Duvarı projesi bitince 6 puan düşer (%12).
+  // Bonus ortak dünya durumundan (globalPool) okunur: projeyi bitiren herkes için geçerlidir, sunucuda da aynı yöntem çalışır.
+  getWorldBossEarlyUnstakeRate() {
+    const taban = GAME_CONFIG.WORLD_BOSS.EARLY_UNSTAKE_PENALTY ?? 0.18;
+    const bonus = (typeof globalPool !== 'undefined' && globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('bossPenaltyPoints') : 0;
+    return Math.max(0, Math.round((taban + bonus) * 10000) / 10000);   // 0,18 − 0,06 = 0,12 tam çıksın (kayan nokta)
+  },
+
   // Kullanıcının ordusunun Pazar 18:00 TSİ savaşındaki hasar gücünü hesaplar:
   // Her 1 ATK = 1:1 rasyo, Her 1 HP = 1:0.25 rasyo + Yetenek Çeşitliliği Bonusu (max +%50)
   calculateUserWorldBossPower() {
@@ -66,6 +74,7 @@ export const dunyaBossuYontemleri = {
       baseDamage,
       calculatedDamage,
       estimatedAda,
+      earlyUnstakePenaltyRate: this.getWorldBossEarlyUnstakeRate(),
       diversityMultiplier: diversity.diversityMultiplier,
       uniqueRoles: diversity.uniqueRoles,
       rolesFound: diversity.rolesFound
@@ -235,8 +244,8 @@ export const dunyaBossuYontemleri = {
   },
 
   // Erken Çekilme (Emergency Unstake):
-  // Pazar günü etkinlik tamamlanmadan önce ordu çekilirse, ordunun vereceği hasar üzerinden
-  // kazanacağı anlık tahmini ASTRA miktarının %18'i ceza olarak ödenir ve ordu serbest bırakılır.
+  // Pazar günü etkinlik tamamlanmadan önce ordu çekilirse, ordunun vereceği hasar üzerinden kazanacağı anlık tahmini
+  // ASTRA miktarının %18'i (Savunma Duvarı bitince %12'si) ceza olarak ödenir ve ordu serbest bırakılır.
   emergencyUnstakeWorldBossArmy() {
     const boss = this.getWorldBossInfo();
     if (!boss.userStaked) {
@@ -245,14 +254,15 @@ export const dunyaBossuYontemleri = {
 
     const power = this.calculateUserWorldBossPower();
     const estimatedAda = power.estimatedAda || 0;
-    // Anlık tahmini ASTRA miktarının %18'i ceza olarak hesaplanır:
-    const penaltyAda = Math.max(1, Math.round(estimatedAda * 0.18));
+    const rate = this.getWorldBossEarlyUnstakeRate();
+    const pct = Math.round(rate * 100);
+    const penaltyAda = Math.max(1, Math.round(estimatedAda * rate));
 
     if (this.state.adAstraBalance < penaltyAda) {
       return {
         success: false,
         penaltyRequired: penaltyAda,
-        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%18) cezası olan ${penaltyAda.toLocaleString()} ASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ASTRA).`
+        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%${pct}) cezası olan ${penaltyAda.toLocaleString()} ASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ASTRA).`
       };
     }
 
@@ -279,7 +289,7 @@ export const dunyaBossuYontemleri = {
       penaltyPaid: penaltyAda,
       unlockedSoldiersCount: soldiersCount,
       newBalance: this.state.adAstraBalance,
-      message: `🔓 %18 Ceza (${penaltyAda.toLocaleString()} ASTRA) ödendi. ${soldiersCount} kişilik ordunun kilidi başarıyla açıldı!`
+      message: `🔓 %${pct} Ceza (${penaltyAda.toLocaleString()} ASTRA) ödendi. ${soldiersCount} kişilik ordunun kilidi başarıyla açıldı!`
     };
   },
 };

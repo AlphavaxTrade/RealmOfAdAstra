@@ -11,6 +11,35 @@ export const gelistiriciYontemleri = {
   // =========================================================================
   // 🧪 GELİŞTİRİCİ & HIZLI TEST METOTLARI (DEV CHEAT ENGINE)
   // =========================================================================
+  // 🧪 Deneme menüsü: Sirius Konseyi projelerini SIRAYLA bitirir (count kadar; 10 üst sınır). Normal oyunda her proje 6 M birim hammadde +
+  // 50.000 emek ister, bu yüzden bonuslar (ör. Savunma Duvarı) elle test edilemezdi. Gerçek işlem listesinde YOK: yalnız deneme kipinde (DEV_ACTIONS).
+  devFinishCouncilProjects(count = 1) {
+    let finished = 0;
+    const n = Math.max(0, Math.min(10, Math.floor(Number(count)) || 0));
+    for (let i = 0; i < n; i++) {
+      const s = globalPool.getProjectStatus();
+      if (!s.active) break;
+      const r = globalPool.contributeProject({ stone: s.need.stone, iron: s.need.iron, wood: s.need.wood }, s.active.labor);
+      if (!r.completed) break;
+      finished++;
+    }
+    this.saveState();
+    const kalan = globalPool.getProjectStatus().active;
+    return { success: true, finished, message: finished > 0 ? `🏛️ ${finished} Konsey projesi bitti.${kalan ? ' Sıradaki: ' + kalan.name + '.' : ' Bütün projeler tamam.'}` : 'Bitirilecek açık Konsey projesi yok.' };
+  },
+
+  // 🧪 Deneme menüsü: Konsey projelerini başa alır (yapılanlar silinir, katkı ilerlemesi sıfırlanır). Konsey projeleri dünya geneli olduğundan,
+  // projeleri bitirip deneyen biri bunu geri alabilsin diye (dünya ve hesapları sıfırlayan 'vanilla sıfırla'ya gerek kalmasın).
+  devResetCouncilProjects() {
+    const k = globalPool._konsey && globalPool._konsey();
+    if (!k) return { success: false, reset: 0, message: 'Konsey durumu bulunamadı.' };
+    const reset = k.projects.done.length;
+    k.projects = { activeIndex: 0, progress: {}, labor: 0, done: [] };
+    globalPool.saveState();
+    this.saveState();
+    return { success: true, reset, message: `🏛️ Konsey projeleri başa alındı (${reset} bitmiş proje silindi).` };
+  },
+
   addDevResource(resourceKey, amount) {
     if (!this.state.inventory) this.state.inventory = {};
     this.state.inventory[resourceKey] = Math.max(0, (this.state.inventory[resourceKey] || 0) + amount);

@@ -32,7 +32,7 @@ Tarih: 7 Ekim 2026 · Yetki: kullanıcı "sormadan tasarla, karar ver, oynanabil
 - Katkı kademesi eşikleri (haftalık katkı puanı, fiyat çarpanıyla ölçekli): Bronz 50 · Gümüş 200 · Altın 500 · Platin 1.500 · Elmas 5.000.
 - Madencilik Otoritesi: Sirius Konseyi'nde ortak inşaat; 1. seviye 2 M birim (×1,4/sv, 20 sv); karışım %40 taş, %20 demir, %10 odun + %30 "çelik payı" = ASTRA 0,05/birim Konsey kasasından; her sv kapasite ve herkesin hakkı +%5, çalışma günü 20→24 saat, hafta 6→7 gün. Katkı = katkı puanı.
 - Ortak kasa: çıkarılan her hammaddenin %5'i (kaynak olarak) Konsey'e; Otorite havuzuna ve projelere akar.
-- Konsey projeleri (sırayla, biri açık): Nehir Köprüsü (sefer süresi −%2), Büyük Ambar (silo +%5), Şifa Bahçesi (şifalı ot +%5), Liman Rıhtımı (Hazırlık Deposu kişi tavanı ×2), Savunma Duvarı (dünya bossu hasarı −%10). Her proje 6 M birim hammadde (karışım Otorite gibi) + 50.000 emek puanı. En çok katkı yapan 10 kişi rozet.
+- Konsey projeleri (sırayla, biri açık): Nehir Köprüsü (sefer süresi −%2), Büyük Ambar (silo +%5), Şifa Bahçesi (şifalı ot +%5), Liman Rıhtımı (Hazırlık Deposu kişi tavanı ×2), Savunma Duvarı (Dünya Bossu savaşından erken çekilme cezası %18 → %12; 8 Ekim 2026 kararı: eski "bossun hasarı −%10" etkisiz kalıyordu, çünkü dünya bossu oyunculara vurmuyor, yalnız hasar yarışı). Her proje 6 M birim hammadde (karışım Otorite gibi) + 50.000 emek puanı. En çok katkı yapan 10 kişi rozet.
 
 ## E. Kasalar (R3)
 

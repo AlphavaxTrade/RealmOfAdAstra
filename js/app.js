@@ -3725,8 +3725,8 @@ function openBattlefieldModal() {
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
           ${isStaked ? `
-            <button id="btn-emergency-unstake-boss" class="btn-clean btn-clean-red" style="width: auto; padding: 8px 14px; font-size: 0.8rem;" title="Pazar gününden önce erken çekilme cezası (%18)">
-              🔓 %18 Ceza ile Erken Çek (${Math.max(1, Math.round(power.estimatedAda * 0.18)).toLocaleString('tr-TR')} ASTRA)
+            <button id="btn-emergency-unstake-boss" class="btn-clean btn-clean-red" style="width: auto; padding: 8px 14px; font-size: 0.8rem;" title="Pazar gününden önce erken çekilme cezası (%${Math.round(power.earlyUnstakePenaltyRate * 100)}${power.earlyUnstakePenaltyRate >= GAME_CONFIG.WORLD_BOSS.EARLY_UNSTAKE_PENALTY ? '; Konseyin Savunma Duvarı projesi bitince düşer' : '; Savunma Duvarı projesi sayesinde düştü'})">
+              🔓 %${Math.round(power.earlyUnstakePenaltyRate * 100)} Ceza ile Erken Çek (${Math.max(1, Math.round(power.estimatedAda * power.earlyUnstakePenaltyRate)).toLocaleString('tr-TR')} ASTRA)
             </button>
           ` : ''}
           <button id="btn-stake-army-boss" class="btn-clean ${isStaked ? 'btn-clean-outline' : 'btn-clean-gold'}" style="width: auto; padding: 8px 18px;" ${!hasSoldiers ? 'disabled' : ''}>
@@ -4021,7 +4021,7 @@ function openColosseumModal() {
           <div style="font-size: 2rem; margin-bottom: 6px;">🔒</div>
           <div style="font-weight: 800; font-size: 1rem; color: #f87171;">Ordun World Boss Savaşına Kilitlendi!</div>
           <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto; line-height: 1.4;">
-            Askerlerin Pazar 18:00 TSİ World Boss savaşı için kilit altındadır. Kolezyumda dövüşebilmek için Savaş Alanından (%18 ceza ile) ordunu erken çekmeli veya Pazar 18:00 sonrası ödülünle birlikte ordunu toplamalısın.
+            Askerlerin Pazar 18:00 TSİ World Boss savaşı için kilit altındadır. Kolezyumda dövüşebilmek için Savaş Alanından (%${Math.round(gameState.getWorldBossEarlyUnstakeRate() * 100)} ceza ile) ordunu erken çekmeli veya Pazar 18:00 sonrası ödülünle birlikte ordunu toplamalısın.
           </div>
           <button class="btn-clean btn-clean-gold" id="btn-goto-battlefield-colosseum" style="margin-top: 12px; width: auto; padding: 8px 18px;">
             🌋 Savaş Alanı & World Boss'a Git
@@ -5214,7 +5214,7 @@ function openPreBattleModal(monster) {
       <div style="font-size:2.2rem; margin-bottom:6px;">🔒</div>
       <div style="font-weight:800; font-size:1rem; color:#f87171;">Ordun World Boss Savaşına Kilitlendi!</div>
       <div style="font-size:0.8rem; color:#cbd5e1; margin-top:6px; max-width:280px; line-height:1.4;">
-        Askerlerin Pazar 18:00 TSİ World Boss savaşı için kilit altındadır ve başka hiçbir alanda kullanılamaz. Savaş Alanından (%18 ceza ile) erken çekebilir veya Pazar 18:00 sonrası ödülünle birlikte ordunu toplayabilirsin.
+        Askerlerin Pazar 18:00 TSİ World Boss savaşı için kilit altındadır ve başka hiçbir alanda kullanılamaz. Savaş Alanından (%${Math.round(gameState.getWorldBossEarlyUnstakeRate() * 100)} ceza ile) erken çekebilir veya Pazar 18:00 sonrası ödülünle birlikte ordunu toplayabilirsin.
       </div>
       <button class="btn-clean btn-clean-gold" id="btn-goto-battlefield-prebattle" style="margin-top:14px; width:auto; padding:8px 18px;">
         🌋 Savaş Alanı & World Boss'a Git
@@ -7367,7 +7367,7 @@ function initAppEvents() {
       return;
     }
 
-    // World Boss: %18 Ceza ile Erken Çekilme (Emergency Unstake)
+    // World Boss: erken çekilme cezası (%18; Savunma Duvarı bitince %12) ile Erken Çekilme (Emergency Unstake)
     if (e.target.closest('#btn-emergency-unstake-boss')) {
       const res = gameState.emergencyUnstakeWorldBossArmy();
       if (res.success) {
@@ -8028,6 +8028,20 @@ function initDevPanelEvents() {
         showToast(`⚔️ Orduya +18 asker katıldı! (Toplam: ${gameState.state.soldierUnits.length})`, 'success');
         sound.playLevelUp();
         break;
+
+      case 'reset-council': {
+        const r = gameState.devResetCouncilProjects();
+        showToast((r && r.message) || 'Konsey projeleri sıfırlandı.', r && r.success ? 'success' : 'error');
+        sound.playPickaxe();
+        break;
+      }
+
+      case 'finish-council': {
+        const r = gameState.devFinishCouncilProjects(amount || 1);
+        showToast((r && r.message) || 'Konsey projeleri güncellendi.', r && r.finished > 0 ? 'success' : 'error');
+        sound.playLevelUp();
+        break;
+      }
 
       case 'set-dungeon':
         gameState.setDungeonProgress(level);

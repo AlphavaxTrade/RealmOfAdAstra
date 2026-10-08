@@ -52,7 +52,7 @@ export const GAME_CONFIG = {
     { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 6000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.' },
     { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 6000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.' },
     { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 6000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.' },
-    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossDamage: -0.10 },   desc: 'Dünya bossunun hasarı %10 azalır.' }
+    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossPenaltyPoints: -0.06 }, desc: "Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur." }
   ],
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
   KOY: {
@@ -625,6 +625,7 @@ export const GAME_CONFIG = {
     BATTLE_DAY_UTC: 0,          // 0 = Pazar
     BATTLE_HOUR_UTC: 15,        // 15:00 UTC = 18:00 TSİ
     BASE_HP: 1000000,
+    EARLY_UNSTAKE_PENALTY: 0.18, // erken çekilme cezası (tahmini kazancın oranı); Savunma Duvarı projesi bitince 6 puan düşer (js/gameState/dunyaBossu.js)
     WEEKLY_DISTRIBUTION_RATE: 0.03, // v2 (R3): haftalık etkinlikte kasanın %3'ü dağıtılır (eskiden %10, en hızlı boşalan kasaydı)
     // Skill Çeşitliliği Katkısı: ilk rolden sonraki her farklı rol (Tank, AoE, Şifa, Kırıcı, Kontrol) için hasar bonusu
     SKILL_DIVERSITY_BONUS_PER_ROLE: 0.06,
