@@ -196,7 +196,8 @@ export function olusturHaftalik(w) {
           });
         }
         E.setLottery({ pool: draw.pool, amortiPool: draw.amortiPool, totalTickets: draw.holders.reduce((t, h) => t + (h.tickets || 0), 0) });
-        summary.lottery = { winner: draw.winnerId, prize: draw.prize, poolDepleted: !!draw.poolDepleted, totalTickets: draw.totalTickets, players: holders.length };
+        const amortiPaid = draw.payouts.filter(x => x.kind === 'amorti').reduce((s, x) => s + (Number(x.amount) || 0), 0);
+        summary.lottery = { winner: draw.winnerId, prize: draw.prize, amorti: amortiPaid, poolDepleted: !!draw.poolDepleted, totalTickets: draw.totalTickets, players: holders.length };
       }
 
       // 8) Kolezyum (gerçek rakipler) haftalık sıralama ödülleri: ilk 10, Kolezyum kasasından

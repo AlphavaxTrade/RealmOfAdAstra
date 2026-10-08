@@ -247,11 +247,24 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     return out;
   }
 
-  // ── Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç (dolar) — Faz 2'de "çekilebilen" de eklenecek ──
+  // E-planı Faz 2 (KARAR 1, 8 Ekim — KARARLAR_KESIN §J): "dağıtılan" = bu hafta kasalardan (zindan/kolezyum/boss/
+  // görev-UBI/karnaval/Fatih/konsey) vatandaşlara GERÇEKTEN ödenen toplam (js/treasury.js withdraw() her çağrıda
+  // sayar, geri alım/ammBuyback hariç — o bir ödül değil piyasa savunması) + piyango (ayrı havuz, hazineden değil).
+  // "Çekilebilen" = bu haftanın global çekim tavanı (ASTRA) — kağıt üstü zengin ama nakde çevrilemeyen vatandaşla
+  // kapı açılmasın diye ayrı ölçülür. Kişi başı bölüm AKTİF vatandaş sayısıyla; haftada bir kez çalıştığı için
+  // (settleWeek) activeCitizens() CANLI hesaplanır — saatlik run() önbelleğinin (s.activeCount) o an bayat olma
+  // riski alınmaz.
   function recordWeek(summary, priceUsd) {
     const s = state();
-    const distributed = (Number(summary?.faucet?.totalAda) || 0) + (Number(summary?.withdraw?.sent) || 0) + (Number(summary?.lottery?.prize) || 0);
-    const row = { epochId: summary?.epoch ?? null, at: clock(), distributedAda: round3(distributed), priceUsd: Number(priceUsd) || 0, citizens: counts().citizen };
+    const treasuryGranted = (E.treasury && E.treasury.drainWeekGrantedToCitizens) ? E.treasury.drainWeekGrantedToCitizens() : 0;
+    const lotteryPaid = (Number(summary?.lottery?.prize) || 0) + (Number(summary?.lottery?.amorti) || 0);
+    const distributed = treasuryGranted + lotteryPaid;
+    const withdrawCapAda = Number(summary?.withdraw?.cap) || 0;
+    const row = {
+      epochId: summary?.epoch ?? null, at: clock(),
+      distributedAda: round3(distributed), withdrawCapAda: round3(withdrawCapAda),
+      priceUsd: Number(priceUsd) || 0, citizens: activeCitizens()
+    };
     const history = (Array.isArray(s.history) ? s.history : []).concat([row]).slice(-60);
     setState({ history });
     return row;
@@ -262,25 +275,33 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     const months = Number(K().AVG_MONTHS) || 3;
     const since = clock() - months * 30 * DAY;
     const rows = (s.history || []).filter(r => r.at >= since && r.citizens > 0);
-    if (!rows.length) return { usdPerPlayerMonth: 0, weeks: 0 };
-    // Haftalık dağıtım → dolar → kişi başı; aylık = ortalama hafta × 4,33
+    if (!rows.length) return { usdPerPlayerMonth: 0, withdrawableUsdPerPlayerMonth: 0, weeks: 0 };
+    // Haftalık dağıtım / çekim tavanı → dolar → aktif kişi başı; aylık = ortalama hafta × 4,33
     const perWeek = rows.map(r => r.distributedAda * r.priceUsd / r.citizens);
     const avg = perWeek.reduce((a, b) => a + b, 0) / perWeek.length;
-    return { usdPerPlayerMonth: Math.round(avg * 4.33 * 100) / 100, weeks: rows.length };
+    const perWeekW = rows.map(r => (r.withdrawCapAda || 0) * r.priceUsd / r.citizens);
+    const avgW = perWeekW.reduce((a, b) => a + b, 0) / perWeekW.length;
+    return {
+      usdPerPlayerMonth: Math.round(avg * 4.33 * 100) / 100,
+      withdrawableUsdPerPlayerMonth: Math.round(avgW * 4.33 * 100) / 100,
+      weeks: rows.length
+    };
   }
 
-  // Büyüme: KARAR 1 (8 Ekim) — Faz 2'nin "dağıtılan + çekilebilen" göstergesi kurulana dek GROWTH_LOCKED ile kilitli.
-  // Gösterge o dönemin eşiğini geçtiyse sınır ayda bir %10 büyür (kilit açılınca).
+  // Büyüme: KARAR 1 (8 Ekim) — Faz 2'nin göstergesi kurulana dek GROWTH_LOCKED ile kilitli. Kilit açılınca İKİ şart
+  // birden gerekir: dağıtılan dönemin eşiğini geçmeli VE çekilebilen en az eşiğin ÜÇTE BİRİ olmalı (KARARLAR_KESIN
+  // §J) — yoksa kağıt üstü zengin ama kimse nakde çeviremeyen bir vatandaşlıkla sınır büyütülmüş olur.
   function growth() {
     if (K().GROWTH_LOCKED) return null;
     const s = state(), tiers = K().USD_TIERS || [50, 100, 300];
     const threshold = tiers[Math.min(s.tier, tiers.length - 1)];
     const ind = indicator();
     if (ind.usdPerPlayerMonth < threshold) return null;
+    if (ind.withdrawableUsdPerPlayerMonth < threshold / 3) return null;
     if (clock() - (Number(s.lastGrowthAt) || 0) < 30 * DAY) return null;
     const limit = Math.ceil(s.limit * (1 + (Number(K().GROWTH_STEP) || 0.1)));
     setState({ limit, lastGrowthAt: clock() });
-    db.event('gate-grow', null, { from: s.limit, to: limit, indicator: ind.usdPerPlayerMonth, tier: s.tier });
+    db.event('gate-grow', null, { from: s.limit, to: limit, indicator: ind.usdPerPlayerMonth, withdrawable: ind.withdrawableUsdPerPlayerMonth, tier: s.tier });
     return { from: s.limit, to: limit };
   }
 

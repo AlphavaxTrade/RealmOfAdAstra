@@ -171,19 +171,27 @@ try {
   assert.equal(iSt.katilim.oncelikVar, true, 'Öncelik cezası tüketildi; sonraki sefer normale döner');
   ok('İzin hakkı tükenmişken düşük kalma: son uyarı, askı, dönüşte öncelik YOK (tek seferlik ceza, sonrakinde normale döner)');
 
-  // 9) Büyüme kilidi (KARAR 1, Faz 2'ye kadar): gösterge eşiği geçse de sınır büyümez; yönetici açarsa büyür.
-  // Önceki adımların katılım-puanı askıları yüzünden vatandaş sayısı 0 olabilir (gösterge 0 vatandaşlı haftayı
-  // saymaz) — gösterge testi için tek, temiz bir vatandaş ekleniyor.
+  // 9) Büyüme kilidi + çift şart (KARAR 1, Faz 2): gösterge artık GERÇEK hazine ödemesinden (treasury.withdraw,
+  // ammBuyback hariç) ve haftanın çekim tavanından hesaplanır (server/kapi.js recordWeek). Büyümek için dağıtılan
+  // dönemin eşiğini (50 $) VE çekilebilen eşiğin üçte birini (≈16,7 $) birlikte geçmeli. Önceki adımların katılım-
+  // puanı askıları yüzünden vatandaş sayısı 0 olabilir — tek, temiz bir vatandaş ekleniyor ve bu hafta 2 kategoriye
+  // dokunduruluyor (Sv.1 eşiği 2; dokunmazsa activeCitizens() onu saymaz, gösterge hep 0 kalır).
   const J = await register('jale@ornek.com'); kapi.adminSetPlayer(J.pid, 'citizen');
+  engine.mutatePlayer(J.pid, gs => { gs._katilim().touched = { sefer: true, pazar: true }; });
   assert.equal(engine.GAME_CONFIG.KAPI.GROWTH_LOCKED, true, 'Varsayılan kilitli');
-  kapi.recordWeek({ epoch: 1, faucet: { totalAda: 1000 }, withdraw: { sent: 0 }, lottery: { prize: 0 } }, 0.5);
-  assert.equal(kapi.growth(), null, 'Kilitliyken gösterge geçse de büyümez');
+  engine.treasury.depositTo('quest', 100000);
+  engine.treasury.withdraw('quest', 30);                            // bu hafta GERÇEKTEN dağıtılan: 30 ASTRA → 15 $/hafta ≈ 65 $/ay (eşik 50 $ geçer)
+  kapi.recordWeek({ epoch: 1, withdraw: { cap: 2 } }, 0.5);          // çekim tavanı 2 ASTRA → 1 $/hafta ≈ 4,3 $/ay (eşik ≈16,7 $ geçMEZ)
+  assert.equal(kapi.growth(), null, 'Kilitliyken gösterge ikisi de geçse de büyümez');
   const unlock = await call('POST', '/api/admin/kapi', { growthLocked: false }, ADMIN);
   assert.equal(unlock.status, 200, JSON.stringify(unlock.body));
   assert.equal(unlock.body.growthLocked, false);
+  assert.equal(kapi.growth(), null, 'Kilit açık ama çekilebilen eşiğin üçte birinin altında: dağıtılan tek başına yetmez');
+  engine.treasury.withdraw('quest', 30);
+  kapi.recordWeek({ epoch: 2, withdraw: { cap: 50 } }, 0.5);         // 2. hafta çekim tavanı 50 ASTRA → ortalama çekilebilen eşiği de geçer
   const grew = kapi.growth();
-  assert.ok(grew && grew.to > grew.from, 'Kilit açılınca gösterge geçtiğinde büyür');
-  ok('Büyüme Faz 2 göstergesi kurulana dek kilitli; yönetici açınca normal çalışır');
+  assert.ok(grew && grew.to > grew.from, 'Kilit açık VE dağıtılan+çekilebilen ikisi de eşiği geçince büyür');
+  ok('Büyüme Faz 2 göstergesi: GROWTH_LOCKED ile kilitli; açılınca dağıtılan VE çekilebilen (eşiğin üçte biri) birlikte gerekir');
 
   // 10) Yönetici: sınır/dönem değişimi, hatalı değer reddi
   const bad = await call('POST', '/api/admin/kapi', { limit: 0 }, ADMIN);

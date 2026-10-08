@@ -34,7 +34,10 @@ export class TreasuryLedger {
       inflow: zeroPools(),
       outflow: zeroPools(),
       // Ödül ölçekleme geçmişi (panelde gösterilir)
-      lastScaleFactor: 1
+      lastScaleFactor: 1,
+      // E-planı Faz 2 (KARAR 1, 8 Ekim): bu hafta kasalardan vatandaşlara GERÇEKTEN ödenen toplam (geri alım hariç;
+      // ammBuyback bir ödül değil, piyasa savunması). server/kapi.js recordWeek() her hafta okur ve sıfırlar.
+      weekGrantedToCitizens: 0
     });
 
     if (typeof localStorage === 'undefined') return seed();
@@ -131,6 +134,8 @@ export class TreasuryLedger {
     this.state.outflow[poolId] = (this.state.outflow[poolId] || 0) + granted;
     this.state.lifetimeWithdrawn += granted;
     this.state.lastScaleFactor = granted / want;
+    // ammBuyback vatandaşa ödenmez (fiyat savunması); diğer her kasa bir oyuncunun bakiyesine gider.
+    if (poolId !== 'ammBuyback') this.state.weekGrantedToCitizens = (Number(this.state.weekGrantedToCitizens) || 0) + granted;
     this.save();
 
     return {
@@ -140,6 +145,14 @@ export class TreasuryLedger {
       depleted: false,
       poolRemaining: this.state.pools[poolId]
     };
+  }
+
+  // Bu haftanın vatandaşa-dağıtılan toplamını okur ve sıfırlar (haftalık hesaplaşmada bir kez çağrılır).
+  drainWeekGrantedToCitizens() {
+    const v = Number(this.state.weekGrantedToCitizens) || 0;
+    this.state.weekGrantedToCitizens = 0;
+    this.save();
+    return v;
   }
 
   // Havuz sağlığı: hedef rezervin ne kadarı duruyor? (1 = tam, 0 = boş)
