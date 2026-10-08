@@ -36,13 +36,21 @@ const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav', '.woff2': 'font/woff2' };
 
-// Tarayıcı korumaları (her yanıta)
-const SEC_HEADERS = {
+// Tarayıcı korumaları (her yanıta). HSTS yalnız HTTPS adresiyle yayınlanırken eklenir (createApp içinde).
+// COOP same-origin-allow-popups: sayfa başka sitelerin penceresiyle bağ kurmaz ama cüzdan açılır pencereleri çalışır.
+const SEC_BASE = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'SAMEORIGIN',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
 };
+const HSTS = 'max-age=31536000; includeSubDomains';
+// Vite'ın içerik özetli dosya adları (index-AbCd1234.js): içerik değişince ad değişir, bu yüzden 1 yıl "immutable" önbellek güvenli
+const OZETLI_DOSYA = /-[A-Za-z0-9_-]{8}\.(?:js|css)$/;
+// Varsayılan HTTP zaman aşımları (ms). Caddy/Nginx arkasında boşta bağlantı ~2 dk yaşar: keepAlive 150 sn olmalı ki
+// vekil sunucu bağlantıyı HER ZAMAN önce kapatsın (aksi halde "connection reset" 502'leri).
+const HTTP_ZAMAN = { headers: 20000, request: 30000, keepAlive: 150000, interval: 5000, maxHeader: 16384 };
 const ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 // Oyun sayfası: yalnız kendi dosyalarımız çalışır; dışarıdan kod yüklenemez, sayfaya sokulan kod çalışmaz,
 // veriler yalnız kendi sunucumuza gönderilebilir (Google yazı tipleri hariç). Cüzdan eklentileri (Core/MetaMask) etkilenmez.
@@ -54,6 +62,7 @@ const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/r
 
 export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, chain, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
+  const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
@@ -424,7 +433,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     const ext = path.extname(file).toLowerCase();
     const s = fs.createReadStream(file);
     s.on('error', () => { if (!res.headersSent) res.writeHead(500, SEC_HEADERS); res.end(); });
-    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400', ...(ext === '.html' ? { 'Content-Security-Policy': GAME_CSP } : {}) });
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : OZETLI_DOSYA.test(file) ? 'public, max-age=31536000, immutable' : 'public, max-age=86400', ...(ext === '.html' ? { 'Content-Security-Policy': GAME_CSP } : {}) });
     s.pipe(res);
   }
 
@@ -492,5 +501,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     }
   }
 
-  return { handle, server: () => http.createServer(handle) };
+  // Zaman aşımları açıkça ayarlı: başlığı/gövdeyi bitirmeyen yavaş istemci (slowloris) kesilir, aşırı büyük başlık 431 olur
+  const zaman = { ...HTTP_ZAMAN, ...(cfg.httpTimeouts || {}) };
+  const sunucu = () => http.createServer({
+    headersTimeout: zaman.headers, requestTimeout: zaman.request, keepAliveTimeout: zaman.keepAlive,
+    connectionsCheckingInterval: zaman.interval, maxHeaderSize: zaman.maxHeader
+  }, handle);
+  return { handle, server: sunucu };
 }
