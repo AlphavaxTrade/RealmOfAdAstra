@@ -63,6 +63,9 @@ for (const P of oyuncular) { await durumuYenile(P); P.aday = !(P.gate && P.gate.
 // Cüzdan bağlama: vatandaşların ~%60'ı (çekim talebi verebilsin)
 let cuzSayac = 1;
 for (const P of oyuncular) if (!P.aday && rng() < 0.6) await W.cuzdanBagla(P, cuzSayac++);
+await W.tick();                                     // ilk tick yalnız kaydeder
+ctx.ilk = anlikFoto(W);                             // dış para girişlerinden ÖNCE: sonradan giren para ctx.dis.depozito ile ayrıca sayılır
+ctx.sonEpoch = E.globalPool.state.epochId;
 // Dış para girişleri (yalnız ilgili senaryolarda): balinalar yatırma yapar
 if (SEN.balinaDepozito) {
   const balinalar = oyuncular.filter(P => !P.aday).slice(0, SEN.balinaSayisi);
@@ -73,10 +76,6 @@ if (SEN.balinaDepozito) {
     ctx.dis.depozito += SEN.balinaDepozito;
   }
 }
-
-await W.tick();                                     // ilk tick yalnız kaydeder
-ctx.ilk = anlikFoto(W);
-ctx.sonEpoch = E.globalPool.state.epochId;
 log(`  başlangıç: ${ctx.ilk.toplam.toExponential(4)} ASTRA (kasalar ${ctx.ilk.kasalar.toExponential(3)}, pazar ${ctx.ilk.amm.toExponential(3)}, piyango ${ctx.ilk.piyango.toExponential(3)})`);
 
 // ── Ana döngü ──

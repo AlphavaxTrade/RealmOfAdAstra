@@ -81,6 +81,17 @@ export function hazirMiState(playerState, kapiCfg = GAME_CONFIG.KAPI) {
   return idler.length > 0 && idler.every(id => !!c[id]);
 }
 
+// Oyuncunun BELİRLİ bir haftada dokunduğu kategoriler (ham JSON durumundan, durumu değiştirmez). Hafta döndüğünde
+// _katilim() kapanan haftayı 'oncekiHafta'ya taşır; değerlendirme geç kalsa (oyuncu Pazartesi 00:00'dan sonra eylem yaptı)
+// ya da oyuncu o hafta hiç girmediyse (bayat veri) doğru hafta okunur. haftaNo verilmezse "şimdiki" dokunulanlar.
+export function haftaTouched(playerState, haftaNo) {
+  const k = playerState && playerState.katilim;
+  if (!k) return {};
+  if (haftaNo == null || k.epochId === haftaNo) return k.touched || {};
+  if (k.oncekiHafta && k.oncekiHafta.epochId === haftaNo) return k.oncekiHafta.touched || {};
+  return {};
+}
+
 // Oyuncu şu an izinde mi (ham JSON durumundan; GameStateManager örneği gerekmez, durumu DEĞİŞTİRMEZ). İzindeki vatandaş
 // yerini korur ama ekonomiden pay almaz: Üretim Hakkı ağırlığı 0, temel gelir/ücretsiz havuz payı yok, "aktif" sayısına girmez.
 export function izindeMiState(playerState, now) {

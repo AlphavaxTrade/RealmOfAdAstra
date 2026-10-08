@@ -14,7 +14,7 @@
 // bekleyen davetler kv 'world:kapi:davet'. Oyunun kendi kurallarına (gameState) dokunmaz: yalnız sunucu katmanı.
 // ============================================================================
 import { playerIdOf } from './accounts.js';
-import { haftaSonucu, hazirMiState, izindeMiState } from './aktiflik.js';
+import { haftaSonucu, hazirMiState, izindeMiState, haftaTouched } from './aktiflik.js';
 
 const DAY = 86400000, HOUR = 3600000;
 const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
@@ -184,7 +184,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   }
 
   // ── Katılım puanı: haftanın sonunda her VATANDAŞ için değerlendirme (server/world/haftalik.js settleWeek çağırır) ──
-  function haftalikKatilimDegerlendir() {
+  function haftalikKatilimDegerlendir(kapananEpoch = null) {
     const now = clock(), cfg = KP();
     const UYARI = Number(cfg.UYARI_HAFTA) || 2, SORU = Number(cfg.IZIN_SORUSU_HAFTA) || 3;
     const out = { degerlendirilen: 0, uyari: [], izinSorusu: [], sonUyari: [] };
@@ -194,7 +194,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
       const k = st.katilim;
       if (k && k.izinModu && now < Number(k.izinModu.bitis)) continue; // izindeyken değerlendirme yok
       out.degerlendirilen++;
-      const { puan, esik, saglikli } = haftaSonucu({ touched: (k && k.touched) || {}, level: st.level }, cfg);
+      const { puan, esik, saglikli } = haftaSonucu({ touched: haftaTouched(st, kapananEpoch), level: st.level }, cfg);
       const durum = E.mutatePlayer(p.address, gs => {
         const kk = gs._katilim();
         if (saglikli) { kk.dusukHaftaSayisi = 0; return 'saglikli'; }
@@ -263,7 +263,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     const row = {
       epochId: summary?.epoch ?? null, at: clock(),
       distributedAda: round3(distributed), withdrawCapAda: round3(withdrawCapAda),
-      priceUsd: Number(priceUsd) || 0, citizens: activeCitizens()
+      priceUsd: Number(priceUsd) || 0, citizens: activeCitizens(summary?.epoch ?? null)
     };
     const history = (Array.isArray(s.history) ? s.history : []).concat([row]).slice(-60);
     setState({ history });
@@ -307,13 +307,13 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
 
   // Katılım puanı eşiğini geçen vatandaş sayısı — her citizen'ın JSON durumunu okumak gerektiği için (counts()
   // gibi tek SQL sorgusu değil) saatlik run()'da hesaplanıp dünya durumuna yazılır; publicSummary() ucuzca okur.
-  function activeCitizens() {
+  function activeCitizens(kapananEpoch = null) {
     let n = 0;
     for (const p of q.citizens.all()) {
       const st = E.readPlayer(p.address);
       if (!st) continue;
       if (izindeMiState(st, clock())) continue;   // izindeki yerini korur ama ekonomiden pay almaz → "aktif" sayılmaz (göstergenin paydasına girmez)
-      const { saglikli } = haftaSonucu({ touched: (st.katilim && st.katilim.touched) || {}, level: st.level }, KP());
+      const { saglikli } = haftaSonucu({ touched: haftaTouched(st, kapananEpoch), level: st.level }, KP());
       if (saglikli) n++;
     }
     return n;

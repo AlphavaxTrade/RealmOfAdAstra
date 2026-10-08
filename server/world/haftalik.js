@@ -208,7 +208,7 @@ export function olusturHaftalik(w) {
       // Kapı göstergesi: bu hafta dağıtılan kazanç (ASTRA) ve fiyat → kişi başı aylık dolar ortalamasına girer
       if (kapi) { try { kapi.recordWeek(summary, Number((econ().market || {}).priceUsd) || 0); } catch (err) { log.warn('Kapı göstergesi:', err.message); } }
       // Katılım puanı (E-planı Faz 1): bu haftanın değerlendirmesi — eşiğin altında kalanlara uyarı/izin sorusu
-      if (kapi) { try { summary.katilim = kapi.haftalikKatilimDegerlendir(); } catch (err) { log.warn('Katılım puanı:', err.message); } }
+      if (kapi) { try { summary.katilim = kapi.haftalikKatilimDegerlendir(closedEpoch); } catch (err) { log.warn('Katılım puanı:', err.message); } }
       setEcon({
         epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap,
         settled: { burned: Number(gp.state.totalBurned) || 0, creator: Number(gp.state.creatorRoyaltyTotal) || 0 },

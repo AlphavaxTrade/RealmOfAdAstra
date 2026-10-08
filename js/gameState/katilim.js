@@ -19,7 +19,9 @@ export const katilimYontemleri = {
       k = this.state.katilim = { epochId: ep, touched: {}, dusukHaftaSayisi: 0, izinYili: yil, izinYillikKalan: yillikIzinHakki(), izinModu: null, izinSorusu: null, sonUyari: null, oncelikKullanildi: false };
     }
     if (k.izinYili !== yil) { k.izinYili = yil; k.izinYillikKalan = yillikIzinHakki(); }   // yeni takvim yılı: hak yenilenir
-    if (k.epochId !== ep) { k.epochId = ep; k.touched = {}; }   // yeni hafta: dokunulanlar sıfırlanır (değerlendirme sunucuda zaten yapıldı)
+    // Yeni hafta: dokunulanlar sıfırlanır; ama KAPANAN haftanınki 'oncekiHafta'da kalır — haftalık değerlendirme (server/kapi.js)
+    // Pazartesi 00:00'dan hemen sonra eylem yapan oyuncunun kapanan haftasını silmesin (yerel simülasyon/T4 yarış testi).
+    if (k.epochId !== ep) { k.oncekiHafta = { epochId: k.epochId, touched: k.touched || {} }; k.epochId = ep; k.touched = {}; }
     if (!k.touched || typeof k.touched !== 'object') k.touched = {};
     if (typeof k.izinYillikKalan !== 'number') k.izinYillikKalan = yillikIzinHakki();
     return k;
