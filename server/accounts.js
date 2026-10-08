@@ -17,6 +17,7 @@
 // ============================================================================
 import crypto from 'node:crypto';
 import QRCode from 'qrcode';
+import { parolaOzetle, parolaDogrula } from './parola.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS accounts (
@@ -73,19 +74,9 @@ export const accountIdOf = playerId => (typeof playerId === 'string' && playerId
 
 const EMAIL_RE = /^[^\s@<>"']{1,64}@[^\s@<>"']{1,190}\.[a-z]{2,24}$/i;
 
-function hashPassword(pw) {
-  const salt = crypto.randomBytes(16);
-  const hash = crypto.scryptSync(pw, salt, 64, { N: 16384, r: 8, p: 1 });
-  return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
-}
-function checkPassword(pw, stored) {
-  const [, saltHex, hashHex] = String(stored).split('$');
-  if (!saltHex || !hashHex) return false;
-  const hash = crypto.scryptSync(pw, Buffer.from(saltHex, 'hex'), 64, { N: 16384, r: 8, p: 1 });
-  const want = Buffer.from(hashHex, 'hex');
-  return want.length === hash.length && crypto.timingSafeEqual(want, hash);
-}
-const DUMMY_HASH = hashPassword('zamanlama-esitleme-icin');
+// Parola özeti server/parola.js'te (asenkron scrypt; sunucuyu bloklamaz). Hesap yokken de aynı iş yapılsın diye sahte özet:
+let sahteOzet = null;
+const sahteParolaOzeti = () => (sahteOzet ||= parolaOzetle('zamanlama-esitleme-icin'));
 
 export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), verifyMessage }) {
   db.raw.exec(SCHEMA);
@@ -163,7 +154,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const e = String(email || '').trim().toLowerCase();
     if (!EMAIL_RE.test(e) || e.length > 254) return { ok: false, error: 'Geçerli bir e-posta adresi yaz.' };
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
-    const pass = hashPassword(password);                   // var olan hesapta da aynı süre geçsin
+    const pass = await parolaOzetle(password);             // var olan hesapta da aynı süre geçsin
     const old = q.byEmail.get(e);
     if (old) {
       let extra = {};
@@ -279,11 +270,14 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return { ok: true, playerId: t.playerId, backupLeft: g.backupLeft };
   }
 
-  function login(email, password, ip = '') {
+  async function login(email, password, ip = '') {
     const e = String(email || '').trim().toLowerCase();
     if (locked('e:' + e) || locked('i:' + ip)) return { ok: false, error: 'Çok fazla hatalı deneme. 15 dakika sonra tekrar dene.' };
     const acc = q.byEmail.get(e);
-    const good = acc ? checkPassword(String(password || ''), acc.pass_hash) : (checkPassword('x', DUMMY_HASH), false);
+    const kontrol = acc ? await parolaDogrula(String(password || ''), acc.pass_hash) : (await parolaDogrula('x', await sahteParolaOzeti()), { ok: false });
+    const good = kontrol.ok;
+    // Doğru parola ama özet eski biçimde / zayıf ayarda: bu girişte güncel ayarla yeniden özetlenir (parola elimizde olan tek an)
+    if (good && kontrol.yenile) q.setPass.run(await parolaOzetle(String(password)), acc.id);
     // Doğrulanmamış hesap da AYNI yanıtı alır (e-postanın kayıtlı olup olmadığı anlaşılmasın)
     const BAD = 'E-posta ya da şifre hatalı. Yeni kayıt olduysan önce e-postandaki bağlantıya tıkla.';
     if (!good) { noteFail('e:' + e); noteFail('i:' + ip); return { ok: false, error: BAD }; }
@@ -339,7 +333,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (typeof newPassword !== 'string' || newPassword.length < 8 || newPassword.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
     const t = takeToken(token, 'reset');
     if (!t) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
-    q.setPass.run(hashPassword(newPassword), t.account_id);
+    q.setPass.run(await parolaOzetle(newPassword), t.account_id);
     q.setVerified.run(t.account_id);                       // e-postayı açabildiyse e-posta onun
     q.sessionsOf.run(playerIdOf(t.account_id));            // bütün cihazlardan çıkış
     db.event('password-reset', playerIdOf(t.account_id));

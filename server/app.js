@@ -181,7 +181,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     },
     'POST /api/account/login': async (req) => {
       const { email, password } = await readBody(req);
-      const r = accounts.login(email, password, clientIp(req));
+      const r = await accounts.login(email, password, clientIp(req));
       if (!r.ok) return [401, { error: r.error }];
       if (r.need2fa) return { need2fa: true, ticket: r.ticket };
       db.event('login', r.playerId);

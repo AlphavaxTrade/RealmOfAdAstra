@@ -13,7 +13,8 @@ const failed = [];
 const t0 = Date.now();
 
 for (const f of files) {
-  const r = spawnSync(process.execPath, [join(dir, f)], { encoding: 'utf8' });
+  // PAROLA_HAFIF=1: testlerde parola özeti hafif ayarla (yüzlerce kayıt test süresini uzatmasın); güçlü ayar tests/test_parola.mjs'te sınanır
+  const r = spawnSync(process.execPath, [join(dir, f)], { encoding: 'utf8', env: { ...process.env, PAROLA_HAFIF: '1' } });
   if (r.status === 0) {
     console.log(`✅ ${f}`);
   } else {
