@@ -7,6 +7,8 @@
 //   beklenen   : oyunun TASARIM kuralları (neden böyle olması gerektiği ad'ında yazar); once/sonra = ozet() görüntüleri.
 // Senaryolar rastgelelik içermez (zindan/çark gibi şansa bağlı eylemler burada yok; onlar sunucuda çözülür).
 import { ammMarket } from '../ammMarket.js';
+import { treasury } from '../treasury.js';
+import { GAME_CONFIG } from '../config.js';
 
 // Oyunun o anki durumunun karşılaştırmaya yarayan kısa görüntüsü
 export function ozet(gs) {
@@ -28,11 +30,19 @@ export function ozet(gs) {
     baltaDayanikliligi: (st.tools.axe || {}).durability,
     odunFiyati: ammMarket.getPrice('wood'),
     bilet: st.lotteryTickets || 0,
+    arenaAnahtar: st.arenaKeys || 0,
+    arenaMac: (gs.getDailyCounters().arenaMatches) || 0,
+    zindanGiris: gs.getDungeonDayStatus().entriesToday,
+    zindanKasasi: treasury.getPool('dungeon'),
+    askerCan: (st.soldierUnits && st.soldierUnits[0]) ? st.soldierUnits[0].hp : null,
     rehberTamam: Object.entries(st.onboarding || {}).filter(([, v]) => v && v.done).map(([k]) => k)
   };
 }
 
 const ALET_TAM = 4320;
+// Günlük sayaçlar (zindan girişi, arena maçı) sıfırlanır; senaryo "bugün ilk giriş" gibi durumlara güvenebilsin
+const gunlukSifirla = (gs) => { const c = gs.getDailyCounters(); c.dungeonRuns = 0; c.dungeonEntries = 0; c.dungeonPaidEntries = 0; c.arenaMatches = 0; c.dungeonBudget = null; c.dungeonPaid = 0; };
+const askerler = (gs, n) => { gs.setDevAdAstra(1e7); gs.state.soldierUnits = []; for (let i = 0; i < n; i++) gs.buySoldierUnit(); gs.healAllDevSoldiers(); };
 // Ortak ön koşullar
 const temiz = (gs) => { gs.state.activeExpeditions = {}; gs.repairAllDevTools(); gs.refillDevStamina(); };
 const tumuDolu = (gs) => { const cap = gs.getWarehouseCapacity(); for (const k of Object.keys(cap)) gs.setDevResource(k, cap[k]); };
@@ -49,6 +59,8 @@ export const KATEGORILER = [
   { id: 'karakter', ad: 'Karakter' },
   { id: 'silo', ad: 'Silo' },
   { id: 'ordu', ad: 'Ordu' },
+  { id: 'zindan', ad: 'Zindan' },
+  { id: 'kolezyum', ad: 'Kolezyum' },
   { id: 'pazar', ad: 'Pazar' },
   { id: 'karnaval', ad: 'Karnaval' },
   { id: 'rehber', ad: 'Rehber' }
@@ -279,6 +291,160 @@ export const SENARYOLAR = [
     beklenen: [
       { ad: 'Satım reddedildi', tamam: (o, s, r) => r.success === false },
       { ad: 'ASTRA değişmedi', tamam: (o, s) => s.astra === o.astra }
+    ]
+  },
+  {
+    id: 'ordu-koylu-siniri', kategori: 'ordu', ad: 'Asker sayısı köylü sayısıyla sınırlı',
+    ne: 'Her asker bir köylü ister: sınıra kadar asker alınır, sınırda yeni asker reddedilir ve nedeni "köylü" olur.',
+    kur: (gs) => { temiz(gs); gs.setDevAdAstra(1e8); gs.state.soldierUnits = []; },
+    calistir: (gs) => { let n = 0; while (n < 60 && gs.buySoldierUnit().success) n += 1; return { alinan: n, sinir: gs.getVillageInfo().soldierCap, sonraki: gs.buySoldierUnit() }; },
+    beklenen: [
+      { ad: 'Alınan asker sayısı köyün asker sınırına eşit', tamam: (o, s, r) => r.alinan === r.sinir && s.asker === r.sinir },
+      { ad: 'Sınırda yeni asker reddedildi', tamam: (o, s, r) => r.sonraki.success === false },
+      { ad: 'Neden: köylü gerekir', tamam: (o, s, r) => /köylü/i.test(r.sonraki.message) }
+    ]
+  },
+  {
+    id: 'ordu-doyur', kategori: 'ordu', ad: 'Yaralı askeri doyurmak canı doldurur',
+    ne: 'Yaralı askere "hemen doyur" denince can tamamen dolmalı; buğday ve ASTRA harcanmalı.',
+    kur: (gs) => { temiz(gs); askerler(gs, 1); gs.state.soldierUnits[0].hp = 10; gs.state.soldierUnits[0].maxHp = 100; gs.setDevResource('wheat', gs.getWarehouseCapacity().wheat); gs.setDevAdAstra(1000); },
+    calistir: (gs) => gs.healSoldierInstantly(0),
+    beklenen: [
+      { ad: 'İyileştirme başarılı', tamam: (o, s, r) => r.success === true },
+      { ad: 'Can tamamen doldu', tamam: (o, s) => s.askerCan === 100 },
+      { ad: 'Buğday harcandı', tamam: (o, s) => s.env.wheat < o.env.wheat },
+      { ad: 'ASTRA harcandı', tamam: (o, s) => s.astra < o.astra }
+    ]
+  },
+  // ------------------------------------------------------------------ ZİNDAN (savaşın sonucu şansa bağlı; burada giriş kuralları ve ödül tablosu sınanır)
+  {
+    id: 'zindan-kat-kilidi', kategori: 'zindan', ad: 'Önceki katı bitirmeden üst kata girilemez',
+    ne: 'Zindan ilerlemesi 1 iken 3. kata savaş açılamaz; giriş sayılmaz, stamina harcanmaz.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); },
+    calistir: (gs) => gs.fightDungeon(3, [0]),
+    beklenen: [
+      { ad: 'Savaş reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Mesaj seviye kilidini söylüyor', tamam: (o, s, r) => /Seviye/.test(r.message) },
+      { ad: 'Giriş sayılmadı', tamam: (o, s) => s.zindanGiris === o.zindanGiris },
+      { ad: 'Stamina harcanmadı', tamam: (o, s) => s.stamina === o.stamina }
+    ]
+  },
+  {
+    id: 'zindan-asker-secilmedi', kategori: 'zindan', ad: 'Asker seçmeden savaşa girilmez',
+    ne: 'Boş asker listesiyle zindan savaşı reddedilmeli.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); },
+    calistir: (gs) => gs.fightDungeon(1, []),
+    beklenen: [
+      { ad: 'Savaş reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Giriş sayılmadı', tamam: (o, s) => s.zindanGiris === o.zindanGiris }
+    ]
+  },
+  {
+    id: 'zindan-stamina-yok', kategori: 'zindan', ad: 'Stamina yoksa zindana girilmez',
+    ne: 'Stamina sıfırken savaş reddedilmeli ve ödüllü giriş hakkı yanmamalı.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); gs.state.stamina = 0; },
+    calistir: (gs) => gs.fightDungeon(1, [0]),
+    beklenen: [
+      { ad: 'Savaş reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Mesaj stamina yetersizliğini söylüyor', tamam: (o, s, r) => /stamina/i.test(r.message) },
+      { ad: 'Giriş hakkı yanmadı', tamam: (o, s) => s.zindanGiris === o.zindanGiris }
+    ]
+  },
+  {
+    id: 'zindan-ilk-giris', kategori: 'zindan', ad: 'Günün ilk girişi ödüllüdür ve silahı aşındırmaz',
+    ne: 'Taze günde ilk zindan girişi ödüllü sayılır, silah aşınmaz, staminanın bedeli ödenir; sıradaki girişte silah aşınır.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); },
+    calistir: (gs) => { const once = gs.getDungeonDayStatus(); const maliyet = gs.getDungeonStaminaCost(1, 1); const r = gs.fightDungeon(1, [0]); return { once, maliyet, r, sonra: gs.getDungeonDayStatus() }; },
+    beklenen: [
+      { ad: 'Savaş yapıldı', tamam: (o, s, r) => r.r.success === true },
+      { ad: 'İlk giriş: silah aşınmaz', tamam: (o, s, r) => r.once.nextIsFirstEntry === true && r.once.nextWeaponWear === false && r.r.entry.weaponWear === false },
+      { ad: 'Ödüllü giriş sayıldı (günlük hak 1 azaldı)', tamam: (o, s, r) => r.r.entry.rewarded === true && r.sonra.freeLeft === r.once.freeLeft - 1 },
+      { ad: 'Stamina bedeli kadar harcandı', tamam: (o, s, r) => o.stamina - s.stamina >= r.maliyet },
+      { ad: 'Sıradaki giriş artık silahı aşındırır', tamam: (o, s, r) => r.sonra.nextWeaponWear === true }
+    ]
+  },
+  {
+    id: 'zindan-harc-ve-antrenman', kategori: 'zindan', ad: 'Günlük ödüllü haklar bitince kapı harcı istenir',
+    ne: 'Ödüllü haklar dolunca kapı harcı (ödülün %20\'si) istenir; harç ödenmezse giriş "antrenman" olur (ödülsüz, ASTRA harcanmaz); ödenirse harç zindan kasasına gider.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); gs.setDevAdAstra(1000); const c = gs.getDailyCounters(); c.dungeonRuns = GAME_CONFIG.DUNGEON.DAILY_RUNS; c.dungeonEntries = GAME_CONFIG.DUNGEON.DAILY_RUNS; },
+    calistir: (gs) => {
+      const terimler = gs.getDungeonEntryTerms(1);
+      const beklenenHarc = Math.max(0.01, Math.round(gs.getDungeonBaseReward(1).ada * GAME_CONFIG.DUNGEON.GATE_FEE_RATE * 1000) / 1000);
+      const once = ozet(gs);
+      const antrenman = gs.fightDungeon(1, [0], { payGateFee: false });
+      const arada = ozet(gs);
+      gs.refillDevStamina();
+      const odemeli = gs.fightDungeon(1, [0], { payGateFee: true });
+      return { terimler, beklenenHarc, once, antrenman, arada, odemeli };
+    },
+    beklenen: [
+      { ad: 'Ödüllü haklar bitti: harç isteniyor', tamam: (o, s, r) => r.terimler.nextNeedsFee === true },
+      { ad: 'Harç = ödülün %20\'si (en az 0,01)', tamam: (o, s, r) => Math.abs(r.terimler.fee - r.beklenenHarc) < 1e-9 && r.terimler.fee > 0 },
+      { ad: 'Harçsız giriş antrenman: ödülsüz', tamam: (o, s, r) => r.antrenman.success === true && r.antrenman.entry.rewarded === false },
+      { ad: 'Antrenman ASTRA harcamadı', tamam: (o, s, r) => r.arada.astra === r.once.astra },
+      { ad: 'Harçlı giriş ödüllü', tamam: (o, s, r) => r.odemeli.success === true && r.odemeli.entry.rewarded === true },
+      { ad: 'Harç tam tutarıyla ASTRA\'dan düştü', tamam: (o, s, r) => Math.abs((r.arada.astra - s.astra) - r.beklenenHarc) < 1e-6 },
+      { ad: 'Harç zindan kasasına gitti', tamam: (o, s, r) => s.zindanKasasi - r.arada.zindanKasasi >= r.beklenenHarc - 1e-6 }
+    ]
+  },
+  {
+    id: 'zindan-odul-tablosu', kategori: 'zindan', ad: 'Ödül kata göre artar, büyük boss katları çarpanlıdır',
+    ne: 'Ödül kat sayısıyla doğru orantılı; 9. ve 18. kat (büyük boss) ek çarpanla ödüllendirilir.',
+    kur: (gs) => { temiz(gs); },
+    calistir: (gs) => ({ r1: gs.getDungeonBaseReward(1).ada, r2: gs.getDungeonBaseReward(2).ada, r8: gs.getDungeonBaseReward(8).ada, r9: gs.getDungeonBaseReward(9).ada, r18: gs.getDungeonBaseReward(18).ada }),
+    beklenen: [
+      { ad: '2. kat ödülü 1. katın iki katı', tamam: (o, s, r) => Math.abs(r.r2 - 2 * r.r1) < 1e-9 },
+      { ad: '9. kat (büyük boss) normal orantının çarpan katı', tamam: (o, s, r) => Math.abs(r.r9 - 9 * r.r1 * GAME_CONFIG.DUNGEON.MAJOR_BOSS_REWARD_MULT) < 1e-6 },
+      { ad: '18. kat da büyük boss çarpanını alır', tamam: (o, s, r) => Math.abs(r.r18 - 18 * r.r1 * GAME_CONFIG.DUNGEON.MAJOR_BOSS_REWARD_MULT) < 1e-6 },
+      { ad: 'Normal katlarda çarpan yok (8. kat = 8 × 1. kat)', tamam: (o, s, r) => Math.abs(r.r8 - 8 * r.r1) < 1e-9 }
+    ]
+  },
+  // ------------------------------------------------------------------ KOLEZYUM (maçın sonucu şansa bağlı; giriş bedeli ve sınırlar sınanır)
+  {
+    id: 'kolezyum-anahtar-yok', kategori: 'kolezyum', ad: 'Arena anahtarı yoksa maça çıkılmaz',
+    ne: 'Anahtar yokken maç reddedilmeli; stamina ve günlük hak harcanmamalı.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 0; },
+    calistir: (gs) => gs.executeColosseum1v1Match(0),
+    beklenen: [
+      { ad: 'Maç reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Mesaj anahtar istiyor', tamam: (o, s, r) => /Anahtar/i.test(r.message) },
+      { ad: 'Stamina ve günlük hak harcanmadı', tamam: (o, s) => s.stamina === o.stamina && s.arenaMac === o.arenaMac }
+    ]
+  },
+  {
+    id: 'kolezyum-yarali', kategori: 'kolezyum', ad: 'Ağır yaralı asker arenaya çıkamaz',
+    ne: 'Canı çok düşük askerle maç reddedilmeli; anahtar harcanmamalı.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; gs.state.soldierUnits[0].hp = 5; },
+    calistir: (gs) => gs.executeColosseum1v1Match(0),
+    beklenen: [
+      { ad: 'Maç reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Mesaj yaralı olduğunu söylüyor', tamam: (o, s, r) => /yaralı/i.test(r.message) },
+      { ad: 'Anahtar harcanmadı', tamam: (o, s) => s.arenaAnahtar === o.arenaAnahtar }
+    ]
+  },
+  {
+    id: 'kolezyum-gunluk-sinir', kategori: 'kolezyum', ad: 'Günlük maç hakkı dolunca maç yapılmaz',
+    ne: 'Günlük sınır dolunca maç reddedilmeli.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; gs.getDailyCounters().arenaMatches = GAME_CONFIG.COLOSSEUM.DAILY_MATCH_CAP; },
+    calistir: (gs) => ({ sonuc: gs.executeColosseum1v1Match(0), durum: gs.getColosseumEntryStatus() }),
+    beklenen: [
+      { ad: 'Maç reddedildi', tamam: (o, s, r) => r.sonuc.success === false },
+      { ad: 'Mesaj günlük hakkın dolduğunu söylüyor', tamam: (o, s, r) => /Günlük/i.test(r.sonuc.message) },
+      { ad: 'Giriş durumu da engel nedenini gösteriyor', tamam: (o, s, r) => /Günlük/i.test(r.durum.blockReason) },
+      { ad: 'Anahtar harcanmadı', tamam: (o, s) => s.arenaAnahtar === o.arenaAnahtar }
+    ]
+  },
+  {
+    id: 'kolezyum-mac-bedeli', kategori: 'kolezyum', ad: 'Maç anahtar, stamina ve günlük hak harcar',
+    ne: 'Koşullar tamamsa maç yapılır; sonucu şansa bağlı olsa da bedeli kesindir: 1 anahtar (zaferde bazen geri verilir), 12 stamina, 1 günlük hak.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; },
+    calistir: (gs) => ({ once: gs.getColosseumEntryStatus(), sonuc: gs.executeColosseum1v1Match(0) }),
+    beklenen: [
+      { ad: 'Koşullar tamamken giriş engeli yok', tamam: (o, s, r) => r.once.blockReason === '' },
+      { ad: 'Maç yapıldı', tamam: (o, s, r) => r.sonuc.success === true },
+      { ad: 'Giriş bedeli 1 anahtar (zaferde geri verilen anahtar kadar eksik harcanır)', tamam: (o, s, r) => o.arenaAnahtar - s.arenaAnahtar === GAME_CONFIG.COLOSSEUM.ENTRY_KEY_COST - (r.sonuc.rewardKeys || 0) },
+      { ad: 'Stamina bedeli kadar düştü', tamam: (o, s) => o.stamina - s.stamina >= GAME_CONFIG.COLOSSEUM.ENTRY_STAMINA_COST },
+      { ad: 'Günlük hak 1 arttı', tamam: (o, s) => s.arenaMac === o.arenaMac + 1 }
     ]
   },
   // ------------------------------------------------------------------ KARNAVAL

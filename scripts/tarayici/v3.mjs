@@ -93,12 +93,13 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());
   const lab = sel => s.evaluate(q => document.querySelectorAll(`#modal-body ${q}`).length, sel);
-  kontrol(`${ad}: laboratuvarda 23 senaryo kartı`, (await lab('.v3-lab-kart')) === 23, String(await lab('.v3-lab-kart')));
+  const toplamSenaryo = await s.evaluate(async (yol) => (await import(yol)).SENARYOLAR.length, '/js/dev/senaryolar.js');
+  kontrol(`${ad}: laboratuvarda tüm senaryolar kart olarak var (${toplamSenaryo})`, (await lab('.v3-lab-kart')) === toplamSenaryo && toplamSenaryo >= 35, String(await lab('.v3-lab-kart')));
   await tikla('[data-lab^="calistir:zaman-sefer-hazir"]');
   kontrol(`${ad}: tek senaryo çalışır ve ✓ gösterir`, await s.evaluate(() => /Geçti/.test(document.querySelector('[data-lab-senaryo="zaman-sefer-hazir"] .v3-lab-sonuc')?.innerText || '')));
   await tikla('[data-lab="hepsini"]'); await bekle(1500);
   const ozetMetni = await s.evaluate(() => document.querySelector('.v3-lab-ozet span')?.innerText || '');
-  kontrol(`${ad}: "listeyi çalıştır" 23/23 geçti`, /23\/23 geçti/.test(ozetMetni), ozetMetni);
+  kontrol(`${ad}: "listeyi çalıştır" hepsi geçti`, new RegExp(`${toplamSenaryo}/${toplamSenaryo} geçti`).test(ozetMetni), ozetMetni);
   await foto('10_lab_sonuclar');
   await tikla('[data-lab="sekme:arac"]'); await foto('11_lab_araclar');
   await tikla('[data-lab="astra:1000"]');
@@ -139,7 +140,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   const don = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, tab: getComputedStyle(document.getElementById('v3-tabbar')).display }));
   kontrol(`${ad}: kasabaya dönünce v3 çubukları geri gelir`, !don.iceride && don.hud !== 'none' && don.tab !== 'none', JSON.stringify(don));
   const varsayilan = await baglam.newPage();
-  await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
+  await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); await bekle(1500);
   kontrol(`${ad}: adres parametresi olmadan da yeni arayüz açılır (varsayılan)`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar')));
   await varsayilan.goto(BASE + '/?arayuz=eski', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
   kontrol(`${ad}: ?arayuz=eski eski arayüzü açar`, await varsayilan.evaluate(() => !document.documentElement.classList.contains('v3') && !document.getElementById('v3-tabbar')));
