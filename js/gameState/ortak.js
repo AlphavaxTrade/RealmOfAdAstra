@@ -1,0 +1,17 @@
+// Realm of AdAstra — GameStateManager'ın ortak küçük yardımcıları (js/gameState.js'ten AYNEN taşındı, kurumsal A3.11)
+import { GAME_CONFIG } from '../config.js';
+
+// Asker portreleri (public/assets/ui, 5 Ekim 2026): numarasına göre sırayla
+export const SOLDIER_PORTRAITS = ['assets/ui/soldier_1.webp', 'assets/ui/soldier_2.webp', 'assets/ui/soldier_3.webp', 'assets/ui/soldier_4.webp'];
+export const soldierPortraitFor = n => SOLDIER_PORTRAITS[(Math.max(1, Number(n) || 1) - 1) % SOLDIER_PORTRAITS.length];
+
+// Oyuncunun yazdığı isimler başka oyuncuların ekranında da görünür (Kolezyum sıralaması, maç kayıtları):
+// HTML/kod gibi çalışabilecek işaretler ve görünmez karakterler atılır.
+export const cleanName = (s, max = 24) => String(s == null ? '' : s)
+  .replace(/[<>&"'`\\\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g, '')
+  .replace(/\s+/g, ' ').trim().slice(0, max);
+
+// v2 (7 Ekim 2026): hammadde anahtarları config'ten (6 kaynak); eski kayıtlar için yedek üçlü
+export const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+export const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
+export const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
