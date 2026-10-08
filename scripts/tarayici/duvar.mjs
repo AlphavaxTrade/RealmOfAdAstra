@@ -22,6 +22,7 @@ if (!giris.token) { console.log('❌ giriş yapılamadı'); process.exit(1); }
 const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader'] });
 const baglam = await tarayici.newContext({ viewport: { width: 1280, height: 860 } });
 await baglam.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, ['adastra_session_v1', JSON.stringify({ token: giris.token, playerId: giris.playerId })]);
+await baglam.addInitScript(() => { try { localStorage.setItem('roa_arayuz', 'eski'); } catch { /* */ } });   // bu betik ESKİ test menüsünü (T tuşu, dev-modal) kullanır; yeni arayüz (v3) varsayılan olduğundan eskiye sabitlenir
 const sayfa = await baglam.newPage();
 const hatalar = [];
 sayfa.on('pageerror', e => hatalar.push('pageerror: ' + e.message));
