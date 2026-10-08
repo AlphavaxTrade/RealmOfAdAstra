@@ -150,24 +150,29 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
   }
 
   // Haftalık: ilk 10'a Kolezyum kasasından ödül, sıralama sıfırlanır (world.settleWeek içinden, tek işlemde)
+  // v2 düzeltmesi (E-planı S6, 8 Ekim 2026): bu haftanın TOPLAM bütçesi tek bir T.withdraw() çağrısından geçer
+  // (eskiden havuz doğrudan düşülüyordu, %2 tek çekim tavanı ve kasa sağlığı küçültmesi atlanıyordu); tavan devreye
+  // girip bütçe küçülürse herkesin payı AYNI oranda küçülür (1. ile 10.nun arasındaki oran bozulmaz). Kesirli
+  // bölüşümde (floor) kalan ufak artık son ödüllü sıraya eklenir: kasadan çıkan ile oyunculara dağıtılan tam eşit.
   function settleWeek(closedEpoch) {
     const A = get();
     const T = E.treasury;
     const rewards = weeklyRewards(A.table, T.getPool('arena'));
+    const payable = rewards.filter(r => r.amount > 0);
+    const wanted = payable.reduce((s, r) => s + r.amount, 0);
+    const grantedTotal = wanted > 0 ? (T.withdraw('arena', wanted).granted || 0) : 0;
     let total = 0;
-    for (const r of rewards) {
-      if (!(r.amount > 0)) continue;
-      T.state.pools.arena -= r.amount;
-      T.state.outflow.arena = (Number(T.state.outflow.arena) || 0) + r.amount;
-      total += r.amount;
+    payable.forEach((r, i) => {
+      const isLast = i === payable.length - 1;
+      const granted = isLast ? Math.max(0, grantedTotal - total) : Math.floor(r.amount * grantedTotal / wanted);
+      total += granted;
+      if (!(granted > 0)) return;
       E.mutatePlayer(r.id, gs => {
-        gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + r.amount;
-        gs._onAdaEarned(r.amount);
-        gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${r.amount.toLocaleString('tr-TR')} ADA (${r.points} puan).`, 'success');
+        gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + granted;
+        gs._onAdaEarned(granted);
+        gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${granted.toLocaleString('tr-TR')} ADA (${r.points} puan).`, 'success');
       });
-    }
-    T.state.lifetimeWithdrawn = (Number(T.state.lifetimeWithdrawn) || 0) + total;
-    T.save();
+    });
     A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount })) };
     A.table = {};
     put(A);

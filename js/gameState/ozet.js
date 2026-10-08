@@ -6,6 +6,16 @@ import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { zeroRes } from './ortak.js';
 
+// ISO hafta anahtarı ("2026-W41"): haftalık buyback'in günde değil haftada bir çalışmasını sağlar (UTC Pazartesi başlangıçlı)
+export function isoWeekKey(ms) {
+  const d = new Date(ms);
+  d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 1 - (d.getUTCDay() || 7));            // haftanın Pazartesi'sine sabitle
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
 export const ozetYontemleri = {
   // =========================================================================
   // DASHBOARD: KRALIK GENEL BAKIŞ & TOPLU EYLEMLER
@@ -73,7 +83,7 @@ export const ozetYontemleri = {
     const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
     const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;
     const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;
-    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 20000000);
+    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 12000000);
     const amortiPool = state.lotteryAmortiPool || 0;
     const myTickets = state.lotteryTickets || 0;
     const lotteryWinnerMultiplier = GAME_CONFIG.CARNIVAL?.LOTTERY?.WINNER_MULTIPLIER || 2.0;
@@ -261,7 +271,7 @@ export const ozetYontemleri = {
       : ((GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.INITIAL_SEED_POOL) || 2400000);
     const burnedNftPool = 42500 + ((state.genesisNftMinted ? 1 : 0) * 18000);
     const totalAmmLiquidityAda = (typeof ammMarket !== 'undefined' && ammMarket.getTotalAdAstraLiquidity) ? ammMarket.getTotalAdAstraLiquidity() : 40000000;
-    const lotteryPoolAda = Math.round(state.lotteryPool || 20000000);
+    const lotteryPoolAda = Math.round(state.lotteryPool || 12000000);
     const questPool = (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('quest')) : 8000000;
 
     const totalVaultAda = worldBossPool + colosseumPool + dungeonLootVault + carnivalPool + ammBuybackPool + parliamentStakingPool + ubiPool + questPool + totalAmmLiquidityAda;
@@ -401,7 +411,9 @@ export const ozetYontemleri = {
   },
 
   // 🛡️ AMM DEX Otonom Buyback & Yakım Operasyonu
-  executeAmmTreasuryBuyback(cycleBudgetCap = 0.15) {
+  // v2 (kurumsal E-planı S2 düzeltmesi, 8 Ekim 2026): oran artık tek kaynaktan (GAME_CONFIG.AMM_BUYBACK.WEEKLY_RATE,
+  // %3) okunur; eskiden burada gömülü %15 vardı ve docs/v2/KARARLAR_KESIN.md'deki "haftada %3" kararından sapıyordu.
+  executeAmmTreasuryBuyback(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
     if (typeof ammMarket !== 'undefined' && typeof ammMarket.executeAutonomousBuyback === 'function') {
       const res = ammMarket.executeAutonomousBuyback(cycleBudgetCap);
       this.saveState();
@@ -410,25 +422,27 @@ export const ozetYontemleri = {
     return { success: false, message: 'AMM Market motoru bulunamadı.' };
   },
 
-  // 🔄 Gün Sonu Otonom Buyback & Yakım Kontrolü (Günde 1 kez çalışır)
-  checkDailyAutonomousBuyback(forcedToday = null) {
-    const today = forcedToday || new Date(this._calendarNow()).toISOString().slice(0, 10);
-    if (!this.state.lastAmmBuybackDate) {
-      this.state.lastAmmBuybackDate = today;
+  // 🔄 Haftalık Otonom Buyback & Yakım Kontrolü (haftada 1 kez çalışır; ISO hafta anahtarıyla)
+  // v2 düzeltmesi: eskiden "Gün Sonu" diye HER GÜN çalışıyordu (günde %15 = kararın ~35 katı hızında kasa eritiyordu).
+  checkWeeklyAutonomousBuyback(forcedNow = null) {
+    const now = forcedNow || this._calendarNow();
+    const weekKey = isoWeekKey(now);
+    if (!this.state.lastAmmBuybackWeek) {
+      this.state.lastAmmBuybackWeek = weekKey;
       return { executed: false, reason: 'initial_marker' };
     }
-    if (this.state.lastAmmBuybackDate !== today) {
-      this.state.lastAmmBuybackDate = today;
-      const res = this.executeAmmTreasuryBuyback(0.15);
+    if (this.state.lastAmmBuybackWeek !== weekKey) {
+      this.state.lastAmmBuybackWeek = weekKey;
+      const res = this.executeAmmTreasuryBuyback();
       if (res && res.executed) {
-        console.log(`[AMM Buyback] Gün sonu otonom buyback çalıştırıldı (${today}):`, res);
+        console.log(`[AMM Buyback] Haftalık otonom buyback çalıştırıldı (${weekKey}):`, res);
       }
-      return { executed: true, result: res, date: today };
+      return { executed: true, result: res, week: weekKey };
     }
-    return { executed: false, reason: 'already_run_today' };
+    return { executed: false, reason: 'already_run_this_week' };
   },
 
-  getAmmBuybackAnalysis(cycleBudgetCap = 0.15) {
+  getAmmBuybackAnalysis(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
     if (typeof ammMarket !== 'undefined' && typeof ammMarket.getBuybackAnalysis === 'function') {
       return ammMarket.getBuybackAnalysis(cycleBudgetCap);
     }

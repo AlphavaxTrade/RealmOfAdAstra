@@ -6,7 +6,12 @@ export function olusturBoss(w) {
   const { db, E, setEcon, atomic } = w;
   // ── Ortak dünya bossu (her Pazar 18:00 TSİ) ─────────────────────────────
   // Ordusunu kilitlemiş bütün oyuncular aynı bossa vurur. Boss kasasının o haftaki payı (WEEKLY_DISTRIBUTION_RATE,
-  // %10) verilen hasar oranında paylaşılır: kim önce talep ederse kasayı boşaltamaz. Ödül Kışla → World Boss'tan toplanır.
+  // %3) verilen hasar oranında paylaşılır: kim önce talep ederse kasayı boşaltamaz. Ödül Kışla → World Boss'tan toplanır.
+  // v2 düzeltmesi (E-planı S6/S9, 8 Ekim 2026): bu haftanın TOPLAM bütçesi tek bir T.withdraw() çağrısından geçer
+  // (eskiden havuz doğrudan düşülüyordu, hiçbir tavan yoktu); böylece tek çekim ≤ kasanın %2'si tavanı ve kasa
+  // sağlığı küçültmesi burada da uygulanır. Bütçe tek seferde kapandıktan SONRA hasar oranına göre bölüşülür — kişi
+  // başına ayrı ayrı çekilseydi (ilk işlenen havuzu biraz küçültüp sıradakinin yüzdesini kaydırırdı) oranı bozardı.
+  // Yorumdaki ve yedek değerdeki eski %10 (gerçek oran %3) de düzeltildi.
   function runWorldBoss(battleTime) {
     return atomic(() => {
       const players = db.q.playersAll.all();
@@ -17,11 +22,15 @@ export function olusturBoss(w) {
         E.mutatePlayer(a, gs => { const d = Math.max(0, Number(gs.calculateUserWorldBossPower().calculatedDamage) || 0); dmg.set(a, d); total += d; });
       }
       const T = E.treasury;
-      const budget = Math.floor(T.getPool('worldBoss') * (E.GAME_CONFIG.WORLD_BOSS?.WEEKLY_DISTRIBUTION_RATE ?? 0.10));
+      const want = total > 0 ? Math.floor(T.getPool('worldBoss') * (E.GAME_CONFIG.WORLD_BOSS?.WEEKLY_DISTRIBUTION_RATE ?? 0.03)) : 0;
+      const budget = want > 0 ? (T.withdraw('worldBoss', want).granted || 0) : 0;
+      // Kesirli bölüşümde (floor) kalan ufak artık son savaşçıya eklenir — kasadan çekilen (budget) ile oyunculara
+      // dağıtılan (paid) tam eşit olsun diye (ne bir oyuncuya gitmeyen artık kalır, ne kasadan fazladan çıkar).
       let paid = 0;
-      for (const a of fighters) {
+      fighters.forEach((a, idx) => {
         const d = dmg.get(a) || 0;
-        const reward = total > 0 ? Math.floor(budget * d / total) : 0;
+        const isLast = idx === fighters.length - 1;
+        const reward = isLast ? Math.max(0, budget - paid) : Math.floor(budget * d / total);
         paid += reward;
         E.mutatePlayer(a, gs => {
           const b = gs.getWorldBossInfo();
@@ -34,13 +43,7 @@ export function olusturBoss(w) {
           if (gs.state.worldBoss) gs.state.worldBoss = b;
           gs.pushNotice(`🌋 Dünya Bossu savaşı bitti: krallık toplam ${fmt(total)} hasar vurdu (${fighters.length} ordu). Senin payın %${total > 0 ? (100 * d / total).toFixed(2).replace('.', ',') : '0'} → ${fmt(reward)} ADA. Kışla → World Boss'tan topla.`, 'success');
         });
-      }
-      if (paid > 0) {
-        T.state.pools.worldBoss -= paid;
-        T.state.outflow.worldBoss = (Number(T.state.outflow.worldBoss) || 0) + paid;
-        T.state.lifetimeWithdrawn = (Number(T.state.lifetimeWithdrawn) || 0) + paid;
-        T.save();
-      }
+      });
       db.kvSet('world:bossLastBattle', battleTime);
       const info = { at: battleTime, fighters: fighters.length, totalDamage: total, budget, paid };
       setEcon({ lastBoss: info });

@@ -3,6 +3,7 @@ import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
 import { treasury } from '../js/treasury.js';
 import { GAME_CONFIG } from '../js/config.js';
+import { isoWeekKey } from '../js/gameState/ozet.js';
 
 console.log('--- 🧪 AMM SERBEST PİYASA, ALET ONARIMI UYARISI VE GÜN SONU BUYBACK TESTİ ---');
 
@@ -59,8 +60,10 @@ assert.equal(repairRes.missingAda, true, 'ADA eksikliği bayrağı true olmalı'
 assert.equal(repairRes.message, '⚠️ Hesapta yeteri kadar ASTRA yok!', 'Uyarı mesajı doğru olmalı');
 console.log('✅ Alet onarımında "Tamir edilecek alet yok" yerine "⚠️ Hesapta yeteri kadar ASTRA yok!" uyarısı verildi.');
 
-// 3. TEST: OTONOM GÜN SONU BUYBACK ÇALIŞMASI
-console.log('\n[3] Gün Sonu Otonom AMM Buyback & Yakım Testi:');
+// 3. TEST: OTONOM HAFTALIK BUYBACK ÇALIŞMASI
+// v2 düzeltmesi (E-planı S2, 8 Ekim 2026): motor artık GÜNDE değil HAFTADA bir çalışır (eskiden günde %15 kasayı
+// kararın ~35 katı hızında eritiyordu); işaret ISO hafta anahtarıdır (lastAmmBuybackWeek), takvim günü değil.
+console.log('\n[3] Haftalık Otonom AMM Buyback & Yakım Testi:');
 // Satış sonrası buğday havuzunun fiyatı genesis fiyatının altına inmiş durumda
 const wheatPrice = ammMarket.getPrice('wheat');
 console.log(`Buyback öncesi Buğday Fiyatı: ${wheatPrice.toFixed(4)} ASTRA`);
@@ -71,17 +74,17 @@ console.log('Buyback Analizi:', {
   assetsNeedingSupport: buybackAnalysis.assets.filter(a => a.allocatedBudget > 0).map(a => `${a.name}: ${a.allocatedBudget} ASTRA`)
 });
 
-// Gün sonu tetikleyicisi
-gs.state.lastAmmBuybackDate = '2026-09-17'; // Dünün tarihi
-const dailyRes = gs.checkDailyAutonomousBuyback('2026-09-18');
-console.log('Gün Sonu Döngüsü Tetiklendi:', dailyRes);
-assert.equal(dailyRes.executed, true, 'Gün geçişinde otonom buyback çalışmalı');
-if (dailyRes.result && dailyRes.result.executed) {
-  console.log('Yakılan Varlıklar:', dailyRes.result.reportItems);
+// Hafta geçişi tetikleyicisi: işaret 7 gün önceki (kesin başka ISO hafta) bir anda bırakılır
+gs.state.lastAmmBuybackWeek = isoWeekKey(new Date('2026-09-11').getTime());
+const weeklyRes = gs.checkWeeklyAutonomousBuyback('2026-09-18');
+console.log('Haftalık Döngü Tetiklendi:', weeklyRes);
+assert.equal(weeklyRes.executed, true, 'Hafta geçişinde otonom buyback çalışmalı');
+if (weeklyRes.result && weeklyRes.result.executed) {
+  console.log('Yakılan Varlıklar:', weeklyRes.result.reportItems);
 }
 
-// Aynı gün tekrar çağrıldığında çalışmamalı
-const secondCall = gs.checkDailyAutonomousBuyback('2026-09-18');
-assert.equal(secondCall.executed, false, 'Aynı gün içinde tekrar çalışmamalı');
+// Aynı hafta tekrar çağrıldığında çalışmamalı
+const secondCall = gs.checkWeeklyAutonomousBuyback('2026-09-18');
+assert.equal(secondCall.executed, false, 'Aynı hafta içinde tekrar çalışmamalı');
 
-console.log('✅ Gün sonu otonom buyback motoru testi başarıyla tamamlandı.');
+console.log('✅ Haftalık otonom buyback motoru testi başarıyla tamamlandı.');

@@ -575,7 +575,7 @@ export class AMMMarketEngine {
   }
 
   // ── Otonom Buyback & Burn Yürütücü (Döngü Başına) ───────────────────
-  executeAutonomousBuyback(cycleBudgetCap = 0.10) {
+  executeAutonomousBuyback(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
     const analysis = this.getBuybackAnalysis(cycleBudgetCap);
     if (!analysis.totalFundToSpend || analysis.totalFundToSpend <= 1) {
       return {

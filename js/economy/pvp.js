@@ -8,12 +8,17 @@
 //  • Maç askerin canını azaltmaz: iki taraf da tam canla dövüşür (kilitlenen askerin gücü).
 // ============================================================================
 
+import { GAME_CONFIG } from '../config.js';
+
 export const PVP_RULES = {
   modes: {
     '1v1': { size: 1, points: 1 },
     '3v3': { size: 3, points: 3 }
   },
-  weeklyPoolShare: 0.30,                               // her hafta Kolezyum kasasının %30'u ilk 10'a
+  // v2 düzeltmesi (E-planı S1, 8 Ekim 2026): docs/v2/KARARLAR_KESIN.md kararı haftada %2'dir; burada gömülü %30 vardı
+  // (kasayı aylar yerine haftalar içinde eritiyordu). Tek kaynak GAME_CONFIG.TREASURY_WEEKLY_PAYOUT.arena (ikinci bir
+  // sabit elle senkron tutulmasın diye).
+  weeklyPoolShare: GAME_CONFIG.TREASURY_WEEKLY_PAYOUT?.arena ?? 0.02,
   topWeights: [25, 18, 14, 10, 8, 7, 6, 5, 4, 3],      // sıraya göre pay (toplam 100)
   keepMatches: 10                                      // oyuncu başına saklanan son maç sayısı
 };

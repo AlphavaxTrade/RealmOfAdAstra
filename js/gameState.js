@@ -129,11 +129,12 @@ export class GameStateManager {
       combatPresets: this.mergeCombatPresets(parsed.combatPresets),
       dungeonMonsterCurrentHp: parsed.dungeonMonsterCurrentHp || {},
       lotteryTickets: parsed.lotteryTickets || 0,
-      // v1.25: Piyango kasası artık her yüklemede 20M'a tamamlanmıyor (sonsuz para açığıydı).
+      // v1.25: Piyango kasası artık her yüklemede tohuma tamamlanmıyor (sonsuz para açığıydı).
       // Kayıtlı bakiye neyse o; yalnızca hiç kayıt yoksa tohum ile başlar.
+      // v2 düzeltmesi (E-planı S10, 8 Ekim 2026): yedek değer eskiden 20M'di (R3'te 12M'ye indi); tek kaynak SEED_POOL_ADA.
       lotteryPool: (parsed.lotteryPool != null && isFinite(parsed.lotteryPool) && parsed.lotteryPool >= 0)
         ? parsed.lotteryPool
-        : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 20000000),
+        : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 12000000),
       lotteryPendingPayout: Number(parsed.lotteryPendingPayout) || 0,
       lastLotteryDrawEpoch: parsed.lastLotteryDrawEpoch ?? null,
       lastLotteryResult: parsed.lastLotteryResult || null,

@@ -2321,7 +2321,7 @@ function openTownZoneModal(zoneId, zoneName) {
     }
 
     if (marketActiveTab === 'buyback_vault') {
-      const analysis = ammMarket.getBuybackAnalysis(0.10);
+      const analysis = ammMarket.getBuybackAnalysis();
       const lastReport = ammMarket.getLastBuybackReport();
 
       html += `
@@ -2332,13 +2332,13 @@ function openTownZoneModal(zoneId, zoneName) {
                 <span>🛡️</span> <span>AMM Hazine Rezervi & Otonom Buyback-Burn Motoru</span>
               </div>
               <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; max-width: 580px; line-height: 1.4;">
-                Oyundaki <strong>tüm ASTRA harcamalarının %18'i</strong> doğrudan bu kasaya akar. Varlıklar başlangıç fiyatından düştükçe üstel katsayıyla (döngü başına %10 tavan) piyasadan malzeme satın alınıp kalıcı yakılır.
+                Oyundaki hazineye giren ASTRA'nın <strong>%${Math.round((GAME_CONFIG.TREASURY_ALLOCATION?.ammBuyback || 0) * 100)}'i</strong> (toplam harcamanın ~%${Math.round((GAME_CONFIG.TOKEN_REWARD_POOL_RATE || 0) * (GAME_CONFIG.TREASURY_ALLOCATION?.ammBuyback || 0) * 1000) / 10}'i) bu kasaya akar. Varlıklar başlangıç fiyatından düştükçe üstel katsayıyla (haftada kasanın %${Math.round((GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03) * 100)}'ü tavan) piyasadan malzeme satın alınıp kalıcı yakılır.
               </div>
             </div>
             <div style="text-align: right; background: rgba(30,41,59,0.6); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2);">
               <div style="font-size: 0.72rem; color: #94a3b8;">AMM Kasası Mevcut Bakiye:</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #facc15;">${analysis.availableTreasury.toLocaleString('tr-TR')} ASTRA</div>
-              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">Döngü Başına Müdahale Tavanı (%10): <strong>${analysis.maxCycleFund.toLocaleString('tr-TR')} ASTRA</strong></div>
+              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">Haftalık Müdahale Tavanı (%${Math.round((GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03) * 100)}): <strong>${analysis.maxCycleFund.toLocaleString('tr-TR')} ASTRA</strong></div>
             </div>
           </div>
         </div>
@@ -3293,7 +3293,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
       totalDeposited: 0,
       totalWithdrawn: 0,
       burnedResources: { wood: 0, iron: 0, wheat: 0 },
-      lottery: { lotteryPool: 20000000, winnerMultiplier: 2.0, amortiShare: 400000, rolloverShare: 19600000 },
+      lottery: { lotteryPool: 12000000, winnerMultiplier: 2.0, amortiShare: 240000, rolloverShare: 11760000 },
       pools: []
     };
 
@@ -7327,7 +7327,7 @@ function initAppEvents() {
 
     // 🛡️ AMM Hazine Otonom Buyback & Yakım Çalıştır
     if (e.target.closest('#btn-run-amm-buyback')) {
-      const res = gameState.executeAmmTreasuryBuyback(0.10);
+      const res = gameState.executeAmmTreasuryBuyback();
       if (res.success) {
         sound.playLevelUp();
         showToast(res.message, 'success');
@@ -8057,7 +8057,7 @@ function initDevPanelEvents() {
           '2. Haftalık kaynak çıkarma limitlerini tam kapasiteye (%100) sıfırlar.\n' +
           '3. AMM DEX Pazar Havuzlarını tam 40M ASTRA ilk tohum rezervlerine (14M Buğday, 10M Odun, 10M Demir, 3M Parça, 2M Kutu, 1M Anahtar) sıfırlar.\n' +
           '4. Krallık Hazinesi Kasalarını tam 40M ASTRA ilk tohum rezervlerine (14M Zindan, 8M Arena, 8M World Boss, 6M Buyback, 4M Karnaval) sıfırlar.\n' +
-          '5. Krallık Piyango Havuzunu tam 20M ASTRA tohumuna sıfırlar.\n\n' +
+          '5. Krallık Piyango Havuzunu tam 12M ASTRA tohumuna sıfırlar.\n\n' +
           'Toplam 100 Milyon ASTRA ilk dağıtım anındaki havuz oranlarına eksiksiz sıfırlanacaktır.\n\n' +
           'Devam etmek istiyor musun?'
         );
@@ -8489,7 +8489,7 @@ function uiGameLoop(currentTime) {
     gameState.processSoldierPassiveHealing(slowDelta);
     if (gameState.processVillage) gameState.processVillage(slowDelta);
     gameState.tickUpgradeCostBot(slowDelta);
-    gameState.checkDailyAutonomousBuyback();
+    gameState.checkWeeklyAutonomousBuyback();
     globalPool.simulateGlobalActivity(slowDelta);
     refreshBarracksLiveUI(slowDelta);
     refreshLiveUpgradeCostUI(slowDelta);

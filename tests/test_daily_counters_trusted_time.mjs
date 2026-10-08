@@ -22,16 +22,16 @@ gs.state.stamina = 1000;
 globalPool.serverTimeOffset = 0;
 for (let i = 0; i < 5; i++) gs.beginDungeonEntry(1, false, { soldierCount: 1 });
 assert.equal(gs.getDungeonDayStatus().freeLeft, 0);
-gs.checkDailyAutonomousBuyback(); // bugünün işaretini koy
+gs.checkWeeklyAutonomousBuyback(); // bu haftanın işaretini koy
 
 // 1) Oyuncu bilgisayar saatini 2 gün ileri alır; sunucu saati farkı düzeltir → gün değişmez
 try {
   Date.now = () => realNow() + 2 * DAY;
   globalPool.serverTimeOffset = -2 * DAY;
   assert.equal(gs.getDungeonDayStatus().freeLeft, 0, 'Saat ileri alınınca günlük haklar yenilenmemeli');
-  const d = gs.checkDailyAutonomousBuyback();
-  assert.notEqual(d.executed, true, 'Saat ileri alınınca günlük geri alım tekrar çalışmamalı');
-  ok('Bilgisayar saatini ileri almak günlük hakları ve geri alımı yenilemez');
+  const d = gs.checkWeeklyAutonomousBuyback();
+  assert.notEqual(d.executed, true, 'Saat ileri alınınca haftalık geri alım tekrar çalışmamalı');
+  ok('Bilgisayar saatini ileri almak günlük hakları ve haftalık geri alımı yenilemez');
 } finally {
   Date.now = realNow;
   globalPool.serverTimeOffset = 0;

@@ -292,6 +292,15 @@ export class GlobalResourceManager {
     return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, lastTermostat: applied };
   }
 
+  // v2 düzeltmesi (E-planı S8, 8 Ekim 2026): adalet tavanı — dünyadaki en düşük aktif ağırlığın FAIRNESS_CAP katı.
+  // server/world/uretim.js refreshUretim() saatte bir yazar; js/gameState/ekonomi.js getUretimWeight() uygular.
+  setFairnessCapWeight(v) {
+    if (!this.state) return;
+    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+    this.state.uretim.fairnessCapWeight = Math.max(0, Number(v) || 0);
+    this.saveState();
+  }
+
   recordPriceRatios(ratios, at = this.getTrustedTime()) {
     if (!this.state) return;
     if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);

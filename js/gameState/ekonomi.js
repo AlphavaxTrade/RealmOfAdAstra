@@ -199,13 +199,27 @@ export const ekonomiYontemleri = {
     return Math.max(U.ACTIVITY_MIN ?? 0.25, Math.min(1, days / 7));
   },
 
-  getUretimWeight() {
+  // Ham ağırlık (tavansız). Dünya kapasitesi (server/world/uretim.js refreshUretim → sumWeight) bundan hesaplanır,
+  // ki adalet tavanı pastayı küçültmesin — yalnız KİŞİNİN kendi hakkı tavanlanır (bkz. getUretimWeight).
+  _getUretimWeightRaw() {
     const U = GAME_CONFIG.URETIM_HAKKI || {};
     const lvl = Math.max(1, Number(this.state.level) || 1);
     const levelFactor = Math.min(U.LEVEL_WEIGHT_MAX ?? 2, 1 + (U.LEVEL_WEIGHT_PER_LEVEL ?? 0.025) * lvl);
     const tier = this.getContributionTier();
     const activity = this.getUretimActivity();
     return { weight: round3(levelFactor * tier.mult * activity), levelFactor: round3(levelFactor), tier, activity: round3(activity) };
+  },
+
+  // v2 düzeltmesi (E-planı S8, 8 Ekim 2026): docs/v2/KARARLAR_KESIN.md "adalet tavanı: en yüksek ağırlık en düşüğün
+  // 3 katını geçmez." Eskiden FAIRNESS_CAP yalnız kişinin KENDİ taşan kullanımını (getUretimHakki'deki "extra")
+  // sınırlıyordu, ağırlıkların birbirine oranını değil. Sunucu her saat en düşük aktif oyuncunun ham ağırlığını
+  // bulup `globalPool.state.uretim.fairnessCapWeight`'e yazar (server/world/uretim.js); burada o tavan uygulanır.
+  // Tarayıcıda tek oyuncu modunda (sunucu hiç yazmadıysa) tavan yoktur, davranış değişmez.
+  getUretimWeight() {
+    const raw = this._getUretimWeightRaw();
+    const cap = Number(globalPool && globalPool.state && globalPool.state.uretim && globalPool.state.uretim.fairnessCapWeight);
+    if (!(isFinite(cap) && cap > 0) || raw.weight <= cap) return raw;
+    return { ...raw, weight: round3(cap), weightCapped: true };
   },
 
   // Bu hafta bu kaynak için hakkın: haftalık, bugüne kadar açılan, kullanılan, alınabilir (dünya tavanıyla)

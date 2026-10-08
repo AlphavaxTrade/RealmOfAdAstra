@@ -15,7 +15,7 @@ import { applyRates } from '../economy/rates.js';
 const SESSION_KEY = 'adastra_session_v1';
 // Zamanla ilerleyen işler: tarayıcıda yalnız görüntü için çalışır, sunucuya gönderilmez (sunucu kendisi işler)
 const LOCAL_ONLY = ['runTavernaAutomationCycle', 'updateExpeditions', 'regenerateStamina', 'processSoldierPassiveHealing',
-  'tickUpgradeCostBot', 'updateBotPauseState', 'checkDailyAutonomousBuyback', 'processEconomyTick', 'processScheduledLottery',
+  'tickUpgradeCostBot', 'updateBotPauseState', 'checkWeeklyAutonomousBuyback', 'processEconomyTick', 'processScheduledLottery',
   'processOfflineProgress', 'simulateTimePassage', 'checkOnboardingProgress', 'checkAndProcessBotAutoRenew'];
 // Yalnız tarayıcıya ait arayüz tercihleri: sunucu kaydı bunları ezmez
 const CLIENT_KEYS = ['guideDismissed'];

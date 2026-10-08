@@ -90,8 +90,8 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       if (chain && cfg.ratesContract && now - (last.rates || 0) >= 300000) { last.rates = now; await syncRates().catch(err => log.warn('Oran sözleşmesi:', err.message)); }
       if (chain && now - (last.partner || 0) >= 300000) { last.partner = now; await scanPartnerIncome().catch(err => log.warn('Ortak gelir:', err.message)); }
       if (chain && now - (last.hotWallet || 0) >= DAY) { last.hotWallet = now; await checkHotWallet().catch(err => log.warn('Oyun cüzdanı:', err.message)); }
-      // Günlük pazar geri alımı (dünya işi; sistem hesabıyla)
-      E.withPlayer(SYSTEM, gs => gs.checkDailyAutonomousBuyback());
+      // Haftalık pazar geri alımı (dünya işi; sistem hesabıyla); ISO hafta anahtarı sayesinde günde çok kez çağrılsa da haftada bir çalışır
+      E.withPlayer(SYSTEM, gs => gs.checkWeeklyAutonomousBuyback());
     } catch (err) {
       nabiz.hataSayisi++; nabiz.sonHata = String(err?.message || err).slice(0, 300); nabiz.sonHataZamani = clock();
       throw err;

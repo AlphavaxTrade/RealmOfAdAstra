@@ -25,7 +25,10 @@ export const WEEKLY_RULES = {
   defenseBurnWeekly: 0.01,
   faucetMonthlyMcapShare: 0.01,
   faucetMaxUsdPerPlayer: 100,
-  faucetMaxPoolShare: 0.8,
+  // v2 düzeltmesi (E-planı S3, 8 Ekim 2026): docs/v2/KARARLAR_KESIN.md kararı "kasanın ≤%1,5'i/hafta"dır (js/config.js
+  // FREE_PLAYER_POOL.WEEKLY_POOL_CAP ile aynı değer, oradaki alan şu an hiç okunmuyor); burada gömülü %80 vardı —
+  // görev kasasını tek haftada boşaltabilecek bir sızıntıydı. Kalıcı çözüm (RealmRates'ten tek kaynak): Faz 4.
+  faucetMaxPoolShare: 0.015,
   weeksPerMonth: 4.33,
   multExp: 0.6,
   multStep: 0.05,

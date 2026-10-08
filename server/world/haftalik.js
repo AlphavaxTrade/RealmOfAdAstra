@@ -101,13 +101,22 @@ export function olusturHaftalik(w) {
       const fracs = free.map(x => capFraction(x.weight, FP));
       const f = faucetWeekly({ mcapUsd: market?.mcapUsd || 0, priceUsd: market?.priceUsd || 0, freePlayers: fracs.reduce((s, v) => s + v, 0), questPool: T.getPool('quest') });
       const capFull = market?.priceUsd > 0 ? WEEKLY_RULES.faucetMaxUsdPerPlayer / WEEKLY_RULES.weeksPerMonth / market.priceUsd : 0;
-      const shares = f.totalAda > 0 ? distribute(f.totalAda, free.map(x => x.weight), fracs.map(v => v * capFull)) : free.map(() => 0);
-      const paidTotal = shares.reduce((s, v) => s + v, 0);
-      if (paidTotal > 0) {
-        T.state.pools.quest -= paidTotal;
-        T.state.outflow.quest = (Number(T.state.outflow.quest) || 0) + paidTotal;
-        T.state.lifetimeWithdrawn = (Number(T.state.lifetimeWithdrawn) || 0) + paidTotal;
-      }
+      // v2 düzeltmesi (E-planı S6, 8 Ekim 2026): bu haftanın TOPLAM bütçesi (zaten f.totalAda ile kasanın en çok
+      // %1,5'i) tek bir T.withdraw() çağrısından geçer (%2 tek çekim tavanı + kasa sağlığı); tavan/sağlık bütçeyi
+      // küçültürse herkesin payı AYNI oranda küçülür, istenen (wanted[i]) değil gerçekten verilen kullanılır. Kesirli
+      // bölüşümde kalan ufak artık son hak sahibine eklenir: kasadan çıkan (grantedTotal) ile dağıtılan (paidTotal)
+      // tam eşit olsun diye.
+      const wanted = f.totalAda > 0 ? distribute(f.totalAda, free.map(x => x.weight), fracs.map(v => v * capFull)) : free.map(() => 0);
+      const wantedTotal = wanted.reduce((s, v) => s + v, 0);
+      const grantedTotal = wantedTotal > 0 ? (T.withdraw('quest', wantedTotal).granted || 0) : 0;
+      let paidTotal = 0;
+      const lastIdx = wanted.reduce((last, v, i) => (v > 0 ? i : last), -1);
+      const shares = wanted.map((amt, i) => {
+        if (!(amt > 0) || !(wantedTotal > 0)) return 0;
+        const v = i === lastIdx ? Math.max(0, grantedTotal - paidTotal) : Math.floor(amt * grantedTotal / wantedTotal * 100) / 100;
+        paidTotal += v;
+        return v;
+      });
       free.forEach((x, i) => {
         const amt = shares[i];
         E.mutatePlayer(x.id, gs => {

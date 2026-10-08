@@ -6,6 +6,7 @@ import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { removeJSON } from '../storage.js';
 import { zeroRes } from './ortak.js';
+import { isoWeekKey } from './ozet.js';
 
 export const gelistiriciYontemleri = {
   // =========================================================================
@@ -120,14 +121,15 @@ export const gelistiriciYontemleri = {
     this._lastFrameAt = now;
     this.state.lastSeenAt = now;
 
-    // Günlük hazine geri alımı: geçen her tam gün için bir kez (en fazla 7)
-    if (hours >= 24) {
-      const daysPassed = Math.floor(hours / 24);
-      for (let d = 0; d < Math.min(daysPassed, 7); d++) {
-        this.executeAmmTreasuryBuyback(0.15);
+    // Haftalık hazine geri alımı: geçen her tam hafta için bir kez (en fazla 4; kararlı oran GAME_CONFIG.AMM_BUYBACK.WEEKLY_RATE)
+    // v2 düzeltmesi (E-planı S2): eskiden GÜNDE bir kez %15 ile çalışıyordu (karardan ~35 kat daha hızlı kasa eritiyordu).
+    if (hours >= 24 * 7) {
+      const weeksPassed = Math.floor(hours / (24 * 7));
+      for (let d = 0; d < Math.min(weeksPassed, 4); d++) {
+        this.executeAmmTreasuryBuyback();
       }
-      this.state.lastAmmBuybackDate = new Date(this._calendarNow()).toISOString().slice(0, 10);
     }
+    this.state.lastAmmBuybackWeek = isoWeekKey(this._calendarNow());
 
     this.saveState();
     if (typeof globalPool !== 'undefined' && globalPool && typeof globalPool.saveState === 'function') globalPool.saveState();
@@ -247,7 +249,7 @@ export const gelistiriciYontemleri = {
   // 2. Haftalık kaynak çıkartma limitlerini tam kapasiteye (%100) sıfırlar.
   // 3. AMM DEX Pazar Havuzlarını tam 40M ASTRA ilk tohum rezervlerine sıfırlar.
   // 4. Krallık Hazinesi Kasalarını (Zindan 14M, Arena 8M, World Boss 8M, AMM Buyback 6M, Karnaval 4M) tam 40M ASTRA ilk tohum rezervlerine sıfırlar.
-  // 5. Krallık Piyango Havuzunu tam 20M ASTRA tohumuna sıfırlar.
+  // 5. Krallık Piyango Havuzunu tam 12M ASTRA tohumuna sıfırlar.
   // 6. World Boss'u tam 1.000.000 Can ve 8M ASTRA ödül havuzuyla ilk haline sıfırlar.
   // 7. Kolezyum Gladyatör Arenasını, ELO derecesini, günlük maç haklarını ve liderlik tablosunu sıfırlar.
   // 8. Zindan katlarını ve canavar canlarını Seviye 1'e ve %100 tam cana sıfırlar.
@@ -307,7 +309,7 @@ export const gelistiriciYontemleri = {
       armoryInventory: [],
       dungeonMonsterCurrentHp: {},
       lotteryTickets: 0,
-      lotteryPool: (GAME_CONFIG.CARNIVAL && GAME_CONFIG.CARNIVAL.LOTTERY && GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA) || 20000000,
+      lotteryPool: (GAME_CONFIG.CARNIVAL && GAME_CONFIG.CARNIVAL.LOTTERY && GAME_CONFIG.CARNIVAL.LOTTERY.SEED_POOL_ADA) || 12000000,
       lotteryAmortiPool: 0,
       lotteryPendingPayout: 0,
       lastLotteryDrawEpoch: (globalPool && globalPool.state && globalPool.state.epochId) || 1,

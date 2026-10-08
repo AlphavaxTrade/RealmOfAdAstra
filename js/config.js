@@ -1,4 +1,13 @@
 // Realm of AdAstra - Karakter Seviyesi, Kışla Ordusu, Taverna Güçlendirmeleri & AMM Konfigürasyonu
+
+// Hedef rezerv yardımcısı (E-planı S5, 8 Ekim 2026): bir kasa haftada r oranında (bakiyesinin r'si) ödeme yaparsa,
+// 52 hafta boyunca ödenen toplam pay = tohum × (1 − (1−r)^52). docs/v2/KARARLAR_KESIN.md "hedef rezerv = 12 aylık
+// ödeme" kararını bu şekilde sayıya bağlar. Eskiden hedef = tohumun KENDİSİYDİ; bu, taze bir kasada sağlık (bakiye/
+// hedef) tam 1,0 oluyordu ve İLK harcamadan sonra bile hemen 1'in altına düşüp ödülleri küçültmeye başlıyordu
+// (treasury.js withdraw: health<1 → granted *= health). Şimdi hedef tohumdan küçük: taze kasada sağlık > 1 (gerçek
+// başlangıç payı), küçülme yalnız kasa GERÇEKTEN bu yıllık payın altına inince başlar.
+const annualPayout = (seed, weeklyRate) => Math.round(seed * (1 - Math.pow(1 - weeklyRate, 52)));
+
 export const GAME_CONFIG = {
   GAME_TITLE: 'Realm of AdAstra',
   GAME_VERSION: '2.0.0-dev',
@@ -655,10 +664,23 @@ export const GAME_CONFIG = {
   },
   // v2 (R3): tohumlar 200 M ASTRA'dan (pazar 100 M ayrı: AMM_SEED_ASTRA)
   TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 7000000, quest: 8000000, carnival: 3000000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
-  // Hedef rezerv = ~12 aylık ödeme; sağlık = bakiye / hedef
-  TREASURY_TARGET_RESERVE: { dungeon: 10000000, ammBuyback: 7000000, worldBoss: 6000000, arena: 4000000, carnival: 3000000, quest: 8000000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
-  // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3
-  TREASURY_WEEKLY_PAYOUT: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025 },
+  // Hedef rezerv = ~12 aylık ödeme (annualPayout, yukarıda); sağlık = bakiye / hedef. Haftalık oranla sürekli ödeme
+  // yapan 5 kasa (dungeon/arena/worldBoss/ammBuyback/quest) formülle hesaplanır; sürekli haftalık oranı olmayan
+  // (karnaval: çevirme başına kendini finanse eder; fatih: yalnız 18. boss ilk zaferinde; konsey/universe: kilitli/
+  // proje bazlı) kasalarda hedef = tohum (değişmedi).
+  TREASURY_TARGET_RESERVE: {
+    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(7000000, 0.03), worldBoss: annualPayout(6000000, 0.03),
+    arena: annualPayout(4000000, 0.02), quest: annualPayout(8000000, 0.015),
+    carnival: 3000000, fatih: 20000000, konsey: 10000000, universe: 20000000
+  },
+  // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3. Her alanın gerçek kullanım yeri:
+  //  • dungeon: bilgi amaçlı (gerçek tavan DUNGEON.DAILY_BUDGET_RATE × 7, aynı sayı: 0,0036×7≈0,025)
+  //  • arena: js/economy/pvp.js PVP_RULES.weeklyPoolShare BURADAN okur (E-planı S1/S4 düzeltmesi)
+  //  • worldBoss: bilgi amaçlı (gerçek tavan WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE, aynı sayı)
+  //  • quest: ücretsiz oyuncu havuzunun gerçek tavanı FREE_PLAYER_POOL.WEEKLY_POOL_CAP'tir (aynı sayı, 0,015);
+  //    karnavalın (çark/piyango) burada satırı yok çünkü haftalık toplu ödeme değil, çevirme başına kendi
+  //    kendini finanse eder (R3 §Çark) — buraya tahmini bir sayı eklemek yanıltıcı olurdu.
+  TREASURY_WEEKLY_PAYOUT: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.015 },
   // Kilitli kasalar: hiçbir ödül çekemez (universe yalnız Universe açılışında, fatih yalnız 18. boss)
   TREASURY_LOCKED_POOLS: ['universe'],
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
