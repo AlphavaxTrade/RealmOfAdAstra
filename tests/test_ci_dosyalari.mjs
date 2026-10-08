@@ -126,7 +126,11 @@ const komutlar = wf => Object.values(wf.jobs).flatMap(j => adimlar(j).map(s => s
   const kur = oku('scripts/hook-kur.mjs');
   assert.ok(/core\.hooksPath/.test(kur) && /\.githooks/.test(kur));
   assert.ok(pkg.scripts['hook-kur'], 'npm run hook-kur');
-  ok('pre-commit kancası, hook-kur betiği ve hizli.json (var olan testler) tutarlı');
+  const itme = oku('.githooks/pre-push');
+  assert.ok(itme.startsWith('#!/bin/sh') && itme.includes('scripts/pre-push.mjs'), 'pre-push kancası betiği çağırır');
+  assert.ok(var_('scripts/pre-push.mjs'));
+  assert.ok(oku('scripts/hook-kur.mjs').includes("'pre-push'"), 'hook-kur her iki kancayı da hazırlar');
+  ok('pre-commit ve pre-push kancaları, hook-kur betiği ve hizli.json (var olan testler) tutarlı');
 }
 
 // 8) Dal koruma belgesi: komutlar JSON olarak ayrıştırılabilir ve zorunlu denetimler CI iş adlarıyla eşleşir

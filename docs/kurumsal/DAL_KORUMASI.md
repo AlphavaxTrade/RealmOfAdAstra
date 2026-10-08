@@ -7,6 +7,15 @@ GitHub ayarını değiştirmek benim yetkimde değil (ve geri alması zor bir d�
 - `gh` (GitHub CLI) bu makinede `C:\Users\AlphAvax\tools\gh\bin\gh.exe` konumunda ve `blockchainary` hesabıyla giriş yapılı (depoda yönetici yetkisi var).
 - Önce `.github/workflows/ci.yml` en az bir kez çalışmış olmalı (zorunlu denetim adları GitHub'a ilk koşuda tanıtılır).
 
+## Ücretsiz planda ne yapıyoruz? (kararınız: plan yükseltilmeyecek, depo açılmayacak)
+GitHub korumayı bu planda uygulatmadığı için iki **yerel** güvence kuruldu (`npm run hook-kur`, bir kez):
+- **pre-push kancası:** `main` dalına doğrudan itmeyi, `main`'i silmeyi ve zorla itmeyi bu bilgisayarda engeller. Kod `kurumsal` gibi bir dala itilir; birleştirmeyi bilerek yapmak için `REALM_MAIN_PUSH=1 git push origin <dal>:main`.
+- **pre-commit kancası:** gizli bilgi taraması + lint + hızlı testler her commit'te.
+- **CI:** her itmede çalışır ve kırmızı olursa görünür; `main`'e birleştirmeden önce yeşil olduğuna `gh run list -R AlphavaxTrade/RealmOfAdAstra` ile bakın.
+**Sınır (dürüst):** bunlar yalnız sizin bilgisayarınızdaki kancalardır. GitHub arayüzünden, başka bilgisayardan ya da `--no-verify` ile atlanabilir; sunucu tarafı bir engel değildir. Yanlışlıkla `main`'i bozmayı önler, kötü niyete karşı koruma değildir. Bu risk bilinerek kabul edildi.
+
+Aşağıdaki bölümler yalnız ileride plan yükseltilirse geçerlidir.
+
 ## 1. Kural gövdesi
 `kural.json` olarak kaydedin (zorunlu denetim adları CI iş adlarıyla birebir aynıdır; bunu `tests/test_ci_dosyalari.mjs` korur):
 

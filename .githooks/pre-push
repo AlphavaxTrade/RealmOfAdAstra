@@ -1,0 +1,3 @@
+#!/bin/sh
+# main dalına doğrudan itmeyi engeller (ayrıntı ve istisna: scripts/pre-push.mjs). Kurulum: npm run hook-kur
+exec node scripts/pre-push.mjs "$@"
