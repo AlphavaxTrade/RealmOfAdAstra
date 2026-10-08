@@ -17,6 +17,10 @@ import { createBarracksUI } from './ui/barracks.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
+// Arayüz v3 (yeni kabuk): ?arayuz=3 ile açılır, varsayılan değildir. Sınıf en başta konur ki ilk çizimde eski çubuk görünmesin.
+const V3_ARAYUZ = new URLSearchParams(location.search).get('arayuz') === '3';
+if (V3_ARAYUZ) document.documentElement.classList.add('v3');
+
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
 
@@ -391,6 +395,8 @@ function renderTopBar() {
   if (document.body.classList.contains('in-dungeon')) {
     updateDungeonLiveDropRatesUI();
   }
+
+  if (window.__v3) window.__v3.guncelle();   // v3 üst çubuğu eski çubuktaki değerleri okur
 }
 window.renderHUD = renderTopBar;
 
@@ -8757,6 +8763,26 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   initPlayerGuide();
   renderTopBar();
+  if (V3_ARAYUZ) {
+    const { kurV3Kabuk } = await import('./ui/v3/kabuk.js');
+    kurV3Kabuk({
+      gameState,
+      isAnyModalOpen, closeModal,
+      openPanel: ([simge, ad], html) => {
+        dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
+        dom.modalBody.innerHTML = html;
+        displayModal();
+      },
+      openDashboard: openDashboardModal, openWarehouse: openWarehouseModal, openInventory: openInventoryModal,
+      openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openBarracks: openBarracksModal,
+      enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
+      openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
+      openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
+      openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
+      duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || []
+    });
+    renderTopBar();
+  }
 
   // 🏛️ AMM DEX Anlık Fiyat Değişimlerini İzle ve Dinamik Maliyetleri Anında Yenile
   if (typeof ammMarket !== 'undefined' && ammMarket.subscribe) {
