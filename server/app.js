@@ -1,6 +1,8 @@
 // Realm of AdAstra sunucusu — HTTP uç noktaları (ek kütüphane yok; Node'un kendi http modülü)
 // ============================================================================
 //  GET  /api/health                      sunucu ayakta mı
+//  GET  /api/ready                       hazır mı (veritabanı + dünya zamanlayıcısı); değilse 503
+//  GET  /metrics                         Prometheus ölçümleri (yönetici şifresi ya da yalnız yerel adres)
 //  POST /api/account/register {email, password}   kayıt → {token}
 //  POST /api/account/login    {email, password}   giriş → {token}
 //  POST /api/account/verify   {token}             e-posta doğrulama (e-postadaki bağlantı)
@@ -28,6 +30,8 @@
 import http from 'node:http';
 import { createPromo } from './promo.js';
 import { tokenOzeti } from './oturum.js';
+import { createMetrik } from './metrik.js';
+import { istekBaglami } from './log.js';
 import { createStatic } from './statik.js';
 import genelRotalar from './rotalar/genel.js';
 import hesapRotalari from './rotalar/hesap.js';
@@ -56,11 +60,12 @@ const HTTP_ZAMAN = { headers: 20000, request: 30000, keepAlive: 150000, interval
 const ADMIN_CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
 const userError = msg => Object.assign(new Error(msg), { userError: true });
 
-const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
+const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, chain, cfg, clock = () => Date.now(), log = console }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
+  metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
   const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
@@ -168,6 +173,19 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...yonetimRotalari(ctx)
   };
   const serveStatic = createStatic({ cfg, secHeaders: SEC_HEADERS });
+
+  // Ölçüler (/metrics): veritabanı boyutu, bekleyen para işleri, dünya zamanlayıcısı nabzı. Hepsi ucuz tek sorgu; tarama başına bir kez çalışır.
+  const sayiSorgu = sql => () => db.raw.prepare(sql).get().n;
+  metrik.gauge('realm_db_dosya_bayt', 'Ana veritabanı dosyasının boyutu (WAL hariç)', () => db.raw.prepare('PRAGMA page_count').get().page_count * db.raw.prepare('PRAGMA page_size').get().page_size);
+  metrik.gauge('realm_odeme_bekleyen', 'Gönderilmeyi bekleyen çekim/ödeme sayısı', sayiSorgu("SELECT COUNT(*) AS n FROM payouts WHERE status = 'pending'"));
+  metrik.gauge('realm_kasa_islem_bekleyen', 'Oyun Kasası kuyruğunda bekleyen işlem sayısı', sayiSorgu("SELECT COUNT(*) AS n FROM kasa_ops WHERE status = 'pending'"));
+  if (typeof world.tickDurumu === 'function') {
+    const tur = f => () => { const t = world.tickDurumu(); return t ? f(t) : null; };
+    metrik.gauge('realm_zamanlayici_tur_toplam', 'Biten dünya zamanlayıcı turu sayısı', tur(t => t.tur), 'counter');
+    metrik.gauge('realm_zamanlayici_hata_toplam', 'Hatayla biten dünya zamanlayıcı turu sayısı', tur(t => t.hataSayisi), 'counter');
+    metrik.gauge('realm_zamanlayici_son_sure_saniye', 'Son dünya zamanlayıcı turunun süresi', tur(t => (t.sonSureMs ?? NaN) / 1000));
+    metrik.gauge('realm_zamanlayici_son_bitis_yas_saniye', 'Dünya zamanlayıcısının son turunu bitirmesinin üstünden geçen süre (takılırsa büyür)', tur(t => t.yasMs / 1000));
+  }
   // Yanlış yönetici şifresi denemeleri: IP başına 10 dakikada 10 → sonra bekletilir
   const adminFails = new Map();
   const adminBlocked = ip => { const f = adminFails.get(ip); return !!(f && clock() - f.t < 600000 && f.n >= 10); };
@@ -183,6 +201,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     const url = new URL(req.url, 'http://x');
     const key = `${req.method} ${url.pathname}`;
     const ip = clientIp(req);
+    // Metrik/günlük etiketi: bilinen rota anahtarı ya da sabit bir ad (ham adres ASLA etiket olmaz: sınırsız çeşit ve sızıntı olurdu)
+    req.rotaEtiketi = url.pathname.startsWith('/api/') ? (Object.hasOwn(routes, key) ? key : 'bilinmeyen')
+      : url.pathname === '/metrics' ? 'GET /metrics' : url.pathname.startsWith('/admin') ? 'admin-sayfa' : 'statik';
+    if (url.pathname === '/metrics') return metrikSun(req, res, ip);
     if (url.pathname === '/admin' || url.pathname === '/admin/') {
       const html = fs.readFileSync(new URL('./admin.html', import.meta.url), 'utf8');
       res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Content-Security-Policy': ADMIN_CSP });
@@ -217,9 +239,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       } else if (!PUBLIC_ROUTES.includes(key)) {
         me = auth(req);
         if (!me) return send(res, 401, { error: 'Giriş gerekli' });
+        req.oyuncu = me;
       }
       if (limited(me || ip)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
-      if (PUBLIC_ROUTES.includes(key) && key !== 'GET /api/health' && limited('pub:' + ip, cfg.publicRateLimitPerSec || 5)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
+      if (PUBLIC_ROUTES.includes(key) && key !== 'GET /api/health' && key !== 'GET /api/ready' && limited('pub:' + ip, cfg.publicRateLimitPerSec || 5)) return send(res, 429, { error: 'Çok hızlı istek; biraz yavaşla' });
       const out = await route(req, me);
       if (adminYazma) denetimIzi('admin', key, ip, Array.isArray(out) ? out[0] : 200);
       if (Array.isArray(out)) return send(res, out[0], out[1]);
@@ -228,17 +251,54 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
       if (adminYazma) denetimIzi('admin', key, ip, err && err.userError ? 400 : 500);
       if (err && err.userError) return send(res, 400, { error: err.message });
       log.error('İstek hatası', key, err);
-      return send(res, 500, { error: 'Sunucu hatası' });   // iç ayrıntı dışarı verilmez
+      return send(res, 500, { error: 'Sunucu hatası', istekKimligi: req.istekKimligi });   // iç ayrıntı dışarı verilmez; kimlik günlükte aranır
     }
   }
 
-  // Hiçbir istek sunucuyu düşüremez: beklenmeyen her hata burada yakalanır
+  // /metrics: yönetici şifresiyle ya da YALNIZ yerel adresten (aynı makinedeki Prometheus/Alloy). Önde vekil (Caddy) varsa
+  // her dış istek X-Forwarded-For taşır; bu yüzden vekil üzerinden gelen şifresiz istek yerel sayılmaz (internete açık kalmaz).
+  function metrikSun(req, res, ip) {
+    const vekilli = !!(req.headers['x-forwarded-for'] || req.headers.forwarded);
+    const yerel = !vekilli && /^(::1|127.0.0.1|::ffff:127.0.0.1)$/.test(req.socket.remoteAddress || '');
+    if (req.method !== 'GET') return send(res, 404, { error: 'Bulunamadı' });
+    if ((req.headers.authorization || '').startsWith('Bearer ')) {
+      if (adminBlocked(ip)) return send(res, 429, { error: 'Çok fazla hatalı deneme; 10 dakika sonra tekrar dene.' });
+      if (!isAdmin(req)) { adminFail(ip); denetimIzi('admin-yetkisiz', 'GET /metrics', ip); return send(res, 401, { error: 'Yetki gerekli' }); }
+    } else if (!yerel) return send(res, 401, { error: 'Yetki gerekli' });
+    res.writeHead(200, { ...SEC_HEADERS, 'Content-Type': 'text/plain; version=0.0.4; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(metrik.metin());
+  }
+
+  // Günlük işlevi eksik olabilir (eski testler yalnız log/warn/error veren sahte nesne geçer); yapılandırılmış günlük yoksa istek satırı yazılmaz
+  const yapisalGunluk = log !== console && typeof log.info === 'function' && typeof log.debug === 'function';
+  const SESSIZ_UCLAR = new Set(['GET /api/health', 'GET /api/ready', 'GET /metrics', 'statik']);   // sık yoklanan uçlar yalnız debug seviyesinde yazılır
+  const GECERLI_KIMLIK = /^[A-Za-z0-9._-]{8,64}$/;
+
+  // Hiçbir istek sunucuyu düşüremez: beklenmeyen her hata burada yakalanır.
+  // Her isteğe bir kimlik verilir (vekilin ürettiği geçerli kimlik korunur; yoksa/zararlıysa yenisi), yanıt başlığına ve o istekte yazılan
+  // her günlük satırına eklenir; bitince tek satır istek günlüğü ve metrik kaydı yazılır.
   async function handle(req, res) {
-    try { await handleInner(req, res); }
-    catch (err) {
-      log.error('Beklenmeyen istek hatası', err);
-      try { if (!res.headersSent) send(res, 400, { error: 'Geçersiz istek' }); else res.end(); } catch { /* bağlantı kapanmış */ }
-    }
+    const t0 = process.hrtime.bigint();
+    const gelen = req.headers['x-request-id'];
+    const id = typeof gelen === 'string' && GECERLI_KIMLIK.test(gelen) ? gelen : crypto.randomBytes(8).toString('hex');
+    req.istekKimligi = id;
+    res.setHeader('X-Request-Id', id);
+    res.once('close', () => {
+      const ms = Math.round(Number(process.hrtime.bigint() - t0) / 1e4) / 100;
+      const etiket = req.rotaEtiketi || 'bilinmeyen';
+      const durum = res.statusCode;
+      metrik.istek(etiket, durum, ms / 1000);
+      if (!yapisalGunluk) return;
+      const sev = durum >= 500 ? 'warn' : (SESSIZ_UCLAR.has(etiket) && durum < 400 ? 'debug' : 'info');
+      log[sev]('istek', { istek: id, yontem: req.method, rota: etiket, durum, ms, ...(req.oyuncu ? { oyuncu: req.oyuncu } : {}), ...(res.writableFinished ? {} : { kesildi: true }) });
+    });
+    await istekBaglami.run({ istek: id }, async () => {
+      try { await handleInner(req, res); }
+      catch (err) {
+        log.error('Beklenmeyen istek hatası', err);
+        try { if (!res.headersSent) send(res, 400, { error: 'Geçersiz istek' }); else res.end(); } catch { /* bağlantı kapanmış */ }
+      }
+    });
   }
 
   // Zaman aşımları açıkça ayarlı: başlığı/gövdeyi bitirmeyen yavaş istemci (slowloris) kesilir, aşırı büyük başlık 431 olur
@@ -247,5 +307,5 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     headersTimeout: zaman.headers, requestTimeout: zaman.request, keepAliveTimeout: zaman.keepAlive,
     connectionsCheckingInterval: zaman.interval, maxHeaderSize: zaman.maxHeader
   }, handle);
-  return { handle, server: sunucu };
+  return { handle, server: sunucu, metrik };
 }

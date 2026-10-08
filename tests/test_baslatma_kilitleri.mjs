@@ -84,7 +84,11 @@ try {
     assert.ok(/sunucusu çalışıyor/.test(r.cikti), r.cikti.slice(0, 400));
     assert.match(r.cikti, /DENEME MODU/);
     assert.match(r.cikti, /ADMIN_TOKEN 24 karakterden kısa/);
-    ok('deneme modu açılır; kısa ADMIN_TOKEN uyarılır');
+    // Günlük satırları makine okunur: her dolu satır geçerli JSON ve seviye/zaman taşır (kurumsal A7)
+    const kayitlar = r.cikti.split(String.fromCharCode(10)).filter(s => s.trim()).map(s => JSON.parse(s));
+    assert.ok(kayitlar.length >= 2 && kayitlar.every(k => k.t && ['debug', 'info', 'warn', 'error'].includes(k.sev) && typeof k.ileti === 'string'), 'her satır JSON kayıt');
+    assert.ok(kayitlar.some(k => k.sev === 'warn' && /ADMIN_TOKEN/.test(k.ileti)) && kayitlar.some(k => k.sev === 'info' && /sunucusu çalışıyor/.test(k.ileti)));
+    ok('deneme modu açılır; kısa ADMIN_TOKEN uyarılır; günlük satırları geçerli JSON');
   }
 
   // 7) Üretim doğrulaması (NODE_ENV=production): eksik/yanlış ayar başlamadan açık hata verir (kurumsal A6.2)

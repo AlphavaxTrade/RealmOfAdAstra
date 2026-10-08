@@ -1,18 +1,18 @@
 {
   "toplam": {
-    "lines": 89.3,
-    "branches": 67,
-    "functions": 85.3
+    "lines": 90.2,
+    "branches": 68.7,
+    "functions": 86.2
   },
   "dosyalar": {
     "server/index.js": {
-      "lines": 48.3
+      "lines": 50.8
     },
     "server/chain.js": {
       "lines": 76.2
     },
     "server/app.js": {
-      "lines": 91.1
+      "lines": 94
     },
     "server/payments.js": {
       "lines": 94
@@ -28,6 +28,24 @@
     },
     "server/accounts.js": {
       "lines": 97
+    },
+    "server/log.js": {
+      "lines": 98
+    },
+    "server/kapanis.js": {
+      "lines": 98
+    },
+    "server/metrik.js": {
+      "lines": 98
+    },
+    "server/uyari.js": {
+      "lines": 98
+    },
+    "server/olumcul.js": {
+      "lines": 98
+    },
+    "server/izleme.js": {
+      "lines": 98
     }
   }
 }

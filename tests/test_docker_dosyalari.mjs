@@ -59,6 +59,7 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   assert.ok(Number.parseInt(r.mem_limit, 10) <= 12, '16 GB makinede işletim sistemi için pay bırakır');
   assert.ok(r.ports.every(p => String(p).startsWith('127.0.0.1:')), 'oyun portu yalnız yerel adrese açık (önünde HTTPS katmanı)');
   assert.equal(r.restart, 'unless-stopped');
+  assert.ok(Number.parseInt(r.stop_grace_period, 10) >= 15, 'kapanış bekleme süresi (10 sn) + pay: Docker varsayılanı 10 sn yetmez');
   assert.ok(r.logging && r.logging.options['max-size'], 'günlük döndürme');
   assert.ok(r.volumes.some(v => String(v).endsWith(':/data')), 'kalıcı veri hacmi');
   assert.ok(r.environment.some(e => e === 'NODE_ENV=production'));

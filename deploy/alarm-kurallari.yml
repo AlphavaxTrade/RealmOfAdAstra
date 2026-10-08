@@ -1,0 +1,83 @@
+# Prometheus uyarı kuralları (kurumsal A7.10). Ölçü adları /metrics çıktısından gelir (docs/kurumsal/GOZLEM.md); adı kodda değişirse
+# tests/test_alarm_kurallari.mjs kırılır. Eşikler başlangıç değeridir: ilk haftanın gerçek ölçümüne (docs/kurumsal/PERFORMANS.md) göre ayarlayın.
+# Kullanım: prometheus.yml içinde `rule_files: [alarm-kurallari.yml]` ve `scrape_configs` için job_name: realm (hedef 127.0.0.1:8080/metrics).
+groups:
+  - name: realm-erisilebilirlik
+    rules:
+      - alert: RealmKapali
+        expr: up{job="realm"} == 0
+        for: 2m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "Oyun sunucusu 2 dakikadır ölçüm vermiyor"
+          yapilacak: "systemctl status realm / docker compose ps; günlük: journalctl -u realm -n 200. Çöktüyse son 'ÖLÜMCÜL' satırına bak."
+      - alert: RealmZamanlayiciTakildi
+        expr: realm_zamanlayici_son_bitis_yas_saniye > 180
+        for: 2m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "Dünya zamanlayıcısı 3 dakikadır tur bitirmedi (/api/ready 503 verir)"
+          yapilacak: "Takılan iş: ödeme/yatırma taraması, RPC. Günlükte 'Zamanlayıcı hatası' ve RPC uyarılarına bak; gerekirse servisi yeniden başlat."
+      - alert: RealmZamanlayiciHataVeriyor
+        expr: increase(realm_zamanlayici_hata_toplam[15m]) >= 3
+        labels: { onem: uyari }
+        annotations:
+          ozet: "Dünya zamanlayıcısı son 15 dakikada en az 3 kez hata verdi"
+          yapilacak: "Günlükte 'Zamanlayıcı hatası' satırlarının hata alanına bak (aynı hata mı, farklı mı)."
+
+  - name: realm-hizmet-kalitesi
+    rules:
+      - alert: RealmSunucuHatasiOrani
+        expr: sum(rate(realm_http_istek_toplam{sinif="5xx"}[5m])) / sum(rate(realm_http_istek_toplam[5m])) > 0.02
+        for: 5m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "İsteklerin %2'sinden fazlası 500 ile bitiyor"
+          yapilacak: "Günlükte sev=error satırlarını istek kimliğiyle ara (kullanıcı hata kimliğini gösterir)."
+      - alert: RealmYavasIstek
+        expr: histogram_quantile(0.95, sum by (le) (rate(realm_http_sure_saniye_bucket[5m]))) > 1
+        for: 10m
+        labels: { onem: uyari }
+        annotations:
+          ozet: "İsteklerin %95'i 1 saniyeden yavaş (taban: docs/kurumsal/PERFORMANS.md)"
+          yapilacak: "realm_olay_dongusu_gecikme_saniye ve bellek ölçülerine bak; ağır rotayı realm_http_sure_saniye ile bul."
+      - alert: RealmOlayDongusuGeciKiyor
+        expr: realm_olay_dongusu_gecikme_saniye{nicelik="0.99"} > 0.2
+        for: 10m
+        labels: { onem: uyari }
+        annotations:
+          ozet: "Olay döngüsü gecikmesi p99 200 ms üstünde (sunucu donuyor)"
+          yapilacak: "Uzun süren eşzamanlı iş var: scripts/yuk/cpu-ozet.mjs ile CPU profili çıkar."
+
+  - name: realm-para-yollari
+    rules:
+      - alert: RealmOdemeKuyruguBirikti
+        expr: realm_odeme_bekleyen > 20
+        for: 30m
+        labels: { onem: kritik }
+        annotations:
+          ozet: "30 dakikadır 20'den fazla ödeme/çekim gönderilmeyi bekliyor"
+          yapilacak: "Oyun cüzdanı bakiyesi, RPC erişimi ve 'ödemeleri durdur' bayrağı. Yönetici panelinden elle çalıştırmadan önce zincirde çifte ödeme olmadığını doğrula."
+      - alert: RealmKasaKuyruguBirikti
+        expr: realm_kasa_islem_bekleyen > 20
+        for: 30m
+        labels: { onem: uyari }
+        annotations:
+          ozet: "Oyun Kasası kuyruğunda 30 dakikadır 20'den fazla işlem bekliyor"
+          yapilacak: "Günlükte 'Kasa işlemleri' uyarılarına bak."
+
+  - name: realm-kaynaklar
+    rules:
+      - alert: RealmBellekYuksek
+        expr: realm_surec_rss_bayt > 9e9
+        for: 15m
+        labels: { onem: uyari }
+        annotations:
+          ozet: "Süreç belleği 9 GB üstünde (kapsayıcı sınırı 12 GB)"
+          yapilacak: "Sızıntı şüphesi: realm_surec_heap_kullanilan_bayt eğrisi saatlerce yükseliyorsa yeniden başlat ve heap profili al."
+      - alert: RealmVeritabaniBuyuk
+        expr: realm_db_dosya_bayt > 5e9
+        labels: { onem: uyari }
+        annotations:
+          ozet: "Veritabanı 5 GB'ı aştı"
+          yapilacak: "docs/kurumsal/ADR/0001-veritabani-sqlite.md eşikleri: PostgreSQL geçişini değerlendir; olay/fiyat saklama sürelerini kontrol et."

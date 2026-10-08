@@ -10,6 +10,7 @@ services:
     image: realm-of-adastra:${SURUM:-yerel}
     init: true                      # PID 1 sorunu: sinyaller doğru iletilir, zombi süreç kalmaz
     restart: unless-stopped
+    stop_grace_period: 20s          # uygulama kapanışta en çok 10 sn bekler (yarıdaki istekler, dünya turu); Docker varsayılanı 10 sn onu keserdi
     env_file:
       - server/.env
     environment:

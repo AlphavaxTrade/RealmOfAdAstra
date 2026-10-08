@@ -26,6 +26,7 @@
   ],
   "ignoreDependencies": [
     "ganache",
+    "@sentry/node",
     "solc",
     "playwright"
   ],

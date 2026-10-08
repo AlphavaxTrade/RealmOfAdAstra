@@ -45,9 +45,13 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
 
   const last = { market: 0, deposits: 0, live: 0, payouts: 0 };
   let ticking = false;
+  // Zamanlayıcı nabzı: /api/ready ve /metrics okur (tur takılırsa ya da hep hata verirse dışarıdan görünür)
+  const nabiz = { olusturuldu: clock(), sonBaslangic: null, sonBitis: null, sonSureMs: null, tur: 0, hataSayisi: 0, sonHata: null, sonHataZamani: null };
+  const tickDurumu = () => ({ ...nabiz, calisiyor: ticking, yasMs: clock() - (ticking ? nabiz.sonBaslangic : (nabiz.sonBitis ?? nabiz.olusturuldu)) });
   async function tick() {
     if (ticking) return;
     ticking = true;
+    nabiz.sonBaslangic = clock();
     try {
       E.globalPool.checkEpochExpiration();
       const ep = E.globalPool.state.epochId;
@@ -88,8 +92,12 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       if (chain && now - (last.hotWallet || 0) >= DAY) { last.hotWallet = now; await checkHotWallet().catch(err => log.warn('Oyun cüzdanı:', err.message)); }
       // Günlük pazar geri alımı (dünya işi; sistem hesabıyla)
       E.withPlayer(SYSTEM, gs => gs.checkDailyAutonomousBuyback());
+    } catch (err) {
+      nabiz.hataSayisi++; nabiz.sonHata = String(err?.message || err).slice(0, 300); nabiz.sonHataZamani = clock();
+      throw err;
     } finally {
       ticking = false;
+      nabiz.sonBitis = clock(); nabiz.sonSureMs = nabiz.sonBitis - nabiz.sonBaslangic; nabiz.tur++;
     }
   }
 
@@ -125,5 +133,5 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   }
 
 
-  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

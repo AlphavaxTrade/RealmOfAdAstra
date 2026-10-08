@@ -21,6 +21,9 @@
 | `CORS_ORIGINS` | Oyun dosyaları başka adresten sunuluyorsa izinli adresler (virgülle). Yönetici uçlarına asla izin verilmez | (boş) |
 | ⚠️ `DB_FILE` | SQLite kayıt dosyası. Üretimde kalıcı bir yol (Docker'da /data/realm.db), :memory: olamaz | ./data/realm.db |
 | `SESSION_DAYS` | Oturum geçerlilik süresi (gün) | 30 |
+| `LOG_LEVEL` | Günlük seviyesi: debug \| info \| warn \| error. debug sağlık/statik istekleri de yazar (sorun ayıklarken) | info |
+| `LOG_FORMAT` | Günlük biçimi: json (makine okur, üretim için) \| duz (geliştirici: saat SEVİYE ileti) | json |
+| `SENTRY_DSN` | İsteğe bağlı hata izleme. Doluysa ve sunucuda npm i @sentry/node yapılmışsa hatalar Sentry hizmetine de gider; paket yoksa yalnız uyarılır | (boş: kapalı) |
 
 ## Hız sınırı
 

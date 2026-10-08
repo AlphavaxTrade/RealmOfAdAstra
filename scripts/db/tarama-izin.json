@@ -46,5 +46,9 @@
   {
     "sql": "DELETE FROM kv WHERE key LIKE 'ls:%'",
     "neden": "YALNIZ deneme sunucusu \"vanilla sıfırla\" (TEST_MODE); gerçek sunucuda çalışmaz"
+  },
+  {
+    "sql": "SELECT 1 AS x",
+    "neden": "/api/ready veritabanı yanıt denetimi: hiçbir tabloyu okumaz (sabit satır), yalnız bağlantının canlı olduğunu sınar"
   }
 ]
