@@ -4867,9 +4867,28 @@ function openTreasuryVaultModal() {
         <div class="card-title" style="color:#fcd34d;">🚪 Kapı durumu — vatandaş ${fmtInt(kp.citizens)} / ${fmtInt(kp.limit)}</div>
         <span class="card-badge">aktif ${fmtInt(kp.active || 0)} · sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
       </div>
-      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)} (ilk döngü); bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi bu hafta katılım puanını (sefer, zindan, kolezyum, pazar, Konsey, çark, rehber görevi gibi alanlardan yeterince çeşitli) sağladığı için aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer, vadiyi gezer, hazır aday onaylarını verebilir. Katılımı düşük kalan önce uyarılır, sonra izin hakkını kullanmaya davet edilir; cevapsız kalırsa yeri sıradaki hazır adaya geçer (hesap silinmez). Gösterge: son 3 ayda kişi başı aylık dağıtılan kazanç <strong>${(kp.indicator?.usdPerPlayerMonth || 0).toLocaleString('tr-TR')} $</strong> (${kp.indicator?.weeks || 0} hafta); bu dönemin eşiği ${kp.threshold} $. Büyüme ${kp.growthLocked ? '<strong>şimdilik kilitli</strong> (gerçek gelir göstergesi kurulana dek)' : 'eşik geçilince ayda %10'}.</div>
+      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)} (ilk döngü); bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi bu hafta katılım puanını (sefer, zindan, kolezyum, pazar, Konsey, çark, rehber görevi gibi alanlardan yeterince çeşitli) sağladığı için aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer, vadiyi gezer, hazır aday onaylarını verebilir. Katılımı düşük kalan önce uyarılır, sonra izin hakkını kullanmaya davet edilir; cevapsız kalırsa yeri sıradaki hazır adaya geçer (hesap silinmez).</div>
     </div>` : '';
-  dom.modalBody.innerHTML = kapiHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+
+  // E-planı Faz 2 (8 Ekim, KARAR 1): gelir motoru panosu — dağıtılan + çekilebilen, hedefe uzaklık, trade sitesi geliri (herkese açık)
+  const gm = kp?.indicator, pi = online.partnerIncome;
+  const usd = gm?.usdPerPlayerMonth || 0, wusd = gm?.withdrawableUsdPerPlayerMonth || 0;
+  const esikD = kp?.threshold || 0, esikC = esikD / 3;
+  const uzaklik = v => v > 0 ? (v >= 1 ? '✅ hedef geçildi' : `hedefin %${Math.round(v * 100)}'ü — ${(1 / v).toFixed(1)} kat kaldı`) : 'henüz veri yok';
+  const gelirHtml = kp ? `
+    <div class="clean-card" style="border-color:#34d399;">
+      <div class="card-title-row">
+        <div class="card-title" style="color:#6ee7b7;">💰 Gelir motoru — kişi başı aylık (aktif vatandaş)</div>
+        <span class="card-badge">${gm?.weeks || 0} hafta ortalaması</span>
+      </div>
+      <div class="clean-desc">
+        Dağıtılan (kilitli dahil): <strong>${usd.toLocaleString('tr-TR')} $</strong> / hedef ${esikD} $ — ${uzaklik(esikD > 0 ? usd / esikD : 0)}.<br>
+        Gerçekten çekilebilen: <strong>${wusd.toLocaleString('tr-TR')} $</strong> / hedef ${esikC.toFixed(1)} $ — ${uzaklik(esikC > 0 ? wusd / esikC : 0)}.<br>
+        Büyüme (vatandaş sınırının artması) için <strong>ikisi birden</strong> hedefi geçmeli: ${kp.growthLocked ? '<strong>şimdilik kilitli</strong> (yönetici açana dek)' : 'kilit açık, eşikler geçilince ayda %10 büyür'}.
+        ${pi?.enabled ? `<br>Trade sitesinden gelen gerçek dış gelir — bu hafta <strong>${fmtInt(pi.weekAda)}</strong> / toplam <strong>${fmtInt(pi.totalAda)}</strong> ASTRA.` : ''}
+      </div>
+    </div>` : '';
+  dom.modalBody.innerHTML = kapiHtml + gelirHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
 
   document.querySelectorAll('.btn-treasury-action').forEach(btn => {
     btn.addEventListener('click', () => {

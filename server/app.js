@@ -164,9 +164,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   function playerPayload(address, state) {
-    const world = E.worldSnapshot();
-    if (kapi) world.kapi = kapi.publicSummary();   // Kapı: sınır, vatandaş / sıra sayıları, gösterge (Sirius Konseyi ekranı)
-    return { player: state, world, address, epochId: E.globalPool.state.epochId, gate: kapi ? kapi.statusOf(address) : null };
+    const snap = E.worldSnapshot();
+    if (kapi) snap.kapi = kapi.publicSummary();   // Kapı: sınır, vatandaş / sıra sayıları, gösterge (Sirius Konseyi ekranı)
+    // E-planı Faz 2 (8 Ekim): trade sitesinden gelen gerçek dış gelir, herkese açık (Konsey gelir panosu).
+    if (world && world.partnerIncomeStatus) snap.partnerIncome = world.partnerIncomeStatus();
+    return { player: state, world: snap, address, epochId: E.globalPool.state.epochId, gate: kapi ? kapi.statusOf(address) : null };
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir

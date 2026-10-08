@@ -36,10 +36,17 @@ export function olusturOrtakGelir(w) {
     return total;
   }
 
+  // E-planı Faz 2 (8 Ekim): her oyuncu aksiyonu yanıtına eklenir (Konsey'de herkese açık gelir panosu) — 2 sn
+  // önbellek, kapi.js'teki sayım önbelleğiyle aynı desen (küçük tabloda da olsa her istekte 2 SQL sorgusu olmasın).
+  let piOnbellek = null;
   function partnerIncomeStatus() {
+    const now = clock();
+    if (piOnbellek && now - piOnbellek.at < 2000) return piOnbellek.v;
     const all = db.raw.prepare('SELECT COUNT(*) AS n, COALESCE(SUM(amount), 0) AS t FROM partner_income').get();
-    const week = db.raw.prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at >= ?').get(clock() - 7 * DAY);
-    return { enabled: !!(partnerTo() && (cfg.partnerIncomeFrom || []).length), to: partnerTo() || null, from: cfg.partnerIncomeFrom || [], count: all.n, totalAda: all.t, weekAda: week.t };
+    const week = db.raw.prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at >= ?').get(now - 7 * DAY);
+    const v = { enabled: !!(partnerTo() && (cfg.partnerIncomeFrom || []).length), to: partnerTo() || null, from: cfg.partnerIncomeFrom || [], count: all.n, totalAda: all.t, weekAda: week.t };
+    piOnbellek = { at: now, v };
+    return v;
   }
 
 
