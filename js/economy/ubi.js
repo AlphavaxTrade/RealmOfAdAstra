@@ -5,6 +5,8 @@
 //  • Pazartesi 00:01 (TSİ) geçen haftanın kasası açılır; hak sahipleri arasında seviye ağırlığına göre bölünür.
 //  • Hak kazanmak için en az 3. seviye olmak gerekir.
 //  • Kasa bir hafta boyunca çekilebilir; çekilmeyen pay bir sonraki haftanın kasasına eklenir.
+//  • Tek çekim tavanı: hiç kimse haftanın açılış kasasının `maxSingleShare` oranından (%5) fazlasını alamaz;
+//    az kişi varken artan kısım dağıtılmaz, kasada kalır ve bir sonraki haftaya devreder.
 // ============================================================================
 
 export const DEFAULT_UBI_RULES = {
@@ -31,5 +33,6 @@ export function shareOf({ pot, playerLevel, totalWeight, rules = DEFAULT_UBI_RUL
   const w = levelWeight(playerLevel, rules);
   if (w <= 0 || pot <= 0) return 0;
   const tw = Math.max(w, Number(totalWeight) || 0);
-  return Math.floor((pot * w / tw) * 100) / 100;
+  const cap = rules.maxSingleShare > 0 ? pot * rules.maxSingleShare : Infinity;
+  return Math.floor(Math.min(pot * w / tw, cap) * 100) / 100;
 }

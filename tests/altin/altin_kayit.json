@@ -219,10 +219,10 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "3a08fd3e0d34e8cf",
+   "a437ac697c481f79",
    "ed94fa05cc1e04ac"
   ],
-  "dunya": "c539eb4510018f27",
+  "dunya": "1589cf00560aa9db",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:ok",
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "bc0c9b692c4b2d65",
+   "f5f45a23f49cd3f4",
    "b692827d6d3ea11e",
    "2ff5dfb1245cdfd1"
   ],
-  "dunya": "423b7889da4e7952",
+  "dunya": "7804d2dc819ca232",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,15 +245,15 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "7ea1342426ba2c84",
+   "ea7c4ef25f11c014",
    "40df060aae1355c7",
    "2ff5dfb1245cdfd1"
   ],
-  "dunya": "70ec629555c4ac0d",
+  "dunya": "c79cf397ea3960aa",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",
-   "claimWeeklyUbi:RED"
+   "claimWeeklyUbi:ok"
   ]
  }
 ]
