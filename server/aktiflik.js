@@ -11,6 +11,7 @@
 // ============================================================================
 import { GAME_CONFIG } from '../js/config.js';
 import { ACTIONS } from './actions.js';
+import { esikSeviye } from '../js/economy/katilimEsik.js';
 
 // İşlem adı → kategori. ACTIONS (server/actions.js) beyaz listesindeki her gerçek işlem elle eşlenir; eşlenmeyen
 // işlemler (ör. levelUp, claimWeeklyUbi, bot paketi satın alma) katılım puanına girmez — bunlar ya pasif bir ödülün
@@ -61,12 +62,8 @@ export function kategoriOf(islemAdi) {
   return KATEGORI_ESLEME[islemAdi] || null;
 }
 
-// Beklenen haftalık eşik: seviye arttıkça büyür (taban..tavan arası), KATILIM_PUANI config'inden
-export function esikSeviye(level, cfg = GAME_CONFIG.KATILIM_PUANI) {
-  const taban = Number(cfg?.ESIK_TABAN) || 0, tavan = Number(cfg?.ESIK_TAVAN) || taban, aralik = Math.max(1, Number(cfg?.ESIK_SEVIYE_ARALIGI) || 10);
-  const lvl = Math.max(1, Number(level) || 1);
-  return Math.min(tavan, taban + Math.floor((lvl - 1) / aralik));
-}
+// Beklenen haftalık eşik: tek kaynak js/economy/katilimEsik.js (tarayıcıdaki kişisel karne de aynısını kullanır)
+export { esikSeviye };
 
 // Bu haftanın sonucu: touched = { kategori: true, ... } (dokunulan kategoriler); puan = dokunulan kategori sayısı
 export function haftaSonucu({ touched = {}, level = 1 } = {}, cfg = GAME_CONFIG.KATILIM_PUANI) {
@@ -82,4 +79,11 @@ export function hazirMiState(playerState, kapiCfg = GAME_CONFIG.KAPI) {
   const idler = Array.isArray(kapiCfg?.READY_TASK_IDS) ? kapiCfg.READY_TASK_IDS : [];
   const c = (playerState && playerState.candidateReady) || {};
   return idler.length > 0 && idler.every(id => !!c[id]);
+}
+
+// Oyuncu şu an izinde mi (ham JSON durumundan; GameStateManager örneği gerekmez, durumu DEĞİŞTİRMEZ). İzindeki vatandaş
+// yerini korur ama ekonomiden pay almaz: Üretim Hakkı ağırlığı 0, temel gelir/ücretsiz havuz payı yok, "aktif" sayısına girmez.
+export function izindeMiState(playerState, now) {
+  const k = playerState && playerState.katilim;
+  return !!(k && k.izinModu && now < Number(k.izinModu.bitis));
 }

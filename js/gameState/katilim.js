@@ -4,6 +4,7 @@
 // dünyasındadır: server/aktiflik.js (saf hesap) + server/kapi.js (karar + veritabanı). Mixin: js/gameState.js.
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
+import { esikSeviye } from '../economy/katilimEsik.js';
 
 const yillikIzinHakki = () => Number(GAME_CONFIG.KATILIM_PUANI?.IZIN_YILLIK_GUN) || 30;
 const izinBlokGun = () => Math.min(14, yillikIzinHakki());
@@ -36,15 +37,22 @@ export const katilimYontemleri = {
     return !!(k.izinModu && this._now() < Number(k.izinModu.bitis));
   },
 
+  // Aynısı, ama durumu DEĞİŞTİRMEDEN: _katilim() hafta döndüyse dokunulanları sıfırlar; haftalık hesaplaşmadan önce
+  // çalışan okuma yolları (refreshUretim → _getUretimWeightRaw) bunu tetiklememeli, yoksa değerlendirme boş sayım görür.
+  izindeMiOkuma() {
+    const k = this.state.katilim;
+    return !!(k && k.izinModu && this._now() < Number(k.izinModu.bitis));
+  },
+
   // Oyuncunun kendi "karnesi" (Konsey ekranı / kişisel panel)
   getKatilimOzet() {
     const k = this._katilim();
     const kategoriler = GAME_CONFIG.KATILIM_PUANI?.KATEGORILER || [];
     const puan = kategoriler.filter(kat => k.touched[kat]).length;
-    // Eşik (seviyeye bağlı) burada hesaplanmaz: server/aktiflik.js esikSeviye() tek kaynaktır, UI sunucudan okur.
+    const esik = esikSeviye(this.state.level);   // tek kaynak: js/economy/katilimEsik.js (sunucu da aynısını kullanır)
     return {
       kategoriler: kategoriler.map(kat => ({ id: kat, dokunuldu: !!k.touched[kat] })),
-      puan, kategoriSayisi: kategoriler.length,
+      puan, esik, saglikli: puan >= esik, kategoriSayisi: kategoriler.length,
       dusukHaftaSayisi: k.dusukHaftaSayisi || 0,
       izinYillikKalan: k.izinYillikKalan,
       izindeMi: this.izindeMi(),

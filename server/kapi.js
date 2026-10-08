@@ -14,7 +14,7 @@
 // bekleyen davetler kv 'world:kapi:davet'. Oyunun kendi kurallarına (gameState) dokunmaz: yalnız sunucu katmanı.
 // ============================================================================
 import { playerIdOf } from './accounts.js';
-import { haftaSonucu, hazirMiState } from './aktiflik.js';
+import { haftaSonucu, hazirMiState, izindeMiState } from './aktiflik.js';
 
 const DAY = 86400000, HOUR = 3600000;
 const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
@@ -312,7 +312,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     for (const p of q.citizens.all()) {
       const st = E.readPlayer(p.address);
       if (!st) continue;
-      if (st.katilim && st.katilim.izinModu && clock() < Number(st.katilim.izinModu.bitis)) { n++; continue; } // izindeyken sayılır (yer kaybı yok)
+      if (izindeMiState(st, clock())) continue;   // izindeki yerini korur ama ekonomiden pay almaz → "aktif" sayılmaz (göstergenin paydasına girmez)
       const { saglikli } = haftaSonucu({ touched: (st.katilim && st.katilim.touched) || {}, level: st.level }, KP());
       if (saglikli) n++;
     }
@@ -325,8 +325,9 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     const grown = growth();
     const admitted = fillSeats();
     const activeCount = activeCitizens();
-    setState({ activeCount });
-    return { davetBitenler, katilimAskiya, admitted, grown, activeCount };
+    const izindeCount = q.citizens.all().reduce((n, p) => n + (izindeMiState(E.readPlayer(p.address), clock()) ? 1 : 0), 0);
+    setState({ activeCount, izindeCount });
+    return { davetBitenler, katilimAskiya, admitted, grown, activeCount, izindeCount };
   }
 
   function statusOf(address) {
@@ -346,7 +347,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   // Herkese açık özet (Sirius Konseyi ekranı)
   function publicSummary() {
     const s = state(), c = countsGoster(), tiers = K().USD_TIERS || [50, 100, 300];
-    return { limit: s.limit, citizens: c.citizen, active: s.activeCount || 0, waiting: c.waiting, suspended: c.suspended, tier: s.tier,
+    return { limit: s.limit, citizens: c.citizen, active: s.activeCount || 0, izinde: s.izindeCount || 0, waiting: c.waiting, suspended: c.suspended, tier: s.tier,
       threshold: tiers[Math.min(s.tier, tiers.length - 1)], indicator: indicator(), lastGrowthAt: s.lastGrowthAt || 0, growthLocked: !!K().GROWTH_LOCKED,
       inviteHours: Number(K().INVITE_HOURS) || 72, izinYillikGun: Number(KP().IZIN_YILLIK_GUN) || 30 };
   }

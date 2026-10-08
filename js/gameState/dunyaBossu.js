@@ -179,7 +179,7 @@ export const dunyaBossuYontemleri = {
     // YASA 1: ödül hazinenin worldBoss havuzundan çekilir, basılmaz.
     const request = Math.max(1, Math.floor((damageDealt * boss.weeklyAdaPool) / boss.maxBossHp));
     const draw = globalPool.withdrawReward('worldBoss', request);
-    const rewardAda = Math.floor(draw.granted);
+    const rewardAda = draw.granted;
 
     boss.claimableRewardAda = (boss.claimableRewardAda || 0) + rewardAda;
     boss.lastBattleTimestamp = Date.now();

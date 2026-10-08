@@ -138,8 +138,8 @@ export const kolezyumYontemleri = {
       const arenaPool = (typeof treasury !== 'undefined' && treasury.getPool) ? treasury.getPool('arena') : 0;
       const baseReward = Math.min(this.adaPrice(2500), Math.round(arenaPool * 0.0002));
       const requested = Math.round(baseReward * tier.rewardMult);
-      const draw = (typeof treasury !== 'undefined' && treasury.withdraw) ? treasury.withdraw('arena', requested) : { granted: 0 };
-      rewardAda = Math.floor(draw.granted || 0);
+      const draw = (typeof treasury !== 'undefined' && treasury.withdraw) ? treasury.withdrawWhole('arena', requested) : { granted: 0 };
+      rewardAda = draw.granted || 0;
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + rewardAda;
       this._onAdaEarned(rewardAda);
       if (this.state.colosseumStats) this.state.colosseumStats.totalAdaWon = (this.state.colosseumStats.totalAdaWon || 0) + rewardAda;

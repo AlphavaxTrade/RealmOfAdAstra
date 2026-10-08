@@ -100,8 +100,8 @@ export const rehberYontemleri = {
     if (entry.claimed) return { success: false, message: 'Bu görevin ödülünü zaten aldın.' };
     let granted = 0;
     if ((q.rewardAda || 0) > 0 && treasury && treasury.withdraw) {
-      const draw = treasury.withdraw('quest', q.rewardAda);
-      granted = Math.floor(draw.granted || 0);
+      const draw = treasury.withdrawWhole('quest', q.rewardAda);   // tam sayı ödül; kesirli artık kasada kalır
+      granted = draw.granted || 0;
     }
     entry.claimed = true;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;

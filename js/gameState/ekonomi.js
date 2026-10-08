@@ -207,6 +207,9 @@ export const ekonomiYontemleri = {
     const levelFactor = Math.min(U.LEVEL_WEIGHT_MAX ?? 2, 1 + (U.LEVEL_WEIGHT_PER_LEVEL ?? 0.025) * lvl);
     const tier = this.getContributionTier();
     const activity = this.getUretimActivity();
+    // Onaylı kural (E-planı Faz 1, KARAR 8): izindeyken Üretim Hakkı alınmaz — yer tutulur, ekonomiden pay alınmaz
+    // (tatil yüzünden diğer vatandaşların payı küçülmesin: toplam ağırlıktan da düşer).
+    if (this.izindeMiOkuma && this.izindeMiOkuma()) return { weight: 0, levelFactor: round3(levelFactor), tier, activity: round3(activity), izinde: true };
     return { weight: round3(levelFactor * tier.mult * activity), levelFactor: round3(levelFactor), tier, activity: round3(activity) };
   },
 

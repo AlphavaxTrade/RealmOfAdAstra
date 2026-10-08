@@ -33,9 +33,9 @@ export const kesifYontemleri = {
     let adAstraGained = 0;
     if (targetAdAstra > 0) {
       const draw = (typeof treasury !== 'undefined' && treasury && treasury.withdraw)
-        ? treasury.withdraw('dungeon', targetAdAstra)
+        ? treasury.withdrawWhole('dungeon', targetAdAstra)
         : { granted: targetAdAstra };
-      adAstraGained = Math.max(0, Math.round(draw.granted != null ? draw.granted : targetAdAstra));
+      adAstraGained = Math.max(0, draw.granted != null ? draw.granted : targetAdAstra);
       this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + adAstraGained;
     }
     const budgetCapped = adAstraGained < base.ada;

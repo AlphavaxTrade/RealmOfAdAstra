@@ -494,6 +494,8 @@ export const hasatYontemleri = {
 
   // 🏛️ HAFTALIK EVRENSEL TEMEL GELİR (UBI) TALEP ETME METODU
   claimWeeklyUbi() {
+    // Onaylı kural: izindeyken temel gelir alınmaz (yer korunur, ekonomiden pay alınmaz)
+    if (this.izindeMiOkuma && this.izindeMiOkuma()) return { success: false, message: 'İzindeyken haftalık temel gelir alınmaz; izin bitince yeniden alabilirsin.' };
     const res = globalPool.claimWeeklyUbi(
       this.state.level || 1,
       this.state.adAstraBalance || 0,

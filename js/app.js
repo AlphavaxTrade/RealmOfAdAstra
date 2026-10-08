@@ -261,6 +261,12 @@ function renderGateBanner() {
     parcalar.push(`<div class="gate-banner-row">🏖️ <strong>Katılımın düşük; izin hakkını kullanmak ister misin?</strong> ${saat} saat içinde cevap ver, yoksa yerin bekleyen bir vatandaşa geçer (izinde yer kaybı yok; cevapsız kalırsan dönüşte sıranın önüne alınırsın). <button id="btn-izin-evet" class="btn-clean">✅ Evet, izin kullan</button> <button id="btn-izin-hayir" class="btn-clean">Hayır</button></div>`);
   }
 
+  // 🏖️ İzindeyken şeritte bilgi (yer korunuyor; ekonomiden pay alınmıyor) + erken bitirme
+  if (k && k.izinModu && Date.now() < Number(k.izinModu.bitis)) {
+    const gun = Math.max(0, Math.ceil((Number(k.izinModu.bitis) - Date.now()) / 86400000));
+    parcalar.push(`<div class="gate-banner-row">🏖️ <strong>İzindesin</strong> — ${gun} gün kaldı. Yerin korunuyor; bu sürede Üretim Hakkı, temel gelir ve ücretsiz oyuncu payı almazsın. <button id="btn-izin-bitir-serit" class="btn-clean">İzni şimdi bitir</button></div>`);
+  }
+
   if (!g || g.status === 'citizen' || g.status === 'new') {
     if (!parcalar.length) { el.hidden = true; el.innerHTML = ''; return; }
   } else if (g.status === 'waiting') {
@@ -279,7 +285,8 @@ document.getElementById('gate-banner')?.addEventListener('click', e => {
   const gorev = e.target.closest('[data-misafir-gorev]');
   if (gorev && !gorev.disabled) { gameState.misafirGorevTamamla(gorev.dataset.misafirGorev); renderGateBanner(); return; }
   if (e.target.closest('#btn-izin-evet')) { gameState.cevaplaIzinSorusu(true); renderGateBanner(); return; }
-  if (e.target.closest('#btn-izin-hayir')) { gameState.cevaplaIzinSorusu(false); renderGateBanner(); }
+  if (e.target.closest('#btn-izin-hayir')) { gameState.cevaplaIzinSorusu(false); renderGateBanner(); return; }
+  if (e.target.closest('#btn-izin-bitir-serit')) { gameState.bitirIzin(); renderGateBanner(); }
 });
 
 // 🏷️ İlan pazarı (teçhizat; yalnız sunucuda): ilanlar sunucudan ayrıca çekilir, kabuk hemen çizilir
@@ -4888,7 +4895,27 @@ function openTreasuryVaultModal() {
         ${pi?.enabled ? `<br>Trade sitesinden gelen gerçek dış gelir — bu hafta <strong>${fmtInt(pi.weekAda)}</strong> / toplam <strong>${fmtInt(pi.totalAda)}</strong> ASTRA.` : ''}
       </div>
     </div>` : '';
-  dom.modalBody.innerHTML = kapiHtml + gelirHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  // 🧾 Kişisel katılım karnem (E-planı Bölüm 1.4): bu hafta hangi kategorilere dokundum, eşik ne, izin durumum
+  const KAT_AD = { sefer: '🌾 Sefer', bakim: '🔧 Bakım', kisla: '⚔️ Kışla', zindan: '🏰 Zindan', kolezyum: '🛡️ Kolezyum', boss: '🐉 Dünya Bossu', pazar: '🏪 Pazar', konsey: '🏛️ Konsey', karnaval: '🎪 Karnaval', rehber: '🧭 Rehber' };
+  const ko = kp && gameState.state.katilim ? gameState.getKatilimOzet() : null;
+  const izinKalanGun = ko && ko.izindeMi ? Math.max(0, Math.ceil((Number(ko.izinModu.bitis) - Date.now()) / 86400000)) : 0;
+  const karneHtml = ko ? `
+    <div class="clean-card" style="border-color:#a78bfa;">
+      <div class="card-title-row">
+        <div class="card-title" style="color:#c4b5fd;">🧾 Katılım karnem</div>
+        <span class="card-badge">${ko.izindeMi ? '🏖️ izindesin' : ko.saglikli ? '✅ bu hafta tamam' : `bu hafta ${ko.puan}/${ko.esik}`}</span>
+      </div>
+      <div class="clean-desc">
+        Bu hafta <strong>${ko.puan}</strong> farklı alana dokundun; beklenen en az <strong>${ko.esik}</strong> (seviyen yükseldikçe artar). Aynı alanı tekrarlamak ek puan getirmez.<br>
+        ${ko.kategoriler.map(c => `<span style="display:inline-block;margin:2px 6px 2px 0;opacity:${c.dokunuldu ? 1 : 0.55};">${c.dokunuldu ? '✅' : '☐'} ${KAT_AD[c.id] || c.id}</span>`).join('')}<br>
+        ${ko.dusukHaftaSayisi > 0 ? `⚠️ Katılımın ${ko.dusukHaftaSayisi} haftadır düşük. ` : ''}Yıllık izin hakkın: <strong>${ko.izinYillikKalan}</strong> gün.
+        ${ko.izindeMi ? `<br>🏖️ <strong>İzindesin</strong> (${new Date(Number(ko.izinModu.bitis)).toLocaleDateString('tr-TR')} tarihine kadar, ${izinKalanGun} gün kaldı): yerin korunuyor ama bu sürede Üretim Hakkı, temel gelir ve ücretsiz oyuncu payı almazsın. <button id="btn-izin-bitir" class="btn-clean">İzni şimdi bitir</button>` : ''}
+        ${ko.sonUyari ? '<br>🚨 Son uyarı: izin hakkın bitti, katılımını artırmazsan yerin bekleyen birine geçer.' : ''}
+      </div>
+    </div>` : '';
+  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  const izinBitirBtn = document.getElementById('btn-izin-bitir');
+  if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };
 
   document.querySelectorAll('.btn-treasury-action').forEach(btn => {
     btn.addEventListener('click', () => {

@@ -606,7 +606,7 @@ export class GlobalResourceManager {
 
   // Ödül çekimi — tek geçit. Hiçbir modül bakiyeye doğrudan ADA eklemez.
   withdrawReward(poolId, amount) {
-    return treasury.withdraw(poolId, amount);
+    return treasury.withdrawWhole(poolId, amount);   // tam sayı ödül; kesirli artık kasada kalır (kimsenin bakiyesine girmeyen ASTRA kaybolmasın)
   }
 
   // 📺 YAYIN GELİRİ BUYBACK ENJEKSİYONU (%35 Avalanche Arena Geliri)

@@ -5,6 +5,7 @@ import { runDraw } from '../../js/economy/lottery.js';
 import { rastgele } from '../rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../../js/economy/faucet.js';
 import { fmt, DAY } from './yardimci.js';
+import { izindeMiState } from '../aktiflik.js';
 
 export function olusturHaftalik(w) {
   const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
@@ -92,6 +93,7 @@ export function olusturHaftalik(w) {
         if (accounts && String(p.address).startsWith('acc:') && !accounts.isVerified(p.address)) continue;
         const st = states.get(p.address) || E.readPlayer(p.address);
         if (!st) continue;
+        if (izindeMiState(st, now)) continue;      // izindeki vatandaş ücretsiz havuzdan pay almaz (onaylı kural)
         const contribution = weekScore(st, closedEpoch);
         if (!qualifies({ level: st.level, contribution, priceMultiplier: mult }, FP)) continue;
         const streak = nextStreak(st.faucetStreak, closedEpoch);
@@ -145,7 +147,7 @@ export function olusturHaftalik(w) {
       let ubiTotalWeight = 0;
       for (const p of players) {
         const st = states.get(p.address);
-        if (st && (st.level || 1) >= minLvl && p.last_seen >= now - 14 * DAY) ubiTotalWeight += E.levelWeight(st.level || 1);
+        if (st && (st.level || 1) >= minLvl && p.last_seen >= now - 14 * DAY && !izindeMiState(st, now)) ubiTotalWeight += E.levelWeight(st.level || 1);
       }
 
       // 6) Oyun içi yakım ve yapımcı payı → zincir

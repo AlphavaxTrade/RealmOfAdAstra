@@ -147,6 +147,30 @@ export class TreasuryLedger {
     };
   }
 
+  // Çekilen miktarın bir kısmını kasaya geri koyar (withdraw()'ın kayıtlarını AYNEN geri alır: çıkış, yaşam boyu çıkış,
+  // bu haftanın vatandaşa dağıtılanı). Ödülü yuvarlayan her yolda (bkz. withdrawWhole) kesirli artık kasada kalsın,
+  // ASTRA ortadan kaybolmasın / yoktan oluşmasın (yerel simülasyonda bulundu: görev ödülünde kayıt başına ≈0,5 ASTRA yok oluyordu).
+  refund(poolId, amount) {
+    const v = Number(amount);
+    if (!POOL_IDS.includes(poolId) || !isFinite(v) || v <= 0) return 0;
+    this.state.pools[poolId] = (this.state.pools[poolId] || 0) + v;
+    this.state.outflow[poolId] = Math.max(0, (this.state.outflow[poolId] || 0) - v);
+    this.state.lifetimeWithdrawn = Math.max(0, this.state.lifetimeWithdrawn - v);
+    if (poolId !== 'ammBuyback') this.state.weekGrantedToCitizens = Math.max(0, (Number(this.state.weekGrantedToCitizens) || 0) - v);
+    this.save();
+    return v;
+  }
+
+  // Tam sayı ASTRA ödülü: withdraw() ile aynı ama oyuncuya verilen miktar tam sayıya İNDİRİLİR, kesirli artık kasaya iade edilir.
+  withdrawWhole(poolId, requested) {
+    const r = this.withdraw(poolId, requested);
+    if (!(r.granted > 0)) return r;
+    const whole = Math.floor(r.granted + 1e-9);
+    const rest = r.granted - whole;
+    if (rest > 1e-12) this.refund(poolId, rest);
+    return { ...r, granted: whole, scaleFactor: r.requested > 0 ? whole / r.requested : 0 };
+  }
+
   // Bu haftanın vatandaşa-dağıtılan toplamını okur ve sıfırlar (haftalık hesaplaşmada bir kez çağrılır).
   drainWeekGrantedToCitizens() {
     const v = Number(this.state.weekGrantedToCitizens) || 0;
