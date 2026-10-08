@@ -8,7 +8,7 @@ import { fmt, DAY } from './yardimci.js';
 import { izindeMiState } from '../aktiflik.js';
 
 export function olusturHaftalik(w) {
-  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
+  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, externalBuy, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
   function settleWeek(closedEpoch, market) {
     const now = clock();
     const e = econ();
@@ -66,7 +66,7 @@ export function olusturHaftalik(w) {
       gp.state.ubiWeekAccrued = (Number(gp.state.ubiWeekAccrued) || 0) + alloc.totals.feeToUbi;
       gp.state.ubiPool = (Number(gp.state.ubiClaimPot) || 0) + gp.state.ubiWeekAccrued;
       let burn = alloc.totals.feeBurn;
-      summary.withdraw = { cap, ...alloc.totals };
+      summary.withdraw = { cap, k: Number(econ().k) || 1, externalBuy4w: externalBuy(), ...alloc.totals };
 
       // 2) Fiyat savunma yakımı (fren açıkken)
       let defense = 0;

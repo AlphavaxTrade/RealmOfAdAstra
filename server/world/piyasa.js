@@ -1,7 +1,9 @@
 // Realm of AdAstra sunucusu — dünya: piyasa verisi, çekim havuzu ve çekim talepleri
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
-import { brakeState, withdrawCapTokens, WEEKLY_RULES } from '../economy.js';
+import { brakeState, withdrawCapTokens, dualWithdrawCap, priceFactorK, netTokenFlow, WEEKLY_RULES } from '../economy.js';
 import { fmt, DAY } from './yardimci.js';
+
+const dayKey = t => new Date(t).toISOString().slice(0, 10);
 
 export function olusturPiyasa(w) {
   const { db, E, chain, cfg, clock, econ, setEcon } = w;
@@ -12,15 +14,33 @@ export function olusturPiyasa(w) {
     db.q.priceAdd.run(m.at, m.priceUsd, m.mcapUsd, m.supply, m.dead, m.avaxUsd, m.graduated ? 1 : 0);
     const e = econ();
     const hist = db.q.pricesSince.all(clock() - 31 * DAY).map(r => ({ at: r.at, mcapUsd: r.mcap_usd }));
-    const patch = { market: m, brake: brakeState(hist, e.brake || {}, clock()) };
+    const brake = brakeState(hist, e.brake || {}, clock());
+    // KARAR 5/6: günlük net token akışı (dış alım ölçümü) ve tek fiyat çarpanı k
+    const flow = { ...(e.flow || {}) };
+    const key = dayKey(m.at);
+    flow[key] = (Number(flow[key]) || 0) + netTokenFlow(e.market, m);
+    const oldest = dayKey(m.at - 40 * DAY);
+    for (const d of Object.keys(flow)) if (d < oldest) delete flow[d];
+    const patch = { market: m, brake, flow, k: priceFactorK(brake) };
     if (!(e.launchPriceUsd > 0)) patch.launchPriceUsd = cfg.launchPriceUsd > 0 ? cfg.launchPriceUsd : m.priceUsd;
     setEcon(patch);
     return m;
   }
 
+  // Son 4 haftadaki dış alım (token): piyasadan net alım (negatifse 0) + trade sitesinden oyuna gelen pay
+  function externalBuy(now = clock(), e = econ()) {
+    const from = now - WEEKLY_RULES.externalWindowDays * DAY;
+    const fromKey = dayKey(from);
+    let net = 0;
+    for (const [d, v] of Object.entries(e.flow || {})) if (d >= fromKey) net += Number(v) || 0;
+    const partner = db.raw.prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at >= ?').get(from).t;
+    return Math.max(0, net) + (Number(partner) || 0);
+  }
+
   function currentCap(market = econ().market) {
     if (!market) return 0;
-    let cap = withdrawCapTokens(market);
+    const e = econ();
+    let cap = dualWithdrawCap({ baseCap: withdrawCapTokens(market), k: e.k, externalBuy: externalBuy(clock(), e) });
     cap = Math.min(cap, cfg.weeklySendCapAda);
     if (chain && chain.gameWallet && market.walletAda != null) cap = Math.min(cap, Math.max(0, market.walletAda));
     return cap;
@@ -77,6 +97,8 @@ export function olusturPiyasa(w) {
       weekScore: myScore,
       scoreTotal: live.scoreTotal || 0,
       weeklyCap: cap,
+      priceFactorK: Number(e.k) || 1,
+      externalBuy4w: externalBuy(clock(), e),
       estimatedRight: live.scoreTotal > 0 ? cap * myScore / live.scoreTotal : 0,
       brake: !!(e.brake && e.brake.on),
       feeRate: e.brake && e.brake.on ? WEEKLY_RULES.feeBrake : WEEKLY_RULES.fee,
@@ -90,5 +112,5 @@ export function olusturPiyasa(w) {
   }
 
 
-  return { snapshotMarket, currentCap, weekScore, requestWithdraw, cancelWithdraw, withdrawStatus };
+  return { snapshotMarket, currentCap, externalBuy, weekScore, requestWithdraw, cancelWithdraw, withdrawStatus };
 }

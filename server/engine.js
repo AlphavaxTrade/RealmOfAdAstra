@@ -90,6 +90,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     const w = world();
     const m = Number(w.priceMultiplier) > 0 ? Number(w.priceMultiplier) : 1;
     gs.state.adaPriceMultiplier = m;
+    gs.state.unlockK = Number(w.k) > 0 ? Number(w.k) : 1;   // KARAR 6: kilit açılma tabanı (haftalık %1) × k
     gs.state.adaPriceMultiplierTarget = m;
     gs.state.adaPriceMultiplierEpoch = globalPool.state.epochId;
     const L = lottery();
