@@ -21,9 +21,11 @@ const PAIR_ABI = ['function getReserves() view returns (uint112,uint112,uint32)'
 
 const toAda = v => Number(ethers.formatUnits(v, 18));
 
-export function createChain(cfg) {
+// providerFactory: testlerde sahte sağlayıcı vermek için (varsayılan: gerçek JSON-RPC)
+export function createChain(cfg, { providerFactory } = {}) {
   // Önbellek kapalı (cacheTimeout -1): işlemden hemen sonra okunan bakiye eski çıkmasın
-  const providers = cfg.rpcUrls.map(u => new ethers.JsonRpcProvider(u.trim(), cfg.chainId, { staticNetwork: true, cacheTimeout: -1 }));
+  const yap = providerFactory || (u => new ethers.JsonRpcProvider(u, cfg.chainId, { staticNetwork: true, cacheTimeout: -1 }));
+  const providers = cfg.rpcUrls.map(u => yap(u.trim()));
   let pi = 0;
   // Sırayla yedek adreslere geçen okuma: bir düğüm yanıt vermezse sonrakini dener
   async function withProvider(fn) {
