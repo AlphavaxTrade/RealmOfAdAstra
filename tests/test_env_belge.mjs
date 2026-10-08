@@ -37,4 +37,14 @@ const kodda = koddaOkunanlar();
   ok('ORTAM.md ve env.ornek.txt koddan üretilmiş hâliyle aynı');
 }
 
-console.log(`\n${passed}/3 ortam belgesi testi geçti`);
+// 4) server/.env.example (elle kopyalanan şablon) belgedeki her ayarı içeriyor; yeni ayar eklenip şablon unutulursa test kırılır
+{
+  const ornek = fs.readFileSync(new URL('../server/.env.example', import.meta.url), 'utf8').split(String.fromCharCode(13) + String.fromCharCode(10)).join(String.fromCharCode(10)).split(String.fromCharCode(10));
+  const eksik = DEGISKENLER.filter(d => !d[4].includes('T')).map(d => d[1]).filter(ad => !ornek.some(s => s.startsWith(ad + '=')));
+  assert.deepEqual(eksik, [], 'server/.env.example içinde olmayan ayarlar: docs/kurumsal/env.ornek.txt içeriğini kopyalayın');
+  assert.ok(!ornek.some(s => s.startsWith('PAROLA_HAFIF=') || s.startsWith('TEST_RASTGELE=')), 'test bayrakları şablonda olmamalı');
+  for (const gizli of DEGISKENLER.filter(d => d[4].includes('G')).map(d => d[1])) assert.ok(ornek.includes(gizli + '='), `gizli ayar ${gizli} şablonda BOŞ olmalı`);
+  ok('server/.env.example belgedeki bütün ayarları içeriyor, gizli olanlar boş, test bayrakları yok');
+}
+
+console.log(`\n${passed}/4 ortam belgesi testi geçti`);

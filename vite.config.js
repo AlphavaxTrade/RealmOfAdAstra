@@ -11,6 +11,15 @@ export default defineConfig({
     strictPort: true,
     open: false,
     cors: true,
+    // The dev server only serves js/, css/, public/ and index.html. Watching the whole root made
+    // it burn 1+ CPU core around the clock (tests, coverage, logs and the database file change all day).
+    watch: {
+      ignored: [
+        '**/node_modules/**', '**/.git/**', '**/.claude/**', '**/claude-proje-kiti/**',
+        '**/coverage/**', '**/data/**', '**/logs/**', '**/deploy/**', '**/tests/**',
+        '**/docs/**', '**/dist/**', '**/server/**', '**/contracts/**', '**/scripts/**',
+      ],
+    },
   },
 
   // Allow .jpg, .png image assets
