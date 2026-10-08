@@ -110,7 +110,7 @@ export const GAME_CONFIG = {
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
   WHEAT_PER_STAMINA: 1.0,             // 1 Stamina = 1 Buğday (v2: üretim ×0,3 ölçeğinde 6 seferin staminası buğday üretiminin ~%40 kadarı)
 
-  // Ekonomi kararı (30 Eylül 2026, token modeli: scripts/model/token_economy_model.mjs):
+  // Ekonomi kararı (30 Eylül 2026, token modeli: scripts/model/arsiv/token_economy_model.mjs — arşiv, S11):
   // %5 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %86 Hazine.
   // Yakım %13'ten %5'e indi: yatırımcının harcaması daha az erir; yakımın ağırlığı ileride
   // çekim ücretine ve fiyat savunmasına kayar (sunucu aşaması).

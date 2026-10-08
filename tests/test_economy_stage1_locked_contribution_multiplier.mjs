@@ -1,4 +1,4 @@
-// Ekonomi 1. aşama (kullanıcı kararı, 30 Eylül 2026) — token modeli: scripts/model/token_economy_model.mjs
+// Ekonomi 1. aşama (kullanıcı kararı, 30 Eylül 2026) — token modeli: scripts/model/arsiv/token_economy_model.mjs (arşiv, S11)
 //  • Harcama bölünüşü: %5 yakım, %3 telif, %6 UBI, %86 hazine; hazine 6 kasaya (görev kasası yeni)
 //  • Kilitli bakiye: kazancın %20'si serbest, %80'i kilitli; harcamada önce kilitli kısım, +%20 ek açılma;
 //    haftada %1 taban + oyuna girilen günler için ek açılma

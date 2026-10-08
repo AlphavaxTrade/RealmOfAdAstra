@@ -1,6 +1,6 @@
 // Realm of AdAstra sunucusu — haftalık ekonomi kuralları (saf fonksiyonlar; zincire ve veritabanına bağlı değil)
 // ============================================================================
-// Kullanıcı kararları (30 Eylül 2026, revize rapor 3 + token modeli scripts/model/token_economy_model.mjs):
+// Kullanıcı kararları (30 Eylül 2026, revize rapor 3 + token modeli scripts/model/arsiv/token_economy_model.mjs — arşiv, S11):
 //  • Ortak haftalık çekim havuzu: bir haftada çekilebilecek toplam ADA, piyasada satılsa fiyatı en fazla %2
 //    düşürecek miktardır. Havuz oyunculara katkı puanına göre paylaşılır.
 //  • Kullanılmayan çekim hakkını başkaları kullanır; kullanan, fazladan çektiği miktarın %1,5'ini "hak kirası"
