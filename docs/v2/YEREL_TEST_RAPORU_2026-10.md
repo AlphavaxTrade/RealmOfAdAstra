@@ -91,3 +91,46 @@ Düzeltme sırasında iki test de yeni kurala uydurulmak zorunda kaldı (zayıfl
 ## 7. Elle denemek için
 
 `SENARYO-DUNYASI-BASLAT.bat` (http://localhost:8081, :8080'e dokunmaz). Hangi hesapta ne denenir: `docs/v2/SENARYO_REHBERI.md`. Ham simülasyon sonuçları: `docs/v2/sim/*.json`.
+
+---
+
+# EK — 9 Ekim 2026: kodlanan kararlar ve yeni ölçümler
+
+Bu bölüm, ilk rapordan sonra "sen karar ver" yetkisiyle yapılan işleri anlatır. Hepsi **yerel**; zincire, gerçek paraya, canlı sunucuya dokunulmadı.
+
+## Yapılanlar (commit'ler `kurumsal` dalında)
+| İş | Ne oldu | Commit |
+|---|---|---|
+| Temel gelir (UBI) %5 tek talep tavanı | Gerçek talep yoluna bağlandı; artan kısım kasada kalır, ertesi haftaya devreder | `a0c8b2e` |
+| KARAR 4 | Çekim ücretinin %50'si yakılır, %50'si temel gelire (eskiden %30 / %70) | `c8371f8` |
+| KARAR 5 + 6 | İkili çekim tavanı ve tek fiyat çarpanı k | `9700e68` |
+| KARAR 7 | Girişe bağlı haftalık ödeme bütçesi (5 kasa) | `2221984` |
+| Sponsorluk | Tasarım (`SPONSORLUK_TASARIMI.md`) + sunucu + Konsey ekranı + testler | `fe5ceea` |
+
+## Nasıl çalışıyor (sade)
+- **KARAR 5 (çekim tavanı):** haftalık toplam çekim sınırı = bugünkü kural ile "son 4 haftadaki dış alımın yarısı"ndan **küçük olanı**; ama bugünkü kuralın **%20'sinden az olamaz**. "Dış alım" = piyasadan net token alımı + trade sitesinden gelen pay. Sunucu bunu her saat piyasa fotoğrafından günlük kutulara yazarak ölçer.
+- **KARAR 6 (k çarpanı):** k = son günlerin piyasa değeri ÷ 30 günlük zirve. Fiyat düşünce k küçülür; hem kilit açılma tabanı (haftalık %1 × k) hem çekim tavanı yavaşlar. Giriş günü primi (%1,4) sabit.
+- **KARAR 7 (ödeme bütçesi):** her kasanın bir haftada oyuncu hareketiyle ödeyebileceği tutar = kasa × oran (zindan 2,5 · kolezyum 2 · boss 3 · görev 2,5 · karnaval 2) × sağlık çarpanı (0,15–1) + son 4 haftanın ortalama girişinin %90'ı. Hesaplaşmadaki ödemeler (ücretsiz oyuncu havuzu, kolezyum sıralaması) bu bütçeye girmez.
+- **Sponsorluk:** B, bir vatandaşa (A) ASTRA ile sponsor olur. Para A'da "çekilemez" kalemdir; A harcarken **önce o gider**. A her hafta gerçek çekim yaparsa net miktarın %30'u sponsorlara (anapara oranında) gider; sözleşme 12 ay ya da getiri anaparanın 2 katına ulaşınca biter. Sponsorlu para oyuncudan oyuncuya geçemez (ilan pazarı yalnız kendi parayla). Kararların gerekçesi `SPONSORLUK_TASARIMI.md`'de.
+
+## Ölçümler (aynı tohum, aynı bot oyuncular; eski → yeni)
+| Senaryo | Haftalık çekim tavanı | Zincire giden toplam | Çekilebilen $/ay (kişi başı) | İhlal |
+|---|---|---|---|---|
+| Taban 52 hafta | 21,4 M → **4,3 M** | 0,61 M → 0,68 M | 0,21 → 0,04 | yok |
+| Fiyat çöküşü 30 hf | 21,4 M → 4,3 M | 0,18 M → 0,19 M | 0,10 → 0,02 | yok |
+| Dış gelir 26 hf | 21,4 M → 4,3 M | 0,14 M → 0,21 M | 0,20 → 0,04 | yok |
+| Toplu çekim 20 hf | 0,30 M → **0,06 M** | 0,54 M → 0,44 M (istenen 1,43 M) | 0 → 0 | yok |
+| Sponsorluk 10 hf | (taban) | sponsor payı 37.319 ASTRA ödendi | — | yok (S1-S3 dahil) |
+
+Okuma: normal oyunda oyuncuların çekim talebi (haftada ≈ 13 bin) tavanın çok altında kaldığı için **kimsenin çekimi kısılmadı**; tavan yalnız toplu çekim senaryosunda bağladı. Ödeme bütçeleri açılışta toplam ≈ 770 bin ASTRA/hafta iken 52 haftada kasaların **net** azalışı yalnız ≈ 6 milyon (≈ 115 bin/hafta) oldu; Ayrıca ölçtüm (26 hafta, taban): bir haftada harcanan / bütçe oranının en yükseği **dünya boss kasasında %67**, diğerlerinde ≈ %0 (zindan, kolezyum, görev, karnaval). Yani yalnızca 130 hareketsiz bot oyuncuyla bile boss kasası bütçesinin üçte ikisine ulaştı; **gerçek oyuncu yoğunluğunda boss bütçesi bağlayıcı olabilir** — canlıya yakın denemede izlenmeli (`lastWeekBudget/lastWeekSpent`).
+
+## Sizin dikkatinize / kararınıza (yeni)
+1. **Çekilebilen gösterge daha da düştü (0,21 → 0,04 $/ay).** Sebep KARAR 5: simülasyonda hiç dış alım yok, tavan bugünkü kuralın %20'sine iniyor. Gerçekte trade sitesi payı ve piyasadan alım bu tavanı yükseltir; ama **ilk 4 hafta** (alım geçmişi birikene dek) tavan hep taban değerinde olur. Büyüme kilidi açmak için dış alım şart olduğu daha da netleşti.
+2. **k'nin üst sınırı (1,5) pratikte hiç çalışmaz:** zirve, güncel değerden küçük olamayacağı için oran en çok 1,0 olur. Karar metnine uydum; "30 günlük ortalama"ya bölmek isterseniz 1,5 anlam kazanır.
+3. **Ödeme bütçesi + mevcut "sağlık yumuşatması" birlikte çalışıyor:** kasa zayıflayınca oyuncu hem tek tek ödemelerde (eskiden beri) hem haftalık bütçede kısılır; yani sağlık düşüşü iki kez hissedilir. İsterseniz birini kaldırırım (karar sizin).
+4. **Bütçe dolunca oyuncu "kasa boş" benzeri bir yanıt görür** (ayrı bir "bu haftaki bütçe doldu" mesajı yok). Bot simülasyonunda dolmadı ama boss kasası %67'ye ulaştı; gerçek yoğunlukta görülebilir, o zaman mesaj eklenmeli.
+5. **Sponsorluk:** getiri %30 / 12 ay / 2× tavan benim önerimdir; değiştirmek tek satır (`js/config.js` → `SPONSORLUK`). Kalan risk ve hukuki konu `SPONSORLUK_TASARIMI.md`'de. Sponsorlu paranın harcaması **katkı puanı vermez** (aksi halde sponsor parası çekim payı satın alırdı).
+6. **Satır sonu kazası:** bir düzenleme aracı satır sonlarını değiştirip "sunucuda Math.random yok" denetim testini bozdu; tam test takımı yakaladı, düzeltildi.
+
+## Hâlâ denenmedi / sonraya (bkz. `SONRA_YAPILACAKLAR.md`)
+Sakin makinede yük eşiği, 30 dk dayanıklılık, gerçek Avalanche/gerçek token/PostgreSQL; sponsorluğun zincir üstü hâli ve doğrudan zincirden sponsor yatırma; sponsorlu harcamanın katkı puanındaki etkisi gerçek oyuncu davranışıyla.

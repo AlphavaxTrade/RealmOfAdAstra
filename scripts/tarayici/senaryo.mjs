@@ -48,6 +48,7 @@ const tumHatalar = [];
 async function sayfaAc(ad, { mobil = false } = {}) {
   const g = await girisAl(ad);
   const baglam = await tarayici.newContext({ viewport: mobil ? { width: 390, height: 844 } : { width: 1280, height: 860 }, hasTouch: mobil, permissions: ['clipboard-read', 'clipboard-write'] });
+  await baglam.addInitScript(() => { try { localStorage.setItem('roa_arayuz', 'eski'); } catch { /* */ } });   // betik eski ekranın seçicilerine bağlı (v3 artık varsayılan)
   await baglam.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, ['adastra_session_v1', JSON.stringify({ token: g.token, playerId: g.playerId })]);
   const sayfa = await baglam.newPage();
   const hatalar = [];

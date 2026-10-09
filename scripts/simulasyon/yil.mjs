@@ -99,7 +99,8 @@ function haftaKaydi() {
     hafta, epoch: gp.epochId, vatandas: ks.citizens, aktif: ((kapi.state().history || []).at(-1) || {}).citizens ?? 0, ekranAktif: ks.active, bekleyen: ks.waiting, askida: ks.suspended, sinir: ks.limit,
     gosterge: ks.indicator, izinde: oyuncular.filter(P => { const k = (E.readPlayer(P.pid) || {}).katilim; return k && k.izinModu && zaman.T < Number(k.izinModu.bitis); }).length,
     kasalar: Math.round(anlikFoto(W).kasalar), cekim: ozet.withdraw ? { cap: Math.round(ozet.withdraw.cap), talep: Math.round(ozet.withdraw.requested), gonderilen: Math.round(ozet.withdraw.sent) } : null,
-    ucretsizHavuz: ozet.faucet ? { oyuncu: ozet.faucet.players, toplam: Math.round(ozet.faucet.totalAda) } : null, yakilan: Math.round(Number(gp.totalBurned) || 0), sponsorPay: Math.round(ctx.cum.sponsorPay || 0), kasaOmruAy: ozet.runwayMonths ?? null,
+    ucretsizHavuz: ozet.faucet ? { oyuncu: ozet.faucet.players, toplam: Math.round(ozet.faucet.totalAda) } : null, yakilan: Math.round(Number(gp.totalBurned) || 0), sponsorPay: Math.round(ctx.cum.sponsorPay || 0),
+    butce: Object.fromEntries(Object.entries(E.treasury.state.lastWeekBudget || {}).map(([k, b]) => [k, { butce: Math.round(b), harcanan: Math.round((E.treasury.state.lastWeekSpent || {})[k] || 0) }])), kasaOmruAy: ozet.runwayMonths ?? null,
     seviye: { ucretsiz: sinifOrt('ucretsiz'), orta: sinifOrt('orta'), balina: sinifOrt('balina') }, korunumFarki: Math.round(ctx.korunumFarki * 100) / 100
   };
 }

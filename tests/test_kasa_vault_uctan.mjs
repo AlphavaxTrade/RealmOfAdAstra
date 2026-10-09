@@ -160,6 +160,18 @@ try {
   assert.equal(row(kes).status, 'sent'); assert.equal((await bal(P3)) - p3b, ASTRA(77), 'Tam bir kez');
   ok('Kasa modunda yayın koptu: satır yeniden gönderilmedi, reconcile ile tek ödeme (çift ödeme yok)');
 
+  // 7b) Toz: tavan/adım kırpmasından artan 0,01 ASTRA'dan küçük kalan gönderilmez, olay olarak kaydedilir (satır kırpılan tutarla kapanır)
+  {
+    const once = await bal(P3);
+    const toz = add('withdraw', P3, 100.004, 9);
+    const rt = await mkWorld(cfg).processPayouts({ force: true });
+    assert.deepEqual([rt.sent, rt.failed], [1, 0], JSON.stringify(rt));
+    assert.equal((await bal(P3)) - once, ASTRA(100), 'yalnız 100,00 ASTRA gitti (0,004 toz)');
+    assert.equal(row(toz).amount, 100); assert.equal(row(toz).status, 'sent');
+    assert.ok(db.raw.prepare("SELECT COUNT(*) AS n FROM events WHERE type = 'payout-dust'").get().n >= 1, 'toz olayı kaydedildi');
+    ok('Toz: 0,01 ASTRA altı artık gönderilmez, olay kaydedilir; satır gönderilen tutarla kapanır');
+  }
+
   // 8) Sahip dağıtıcıyı değiştirirse (24 saat sonra) sunucu ödemeyi durdurur — yeni anahtar tanımlanana kadar
   await (await kasa.connect(owner).proposeConfig({ dagitici: new ethers.Wallet(otherKey).address, creator: CREATOR, singleDrawBps: 200, dailyLimitBps: 1000 })).wait();
   const hala = add('withdraw', P3, 5, 8);
