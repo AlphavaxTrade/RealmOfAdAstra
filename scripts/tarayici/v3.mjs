@@ -99,7 +99,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: tek senaryo çalışır ve ✓ gösterir`, await s.evaluate(() => /Geçti/.test(document.querySelector('[data-lab-senaryo="zaman-sefer-hazir"] .v3-lab-sonuc')?.innerText || '')));
   await tikla('[data-lab="hepsini"]'); await bekle(1500);
   const ozetMetni = await s.evaluate(() => document.querySelector('.v3-lab-ozet span')?.innerText || '');
-  kontrol(`${ad}: "listeyi çalıştır" hepsi geçti`, new RegExp(`${toplamSenaryo}/${toplamSenaryo} geçti`).test(ozetMetni), ozetMetni);
+  kontrol(`${ad}: "listeyi çalıştır" hepsi geçti`, ozetMetni.includes(`${toplamSenaryo}/${toplamSenaryo} geçti`), ozetMetni);
   await foto('10_lab_sonuclar');
   await tikla('[data-lab="sekme:arac"]'); await foto('11_lab_araclar');
   await tikla('[data-lab="astra:1000"]');
