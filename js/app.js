@@ -730,13 +730,13 @@ function refreshQuotaTrackerUI() {
   const el = dom.modalBody && dom.modalBody.querySelector('.quota-tracker');
   if (!el) return;
   const scroll = dom.modalBody.scrollTop;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
   dom.modalBody.scrollTop = scroll;
 }
 
 function openDailyLimitsModal() {
   dom.modalTitle.innerHTML = `<span>📊</span> <span>KOTA VE SINIRLAR</span>`;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
   displayModal();
 }
 
@@ -1771,7 +1771,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <span>🔨 Ocağın Başı: Ne Üretmek İstersin?</span>
             </div>
             <div style="font-size: 0.88rem; color: #94a3b8; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
-              <span>Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.</span>
+              ${V3_ARAYUZ ? `<details class="v3-ayrinti" style="flex:1; min-width:140px;"><summary>Nasıl çalışır?</summary><div>Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.</div></details>` : `<span>Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.</span>`}
               <button class="btn-clean btn-goto-armory" style="width:auto; padding:6px 12px; font-size:0.8rem; background:transparent; border:1px solid #475569; color:#cbd5e1;">⚔️ Kışla → Cephanelik</button>
             </div>
           </div>
@@ -3247,6 +3247,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
         </div>
 
         <!-- 15 Ödül Listesi / Detaylı İnceleme Bölümü -->
+        ${V3_ARAYUZ ? '<details class="v3-ayrinti"><summary>📋 Çarktaki 15 ödül ve şansları</summary>' : ''}
         <div class="clean-card" style="border-color: rgba(255,255,255,0.1); background: rgba(10,10,18,0.6); padding:12px;">
           <div style="font-size:0.85rem; font-weight:800; color:#cbd5e1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
             <span>📋 Çarktaki 15 Dilim Ödül Tablosu: <span style="font-weight:600; color:#94a3b8; font-size:0.75rem;">hammadde, parça ve anahtar ödülleri Karnaval kasasının parasıyla pazardan geri alınıp sana verilir</span></span>
@@ -3269,6 +3270,8 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             })()}
           </div>
         </div>
+
+        ${V3_ARAYUZ ? '</details>' : ''}
 
         <div id="carnival-redeem-codes-container">
           ${redeemCodes.length > 0 ? `
@@ -4868,7 +4871,7 @@ function openTreasuryVaultModal() {
             </div>
             <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #cbd5e1; font-weight: 700; align-self: flex-start;">${pool.statusBadge}</span>
           </div>
-          <div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}</div>
+          ${(() => { const ic = `${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}`; return V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Nasıl dolar?</summary><div>${ic}</div></details>` : `<div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${ic}</div>`; })()}
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; margin-top: auto;">
             <span style="font-size: 0.78rem; color: #cbd5e1; flex: 1; min-width: 0;">👤 ${pool.userShareText}</span>
             <button class="btn-clean btn-treasury-action" data-action="${pool.actionType}" style="padding: 5px 10px; font-size: 0.76rem; width: auto; border: 1px solid ${pool.color}; background: transparent; color: #fff; white-space: nowrap; flex-shrink: 0;">${pool.actionText} →</button>
@@ -4960,7 +4963,7 @@ function openTreasuryVaultModal() {
       </div>
     </div>` : '';
   const sponsorHtml = online.active && isLoggedIn() ? '<div id="sponsor-box" class="clean-card" style="border-color:#f472b6;"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Yükleniyor…</div></div>' : '';
-  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + (V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Harcanan her 100 ASTRA nereye gider?</summary>${splitHtml}</details>` : splitHtml) + poolsGridHtml;
   if (sponsorHtml) loadSponsorBox();
   const izinBitirBtn = document.getElementById('btn-izin-bitir');
   if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };

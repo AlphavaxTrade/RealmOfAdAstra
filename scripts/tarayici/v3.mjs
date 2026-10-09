@@ -166,6 +166,23 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: diziliş seçenekleri açılır`, await s.evaluate(() => document.querySelectorAll('.bk-presets [data-bk="preset"]').length >= 1));
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Kotalar, Karnaval, Hazine, Demirhane: kısa ve kaydırmasız yatay taşma yok; uzun açıklamalar katlı
+  await ust('ben', 'kotalar'); await foto('15_kotalar');
+  const kota = await s.evaluate(() => { const t = [...document.querySelectorAll('#modal-body details.v3-katli > summary')].map(e => e.innerText.slice(0, 18)); return { ilk: t[0], son: t[t.length - 1], katli: document.querySelectorAll('#modal-body details.v3-ayrinti').length, sayac: getComputedStyle(document.querySelector('.quota-timers')).gridTemplateColumns.split(' ').length }; });
+  kontrol(`${ad}: Kotalar'da bugünkü sınırların önde, Sirius kapasitesi (bütün oyuncular) sonda`, /Günlük/.test(kota.ilk) && /Sirius/.test(kota.son), JSON.stringify(kota));
+  kontrol(`${ad}: Kotalar'da 3 sayaç tek satır, açıklamalar katlı`, kota.sayac === 3 && kota.katli >= 2, JSON.stringify(kota));
+  kontrol(`${ad}: Kotalar kısa (≤ 1700 px; eskiden ~2340)`, (await govdeYuk()) <= 1700, String(await govdeYuk()));
+  await ust('pazar', 'karnaval'); await foto('16_karnaval');
+  const karn = await s.evaluate(() => { const w = document.querySelector('.carnival-wheel-wrapper').getBoundingClientRect(); const d = document.querySelector('.btn-spin-wheel')?.getBoundingClientRect(); return { cark: Math.round(w.width), sekme: getComputedStyle(document.querySelector('.carnival-tab-btn').parentElement).gridTemplateColumns.split(' ').length, katliOdul: !!document.querySelector('#modal-body details.v3-ayrinti'), dugmeAltta: d ? Math.round(d.top) : -1 }; });
+  kontrol(`${ad}: Karnaval'da çark küçük, 3 sekme tek satır, ödül tablosu katlı`, karn.cark <= 260 && karn.sekme === 3 && karn.katliOdul, JSON.stringify(karn));
+  kontrol(`${ad}: Karnaval kısa (≤ 1400 px; eskiden ~2370)`, (await govdeYuk()) <= 1400, String(await govdeYuk()));
+  await ust('ben', 'hazine'); await foto('17_hazine');
+  kontrol(`${ad}: Hazine'de kasa açıklamaları ve harcama dağılımı katlı, ≤ 2100 px`, (await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-ayrinti').length)) >= 10 && (await govdeYuk()) <= 2100, String(await govdeYuk()));
+  await ust('kralik', 'demirhane'); await foto('18_demirhane');
+  kontrol(`${ad}: Demirhane'de giriş açıklaması katlı`, await s.evaluate(() => !!document.querySelector('#modal-body details.v3-ayrinti')));
+  kontrol(`${ad}: bu dört panelde yatay taşma yok`, await s.evaluate(() => document.getElementById('modal-body').scrollWidth <= document.getElementById('modal-body').clientWidth + 2));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // onay penceresi: Esc vazgeç, Onayla evet
   await s.evaluate(async (yol) => { const m = await import(yol); window.__onay = (...a) => { window.__sonuc = undefined; m.onay(...a).then(v => { window.__sonuc = v; }); }; }, '/js/ui/v3/bilesenler.js');   // söz döndürmez: evaluate pencere kapanana kadar beklemesin
   await s.evaluate(() => window.__onay({ baslik: 'Silinsin mi?', metin: 'Geri alınamaz.', tamam: 'Sil', tehlikeli: true }));

@@ -107,7 +107,8 @@ export function renderDungeonEntryLadder(st) {
 }
 
 // "Kota ve Sınırlar" panelinin tamamı
-export function renderQuotaTracker({ gameState, globalPool, config }) {
+// compact (arayüz v3): kişisel bölümler önde (bugünkü sınırların, kendi üretim hakkın), bütün oyunculara ait Sirius kapasitesi en altta; uzun açıklamalar 'Nasıl hesaplanıyor?' altında
+export function renderQuotaTracker({ gameState, globalPool, config, compact = false }) {
   const caps = config.GLOBAL_RESOURCE_CAPS;
   const order = config.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
   const W = gameState.getUretimWeight ? gameState.getUretimWeight() : { weight: 1, levelFactor: 1, tier: { name: 'Yok', mult: 1 }, activity: 1 };
@@ -131,20 +132,21 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
     return t.getTime() - 3 * 3600 * 1000;
   })();
 
-  return `
-    <div class="quota-tracker">
+  const not = (ozet, ic) => (compact ? `<details class="v3-ayrinti"><summary>${ozet}</summary><div>${ic}</div></details>` : `<div class="clean-desc">${ic}</div>`);
+  const zamanlar = `
       <div class="quota-timers">
         <div class="stat-tile"><span class="stat-tile-label">Kotanın yeni parçası</span><strong>${nextRelease && dayIndex < 6 ? formatDuration(nextRelease - now) : 'Hafta sonu'}</strong><span class="stat-tile-sub">Her gün haftalık kotanın 1/7'si açılır</span></div>
         <div class="stat-tile"><span class="stat-tile-label">Günlük haklar yenilenir</span><strong>${formatDuration(trtMidnight - now)}</strong><span class="stat-tile-sub">Gece 00:00 (TSİ)</span></div>
         <div class="stat-tile"><span class="stat-tile-label">Yeni hafta</span><strong>${formatDuration(weekEnd - now)}</strong><span class="stat-tile-sub">Pazartesi 00:01 (TSİ)</span></div>
-      </div>
+      </div>`;
 
+  const bUretim = `
       <section class="clean-card quota-section">
         <div class="card-title-row">
           <div class="card-title">🎫 Üretim Hakkın (bu hafta)</div>
           <span class="card-badge">ağırlık ×${W.weight} · kademe ${W.tier.name}</span>
         </div>
-        <div class="clean-desc">Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(OT.hours)} sa × ${Math.round(OT.days)} gün) × kişi başı kota × ağırlığın (seviye ×${W.levelFactor} · katkı kademesi ${W.tier.name} ×${W.tier.mult} · aktiflik ×${W.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.</div>
+        ${not('Nasıl hesaplanıyor?', `Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(OT.hours)} sa × ${Math.round(OT.days)} gün) × kişi başı kota × ağırlığın (seviye ×${W.levelFactor} · katkı kademesi ${W.tier.name} ×${W.tier.mult} · aktiflik ×${W.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`)}
         <div class="quota-res-grid">
           ${order.map(k => { const hk = gameState.getUretimHakki(k); const m = caps[k]; const pc = (n, b) => (b > 0 ? Math.min(100, (n / b) * 100) : 0).toFixed(1); return `
           <div class="quota-res-card" style="--res-color:${m.color}">
@@ -153,20 +155,22 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
             <div class="quota-res-legend"><span><i class="lg lg-harvested"></i>Kullanılan ${fmtInt(hk.used)}</span><span><i class="lg lg-released"></i>Açılan ${fmtInt(hk.released)}</span><span><i class="lg lg-locked"></i>Haftalık ${fmtInt(hk.weekly)}</span>${hk.extra > 0 ? `<span>➕ Başkalarından ${fmtInt(hk.extra)}</span>` : ''}</div>
           </div>`; }).join('')}
         </div>
-      </section>
+      </section>`;
 
+  const bSirius = `
       <section class="clean-card quota-section">
         <div class="card-title-row">
           <div class="card-title">🌍 Sirius Çıkarma Kapasitesi (bu hafta, bütün oyuncular · kota %${Math.round((UP.qpp[order[0]] || 0) * 100)} · Otorite sv.${UP.otoriteLevel})</div>
           <span class="card-badge">${dayIndex + 1}. gün / 7</span>
         </div>
-        <div class="clean-desc">Bütün oyuncuların bu hafta çıkarabileceği toplam hammadde. Kota her gün bir parça açılır; açılıp çıkarılmayan kısım hafta içinde birikir. Seferin topladığı miktar, o an alınabilir olanla sınırlıdır.</div>
+        ${not('Bu ne demek?', 'Bütün oyuncuların bu hafta çıkarabileceği toplam hammadde. Kota her gün bir parça açılır; açılıp çıkarılmayan kısım hafta içinde birikir. Seferin topladığı miktar, o an alınabilir olanla sınırlıdır.')}
         ${renderDayStrip(dayIndex)}
         <div class="quota-res-list">
           ${order.map(k => renderResourceQuotaCard(k, infos[k], caps[k])).join('')}
         </div>
-      </section>
+      </section>`;
 
+  const bGunluk = `
       <section class="clean-card quota-section">
         <div class="card-title-row">
           <div class="card-title">📅 Günlük sınırların (bugün)</div>
@@ -177,8 +181,9 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
           ${renderLimitMeter({ icon: '🏦', label: 'Zindan kasasının bugünkü ödeme bütçesi', used: Math.max(0, (dun.budget || 0) - (dun.budgetLeft || 0)), max: dun.budget || 0, unit: ' ASTRA', note: 'Kasa günde en fazla bakiyesinin %1\'ini öder' })}
         </div>
         ${renderDungeonEntryLadder(dun)}
-      </section>
+      </section>`;
 
+  const bHaftalik = `
       <section class="clean-card quota-section">
         <div class="card-title-row">
           <div class="card-title">🗓️ Haftalık sınırların</div>
@@ -194,6 +199,11 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
           <span>🏛️ Haftalık temel gelir (UBI)</span>
           <strong>${(gameState.state.level || 1) < ubiMin ? `${ubiMin}. seviyede açılır` : ubiClaimed ? 'Bu hafta alındı' : 'Bu hafta alınabilir'}</strong>
         </div>
-      </section>
+      </section>`;
+
+  const sirali = compact ? [bGunluk, bUretim, bHaftalik, bSirius] : [bUretim, bSirius, bGunluk, bHaftalik];
+  return `
+    <div class="quota-tracker">${zamanlar}
+${sirali.join('\n')}
     </div>`;
 }

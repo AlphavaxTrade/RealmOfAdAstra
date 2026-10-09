@@ -178,4 +178,24 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
   ok('Kota paneli: tüm bölümler hatasız üretiliyor');
 }
 
+// 10) Kota paneli v3 (compact) düzeni: kişisel bölümler önde, bütün oyunculara ait Sirius kapasitesi sonda, açıklamalar katlı; aynı içerik, yalnız sıra ve katlama değişir
+{
+  const gs = fresh();
+  const eski = renderQuotaTracker({ gameState: gs, globalPool, config: GAME_CONFIG });
+  const yeni = renderQuotaTracker({ gameState: gs, globalPool, config: GAME_CONFIG, compact: true });
+  const sira = (h) => ['Günlük sınırların', 'Üretim Hakkın', 'Haftalık sınırların', 'Sirius Çıkarma Kapasitesi'].map((b) => h.indexOf(b));
+  const [g, u, h, s] = sira(yeni);
+  assert.ok(g > 0 && g < u && u < h && h < s, `compact sıra: günlük < üretim hakkı < haftalık < Sirius (bulunan ${sira(yeni)})`);
+  const [g0, u0, h0, s0] = sira(eski);
+  assert.ok(u0 < s0 && s0 < g0 && g0 < h0, 'varsayılan (eski) sıra değişmemeli');
+  assert.equal((yeni.match(/class="v3-ayrinti"/g) || []).length, 2, 'iki uzun açıklama katlı');
+  assert.equal((eski.match(/v3-ayrinti/g) || []).length, 0, 'eski düzende katlama yok');
+  assert.ok(yeni.includes('Nasıl hesaplanıyor?') && yeni.includes('Bu ne demek?'));
+  assert.ok(!/NaN|undefined|Infinity/.test(yeni));
+  // aynı bilgi: iki çıktıdaki sayılar kümesi aynı
+  const sayilar = (x) => (x.replace(/<[^>]+>/g, ' ').match(/\d[\d.,]*/g) || []).sort().join('|');
+  assert.equal(sayilar(yeni), sayilar(eski), 'compact aynı sayıları göstermeli');
+  ok('Kota paneli v3: kişisel bölümler önde, Sirius sonda, açıklamalar katlı, içerik aynı');
+}
+
 console.log(`\n${passed} v1.27 testi geçti.`);

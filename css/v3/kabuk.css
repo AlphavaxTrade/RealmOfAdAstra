@@ -357,3 +357,28 @@ html.v3 .bk :is(.bk-btn, .bk-chip, .bk-tab, .bk-seg, .bk-slot-hit, .bk-icon-btn,
 html.v3 .bk .bk-row { display: flex; }
 html.v3 .bk :is(.bk-mini, .bk-btn.sm) { min-height: 40px; padding-left: 12px; padding-right: 12px; }
 html.v3 .bk .bad { color: var(--v3-kotu); font-weight: 700; }
+
+/* 17. KARNAVAL (çark küçülür: çevirme düğmeleri kaydırmadan görünsün; üç sekme tek satır) ------------- */
+html.v3 .rpg-modal-body div:has(> .carnival-tab-btn) { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; margin-bottom: 8px !important; }
+html.v3 .carnival-tab-btn { padding: 6px 4px !important; font-size: 0.72rem !important; line-height: 1.15; flex-direction: column; gap: 2px !important; min-height: 56px; text-align: center; }
+html.v3 .carnival-tab-btn > span:first-child { font-size: 1.15rem !important; }
+html.v3 .carnival-wheel-wrapper { width: min(250px, 64vw); height: min(250px, 64vw); max-width: none; max-height: none; padding: 6px 0; }
+html.v3 #carnival-wheel-canvas { width: 100%; height: 100%; }
+html.v3 .carnival-wheel-hub { width: 54px; height: 54px; }
+html.v3 .carnival-wheel-hub-inner { width: 40px; height: 40px; }
+html.v3 .carnival-wheel-hub-inner span + span { display: none; }
+html.v3 .carnival-wheel-hub-inner span { font-size: 1.2rem !important; }
+html.v3 .carnival-wheel-pointer { width: 28px; height: 34px; }
+html.v3 .carnival-wheel-stage { margin: 0 auto 8px; }
+html.v3 .btn-spin-wheel { min-height: var(--v3-tap); }
+
+/* 18. KOTALAR (üç sayaç tek satır) ------------------------------------------------------------------ */
+html.v3 .quota-timers { grid-template-columns: repeat(3, 1fr) !important; gap: 6px !important; }
+html.v3 .quota-timers .stat-tile { padding: 8px 8px; min-width: 0; }
+html.v3 .quota-timers .stat-tile strong { font-size: 0.95rem; }
+html.v3 .quota-timers .stat-tile-label { font-size: 0.68rem; line-height: 1.2; }
+html.v3 .quota-timers .stat-tile-sub { display: none; }
+
+/* 19. HAZİNE (ödül kasaları daha sıkı) ---------------------------------------------------------------- */
+html.v3 .rpg-modal-body div[style*="minmax(300px"] > .clean-card { padding: 10px 12px !important; gap: 4px !important; }
+html.v3 .rpg-modal-body div[style*="minmax(300px"] details.v3-ayrinti { margin: 0; }
