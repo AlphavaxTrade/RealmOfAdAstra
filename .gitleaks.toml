@@ -12,6 +12,8 @@ description = "Bilinen sahte değerler ve herkese açık sözleşme adresi (büt
 regexes = [
   # testlerde kullanılan uydurma yönetici şifresi (loadConfig({ adminToken: ... }))
   '''yonetici-test-anahtari-uzun-1234567890''',
+  # yıllık simülasyon aracının uydurma yönetici şifresi (scripts/simulasyon/dunya.mjs; yalnız ':memory:' veritabanıyla, 9 Ekim 2026)
+  '''sim-yonetici-anahtari-uzun-1234567890''',
   # yük aracının sanal oyuncu parolası
   '''Yuk-Parola-123''',
   # ADASTRA token sözleşmesi (Avalanche C-Chain'de herkese açık adres, sır değil)
