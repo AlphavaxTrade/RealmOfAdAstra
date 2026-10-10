@@ -11,6 +11,7 @@ const SADE_BASLIKLAR = [
   [/KOTA VE SINIRLAR/i, '📊 Kotalarım'],
   [/Sirius Konseyi\s*&\s*Hazine/i, '🏛️ Konsey ve hazine'],
   [/SÜRÜM GEÇMİŞİ/i, '📜 Sürüm geçmişi'],
+  [/DEMİRCİSİ\s*&\s*TAMİRHANE|KRALLIK DEMİRCİSİ/i, '⚒️ Demirhane'],
   [/GLADYATÖR KOLEZYUMU/i, '🏟️ Kolezyum'],
   [/KARNAVALI/i, '🎪 Karnaval'],
   [/NFT KOLEKSİYONU/i, '👑 Sandıklar ve koleksiyon'],

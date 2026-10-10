@@ -1686,15 +1686,8 @@ function openTownZoneModal(zoneId, zoneName) {
 
   // 2.5 DEMİRCİ & TAMİRHANE (ŞEHİR MERKEZİNDEKİ EV) - Geniş Ekran 3 Sütunlu Entegre Cephanelik, Dövme ve Donatım Merkezi
   else if (zoneId === 'blacksmith') {
-    const pickaxeTool = state.tools.pickaxe || { durability: 0 };
-    const axeTool = state.tools.axe || { durability: 0 };
-    const sickleTool = state.tools.sickle || { durability: 0 };
-    const pickCost = gameState.calculateRepairCost('pickaxe');
-    const axeCost = gameState.calculateRepairCost('axe');
-    const sickleCost = gameState.calculateRepairCost('sickle');
 
     const equipConfig = GAME_CONFIG.EQUIPMENT_RECIPES;
-    const currentEquip = state.equipment || {};
     const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
     const slotNames = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı', legs: 'Pantolon', boots: 'Ayakkabı' };
 
@@ -1711,7 +1704,6 @@ function openTownZoneModal(zoneId, zoneName) {
     let curSoldierIdx = window.blacksmithSelectedSoldierIndex != null ? window.blacksmithSelectedSoldierIndex : 0;
     if (curSoldierIdx >= soldiers.length && soldiers.length > 0) curSoldierIdx = 0;
     window.blacksmithSelectedSoldierIndex = curSoldierIdx;
-    const currentSelectedSoldier = soldiers[curSoldierIdx] || null;
 
     // Hasarlı eşya sayısı kontrolü
     const damagedArmoryItems = armoryList.filter(e => (e.item.durability || 13) < (e.item.maxDurability || 13));
@@ -1754,11 +1746,11 @@ function openTownZoneModal(zoneId, zoneName) {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
         <button class="phase2-tab-btn btn-bs-tab ${activeBlacksmithTab === 'forge' ? 'active' : ''}" data-bstab="forge" style="padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span style="font-size: 1.3rem;">🔥</span>
-          <span>1. YENİ SİLAH & ZIRH DÖV</span>
+          <span>${V3_ARAYUZ ? 'Yeni eşya dök' : '1. YENİ SİLAH & ZIRH DÖV'}</span>
         </button>
         <button class="phase2-tab-btn btn-bs-tab ${activeBlacksmithTab === 'armory' ? 'active' : ''}" data-bstab="armory" style="padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span style="font-size: 1.3rem;">🎒</span>
-          <span>2. ÇANTAM & EŞYALARIM (${armoryList.length})</span>
+          <span>${V3_ARAYUZ ? `Eşyalarım (${armoryList.length})` : `2. ÇANTAM & EŞYALARIM (${armoryList.length})`}</span>
         </button>
       </div>
 
@@ -1771,7 +1763,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <span>🔨 Ocağın Başı: Ne Üretmek İstersin?</span>
             </div>
             <div style="font-size: 0.88rem; color: #94a3b8; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
-              <span>Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.</span>
+              <span>${V3_ARAYUZ ? 'Bir parça seç ve döv; eksik hammaddeyi tek tuşla pazardan alabilirsin. Askerine Kışla\'dan takarsın.' : 'Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik\'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.'}</span>
               <button class="btn-clean btn-goto-armory" style="width:auto; padding:6px 12px; font-size:0.8rem; background:transparent; border:1px solid #475569; color:#cbd5e1;">⚔️ Kışla → Cephanelik</button>
             </div>
           </div>
@@ -1868,22 +1860,23 @@ function openTownZoneModal(zoneId, zoneName) {
             </div>
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;">
-                ⚡ Hepsini Toplu Geliştir
-              </button>
+              ${V3_ARAYUZ ? '' : `<button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;"> ⚡ Hepsini Toplu Geliştir </button>`}
               <button class="btn-clean btn-armory-repair-all" style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 8px 14px; font-size: 0.84rem;" ${damagedArmoryItems.length === 0 ? 'disabled' : ''}>
                 🔨 Kırılan Her Şeyi Onar (${damagedArmoryItems.length})
               </button>
               <button class="btn-clean btn-smart-auto-equip" style="width: auto; background: #16a34a; border-color: #4ade80; padding: 8px 14px; font-size: 0.84rem;">
                 ⚡ En İyileri Askerlerime Giydir
               </button>
+              ${V3_ARAYUZ ? `<details class="v3-daha v3-genis"><summary>Toplu işlemler</summary><div><button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;"> ⚡ Hepsini Toplu Geliştir </button>` : ''}
               <button class="btn-clean btn-smart-unequip-all" style="width: auto; background: #334155; border-color: #64748b; padding: 8px 14px; font-size: 0.84rem;">
                 🔄 Tümünü Çantaya Topla
               </button>
+              ${V3_ARAYUZ ? '</div></details>' : ''}
             </div>
           </div>
 
           <!-- Özelleştirilmiş Hızlı Geliştirme Paneli -->
+          ${V3_ARAYUZ ? '<details class="v3-daha v3-genis"><summary>Tür ve seviyeye göre geliştir</summary><div>' : ''}
           <div class="clean-card" style="border-left: 4px solid #f59e0b; padding: 12px 16px; background: rgba(30,20,10,0.4);">
             <div style="font-size: 0.9rem; font-weight: 800; color: #fde047; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
               <span>🎯 Özelleştirilmiş Hızlı Geliştirme</span>
@@ -1933,6 +1926,7 @@ function openTownZoneModal(zoneId, zoneName) {
               </div>
             </div>
           </div>
+          ${V3_ARAYUZ ? '</div></details>' : ''}
 
           <!-- Eşya Listesi -->
           <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -1940,7 +1934,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="clean-card" style="text-align: center; padding: 40px 20px; color: #94a3b8;">
                 <div style="font-size: 2.5rem; margin-bottom: 8px;">🎒</div>
                 <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">Bu Kategori İçin Çantanızda Eşya Yok</div>
-                <div style="font-size: 0.9rem; margin-top: 4px;">Yukarıdaki <strong>"1. YENİ SİLAH & ZIRH DÖV"</strong> sekmesine tıklayarak ordunuz için yeni eşya üretebilirsiniz.</div>
+                <div style="font-size: 0.9rem; margin-top: 4px;">Yukarıdaki <strong>"${V3_ARAYUZ ? 'Yeni eşya dök' : '1. YENİ SİLAH & ZIRH DÖV'}"</strong> sekmesine tıklayarak ordunuz için yeni eşya üretebilirsiniz.</div>
               </div>
             ` : filteredArmoryList.map((entry, idx) => {
               const { source, slotKey, slotName, soldierIndex, soldierName, locationLabel, item, armoryIndex } = entry;
@@ -2006,46 +2000,23 @@ function openTownZoneModal(zoneId, zoneName) {
 
                   <!-- Sağ: Aksiyon Butonları -->
                   <div style="display: flex; gap: 8px; align-items: center; flex-wrap:wrap;">
-                    ${!isMaxLvl ? `
-                      <button class="btn-clean btn-armory-direct-upgrade" 
-                        data-source="${source}" 
-                        data-slot="${slotKey}" 
-                        data-armory-idx="${armoryIndex !== undefined ? armoryIndex : ''}" 
-                        data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" 
-                        data-item-id="${item.id}"
-                        style="width: auto; background: #7c3aed; border-color: #a78bfa; padding: 10px 16px; font-size: 0.88rem;"
-                        ${canAffordUp ? '' : 'disabled'}>
-                        ✨ Seviye ${nextLvl}'ye Yükselt
-                      </button>
-                    ` : `
-                      <span style="color: #facc15; font-size: 0.85rem; font-weight: 800; padding: 8px;">🏆 Maksimum Güç</span>
-                    `}
-
-                    ${online.active ? `<button class="btn-clean btn-clean-outline btn-sell-equipment" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f59e0b; color:#fcd34d;" title="İlan pazarına koy: komisyon %2, 7 gün, en çok 10 ilan">🏷️ Pazara koy</button>` : ''}
-                    ${(() => { const rv = gameState.getRecycleValue ? gameState.getRecycleValue(item) : null; if (!rv) return ''; const txt = `${rv.wood}🌲 ${rv.iron}⛏️${rv.coal ? ` ${rv.coal}⚫` : ''}`; return `<button class="btn-clean btn-clean-outline btn-recycle-equipment" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" data-value="${txt}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f97316; color:#fdba74;" title="Geri dönüşüm: hammaddelerin %70'i geri gelir, ASTRA gelmez; eşya yok olur">♻️ Geri dönüştür (${txt})</button>`; })()}
-                    ${isDamaged ? `
-                      <button class="btn-clean btn-armory-repair btn-equip-repair" 
-                        data-slot="${slotKey}" 
-                        data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}"
-                        style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 10px 14px; font-size: 0.88rem;"
-                        ${canAffordRep ? '' : 'disabled'}>
-                        🔧 Onar (${repCost ? repCost.adaCost : 0} ASTRA)
-                      </button>
-                    ` : ''}
-
-                    ${isEquipped ? `
-                      <button class="btn-clean btn-unequip-soldier-slot" 
-                        data-soldier-idx="${soldierIndex}" 
-                        data-slot="${slotKey}"
-                        style="width: auto; background: #475569; border-color: #64748b; padding: 10px 14px; font-size: 0.88rem;">
-                        ✕ Üzerinden Çıkar
-                      </button>
-                    ` : `
-                      <button class="btn-clean btn-smart-auto-equip" 
-                        style="width: auto; background: #16a34a; border-color: #4ade80; padding: 10px 14px; font-size: 0.88rem;">
-                        🛡️ Askerime Giydir
-                      </button>
-                    `}
+                    ${(() => {
+                      const attrSrc = `data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined && armoryIndex !== null ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}"`;
+                      const upBtn = !isMaxLvl ? `
+                        <button class="btn-clean btn-armory-direct-upgrade" data-source="${source}" data-slot="${slotKey}" data-armory-idx="${armoryIndex !== undefined ? armoryIndex : ''}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" data-item-id="${item.id}" style="width: auto; background: #7c3aed; border-color: #a78bfa; padding: 10px 16px; font-size: 0.88rem;" ${canAffordUp ? '' : 'disabled'}>✨ Seviye ${nextLvl}'ye Yükselt</button>`
+                        : `<span style="color: #facc15; font-size: 0.85rem; font-weight: 800; padding: 8px;">🏆 Maksimum Güç</span>`;
+                      const sellBtn = online.active ? `<button class="btn-clean btn-clean-outline btn-sell-equipment" ${attrSrc} style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f59e0b; color:#fcd34d;" title="İlan pazarına koy: komisyon %2, 7 gün, en çok 10 ilan">🏷️ Pazara koy</button>` : '';
+                      const recycleBtn = (() => { const rv = gameState.getRecycleValue ? gameState.getRecycleValue(item) : null; if (!rv) return ''; const txt = `${rv.wood}🌲 ${rv.iron}⛏️${rv.coal ? ` ${rv.coal}⚫` : ''}`; return `<button class="btn-clean btn-clean-outline btn-recycle-equipment" ${attrSrc} data-value="${txt}" style="width:auto; padding:10px 12px; font-size:0.82rem; border-color:#f97316; color:#fdba74;" title="Geri dönüşüm: hammaddelerin %70'i geri gelir, ASTRA gelmez; eşya yok olur">♻️ Geri dönüştür (${txt})</button>`; })();
+                      const repairBtn = isDamaged ? `
+                        <button class="btn-clean btn-armory-repair btn-equip-repair" data-slot="${slotKey}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 10px 14px; font-size: 0.88rem;" ${canAffordRep ? '' : 'disabled'}>🔧 Onar (${repCost ? repCost.adaCost : 0} ASTRA)</button>` : '';
+                      const unequipBtn = `<button class="btn-clean btn-unequip-soldier-slot" data-soldier-idx="${soldierIndex}" data-slot="${slotKey}" style="width: auto; background: #475569; border-color: #64748b; padding: 10px 14px; font-size: 0.88rem;">✕ Üzerinden Çıkar</button>`;
+                      const equipBtn = `<button class="btn-clean btn-smart-auto-equip" style="width: auto; background: #16a34a; border-color: #4ade80; padding: 10px 14px; font-size: 0.88rem;">🛡️ Askerime Giydir</button>`;
+                      if (!V3_ARAYUZ) return upBtn + sellBtn + recycleBtn + repairBtn + (isEquipped ? unequipBtn : equipBtn);
+                      // arayüz v3: ana işlemler görünür (yükselt / onar / giydir); pazara koy, geri dönüştür, çıkar "Diğer" altında
+                      const digerleri = sellBtn + recycleBtn + (isEquipped ? unequipBtn : '');
+                      return upBtn + repairBtn + (isEquipped ? '' : equipBtn)
+                        + (digerleri ? `<details class="v3-daha"><summary>Diğer</summary><div>${digerleri}</div></details>` : '');
+                    })()}
                   </div>
 
                 </div>

@@ -89,6 +89,26 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: konsey ve hazine sade başlıklı`, (await baslik()) === '🏛️ Konsey ve hazine', await baslik());
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Demirhane (v3): sade başlık, 2 sade sekme, ana işlemler görünür; pazara koy / geri dönüştür / çıkar "Diğer" altında
+  await s.evaluate(() => {   // cephanelige 3 deneme esyasi (biri hasarli): dovme maliyetli/sureli oldugu icin dogrudan eklenir
+    const g = window.gameState;
+    const e = (id, slot, name, icon, atk, hp, dur) => ({ id, slot, name, icon, level: 1, baseAtk: atk, baseHp: hp, atkBonus: atk, hpBonus: hp, durability: dur, maxDurability: 13, craftedAt: Date.now() });
+    g.state.armoryInventory = [e('t_w', 'weapon', 'Deneme Kılıcı', '🗡️', 12, 0, 13), e('t_h', 'helmet', 'Deneme Miğferi', '🪖', 0, 20, 5), e('t_a', 'armor', 'Deneme Zırhı', '🛡️', 0, 40, 13)];
+    g.saveState();
+  });
+  await ust('kralik', 'demirhane'); await foto('09_demirhane_dov');
+  kontrol(`${ad}: Demirhane sade başlıkla açılır`, (await baslik()) === '⚒️ Demirhane', await baslik());
+  kontrol(`${ad}: Demirhane sekmeleri sade (numara ve bağırma yok)`, await s.evaluate(() => { const t = [...document.querySelectorAll('.btn-bs-tab')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()); return t.length === 2 && !/^\S*\s*\d\./.test(t[0]) && !/[A-ZÇĞİÖŞÜ]{4,}/.test(t.join(' ')); }));
+  await tikla('.btn-bs-tab[data-bstab="armory"]'); await foto('10_demirhane_esyalarim');
+  kontrol(`${ad}: Eşyalarım'da toplu işlemler katlı`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-daha.v3-genis'); return !!d && !d.open; }));
+  kontrol(`${ad}: ana işlem düğmeleri görünür (onar-hepsi, giydir)`, await s.evaluate(() => { const gor = (sel) => { const e = document.querySelector(sel); return !!e && e.offsetParent !== null; }; return gor('.btn-armory-repair-all') && gor('.btn-smart-auto-equip'); }));
+  kontrol(`${ad}: eşya kartında "Diğer" bölümü katlı ve ikincil işlemleri içerir`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-daha:not(.v3-genis)'); return !!d && !d.open && !!d.querySelector('.btn-recycle-equipment, .btn-sell-equipment, .btn-unequip-soldier-slot'); }));
+  kontrol(`${ad}: Demirhane düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .btn-armory-direct-upgrade, #modal-body .btn-smart-auto-equip, #modal-body .btn-bs-tab')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
+  await s.evaluate(() => document.querySelector('#modal-body details.v3-daha:not(.v3-genis) > summary').click()); await bekle(300);
+  kontrol(`${ad}: "Diğer" açılınca ikincil düğmeler görünür`, await s.evaluate(() => { const b = document.querySelector('#modal-body details.v3-daha:not(.v3-genis)[open] button'); return !!b && b.offsetParent !== null; }));
+  kontrol(`${ad}: Demirhane yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // Aşama 4: Test laboratuvarı
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());

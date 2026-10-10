@@ -57,6 +57,7 @@ assert.equal(sadeBaslik('🏛️ Sirius Konseyi & Hazine'), '🏛️ Konsey ve h
 assert.equal(sadeBaslik('📜 ADASTRA REALM SÜRÜM GEÇMİŞİ & GÜNCELLEME LOGU'), '📜 Sürüm geçmişi');
 assert.equal(sadeBaslik('📍 🌿 Şifahane'), '🌿 Şifahane');
 assert.equal(sadeBaslik('🌙 SEN YOKKEN OLANLAR'), '🌙 Sen yokken olanlar');
+assert.equal(sadeBaslik('⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'), '⚒️ Demirhane');
 assert.equal(sadeBaslik('🏰 Krallık'), '🏰 Krallık', 'zaten sade olan değişmez');
 assert.equal(sadeBaslik(''), '');
 // Katlama yalnız bilinen yoğun panellerde; ilk kartlar açık kalır
