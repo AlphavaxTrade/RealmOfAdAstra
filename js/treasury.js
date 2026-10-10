@@ -119,20 +119,23 @@ export class TreasuryLedger {
 
     const available = this.state.pools[poolId] || 0;
     const budgetLeft = this._budgetLeft(poolId);
-    if (budgetLeft <= 0) return { granted: 0, requested: want, scaleFactor: 0, depleted: true, budgetExhausted: true };
-    const floorRatio = GAME_CONFIG.TREASURY_MIN_PAYOUT_RATIO;
+    if (budgetLeft <= 0) return { granted: 0, requested: want, scaleFactor: 0, depleted: true, budgetExhausted: true, budgetFull: true };
 
     // Bir tek ödül havuzun tamamını süpüremez: tek seferde en fazla %2'si.
     const singleDrawCap = available * GAME_CONFIG.TREASURY_SINGLE_DRAW_CAP;
     let granted = Math.min(want, singleDrawCap);
 
-    // Havuz kritik seviyeye düşerse ödüller kademeli küçülür (yumuşak iniş)
-    const health = this.getPoolHealth(poolId);
-    if (health < 1) {
-      granted *= Math.max(floorRatio, health);
+    // Sağlık yumuşatması (kasa zayıflayınca ödüller küçülür): haftalık bütçesi olan kasalarda bütçenin kendi sağlık çarpanı
+    // (openWeekBudgets) bunu zaten yapar; burada ikinci kez uygulamak zayıflamayı iki kez hissettiriyordu (karar 11 Ekim 2026).
+    // Bütçesiz kasalar (ör. Konsey) eski yumuşatmayı korur.
+    if (!this._budgeted(poolId)) {
+      const health = this.getPoolHealth(poolId);
+      if (health < 1) granted *= Math.max(GAME_CONFIG.TREASURY_MIN_PAYOUT_RATIO, health);
     }
 
-    granted = Math.max(0, Math.min(granted, available, budgetLeft));
+    const beforeBudget = Math.min(granted, available);
+    granted = Math.max(0, Math.min(beforeBudget, budgetLeft));
+    const budgetFull = this._budgeted(poolId) && granted < beforeBudget;
     if (granted <= 0) {
       return { granted: 0, requested: want, scaleFactor: 0, depleted: true };
     }
@@ -151,6 +154,7 @@ export class TreasuryLedger {
       requested: want,
       scaleFactor: granted / want,
       depleted: false,
+      budgetFull,
       poolRemaining: this.state.pools[poolId]
     };
   }

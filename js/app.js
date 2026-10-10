@@ -5713,7 +5713,8 @@ async function executeMonsterBattle(monster, selectedIndices, { payGateFee = fal
         const lvlMsg = outcome.levelUps.length > 0 ? ` • 🎉 ${outcome.levelUps.join(', ')}` : '';
         const wearMsg = weaponsWorn.length > 0 ? ` • ⚔️ Silah Aşınması: ${weaponsWorn.join(', ')}` : '';
         const scrollNotice = outcome.scrollGained ? ` • 📜 ${outcome.scrollGained.name} DÜŞTÜ!` : '';
-        addNotification('🏆', `${monster.name} yenildi! +${adaReward} ASTRA kazandın (⚡ -${staminaCost} Stamina).${scrollNotice} Savaşa katılan askerlerin +${monster.rewardXp} Asker XP kazandı.${lvlMsg}${wearMsg}`);
+        const budgetNote = outcome.budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : '';
+        addNotification('🏆', `${monster.name} yenildi! +${adaReward} ASTRA kazandın (⚡ -${staminaCost} Stamina).${budgetNote}${scrollNotice} Savaşa katılan askerlerin +${monster.rewardXp} Asker XP kazandı.${lvlMsg}${wearMsg}`);
 
         if (weaponsWorn.length > 0) {
           showToast(`⚔️ Silahların dayanıklılığı -1 azaldı: ${weaponsWorn.join(', ')}`, 'info');

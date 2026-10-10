@@ -99,15 +99,18 @@ export const rehberYontemleri = {
     if (!entry || !entry.done) return { success: false, message: 'Bu görev henüz tamamlanmadı.' };
     if (entry.claimed) return { success: false, message: 'Bu görevin ödülünü zaten aldın.' };
     let granted = 0;
+    let budgetFull = false;
     if ((q.rewardAda || 0) > 0 && treasury && treasury.withdraw) {
       const draw = treasury.withdrawWhole('quest', q.rewardAda);   // tam sayı ödül; kesirli artık kasada kalır
       granted = draw.granted || 0;
+      budgetFull = !!draw.budgetFull;
     }
     entry.claimed = true;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
     this._onAdaEarned(granted);
     sound.playLevelUp();
     this.saveState();
-    return { success: true, granted, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} ASTRA (Krallık Hazinesinden)` };
+    const budgetNote = budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : '';
+    return { success: true, granted, budgetFull, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} ASTRA (Krallık Hazinesinden)${budgetNote}` };
   },
 };

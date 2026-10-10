@@ -15,12 +15,15 @@ Geçiş kararını siz verirsiniz; karar verdiğinizde Claude bu listeyi önün�
 - [ ] **Gerçek Arena alımı (Kanal B):** `buyAndCreateLpIfPossible` anlamı ve fazla AVAX iadesi doğrulanmadan kodlanmadı; gerçek ağda küçük miktarla doğrulanmalı.
 - [ ] **Gerçek posta ve gerçek telefon:** e-posta gönderimi, telefon tarayıcıları (Safari dahil).
 - [ ] **Kanal A gerçek ayarı (sizin eyleminiz):** `PARTNER_INCOME_FROM/TO` ve trade sitesindeki Bot Kasası `oyunKasasi` adresi.
-- [ ] **Kasa güvenliği kararları:** günlük çekim sınırı (%10) son kararı; dağıtıcı anahtarı için izleme/uyarı (fark edilmezse günlerce akabilir).
+- [x] **Kasa günlük çekim sınırı: %5 (karar 11 Ekim 2026).** Kasa sözleşmesi kurulurken `dailyLimitBps: 500` verilecek (şimdiye dek zincire kurulmadı; saldırı testi %5'e göre güncellendi: çalınan dağıtıcı anahtarı ilk 24 saatte en çok %4,85).
+- [ ] **Kasa güvenliği:** dağıtıcı anahtarı için izleme/uyarı (fark edilmezse günlerce akabilir).
 - [ ] **Kanarya** (küçük miktar) → ancak sonra gerçek 200 M: sırayla, her adım sizin onayınızla.
 
 ## C) KARAR 4-7 ve sponsorluktan kalan küçük işler (9 Ekim 2026)
-- [ ] **Gerçek oyuncu yoğunluğunda ödeme bütçesi izlenmeli:** `treasury.state.lastWeekBudget / lastWeekSpent` her hafta kaydedilir; bütçe sık doluyorsa oranları/ mesajı gözden geçir. Bütçe dolunca oyuncuya ayrı "bu haftaki bütçe doldu" mesajı yok (şimdilik "kasa boş" benzeri yanıt).
-- [ ] **k üst sınırı (1,5) pratikte çalışmıyor** (zirve ≥ güncel): kullanıcı isterse "30 günlük ortalamaya bölme" ile anlam kazanır.
-- [ ] **Sağlık yumuşatması çift sayılıyor** (tek ödeme + haftalık bütçe): kullanıcı karar verirse birini kaldır.
+- [ ] **Gerçek oyuncu yoğunluğunda ödeme bütçesi izlenmeli:** `treasury.state.lastWeekBudget / lastWeekSpent` her hafta kaydedilir; bütçe sık doluyorsa oranları gözden geçir.
+- [x] **"Bu haftaki ödeme payı doldu" mesajı eklendi (11 Ekim 2026):** `withdraw` sonucunda `budgetFull`; zindan, görev, world boss mesajlarında gösterilir (kolezyum yalnız alanı taşır, ekranda henüz yok).
+- [x] **k üst sınırı:** karar: olduğu gibi kalsın (pratikte 1,0); veri görülünce yeniden bakılır.
+- [x] **Sağlık yumuşatması çift sayımı kaldırıldı (11 Ekim 2026):** bütçeli kasalarda tek ödeme artık sağlıkla küçülmez (haftalık bütçe zaten sağlık çarpanını uygular); bütçesiz kasalar (Konsey…) eskisi gibi.
+- [ ] **Sponsorluk teklif–kabul sürümü (11 Ekim 2026'da kullanıcı kararıyla ERTELENDİ):** yatırımcı miktar + getiri yazan teklif gönderir, alan kabul ederse sistem işler (örnek: 100 M, %30 → 130 M geri ödenene dek çekimin %50'si). Çıkmaz/kötüye kullanım analizi ve 8 açık soru (süre sınırı, yatırım ve getiri tavanı, sabit pay, sponsor sayısı, yalnız serbest bakiye, erken kapatma, teklif süresi) 11 Ekim sohbetinde sunuldu; kullanıcı dönünce oradan sürülür. Mevcut sabit sürüm (%30 / 12 ay / 2×) olduğu gibi duruyor.
 - [ ] **Sponsorluk, ikinci sürüm:** doğrudan zincirden sponsor yatırma, sözleşmenin zincirde tutulması, sponsorlu harcamanın katkı puanındaki etkisinin gerçek davranışla ölçülmesi, hukuki nitelendirme (kullanıcıda).
 - [ ] **İlk 4 hafta ısınma:** çekim tavanı alım geçmişi birikene dek taban değerinde (bugünkü kuralın %20'si) kalır; canlıya yakın bir denemede bunun oyuncuya anlatımı düşünülmeli.

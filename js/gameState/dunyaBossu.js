@@ -196,8 +196,9 @@ export const dunyaBossuYontemleri = {
       rewardAda,
       requested: request,
       scaled: draw.scaleFactor < 0.999,
+      budgetFull: !!draw.budgetFull,
       claimableRewardAda: boss.claimableRewardAda,
-      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${damageDealt.toLocaleString()} hasar vurdu ve ${rewardAda.toLocaleString()} ASTRA kazandı.${draw.scaleFactor < 0.999 ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : ''}`
+      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${damageDealt.toLocaleString()} hasar vurdu ve ${rewardAda.toLocaleString()} ASTRA kazandı.${draw.budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : (draw.scaleFactor < 0.999 ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : '')}`
     };
   },
 

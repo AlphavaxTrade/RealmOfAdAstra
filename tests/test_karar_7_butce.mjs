@@ -72,6 +72,37 @@ const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
   ok('Bütçe kurulmamış defter ve bütçesiz kasalar eskisi gibi çalışır');
 }
 
+// 5b) Sağlık yumuşatması çift sayılmaz (11 Ekim 2026): bütçeli kasada tek ödeme sağlıkla küçülmez, bütçesiz kasada küçülür
+{
+  const T = new TreasuryLedger();
+  const target = GAME_CONFIG.TREASURY_TARGET_RESERVE;
+  T.state.pools.worldBoss = target.worldBoss * 0.5;                 // sağlık 0,5 (bütçeli kasa)
+  T.state.weekBudget = { worldBoss: 1e12 }; T.state.weekSpent = {};
+  const want = 1000;
+  assert.equal(T.withdraw('worldBoss', want).granted, want, 'bütçeli kasada tek ödeme sağlıkla ikinci kez küçülmez');
+  T.state.pools.konsey = target.konsey != null ? target.konsey * 0.5 : 1e6;
+  const r = T.withdraw('konsey', want);
+  assert.ok(r.granted < want, 'bütçesiz kasada eski sağlık yumuşatması korunur');
+  ok('Sağlık yumuşatması yalnız bir kez uygulanır (bütçeli kasa: bütçede; bütçesiz kasa: tek ödemede)');
+}
+
+// 5c) Bütçe dolunca oyuncuya ayrı işaret ve mesaj verilir ("kasa boş" sanılmaz)
+{
+  const T = new TreasuryLedger();
+  T.state.pools.dungeon = 6e6; T.state.weekBudget = { dungeon: 500 }; T.state.weekSpent = {};
+  const a = T.withdraw('dungeon', 400);
+  assert.equal(a.budgetFull, false, 'bütçe yetiyorsa işaret yok');
+  const b = T.withdraw('dungeon', 400);                              // 100 kaldı → kısmen ödenir
+  assert.equal(b.granted, 100); assert.equal(b.budgetFull, true, 'bütçe yüzünden kısılan ödeme işaretlenir');
+  const c = T.withdraw('dungeon', 400);
+  assert.equal(c.granted, 0); assert.equal(c.budgetFull, true); assert.equal(c.budgetExhausted, true);
+  assert.equal(c.depleted, true);
+  assert.ok(/Pazartesi/.test(B.FULL_MESSAGE), 'mesaj Pazartesi yenilendiğini söyler');
+  const w = T.withdrawWhole('dungeon', 10);
+  assert.equal(w.budgetFull, true, 'withdrawWhole işareti taşır');
+  ok('Bütçe doldu işareti: kısmi ve tam dolu durumda budgetFull=true, mesaj tanımlı');
+}
+
 // 6) Model kapısı: sıfır girişte, tam talepte kasanın ömrü ≥ 36 ay (ömür = bakiye tohumun %10'una inene dek)
 {
   const seeds = GAME_CONFIG.TREASURY_SEED, target = GAME_CONFIG.TREASURY_TARGET_RESERVE;

@@ -228,6 +228,7 @@ export const zindanYontemleri = {
       this.clearMonsterHp(monster.level);
       const drop = this.addDungeonXpAndDrops(monster.level, isBoss, { rewarded: entry.rewarded });
       outcome.adaReward = drop.adAstraGained || 0;
+      outcome.budgetFull = !!drop.budgetFull;
       outcome.scrollGained = drop.scrollGained || null;
       for (const idx of selectedIndices) {
         const sRes = this.addSoldierXp(idx, monster.rewardXp);

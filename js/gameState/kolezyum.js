@@ -119,6 +119,7 @@ export const kolezyumYontemleri = {
     }
 
     let rewardAda = 0;
+    let budgetFull = false;
     let rewardKeys = 0;
 
     // 🏆 Gerçek ELO Formülü
@@ -140,6 +141,7 @@ export const kolezyumYontemleri = {
       const requested = Math.round(baseReward * tier.rewardMult);
       const draw = (typeof treasury !== 'undefined' && treasury.withdraw) ? treasury.withdrawWhole('arena', requested) : { granted: 0 };
       rewardAda = draw.granted || 0;
+      budgetFull = !!draw.budgetFull;
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + rewardAda;
       this._onAdaEarned(rewardAda);
       if (this.state.colosseumStats) this.state.colosseumStats.totalAdaWon = (this.state.colosseumStats.totalAdaWon || 0) + rewardAda;
@@ -176,6 +178,7 @@ export const kolezyumYontemleri = {
       allyUid: 'player_champ',
       enemyUid: 'opp_champ',
       rewardAda,
+      budgetFull,
       rewardKeys,
       ratingDelta,
       newRating: this.state.colosseumStats.rating,

@@ -30,7 +30,7 @@ const mine = async s => { await provider.send('evm_increaseTime', [s]); await pr
 async function yeniKasa() {
   const dep = async (n, ...a) => { const k = await new ethers.ContractFactory(c[n].abi, c[n].bytecode, owner).deploy(...a); await k.waitForDeployment(); return k; };
   const token = await dep('MockToken');
-  const kasa = await dep('OyunKasasi', await token.getAddress(), DEAD, { dagitici: await addr(dagitici), creator: await addr(creator), singleDrawBps: 200, dailyLimitBps: 1000 });
+  const kasa = await dep('OyunKasasi', await token.getAddress(), DEAD, { dagitici: await addr(dagitici), creator: await addr(creator), singleDrawBps: 200, dailyLimitBps: 500 });   // kullanıcı kararı (11 Ekim 2026): günlük sınır %5
   await (await token.mint(await addr(owner), ASTRA(200_000_000))).wait();
   await (await token.approve(await kasa.getAddress(), ethers.MaxUint256)).wait();
   await (await kasa.deposit(ASTRA(200_000_000))).wait();
@@ -58,16 +58,16 @@ async function sombur(kasa, signer, hedef) {
   const gun1 = await sombur(kasa, dagitici, hedef);
   const kaybolan1 = await token.balanceOf(hedef);
   console.log(`   A — saldırgan 1. gün (${gun1.calls} işlemde): ${M(kaybolan1)} aldı = %${(Number(kaybolan1 * 10000n / T0) / 100).toFixed(2)} (kasa 200 M)`);
-  // Üst sınır: günlük pay d=%10, tek ödeme payı s=%2 → en çok d/(1+d−s) = 0,1/1,08 = %9,259 (sınırlar her çağrıda o anki bakiyeden hesaplanır)
-  assert.ok(kaybolan1 <= T0 * 10n / 108n + ASTRA(1), 'İlk 24 saatte kasanın en fazla %9,26\'sı gidebilir');
-  assert.ok(kaybolan1 >= T0 * 90n / 1000n, 'Saldırgan sınırı gerçekten doldurdu (test anlamlı)');
+  // Üst sınır: günlük pay d=%5, tek ödeme payı s=%2 → en çok d/(1+d−s) = 0,05/1,03 = %4,854 (sınırlar her çağrıda o anki bakiyeden hesaplanır)
+  assert.ok(kaybolan1 <= T0 * 5n / 103n + ASTRA(1), 'İlk 24 saatte kasanın en fazla %4,85\'i gidebilir');
+  assert.ok(kaybolan1 >= T0 * 45n / 1000n, 'Saldırgan sınırı gerçekten doldurdu (test anlamlı)');
   assert.equal(await tx(() => kasa.connect(dagitici).payPlayer(hedef, ASTRA(1), ethers.id('x'))), 'DailyLimitExceeded', 'Aynı gün ikinci tur reddedildi');
   // Sahip fark edip DURDURUR: saldırganın sonraki günleri 0
   await mine(24 * 3600 + 60);
   await (await kasa.connect(owner).setPaused(true)).wait();
   assert.equal(await tx(() => kasa.connect(dagitici).payPlayer(hedef, ASTRA(1), ethers.id('y'))), 'IsPaused');
   assert.equal(await token.balanceOf(hedef), kaybolan1, 'Durdurduktan sonra saldırgan hiçbir şey alamadı');
-  ok(`Senaryo A (dağıtıcı anahtarı çalındı): saldırgan ilk 24 saatte en çok ${M(kaybolan1)} (≈%9,2) alabildi; sahip durdurunca sıfır — kendine para çekme yolu yok, hız sınırlı`);
+  ok(`Senaryo A (dağıtıcı anahtarı çalındı): saldırgan ilk 24 saatte en çok ${M(kaybolan1)} (≈%4,9) alabildi; sahip durdurunca sıfır — kendine para çekme yolu yok, hız sınırlı`);
 
   // Fark edilmezse günler içinde ne olur (paused kapalı kasa): kaç günde yarısı gider
   const { token: t2, kasa: k2 } = await yeniKasa();
@@ -77,7 +77,7 @@ async function sombur(kasa, signer, hedef) {
     await sombur(k2, dagitici, hedef);
     toplam = await t2.balanceOf(hedef);
   }
-  console.log(`   A — fark edilmezse: kasanın yarısı ${gun}. günde gider (toplam ${M(toplam)}); 7. günde tahmini kayıp %${(100 * (1 - (1 - 0.1 / 1.08) ** 7)).toFixed(0)}`);
+  console.log(`   A — fark edilmezse: kasanın yarısı ${gun}. günde gider (toplam ${M(toplam)}); 7. günde tahmini kayıp %${(100 * (1 - (1 - 0.05 / 1.03) ** 7)).toFixed(0)}`);
   assert.ok(gun >= 7, 'Fark edilmeyen saldırıda bile kasanın yarısı en az 7 günde gider');
   ok(`Senaryo A (fark edilmezse): kasanın yarısı ${gun}. günde — fark etme ve durdurma süresi (gün cinsinden) güvenlik payıdır`);
 }

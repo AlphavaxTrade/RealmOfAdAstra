@@ -31,11 +31,13 @@ export const kesifYontemleri = {
     const day = this.getDungeonDayStatus();
     const targetAdAstra = Math.min(base.ada, day.budgetLeft);
     let adAstraGained = 0;
+    let budgetFull = false;
     if (targetAdAstra > 0) {
       const draw = (typeof treasury !== 'undefined' && treasury && treasury.withdraw)
         ? treasury.withdraw('dungeon', targetAdAstra)   // yuvarlama yok: kasadan çıkan tam miktar oyuncuya gider (1 ASTRA altı ödül sıfıra inmesin, ASTRA yoktan oluşmasın)
         : { granted: targetAdAstra };
       adAstraGained = Math.max(0, draw.granted != null ? draw.granted : targetAdAstra);
+      budgetFull = !!draw.budgetFull;
       this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + adAstraGained;
     }
     const budgetCapped = adAstraGained < base.ada;
@@ -83,7 +85,7 @@ export const kesifYontemleri = {
     sound.playLevelUp();
     this.saveState();
 
-    return { xpGained, adAstraGained, fragmentsGained, boxGained, artifactDiscovered, scrollGained, isBoss: isMajorBoss, budgetCapped, baseAda: base.ada };
+    return { xpGained, adAstraGained, fragmentsGained, boxGained, artifactDiscovered, scrollGained, isBoss: isMajorBoss, budgetCapped, budgetFull, baseAda: base.ada };
   },
 
   // Henüz Keşfedilmemiş Bir Koleksiyon Eserini Açığa Çıkarır (Varsa Zindan Seviyesine Uygun Olanı Önceliklendirir)
