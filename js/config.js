@@ -9,16 +9,13 @@
 const annualPayout = (seed, weeklyRate) => Math.round(seed * (1 - Math.pow(1 - weeklyRate, 52)));
 
 export const GAME_CONFIG = {
-  GAME_TITLE: 'Realm of AdAstra',
   GAME_VERSION: '2.0.0-dev',
 
   // ═══════════════════════════════════════════════════════════════════════
   // v2 (7 Ekim 2026) — docs/v2/KARARLAR_KESIN.md: 6 hammadde, ASTRA fiyat ölçeği, Üretim Hakkı, kasalar, kapı
   // ═══════════════════════════════════════════════════════════════════════
-  // ASTRA bedellerinin ölçeği: bugünkü listenin %1'i (R4 bulgusu: 200 M'lik ekonomi için eski liste 300 kat büyüktü;
-  // kalan ×0,3 üretim hızlarından alındı). Sayısal ASTRA bedelleri bu dosyada ölçekli yazılır; bu sabit yalnız bilgi.
-  ASTRA_SCALE: 0.01,
-  CURRENCY_NAME: 'ASTRA',
+  // ASTRA bedelleri bu dosyada ölçekli yazılır: eski listenin %1'i, üretim hızları ×0,3 (R4: 200 M'lik ekonomi için
+  // eski liste 300 kat büyüktü; bkz. docs/v2/R4_DENGE.md).
   // Altı hammadde (R2). Sıra ekran sırasıdır. zone: haritadaki yer (R1).
   RESOURCE_KEYS: ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'],
   RESOURCE_META: {
@@ -113,8 +110,6 @@ export const GAME_CONFIG = {
   ILAN_PAZARI: { FEE: 0.02, FEE_BURN_SHARE: 0.5, DAYS: 7, MAX_LISTINGS: 10, SELLER_LOCKED_SHARE: 0.8, MIN_PRICE: 0.01, MAX_PRICE: 1e9 },
   // Universe'e geçiş aşamaları (R3): 0 Realm, 1 Hazırlık, 2 Ön sipariş, 3 Universe (yalnız yönetici)
   UNIVERSE_STAGE: 0,
-  // Not: Duyuru şeridi ayarları (ANNOUNCEMENT_TICKER / ANNOUNCEMENTS) dosyanın sonunda TEK yerde tanımlıdır.
-  // v1.25 öncesinde üç ayrı kopya vardı ve yalnızca sonuncusu geçerli oluyordu.
 
   // Stamina — v2.5: Seferler ve Zindan savaşları için genişletilmiş stamina havuzu.
   // Her seviye atlandığında Max Stamina +50 artar (Lv 1: 100, Lv 2: 150, Lv 3: 200, Lv 10: 550, Lv 81: 4.100).
@@ -658,16 +653,6 @@ export const GAME_CONFIG = {
     RAGE_PER_ROUND: 0.18
   },
 
-  // ⏳ HENÜZ OYUNA BAĞLI DEĞİL (tasarım taslağı, bkz. docs/GELISTIRME_ONERILERI.md §12)
-  // Haftalık rotasyonlu kat etkileri — aynı zindan her hafta farklı oynanır
-  DUNGEON_MODIFIERS: [
-    { id: 'lava', name: 'Kaynayan Zemin', desc: 'Her tur tüm birimler 18 yanma hasarı alır.', kind: 'dot', magnitude: 18 },
-    { id: 'gloom', name: 'Kadim Karanlık', desc: 'Tüm iyileştirmeler %50 azalır.', kind: 'healCut', magnitude: 0.5 },
-    { id: 'gale', name: 'Fırtına Rüzgârı', desc: 'Arka saf koruması zayıflar: sızma şansı iki katına çıkar.', kind: 'coverCut', magnitude: 0.7 },
-    { id: 'ironstorm', name: 'Demir Fırtınası', desc: 'Tüm birimlerin zırhı %25 azalır.', kind: 'armorCut', magnitude: 0.25 },
-    { id: 'blessing', name: 'Yıldız Kutsaması', desc: 'Tüm müttefikler +%12 saldırı gücü kazanır.', kind: 'allyBuff', magnitude: 0.12 }
-  ],
-
   // ═══════════════════════════════════════════════════════════════════════
   // 💀 ZİNDAN KOŞUSU — sonsuz farm yerine günlük hak + azalan getiri (F-01)
   // ═══════════════════════════════════════════════════════════════════════
@@ -781,50 +766,9 @@ export const GAME_CONFIG = {
   // en çok STREAK_MAX; kaçırılan hafta seriyi yarıya indirir); kişi başı tavan da ağırlıkla ölçeklenir (tam tavan için
   // FULL_CONTRIBUTION katkı + en yüksek seri); pay tamamen kilitli gelir.
   // v2: katkı eşikleri ölçekli (×0,01); haftada kasanın en çok %1,5'i (R3)
-  FREE_PLAYER_POOL: { MONTHLY_MCAP_SHARE: 0.01, MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 1, FULL_CONTRIBUTION: 10, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true, WEEKLY_POOL_CAP: 0.015 },
+  FREE_PLAYER_POOL: { MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 1, FULL_CONTRIBUTION: 10, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true, WEEKLY_POOL_CAP: 0.015 },
   TREASURY_MIN_PAYOUT_RATIO: 0.15,   // havuz boşalsa bile ödül tamamen sıfırlanmaz
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // ⏳ HENÜZ OYUNA BAĞLI DEĞİL — gelecek sistemlerin tasarım taslakları
-  // (eşya eklentileri, sezon, prestij; bkz. docs/GELISTIRME_ONERILERI.md §12-13)
-  // ═══════════════════════════════════════════════════════════════════════
-  // 🎲 EKİPMAN EKLENTİLERİ (AFFIX) — aynı kılıç iki oyuncuda aynı olmaz
-  EQUIPMENT_AFFIXES: [
-    { id: 'sharp',    name: 'Keskin',     icon: '🗡️', stat: 'atk',       tiers: [4, 9, 16],       weight: 22 },
-    { id: 'sturdy',   name: 'Sağlam',     icon: '🛡️', stat: 'armor',     tiers: [6, 13, 24],      weight: 22 },
-    { id: 'vital',    name: 'Dirençli',   icon: '❤️', stat: 'hp',        tiers: [18, 40, 75],     weight: 20 },
-    { id: 'swift',    name: 'Çevik',      icon: '💨', stat: 'speed',     tiers: [2, 4, 7],        weight: 14 },
-    { id: 'deadly',   name: 'Ölümcül',    icon: '🎯', stat: 'crit',      tiers: [0.03, 0.06, 0.10], weight: 12 },
-    { id: 'piercing', name: 'Delici',     icon: '🔺', stat: 'pen',       tiers: [8, 18, 32],      weight: 7 },
-    { id: 'vampiric', name: 'Kan Emici',  icon: '🩸', stat: 'lifesteal', tiers: [0.04, 0.08, 0.14], weight: 3 }
-  ],
-  AFFIX_RARITY: [
-    { id: 'common',    name: 'Yaygın',   color: '#94a3b8', affixCount: 1, tier: 0, weight: 55 },
-    { id: 'rare',      name: 'Nadir',    color: '#38bdf8', affixCount: 2, tier: 0, weight: 27 },
-    { id: 'epic',      name: 'Epik',     color: '#c084fc', affixCount: 2, tier: 1, weight: 13 },
-    { id: 'legendary', name: 'Efsanevi', color: '#fbbf24', affixCount: 3, tier: 2, weight: 5 }
-  ],
-
-
-  // 60 günlük sezon: ücretsiz şerit herkese, premium şerit ASTRA ile.
-  // F2P/P2E dengesinin en temiz kaldıracı — para EKSTRA alır, ZORUNLU değil.
-  SEASON: {
-    DURATION_DAYS: 60,
-    PREMIUM_COST_ADA: 120,
-    TIERS: 30,
-    POINTS_PER_TIER: 150,
-    FREE_TRACK:    { adaPerTier: 0.6, keysEvery: 5, fragmentsEvery: 3, boxEvery: 10 },
-    PREMIUM_TRACK: { adaPerTier: 1.9, keysEvery: 3, fragmentsEvery: 2, boxEvery: 5 }
-  },
-
-  // Prestij: Lv.81'e ulaşan oyuncuya yeni ufuk
-  PRESTIGE: {
-    REQUIRED_LEVEL: 81,
-    PRODUCTION_BONUS_PER_STAR: 0.05,
-    MAX_STARS: 10,
-    COST_ADA: 500
-  },
 
   // ═══════════════════════════════════════════════════════════════════════
   // 🎪 KRALLIK KARNAVALI: ŞANS ÇARKI & HAFTALIK PİYANGO
@@ -1354,19 +1298,5 @@ export const GAME_CONFIG = {
       active: true,
       priority: 2
     }
-  ],
-  ANNOUNCEMENT_TICKER: {
-    enabled: true,
-    speedSeconds: 55,
-    pauseOnHover: true,
-    showPulseDot: true,
-    separator: '✦'
-  },
-  TICKER_CONFIG: {
-    enabled: true,
-    speedSeconds: 55,
-    pauseOnHover: true,
-    showPulseDot: true,
-    separator: '✦'
-  }
+  ]
 };

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // Import GAME_CONFIG from js/config.js
 import { GAME_CONFIG } from '../js/config.js';
 
-test('🔔 Üst Kayan Duyuru & Risk Uyarı Paneli Doğrulama Testi', async (t) => {
+test('🔔 Risk uyarısı duyurusu (Ben → Duyurular) doğrulama testi', async (t) => {
   await t.test('1. GAME_CONFIG.ANNOUNCEMENTS dizisi tanımlı ve en az 1 duyuru içermeli', () => {
     assert.ok(Array.isArray(GAME_CONFIG.ANNOUNCEMENTS), 'ANNOUNCEMENTS bir dizi olmalıdır');
     assert.ok(GAME_CONFIG.ANNOUNCEMENTS.length >= 1, 'En az 1 duyuru bulunmalıdır');
@@ -26,12 +26,4 @@ test('🔔 Üst Kayan Duyuru & Risk Uyarı Paneli Doğrulama Testi', async (t) =
     assert.ok(text.includes('anlayısınız ve ilginiz için teşekkür ederim'), 'Kapanış metni bulunmalıdır');
   });
 
-  await t.test('3. Ticker yapılandırma ayarları (hız, duraklatma) doğru ayarlanmış olmalı', () => {
-    const config = GAME_CONFIG.ANNOUNCEMENT_TICKER;
-    assert.ok(config, 'ANNOUNCEMENT_TICKER konfigürasyonu bulunamadı');
-    assert.strictEqual(config.enabled, true);
-    assert.strictEqual(config.pauseOnHover, true);
-    assert.strictEqual(typeof config.speedSeconds, 'number');
-    assert.ok(config.speedSeconds >= 30, 'Uzun metnin rahat okunması için hız en az 30s olmalıdır');
-  });
 });
