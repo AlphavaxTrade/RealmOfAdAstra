@@ -170,7 +170,7 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       E.mutatePlayer(r.id, gs => {
         gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + granted;
         gs._onAdaEarned(granted);
-        gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${granted.toLocaleString('tr-TR')} ADA (${r.points} puan).`, 'success');
+        gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${granted.toLocaleString('tr-TR')} ASTRA (${r.points} puan).`, 'success');
       });
     });
     A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount })) };

@@ -6,7 +6,7 @@
 //
 // hp / atk  : savaşta kullanılan gerçek değerler
 // rewardXp  : zaferde savaşa katılan her askere verilen deneyim
-// ADA ve hesap XP ödülü tablodan değil formülden gelir: gameState.getDungeonBaseReward
+// ASTRA ve hesap XP ödülü tablodan değil formülden gelir: gameState.getDungeonBaseReward
 // (GAME_CONFIG.DUNGEON.REWARD_*).
 // color     : haritadaki oda çerçevesinin rengi (Phaser)
 // ============================================================================

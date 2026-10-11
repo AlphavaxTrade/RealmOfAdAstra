@@ -58,15 +58,15 @@ export function olusturPiyasa(w) {
   // ── Çekim talebi (oyuncu) ──────────────────────────────────────────────
   function requestWithdraw(address, amount) {
     const amt = Math.floor((Number(amount) || 0) * 100) / 100;
-    if (!(amt >= cfg.minWithdrawAda)) return { success: false, message: `En az ${fmt(cfg.minWithdrawAda)} ADA çekebilirsin.` };
+    if (!(amt >= cfg.minWithdrawAda)) return { success: false, message: `En az ${fmt(cfg.minWithdrawAda)} ASTRA çekebilirsin.` };
     if (econ().paused) return { success: false, message: 'Çekimler şu an bakımda. Kısa süre sonra tekrar dene.' };
     const { result } = E.withPlayer(address, gs => {
       const lk = gs.getLockedBalanceInfo();
-      if (amt > lk.free + 1e-9) return { success: false, message: `Çekilebilir (serbest) bakiyen ${fmt(lk.free)} ADA.` };
+      if (amt > lk.free + 1e-9) return { success: false, message: `Çekilebilir (serbest) bakiyen ${fmt(lk.free)} ASTRA.` };
       gs.state.adAstraBalance -= amt;
       gs.state.lockedAda = Math.min(Number(gs.state.lockedAda) || 0, gs.state.adAstraBalance);
       gs.state.pendingWithdrawAda = (Number(gs.state.pendingWithdrawAda) || 0) + amt;
-      return { success: true, pending: gs.state.pendingWithdrawAda, message: `🏦 ${fmt(amt)} ADA çekim sırasına alındı. Pazartesi 00:01'de haftalık havuzdan karşılanır; sığmayan kısım bakiyene döner.` };
+      return { success: true, pending: gs.state.pendingWithdrawAda, message: `🏦 ${fmt(amt)} ASTRA çekim sırasına alındı. Pazartesi 00:01'de haftalık havuzdan karşılanır; sığmayan kısım bakiyene döner.` };
     });
     if (result.success) db.q.playerSetPending.run(result.pending, address);
     return result;
@@ -78,7 +78,7 @@ export function olusturPiyasa(w) {
       if (!(p > 0)) return { success: false, message: 'Bekleyen çekim talebin yok.' };
       gs.state.adAstraBalance += p;
       gs.state.pendingWithdrawAda = 0;
-      return { success: true, returned: p, message: `↩️ ${fmt(p)} ADA bakiyene geri döndü.` };
+      return { success: true, returned: p, message: `↩️ ${fmt(p)} ASTRA bakiyene geri döndü.` };
     });
     if (result.success) db.q.playerSetPending.run(0, address);
     return result;

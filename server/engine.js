@@ -123,7 +123,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       // Yeni oyuncu: başlangıç profili; piyango ve kasa bilgileri dünyadan gelir
       gs.state.lastSeenAt = clock();
       gs.state.lastLotteryDrawEpoch = globalPool.state.epochId;
-      // Kullanıcı kararı (2 Ekim 2026): yeni hesap 0 ADA ve 0 kaynakla başlar
+      // Kullanıcı kararı (2 Ekim 2026): yeni hesap 0 ASTRA ve 0 kaynakla başlar
       gs.state.adAstraBalance = 0;
       gs.state.lockedAda = 0;
       gs.state.inventory = { ...gs.state.inventory, ...Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [k, 0])), fragments: 0 };   // v2: 6 hammadde
@@ -238,7 +238,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
 
   const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG, { testMode });
 
-  // Bir işlemin ADA tutarını ölçer: işlem bol bakiyeyle "deneme" olarak çalıştırılır, sonra HER ŞEY geri alınır
+  // Bir işlemin ASTRA tutarını ölçer: işlem bol bakiyeyle "deneme" olarak çalıştırılır, sonra HER ŞEY geri alınır
   // (veritabanı + bellekteki dünya). Döner: { succeeds, spent, balance, message }
   const ROLLBACK = Symbol('geri-al');
   function quoteCost(address, name, args) {

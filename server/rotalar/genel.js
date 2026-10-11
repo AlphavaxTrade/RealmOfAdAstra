@@ -18,7 +18,7 @@ export default function genelRotalar(ctx) {
       const out = { hazir, kontroller, ...(t ? { zamanlayiciTur: t.tur, zamanlayiciHata: t.hataSayisi, zamanlayiciYasSn: Math.round(t.yasMs / 1000) } : {}) };
       return hazir ? out : [503, out];
     },
-    // ADA nereye gidiyor: oranlar herkese açık (RealmRates sözleşmesi)
+    // ASTRA nereye gidiyor: oranlar herkese açık (RealmRates sözleşmesi)
     'GET /api/rates': () => (world.ratesStatus ? world.ratesStatus() : [404, { error: 'Kapalı' }]),
     'GET /api/health': () => ({ ok: true, time: clock(), version: E.GAME_CONFIG.GAME_VERSION, chain: !!chain, payoutMode: cfg.payoutMode, testMode: !!cfg.testMode, payments: payments ? payments.info() : null }),
   };

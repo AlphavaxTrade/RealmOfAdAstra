@@ -1,10 +1,10 @@
 // Realm of AdAstra — Haftalık Piyango hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı çalışır)
 // ============================================================================
 // Kurallar (29 Eylül 2026, kullanıcı kararı):
-//  • Her bilet 100 ADA. Her hesap haftada en fazla belirli sayıda bilet alabilir.
+//  • Her bilet 100 ASTRA. Her hesap haftada en fazla belirli sayıda bilet alabilir.
 //  • Biletin küçük bir kısmı amorti kasasına, kalanı piyango kasasına gider.
 //  • Haftalık çekilişte TEK kazanan seçilir; kazanma şansı = kişinin bileti / toplam bilet.
-//  • Kazanan, elindeki biletlere ödediği toplam ADA'nın 2 katını kasadan kazanır.
+//  • Kazanan, elindeki biletlere ödediği toplam ASTRA'nın 2 katını kasadan kazanır.
 //    Biletleri ödülü çekerken yanar. (Çekilişte kilitlenir, sonraki çekilişlere girmez.)
 //  • Kazanamayanların biletleri yanmaz; sonraki haftaya devreder (bilet "stake" edilmiş olur).
 //  • Piyango kasası kazananın ödülünü karşılayamazsa kasa biter: kazanan kasada kalan her şeyi alır,
@@ -43,7 +43,7 @@ export function winChance(holderTickets, totalTickets) {
 }
 
 // Haftalık çekiliş. Girdiyi değiştirmez; yeni durumu döndürür.
-// state: { pool, amortiPool, holders: [{ id, tickets, paid }] }  (paid = elindeki biletlere ödediği toplam ADA)
+// state: { pool, amortiPool, holders: [{ id, tickets, paid }] }  (paid = elindeki biletlere ödediği toplam ASTRA)
 export function runDraw(state, rng = Math.random, rules = DEFAULT_LOTTERY_RULES) {
   const holders = state.holders.map(h => ({ ...h }));
   const totalTickets = holders.reduce((s, h) => s + (h.tickets || 0), 0);

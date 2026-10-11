@@ -1,7 +1,7 @@
 // Realm of AdAstra sunucusu — promo kodları (kullanıcı kararı 6 Ekim 2026)
 // ============================================================================
 //  • Kodları yönetici üretir (alphavaxtrade.vercel.app paneli → Realm of AdAstra → Promo kodları). Her kodun ödülü ayrı
-//    seçilir: kilitli ADA ve/veya hammadde, parça, anahtar, kutu, parşömen (gameState.applyPromoReward).
+//    seçilir: kilitli ASTRA ve/veya hammadde, parça, anahtar, kutu, parşömen (gameState.applyPromoReward).
 //  • Ödülün bedeli görev kasasından ödenir; yoktan bir şey basılmaz. Kasa ya da pazar yetmezse kod kullanılmaz
 //    (hak düşmez, hiçbir şey değişmez).
 //  • Her hesap bir kodu bir kez kullanır; kodun toplam kullanım sınırı ve bitiş tarihi olabilir; kod kapatılabilir.

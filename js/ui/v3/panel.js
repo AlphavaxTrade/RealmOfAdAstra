@@ -13,12 +13,17 @@ const SADE_BASLIKLAR = [
   [/SÜRÜM GEÇMİŞİ/i, '📜 Sürüm geçmişi'],
   [/DEMİRCİSİ\s*&\s*TAMİRHANE|KRALLIK DEMİRCİSİ/i, '⚒️ Demirhane'],
   [/GLADYATÖR KOLEZYUMU/i, '🏟️ Kolezyum'],
+  [/ZÜMRÜT ORMAN[Iıİi]/i, '🌲 Zümrüt Ormanı'],
+  [/GÜNEŞ TARLAS[Iıİi]/i, '🌾 Güneş Tarlası'],
+  [/MADEN OCAĞ[Iıİi]|DEM[İIiı]R MADEN[İIiı]/i, '⛏️ Demir Madeni'],
+  [/BÜYÜK SAVAŞ ALAN[Iıİi]/i, '🌋 Savaş alanı'],
   [/KARNAVALI/i, '🎪 Karnaval'],
   [/NFT KOLEKSİYONU/i, '👑 Sandıklar ve koleksiyon'],
   [/SEN YOKKEN OLANLAR/i, '🌙 Sen yokken olanlar'],
   [/AMM Pazar|Meydan Pazarı|^📍?\s*🏪\s*Pazar/i, '🏪 Pazar']
 ];
 
+// NOT: JS'te /i bayrağı ASCII olmayan harfler için 'ı' ile 'I'yı aynı saymaz; kurallar [Iıİi] sınıfı kullanır.
 // Başlık metnini (simge dahil, boşluklar sadeleşmiş) sade karşılığına çevirir; eşleşme yoksa baştaki 📍 işaretini atar.
 export function sadeBaslik(metin) {
   const m = String(metin || '').replace(/\s+/g, ' ').trim();

@@ -142,7 +142,7 @@ export const GAME_CONFIG = {
   UBI_POOL_RATE: 0.06,
   TOKEN_REWARD_POOL_RATE: 0.86,
 
-  // 🔒 KİLİTLİ BAKİYE — kazanılan ADA'nın çoğu kilitli başlar; oyunda harcanabilir ama çekilemez.
+  // 🔒 KİLİTLİ BAKİYE — kazanılan ASTRA'nın çoğu kilitli başlar; oyunda harcanabilir ama çekilemez.
   // Harcadıkça, oynadıkça ve zamanla açılır. Çekim (sunucu aşaması) yalnız serbest kısımdan yapılır.
   LOCKED_BALANCE: {
     FREE_SHARE: 0.20,               // kazancın serbest kısmı (kalanı kilitli)
@@ -153,12 +153,12 @@ export const GAME_CONFIG = {
 
   // 🏅 KATKI PUANI — ileride ortak haftalık çekim havuzundan pay bu puana göre dağıtılır (sunucu aşaması)
   CONTRIBUTION: {
-    ADA_SPEND_WEIGHT: 1.0,          // oyunda harcanan (yakılan/kasaya giden) her ADA
-    RESOURCE_BURN_WEIGHT: 0.5,      // harcanan/yakılan hammaddenin pazar değeri (ADA)
+    ADA_SPEND_WEIGHT: 1.0,          // oyunda harcanan (yakılan/kasaya giden) her ASTRA
+    RESOURCE_BURN_WEIGHT: 0.5,      // harcanan/yakılan hammaddenin pazar değeri (ASTRA)
     RESOURCE_SALE_WEIGHT: 0.5       // pazara net hammadde satışı (aynı hammaddeyi alıp satmak puan getirmez)
   },
 
-  // 💱 ADA FİYAT ÇARPANI — oyundaki sabit ADA fiyatları ve ödülleri bu çarpanla ölçeklenir.
+  // 💱 ASTRA FİYAT ÇARPANI — oyundaki sabit ASTRA fiyatları ve ödülleri bu çarpanla ölçeklenir.
   // ADASTRA'nın dolar değeri düşünce çarpan artar (oyuna girişin dolar maliyeti korunur), değerlenince
   // yavaş yavaş azalır. Şimdilik hedef elle girilir; sunucu aşamasında Arena fiyatından hesaplanır.
   ADA_PRICE_MULTIPLIER: {
@@ -199,7 +199,7 @@ export const GAME_CONFIG = {
       wheat: 50,
       adAstra: 0.5
     },
-    // v1.25: Bot kasadaki ADA'nın tamamını silo yükseltmeye gömmez; en az bu kadarını ve
+    // v1.25: Bot kasadaki ASTRA'nın tamamını silo yükseltmeye gömmez; en az bu kadarını ve
     // (oto-yenileme açıksa) bir sonraki günün bot ücretini her zaman kasada bırakır. (v2: ölçekli)
     MIN_ADA_RESERVE: 5,
     // Satın alınabilir süreler (saat). Ücret = 24 saatlik tahmini net kârın %50'si × (süre / 24)
@@ -295,11 +295,11 @@ export const GAME_CONFIG = {
   // ═══════════════════════════════════════════════════════════════════════
   // YASA 3: "Kıt olan pahalıdır." Haftalık küresel kota 180.000 odunsa odun
   // ucuz olamaz. Fiyatlar kota kıtlığına göre yeniden türetildi:
-  //   odun  180.000/hafta × 2,50 =   450.000 ADA
-  //   demir 130.000/hafta × 4,00 =   520.000 ADA
-  //   buğday 490.000/hafta × 0,90 = 441.000 ADA
+  //   odun  180.000/hafta × 2,50 =   450.000 ASTRA
+  //   demir 130.000/hafta × 4,00 =   520.000 ASTRA
+  //   buğday 490.000/hafta × 0,90 = 441.000 ASTRA
   //   ────────────────────────────────────────────
-  //   Tüm evrenin haftalık emek geliri = 1.411.000 ADA (v1'de 6.264 ADA idi)
+  //   Tüm evrenin haftalık emek geliri = 1.411.000 ASTRA (v1'de 6.264 ASTRA idi)
   // v2 (R4b): açılış fiyatları ölçekli (×0,01); koridor taban 0,5×, tavan 2,5× açılış (ASTRA/birim; ekranda 1.000 birim başına)
   AMM_CORRIDORS: {
     wheat:     { minPriceAda: 0.0045, maxPriceAda: 0.0225, defaultPriceAda: 0.009 },
@@ -346,7 +346,7 @@ export const GAME_CONFIG = {
 
   // 24 Saatlik Otomatik Asker Doyurma (Pasif İyileşme) Kuralı:
   // 24 saat (1440 dk / 86400 sn) içinde asker kendi kendini otomatik iyileştirirken:
-  // Her 1 HP için: 0.30 Buğday + 0.10 ADA tüketilir. Yetersiz bakiye veya buğdayda iyileşme durdurulur.
+  // Her 1 HP için: 0.30 Buğday + 0.10 ASTRA tüketilir. Yetersiz bakiye veya buğdayda iyileşme durdurulur.
   SOLDIER_PASSIVE_HEAL: {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
     wheatPerHp: 0.30,             // 24 saatte 1 HP başına 0.30 Buğday
@@ -355,7 +355,7 @@ export const GAME_CONFIG = {
 
   // Hızlı Asker Doyurma (Instant / Fast Heal) Kuralı:
   // 24 saatlik otomatik formülün 10 katı (Deflasyonist Zaman Satın Alma & Hazine Besleme):
-  // Her 1 HP için: 3.0 Buğday (0.30 * 10) + 1.0 ADA (0.10 * 10)
+  // Her 1 HP için: 3.0 Buğday (0.30 * 10) + 1.0 ASTRA (0.10 * 10)
   SOLDIER_FAST_HEAL: {
     wheatPerHp: 3.0,             // 24 saatlik formülün 10 katı (3 Buğday / HP)
     adAstraPerHp: 0.01           // 24 saatlik formülün 10 katı (v2 ölçekli)
@@ -369,7 +369,7 @@ export const GAME_CONFIG = {
   // Ara seviyeler: başlangıçtan maksimuma eşit oranlı (üssel) büyüme
   // Maksimum (Lv 18): Haftalık havuz tavanının %50'si (90k Odun, 65k Demir, 245k Buğday)
   // Yükseltme Şartı: Tüm depolar %80 dolu olmak zorunda
-  // Yükseltme Maliyeti: Mevcut kapasitenin yarısı (%50) + Anlık DEX Pazar ADA karşılığı
+  // Yükseltme Maliyeti: Mevcut kapasitenin yarısı (%50) + Anlık DEX Pazar ASTRA karşılığı
   // =========================================================================
   WAREHOUSE: {
     baseLevels: 18,
@@ -432,7 +432,7 @@ export const GAME_CONFIG = {
   // ═══════════════════════════════════════════════════════════════════════
   // TAVERNA — v2 fiyatlaması (F-17)
   // ═══════════════════════════════════════════════════════════════════════
-  // v1'de 45.000 ADA'lık iksir verimi HİÇ artırmıyordu; 40 ADA'lık eski
+  // v1'de 45.000 ASTRA'lık iksir verimi HİÇ artırmıyordu; 40 ASTRA'lık eski
   // `speed_wood` buff'ı ise hem süreyi hem verimi 1,5× yapıyordu. Yani pahalı
   // ürün ucuzdan 1.125 kat daha kötüydü. Eski buff'lar kaldırıldı, iksirler
   // artık HEM süreyi HEM verimi çarpıyor ve yeni gelir düzeyine göre fiyatlandı.
@@ -617,9 +617,9 @@ export const GAME_CONFIG = {
     //  • 6. girişten itibaren: kapı harcı ödenirse ödüllü, ödenmezse yalnız deneyim veren antrenman.
     DAILY_RUNS: 5,                    // harçsız ödüllü giriş sayısı
     FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde silahlar aşınmaz
-    // Harç, o katın temel ADA ödülünün bu oranı kadardır ve %100'ü zindan kasasına gider.
+    // Harç, o katın temel ASTRA ödülünün bu oranı kadardır ve %100'ü zindan kasasına gider.
     GATE_FEE_RATE: 0.20,
-    // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ADA öder → kasa matematiksel olarak boşalamaz.
+    // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ASTRA öder → kasa matematiksel olarak boşalamaz.
     // v2 (R3): haftada %2,5 → günde ~%0,36
     DAILY_BUDGET_RATE: 0.0036,
     // Zafer ödülü (gameState.getDungeonBaseReward): seviye × taban; Lv.9 ve Lv.18 bosslarında × çarpan.
@@ -745,7 +745,7 @@ export const GAME_CONFIG = {
   ],
 
 
-  // 60 günlük sezon: ücretsiz şerit herkese, premium şerit ADA ile.
+  // 60 günlük sezon: ücretsiz şerit herkese, premium şerit ASTRA ile.
   // F2P/P2E dengesinin en temiz kaldıracı — para EKSTRA alır, ZORUNLU değil.
   SEASON: {
     DURATION_DAYS: 60,
@@ -769,10 +769,10 @@ export const GAME_CONFIG = {
   // ═══════════════════════════════════════════════════════════════════════
   CARNIVAL: {
     WHEEL_COST_ADA: 1, // 1 ASTRA veya dengi hammadde veya 1 Piyango Bileti (v2 ölçekli)
-    // Karnaval kasasında en az bu kadar ADA yoksa çark geçici olarak kapanır (ödüller asla yoktan ödenmez)
+    // Karnaval kasasında en az bu kadar ASTRA yoksa çark geçici olarak kapanır (ödüller asla yoktan ödenmez)
     WHEEL_MIN_CARNIVAL_BALANCE: 200,
-    // Kullanıcı kararı (4 Ekim 2026): ADA ile çevrilen çarkın bedelinin %80'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
-    // kasadan ödenir; eskiden yalnız %3,4'ü giriyordu ve kasa her çevirmede ~50 ADA eriyordu). Kalan %20 her harcama gibi
+    // Kullanıcı kararı (4 Ekim 2026): ASTRA ile çevrilen çarkın bedelinin %80'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
+    // kasadan ödenir; eskiden yalnız %3,4'ü giriyordu ve kasa her çevirmede ~50 ASTRA eriyordu). Kalan %20 her harcama gibi
     // dağıtılır (yakım, yapımcı payı, temel gelir, hazine kasaları).
     WHEEL_CARNIVAL_SHARE: 0.80,
     // Hammadde oyunda bedava toplandığı için hammaddeyle çevirme günde en çok bu kadar (kasa bu yoldan erimesin)
@@ -805,7 +805,7 @@ export const GAME_CONFIG = {
       SEED_POOL_ADA: 12000000,     // v2 (R3): 12 M ASTRA tohum (eskiden 20 M; model 2 yılda hiç erimedi)
       // Balina koruması: bir hesap bir haftada en fazla bu kadar bilet satın alabilir.
       // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder.
-      MAX_TICKETS_PER_ACCOUNT: 100,  // haftalık alım sınırı (10.000 ADA)
+      MAX_TICKETS_PER_ACCOUNT: 100,  // haftalık alım sınırı (10.000 ASTRA)
       WINNER_MULTIPLIER: 2.0,        // Kazanan, biletlerine ödediğinin 2 katını alır
       AMORTI_SHARE: 0.02             // Bilet bedelinin %2'si amorti kasasına
     }
@@ -856,12 +856,12 @@ export const GAME_CONFIG = {
       title: 'Büyük Krallık Reformu & Karnaval',
       date: 'Eylül 2026',
       changes: [
-        'Tek tip elit asker: "AdAstra Şampiyonu" (Lv.1: 100 HP, 25 ATK); 18 saatlik otomatik pasif doyurma (1 HP = 0.30 Buğday + 0.10 ADA) ve 100 katı anında hızlı doyurma (1 HP = 30 Buğday + 10 ADA).',
+        'Tek tip elit asker: "AdAstra Şampiyonu" (Lv.1: 100 HP, 25 ATK); 18 saatlik otomatik pasif doyurma (1 HP = 0.30 Buğday + 0.10 ASTRA) ve 100 katı anında hızlı doyurma (1 HP = 30 Buğday + 10 ASTRA).',
         'Zindanda Persistent Canavar Canı (kaybedilen savaşta canavarın canı yenilenmez).',
         'Krallık Demircisi "Çantam" kategorik filtreleri, seviye sıralaması ve toplu yükseltme/onarım.',
-        'Yeni Teçhizat Craft & Upgrade matematiği (ATK 18 dk, HP 21 dk üretim + AMM ADA + Parça; 13 Dayanıklılık).',
+        'Yeni Teçhizat Craft & Upgrade matematiği (ATK 18 dk, HP 21 dk üretim + AMM ASTRA + Parça; 13 Dayanıklılık).',
         '24 Saatlik Kâr Ortaklı Taverna Otomasyon Botu (Saf kârın %50\'si) & Silo yönetimi.',
-        'Krallık Karnavalı: 14 Ödüllü Şans Çarkı (RTP %78, Kasa Kârı %22) & 1M ADA Tohumlu Haftalık Piyango.',
+        'Krallık Karnavalı: 14 Ödüllü Şans Çarkı (RTP %78, Kasa Kârı %22) & 1M ASTRA Tohumlu Haftalık Piyango.',
         'AMM Swap ücreti %1.00 yapıldı; 3 yeni Parşömen likidite havuzu açıldı.',
         '1-Click "Tüm Seferleri Topla" butonu artık bitmemiş seferlerdeki biriken kaynakları da anında topluyor.'
       ]
@@ -917,10 +917,10 @@ export const GAME_CONFIG = {
       title: 'Ordu Hızlı Doyurma Deflasyonist Denge & Hazine Yakımı Reformu',
       date: 'Eylül 2026',
       changes: [
-        'Ordu hızlı doyurma (Instant Heal) maliyeti, zindan havuzunu korumak ve deflasyonist yapıyı beslemek amacıyla 10x altın orana (1 HP = 3.0 Buğday + 1.0 ADA) uyarlandı.',
-        '100x aşırı çarpan kaldırılarak tek asker tam canı 300 Buğday + 100 ADA, 18 kişilik tüm ordu ise 5.400 Buğday + 1.800 ADA seviyesine kalibre edildi.',
+        'Ordu hızlı doyurma (Instant Heal) maliyeti, zindan havuzunu korumak ve deflasyonist yapıyı beslemek amacıyla 10x altın orana (1 HP = 3.0 Buğday + 1.0 ASTRA) uyarlandı.',
+        '100x aşırı çarpan kaldırılarak tek asker tam canı 300 Buğday + 100 ASTRA, 18 kişilik tüm ordu ise 5.400 Buğday + 1.800 ASTRA seviyesine kalibre edildi.',
         'Hızlı doyurmada harcanan tüm $ADASTRA anında Hazine Muhasebesine (%22 Kalıcı Yakım + %78 Hazine Havuzları) işlenerek deflasyonist token yakımı ve havuz sponsorluğu sağlandı.',
-        '18 saatlik düşük maliyetli pasif doyurma (1 HP = 0.30 Buğday + 0.10 ADA) aynen korunarak sabırlı emek veren oyuncuların zindan kârlılığı teminat altına alındı.'
+        '18 saatlik düşük maliyetli pasif doyurma (1 HP = 0.30 Buğday + 0.10 ASTRA) aynen korunarak sabırlı emek veren oyuncuların zindan kârlılığı teminat altına alındı.'
       ]
     },
     {
@@ -940,11 +940,11 @@ export const GAME_CONFIG = {
       title: 'Pandora Kutusu & Anahtar AMM Havuzları ve Piyango 2x Kazanç Reformu',
       date: 'Eylül 2026',
       changes: [
-        'Pandora Kutusu (10.000 ADA) ve Anahtar (1.000 ADA) AMM DEX havuzları yüksek değerleme ve sanal derinlik modeliyle optimize edildi.',
+        'Pandora Kutusu (10.000 ASTRA) ve Anahtar (1.000 ASTRA) AMM DEX havuzları yüksek değerleme ve sanal derinlik modeliyle optimize edildi.',
         'Pandora Kutularını açmak için Anahtar zorunluluğu getirildi. Anahtarların Zindan düşüşü kapatıldı; yalnızca Kolezyum sıralaması ve Şans Çarkından düşebilir hale getirildi.',
         'Koleksiyonu tamamlayan gezginler, düşürdükleri Pandora Kutularını AMM havuzunda ~10.000 $ADASTRA gibi devasa bir bedelle satabilme imkanına kavuştu.',
         'Piyango 2x Kazanç Sistemi: Kazanan kişi havuzun %18\'i yerine satın aldığı bilet tutarının tam 2 katını (2x) nakit kazanır, biletleri yakılır ve devasa 20M+ havuz devrederek büyümeye devam eder.',
-        'Balina İstiflemesini Önleme Kotası: Her hesabın haftalık satın alabileceği maksimum bilet sayısı 100 bilet (10.000 ADA) ile sınırlandırıldı.'
+        'Balina İstiflemesini Önleme Kotası: Her hesabın haftalık satın alabileceği maksimum bilet sayısı 100 bilet (10.000 ASTRA) ile sınırlandırıldı.'
       ]
     },
     {
@@ -953,11 +953,11 @@ export const GAME_CONFIG = {
       date: 'Eylül 2026',
       changes: [
         'Karnaval Çarkı hammadde yakım sayacı bağımsızlaştırılarak sadece çarkta yakılan kaynaklar için özel sayaç bağlandı.',
-        'Hazine kasalarındaki yanıltıcı "doluluk oranı" kaldırılarak her kasada net ADA miktarı gösterildi.',
+        'Hazine kasalarındaki yanıltıcı "doluluk oranı" kaldırılarak her kasada net ASTRA miktarı gösterildi.',
         'Karnaval çarkında kazanılan tüm ödüller havadan basılmak yerine Karnaval hazine bütçesiyle AMM pazarından buyback yapılıp teslim edilecek şekilde uyarlandı.',
         'Çark amorti bilet gereksinimi 10 adetten 3 adede düşürüldü (3 bilet parçası = 1 çevirme).',
         'AMM DEX işlemlerinde alınan %2 komisyon ile toplam kaç adet demir, odun ve buğday yakıldığını gösteren canlı sayaç kartı eklendi.',
-        'Piyangodaki "Bu haftaki talihli payı" silindi; yerine talihlinin biletlerini yakıp değerinin tam 2 katı ADA\'yı kasadan çektiği "Talihli Bilet Yak & 2 Katı ADA Kasadan Çek" bölümü eklendi.'
+        'Piyangodaki "Bu haftaki talihli payı" silindi; yerine talihlinin biletlerini yakıp değerinin tam 2 katı ASTRA\'yı kasadan çektiği "Talihli Bilet Yak & 2 Katı ASTRA Kasadan Çek" bölümü eklendi.'
       ]
     },
     {
@@ -982,7 +982,7 @@ export const GAME_CONFIG = {
         'Fiyat düşüşleri haftalık dalgalanmaya değil, değişmez Genesis Lansman Fiyatlarına ($P_{genesis}$) sabitlendi.',
         'Kuvvet Yasası Harcama Matematiği (U = Δ^2.5): Fiyat %10 düştüğünde binde 3 sembolik fon ayrılırken, %90 çöküşte bütçenin %76.8\'i devreye girer ve ucuza gelen fiyattan tam 2.195 kat daha fazla FİZİKSEL ADET satın alınıp anında yakılır (Burn).',
         'Hazine Dağıtım Ağırlığı: Bütçenin %75 aslan payı temel hammadde üçlüsüne (%30 Buğday, %25 Demir, %20 Odun), %25 payı ise gelişim & prestij varlıklarına (%10 Parça, %8 Anahtar, %7 Kutu) tahsis edildi.',
-        'Hazine Güvenlik Tavanı: Kasada kaç milyon ADA olursa olsun, bir döngüde en fazla %10 bütçe harcanabilir; kalan %90 rezervde kalıp arkadaki kale görevini sürdürür.',
+        'Hazine Güvenlik Tavanı: Kasada kaç milyon ASTRA olursa olsun, bir döngüde en fazla %10 bütçe harcanabilir; kalan %90 rezervde kalıp arkadaki kale görevini sürdürür.',
         'Pazar yerine "🛡️ Otonom Buyback & Yakım" sekmesi eklendi; 6 varlığın canlı fiyat analizi, aciliyet yoğunluğu ve tek tıkla operasyon yürütme kontrolü sağlandı.'
       ]
     },
@@ -993,7 +993,7 @@ export const GAME_CONFIG = {
       changes: [
         'Geliştirici & Hızlı Test Konsolundan saat ileri sarıldığında (+1s, +6s, +18s, +24s) otonom Taverna Botunun zaman dilimini ardışık döngülerle otonom simüle etmesi sağlandı.',
         'Simülasyon sürecinde odun, demir ve buğday seferleri peş peşe tamamlanır, depolar doldurulur, aşınan aletler otomatik onarılır ve stamina sadece gereken oranda buğdaydan karşılanır.',
-        'Silo Doluluk Tercihi Tam Entegrasyonu: "Siloyu Yükselt" seçiliyken ambarlar otomatik üst seviyeye taşınır, "Kaynakları Sat" modundayken %50 rezerve korunarak fazlalık AMM DEX pazarında satılıp ADA biriktirilir.',
+        'Silo Doluluk Tercihi Tam Entegrasyonu: "Siloyu Yükselt" seçiliyken ambarlar otomatik üst seviyeye taşınır, "Kaynakları Sat" modundayken %50 rezerve korunarak fazlalık AMM DEX pazarında satılıp ASTRA biriktirilir.',
         '50x Önkoşul & Dondurma (Freeze) Uyumu: Zaman ilerletilirken kaynaklar tükenirse bot süresi dondurulur, saniyeler boşa harcanmaz.',
         'Kalan bot süresi geçen zaman kadar senkronize geriye düşürülür; süre bittiğinde seferler durur.',
         'Test menüsünde zaman sarıldıktan sonra tamamlanan sefer sayısını, kazanılan net hammaddeleri, kasa değişimini ve kalan bot süresini gösteren canlı "Simülasyon Sonuç Raporu" arayüzü eklendi.'
@@ -1007,7 +1007,7 @@ export const GAME_CONFIG = {
         'Karnaval Çarkında Odun, Buğday, Demir, Teçhizat Parçası veya Anahtar çıktığında ödüllerin havadan basılması kesin olarak engellendi.',
         'Tüm bu ödüller doğrudan Karnaval Hazine Kasası (pools.carnival) bütçesiyle AMM DEX pazarından fiziki executeBuyAmount işlemiyle piyasadan satın alınır (Buyback).',
         'Piyasa alımı AMM likidite havuzundaki arzı fiziki olarak eksiltir ve marketteki fiyatı anında yukarı doğru artırır.',
-        'Çark sonuç ekranına ve toast bildirimlerine "🏛️ KARNAVAL HAZİNESİ AMM BUYBACK DEKONTU" eklendi; satın alınan miktar, kasadan ödenen ADA ve anlık fiyat artışı (P_eski ➔ P_yeni ADA, +%X.XX 📈) canlı olarak raporlanır.',
+        'Çark sonuç ekranına ve toast bildirimlerine "🏛️ KARNAVAL HAZİNESİ AMM BUYBACK DEKONTU" eklendi; satın alınan miktar, kasadan ödenen ASTRA ve anlık fiyat artışı (P_eski ➔ P_yeni ASTRA, +%X.XX 📈) canlı olarak raporlanır.',
         'Pazar yerinde fiyatlar 4 ondalık basamak hassasiyetle anlık canlı güncellenir.'
       ]
     },
@@ -1029,8 +1029,8 @@ export const GAME_CONFIG = {
       date: 'Eylül 2026',
       changes: [
         'Bot çalışırken Silo Seviye atladığında veya sefer/tamirat harcamalarıyla Odun, Demir veya Buğday stokları 50 altına indiğinde; kasadaki $ADASTRA bakiyesiyle AMM pazarından eksik hammaddeyi anında satın alan çift yönlü oto-tedarik motoru (autoBuyBotResourceDeficit) entegre edildi.',
-        'Daha önce yalnızca ADA eksikliğinde kaynak satan tek yönlü sistem; hem ADA eksildiğinde kaynak satan hem de hammadde azaldığında piyasadan kaynak satın alan tam otonom çift yönlü dengeleyiciye dönüştürüldü.',
-        'Silo Seviye 3, 4 ve üzeri yükseltmelerde tüm ambarlar sıfırlandığında botun duraklatılması (paused) engellendi; yükseltme tamamlandığı an kasadaki ADA ile ambarlara güvenlik rezervi otomatik temin edildi.',
+        'Daha önce yalnızca ASTRA eksikliğinde kaynak satan tek yönlü sistem; hem ASTRA eksildiğinde kaynak satan hem de hammadde azaldığında piyasadan kaynak satın alan tam otonom çift yönlü dengeleyiciye dönüştürüldü.',
+        'Silo Seviye 3, 4 ve üzeri yükseltmelerde tüm ambarlar sıfırlandığında botun duraklatılması (paused) engellendi; yükseltme tamamlandığı an kasadaki ASTRA ile ambarlara güvenlik rezervi otomatik temin edildi.',
         'Geliştirici konsolundan saat ileri sarıldığında veya çevrimdışı ilerlemede ambar sıfırlanmasından ötürü botun dondurulması sorunu kökten çözüldü.'
       ]
     },
@@ -1075,8 +1075,8 @@ export const GAME_CONFIG = {
       date: 'Eylül 2026',
       changes: [
         'Projenin resmi adı "Realm of Astra" olarak tescillendi ve arayüz başlıkları yenilendi.',
-        'Bot Satın Alımında Ani Silo Seviye 2 Koruması: Bot satın alındığı sıfırıncı saniyede henüz sefer toplanmamışken kullanıcının kalan ~3.884 ADA parasını anında siloya gömen kontrolsüz yükseltme kökünden engellendi. Silonun yükseltilmesi yalnızca botun sefer tamamlayıp depoyu doldurması kuralına bağlandı.',
-        'AMM Market Fiyat Şişirme Engeli: Botun kasadaki ADA ile AMM\'den zorla odun/demir/buğday satın alıp piyasa fiyatlarını artıran ve kullanıcının ADA\'sını tüketen alım çağrıları kaldırıldı. Bot bir hammadde üreticisidir; alet tamiri veya silo için ADA lazımsa depodaki hammaddeyi AMM\'de SATARAK ADA temin eder ve pazar fiyatlarının düşmesini sağlar.',
+        'Bot Satın Alımında Ani Silo Seviye 2 Koruması: Bot satın alındığı sıfırıncı saniyede henüz sefer toplanmamışken kullanıcının kalan ~3.884 ASTRA parasını anında siloya gömen kontrolsüz yükseltme kökünden engellendi. Silonun yükseltilmesi yalnızca botun sefer tamamlayıp depoyu doldurması kuralına bağlandı.',
+        'AMM Market Fiyat Şişirme Engeli: Botun kasadaki ASTRA ile AMM\'den zorla odun/demir/buğday satın alıp piyasa fiyatlarını artıran ve kullanıcının ASTRA\'sını tüketen alım çağrıları kaldırıldı. Bot bir hammadde üreticisidir; alet tamiri veya silo için ASTRA lazımsa depodaki hammaddeyi AMM\'de SATARAK ASTRA temin eder ve pazar fiyatlarının düşmesini sağlar.',
         'Taverna Bot Satın Alma Radyo Seçeneği Senkronizasyonu: Satın alma anında kullanıcının seçtiği "Siloyu Yükselt" veya "Akıllı Satış" tercihi anında state\'e kaydedilir.',
         '38 birim testin tamamı (tüm zindan, dövüş, ekonomi ve bot testleri) sıfır hata ile %100 doğrulandı.'
       ]
@@ -1086,9 +1086,9 @@ export const GAME_CONFIG = {
       title: '🛡️ 24s Bot AMM Oto-Alım Kaldırılması & Başlangıç Demir Rezervi Senkronizasyonu',
       date: 'Eylül 2026',
       changes: [
-        'Bot Satın Alımında AMM Marketinden Kaynak Alımı Tamamen Yasaklandı: Bot satın alındığında siloyu doldurmak için kullanıcının kasasındaki ADA ile AMM pazarından zorla kaynak satın alıp fiyatları fırlatan autoBuyBotResourceDeficit fonksiyonu kalıcı olarak devre dışı bırakıldı.',
-        'Başlangıç Profili Demir Stoğu (40 -> 50): Yeni başlayan oyuncunun 50x bot çalışma önkoşulunu (50 Demir, 50 Odun, 50 Buğday, 50 ADA) eksiksiz karşılaması için başlangıç demiri 50 yapıldı.',
-        'Bot Üretici Kimliği Güvencesi: Bot yalnızca seferlerden hammadde toplar. Alet tamiri için ADA gerektiğinde silodaki fazla hammaddeyi AMM\'de satarak hem ADA üretir hem de pazar fiyatlarını düşürür.'
+        'Bot Satın Alımında AMM Marketinden Kaynak Alımı Tamamen Yasaklandı: Bot satın alındığında siloyu doldurmak için kullanıcının kasasındaki ASTRA ile AMM pazarından zorla kaynak satın alıp fiyatları fırlatan autoBuyBotResourceDeficit fonksiyonu kalıcı olarak devre dışı bırakıldı.',
+        'Başlangıç Profili Demir Stoğu (40 -> 50): Yeni başlayan oyuncunun 50x bot çalışma önkoşulunu (50 Demir, 50 Odun, 50 Buğday, 50 ASTRA) eksiksiz karşılaması için başlangıç demiri 50 yapıldı.',
+        'Bot Üretici Kimliği Güvencesi: Bot yalnızca seferlerden hammadde toplar. Alet tamiri için ASTRA gerektiğinde silodaki fazla hammaddeyi AMM\'de satarak hem ASTRA üretir hem de pazar fiyatlarını düşürür.'
       ]
     },
     {
@@ -1110,9 +1110,9 @@ export const GAME_CONFIG = {
       title: '⚖️ Yeni Ekonomi Kuralları, Adım Adım Açılan Menüler & Hız',
       date: '30 Eylül 2026',
       changes: [
-        'Piyango: her bilet 100 ADA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; biletleri ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
+        'Piyango: her bilet 100 ASTRA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; biletleri ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
         'Çarkta 1 piyango bileti = 1 çevirme; yakılan biletin bedeli piyango ödül hesabından da düşer.',
-        'Haftalık temel gelir (UBI): oyunda harcanan her ADA\'nın %6\'sı haftalık kasada birikir, Pazartesi 00:01 (TSİ) açılır ve 3. seviyeden itibaren seviyeye göre paylaşılır; çekilmeyen pay sonraki haftaya devreder.',
+        'Haftalık temel gelir (UBI): oyunda harcanan her ASTRA\'nın %6\'sı haftalık kasada birikir, Pazartesi 00:01 (TSİ) açılır ve 3. seviyeden itibaren seviyeye göre paylaşılır; çekilmeyen pay sonraki haftaya devreder.',
         'Haftalık kota her gün bir parça açılır (Pazartesi sabahı tek seferde bitmez). Pazar derinliği haftalık kotanın 80 katına çıkarıldı: fiyatın %90 düşmesi yıllar alır.',
         'Zindan: günde 5 ödüllü giriş; sonrasında isteğe bağlı kapı harcıyla ödüllü giriş (harcın tamamı zindan kasasına). Zindan kasası günde bakiyesinin en fazla %1\'ini öder, bu yüzden boşalamaz. Zindanda da asıl savaş motoru kullanılır.',
         'İlk oturumda menüler adım adım açılır: pazar ilk hasattan, kışla ve demirci üç alan birden çalışınca, karnaval 2. seviyede, zindan ilk askerle, kolezyum ilk zindan zaferiyle.',
@@ -1155,9 +1155,9 @@ export const GAME_CONFIG = {
       changes: [
         'Harcama dağılımı yenilendi: her harcamanın %5\'i yakılır (önceden %13), %6\'sı haftalık temel gelire, %3\'ü yapımcı payına, %86\'sı hazine kasalarına gider. Daha az yakım, oyuncuya geri dönen payı artırır.',
         'Yeni Görev & Ücretsiz Oyuncu Kasası: hazine girişinin %21\'i buraya ayrılır. Görev ödülleri artık buradan ödenir; ileride ücretsiz oyunculara aylık pay da buradan dağıtılacak. Kasa payları: Zindan %30, Kolezyum %15, Dünya Bossu %15, Pazar Geri Alım %15, Görev %21, Karnaval %4.',
-        'Kilitli bakiye: oyundan kazandığın ADA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ADA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Hazine panelinde ve bakiyenin üzerine gelince serbest/kilitli miktarı görünür.',
-        'Katkı puanı: oyunda harcadığın her ADA, yaktığın ve pazara sattığın hammadde puan kazandırır. İleride haftalık çekim hakkından payını bu puan belirleyecek.',
-        'ADA fiyat çarpanı: asker, iyileşme, bilet, çark ve Genesis NFT fiyatları ile zindan ve görev ödülleri tek bir çarpana bağlandı. ADASTRA\'nın değeri değişince çarpan haftada en fazla %5 değişerek oyunun dolar maliyetini dengeler (şimdilik ×1).'
+        'Kilitli bakiye: oyundan kazandığın ASTRA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ASTRA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Hazine panelinde ve bakiyenin üzerine gelince serbest/kilitli miktarı görünür.',
+        'Katkı puanı: oyunda harcadığın her ASTRA, yaktığın ve pazara sattığın hammadde puan kazandırır. İleride haftalık çekim hakkından payını bu puan belirleyecek.',
+        'ASTRA fiyat çarpanı: asker, iyileşme, bilet, çark ve Genesis NFT fiyatları ile zindan ve görev ödülleri tek bir çarpana bağlandı. ADASTRA\'nın değeri değişince çarpan haftada en fazla %5 değişerek oyunun dolar maliyetini dengeler (şimdilik ×1).'
       ]
     },
     {
@@ -1169,7 +1169,7 @@ export const GAME_CONFIG = {
         'Kayıt artık e-postandaki onay bağlantısıyla tamamlanır; bağlantıya tıklayınca doğrudan oyuna girersin. Kayıt ekranı bir e-postanın kayıtlı olup olmadığını kimseye göstermez.',
         'Şifren değişince ya da Muhafız Mührü takılıp kaldırılınca e-postana bildirim gelir.',
         'Oyun Kasası üst sınırı: kasanda yaklaşık 30 günlük harcamandan fazlası birikirse fazlası güvenliğin için kendi cüzdanına kendiliğinden geri gönderilir.',
-        'Karnaval Çarkı hammaddeyle çevrilince ödenen hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ADA Karnaval kasasına girer (ödüller bu kasadan ödenir).',
+        'Karnaval Çarkı hammaddeyle çevrilince ödenen hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ASTRA Karnaval kasasına girer (ödüller bu kasadan ödenir).',
         'Tarayıcı koruması açıldı: oyun sayfasında yalnız oyunun kendi kodu çalışabilir.'
       ]
     },
@@ -1178,8 +1178,8 @@ export const GAME_CONFIG = {
       title: '🎡 Yeni Şans Çarkı & Adil Ücretsiz Oyuncu Payı',
       date: '4 Ekim 2026',
       changes: [
-        `Şans Çarkı yenilendi: oyuncuya ortalama dönüş %63'ten ~%81'e çıktı (bot hariç). Çevirmelerin ~%31'inde en az bedelini geri alırsın, ~%10'unda kârla çıkarsın. Yeni 💎 5.000 ADA Büyük İkramiye (50×).`,
-        `Çark artık kendi kendini besliyor: ADA ile çevirmenin %80'i doğrudan Karnaval kasasına girer, kasa erimez ve çark kapanmaz.`,
+        `Şans Çarkı yenilendi: oyuncuya ortalama dönüş %63'ten ~%81'e çıktı (bot hariç). Çevirmelerin ~%31'inde en az bedelini geri alırsın, ~%10'unda kârla çıkarsın. Yeni 💎 5.000 ASTRA Büyük İkramiye (50×).`,
+        `Çark artık kendi kendini besliyor: ASTRA ile çevirmenin %80'i doğrudan Karnaval kasasına girer, kasa erimez ve çark kapanmaz.`,
         `Piyango biletiyle çevirince biletin piyango kasasındaki payı Karnaval kasasına geçer.`,
         `Hammaddeyle çevirme günde 3 hak (hammadde oyunda bedava toplandığı için kasa korunur).`,
         `Haftalık ücretsiz oyuncu payı adil hale geldi: en az 3. seviye ve haftada yeterli katkı puanı gerekir; pay katkın arttıkça hızla büyür ve her hafta üst üste katılınca sadakat serisiyle 2 katına kadar çıkar. Emeğini tek hesapta toplayan, yan hesaplara bölenden çok daha fazla kazanır. Pay kilitli gelir; oyunda harcadıkça çözülür. Şartlarını Hazine panelinde görebilirsin.`
@@ -1195,17 +1195,17 @@ export const GAME_CONFIG = {
         `Seviye başına üretim bonusu %1,5'ten %1'e indi (81. seviyede +%80).`,
         `Kışla yenilendi: aranabilir asker listesi, eşya yuvaları en üstte, yuvaya tıklayınca bütün uygun eşyalar karşılaştırmalı listelenir; cephanelikte süzme, sıralama ve akıllı öneriler.`,
         `Pazar: "Hepsini sat" ve "Depoyu doldur" düğmeleri.`,
-        `Seviye atlama ve silo yükseltmede "Hızlı al": eksik hammaddeleri ADA'n yetiyorsa tek tuşla pazardan alır.`,
-        `Hesabım: kilitli ADA'nın nasıl açılacağını, yarın ve 7 günde ne kadarının açılacağını gösteren panel; pencere dışına tıklayınca kapanır.`
+        `Seviye atlama ve silo yükseltmede "Hızlı al": eksik hammaddeleri ASTRA'n yetiyorsa tek tuşla pazardan alır.`,
+        `Hesabım: kilitli ASTRA'nın nasıl açılacağını, yarın ve 7 günde ne kadarının açılacağını gösteren panel; pencere dışına tıklayınca kapanır.`
       ]
     },
     {
       version: 'v1.33',
-      title: '💸 Şeffaf ADA Oranları',
+      title: '💸 Şeffaf ASTRA Oranları',
       date: '6 Ekim 2026',
       changes: [
-        `Oyundaki bütün ADA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları, çark, zindan harcı, piyango, pazar komisyonu, çekim ücreti) artık herkesin görebileceği bir akıllı sözleşmede. Bir oran değişirse 24 saat önceden görünür.`,
-        `Askerlerin kendi kendine iyileşmesinde harcanan ADA artık her harcama gibi kasalara dağıtılıyor (önceden hiçbir kasaya yazılmıyordu).`,
+        `Oyundaki bütün ASTRA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları, çark, zindan harcı, piyango, pazar komisyonu, çekim ücreti) artık herkesin görebileceği bir akıllı sözleşmede. Bir oran değişirse 24 saat önceden görünür.`,
+        `Askerlerin kendi kendine iyileşmesinde harcanan ASTRA artık her harcama gibi kasalara dağıtılıyor (önceden hiçbir kasaya yazılmıyordu).`,
         `Kullanılan teçhizat parçası, anahtar, kutu ve parşömenler yakım kaydına giriyor.`
       ]
     },
@@ -1214,7 +1214,7 @@ export const GAME_CONFIG = {
       title: '🎟️ Promo Kodları',
       date: '6 Ekim 2026',
       changes: [
-        `Promo kodu: kayıtta ya da oyunda Hesabım → Promo kodu'na yaz. Ödül ADA (kilitli, oyunda harcadıkça açılır) ya da hammadde, anahtar, kutu, parşömen olabilir; bedeli görev kasasından ödenir.`,
+        `Promo kodu: kayıtta ya da oyunda Hesabım → Promo kodu'na yaz. Ödül ASTRA (kilitli, oyunda harcadıkça açılır) ya da hammadde, anahtar, kutu, parşömen olabilir; bedeli görev kasasından ödenir.`,
         `Hesap açarken ve yeni şifre belirlerken şifre iki kez sorulur; yanlış yazılan şifreyle hesap açılmaz.`,
         `Oyun artık realmofadastra.vercel.app adresinde.`
       ]

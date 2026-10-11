@@ -5,7 +5,7 @@ import { fmt, DAY } from './yardimci.js';
 export function olusturSicakCuzdan(w) {
   const { db, E, chain, mailer, cfg, clock, log, econ, setEcon, snapshotMarket, queuePayout, creatorWallet } = w;
   // ── Sıcak / soğuk cüzdan (kullanıcı kararı 4 Ekim 2026) ─────────────────
-  // Oyun cüzdanında (anahtarı sunucuda = "sıcak") yalnız bir haftalık ihtiyaç kadar ADA durur. İhtiyaç: son 4 haftanın
+  // Oyun cüzdanında (anahtarı sunucuda = "sıcak") yalnız bir haftalık ihtiyaç kadar ASTRA durur. İhtiyaç: son 4 haftanın
   // en yüksek haftalık gönderimi, bu haftaki bekleyen çekim talepleri ve HOT_WALLET_MIN_ADA'nın büyüğü; üstüne sırada
   // bekleyen ödemeler. Cüzdan bunun 1,5 katını aşarsa fazlası yedek cüzdana (RESERVE_WALLET, donanım cüzdanı) gider.
   // Azalırsa yönetici panelinde ve e-postayla "yedek cüzdandan şu kadar gönder" uyarısı çıkar.
@@ -76,9 +76,9 @@ Kasa: ${chain.vaultAddress}` })
       db.event('hot-wallet-low', null, { walletAda: m.walletAda, need: n.need, gap });
       if (mailer && cfg.adminEmail) {
         await mailer.send({ to: cfg.adminEmail, subject: 'Realm of AdAstra — oyun cüzdanı azaldı',
-          text: `Oyun cüzdanında ${fmt(m.walletAda)} ADA var; bu haftanın ihtiyacı ${fmt(n.need)} ADA.
+          text: `Oyun cüzdanında ${fmt(m.walletAda)} ASTRA var; bu haftanın ihtiyacı ${fmt(n.need)} ASTRA.
 
-Yedek cüzdanından (Ledger) oyun cüzdanına en az ${fmt(gap)} ADA gönder:
+Yedek cüzdanından (Ledger) oyun cüzdanına en az ${fmt(gap)} ASTRA gönder:
 ${chain.gameWallet}
 
 Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de kullanabilirsin.` }).catch(err => log.warn('Uyarı e-postası:', err.message));

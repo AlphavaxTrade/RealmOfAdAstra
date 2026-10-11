@@ -97,7 +97,7 @@ function buildDefaultPools() {
 
 export class AMMMarketEngine {
   constructor() {
-    // v10: 40M $ADASTRA Derin AMM Havuzları (10k ADA Pandora Kutusu, 1k ADA Anahtar)
+    // v10: 40M $ADASTRA Derin AMM Havuzları (10k ASTRA Pandora Kutusu, 1k ASTRA Anahtar)
     // v11: hammadde havuzları haftalık kotanın 80 katına derinleştirildi (eski kayıtlar yeniden tohumlanır)
     // v12 (v2): 6 hammadde, 100 M tohum, ölçekli fiyatlar (eski kayıtlar yeniden tohumlanır)
     this.storageKey = 'adastra_amm_pools_v12';
@@ -238,7 +238,7 @@ export class AMMMarketEngine {
     return resourceAmount * (1 + resourceBurnRateOf(resourceKey));
   }
 
-  // dx hammadde sat → dy ADA al  (ücret ve %2 yakım düşülmüş net)
+  // dx hammadde sat → dy ASTRA al  (ücret ve %2 yakım düşülmüş net)
   getEstimatedAdAstraForSell(resourceKey, resourceAmount) {
     const pool = this.pools[resourceKey];
     if (!pool || resourceAmount <= 0) return 0;
@@ -261,7 +261,7 @@ export class AMMMarketEngine {
     return Math.floor(maxNetIn / (1 - resourceBurnRateOf(resourceKey)));
   }
 
-  // dx hammadde al → dy ADA öde  (ücret eklenmiş brüt; %2 yakım havuzdan fazladan çıkar)
+  // dx hammadde al → dy ASTRA öde  (ücret eklenmiş brüt; %2 yakım havuzdan fazladan çıkar)
   getEstimatedCostForBuy(resourceKey, resourceAmount) {
     const pool = this.pools[resourceKey];
     if (!pool || resourceAmount <= 0) return 0;
@@ -362,8 +362,8 @@ export class AMMMarketEngine {
           floorBlocked: true,
           maxSellable,
           message: maxSellable > 0
-            ? `⛔ Bu satış ${pool.name} fiyatını taban fiyatın (${corridor.minPriceAda} ADA) altına düşürür. Şu an en fazla ${maxSellable.toLocaleString('tr-TR')} adet satabilirsin.`
-            : `⛔ ${pool.name} fiyatı taban seviyede (${corridor.minPriceAda} ADA). Hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.`
+            ? `⛔ Bu satış ${pool.name} fiyatını taban fiyatın (${corridor.minPriceAda} ASTRA) altına düşürür. Şu an en fazla ${maxSellable.toLocaleString('tr-TR')} adet satabilirsin.`
+            : `⛔ ${pool.name} fiyatı taban seviyede (${corridor.minPriceAda} ASTRA). Hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.`
         };
       }
     }
@@ -379,7 +379,7 @@ export class AMMMarketEngine {
 
     this._recordResourceBurnFee(resourceKey, resourceBurnFee);
 
-    // Havuz: net hammadde girer, brüt ADA çıkar
+    // Havuz: net hammadde girer, brüt ASTRA çıkar
     pool.resourceReserve += netIn;
     pool.adAstraReserve -= gross;
 
@@ -424,7 +424,7 @@ export class AMMMarketEngine {
     if (corridor && priceAfter > corridor.maxPriceAda) {
       return {
         success: false,
-        message: `⛔ Bu alım ${pool.name} fiyatını koridor tavanının (${corridor.maxPriceAda} ADA) üstüne çıkarır. Daha küçük bir miktar dene — piyasa tavan koruması devrede.`,
+        message: `⛔ Bu alım ${pool.name} fiyatını koridor tavanının (${corridor.maxPriceAda} ASTRA) üstüne çıkarır. Daha küçük bir miktar dene — piyasa tavan koruması devrede.`,
         corridorBlocked: true
       };
     }
@@ -467,7 +467,7 @@ export class AMMMarketEngine {
   }
 
   // ── Hazine destekli buyback ─────────────────────────────────────────
-  // Fiyat koridor tabanına yaklaştığında hazine havuzun ADA tarafını besler.
+  // Fiyat koridor tabanına yaklaştığında hazine havuzun ASTRA tarafını besler.
   // Bu, balinaların çekildiği dönemde F2P satış baskısının havuzu kurutmasını
   // engelleyen denge valfidir.
   injectBuyback(resourceKey, adaAmount) {
@@ -624,7 +624,7 @@ export class AMMMarketEngine {
       if (withdrawn <= 0) continue;
 
       // AMM Havuzundan satın alınır ($x \cdot y = k$). Hazine kendi kendine komisyon ödemez:
-      // çekilen ADA'nın tamamı havuza girer (eski sürümde %2'lik kısım hiçbir yere gitmeden kayboluyordu).
+      // çekilen ASTRA'nın tamamı havuza girer (eski sürümde %2'lik kısım hiçbir yere gitmeden kayboluyordu).
       const net = withdrawn;
       const unitsToBuy = (pool.resourceReserve * net) / (pool.adAstraReserve + net);
 
@@ -673,7 +673,7 @@ export class AMMMarketEngine {
     return {
       success: true,
       executed: true,
-      message: `🎯 Otonom Buyback & Yakım Tamamlandı: ${report.totalSpent.toLocaleString('tr-TR')} ADA ile piyasadan malzemeler alınıp kalıcı olarak yakıldı!`,
+      message: `🎯 Otonom Buyback & Yakım Tamamlandı: ${report.totalSpent.toLocaleString('tr-TR')} ASTRA ile piyasadan malzemeler alınıp kalıcı olarak yakıldı!`,
       report
     };
   }

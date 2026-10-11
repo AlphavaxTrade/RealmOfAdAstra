@@ -553,7 +553,7 @@ export class GlobalResourceManager {
     const maxSingleCap = pool * ((GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MAX_SINGLE_CLAIM_SHARE) || 0.05);
     const cappedPayout = Math.min(rawPayout, maxSingleCap > 0 ? maxSingleCap : rawPayout);
 
-    // Minimum 0.01 ADA, 2 ondalık hassasiyetle anlık canlı değer
+    // Minimum 0.01 ASTRA, 2 ondalık hassasiyetle anlık canlı değer
     const payout = Math.max(0.01, Math.round(cappedPayout * 100) / 100);
     const nextLevelPayout = Math.max(0.01, Math.round(Math.min(rawNextPayout, maxSingleCap > 0 ? maxSingleCap : rawNextPayout) * 100) / 100);
     const increasePct = payout > 0 ? Math.round(((nextLevelPayout - payout) / payout) * 100) : 0;
@@ -585,7 +585,7 @@ export class GlobalResourceManager {
     if (amount <= 0) {
       return {
         success: false,
-        message: 'Bu haftanın temel gelir kasası boş. Kasa, oyunda harcanan her ADA\'nın %6\'sıyla dolar ve Pazartesi 00:01 (TSİ) açılır.'
+        message: 'Bu haftanın temel gelir kasası boş. Kasa, oyunda harcanan her ASTRA\'nın %6\'sıyla dolar ve Pazartesi 00:01 (TSİ) açılır.'
       };
     }
 
@@ -604,7 +604,7 @@ export class GlobalResourceManager {
     };
   }
 
-  // Ödül çekimi — tek geçit. Hiçbir modül bakiyeye doğrudan ADA eklemez.
+  // Ödül çekimi — tek geçit. Hiçbir modül bakiyeye doğrudan ASTRA eklemez.
   withdrawReward(poolId, amount) {
     return treasury.withdrawWhole(poolId, amount);   // tam sayı ödül; kesirli artık kasada kalır (kimsenin bakiyesine girmeyen ASTRA kaybolmasın)
   }

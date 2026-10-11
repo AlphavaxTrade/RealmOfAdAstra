@@ -1,4 +1,4 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Kilitli bakiye, katkı puanı, Üretim Hakkı, ADA fiyat çarpanı
+// Realm of AdAstra — GameStateManager yöntemleri: Kilitli bakiye, katkı puanı, Üretim Hakkı, ASTRA fiyat çarpanı
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';

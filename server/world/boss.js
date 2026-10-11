@@ -41,7 +41,7 @@ export function olusturBoss(w) {
           b.realmDamage = total;
           b.realmFighters = fighters.length;
           if (gs.state.worldBoss) gs.state.worldBoss = b;
-          gs.pushNotice(`🌋 Dünya Bossu savaşı bitti: krallık toplam ${fmt(total)} hasar vurdu (${fighters.length} ordu). Senin payın %${total > 0 ? (100 * d / total).toFixed(2).replace('.', ',') : '0'} → ${fmt(reward)} ADA. Kışla → World Boss'tan topla.`, 'success');
+          gs.pushNotice(`🌋 Dünya Bossu savaşı bitti: krallık toplam ${fmt(total)} hasar vurdu (${fighters.length} ordu). Senin payın %${total > 0 ? (100 * d / total).toFixed(2).replace('.', ',') : '0'} → ${fmt(reward)} ASTRA. Kışla → World Boss'tan topla.`, 'success');
         });
       });
       db.kvSet('world:bossLastBattle', battleTime);

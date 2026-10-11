@@ -113,10 +113,16 @@ function isAnyModalOpen() {
 
 let currentBattleInterval = null;
 
+// Panel yeni bir ekranla (başka başlık) ya da kapalıyken açılıyorsa kaydırma en üste döner; aynı ekran yenileniyorsa konum korunur
+let sonPanelBasligi = '';
 function displayModal() {
   if (dom.rpgModal) {
+    const baslik = dom.modalTitle ? dom.modalTitle.textContent : '';
+    const yeniEkran = !dom.rpgModal.classList.contains('active') || baslik !== sonPanelBasligi;
+    sonPanelBasligi = baslik;
     dom.rpgModal.classList.add('active');
     document.body.classList.add('modal-open');
+    if (yeniEkran && dom.modalBody) dom.modalBody.scrollTop = 0;
   }
 }
 
@@ -959,7 +965,7 @@ function openWarehouseModal() {
   displayModal();
 }
 
-// ⚡ Hızlı al: seviye atlama / silo yükseltme için eksik hammaddeleri pazardan alır (ADA yetiyorsa)
+// ⚡ Hızlı al: seviye atlama / silo yükseltme için eksik hammaddeleri pazardan alır (ASTRA yetiyorsa)
 function quickBuyHtml(kind) {
   const plan = gameState.getQuickBuyPlan(kind);
   if (!plan.items.length) return '';
@@ -1529,8 +1535,12 @@ function renderExpeditionActiveBox(nodeId) {
 // =========================================================================
 function openTownZoneModal(zoneId, zoneName) {
   if (!featureGate(zoneId)) return;
-  if (zoneId === 'barracks' || zoneId === 'battlefield') {
+  if (zoneId === 'barracks') {
     openBarracksModal();
+    return;
+  }
+  if (zoneId === 'battlefield') {
+    openBattlefieldModal();
     return;
   }
   if (zoneId === 'colosseum') {
@@ -2013,7 +2023,7 @@ function openTownZoneModal(zoneId, zoneName) {
       <div class="clean-card v3-ozet-kart">
         <div class="card-title-row">
           <div class="card-title">🏪 Pazar</div>
-          <span class="v3-bakiye-rozet">Bakiye: ${state.adAstraBalance.toFixed(1)} ASTRA</span>
+          <span class="v3-bakiye-rozet">Bakiye: ${state.adAstraBalance.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ASTRA</span>
         </div>
         <div class="clean-desc">Al ve sat. Fiyatı ${terim('amm', 'takas havuzu')} belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde ${terim('yakim', 'yakılır')}, %2 ASTRA ${terim('harc', 'harç')} oyun kasalarına gider.</div>
       </div>
@@ -2081,7 +2091,7 @@ function openTownZoneModal(zoneId, zoneName) {
               </button>
               ${RES_KEYS().includes(resKey) ? (() => {
                 const fq = gameState.getFillWarehouseQty(resKey);
-                return `<button class="btn-clean btn-amm-fill" data-res="${resKey}" ${fq.qty > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #4ade80; color: #86efac;" title="Silo dolana kadar al (ADA yetmezse alınabildiği kadar)">
+                return `<button class="btn-clean btn-amm-fill" data-res="${resKey}" ${fq.qty > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #4ade80; color: #86efac;" title="Silo dolana kadar al (ASTRA yetmezse alınabildiği kadar)">
                   Depoyu doldur (${fq.qty.toLocaleString('tr-TR')} adet · ~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA${fq.limitedByAda ? ', ASTRA kadar' : ''})
                 </button>`;
               })() : ''}
@@ -2192,7 +2202,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <select id="p2p-artifact-select" style="flex:1; background:#10141e; color:#fff; border:1px solid #ca8a04; padding:8px 12px; border-radius:6px; font-family:var(--font-game);">
                 ${userArtifactOptions}
               </select>
-              <input type="number" id="p2p-price-input" min="10" value="150" placeholder="ADA Fiyat..." style="width:120px; background:#10141e; color:#fde047; border:1px solid #ca8a04; padding:8px 12px; border-radius:6px; font-weight:800; font-family:var(--font-game);" />
+              <input type="number" id="p2p-price-input" min="10" value="150" placeholder="ASTRA Fiyat..." style="width:120px; background:#10141e; color:#fde047; border:1px solid #ca8a04; padding:8px 12px; border-radius:6px; font-weight:800; font-family:var(--font-game);" />
               <button id="btn-create-p2p-listing" class="btn-clean btn-clean-gold" style="width:auto; padding:8px 18px;">
                 🚀 İLAN VER
               </button>
@@ -4509,7 +4519,7 @@ function openDashboardModal() {
 
       <!-- Widget 2: Aktif Seferler -->
       <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>⚡</span> <span>Sefer Takipçisi (${summary.activeExps.length}/3)</span></div>
+        <div class="dashboard-widget-title"><span>⚡</span> <span>Sefer Takipçisi (${summary.activeExps.length}/${RES_KEYS().length})</span></div>
         ${summary.activeExps.map(e => `
           <div class="dashboard-stat-row">
             <span>${e.icon} ${e.name}</span>
@@ -4558,27 +4568,14 @@ function openDashboardModal() {
       <!-- Widget 6: Silo & Depo Doluluk -->
       <div class="dashboard-widget">
         <div class="dashboard-widget-title"><span>📦</span> <span>Silo & Depo Kapasitesi (Seviye ${gameState.state.warehouseLevel})</span></div>
-        <div class="dashboard-stat-row">
-          <span>🌲 Odun (%${summary.woodPct})</span>
-          <span class="dashboard-stat-value">${(Number(summary.inventory.wood) || 0).toFixed(0)} / ${summary.warehouseCapacity.wood}</span>
-        </div>
-        <div class="dashboard-mini-bar">
-          <div class="dashboard-mini-bar-fill" style="width:${summary.woodPct}%; background:#10b981;"></div>
-        </div>
-        <div class="dashboard-stat-row" style="margin-top:6px;">
-          <span>⛏️ Demir (%${summary.ironPct})</span>
-          <span class="dashboard-stat-value">${(Number(summary.inventory.iron) || 0).toFixed(0)} / ${summary.warehouseCapacity.iron}</span>
-        </div>
-        <div class="dashboard-mini-bar">
-          <div class="dashboard-mini-bar-fill" style="width:${summary.ironPct}%; background:#0284c7;"></div>
-        </div>
-        <div class="dashboard-stat-row" style="margin-top:6px;">
-          <span>🌾 Buğday (%${summary.wheatPct})</span>
-          <span class="dashboard-stat-value">${(Number(summary.inventory.wheat) || 0).toFixed(0)} / ${summary.warehouseCapacity.wheat}</span>
-        </div>
-        <div class="dashboard-mini-bar">
-          <div class="dashboard-mini-bar-fill" style="width:${summary.wheatPct}%; background:#f59e0b;"></div>
-        </div>
+        ${summary.kaynaklar.map((r, i) => `
+          <div class="dashboard-stat-row"${i ? ' style="margin-top:6px;"' : ''}>
+            <span>${r.icon} ${r.name} (%${r.pct})</span>
+            <span class="dashboard-stat-value">${fmtInt(r.amount)} / ${fmtInt(r.cap)}</span>
+          </div>
+          <div class="dashboard-mini-bar">
+            <div class="dashboard-mini-bar-fill" style="width:${r.pct}%; background:${r.pct >= 99 ? '#f59e0b' : r.color};"></div>
+          </div>`).join('')}
       </div>
     </div>
   `;
@@ -6465,7 +6462,7 @@ function initAppEvents() {
     if (ammFillBtn) {
       const resKey = ammFillBtn.dataset.res;
       const fq = gameState.getFillWarehouseQty(resKey);
-      if (fq.qty <= 0) { showToast(fq.room > 0 ? 'ADA yetmiyor.' : 'Silo zaten dolu.', 'info'); return; }
+      if (fq.qty <= 0) { showToast(fq.room > 0 ? 'ASTRA yetmiyor.' : 'Silo zaten dolu.', 'info'); return; }
       const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
       if (!confirm(`${fq.qty.toLocaleString('tr-TR')} ${name} alınsın mı? (~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA, %2 harç dahil)${fq.limitedByAda ? `\nADA'n siloyu tamamen doldurmaya yetmiyor; alınabilecek en fazla miktar bu (boş yer: ${fq.room.toLocaleString('tr-TR')}).` : ''}`)) return;
       const res = await gameState.marketBuy(resKey, fq.qty);
@@ -8313,7 +8310,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
     openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
     openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
-    openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
+    openWallet: () => {
+      if (!online.active) { showToast('🔐 Hesap ve cüzdan, sunucuya bağlı (çevrimiçi) sürümde açılır. Şu an tek kişilik yerel moddasın: kaydın bu tarayıcıda.', 'info'); return; }
+      openWalletPanel();
+    }, toggleNotif: toggleNotificationPanel,
     duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
     hesapAnahtari: () => (online.active && online.playerId) || 'yerel',
     cevrimici: () => !!online.active,

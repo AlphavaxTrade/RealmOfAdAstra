@@ -4,15 +4,15 @@
 //  • Oyuncu kendi Oyun Kasası adresine ADASTRA ve biraz AVAX yatırır. Kasa YALNIZ oyuncu yokken çalışan
 //    otomatik işler içindir (pasif iyileşme, bot ücreti, botun pazar işleri, alet onarımı). Bu işler önce oyunda
 //    kazanılmış bakiyeyi, yetmezse kasayı kullanır; ikisi de bitince durur.
-//  • Kasadan harcanan ADA birikir ve saatte bir, tek işlemle ödeme sözleşmesi (RealmPayments) üzerinden oyuna
+//  • Kasadan harcanan ASTRA birikir ve saatte bir, tek işlemle ödeme sözleşmesi (RealmPayments) üzerinden oyuna
 //    aktarılır; ağ ücreti kadar AVAX komisyonu da bu işlemle alınır.
 //  • Kasadaki para oyuncunun kendi parasıdır: kesinti ve haftalık havuz olmadan, istediği an bağlı (etkin)
-//    cüzdanına çekebilir. Kazanılmış ADA kasaya aktarılamaz (kesintiden kaçış yolu yok).
+//    cüzdanına çekebilir. Kazanılmış ASTRA kasaya aktarılamaz (kesintiden kaçış yolu yok).
 //  • Gizli anahtarlar KASA_MASTER_KEY ile şifreli saklanır (AES-256-GCM). Sunucu ele geçirilirse kasalar risk
 //    altındadır; bu yüzden oyuncuya kasada az para tutması öğütlenir ("Sandık Tavsiyesi").
 //  • Üst sınır (kullanıcı kararı 4 Ekim 2026): kasada "günlük ortalama harcama × 30 gün"den (yeni oyuncu için en az
 //    KASA_CAP_FLOOR_ADA) fazlası birikirse fazlası saatte bir oyuncunun bağlı cüzdanına kendiliğinden geri gönderilir.
-//  • DENEME SUNUCUSUNDA (TEST_MODE) kasa zincire bağlanmaz: bakiyeler taklittir, gerçek ADA yatırılamaz.
+//  • DENEME SUNUCUSUNDA (TEST_MODE) kasa zincire bağlanmaz: bakiyeler taklittir, gerçek ASTRA yatırılamaz.
 // ============================================================================
 import crypto from 'node:crypto';
 import { ethers } from 'ethers';
@@ -84,7 +84,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     return row;
   }
 
-  // Oyun motorunun kullanabileceği kasa ADA'sı (AVAX gaz payı yoksa 0: aktarım yapılamaz → kasa kullanılmaz)
+  // Oyun motorunun kullanabileceği kasa ASTRA'sı (AVAX gaz payı yoksa 0: aktarım yapılamaz → kasa kullanılmaz)
   function available(playerId) {
     if (!enabled) return 0;
     const row = q.get.get(playerId);
@@ -127,7 +127,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     if (!(v > 0)) return { ok: false, error: 'Geçerli bir miktar yaz.' };
     if (asset === 'ADA') {
       const av = Math.max(0, row.ada - row.pending - q.inflight.get(playerId).t);
-      if (v > av + 1e-9) return { ok: false, error: `Kasadan çekilebilir ADA: ${Math.floor(av)}` };
+      if (v > av + 1e-9) return { ok: false, error: `Kasadan çekilebilir ASTRA: ${Math.floor(av)}` };
       if (!simulated && row.avax < cfg.kasaMinAvax) return { ok: false, error: 'Kasada işlem ücreti için yeterli AVAX yok.' };
     } else if (asset === 'AVAX') {
       const av = Math.max(0, row.avax - q.inflightAvax.get(playerId).t - (simulated ? 0 : cfg.kasaMinAvax / 2));
@@ -164,7 +164,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
       if (!to) continue;                                  // bağlı cüzdan yok: panel uyarır, para kasada kalır
       q.opAdd.run(row.player, 'return_ada', excess, clock());
       db.event('kasa-return', row.player, { amount: excess, cap, to });
-      if (notify) try { notify(row.player, `🛡️ Oyun Kasan üst sınırı (${Math.floor(cap).toLocaleString('tr-TR')} ADA) aştı: fazla ${Math.floor(excess).toLocaleString('tr-TR')} ADA güvenliğin için cüzdanına geri gönderiliyor.`); } catch { /* bildirim olmasa da olur */ }
+      if (notify) try { notify(row.player, `🛡️ Oyun Kasan üst sınırı (${Math.floor(cap).toLocaleString('tr-TR')} ASTRA) aştı: fazla ${Math.floor(excess).toLocaleString('tr-TR')} ASTRA güvenliğin için cüzdanına geri gönderiliyor.`); } catch { /* bildirim olmasa da olur */ }
       n++;
     }
     return n;
@@ -266,7 +266,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     }
   }
 
-  // Saatlik: biriken kasa harcamalarını oyuna aktar (en az KASA_MIN_SETTLE ADA ya da 24 saattir bekleyen)
+  // Saatlik: biriken kasa harcamalarını oyuna aktar (en az KASA_MIN_SETTLE ASTRA ya da 24 saattir bekleyen)
   function queueSettlements() {
     if (!enabled) return 0;
     let n = 0;

@@ -58,6 +58,10 @@ assert.equal(sadeBaslik('📜 ADASTRA REALM SÜRÜM GEÇMİŞİ & GÜNCELLEME LO
 assert.equal(sadeBaslik('📍 🌿 Şifahane'), '🌿 Şifahane');
 assert.equal(sadeBaslik('🌙 SEN YOKKEN OLANLAR'), '🌙 Sen yokken olanlar');
 assert.equal(sadeBaslik('⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'), '⚒️ Demirhane');
+assert.equal(sadeBaslik('📍 🌲 Zümrüt Ormanı & Oduncu'), '🌲 Zümrüt Ormanı', 'uzun bölge başlığı kısalır (telefonda "..." ile kesilmesin)');
+assert.equal(sadeBaslik('🌾 Güneş Tarlası & Değirmen'), '🌾 Güneş Tarlası');
+assert.equal(sadeBaslik('⛏️ Maden Ocağı & Tamirhane'), '⛏️ Demir Madeni');
+assert.equal(sadeBaslik('🌋 BÜYÜK SAVAŞ ALANI & WORLD BOSS ETKİNLİĞİ'), '🌋 Savaş alanı');
 assert.equal(sadeBaslik('🏰 Krallık'), '🏰 Krallık', 'zaten sade olan değişmez');
 assert.equal(sadeBaslik(''), '');
 // Katlama yalnız bilinen yoğun panellerde; ilk kartlar açık kalır

@@ -36,7 +36,7 @@ export function olusturYatirma(w) {
         E.mutatePlayer(pid, gs => {
           gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + d.amount;
           gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + d.amount;
-          gs.pushNotice(`💰 Yatırman geldi: +${fmt(d.amount)} ADA (serbest bakiye)`, 'success');
+          gs.pushNotice(`💰 Yatırman geldi: +${fmt(d.amount)} ASTRA (serbest bakiye)`, 'success');
         });
         db.q.depositCredit.run(clock(), d.tx_hash, d.log_index);
         db.q.playerAddDeposit.run(d.amount, pid);

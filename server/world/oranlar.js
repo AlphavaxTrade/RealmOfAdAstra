@@ -1,4 +1,4 @@
-// Realm of AdAstra sunucusu — dünya: ADA oranları (RealmRates sözleşmesi)
+// Realm of AdAstra sunucusu — dünya: ASTRA oranları (RealmRates sözleşmesi)
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
 import { WEEKLY_RULES } from '../economy.js';
 import { applyRates, ratesFromConfig, validateRates, toNamed, moneyFlows, RATE_KEYS, RATE_CHANGE_DELAY_SEC } from '../../js/economy/rates.js';
@@ -6,7 +6,7 @@ import { applyRates, ratesFromConfig, validateRates, toNamed, moneyFlows, RATE_K
 export function olusturOranlar(w) {
   const { db, E, chain, cfg, clock, log } = w;
 
-  // ── ADA oranları (RealmRates sözleşmesi, kullanıcı kararı 6 Ekim 2026) ──
+  // ── ASTRA oranları (RealmRates sözleşmesi, kullanıcı kararı 6 Ekim 2026) ──
   // Sunucu açılışta en son okunan oranları uygular; 5 dakikada bir sözleşmeden okur. Sözleşme yoksa oyunun kendi
   // ayarları geçerlidir. Okunan oranlar geçersizse (olmamalı: sözleşme de denetler) uygulanmaz.
   const ratesDefault = ratesFromConfig(E.GAME_CONFIG, WEEKLY_RULES);

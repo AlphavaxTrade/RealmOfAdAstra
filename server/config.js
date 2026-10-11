@@ -44,7 +44,7 @@ export function loadConfig(env = process.env) {
     gameWalletKey: key,
     gameWalletAddress: (env.GAME_WALLET_ADDRESS || '').trim(),
     payoutMode: env.PAYOUT_MODE || (key ? 'auto' : 'manual'),
-    weeklySendCapAda: num('WEEKLY_SEND_CAP_ADA', 100_000_000),   // güvenlik: bir haftada oyunculara gidebilecek en fazla ADA
+    weeklySendCapAda: num('WEEKLY_SEND_CAP_ADA', 100_000_000),   // güvenlik: bir haftada oyunculara gidebilecek en fazla ASTRA
     minWithdrawAda: num('MIN_WITHDRAW_ADA', 1000),
     depositStartBlock: num('DEPOSIT_START_BLOCK', 0),              // 0: sunucu ilk açıldığı bloktan başlar
     // Eski düzen: oyun cüzdanına doğrudan gönderilen ADASTRA'yı bakiyeye yaz. Yeni düzende KAPALI: ödemeler sözleşmeden,
@@ -65,7 +65,7 @@ export function loadConfig(env = process.env) {
     // yapımcı payı kasadan çıkar (oyun cüzdanı yalnız "dağıtıcı" anahtardır, para tutmaz). Boşsa düz oyun cüzdanı kullanılır.
     vaultContract: (env.VAULT_CONTRACT || '').trim().toLowerCase(),
     payFeeGas: num('PAY_FEE_GAS', 100000),
-    // RealmRates sözleşmesi (kullanıcı kararı 6 Ekim 2026): oyundaki bütün ADA oranları burada durur; sunucu 5 dakikada bir okur.
+    // RealmRates sözleşmesi (kullanıcı kararı 6 Ekim 2026): oyundaki bütün ASTRA oranları burada durur; sunucu 5 dakikada bir okur.
     // Boşsa oyunun kendi ayarları (js/config.js) kullanılır.
     ratesContract: (env.RATES_CONTRACT || '').trim(),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
     kasaMasterKey: gizli('KASA_MASTER_KEY'),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
@@ -76,11 +76,11 @@ export function loadConfig(env = process.env) {
     // KASA_CAP_FLOOR_ADA (fiyat çarpanıyla ölçeklenir).
     kasaCapDays: num('KASA_CAP_DAYS', 30),
     kasaCapFloorAda: num('KASA_CAP_FLOOR_ADA', 20000),
-    // Sıcak / soğuk cüzdan: oyun cüzdanında yalnız HOT_WALLET_WEEKS haftalık ihtiyaç kadar ADA durur; fazlası günde bir
+    // Sıcak / soğuk cüzdan: oyun cüzdanında yalnız HOT_WALLET_WEEKS haftalık ihtiyaç kadar ASTRA durur; fazlası günde bir
     // RESERVE_WALLET adresine (donanım cüzdanı, ör. Ledger) gönderilir. Sunucu yalnız ADRESİ bilir, anahtarını asla.
     reserveWallet: (env.RESERVE_WALLET || '').trim(),
     hotWalletWeeks: num('HOT_WALLET_WEEKS', 1),
-    hotWalletMinAda: num('HOT_WALLET_MIN_ADA', 0),                 // geçmiş yokken (ilk haftalar) oyun cüzdanında kalacak en az ADA
+    hotWalletMinAda: num('HOT_WALLET_MIN_ADA', 0),                 // geçmiş yokken (ilk haftalar) oyun cüzdanında kalacak en az ASTRA
     contractOwner: (env.CONTRACT_OWNER || '').trim(),              // ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı)
     adminEmail: (env.ADMIN_EMAIL || '').trim(),                    // uyarı e-postaları (oyun cüzdanı azaldı vb.)
     // Ortak gelir (kullanıcı kararı 6 Ekim 2026): trade sitesindeki (AlphAvax) harcamaların %40'ı ADASTRA olarak oyuna
@@ -123,6 +123,6 @@ export function dogrula(cfg, env = process.env) {
   if (cfg.reserveWallet && !adres(cfg.reserveWallet)) hatalar.push('RESERVE_WALLET geçerli bir adres değil');
   if (!cfg.yedek.klasor) uyarilar.push('YEDEK_KLASORU yok: otomatik yedek ve yedek ölçüleri KAPALI (felaket durumunda veri kaybı riski)');
   if (cfg.yedek.anahtar && !/^[0-9a-fA-F]{64}$/.test(cfg.yedek.anahtar)) hatalar.push('YEDEK_ANAHTAR 64 haneli onaltılık olmalı (openssl rand -hex 32)');
-  if (!cfg.reserveWallet && cfg.chainEnabled && cfg.gameWalletKey) uyarilar.push('RESERVE_WALLET yok: oyun cüzdanındaki fazla ADA yedek (donanım) cüzdana aktarılmaz');
+  if (!cfg.reserveWallet && cfg.chainEnabled && cfg.gameWalletKey) uyarilar.push('RESERVE_WALLET yok: oyun cüzdanındaki fazla ASTRA yedek (donanım) cüzdana aktarılmaz');
   return { hatalar, uyarilar };
 }

@@ -4,7 +4,7 @@ import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
-import { zeroRes } from './ortak.js';
+import { zeroRes, RES_KEYS } from './ortak.js';
 
 // ISO hafta anahtarı ("2026-W41"): haftalık buyback'in günde değil haftada bir çalışmasını sağlar (UTC Pazartesi başlangıçlı)
 export function isoWeekKey(ms) {
@@ -63,9 +63,13 @@ export const ozetYontemleri = {
       toolSummary, avgToolHealth,
       soldierCount: soldiers.length, totalAtk, totalHp, woundedCount, avgHpPct,
       inventory: inv, warehouseCapacity: whCap,
-      woodPct: Math.min(100, Math.round(((inv.wood || 0) / (whCap.wood || 1080)) * 100)),
-      ironPct: Math.min(100, Math.round(((inv.iron || 0) / (whCap.iron || 720)) * 100)),
-      wheatPct: Math.min(100, Math.round(((inv.wheat || 0) / (whCap.wheat || 900)) * 100)),
+      // Silo doluluğu: oyunun bütün hammaddeleri için (GAME_CONFIG.RESOURCE_KEYS), cap 0 ise yüzde 0
+      kaynaklar: RES_KEYS().map(key => {
+        const meta = (GAME_CONFIG.RESOURCE_META || {})[key] || {};
+        const miktar = Number(inv[key]) || 0;
+        const kapasite = Number(whCap[key]) || 0;
+        return { key, name: meta.name || key, icon: meta.icon || '📦', color: meta.color || '#10b981', amount: miktar, cap: kapasite, pct: kapasite > 0 ? Math.min(100, Math.round((miktar / kapasite) * 100)) : 0 };
+      }),
     };
   },
 

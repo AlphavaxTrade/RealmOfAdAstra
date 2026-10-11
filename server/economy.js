@@ -1,7 +1,7 @@
 // Realm of AdAstra sunucusu — haftalık ekonomi kuralları (saf fonksiyonlar; zincire ve veritabanına bağlı değil)
 // ============================================================================
 // Kullanıcı kararları (30 Eylül 2026, revize rapor 3 + token modeli scripts/model/arsiv/token_economy_model.mjs — arşiv, S11):
-//  • Ortak haftalık çekim havuzu: bir haftada çekilebilecek toplam ADA, piyasada satılsa fiyatı en fazla %2
+//  • Ortak haftalık çekim havuzu: bir haftada çekilebilecek toplam ASTRA, piyasada satılsa fiyatı en fazla %2
 //    düşürecek miktardır. Havuz oyunculara katkı puanına göre paylaşılır.
 //  • Kullanılmayan çekim hakkını başkaları kullanır; kullanan, fazladan çektiği miktarın %1,5'ini "hak kirası"
 //    olarak hakkı kullanılmayan oyunculara öder (kullanılmayan paylarına göre).
@@ -56,7 +56,7 @@ export function withdrawCapTokens({ graduated, curveSupply = 0, poolTokenReserve
 }
 
 // Haftalık çekim dağıtımı.
-// requests: [{ id, requested, score }] — requested: bu hafta çekmek istediği (ayrılmış) ADA; score: katkı puanı.
+// requests: [{ id, requested, score }] — requested: bu hafta çekmek istediği (ayrılmış) ASTRA; score: katkı puanı.
 // Katkı puanı olup talebi olmayan oyuncular da listede olmalı (requested: 0): kullanılmayan hakları kira getirir.
 export function allocateWithdrawals(requests, cap, { brake = false, rules = WEEKLY_RULES } = {}) {
   const rows = requests.map(r => ({ id: r.id, requested: Math.max(0, Number(r.requested) || 0), score: Math.max(0, Number(r.score) || 0) }));
@@ -128,7 +128,7 @@ export function brakeState(history, prev = {}, now = Date.now(), rules = WEEKLY_
   return st;
 }
 
-// Ücretsiz oyuncu havuzunun bu haftalık payı (kişi başı ADA)
+// Ücretsiz oyuncu havuzunun bu haftalık payı (kişi başı ASTRA)
 export function faucetWeekly({ mcapUsd, priceUsd, freePlayers, questPool }, rules = WEEKLY_RULES) {
   if (!(freePlayers > 0) || !(priceUsd > 0)) return { perPlayer: 0, totalAda: 0, usdPerPlayerMonth: 0 };
   const monthUsd = Math.min(rules.faucetMonthlyMcapShare * mcapUsd, rules.faucetMaxUsdPerPlayer * freePlayers);

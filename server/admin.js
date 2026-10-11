@@ -18,7 +18,7 @@ async function load() {
     card('Durum', s.paused ? '⏸️ DURDURULDU' : '✅ Çalışıyor', s.paused ? 'bad' : 'ok'),
     card('Ödeme modu', s.payoutMode === 'auto' ? (s.canSend ? 'Otomatik' : 'Otomatik (anahtar yok!)') : 'Yönetici onayı', s.payoutMode === 'auto' && !s.canSend ? 'bad' : ''),
     card('Oyun cüzdanı', s.gameWallet ? `<a href="https://snowtrace.io/address/${esc(s.gameWallet)}" target="_blank" rel="noopener">${esc(s.gameWallet.slice(0, 8))}…</a>` : '—'),
-    card('Cüzdandaki ADA', m.walletAda != null ? fmt(m.walletAda) : '—'),
+    card('Cüzdandaki ASTRA', m.walletAda != null ? fmt(m.walletAda) : '—'),
     hotCard(s),
     partnerCard(s),
     contractCard(s),
@@ -26,9 +26,9 @@ async function load() {
     card('Piyasa değeri', m.mcapUsd ? '$' + fmt(m.mcapUsd) : '—'),
     card('Fren', s.brake && s.brake.on ? '🔴 AÇIK' : '🟢 kapalı', s.brake && s.brake.on ? 'bad' : 'ok'),
     card('Fiyat çarpanı', '×' + (s.priceMultiplier || 1)),
-    card('Bu haftaki çekim sınırı', fmt(s.weeklyCap) + ' ADA'),
+    card('Bu haftaki çekim sınırı', fmt(s.weeklyCap) + ' ASTRA'),
     card('Oyuncular', `${fmt(s.players.total)} (bu hafta ${fmt(s.players.activeWeek)}, yatıran ${fmt(s.players.depositors)})`),
-    card('Bekleyen çekim talepleri', fmt(s.players.pendingWithdraw) + ' ADA'),
+    card('Bekleyen çekim talepleri', fmt(s.players.pendingWithdraw) + ' ASTRA'),
     card('Sonraki hafta', s.nextWeekAt ? new Date(s.nextWeekAt).toLocaleString('tr-TR') : '—'),
     `<div class="card"><div class="k">Hazine kasaları</div><div style="font-size:0.8rem;margin-top:4px;">${pools}</div></div>`
   ].join('');
@@ -38,7 +38,7 @@ async function load() {
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
   const st = { pending: '⏳ sırada', sending: '⚠️ gönderiliyordu (kontrol et)', sent: '✅ gönderildi' };
-  $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ADA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
+  $('payouts').innerHTML = '<tr><th>#</th><th>Hafta</th><th>Tür</th><th>Adres</th><th>ASTRA</th><th>Durum</th><th>İşlem</th><th>Hata</th></tr>' +
     s.payouts.map(p => `<tr><td>${p.id}</td><td>${p.epoch}</td><td>${esc(p.kind)}</td><td>${esc(p.address.slice(0, 10))}…</td><td>${fmt(p.amount)}</td><td>${st[p.status] || esc(p.status)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">görüntüle</a>` : ''}</td><td class="bad">${esc(p.error || '')}</td></tr>`).join('');
   $('events').innerHTML = '<tr><th>Zaman</th><th>Tür</th><th>Adres</th><th>Bilgi</th></tr>' +
     s.events.map(e => `<tr><td>${new Date(e.at).toLocaleString('tr-TR')}</td><td>${esc(e.type)}</td><td>${esc((e.address || '').slice(0, 10))}</td><td>${esc((e.data || '').slice(0, 160))}</td></tr>`).join('');
@@ -66,7 +66,7 @@ for (const id of ['kapiQueue', 'kapiSusp']) $(id).addEventListener('click', ev =
   if (!confirm(`${b.textContent} — ${b.dataset.pid}?`)) return;
   act(() => api('POST', '/api/admin/kapi/player', { playerId: b.dataset.pid, status: b.dataset.st }));
 });
-// ── ADA oranları ────────────────────────────────────────────────────────
+// ── ASTRA oranları ────────────────────────────────────────────────────────
 let lastRates = null;
 const pctTr = bps => '%' + (bps / 100).toLocaleString('tr-TR');
 function ratesView(r) {
@@ -113,8 +113,8 @@ function partnerCard(s) {
 function hotCard(s) {
   const h = s.hotWallet || {}, n = s.hotNeed || {};
   if (!s.reserveWallet) return card('🧊 Yedek cüzdan', 'TANIMLI DEĞİL (RESERVE_WALLET)', 'bad');
-  const low = h.low ? '<br><span class="bad">⚠️ Az: yedek cüzdandan ' + fmt(Math.ceil((n.need || 0) - (h.walletAda || 0))) + ' ADA gönder</span>' : '';
-  return `<div class="card"><div class="k">🧊 Oyun cüzdanı / haftalık ihtiyaç</div><div class="v ${h.low ? 'bad' : 'ok'}">${fmt(h.walletAda)} / ${fmt(n.need)}</div><div class="k">Fazlası yedek cüzdana gider: ${esc(s.reserveWallet.slice(0, 8))}…${h.swept ? ' · son aktarım ' + fmt(h.swept) + ' ADA' : ''}${low}</div></div>`;
+  const low = h.low ? '<br><span class="bad">⚠️ Az: yedek cüzdandan ' + fmt(Math.ceil((n.need || 0) - (h.walletAda || 0))) + ' ASTRA gönder</span>' : '';
+  return `<div class="card"><div class="k">🧊 Oyun cüzdanı / haftalık ihtiyaç</div><div class="v ${h.low ? 'bad' : 'ok'}">${fmt(h.walletAda)} / ${fmt(n.need)}</div><div class="k">Fazlası yedek cüzdana gider: ${esc(s.reserveWallet.slice(0, 8))}…${h.swept ? ' · son aktarım ' + fmt(h.swept) + ' ASTRA' : ''}${low}</div></div>`;
 }
 function contractCard(s) {
   const c = (s.hotWallet || {}).contract;
@@ -147,9 +147,9 @@ $('topUp').onclick = async () => {
   const s = await api('GET', '/api/admin/status');
   const amt = Number($('topAmt').value);
   if (!(amt > 0) || !s.gameWallet) return alert('Geçerli bir miktar yaz (oyun cüzdanı tanımlı olmalı).');
-  if (!confirm(fmt(amt) + ' ADA yedek cüzdandan oyun cüzdanına (' + s.gameWallet + ') gönderilsin mi?')) return;
+  if (!confirm(fmt(amt) + ' ASTRA yedek cüzdandan oyun cüzdanına (' + s.gameWallet + ') gönderilsin mi?')) return;
   const wei = (BigInt(Math.floor(amt)) * 10n ** 18n).toString(16);
-  ledgerTx(s.tokenAddress, '0xa9059cbb' + pad(s.gameWallet) + pad(wei), 'Oyun cüzdanına ADA');
+  ledgerTx(s.tokenAddress, '0xa9059cbb' + pad(s.gameWallet) + pad(wei), 'Oyun cüzdanına ASTRA');
 };
 $('hotCheck').onclick = () => act(async () => { const r = await api('POST', '/api/admin/hotwallet/check'); alert('Sonuç: ' + JSON.stringify(r && { walletAda: r.walletAda, need: r.need, swept: r.swept, low: r.low })); });
 async function act(fn) { try { await fn(); await load(); } catch (e) { alert(e.message); } }

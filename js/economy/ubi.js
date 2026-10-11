@@ -1,7 +1,7 @@
 // Realm of AdAstra — Evrensel Temel Gelir (UBI) hesap motoru (saf fonksiyonlar; tarayıcıda ve sunucuda aynı)
 // ============================================================================
 // Kurallar (29 Eylül 2026, kullanıcı kararı):
-//  • Oyunda harcanan her ADA'nın %6'sı o haftanın UBI kasasında birikir.
+//  • Oyunda harcanan her ASTRA'nın %6'sı o haftanın UBI kasasında birikir.
 //  • Pazartesi 00:01 (TSİ) geçen haftanın kasası açılır; hak sahipleri arasında seviye ağırlığına göre bölünür.
 //  • Hak kazanmak için en az 3. seviye olmak gerekir.
 //  • Kasa bir hafta boyunca çekilebilir; çekilmeyen pay bir sonraki haftanın kasasına eklenir.

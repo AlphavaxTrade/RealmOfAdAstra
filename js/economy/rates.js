@@ -1,6 +1,6 @@
-// Realm of AdAstra — ADA dağıtım oranları (saf fonksiyonlar; tarayıcıda, sunucuda ve panelde aynı liste)
+// Realm of AdAstra — ASTRA dağıtım oranları (saf fonksiyonlar; tarayıcıda, sunucuda ve panelde aynı liste)
 // ============================================================================
-// Kullanıcı kararı (6 Ekim 2026): oyundaki bütün ADA oranları herkesin görebileceği RealmRates sözleşmesinde durur.
+// Kullanıcı kararı (6 Ekim 2026): oyundaki bütün ASTRA oranları herkesin görebileceği RealmRates sözleşmesinde durur.
 // Oranları yalnız sözleşme sahibi değiştirebilir; değişiklik 24 saat sonra geçerli olur (oyuncular önceden görür).
 // Oyun sunucusu oranları sözleşmeden okur ve oyunun ayarlarına (GAME_CONFIG, haftalık kurallar) uygular.
 // Oranlar "baz puan" (bps) olarak tutulur: 10000 = %100, 500 = %5.
@@ -26,7 +26,7 @@ export const RATE_KEYS = [
   { key: 'wheelCarnival', label: 'Şans çarkı: doğrudan karnaval kasasına', group: 'rule', max: 10000 },
   { key: 'dungeonGate', label: 'Zindan kapı harcı: doğrudan zindan kasasına', group: 'rule', max: 10000 },
   { key: 'lotteryAmorti', label: 'Piyango bileti: amorti kasasına', group: 'rule', max: 5000 },
-  { key: 'marketFee', label: 'Pazar ADA komisyonu (alım ve satım)', group: 'rule', max: 1000 },
+  { key: 'marketFee', label: 'Pazar ASTRA komisyonu (alım ve satım)', group: 'rule', max: 1000 },
   { key: 'marketResourceBurn', label: 'Pazar hammadde yakımı (alım ve satım)', group: 'rule', max: 1000 },
   { key: 'withdrawFee', label: 'Cüzdana çekim ücreti', group: 'rule', max: 2000 },
   { key: 'withdrawFeeBrake', label: 'Cüzdana çekim ücreti (fiyat düşerken)', group: 'rule', max: 3000 },
@@ -111,7 +111,7 @@ export function applyRates(cfg, weekly, arr) {
 const POOL_LABEL = { dungeon: 'zindan', arena: 'kolezyum', worldBoss: 'dünya bossu', ammBuyback: 'pazar desteği', quest: 'görev/ücretsiz oyuncu', carnival: 'karnaval', fatih: 'Fatih Ödülü', konsey: 'Sirius Konseyi' };
 const pct = v => '%' + (Math.round(v * 100) / 100).toLocaleString('tr-TR');
 
-// "ADA nereye gidiyor" listesi: her oyun alanı için paranın gittiği yerler (yüzdeler harcamanın tamamına göre)
+// "ASTRA nereye gidiyor" listesi: her oyun alanı için paranın gittiği yerler (yüzdeler harcamanın tamamına göre)
 export function moneyFlows(arr) {
   const n = toNamed(arr), P = v => v / 100;
   const std = (scale = 1) => {
@@ -136,12 +136,12 @@ export function moneyFlows(arr) {
   const wf = n.withdrawFee / 100, wfb = n.withdrawFeeBrake / 100, wu = n.withdrawFeeUbi / 10000;
   return [
     { area: 'Standart bölüşüm', where: standard, note: 'Asker alma, anında iyileştirme, kendi kendine iyileşme, seviye atlama, taverna güçlendirmeleri ve botu, alet onarımı, silo, demirci (yapma/güçlendirme/onarma), dünya bossu erken çekilme cezası, Genesis NFT, trade sitesinden gelen gelir' },
-    { area: 'Şans çarkı (ADA ile)', where: mix(n.wheelCarnival, 'carnival') },
+    { area: 'Şans çarkı (ASTRA ile)', where: mix(n.wheelCarnival, 'carnival') },
     { area: 'Şans çarkı (biletle)', where: 'biletin bedeli piyango kasasından karnaval kasasına' },
-    { area: 'Şans çarkı (hammaddeyle)', where: 'hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ADA karnaval kasasına' },
+    { area: 'Şans çarkı (hammaddeyle)', where: 'hammaddenin yarısı yakılır, yarısı pazarda satılır ve gelen ASTRA karnaval kasasına' },
     { area: 'Zindan kapı harcı', where: mix(n.dungeonGate, 'dungeon') },
     { area: 'Piyango bileti', where: `${pct(100 - n.lotteryAmorti / 100)} piyango kasası · ${pct(n.lotteryAmorti / 100)} amorti kasası (ikisi de oyunculara ödenir)` },
-    { area: 'Pazardan alım', where: `ödenen ADA pazar havuzuna (hammaddeyi satanlara ödenir) + ${pct(n.marketFee / 100)} komisyon standart bölüşüme · hammaddeden ${pct(n.marketResourceBurn / 100)} yakılır` },
+    { area: 'Pazardan alım', where: `ödenen ASTRA pazar havuzuna (hammaddeyi satanlara ödenir) + ${pct(n.marketFee / 100)} komisyon standart bölüşüme · hammaddeden ${pct(n.marketResourceBurn / 100)} yakılır` },
     { area: 'Pazara satış', where: `${pct(n.marketFee / 100)} komisyon standart bölüşüme · satılan hammaddeden ${pct(n.marketResourceBurn / 100)} yakılır` },
     { area: 'Cüzdana çekim', where: `ücret ${pct(wf)} (fiyat düşerken ${pct(wfb)}): ücretten ${pct(wu * 100)} temel gelire, ${pct((1 - wu) * 100)} yakıma` },
     { area: 'Çekim hakkı kirası', where: `başkasının hakkını kullanan ${pct(n.rent / 100)} öder, hakkını kullanmayan oyunculara gider` }

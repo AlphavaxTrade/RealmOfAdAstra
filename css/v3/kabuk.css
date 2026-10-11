@@ -261,7 +261,7 @@ html.v3 .v3-chip:focus-visible { outline: 2px solid var(--v3-vurgu); outline-off
 html.v3 .v3-bakiye-rozet { font: 800 12.5px var(--font-ui); color: #c9b8ff; white-space: nowrap; }
 html.v3 .v3-ozet-kart .card-title-row { align-items: center; }
 html.v3 details.v3-ayrinti { margin: 2px 0 8px; font: 500 12.5px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
-html.v3 details.v3-ayrinti > summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; color: var(--v3-yazi-3); font-weight: 700; }
+html.v3 details.v3-ayrinti > summary { cursor: pointer; min-height: var(--v3-tap); display: flex; align-items: center; color: var(--v3-yazi-3); font-weight: 700; }
 html.v3 details.v3-ayrinti > div { padding: 4px 0 0; }
 
 /* panel govdesinde cocuklar ezilmez (kaydirmali kutular sifira kadar kuculuyordu); hidden her zaman gizler */
@@ -421,3 +421,21 @@ html.v3 .v3-havuz-alt > details { flex: 1 1 140px; margin: 0; }
 html.v3 .v3-havuz-alt > .btn-eco-pool-jump { flex: 0 0 auto; width: auto; min-height: var(--v3-tap); }
 html.v3 .v3-havuz-kisisel { font: 500 13px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
 html.v3 .v3-havuz-alt > .btn-treasury-action { flex: 0 0 auto; width: auto; min-height: var(--v3-tap); }
+
+/* 17. ARAYÜZ TARAMASI DÜZELTMELERİ (11 Ekim 2026) ------------------------- */
+/* silo kartları iki sütun (üç sütun telefonda taşıyordu); geniş ekranda üç */
+html.v3 .rpg-modal-body .inv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 700px) { html.v3 .rpg-modal-body .inv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+/* kaynak seçici çipler yan kaydırmak yerine alt satıra geçer: hiçbir kaynak gizli kalmaz */
+html.v3 .v3-chipler { flex-wrap: wrap; overflow: visible; }
+html.v3 .v3-chip { min-height: var(--v3-tap); }
+/* tablolar telefonda kendi içinde yana kayar, sayfayı taşırmaz */
+html.v3 .rpg-modal-body table { display: block; max-width: 100%; overflow-x: auto; }
+/* katlı bölüm başlıkları ve onay kutuları parmakla rahat basılır */
+html.v3 .rpg-modal-body summary { display: flex; align-items: center; min-height: var(--v3-tap); }
+html.v3 .rpg-modal-body label:has(> input[type="checkbox"], > input[type="radio"]) { display: inline-flex; align-items: center; gap: 8px; min-height: var(--v3-tap); }
+@media (pointer: coarse) {
+  html.v3 .rpg-modal-body :is(button, select) { min-height: var(--v3-tap) !important; }
+  html.v3 .rpg-modal-body button { min-width: var(--v3-tap); }
+  html.v3 .rpg-modal-body .phase2-tab-btn { min-height: var(--v3-tap); }
+}

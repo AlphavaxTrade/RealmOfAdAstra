@@ -371,7 +371,7 @@ function kasaSection(k) {
     <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Kazandığın bakiye ve kasan bitince: pasif iyileşme durur · bot ücreti yenilenemez, bot durur · botun pazar alımları durur · aletler onarılamaz.</div>
     <div style="display:flex;gap:6px;margin-top:8px;">
       <input id="ks-amount" type="number" min="0" placeholder="Miktar" style="flex:1;padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
-      <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option>ADA</option><option>AVAX</option></select>
+      <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option value="ADA">ASTRA</option><option>AVAX</option></select>
       <button id="ks-withdraw" style="padding:7px 10px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Kasadan çek</button>
     </div>
     ${(k.ops || []).length ? `<div style="margin-top:6px;font-size:0.75rem;color:#94a3b8;">${k.ops.slice(0, 5).map(o => `${{ settle: '↗️ oyuna aktarım', withdraw_ada: '🏧 ASTRA çekimi', withdraw_avax: '🏧 AVAX çekimi', return_ada: '↩️ fazlanın iadesi' }[o.kind] || esc(o.kind)} ${o.kind === 'withdraw_avax' ? Number(o.amount).toFixed(4) : fmt(o.amount)} · ${{ pending: '⏳', sending: '📤', sent: '✅', failed: '❌' }[o.status] || ''}`).join('<br>')}</div>` : ''}
@@ -723,7 +723,7 @@ async function handleEmailLinks() {
 }
 
 // ── 💳 Cüzdandan ödeme (kazanılmış bakiye yetmeyince) ─────────────────
-const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ADA)\b/i;
+const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ASTRA|ADA)\b/i;
 const PAY_STARTED = { success: false, message: '💳 Bakiyen bu işleme yetmedi — cüzdandan ödeme penceresi açıldı.' };
 const pad32 = h => String(h).toLowerCase().replace(/^0x/, '').padStart(64, '0');
 const toHexQ = n => '0x' + BigInt(n).toString(16);

@@ -53,8 +53,8 @@ export function olusturHaftalik(w) {
           gs.state.pendingWithdrawAda = 0;
           if (r.returned > 0) gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + r.returned;
           gs.state.withdrawnAda = (Number(gs.state.withdrawnAda) || 0) + r.total;
-          gs.pushNotice(`🏦 Haftalık çekim: ${fmt(toWallet)} ADA cüzdanına gönderiliyor (ücret ${fmt(r.fee)}, hak kirası ${fmt(r.rent)}${sp.total > 0 ? `, sponsor payı ${fmt(sp.total)}` : ''}).` +
-            (r.returned > 0 ? ` ${fmt(r.returned)} ADA bu haftaki havuza sığmadı, bakiyene döndü.` : ''), 'success');
+          gs.pushNotice(`🏦 Haftalık çekim: ${fmt(toWallet)} ASTRA cüzdanına gönderiliyor (ücret ${fmt(r.fee)}, hak kirası ${fmt(r.rent)}${sp.total > 0 ? `, sponsor payı ${fmt(sp.total)}` : ''}).` +
+            (r.returned > 0 ? ` ${fmt(r.returned)} ASTRA bu haftaki havuza sığmadı, bakiyene döndü.` : ''), 'success');
         });
         db.q.playerSetPending.run(0, r.id);
         if (r.total > 0) db.q.playerAddWithdrawn.run(r.total, r.id);
@@ -65,7 +65,7 @@ export function olusturHaftalik(w) {
       for (const rp of alloc.rentPayouts) {
         E.mutatePlayer(rp.id, gs => {
           gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + rp.amount;
-          gs.pushNotice(`🤝 Kullanmadığın çekim hakkın başkasına kiralandı: +${fmt(rp.amount)} ADA hak kirası.`, 'success');
+          gs.pushNotice(`🤝 Kullanmadığın çekim hakkın başkasına kiralandı: +${fmt(rp.amount)} ASTRA hak kirası.`, 'success');
         });
       }
       const gp = E.globalPool;
@@ -135,7 +135,7 @@ export function olusturHaftalik(w) {
           gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + amt;
           if (FP.LOCKED !== false) gs.state.lockedAda = Math.min(gs.state.adAstraBalance, (Number(gs.state.lockedAda) || 0) + amt);
           else gs._onAdaEarned(amt);
-          gs.pushNotice(`🎁 Ücretsiz oyuncu payın: +${fmt(amt)} ADA (kilitli; oyunda harcadıkça çözülür). Sadakat serin: ${x.streak.weeks} hafta.`, 'success');
+          gs.pushNotice(`🎁 Ücretsiz oyuncu payın: +${fmt(amt)} ASTRA (kilitli; oyunda harcadıkça çözülür). Sadakat serin: ${x.streak.weeks} hafta.`, 'success');
         });
       });
       T.save();
@@ -198,9 +198,9 @@ export function olusturHaftalik(w) {
             if (amorti) gs.state.lotteryPendingPayout = (Number(gs.state.lotteryPendingPayout) || 0) + amorti.amount;
             gs.state.lastLotteryResult = { at: now, userWon: !!prize, wonAmount: prize ? prize.amount : 0, amorti: amorti ? amorti.amount : 0, poolDepleted: !!draw.poolDepleted, epochId: closedEpoch };
             gs.pushNotice(prize
-              ? `👑 Piyango sana çıktı! ${fmt(prize.amount)} ADA kazandın. Karnaval → Piyango'dan çek; kazanan biletlerin çekerken yanar.`
+              ? `👑 Piyango sana çıktı! ${fmt(prize.amount)} ASTRA kazandın. Karnaval → Piyango'dan çek; kazanan biletlerin çekerken yanar.`
               : draw.poolDepleted
-                ? `🎲 Piyango kasası bitti: kalan biletlere amorti dağıtıldı${amorti ? ` (sana +${fmt(amorti.amount)} ADA)` : ''}. Biletler kapandı.`
+                ? `🎲 Piyango kasası bitti: kalan biletlere amorti dağıtıldı${amorti ? ` (sana +${fmt(amorti.amount)} ASTRA)` : ''}. Biletler kapandı.`
                 : `🎲 Haftalık çekiliş yapıldı, bu hafta sana çıkmadı. ${before} biletin yanmadı, sonraki haftaya devretti.`,
               prize ? 'success' : 'info');
           });

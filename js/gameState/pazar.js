@@ -71,7 +71,7 @@ export const pazarYontemleri = {
     const needAda = total + extraAda * 1.03;
     if (xpShort && items.length) return { ok: false, items, total, extraAda, balance, needAda, capBlocked, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
     return { ok: items.length > 0 && balance >= needAda && !capBlocked, items, total, extraAda, balance, needAda, capBlocked,
-      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ADA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ASTRA gerekli.` : '' };
+      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ASTRA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ASTRA gerekli.` : '' };
   },
 
   // 🧺 Depoyu doldur: siloda boş yer kadar, ASTRA yetmezse alınabilecek en fazla miktar

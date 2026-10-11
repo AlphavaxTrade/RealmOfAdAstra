@@ -7,8 +7,8 @@
 //     bir teklif açar (15 dakika).
 //  2. Oyuncu cüzdanından pay(miktar, referans) gönderir.
 //  3. confirm: sunucu işlemi zincirden doğrular (doğru sözleşme, oyuncunun ETKİN cüzdanı, aynı referans,
-//     yeterli miktar, daha önce kullanılmamış) → ödenen ADA oyuncunun bakiyesine eklenir → işlem yapılır.
-//     İşlem o anda başarısız olursa (ör. fiyat değişti) ödenen ADA bakiyede kalır, kaybolmaz.
+//     yeterli miktar, daha önce kullanılmamış) → ödenen ASTRA oyuncunun bakiyesine eklenir → işlem yapılır.
+//     İşlem o anda başarısız olursa (ör. fiyat değişti) ödenen ASTRA bakiyede kalır, kaybolmaz.
 // ============================================================================
 import crypto from 'node:crypto';
 import { validateArgs } from './actions.js';
@@ -81,7 +81,7 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
       if (p.amount + 1e-9 < row.amount) return { ok: false, error: 'Ödenen miktar teklif edilenden az.' };
       paid = p.amount;
     }
-    // Tek seferde: teklifi kapat, ADA'yı bakiyeye ekle, işlemi yap (aynı ödeme iki kez kullanılamaz)
+    // Tek seferde: teklifi kapat, ASTRA'yı bakiyeye ekle, işlemi yap (aynı ödeme iki kez kullanılamaz)
     let out;
     try {
       out = db.tx(() => {
@@ -134,7 +134,7 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
             gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + l.amount;
             gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + l.amount;
             gs.state.walletPaidAda = (Number(gs.state.walletPaidAda) || 0) + l.amount;
-            gs.pushNotice(`💳 Cüzdan ödemen (${Math.floor(l.amount).toLocaleString('tr-TR')} ADA) bakiyene eklendi. Yarım kalan işlemi şimdi tekrar yapabilirsin.`, 'success');
+            gs.pushNotice(`💳 Cüzdan ödemen (${Math.floor(l.amount).toLocaleString('tr-TR')} ASTRA) bakiyene eklendi. Yarım kalan işlemi şimdi tekrar yapabilirsin.`, 'success');
           });
           n++;
         });

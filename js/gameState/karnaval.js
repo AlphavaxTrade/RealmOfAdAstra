@@ -114,7 +114,7 @@ export const karnavalYontemleri = {
     };
   },
 
-  // Çark bedeli (ADA fiyat çarpanıyla)
+  // Çark bedeli (ASTRA fiyat çarpanıyla)
   getWheelCostAda() {
     return this.adaPrice(GAME_CONFIG.CARNIVAL?.WHEEL_COST_ADA || 100);
   },
