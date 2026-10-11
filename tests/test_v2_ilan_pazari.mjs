@@ -1,5 +1,5 @@
 // v2 — İlan pazarı (teçhizat): ilan verme (eşya kayıttan çıkar), 10 ilan sınırı, fiyat sınırı, satın alma
-// (alıcı önce kilitliden öder; satıcıya %98, bunun %80'i kilitli; %1 yakım, %1 kasalar), kendi ilanını alamama,
+// (alıcı önce serbest bakiyesinden öder; satıcıya %98, bunun en az %80'i kilitli; %1 yakım, %1 kasalar), kendi ilanını alamama,
 // geri çekme, 7 gün sonra eşyanın sahibine dönmesi, bekleme sırasındakine kapalı olması.
 import assert from 'node:assert/strict';
 import { openDb } from '../server/db.js';
@@ -76,7 +76,7 @@ try {
   assert.ok(/10/.test(eleventh.body.error));
   ok('Oyuncu başına en çok 10 açık ilan');
 
-  // 3) Satın alma: kendi ilanı alınamaz, para yetmezse olmaz; önce kilitliden öder; satıcıya %98 (%80 kilitli); %1 yakım, %1 kasa
+  // 3) Satın alma: kendi ilanı alınamaz, para yetmezse olmaz; önce serbest bakiyeden öder; satıcıya %98 (%80 kilitli); %1 yakım, %1 kasa
   const listingId = l1.body.listings[0].id;
   assert.equal((await call('POST', '/api/pazar/buy', { id: listingId }, A.token)).status, 400, 'Kendi ilanını alamaz');
   const poor = await call('POST', '/api/pazar/buy', { id: listingId }, B.token);
@@ -88,7 +88,8 @@ try {
   const buy = await call('POST', '/api/pazar/buy', { id: listingId }, B.token);
   assert.equal(buy.status, 200, JSON.stringify(buy.body));
   assert.ok(near(buy.body.player.adAstraBalance, 6), 'Alıcı 10 ödedi');
-  assert.ok(near(buy.body.player.lockedAda, 0), 'Önce kilitli 6 gitti');
+  // 5,988: aradan geçen sürenin doğal kilit açılması (zamanla herkese açılır); alımdan açılan pay yok
+  assert.ok(buy.body.player.lockedAda > 5.9 && buy.body.player.lockedAda <= 6, 'Serbest 10 yetti: kilitli 6 bozulmadı (kilit buradan açılmaz): ' + buy.body.player.lockedAda);
   assert.equal(buy.body.player.armoryInventory.length, 1);
   assert.equal(buy.body.player.armoryInventory[0].name, 'Test Kılıcı 1', 'Eşya alıcının Cephaneliğinde');
   const aSt = await stateOf(A.token);
@@ -100,7 +101,7 @@ try {
   assert.equal((await call('POST', '/api/pazar/buy', { id: listingId }, B.token)).status, 400, 'Satılmış ilan tekrar alınamaz');
   const hist = await call('GET', '/api/pazar', null, B.token);
   assert.equal(hist.body.history[0].status, 'sold');
-  ok('Satın alma: kilitliden ödeme, satıcı payı, yakım ve kasa payı, geçmiş');
+  ok('Satın alma: serbestten ödeme, satıcı payı, yakım ve kasa payı, geçmiş');
 
   // 4) Geri çekme: yalnız sahibi; eşya Cephaneliğe döner
   const mine = (await call('GET', '/api/pazar', null, A.token)).body.mine;
@@ -122,6 +123,48 @@ try {
   assert.equal((await call('GET', '/api/pazar', null, lb.body.token)).body.listings.length, 0);
   ok('7 gün sonra eşya sahibine döner');
 
+  // 5b) Kilit aklama kapalı: iki hesapla al-sat kilitli ASTRA'yı serbest bırakamaz
+  {
+    const satici = lb.body.token;
+    const saticiPid = lb.body.playerId;
+    const listele = async fiyat => {
+      const s = await call('POST', '/api/pazar/sell', { ref: { source: 'armory', armoryIndex: 0 }, price: fiyat }, satici);
+      assert.equal(s.status, 200, JSON.stringify(s.body));
+      return (await call('GET', '/api/pazar', null, satici)).body.mine[0].id;   // en yeni ilan başta
+    };
+    const durum = pid => { let o; engine.mutatePlayer(pid, gs => { o = { bal: gs.state.adAstraBalance, locked: gs.state.lockedAda }; }); return o; };
+    const sifirla = (pid, bal, locked) => engine.mutatePlayer(pid, gs => { gs.state.adAstraBalance = bal; gs.state.lockedAda = locked; gs.state.sponsorAda = 0; });
+
+    // (a) Alıcının tamamı kilitli: satıcıya gelen paranın TAMAMI kilitli gelir (eskiden %20'si serbest kalıyordu)
+    sifirla(saticiPid, 0, 0); sifirla(B.pid, 10, 10);
+    let id = await listele(10);
+    let r = await call('POST', '/api/pazar/buy', { id }, B.token);
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    let a = durum(saticiPid), b = durum(B.pid);
+    assert.ok(near(b.bal, 0) && near(b.locked, 0), `Alıcı: ${JSON.stringify(b)}`);
+    assert.ok(near(a.bal, 9.8) && near(a.locked, 9.8), `Satıcıya gelen 9,8'in tamamı kilitli: ${JSON.stringify(a)}`);
+
+    // (b) Karışık: 6 serbest + 8 kilitli, fiyat 10 → 4'ü kilitliden; satıcıda kilitli pay yine en az %80
+    sifirla(saticiPid, 0, 0); sifirla(B.pid, 14, 8);
+    id = await listele(10);
+    r = await call('POST', '/api/pazar/buy', { id }, B.token);
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    a = durum(saticiPid); b = durum(B.pid);
+    assert.ok(near(b.bal, 4) && near(b.locked, 4), `Serbest 6 önce gitti, kalan 4 kilitliden: ${JSON.stringify(b)}`);
+    assert.ok(near(a.bal, 9.8) && near(a.locked, 7.84), `Satıcıda %80 kilitli: ${JSON.stringify(a)}`);
+
+    // (c) Serbest yetmeyip kilitli oranı %80'i aşarsa satıcıdaki kilitli pay o orana çıkar (fiyat 10: 2 serbest + 8 kilitli → %80; 1 + 9 → %90)
+    sifirla(saticiPid, 0, 0); sifirla(B.pid, 10, 9);
+    id = await listele(10);
+    r = await call('POST', '/api/pazar/buy', { id }, B.token);
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    a = durum(saticiPid);
+    assert.ok(near(a.locked, 9.8 * 0.9), `Kilitli pay %90: ${JSON.stringify(a)}`);
+    // satıcının topladığı kilit, alıcıdan çıkan kilitliden fazla olamaz (toplam kilit hiçbir hâlde artmaz, ücret kısmı hariç)
+    assert.ok(a.locked <= 9 + 1e-6, 'Kilitli toplam alıcının ödediği kilitliyi aşmaz');
+  }
+  ok('Kilit aklama kapalı: kilitli ödeme satıcıda kilitli kalır, serbest önce harcanır');
+
   // 6) Bekleme sırasındaki oyuncu ilan pazarını görür ama kullanamaz
   engine.GAME_CONFIG.KAPI.START_LIMIT = 2;
   kapi.adminSet({ limit: 2 });
@@ -132,7 +175,7 @@ try {
   assert.equal(cs.status, 403);
   ok('Bekleme sırasındaki yalnız bakar');
 
-  console.log(`\n${passed}/6 ilan pazarı testi geçti`);
+  console.log(`\n${passed}/7 ilan pazarı testi geçti`);
 } finally {
   server.close();
 }

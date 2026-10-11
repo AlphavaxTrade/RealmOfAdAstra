@@ -101,7 +101,7 @@ function ilanBolumu(b, s) {
   if (!b.online || !b.online.active) {
     return kart({ baslik: '🏷️ İlan Pazarı', icerik: uyari('Oyuncular arası teçhizat satışı yalnız çevrimiçi sunucuda çalışır (bilgisayardaki deneme modunda kapalı).') });
   }
-  const aciklama = not('Cephanelik\'teki bir eşyayı Demirhane > "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Alıcı önce kilitli ASTRA\'sından öder; satıcıya gelen paranın %80\'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya sana döner.');
+  const aciklama = not('Cephanelik\'teki bir eşyayı Demirhane > "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Alıcı önce serbest ASTRA\'sından öder (yetmezse kalanı kilitliden); satıcıya gelen paranın en az %80\'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya sana döner.');
   const d = s.ilanVeri;
   if (!d) return kart({ baslik: '🏷️ İlan Pazarı: oyuncudan oyuncuya teçhizat', rozet: etiket('komisyon %2 · 7 gün · 10 ilan'), icerik: `${aciklama}<div class="v3-iskelet" aria-busy="true"><i></i><i></i><i></i></div>` });
   const benim = (d.mine || []).map((l) => ilanSatiri(b, l, true, d.now)).join('');
@@ -286,7 +286,7 @@ const ekran = {
     async ilanAl(b, el, secenek) {
       const tamam = await onay({
         baslik: `${el.dataset.ad} satın alınsın mı?`,
-        metin: `${astra(Number(el.dataset.fiyat))} ASTRA. Önce kilitli ASTRA'n kullanılır.`, tamam: 'Satın al'
+        metin: `${astra(Number(el.dataset.fiyat))} ASTRA. Önce serbest ASTRA'n kullanılır; yetmezse kalanı kilitliden düşer.`, tamam: 'Satın al'
       });
       if (!tamam) return false;
       try {

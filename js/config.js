@@ -106,7 +106,7 @@ export const GAME_CONFIG = {
     SON_UYARI_SAAT: 72         // izin hakkı tükendikten sonraki son uyarı süresi
   },
   // İlan pazarı (teçhizat; server/pazar.js): komisyon %2 (yarısı yakım, yarısı kasalar), 7 gün, en çok 10 açık ilan,
-  // alıcı önce kilitli ASTRA'sından öder, satıcıya gelen paranın %80'i kilitli gelir
+  // alıcı önce serbest ASTRA'sından öder (yetmezse kalanı kilitliden), satıcıya gelen paranın en az %80'i kilitli gelir
   ILAN_PAZARI: { FEE: 0.02, FEE_BURN_SHARE: 0.5, DAYS: 7, MAX_LISTINGS: 10, SELLER_LOCKED_SHARE: 0.8, MIN_PRICE: 0.01, MAX_PRICE: 1e9 },
   // Universe'e geçiş aşamaları (R3): 0 Realm, 1 Hazırlık, 2 Ön sipariş, 3 Universe (yalnız yönetici)
   UNIVERSE_STAGE: 0,

@@ -1,8 +1,8 @@
 // Realm of AdAstra — İlan pazarı (teçhizat), KARARLAR_KESIN.md bölüm D
 // ============================================================================
 // Oyuncular arası teçhizat satışı. Kurallar: komisyon %2 (yarısı yakılır, yarısı hazine kasalarına), ilan 7 gün
-// (süresi dolan eşya sahibine döner), oyuncu başına en çok 10 açık ilan, alıcı önce KİLİTLİ ASTRA'sından öder,
-// satıcıya gelen paranın %80'i kilitli gelir. Yalnız sunucuda çalışır (iki oyuncunun kaydına birden dokunur).
+// (süresi dolan eşya sahibine döner), oyuncu başına en çok 10 açık ilan, alıcı önce SERBEST ASTRA'sından öder (yetmezse
+// kalanı kilitliden), satıcıya gelen paranın en az %80'i kilitli gelir. Yalnız sunucuda çalışır (iki oyuncunun kaydına birden dokunur).
 // Eşya ilan verilince oyuncunun kaydından çıkar (ilanda bekler); satılınca alıcının Cephanelik envanterine girer.
 // ============================================================================
 const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
@@ -93,7 +93,9 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     });
   }
 
-  // Satın al: alıcı önce kilitli ASTRA'sından öder; satıcıya %98 (bunun %80'i kilitli); %1 yakım, %1 kasalar
+  // Satın al: alıcı önce SERBEST bakiyesinden öder (serbest yetmezse kalanı kilitliden); satıcıya %98 gelir, en az %80'i kilitli.
+  // %1 yakım, %1 kasalar. Kilit buradan açılmaz: alıcının kilitli payı satıcıda da kilitli kalır (yoksa iki hesap aralarında
+  // al-sat yaparak kilitli ASTRA'yı serbest bırakırdı).
   function buy(me, id) {
     const p = P();
     const r = q.get.get(Number(id));
@@ -102,13 +104,15 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     const price = round3(r.price), fee = round3(price * p.FEE), burn = round3(fee * p.FEE_BURN_SHARE), toTreasury = round3(fee - burn), proceeds = round3(price - fee);
     return atomic(() => {
       const item = JSON.parse(r.item);
+      let fromLocked = 0;                                                   // fiyatın kilitli bakiyeden ödenen kısmı
       const out = E.withPlayer(me, gs => {
         const bal = Number(gs.state.adAstraBalance) || 0;
         // Sponsorlu para oyuncudan oyuncuya geçemez (yoksa ortak ilanıyla "çekilebilir" paraya dönüşürdü): yalnız kendi bakiyesiyle ödenir
+        const bilgi = gs.getLockedBalanceInfo();                            // total = kilitli + sponsorlu + serbest (ayrık)
         const own = bal - Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), bal);
         if (own < price) throw userError(`⚠️ Yetersiz ASTRA: ${price} gerekli, ${round3(own)} var${own < bal ? ' (sponsorlu para ilan pazarında kullanılamaz)' : ''}.`);
-        const locked = Math.max(0, Number(gs.state.lockedAda) || 0);
-        gs.state.lockedAda = round3(Math.max(0, locked - price));          // önce kilitliden
+        fromLocked = round3(Math.max(0, price - Math.max(0, bilgi.free)));
+        gs.state.lockedAda = round3(Math.max(0, bilgi.locked - fromLocked));
         gs.state.adAstraBalance = round3(bal - price);
         gs.state.lockedAda = Math.min(gs.state.lockedAda, gs.state.adAstraBalance);
         gs.state.sponsorAda = Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), gs.state.adAstraBalance);
@@ -118,10 +122,13 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
         if (typeof gs._addContribution === 'function') gs._addContribution(fee * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
         return { success: true };
       });
+      // Satıcıda kilitli kalacak pay: en az SELLER_LOCKED_SHARE, ama alıcı kilitli bakiyesinden ödediyse o oran kadar
+      const kilitliPay = Math.min(1, Math.max(p.SELLER_LOCKED_SHARE, price > 0 ? fromLocked / price : 0));
+      const kilitliGelen = round3(proceeds * kilitliPay);
       E.mutatePlayer(r.seller, gs => {
         gs.state.adAstraBalance = round3((Number(gs.state.adAstraBalance) || 0) + proceeds);
-        gs.state.lockedAda = Math.min(gs.state.adAstraBalance, round3((Number(gs.state.lockedAda) || 0) + proceeds * p.SELLER_LOCKED_SHARE));
-        gs.pushNotice(`💰 İlanın satıldı: ${item.name || 'Eşya'} → ${proceeds} ASTRA (komisyon ${fee}; ${round3(proceeds * p.SELLER_LOCKED_SHARE)} ASTRA kilitli geldi).`, 'success');
+        gs.state.lockedAda = Math.min(gs.state.adAstraBalance, round3((Number(gs.state.lockedAda) || 0) + kilitliGelen));
+        gs.pushNotice(`💰 İlanın satıldı: ${item.name || 'Eşya'} → ${proceeds} ASTRA (komisyon ${fee}; ${kilitliGelen} ASTRA kilitli geldi).`, 'success');
       });
       if (burn > 0) { E.globalPool.state.totalBurned = (Number(E.globalPool.state.totalBurned) || 0) + burn; if (typeof E.globalPool.saveState === 'function') E.globalPool.saveState(); E.treasury.recordBurn(burn); }
       if (toTreasury > 0) E.treasury.deposit(toTreasury);
