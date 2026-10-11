@@ -44,5 +44,10 @@
   "test_kapi_seridi.mjs",
   "test_yol_kutusu.mjs",
   "test_kisla_kurallari.mjs",
-  "test_kisla_ekrani.mjs"
+  "test_kisla_ekrani.mjs",
+  "test_tarama_2026_10_sunucu.mjs",
+  "test_tarama_2026_10_kurallar.mjs",
+  "test_tarama_2026_10_onyuz.mjs",
+  "test_istemci_sunucu_imza.mjs",
+  "test_bot_kurallari.mjs"
 ]

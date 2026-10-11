@@ -26,6 +26,8 @@ npm run kontrol              # everything CI runs: lint (0 errors, warning ceili
 node scripts/openapi-uret.mjs   # regenerates docs/openapi.yaml + docs/api/index.html; new route/action => also docs/openapi/aciklamalar.json (tests/test_openapi.mjs fails until done)
 node scripts/env-belge.mjs      # regenerates docs/kurumsal/ORTAM.md + env.ornek.txt; every env var the code reads must be in scripts/env-belge.mjs (test_env_belge)
 npm run yuk / yuk-kontrol    # load test / regression gate (docs/kurumsal/PERFORMANS.md)
+npm run tarayici                # MANUAL end-to-end browser scenario against a throw-away trial server (needs `npm run build`; 35 checks incl. gate strip, palette, treasury, sponsorship)
+node scripts/tarayici/kabuk-parcalari.mjs   # MANUAL: bell, Krallık Yolu, offline report, gate strip, "seen" hook (needs `npm run dev`)
 node scripts/tarayici/duvar.mjs   # MANUAL real-browser check (Chrome + Playwright) of the Savunma Duvarı council project against the local trial server; leaves the world as it found it. The test menu (T) has 'Konsey projeleri' buttons (finish next / finish all / reset) because each project costs 6 M units + 50k labor
 node server/yedek/cli/yedekle.js | dogrula.js [--derin] | geri-yukle.js <file>   # backup / verify / restore (docs/kurumsal/FELAKET_KURTARMA.md); restore auto-PAUSES payouts and refuses while the server runs
 

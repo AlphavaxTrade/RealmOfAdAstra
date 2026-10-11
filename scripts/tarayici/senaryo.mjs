@@ -48,7 +48,8 @@ const tumHatalar = [];
 async function sayfaAc(ad, { mobil = false } = {}) {
   const g = await girisAl(ad);
   const baglam = await tarayici.newContext({ viewport: mobil ? { width: 390, height: 844 } : { width: 1280, height: 860 }, hasTouch: mobil, permissions: ['clipboard-read', 'clipboard-write'] });
-  await baglam.addInitScript(() => { try { localStorage.setItem('roa_arayuz', 'eski'); } catch { /* */ } });   // betik eski ekranın seçicilerine bağlı (v3 artık varsayılan)
+  // Yeni oyuncu turu perdesi tıklamaları keser: bu betik turu ayrıca denemez, her hesap için atlanmış sayılır
+  await baglam.addInitScript(([k]) => { try { localStorage.setItem(k, '{"atlandi":true}'); } catch { /* */ } }, [`roa_v3_tur_${g.playerId}`]);
   await baglam.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, ['adastra_session_v1', JSON.stringify({ token: g.token, playerId: g.playerId })]);
   const sayfa = await baglam.newPage();
   const hatalar = [];
@@ -73,8 +74,8 @@ try {
     kontrol('yeni vatandaş: kapı şeridi gizli', b.gizli, b.metin.slice(0, 80));
     await paletle(o.sayfa, 'hazine');
     const m = await modalMetni(o.sayfa);
-    kontrol('Konsey: "Kapı durumu" kartı (vatandaş sayısı)', /Kapı durumu — vatandaş 7 \/ 8/.test(m), (m.match(/Kapı durumu[^\n]*/) || [''])[0]);
-    kontrol('Konsey: "Gelir motoru" kartı hedefleri gösteriyor', /Gelir motoru/.test(m) && /hedef 50 \$/.test(m) && /hedef 16\.7 \$/.test(m) && /şimdilik kilitli/.test(m));
+    kontrol('Konsey: "Kapı durumu" kartı (vatandaş sayısı)', /Kapı durumu[^\n]*vatandaş 7 \/ 8/.test(m), (m.match(/Kapı durumu[^\n]*/) || [''])[0]);
+    kontrol('Konsey: "Gelir motoru" kartı hedefleri gösteriyor', /Gelir motoru/.test(m) && /hedef 50 \$/.test(m) && /hedef 16[.,]7 \$/.test(m) && /şimdilik kilitli/.test(m));
     kontrol('Konsey metninde NaN/undefined yok', !/NaN|undefined/.test(m));
     await ekran(o.sayfa, 'yeni_konsey');
     await o.sayfa.keyboard.press('Escape'); await bekle(300);
@@ -96,9 +97,9 @@ try {
   {
     const o = await sayfaAc('izin-sorusu');
     const b = await bannerMetni(o.sayfa);
-    kontrol('izin sorusu: şeritte soru ve iki düğme var', /izin hakkını kullanmak ister misin/.test(b.metin) && /btn-izin-evet/.test(b.html) && /btn-izin-hayir/.test(b.html), b.metin.slice(0, 100));
+    kontrol('izin sorusu: şeritte soru ve iki düğme var', /izin hakkını kullanmak ister misin/.test(b.metin) && /data-kapi="izin-evet"/.test(b.html) && /data-kapi="izin-hayir"/.test(b.html), b.metin.slice(0, 100));
     await ekran(o.sayfa, 'izin_sorusu');
-    await o.sayfa.click('#btn-izin-evet'); await bekle(1500);
+    await o.sayfa.click('[data-kapi="izin-evet"]'); await bekle(1500);
     const sonra = await bannerMetni(o.sayfa);
     kontrol('"Evet": soru şeritten kalktı', !/ister misin/.test(sonra.metin));
     const st = await durumAl(o.g);
@@ -108,7 +109,7 @@ try {
     kontrol('"Evet" sonrası şeritte "İzindesin" bilgisi görünüyor', /İzindesin/.test((await bannerMetni(o.sayfa)).metin));
     await o.kapat();
     const o2 = await sayfaAc('izin-sorusu-2');
-    await o2.sayfa.click('#btn-izin-hayir'); await bekle(1500);
+    await o2.sayfa.click('[data-kapi="izin-hayir"]'); await bekle(1500);
     const st2 = await durumAl(o2.g);
     kontrol('"Hayır": soru kalktı, izin açılmadı, yıllık hak 30 kaldı', !st2.player.katilim.izinSorusu && !st2.player.katilim.izinModu && st2.player.katilim.izinYillikKalan === 30, JSON.stringify(st2.player.katilim));
     await o2.kapat();
@@ -118,9 +119,9 @@ try {
   {
     const o = await sayfaAc('sirada-degil');
     const b = await bannerMetni(o.sayfa);
-    kontrol('hazır olmayan aday: sıra no, 3 açık onay düğmesi, davet yok', /Bekleme sırasındasın: \d+\. sıra/.test(b.metin) && (b.html.match(/data-misafir-gorev=/g) || []).length === 3 && !/Yerin açıldı/.test(b.metin) && !/disabled/.test(b.html), b.metin.slice(0, 90));
+    kontrol('hazır olmayan aday: sıra no, 3 açık onay düğmesi, davet yok', /Bekleme sırasındasın: \d+\. sıra/.test(b.metin) && (b.html.match(/data-kapi-gorev=/g) || []).length === 3 && !/Yerin açıldı/.test(b.metin) && !/disabled/.test(b.html), b.metin.slice(0, 90));
     await ekran(o.sayfa, 'aday_degil');
-    for (const id of ['rehber', 'kurallar', 'hazirim']) { await o.sayfa.click(`[data-misafir-gorev="${id}"]`); await bekle(900); }
+    for (const id of ['rehber', 'kurallar', 'hazirim']) { await o.sayfa.click(`[data-kapi-gorev="${id}"]`); await bekle(900); }
     const sonra = await bannerMetni(o.sayfa);
     kontrol('3 onay verilince hepsi ✅', (sonra.metin.match(/✅/g) || []).length >= 3, sonra.metin.slice(0, 120));
     await o.sayfa.reload({ waitUntil: 'load' }); await o.sayfa.waitForFunction(() => window.gameState && window.gameState.state, null, { timeout: 45000 }); await bekle(2000);
@@ -195,21 +196,21 @@ try {
     kontrol('Konsey: "Sponsorluk" kutusu (açıklama, form) görünüyor', /Sponsorluk/.test(ms) && /Sponsor ol/.test(ms) && /çekilemez/.test(ms) && !/NaN|undefined/.test(ms), (ms.match(/Sponsorluk[\s\S]{0,160}/) || [''])[0].replace(/\s+/g, ' '));
     await sp.sayfa.evaluate(() => { const sel = document.getElementById('sp-hedef'); sel.selectedIndex = 0; document.getElementById('sp-miktar').value = '1500'; });
     const hedefId = await sp.sayfa.evaluate(() => document.getElementById('sp-hedef').value);
-    await sp.sayfa.click('#sp-ol'); await bekle(2500);
+    await sp.sayfa.click('[data-e="sponsorOl"]'); await bekle(2500);
     const bn = await api('GET', '/api/sponsor/benim', null, sp.g.token);
     kontrol('Sponsor ol: sunucuda sözleşme oluştu (1500 ASTRA)', bn.status === 200 && bn.body.given.length === 1 && bn.body.given[0].principal === 1500, JSON.stringify(bn.body.given));
     const ms2 = await modalMetni(sp.sayfa);
-    kontrol('Sponsor ol: kutu "Verdiğim" listesini gösteriyor', /Verdiğim/.test(ms2) && /1\.500 ASTRA/.test(ms2), (ms2.match(/Verdiğim[\s\S]{0,120}/) || [''])[0].replace(/\s+/g, ' '));
+    kontrol('Sponsor ol: kutu "Verdiğim" listesini gösteriyor', /verdiğim/i.test(ms2.toLocaleLowerCase('tr')) && /1\.500 ASTRA/.test(ms2), (ms2.match(/Verdiğim[\s\S]{0,120}/) || [''])[0].replace(/\s+/g, ' '));
     kontrol('Sponsor ol: hedef tablo satırı kimlik içermiyor ve sponsor sayısı 1', (await api('GET', '/api/sponsor/tablo', null, sp.g.token)).body.rows.some(r => r.id === hedefId && r.sponsorSayisi === 1 && !('wallet' in r) && !('email' in r)));
     await sp.sayfa.keyboard.press('Escape');
     await sp.kapat();
     const i = await sayfaAc('izinde');
     const b = await bannerMetni(i.sayfa);
-    kontrol('izinde: şeritte "İzindesin — N gün kaldı" ve erken bitirme düğmesi', /İzindesin/.test(b.metin) && /btn-izin-bitir-serit/.test(b.html), b.metin.slice(0, 100));
+    kontrol('izinde: şeritte "İzindesin — N gün kaldı" ve erken bitirme düğmesi', /İzindesin/.test(b.metin) && /data-kapi="izin-bitir"/.test(b.html), b.metin.slice(0, 100));
     await paletle(i.sayfa, 'hazine');
     const mi = await modalMetni(i.sayfa);
     kontrol('izinde: Konsey karnesinde izin bitiş tarihi ve "Üretim Hakkı almazsın" açıklaması', /İzindesin/.test(mi) && /Üretim Hakkı, temel gelir ve ücretsiz oyuncu payı almazsın/.test(mi));
-    await i.sayfa.click('#btn-izin-bitir'); await bekle(1500);
+    await i.sayfa.click('[data-e="izinBitir"]'); await bekle(1500);
     const st = await durumAl(i.g);
     kontrol('"İzni şimdi bitir": sunucuda izin modu kapandı', !st.player.katilim.izinModu, JSON.stringify(st.player.katilim.izinModu));
     await i.kapat();
