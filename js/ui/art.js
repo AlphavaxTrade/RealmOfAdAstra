@@ -60,3 +60,11 @@ export function rewardImg(r, size = 32) {
   if (!src) return attr(emoji);
   return `<img src="${src}" alt="" draggable="false" style="width:${size}px;height:${size}px;object-fit:contain;image-rendering:pixelated;display:inline-block;" data-fb="text:${attr(emoji)}">`;
 }
+
+// Çark ödülünün simgesi: boyutu kapsayıcıdan alır (satır içi stil yok); resim yoksa emoji
+export function odulSimgesi(r) {
+  const src = rewardArtSrc(r);
+  const emoji = (r && r.icon) || '🎁';
+  if (!src) return attr(emoji);
+  return `<img src="${src}" alt="" class="art-ico" draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
+}

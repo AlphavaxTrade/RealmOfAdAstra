@@ -15,3 +15,4 @@ import './karakter.js';
 import './ekonomi.js';
 import './koleksiyon.js';
 import './savasalani.js';
+import './karnaval.js';

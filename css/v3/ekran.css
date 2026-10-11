@@ -149,3 +149,36 @@
 .ek-oge-etiket.is-sonuk { opacity: .55; }
 .ek-nokta { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--renk, #888); }
 .ek-girdi-dar { width: 110px; }
+
+/* 9. KOLEKSİYON, SAVAŞ ALANI, KARNAVAL ----------------------------------- */
+.ek-buyuk { font: 900 26px/1.2 var(--font-ui); color: var(--v3-vurgu-acik, #f6d98c); font-variant-numeric: tabular-nums; }
+.ek-buyuk > small { font: 700 14px var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); margin-left: 4px; }
+.ek-eser { align-items: center; text-align: center; min-height: 84px; justify-content: center; }
+.ek-eser > b { font-size: 28px; }
+.ek-eser > small { text-transform: none; letter-spacing: 0; }
+.ek-eser.is-kilitli { opacity: .55; }
+.ek-eser.rarity-legendary, .ek-eser.rarity-epic { border-color: rgba(231,185,76,.55); }
+.ek-eser.rarity-rare { border-color: rgba(99,176,255,.5); }
+.ek-kutu-izgara { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 8px; }
+.ek-kutu-simge { display: grid; place-items: center; min-height: 56px; font-size: 30px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
+
+.ek-cark-sahne { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 6px 0 2px; }
+/* Döndürülen tuvalin köşeleri kapsayıcıyı aşıp yatay kaydırma doğurmasın: kapsayıcı kırpar, parıltı için iç boşluk bırakılır */
+.ek-cark-tekerlek { position: relative; width: min(380px, 92%); aspect-ratio: 1; padding: 16px; box-sizing: border-box; overflow: hidden; }
+.ek-cark-tuval { display: block; width: 100%; height: 100%; border-radius: 50%; transform-origin: 50% 50%; will-change: transform; box-shadow: 0 0 25px rgba(236,72,153,.4), 0 0 55px rgba(124,58,237,.3), inset 0 0 15px rgba(0,0,0,.8); }
+.ek-cark-ibre { position: absolute; top: 2px; left: 50%; width: 34px; height: 42px; z-index: 2; pointer-events: none; transform: translateX(-50%); transform-origin: 50% 15%; filter: drop-shadow(0 3px 5px rgba(0,0,0,.8)); transition: transform .06s; }
+.ek-cark-ibre.is-cit { transform: translateX(-50%) rotate(-18deg); }
+.ek-cark-ibre > svg { width: 100%; height: 100%; }
+.ek-cark-durum { margin: 0; min-height: 20px; text-align: center; font: 700 13.5px/1.4 var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); }
+.ek-sonuc { display: flex; align-items: center; gap: 12px; }
+.ek-sonuc-simge { width: 64px; height: 64px; flex: none; display: grid; place-items: center; font-size: 40px; border-radius: 16px; background: rgba(0,0,0,.28); }
+.ek-sonuc-simge .art-ico { width: 100%; height: 100%; padding: 6px; box-sizing: border-box; }
+.ek-sonuc > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ek-sonuc-baslik { font: 900 17px/1.2 var(--font-ui); color: var(--v3-iyi, #43d19a); }
+.ek-odul { align-items: center; text-align: center; }
+.ek-odul > b { font-size: 13px; line-height: 1.25; }
+.ek-odul > small { text-transform: none; letter-spacing: 0; color: var(--v3-vurgu-acik, #f6d98c); }
+.ek-odul-simge { width: 40px; height: 40px; display: grid; place-items: center; font-size: 26px; }
+.ek-odul-simge .art-ico { width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .ek-cark-ibre { transition: none; } }
+html.v3-azalt .ek-cark-ibre { transition: none; }

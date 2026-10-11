@@ -376,10 +376,6 @@ html.v3 div:has(> #colosseum-champion-select) { flex-wrap: wrap; width: 100%; }
 html.v3 #colosseum-champion-select { flex: 1 1 200px; min-width: 0; }
 html.v3 #btn-toggle-colosseum-champ-row { flex: 0 0 auto; }
 
-/* 14. KARNAVAL ------------------------------------------------------------------------- */
-html.v3 :is(.carnival-tab-btn, .btn-spin-wheel) { min-height: var(--v3-tap); }
-html.v3 .carnival-wheel-canvas { max-width: 100%; height: auto; }
-
 /* 15. ZINDAN: SAVAS ONCESI PENCERE VE SAVAS SAHNESI DUGMELERI --------------------------- */
 html.v3 .prebattle-sol-list > div { min-height: var(--v3-tap); }
 html.v3 :is(.btn-toggle-prebattle-row, #btn-pb-auto, #btn-pb-all, .btn-prebattle-preset, #btn-save-prebattle-preset, #btn-prebattle-refill-stamina, #btn-goto-barracks-prebattle, #btn-goto-battlefield-prebattle) { min-height: var(--v3-tap); }
@@ -391,36 +387,6 @@ html.v3 .v3-prebattle-aksiyon .btn-use-scroll { grid-column: 1 / -1; }
 html.v3 :is(.aa-arena .speed-btn, #aa-closeBtn, #aa-resultBtn, #aa-resultCloseBtn, #sidebar-quota-open) { min-height: var(--v3-tap); min-width: var(--v3-tap); }
 html.v3 .prebattle-grid { display: flex !important; flex-direction: column; gap: 12px; }
 html.v3 .v3-prebattle-aksiyon { display: grid !important; }
-
-/* 16. KARNAVAL (cark secenekleri, havuzlar) --------------------------------------------- */
-html.v3 .v3-cevir { display: flex; flex-direction: column; gap: 8px; }
-html.v3 .v3-cevir .btn-spin-wheel { width: 100%; min-height: 48px; margin: 0; font-weight: 800; }
-html.v3 .v3-cevir-ana { background: #7c3aed; border-color: #a78bfa; }
-html.v3 .v3-cevir-hammadde { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 6px; }
-html.v3 .v3-karnaval-havuz { display: flex; flex-direction: column; gap: var(--v3-gap-3); }
-html.v3 .v3-baslik-kucuk { font: 800 14px var(--font-ui); color: var(--v3-vurgu-acik); margin: 4px 0; }
-html.v3 .v3-havuz-liste { display: flex; flex-direction: column; gap: 10px; }
-html.v3 .v3-havuz { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-left: 4px solid var(--v3-havuz-renk, var(--v3-cizgi-guclu)); }
-html.v3 .v3-havuz-ust { display: flex; align-items: center; gap: 10px; }
-html.v3 .v3-havuz-simge { font-size: 26px; width: 34px; text-align: center; }
-html.v3 .v3-havuz-ad { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-html.v3 .v3-havuz-ad b { font: 800 14px/1.25 var(--font-ui); color: var(--v3-yazi); }
-html.v3 .v3-havuz-ad small { font: 500 12px var(--font-ui); color: var(--v3-yazi-3); }
-html.v3 .v3-havuz-bakiye { font: 900 16px var(--font-ui); color: var(--v3-vurgu-acik); text-align: right; white-space: nowrap; }
-html.v3 .v3-havuz-bakiye i { font: 700 10px var(--font-ui); font-style: normal; color: #c9b8ff; margin-left: 4px; }
-html.v3 .v3-havuz > .btn-eco-pool-jump { min-height: var(--v3-tap); width: 100%; }
-html.v3 .v3-bolme { display: flex; height: 16px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06); margin: 8px 0; }
-html.v3 .v3-bolme-ad { display: flex; flex-wrap: wrap; gap: 6px 14px; font: 500 12.5px var(--font-ui); color: var(--v3-yazi-2); }
-html.v3 .v3-bolme-ad i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; }
-html.v3 details.v3-katli-basit { background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-radius: var(--v3-r); }
-html.v3 details.v3-katli-basit > summary { cursor: pointer; min-height: var(--v3-tap); display: flex; align-items: center; padding: 0 14px; font: 700 14px var(--font-ui); color: var(--v3-yazi); }
-html.v3 details.v3-katli-basit > div { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-html.v3 .v3-yakilan b { display: block; font: 700 12.5px var(--font-ui); color: var(--v3-yazi-2); margin-bottom: 2px; }
-html.v3 .v3-havuz-alt { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
-html.v3 .v3-havuz-alt > details { flex: 1 1 140px; margin: 0; }
-html.v3 .v3-havuz-alt > .btn-eco-pool-jump { flex: 0 0 auto; width: auto; min-height: var(--v3-tap); }
-html.v3 .v3-havuz-kisisel { font: 500 13px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
-html.v3 .v3-havuz-alt > .btn-treasury-action { flex: 0 0 auto; width: auto; min-height: var(--v3-tap); }
 
 /* 17. ARAYÜZ TARAMASI DÜZELTMELERİ (11 Ekim 2026) ------------------------- */
 /* silo kartları iki sütun (üç sütun telefonda taşıyordu); geniş ekranda üç */

@@ -1,7 +1,8 @@
 /* global window, document, innerWidth, getComputedStyle */
 // Tek bir ekranı gerçek tarayıcıda (telefon ve masaüstü) açıp görüntüsünü ve ölçümlerini verir. ELLE çalıştırılır.
 // Önce geliştirme sunucusu: npm run dev (http://127.0.0.1:5180).
-// Kullanım: node scripts/tarayici/ekran-bak.mjs <hub-anahtarı> [--zengin] [--tikla "css seçici"]...
+// Kullanım: node scripts/tarayici/ekran-bak.mjs <hub-anahtarı> [--zengin] [--tikla "css seçici"]... [--bekle ms] [--oku "css seçici"]
+//   --bekle: her tıklamadan sonra beklenecek süre (örn. çark dönüşü için 5500); --oku: tıklamalardan sonra o öğenin metnini yazar
 //   örn:   node scripts/tarayici/ekran-bak.mjs silo --zengin
 // Çıktı: ekran görüntüleri (%TEMP%/ekran-bak), konsol hataları, taşma ve bozuk metin özeti.
 import { createRequire } from 'node:module';
@@ -18,7 +19,13 @@ const anahtar = args.find((a) => !a.startsWith('--'));
 if (!anahtar) { console.error('Kullanım: node scripts/tarayici/ekran-bak.mjs <hub-anahtarı> [--zengin]'); process.exit(2); }
 const zengin = args.includes('--zengin');
 const tiklar = [];
-for (let i = 0; i < args.length; i++) if (args[i] === '--tikla' && args[i + 1]) tiklar.push(args[i + 1]);
+const okunacak = [];
+let tikBekle = 400;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--tikla' && args[i + 1]) tiklar.push(args[i + 1]);
+  if (args[i] === '--oku' && args[i + 1]) okunacak.push(args[i + 1]);
+  if (args[i] === '--bekle' && args[i + 1]) tikBekle = Number(args[i + 1]) || 400;
+}
 const BASE = process.env.OYUN_ADRESI || 'http://127.0.0.1:5180';
 const KLASOR = process.env.EKRAN_KLASORU || path.join(os.tmpdir(), 'ekran-bak');
 fs.mkdirSync(KLASOR, { recursive: true });
@@ -59,7 +66,11 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
     await s.evaluate((k) => window.__v3.git(k), anahtar);
   }
   await bekle(zengin ? 4800 : 800);   // açılışta çıkan bildirimler kaybolsun
-  for (const sec of tiklar) { await s.click(sec).catch(() => hatalar.push('tıklanamadı: ' + sec)); await bekle(400); }
+  for (const sec of tiklar) { await s.click(sec).catch(() => hatalar.push('tıklanamadı: ' + sec)); await bekle(tikBekle); }
+  for (const sec of okunacak) {
+    const m = await s.evaluate((q) => { const e = document.querySelector(q); return e ? e.innerText.replace(/[\s]+/g, ' ').trim() : '(öğe yok)'; }, sec);
+    console.log(`      [${sec}] ${m}`);
+  }
   const dosya = path.join(KLASOR, `${anahtar.replace(/[^a-z0-9]/gi, '_')}-${ad}${zengin ? '-zengin' : ''}.png`);
   await s.screenshot({ path: dosya });
   const olcum = await s.evaluate(() => {
