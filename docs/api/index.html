@@ -52,8 +52,8 @@ th,td{border-bottom:1px solid var(--cizgi);padding:4px 8px;text-align:left;verti
 <div class="op" id="post_api_account_2fa_setup"><h3><span class="m">POST</span><span class="yol">/api/account/2fa/setup</span><span class="y oyuncu">Oyuncu oturumu</span></h3><div>İki adımlı doğrulama kurulumu başlat</div>
 <div class="mut">Yanıt: { ok, secret, uri, qr } (qr: SVG data URL)</div><div><span class="kod" title="Geçersiz istek / kural reddi">400</span><span class="kod" title="Giriş (oturum anahtarı) ya da yönetici yetkisi gerekli">401</span><span class="kod" title="Çok hızlı istek; biraz yavaşla">429</span><span class="kod" title="Sunucu hatası (gövdede istekKimligi; günlükte aranır)">500</span></div>
 </div>
-<div class="op" id="post_api_account_2fa_enable"><h3><span class="m">POST</span><span class="yol">/api/account/2fa/enable</span><span class="y oyuncu">Oyuncu oturumu</span></h3><div>İki adımlı doğrulamayı aç (ilk kodu doğrula)</div>
-<table><tr><th>İstek alanı</th><th>Tür</th><th></th></tr><tr><td><code>code</code> *</td><td>string</td><td></td></tr></table>
+<div class="op" id="post_api_account_2fa_enable"><h3><span class="m">POST</span><span class="yol">/api/account/2fa/enable</span><span class="y oyuncu">Oyuncu oturumu</span></h3><div>İki adımlı doğrulamayı aç (parola ve ilk kod gerekir)</div>
+<table><tr><th>İstek alanı</th><th>Tür</th><th></th></tr><tr><td><code>code</code> *</td><td>string</td><td></td></tr><tr><td><code>password</code> *</td><td>string</td><td></td></tr></table>
 <div class="mut">Yanıt: { ok, backupCodes } — 10 yedek kod yalnız bu yanıtta bir kez gösterilir.</div><div><span class="kod" title="Geçersiz istek / kural reddi">400</span><span class="kod" title="Giriş (oturum anahtarı) ya da yönetici yetkisi gerekli">401</span><span class="kod" title="Çok hızlı istek; biraz yavaşla">429</span><span class="kod" title="Sunucu hatası (gövdede istekKimligi; günlükte aranır)">500</span></div>
 </div>
 <div class="op" id="post_api_account_2fa_disable"><h3><span class="m">POST</span><span class="yol">/api/account/2fa/disable</span><span class="y oyuncu">Oyuncu oturumu</span></h3><div>İki adımlı doğrulamayı kapat</div>

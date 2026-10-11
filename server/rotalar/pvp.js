@@ -2,10 +2,12 @@
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
 
 export default function pvpRotalari(ctx) {
-  const { db, E, arena, clock, log, readBody, playerPayload } = ctx;
+  const { db, E, arena, clock, log, readBody, playerPayload, vatandasDegil } = ctx;
   return {
     // ⚔️ Kolezyum — gerçek rakipler
     'POST /api/pvp/queue': async (req, me) => {
+      const kapali = vatandasDegil(me);
+      if (kapali) return kapali;
       const { mode, indices } = await readBody(req);
       if (!arena) return [404, { error: 'Kapalı' }];
       if (!['1v1', '3v3'].includes(mode) || !Array.isArray(indices) || indices.length > 3 || !indices.every(i => Number.isInteger(i) && i >= 0 && i < 64)) return [400, { error: 'Geçersiz seçim' }];

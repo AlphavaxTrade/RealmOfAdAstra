@@ -16,6 +16,8 @@ import { validateArgs } from './actions.js';
 
 
 
+const MAX_ACIK_TEKLIF = 5;
+
 export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, clock = () => Date.now(), log = console }) {
   const q = {
     add: db.raw.prepare('INSERT INTO pay_quotes (ref, player, name, args, amount, created, expires) VALUES (?, ?, ?, ?, ?, ?, ?)'),
@@ -24,6 +26,7 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
     mark: db.raw.prepare("UPDATE pay_quotes SET status = 'paid', tx_hash = ?, paid = ? WHERE ref = ? AND status = 'open'"),
     // Açık teklifler hemen silinmez: geç gelen bir ödeme yine eşleşebilsin (30 gün)
     purge: db.raw.prepare("DELETE FROM pay_quotes WHERE status = 'open' AND expires < ?"),
+    openCount: db.raw.prepare("SELECT COUNT(*) AS n FROM pay_quotes WHERE player = ? AND status = 'open' AND expires > ?"),
     credit: db.raw.prepare("UPDATE pay_quotes SET status = 'credited', tx_hash = ?, paid = ? WHERE ref = ? AND status = 'open'")
   };
   const simulated = () => cfg.testMode && !cfg.paymentsContract;     // deneme sunucusu, sözleşme yok: ödeme taklidi
@@ -52,6 +55,8 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
     if (!p.enabled) return { ok: false, error: 'Cüzdandan ödeme henüz açılmadı.' };
     const wallet = accounts ? accounts.activeWallet(playerId) : null;
     q.purge.run(clock() - 30 * 86400000);
+    // Hesap başına açık teklif sınırı: her teklif tam oyuncu yükleme + deneme çalıştırması demek (ucuz yük çarpanı olmasın)
+    if (q.openCount.get(playerId, clock()).n >= MAX_ACIK_TEKLIF) return { ok: false, error: 'Çok fazla açık ödeme teklifin var; birini tamamla ya da 15 dakika bekle.' };
     const ref = '0x' + crypto.randomBytes(32).toString('hex');
     q.add.run(ref, playerId, name, JSON.stringify(args || []), shortfall, clock(), clock() + 15 * 60000);
     return { ok: true, needPayment: true, ref, amountAda: shortfall, cost: Math.ceil(c.spent), balance: Math.floor(c.balance), wallet, ...p };

@@ -189,6 +189,17 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     return withPlayer(address, g => runAction(g, name, args || [], GAME_CONFIG));
   }
 
+  // Herkese açık ekonomi görüntüsü: işletme (sıcak) cüzdanı bilgileri ve uyarılan oyuncuların kimlikleri yalnız yönetici ucunda
+  function herkeseAcikEkonomi() {
+    const e = { ...world() };
+    delete e.hotWallet;
+    if (e.lastWeekly && typeof e.lastWeekly === 'object') {
+      const { katilim, ...kalan } = e.lastWeekly;
+      e.lastWeekly = kalan;
+    }
+    return e;
+  }
+
   // Dünya görüntüsü: tarayıcı bunu kendi pazar/hazine/kota kopyasına yazar
   function worldSnapshot() {
     return {
@@ -196,7 +207,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
       ammFees: ammMarket.feeStats,
       treasury: treasury.state,
       globalPool: globalPool.state,
-      economy: world(),
+      economy: herkeseAcikEkonomi(),
       rates: (db.kvJson('world:rates', null) || {}).active || null,   // RealmRates oranları (tarayıcı kendi ayarına yazar)
       universeStage: Number(GAME_CONFIG.UNIVERSE_STAGE) || 0,            // Universe aşaması (yönetici; tarayıcı kendi ayarına yazar)
       serverTime: clock()

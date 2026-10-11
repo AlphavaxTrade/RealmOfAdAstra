@@ -2,7 +2,7 @@
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
 
 export default function cuzdanRotalari(ctx) {
-  const { db, E, world, accounts, payments, kasa, chain, cfg, log, readBody, playerPayload } = ctx;
+  const { db, E, world, accounts, payments, kasa, chain, cfg, log, readBody, playerPayload, vatandasDegil } = ctx;
   return {
     'GET /api/wallet': (req, me) => ({
       account: accounts.me(me),
@@ -51,6 +51,8 @@ export default function cuzdanRotalari(ctx) {
 
     // 💳 Cüzdandan ödeme (kazanılmış bakiye yetmeyince)
     'POST /api/pay/quote': async (req, me) => {
+      const kapali = vatandasDegil(me);
+      if (kapali) return kapali;
       if (!payments) return [404, { error: 'Kapalı' }];
       const { name, args } = await readBody(req);
       try {
@@ -59,6 +61,8 @@ export default function cuzdanRotalari(ctx) {
       } catch (err) { E.reloadWorld(); log.error('Ödeme teklifi', err); return [500, { error: 'Sunucu hatası' }]; }
     },
     'POST /api/pay/confirm': async (req, me) => {
+      const kapali = vatandasDegil(me);
+      if (kapali) return kapali;
       if (!payments) return [404, { error: 'Kapalı' }];
       const { ref, txHash } = await readBody(req);
       const r = await payments.confirm(me, ref, txHash);

@@ -87,7 +87,7 @@ const total0 = total();
 // 4) Kara para temizleme: sponsorlu para ilan pazarında kullanılamaz
 {
   setBal(P(2), 0); E.mutatePlayer(P(2), gs => { gs.state.adAstraBalance = 5000; gs.state.sponsorAda = 5000; });
-  E.mutatePlayer(P(3), gs => { gs.state.armoryInventory = [{ name: 'Çürük Kılıç', type: 'weapon' }]; });
+  E.mutatePlayer(P(3), gs => { gs.state.armoryInventory = [{ name: 'Çürük Kılıç', slot: 'weapon' }]; });
   pazar.sell(P(3), { source: 'armory', armoryIndex: 0 }, 4000);
   const ilan = db.raw.prepare("SELECT id FROM listings WHERE status = 'active'").get();
   await hata(() => pazar.buy(P(2), ilan.id), /sponsorlu para ilan pazarında kullanılamaz/);

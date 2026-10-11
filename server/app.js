@@ -153,6 +153,13 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     catch (err) { if (err.userError) return [400, { error: err.message }]; log.error('İlan pazarı hatası', me, err); return [500, { error: 'Sunucu hatası, işlem yapılmadı.' }]; }
   }
 
+  // Bekleme sırasındaki / askıdaki hesap para harcayan ya da ödül alan yollara giremez (/api/action ile aynı kural)
+  function vatandasDegil(me) {
+    return kapi && !kapi.isCitizen(me)
+      ? [403, { error: '⏳ Bu işlem yalnız vatandaşlara açık; yerin açılınca kullanabilirsin.' }]
+      : null;
+  }
+
   function safePlayer(address, fn) {
     try {
       return db.tx(() => { const out = E.withPlayer(address, fn); db.q.playerSeen.run(clock(), address); return out; });
@@ -172,7 +179,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir
-  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, newSession, clientIp };
+  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
   const routes = {
     ...genelRotalar(ctx), ...hesapRotalari(ctx), ...oyunRotalari(ctx), ...cuzdanRotalari(ctx),
     ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...yonetimRotalari(ctx)

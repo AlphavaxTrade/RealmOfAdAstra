@@ -58,6 +58,9 @@ export function openDb(file) {
   const api = {
     raw: db,
     q,
+    // Zincire yayından ÖNCE çağrılır: imzalı işlemin kaydını diske işler (synchronous=NORMAL işletim sistemi çökerse son yazmaları
+    // kaybedebilir; kayıt kaybolursa satır "bekliyor"a döner ve ödeme ikinci kez gider). Sıradan yazmalarda çağrılmaz (pahalı).
+    durable() { try { db.exec('PRAGMA wal_checkpoint(FULL)'); } catch { /* işlem içinde ya da bellek veritabanı: yoksay */ } },
     kvGet(key) { const r = q.kvGet.get(key); return r ? r.value : null; },
     kvSet(key, value) { q.kvSet.run(key, String(value)); },
     kvDel(key) { q.kvDel.run(key); },

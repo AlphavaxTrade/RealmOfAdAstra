@@ -240,6 +240,8 @@ export function olusturHaftalik(w) {
     let market = null;
     try { market = await snapshotMarket(); } catch (err) { log.warn('Piyasa okunamadı, son kayıt kullanılıyor:', err.message); }
     market = market || econ().market || null;
+    // Piyasa okunurken (await) başka bir çağrı (zamanlayıcı + yönetici düğmesi) hesaplaşmayı bitirmiş olabilir: yeniden kontrol
+    if (Number(econ().epochSettled) >= closedEpoch) return { skipped: 'already-settled', epoch: closedEpoch };
     try { refreshUretim(); } catch (err) { log.warn('Üretim Hakkı (hafta başı):', err.message); }
     const summary = settleWeek(closedEpoch, market);
     await processPayouts();

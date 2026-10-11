@@ -276,7 +276,7 @@ paths:
     post:
       tags:
         - Hesap
-      summary: İki adımlı doğrulamayı aç (ilk kodu doğrula)
+      summary: İki adımlı doğrulamayı aç (parola ve ilk kod gerekir)
       operationId: post_api_account_2fa_enable
       security: *a2
       requestBody:
@@ -288,8 +288,11 @@ paths:
               properties:
                 code:
                   type: string
+                password:
+                  type: string
               required:
                 - code
+                - password
       responses:
         "200":
           description: "{ ok, backupCodes } — 10 yedek kod yalnız bu yanıtta bir kez gösterilir."

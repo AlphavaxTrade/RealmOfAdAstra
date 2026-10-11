@@ -319,6 +319,7 @@ async function enable2faFlow() {
       <img src="${s.qr}" alt="QR" style="width:190px;height:190px;background:#fff;border-radius:10px;padding:6px;margin:10px auto 4px;display:block;">
       <a href="${esc(s.uri)}" style="color:#93c5fd;font-size:0.82rem;">📱 Uygulamada aç</a>
       <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Elle girmek için gizli anahtar:<br><span style="font-family:monospace;color:#fde68a;word-break:break-all;">${esc(s.secret)}</span></div>
+      <input id="tf-pass" type="password" autocomplete="current-password" placeholder="Hesap parolan (doğrulama için)" style="${inputCss}">
       <input id="tf-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 haneli kod" style="${inputCss};text-align:center;font-size:1.2rem;letter-spacing:4px;">
       <button id="tf-go" style="${btnCss('#15803d', '#4ade80')}">Mührü tak</button>
       ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
@@ -326,7 +327,7 @@ async function enable2faFlow() {
     el.querySelector('#tf-cancel').onclick = () => openWalletPanel();
     el.querySelector('#tf-go').onclick = async () => {
       try {
-        const r = await api('POST', '/api/account/2fa/enable', { code: el.querySelector('#tf-code').value.trim() });
+        const r = await api('POST', '/api/account/2fa/enable', { code: el.querySelector('#tf-code').value.trim(), password: el.querySelector('#tf-pass').value });
         const el2 = overlay(`
           <div style="font-size:2rem;">📜</div>
           <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Mühür takıldı! Yedek kodların</div>

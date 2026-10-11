@@ -24,7 +24,13 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
 
   // Hepsi ya da hiçbiri: hata olursa veritabanı geri alınır, bellekteki dünya kopyası da tazelenir
   const atomic = fn => { try { return db.tx(fn); } catch (err) { E.reloadWorld(); throw err; } };
+  const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
   const userError = msg => Object.assign(new Error(msg), { userError: true });
+
+  // Gerçek bir teçhizat mı: yuvası bilinen, adı olan nesne ({} ya da Object.prototype gibi şeyler eşya sayılmaz)
+  const gecerliEsya = it => !!it && typeof it === 'object' && !Array.isArray(it) && YUVALAR.includes(it.slot) && typeof it.name === 'string' && it.name.length > 0;
+  // Yuva anahtarı yalnız bilinen yuva adı ve nesnenin KENDİ alanı olabilir ("__proto__", "constructor" geçemez)
+  const yuvadaki = (kap, slotKey) => (kap && typeof kap === 'object' && YUVALAR.includes(slotKey) && Object.hasOwn(kap, slotKey) ? kap[slotKey] : null);
 
   // Eşyayı oyuncunun kaydında bulur ve çıkarır (Demirhane geri dönüşümüyle aynı adresleme)
   function takeItem(gs, ref = {}) {
@@ -33,14 +39,14 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     if (source === 'armory') {
       const list = Array.isArray(gs.state.armoryInventory) ? gs.state.armoryInventory : [];
       const i = Number(armoryIndex);
-      item = Number.isInteger(i) ? list[i] : null; remove = () => list.splice(i, 1);
+      item = Number.isInteger(i) && i >= 0 ? list[i] : null; remove = () => list.splice(i, 1);
     } else if (source === 'kingdom') {
-      item = gs.state.equipment ? gs.state.equipment[slotKey] : null; remove = () => { gs.state.equipment[slotKey] = null; };
+      item = yuvadaki(gs.state.equipment, slotKey); remove = () => { gs.state.equipment[slotKey] = null; };
     } else if (source === 'soldier') {
       const s = (gs.state.soldierUnits || [])[Number(soldierIndex)];
-      item = s && s.equipment ? s.equipment[slotKey] : null; remove = () => { s.equipment[slotKey] = null; };
+      item = yuvadaki(s && s.equipment, slotKey); remove = () => { s.equipment[slotKey] = null; };
     }
-    if (!item || typeof item !== 'object') return null;
+    if (!gecerliEsya(item)) return null;
     remove();
     return item;
   }
@@ -107,7 +113,9 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
         gs.state.lockedAda = Math.min(gs.state.lockedAda, gs.state.adAstraBalance);
         gs.state.sponsorAda = Math.min(Math.max(0, Number(gs.state.sponsorAda) || 0), gs.state.adAstraBalance);
         giveItem(gs, item);
-        if (typeof gs._addContribution === 'function') gs._addContribution(price * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
+        // Katkı puanı yalnız gerçekten harcanan paya (komisyon: yakım + hazine) verilir; oyuncudan oyuncuya geçen bedel harcama sayılmaz
+        // (yoksa iki hesap aralarında al-sat yaparak sahte katkı puanı üretirdi)
+        if (typeof gs._addContribution === 'function') gs._addContribution(fee * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
         return { success: true };
       });
       E.mutatePlayer(r.seller, gs => {

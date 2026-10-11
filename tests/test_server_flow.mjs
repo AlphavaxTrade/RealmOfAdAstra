@@ -152,8 +152,10 @@ try {
     const su = await call('POST', '/api/account/2fa/setup', null, tC);
     assert.equal(su.status, 200);
     assert.ok(/^otpauth:\/\/totp\//.test(su.body.uri) && su.body.qr.startsWith('data:image/svg+xml;base64,'), 'Kare kod ve uygulama bağlantısı');
-    assert.equal((await call('POST', '/api/account/2fa/enable', { code: '000000' }, tC)).status, 400, 'Yanlış kodla açılmaz');
-    const en = await call('POST', '/api/account/2fa/enable', { code: totpCode(su.body.secret, step()) }, tC);
+    assert.equal((await call('POST', '/api/account/2fa/enable', { code: '000000', password: 'gizli-sifre-123' }, tC)).status, 400, 'Yanlış kodla açılmaz');
+    assert.equal((await call('POST', '/api/account/2fa/enable', { code: totpCode(su.body.secret, step()) }, tC)).status, 400, 'Parolasız açılmaz');
+    assert.equal((await call('POST', '/api/account/2fa/enable', { code: totpCode(su.body.secret, step()), password: 'yanlis-parola-1' }, tC)).status, 400, 'Yanlış parolayla açılmaz');
+    const en = await call('POST', '/api/account/2fa/enable', { code: totpCode(su.body.secret, step()), password: 'gizli-sifre-123' }, tC);
     assert.equal(en.status, 200, JSON.stringify(en.body));
     assert.equal(en.body.backupCodes.length, 10, '10 yedek kod');
     assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'carol@ornek.com' && /AÇILDI/.test(m.subject)), 'Açılınca e-posta bildirimi');

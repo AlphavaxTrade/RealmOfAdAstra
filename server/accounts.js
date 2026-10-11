@@ -128,7 +128,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
 
   // Her durumda AYNI yanıt: e-postanın kayıtlı olup olmadığı anlaşılmaz
   async function register(email, password) {
-    const e = String(email || '').trim().toLowerCase();
+    const e = String(email || '').trim().toLowerCase().slice(0, 254);
     if (!EMAIL_RE.test(e) || e.length > 254) return { ok: false, error: 'Geçerli bir e-posta adresi yaz.' };
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
     const pass = await parolaOzetle(password);             // var olan hesapta da aynı süre geçsin
@@ -209,9 +209,12 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return { ok: true, secret, uri, qr: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64') };
   }
 
-  async function totpEnable(playerId, code) {
+  // Mührü takmak parolayı ister: çalıntı bir oturum kendi doğrulama uygulamasını kurup asıl sahibi kilitleyemesin
+  async function totpEnable(playerId, code, password) {
     const acc = q.byId.get(accountIdOf(playerId));
     if (!acc || !acc.totp_pending) return { ok: false, error: 'Önce kurulumu başlat.' };
+    const parola = await parolaDogrula(String(password || ''), acc.pass_hash);
+    if (!parola.ok) return { ok: false, error: 'Parola hatalı.' };
     if (tfaLocked(acc.id)) return { ok: false, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
     const s = matchTotp(acc.totp_pending, code, 0);
     if (!s) { tfaFail(acc.id); return { ok: false, error: 'Kod tutmadı. Uygulamadaki güncel 6 haneli kodu yaz.' }; }
@@ -248,7 +251,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   }
 
   async function login(email, password, ip = '') {
-    const e = String(email || '').trim().toLowerCase();
+    const e = String(email || '').trim().toLowerCase().slice(0, 254);
     if (locked('e:' + e) || locked('i:' + ip)) return { ok: false, error: 'Çok fazla hatalı deneme. 15 dakika sonra tekrar dene.' };
     const acc = q.byEmail.get(e);
     const kontrol = acc ? await parolaDogrula(String(password || ''), acc.pass_hash) : (await parolaDogrula('x', await sahteParolaOzeti()), { ok: false });
@@ -280,7 +283,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
 
   // Doğrulama e-postasını yeniden gönder (e-postayla; yanıt her zaman aynı)
   async function resendVerify(email) {
-    const e = String(email || '').trim().toLowerCase();
+    const e = String(email || '').trim().toLowerCase().slice(0, 254);
     const acc = EMAIL_RE.test(e) ? q.byEmail.get(e) : null;
     let extra = {};
     if (acc && !acc.email_verified && mayMail('rv:' + acc.id, 2 * 60000)) {
@@ -294,7 +297,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
 
   // Kullanıcı varlığını ele vermemek için her zaman aynı yanıt
   async function forgot(email) {
-    const e = String(email || '').trim().toLowerCase();
+    const e = String(email || '').trim().toLowerCase().slice(0, 254);
     const acc = q.byEmail.get(e);
     let extra = {};
     if (acc && mayMail('fg:' + acc.id, 60000)) {

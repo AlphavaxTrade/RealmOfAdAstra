@@ -53,8 +53,8 @@ export default function hesapRotalari(ctx) {
       return r.ok ? r : [400, { error: r.error }];
     },
     'POST /api/account/2fa/enable': async (req, me) => {
-      const { code } = await readBody(req);
-      const r = await accounts.totpEnable(me, code);
+      const { code, password } = await readBody(req);
+      const r = await accounts.totpEnable(me, code, password);
       return r.ok ? r : [400, { error: r.error }];
     },
     'POST /api/account/2fa/disable': async (req, me) => {

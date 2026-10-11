@@ -35,7 +35,7 @@ export function olusturOdemeler(w) {
         db.q.payoutMark.run('sending', null, null, clock(), p.id);
         if (p.kind === 'withdraw') sentWithdraw += p.amount;
         try {
-          const hash = await chain.sendAda(p.address, p.amount, s => db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id));
+          const hash = await chain.sendAda(p.address, p.amount, s => { db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id); db.durable(); });
           db.q.payoutMark.run('sent', hash, null, clock(), p.id);
           out.sent++;
         } catch (err) {
@@ -112,7 +112,7 @@ export function olusturOdemeler(w) {
       db.q.payoutMark.run('sending', null, null, clock(), p.id);
       if (p.kind === 'withdraw') sentWithdraw += chunk;
       try {
-        const hash = await chain.sendVault(p.kind, p.address, chunk, p.id, s => db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id));
+        const hash = await chain.sendVault(p.kind, p.address, chunk, p.id, s => { db.q.payoutSigned.run(s.hash, s.raw, s.nonce, p.id); db.durable(); });
         db.q.payoutMark.run('sent', hash, null, clock(), p.id);
         out.sent++;
         if (rest) todo.unshift(rest);

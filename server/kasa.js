@@ -229,7 +229,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
               ? { to: cfg.tokenAddress, data: ERC20.encodeFunctionData('transfer', [to, ethers.parseUnits(op.amount.toFixed(6), 18)]) }
               : { to, value: ethers.parseEther(op.amount.toFixed(9)) };
           }
-          await chain.sendTx(signer, fields, s => q.opSigned.run(s.hash, s.raw, s.nonce, op.id));
+          await chain.sendTx(signer, fields, s => { q.opSigned.run(s.hash, s.raw, s.nonce, op.id); db.durable(); });
           q.opDone.run('sent', null, clock(), op.id);
           // Zincirden yeniden okunana kadar kasa fazla görünmesin: tutarı hemen düş
           const r2 = q.get.get(op.player);

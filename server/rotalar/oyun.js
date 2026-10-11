@@ -5,7 +5,7 @@ import { kategoriOf } from '../aktiflik.js';
 import { MISAFIR_ACTIONS, runMisafirAction } from '../actions.js';
 
 export default function oyunRotalari(ctx) {
-  const { E, world, promo, kapi, cfg, accounts, readBody, safePlayer, playerPayload } = ctx;
+  const { E, world, promo, kapi, cfg, accounts, readBody, safePlayer, playerPayload, vatandasDegil } = ctx;
   // Krallık Yolu ödülleri (ASTRA) yalnız e-postası doğrulanmış hesaba verilir: yan hesapla öğretici ödülü toplanamaz
   const ODUL_ISLEMLERI = new Set(['claimOnboardingReward', 'claimOnboardingSection']);
   return {
@@ -53,6 +53,8 @@ export default function oyunRotalari(ctx) {
       try { return world.vanillaReset(); } catch (err) { return [400, { error: err.message }]; }
     },
     'POST /api/promo/redeem': async (req, me) => {
+      const kapali = vatandasDegil(me);
+      if (kapali) return kapali;
       const { code } = await readBody(req);
       const r = promo.redeem(me, code);
       return r.success ? { ok: true, message: r.message } : [400, { error: r.message }];
