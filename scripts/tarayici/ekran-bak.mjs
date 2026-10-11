@@ -50,10 +50,15 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
     });
     await bekle(300);
   }
-  await s.evaluate((k) => window.__v3.git(k), anahtar);
+  if (anahtar.startsWith('kaynak:')) {   // kaynak tepsisinden bir hammadde bölgesi: kaynak:wood
+    await s.click('#v3-kaynak-dugme');
+    await s.click(`[data-v3-kaynak="${anahtar.slice(7)}"]`);
+  } else {
+    await s.evaluate((k) => window.__v3.git(k), anahtar);
+  }
   await bekle(zengin ? 4800 : 800);   // açılışta çıkan bildirimler kaybolsun
   for (const sec of tiklar) { await s.click(sec).catch(() => hatalar.push('tıklanamadı: ' + sec)); await bekle(400); }
-  const dosya = path.join(KLASOR, `${anahtar}-${ad}${zengin ? '-zengin' : ''}.png`);
+  const dosya = path.join(KLASOR, `${anahtar.replace(/[^a-z0-9]/gi, '_')}-${ad}${zengin ? '-zengin' : ''}.png`);
   await s.screenshot({ path: dosya });
   const olcum = await s.evaluate(() => {
     const govde = document.getElementById('modal-body');

@@ -68,10 +68,11 @@ for (const [durumAdi, kur] of Object.entries(durumlar)) {
   const gs = kur();
   const b = baglam(gs);
   for (const e of ekranlar) {
-    const etiket = `${e.id} (${durumAdi})`;
-    const baslik = e.baslik(b, {});
+    for (const secenek of (e.ornekSecenekler ? e.ornekSecenekler(b) : [{}])) {
+    const etiket = `${e.id}${secenek.kaynak ? ':' + secenek.kaynak : ''} (${durumAdi})`;
+    const baslik = e.baslik(b, secenek);
     assert.ok(Array.isArray(baslik) && baslik.length === 2 && baslik.every(x => typeof x === 'string' && x), `${etiket}: başlık [simge, ad] olmalı`);
-    const html = e.govde(b, {});
+    const html = e.govde(b, secenek);
     assert.equal(typeof html, 'string', `${etiket}: gövde metin olmalı`);
     assert.ok(html.length > 80, `${etiket}: gövde çok kısa`);
     const metin = gorunurMetin(html);
@@ -85,6 +86,7 @@ for (const [durumAdi, kur] of Object.entries(durumlar)) {
     }
     for (const m of html.matchAll(/data-e-degis="([^"]+)"/g)) {
       assert.ok(e.degisimler && typeof e.degisimler[m[1]] === 'function', `${etiket}: data-e-degis="${m[1]}" için eylem yok`);
+    }
     }
   }
 }

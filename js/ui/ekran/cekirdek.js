@@ -13,7 +13,7 @@
 //     canli: (kok, b, secenek) => …                          // ya da: panel açıkken saniyede bir elle hafif güncelleme
 //   }
 // Eylem sonrası ekran yeniden çizilir (kaydırma ve açık <details> bölümleri korunur); eylem false döndürürse çizilmez,
-// { git: 'ekranId', secenek } döndürürse o ekrana geçilir.
+// { git: 'ekranId', secenek } döndürürse o ekrana geçilir, { kapat: true } paneli kapatır.
 //
 // Bağlam (b): oyun nesneleri ve arayüz işlevleri tek yerde; app.js bir kez verir. Ekranlar başka bir şeye dokunmaz.
 
@@ -164,6 +164,11 @@ async function calistir(fn, el) {
   b.hudYenile();
   // Eylem sırasında panel kapandıysa (örn. öğretici turu kapattı) yeniden açılmaz
   if (b.panelAcik && !b.panelAcik()) { aktif = null; return; }
+  if (sonuc && typeof sonuc === 'object' && sonuc.kapat) {
+    aktif = null;
+    if (b.panelKapat) b.panelKapat();
+    return;
+  }
   if (sonuc && typeof sonuc === 'object' && sonuc.git) {
     ac(sonuc.git, sonuc.secenek || {});
     return;

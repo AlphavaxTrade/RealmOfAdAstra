@@ -246,7 +246,12 @@ export function kurV3Kabuk(api) {
     const yukseklik = balon.offsetHeight;
     balon.style.top = `${r.bottom + 8 + yukseklik > window.innerHeight ? Math.max(10, r.top - yukseklik - 8) : r.bottom + 8}px`;
   }, true);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') balonKapat(); }, true);
+  // Terim balonu açıkken Esc yalnız balonu kapatır (panel açık kalır)
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || balon.hidden) return;
+    e.stopPropagation();
+    balonKapat();
+  }, true);
 
   $('v3-profil').addEventListener('click', () => { tepsiAc(false); api.openInventory(); });
   $('v3-bakiye').addEventListener('click', () => { tepsiAc(false); api.openWallet(); });

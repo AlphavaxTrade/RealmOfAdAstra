@@ -5,3 +5,5 @@ import './merkez.js';
 import './koy.js';
 import './sifahane.js';
 import './uzay.js';
+import './bolge.js';
+import './taverna.js';

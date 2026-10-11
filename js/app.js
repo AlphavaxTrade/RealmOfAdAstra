@@ -201,6 +201,7 @@ ekranBaglamKur({
   hudYenile: () => renderTopBar(),
   panelKok: () => dom.modalBody,
   panelAcik: () => !!(dom.rpgModal && dom.rpgModal.classList.contains('active')),
+  panelKapat: () => closeModal(),
   panelYaz: ([simge, ad], html) => {
     dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
     dom.modalBody.innerHTML = html;
@@ -1334,150 +1335,19 @@ const ZONE_OF_NODE = key => ((RES_META()[key] || {}).zone) || key;
 const NODE_OF_ZONE_UI = zoneId => RES_KEYS().find(k => ZONE_OF_NODE(k) === zoneId) || null;
 const ZONE_NAMES = { wheat: 'Güneş Tarlası & Değirmen', stone: 'Taş Ocağı', wood: 'Zümrüt Ormanı & Oduncu', coal: 'Kömür Ocağı', iron: 'Demir Madeni & Tamirhane', herb: 'Şifalı Ot Bahçesi' };
 const ZONE_LABELS = { village: '🏘️ Köy Evleri', council: '🏛️ Sirius Konseyi', healer: '🌿 Şifahane', spaceport: '🚀 Uzay Limanı' };
-const TOOL_NAMES = { sickle: 'Orak', chisel: 'Keski', axe: 'Balta', coalpick: 'Kömür Kazması', pickaxe: 'Kazma', herbknife: 'Ot Bıçağı' };
 const ZONE_TITLE = key => { const m = RES_META()[key] || {}; const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[key] || {}; return `${m.icon || cap.icon || ''} ${ZONE_NAMES[key] || cap.name || key}`; };
 const fmt3 = v => (Math.round((Number(v) || 0) * 1000) / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 3 });
-
-function renderResourceZoneHtml(nodeId) {
-  const state = gameState.state;
-  const meta = RES_META()[nodeId] || {};
-  const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[nodeId] || {};
-  const toolId = meta.tool || cap.requiredTool;
-  const toolCfg = (GAME_CONFIG.TOOLS || {})[toolId] || {};
-  const maxDur = toolCfg.maxDurability || 4320;
-  const tool = (state.tools || {})[toolId] || { durability: maxDur };
-  const durPct = Math.round(((tool.durability != null ? tool.durability : maxDur) / maxDur) * 100);
-  const repCost = gameState.calculateRepairCost(toolId) || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
-  const activeExp = state.activeExpeditions[nodeId];
-  const isSpeedActive = gameState.isBuffActive('speed_' + nodeId);
-  const currentDuration = gameState.getExpeditionDurationHours();
-  const currentDurationMin = gameState.getExpeditionDurationMinutes();
-  const ratePm = gameState.getResourceRatePerMinute(nodeId);
-  const estYield = Math.floor(ratePm * currentDurationMin * (isSpeedActive ? 1.5 : 1));
-  const name = meta.name || cap.name || nodeId;
-  const icon = meta.icon || cap.icon || '';
-  const toolName = toolCfg.name || TOOL_NAMES[toolId] || toolId;
-  const staminaCost = gameState.getExpeditionStaminaCost();
-  const lowStamina = state.stamina < staminaCost;
-  const hak = gameState.getUretimHakki ? gameState.getUretimHakki(nodeId) : null;
-  return `
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">${icon} ${name} Seferi</div>
-          <div class="card-badge">${currentDuration} Saat (${currentDurationMin} dk) ${isSpeedActive ? '⚡ 1.5x Hızlı' : ''}</div>
-        </div>
-        <div style="font-size: 0.84rem; color: #94a3b8; margin: 4px 0 10px 0; line-height: 1.4;">
-          ⚡ <strong>Üretim:</strong> ${(Math.round(ratePm * 100) / 100).toLocaleString('tr-TR')} ${name} / dakika (${Math.round(ratePm * 60).toLocaleString('tr-TR')} / saat, seviye bonusu dahil)<br>
-          📦 <strong>Beklenen sefer kazancı:</strong> ~${estYield} ${name} | 🔧 <strong>Aşınma:</strong> -${currentDurationMin} dk
-          ${hak ? `<br>🎫 <strong>Üretim Hakkın:</strong> bugün alınabilir <strong style="color:${hak.canTake > 0 ? '#4ade80' : '#f87171'};">${fmtInt(hak.canTake)}</strong> ${name} · bu hafta ${fmtInt(hak.used)} / ${fmtInt(hak.released)} açılan (haftalık ${fmtInt(hak.weekly)}, ağırlık ×${hak.weight})${hak.extra > 0 ? ` · +${fmtInt(hak.extra)} başkalarının kullanmadığı` : ''}` : ''}
-        </div>
-        <div class="durability-row">
-          <span style="font-size: 0.95rem; font-weight: 700;">🔧 ${toolName} Durumu:</span>
-          <span class="card-badge" style="color: ${tool.durability <= maxDur / 6 ? '#ef4444' : '#22c55e'};">${tool.durability} / ${maxDur} dk (%${durPct})</span>
-        </div>
-        ${activeExp ? renderExpeditionActiveBox(nodeId) : `
-          <button class="btn-clean btn-modal-start" data-node="${nodeId}" ${tool.durability <= 0 || lowStamina ? 'disabled' : ''}>
-            ${currentDuration} Saatlik ${name} Görevine Gönder (-${staminaCost.toLocaleString('tr-TR')} ⚡)
-          </button>
-          ${lowStamina && (state.inventory.scroll_stamina || 0) > 0 ? `
-            <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_stamina" style="margin-top: 6px; width: 100%; font-weight: 800;" title="100 Stamina Doldurma Parşömeni Kullan">
-              ⚡ Yetersiz Stamina! Parşömen Kullan (${state.inventory.scroll_stamina} Adet • +100 ⚡)
-            </button>
-          ` : ''}
-        `}
-      </div>
-
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🔨 ${toolName} Tamiratı</div>
-          <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">
-            ${repCost.missingDurability > 0 ? `${repCost.woodCost} Odun + ${repCost.ironCost} Demir + ${fmt3(repCost.adAstraCost)} ASTRA` : '✅ Tam Sağlam'}
-          </span>
-        </div>
-        <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">
-          Onarım bedeli: aşınan her dakika için odun + demir (dakikalık üretimin %25'i, aletlere bölünmüş) + bu malzemenin pazar değerinin %30'u kadar ASTRA (Eksik: ${repCost.missingDurability} dk)
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn-clean btn-clean-outline btn-modal-repair" data-tool="${toolId}" style="flex: 1; min-width: 160px;" ${repCost.missingDurability <= 0 ? 'disabled' : ''}>
-            ${repCost.missingDurability <= 0 ? `${toolName} Tamamen Sağlam` : `${toolName} Onar (${repCost.woodCost}🌲 + ${repCost.ironCost}⛏️ + ${fmt3(repCost.adAstraCost)} 🪙)`}
-          </button>
-        </div>
-      </div>
-    `;
-}
-
-function renderExpeditionActiveBox(nodeId) {
-  const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-  const accrued = gameState.getAccruedExpeditionHarvest(nodeId);
-  const colorMap = Object.fromEntries(RES_KEYS().map(k => [k, (RES_META()[k] || {}).color]));
-  const nodeColor = colorMap[nodeId] || '#ca8a04';
-
-  const cap = gameState.getWarehouseCapacity();
-  const limit = cap[nodeId];
-  const currentInv = Number(gameState.state.inventory[nodeId]) || 0;
-  const availableRoom = limit != null ? Math.max(0, limit - currentInv) : accrued.accruedAmount;
-  const isCompletelyFull = limit != null && availableRoom <= 0;
-  const isPartialRoom = limit != null && availableRoom > 0 && (availableRoom < accrued.accruedAmount);
-
-  return `
-    <div class="expedition-active-box" id="modal-exp-box-${nodeId}" style="border-color: ${nodeColor};">
-      <div class="exp-active-header">
-        <span class="exp-live-label" style="color: ${nodeColor};">⏳ ${nodeConfig.name} Seferi Sürüyor</span>
-        <span class="exp-live-pct" id="modal-exp-pct-${nodeId}">%${accrued.pct}</span>
-      </div>
-      
-      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; font-weight: 700;">
-        <span>Kalan Süre:</span>
-        <strong id="modal-exp-time-${nodeId}" style="color: #fff; font-size: 0.95rem;">${formatCountdown(accrued.remainingSeconds)}</strong>
-      </div>
-
-      <div class="exp-live-track">
-        <div class="exp-live-fill" id="modal-exp-fill-${nodeId}" style="width: ${accrued.pct}%; background: linear-gradient(90deg, #ca8a04, ${nodeColor});"></div>
-      </div>
-
-      <div class="exp-accrued-row">
-        <span>${nodeConfig.icon} Biriken Kaynak:</span>
-        <strong class="exp-accrued-val" id="modal-exp-accrued-${nodeId}">+${accrued.accruedAmount} ${nodeConfig.name} (+${accrued.accruedXp || 0} XP)</strong>
-      </div>
-
-      ${isCompletelyFull ? `
-        <div style="background: rgba(185, 28, 28, 0.25); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 0.84rem; color: #fca5a5; text-align: center; font-weight: 800; line-height: 1.4;">
-          ⚠️ Silo'nuz tamamen dolu (${currentInv.toFixed(0)} / ${limit})!
-          <div style="font-size: 0.76rem; color: #fee2e2; font-weight: 400; margin-top: 3px;">Seferdeki +${accrued.accruedAmount} ${nodeConfig.name} mahsulünü almak için lütfen silonuzu büyütün veya silonuzda yer açın.</div>
-        </div>
-      ` : isPartialRoom ? `
-        <div style="background: rgba(30, 58, 138, 0.35); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 10px 12px; margin-top: 8px; font-size: 0.84rem; color: #bae6fd; text-align: center; font-weight: 800; line-height: 1.4;">
-          📥 Siloda ${availableRoom.toFixed(0)} Adet Boş Yer Var (Mevcut: ${currentInv.toFixed(0)} / ${limit})
-          <div style="font-size: 0.76rem; color: #e0f2fe; font-weight: 400; margin-top: 3px;">Silonuzu dolduracak kadar (+${availableRoom.toFixed(0)} ${nodeConfig.name}) toplayabilirsiniz! Kalan ${(accrued.accruedAmount - availableRoom).toFixed(0)} ${nodeConfig.name} seferde bekletilecek, ambarınız %100 dolacağı için silonuzu hemen büyütebilirsiniz!</div>
-        </div>
-      ` : ''}
-
-      <div class="exp-btn-row">
-        <button class="btn-clean btn-clean-purple btn-modal-partial-claim" data-node="${nodeId}" id="btn-modal-partial-${nodeId}" style="flex: 1;" ${accrued.accruedAmount <= 0 || isCompletelyFull ? 'disabled' : ''}>
-          ${isPartialRoom ? `⚡ BOŞ YERİ DOLDUR (+${availableRoom.toFixed(0)} Al)` : `⚡ ERKEN TOPLA (+${accrued.accruedAmount} Al)`}
-        </button>
-        ${accrued.isCompleted ? `
-          <button class="btn-clean ${isCompletelyFull ? 'btn-clean-amber' : isPartialRoom ? 'btn-clean-blue' : 'btn-clean-green'} btn-modal-claim" data-node="${nodeId}" style="flex: 1; ${isCompletelyFull ? 'background: #78350f; color: #fde047; border: 1px solid #f59e0b;' : isPartialRoom ? 'background: #0284c7; color: #fff; border: 1.5px solid #38bdf8; font-weight: 800;' : ''}">
-            ${isCompletelyFull 
-              ? `⚠️ SİLO TAMAMEN DOLU: YER AÇIN` 
-              : isPartialRoom 
-                ? `📥 SİLOYU DOLDUR (+${availableRoom.toFixed(0)} Al, Kalanı Beklet)` 
-                : '🏁 TAMAMLANDI - TÜMÜNÜ TOPLA'}
-          </button>
-        ` : ''}
-      </div>
-    </div>
-  `;
-}
 
 // =========================================================================
 // 4. BÖLGE MODALLERİ (ORMAN, MADEN, ÇİFTLİK, BALIKÇI, KIŞLA, TAVERNA, AMM PAZAR, KOLEZYUM)
 // =========================================================================
-const YENI_EKRAN_BOLGE = { village: 'koy', healer: 'sifahane', spaceport: 'uzay' };
+const YENI_EKRAN_BOLGE = { village: 'koy', healer: 'sifahane', spaceport: 'uzay', tavern: 'taverna' };
 
 function openTownZoneModal(zoneId, zoneName) {
   if (!featureGate(zoneId)) return;
   if (YENI_EKRAN_BOLGE[zoneId]) { ekranAc(YENI_EKRAN_BOLGE[zoneId]); return; }
+  const kaynakBolgesi = NODE_OF_ZONE_UI(zoneId);
+  if (kaynakBolgesi) { ekranAc('bolge', { kaynak: kaynakBolgesi }); return; }
   if (zoneId === 'barracks') {
     openBarracksModal();
     return;
@@ -1500,14 +1370,8 @@ function openTownZoneModal(zoneId, zoneName) {
 
   let html = '';
 
-  // 1-3. HAMMADDE ALANLARI (v2: tarla, taş ocağı, orman, kömür ocağı, maden, ot bahçesi — tek şablon)
-  const zoneNode = NODE_OF_ZONE_UI(zoneId);
-  if (zoneNode) {
-    html = renderResourceZoneHtml(zoneNode);
-  }
-
-  // 2.5 DEMİRCİ & TAMİRHANE (ŞEHİR MERKEZİNDEKİ EV) - Geniş Ekran 3 Sütunlu Entegre Cephanelik, Dövme ve Donatım Merkezi
-  else if (zoneId === 'blacksmith') {
+  // DEMİRCİ & TAMİRHANE (ŞEHİR MERKEZİNDEKİ EV) - Geniş Ekran 3 Sütunlu Entegre Cephanelik, Dövme ve Donatım Merkezi
+  if (zoneId === 'blacksmith') {
 
     const equipConfig = GAME_CONFIG.EQUIPMENT_RECIPES;
     const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
@@ -2193,110 +2057,6 @@ function openTownZoneModal(zoneId, zoneName) {
       <div class="amm-trade-container">
         ${renderAmmTradeCard(['boxes', 'keys'].includes(marketSelectedRes) || RES_KEYS().includes(marketSelectedRes) ? marketSelectedRes : 'wheat')}
       </div>
-    `;
-  }
-
-  // 5. TAVERNA (MATEMATİKSEL BOOSTLAR & OTOMASYON)
-  else if (zoneId === 'tavern') {
-    const isPaused = gameState.isBotPaused();
-    const isBotActive = gameState.isAutoCollectorActive();
-    const prereq = gameState.checkBotPrerequisites();
-    const expiry = gameState.getAutoCollectorExpiry();
-    const remainingMs = isPaused ? (gameState.state.botPausedRemainingMs || 0) : Math.max(0, expiry - Date.now());
-    const remHours = Math.floor(remainingMs / (3600 * 1000));
-    const remMinutes = Math.floor((remainingMs % (3600 * 1000)) / (60 * 1000));
-    const botRemainingText = `${remHours} saat ${remMinutes} dakika`;
-
-    const botCalc = gameState.calculateTavernaBotProfitAndCost();
-    const isSiloAutoUpgrade = gameState.state.botSiloAutoUpgrade !== false;
-
-    const n0 = v => Math.round(Number(v) || 0).toLocaleString('tr-TR');
-    const expState = k => gameState.state.activeExpeditions?.[k] ? (gameState.state.activeExpeditions[k].isCompleted ? '✅ toplanıyor' : '⏳ sürüyor') : '💤 boşta';
-    const statusColor = isPaused ? '#facc15' : (isBotActive ? '#4ade80' : '#94a3b8');
-    html = `
-      <!-- 1. Bot: durum ve satın alma (en üstte) -->
-      <div class="clean-card" style="border-color: ${isPaused ? '#eab308' : (isBotActive ? '#4ade80' : '#f59e0b')}; background: #181109;">
-        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
-          <div style="width:84px; height:84px; flex:0 0 auto; font-size:3rem; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); border-radius:14px; border:1px solid rgba(255,255,255,.08);">
-            <img src="assets/ui/bot.webp" alt="" draggable="false" style="width:76px; height:76px; object-fit:contain; image-rendering:pixelated;" data-fb="text:🤖">
-          </div>
-          <div style="flex:1; min-width:220px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-              <div style="font-size:1.1rem; font-weight:900; color:#fff;">Otomasyon Botu</div>
-              <div class="card-badge" style="color:${statusColor}; font-weight:800;">${isPaused ? `⏸️ Duraklatıldı · ${botRemainingText} donduruldu` : (isBotActive ? `✅ Çalışıyor · ${botRemainingText} kaldı` : '💤 Kapalı')}</div>
-            </div>
-            <div style="font-size:0.85rem; color:#cbd5e1; line-height:1.5; margin-top:4px;">
-              Sen yokken altı alanda (buğday, taş, odun, kömür, demir, şifalı ot) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <strong>günlük net kârın yarısı</strong>: şu an 24 saat için <strong style="color:#facc15;">~${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ASTRA</strong> (sana kalan net kâr ~${n0((botCalc?.dailyNetProfitAda || botCalc?.netProfitAda || 0) - (botCalc?.dailyBotCostAda || botCalc?.botCostAda || 0))} ASTRA).
-            </div>
-          </div>
-        </div>
-        ${isPaused ? `
-          <div style="background: rgba(234,179,8,0.15); border: 1px solid #ca8a04; border-radius: 8px; padding: 10px 12px; margin-top: 10px; font-size: 0.82rem; color: #fef08a; line-height:1.5;">
-            <strong>Bot bekliyor:</strong> çalışmak ve aletleri onarmak için deponda en az 50 demir, 50 odun, 50 buğday ve 50 ASTRA olmalı. Kalan süren (${botRemainingText}) bu sırada azalmaz.
-            <br><strong>Eksikler:</strong> ${prereq.missingText} — tamamladığın anda bot kaldığı yerden devam eder.
-          </div>
-        ` : ''}
-        <div class="bot-package-row" style="margin-top:12px;">
-          ${((GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.PACKAGE_HOURS) || [24]).map(h => `
-            <button class="btn-clean btn-gold btn-buy-bot-package" id="${h === 24 ? 'btn-buy-taverna-bot' : 'btn-buy-taverna-bot-' + h}" data-hours="${h}">
-              <span class="pkg-title">${isBotActive ? '⚡ +' + h + ' saat uzat' : '🤖 ' + h + ' saatlik bot'}</span>
-              <span class="pkg-price" data-bot-pkg-price="${h}">${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ASTRA</span>
-            </button>`).join('')}
-          ${!gameState.state.botTrialUsed ? `
-            <button class="btn-clean btn-outline" id="btn-start-bot-trial">
-              <span class="pkg-title">🎁 ${(GAME_CONFIG.TAVERNA_BOT && GAME_CONFIG.TAVERNA_BOT.TRIAL_HOURS) || 1} saat ücretsiz dene</span>
-              <span class="pkg-price">Bir kerelik hediye</span>
-            </button>` : ''}
-        </div>
-      </div>
-
-      <!-- 2. Seferlerin durumu -->
-      <div class="clean-card" style="padding:12px 14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-          <span style="font-weight:800; font-size:0.88rem; color:${isBotActive ? '#4ade80' : '#94a3b8'};">${isBotActive ? '🟢 Bot çalışıyor' : '⚪ Bot beklemede'} · seferler</span>
-          ${isBotActive ? `<button id="btn-trigger-bot-cycle" class="btn-clean" style="width:auto; padding:4px 10px; font-size:0.75rem; background:rgba(34,197,94,0.2); border:1px solid #22c55e; color:#4ade80; cursor:pointer;" title="Boştaki seferleri hemen başlat">⚡ Boş seferleri şimdi başlat</button>` : ''}
-        </div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.8rem;">
-          ${RES_KEYS().map(k => { const mm = RES_META()[k] || {}; return [k, mm.name || k, mm.color || '#94a3b8', mm.icon || '']; }).map(([k, nm, c, e]) => `
-            <div style="background:rgba(255,255,255,0.04); padding:8px 10px; border-radius:6px; border-left:3px solid ${c}; display:flex; align-items:center; gap:8px;">
-              <span style="width:22px; height:22px; display:inline-flex;">${resImg(k, e, 'width:22px;height:22px;')}</span>
-              <span><span style="color:#94a3b8;">${nm}:</span> <strong style="color:#fff;">${expState(k)}</strong></span>
-            </div>`).join('')}
-        </div>
-      </div>
-
-      <!-- 3. Ayarlar -->
-      <div class="clean-card" style="padding:12px 14px;">
-        <div style="font-weight:800; font-size:0.88rem; color:#e2e8f0; margin-bottom:8px;">⚙️ Bot ayarları</div>
-        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">Silo dolarsa:</div>
-        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 4px;">
-          <input type="radio" name="bot_silo_opt" value="upgrade" ${isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
-          <span><strong>Siloyu büyüt</strong> — güvenlik payının üstündeki ASTRA'yı kullanır, yetmezse fazla ürünü satar.</span>
-        </label>
-        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; color: #cbd5e1; cursor: pointer; margin-bottom: 10px;">
-          <input type="radio" name="bot_silo_opt" value="sell" ${!isSiloAutoUpgrade ? 'checked' : ''} style="margin-top:2px;" />
-          <span><strong>Fazlasını sat</strong> — silonun yarısını yedek tutar, fazlasını pazarda satar.</span>
-        </label>
-        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; border-top:1px solid rgba(255,255,255,.06); padding-top:10px;">
-          <input type="checkbox" id="chk-bot-auto-renew" style="margin-top: 3px; transform: scale(1.2); accent-color: #10b981; cursor: pointer;" ${gameState.state.botAutoRenew24h ? 'checked' : ''} />
-          <span style="font-size:0.8rem; color:#cbd5e1;"><strong style="color:#34d399;">Süre bitince otomatik yenile</strong> — hesabında yeterli ASTRA varsa bot 24 saat daha çalışır.</span>
-        </label>
-      </div>
-
-      <!-- 4. Ayrıntı -->
-      <details class="clean-card" style="padding:12px 14px;">
-        <summary style="cursor:pointer; font-weight:800; font-size:0.86rem; color:#fde047;">📊 Ücret nasıl hesaplanıyor?</summary>
-        <div style="display:grid; grid-template-columns: 1fr auto; gap:6px; font-size:0.8rem; color:#cbd5e1; margin-top:10px;">
-          <div>24 saatlik üretimin pazar değeri</div><div style="text-align:right; font-weight:700; color:#4ade80;">+${n0(botCalc?.dailyGrossValAda || botCalc?.grossRevenueAda)} ASTRA</div>
-          <div>Stamina için buğday (${n0(botCalc?.dailyWheatNeededForStamina)} buğday)</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyStaminaCostAda || botCalc?.staminaWheatCostAda)} ASTRA</div>
-          <div>Alet onarımı</div><div style="text-align:right; font-weight:700; color:#f87171;">−${n0(botCalc?.dailyToolRepairAda || botCalc?.toolRepairCostAda)} ASTRA</div>
-          <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; font-weight:800; color:#fff;">Net kâr</div><div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:4px; text-align:right; font-weight:800; color:#38bdf8;">+${n0(botCalc?.dailyNetProfitAda || botCalc?.netProfitAda)} ASTRA</div>
-          <div style="font-weight:800; color:#ca8a04;">Bot ücreti (net kârın yarısı)</div><div style="text-align:right; font-weight:900; color:#facc15;">${n0(botCalc?.dailyBotCostAda || botCalc?.botCostAda)} ASTRA</div>
-        </div>
-        <div style="font-size:0.78rem; color:#94a3b8; margin-top:10px; line-height:1.5;">
-          🛡️ <strong>Güvenlik payı:</strong> Bot kasanda en az <strong>${gameState.getBotAdaReserve().toLocaleString('tr-TR')} ASTRA</strong> bırakır${gameState.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}. Siloyu bu parayla büyütmez; alet onarımı için önce fazla ürünü satar, satacak ürün kalmazsa botun durmaması için onarımı bu paradan yapar. Oyun kapalıyken de çalışır; döndüğünde "Sen yokken olanlar" raporunu görürsün.
-        </div>
-      </details>
     `;
   }
 
@@ -5657,55 +5417,6 @@ function initAppEvents() {
       return;
     }
 
-    // Sefer Başlatma
-    const startBtn = e.target.closest('.btn-modal-start');
-    if (startBtn) {
-      const node = startBtn.dataset.node;
-      const res = gameState.startExpedition(node);
-      if (res.success) {
-        showToast(res.message, 'success');
-        closeModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Sefer Toplama (Tam veya Kısmi Silo Doldurma Claim)
-    const claimBtn = e.target.closest('.btn-modal-claim');
-    if (claimBtn) {
-      const node = claimBtn.dataset.node;
-      const res = gameState.claimExpedition(node);
-      if (res.success) {
-        showToast(res.message, 'success');
-        if (res.isPartialSiloFill) {
-          openTownZoneModal(node, GAME_CONFIG.GLOBAL_RESOURCE_CAPS[node]?.name || node);
-        } else {
-          closeModal();
-        }
-      } else {
-        showToast(res.message, (res.isWarehouseFull || res.isQuotaWait) ? 'warning' : 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Sefer Erken Toplama (Partial Claim)
-    const partialClaimBtn = e.target.closest('.btn-modal-partial-claim');
-    if (partialClaimBtn) {
-      const node = partialClaimBtn.dataset.node;
-      const res = gameState.claimPartialExpedition(node);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openTownZoneModal(node, GAME_CONFIG.GLOBAL_RESOURCE_CAPS[node]?.name || node);
-      } else {
-        showToast(res.message, (res.isWarehouseFull || res.isQuotaWait) ? 'warning' : 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
     // Kışla Asker Seçimi
     const selectSoldierBtn = e.target.closest('.btn-select-soldier-card');
     if (selectSoldierBtn) {
@@ -5914,21 +5625,6 @@ function initAppEvents() {
         showToast('İyileştirilecek yaralı asker bulunmuyor veya kaynaklar yetersiz.', 'info');
       }
       openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // Alet Onarımı
-    const repairBtn = e.target.closest('.btn-modal-repair');
-    if (repairBtn) {
-      const tool = repairBtn.dataset.tool;
-      const res = gameState.repairTool(tool);
-      if (res.success) {
-        showToast(res.message, 'success');
-        closeModal();
-      } else {
-        showToast(res.message, 'error');
-      }
       renderTopBar();
       return;
     }
@@ -6434,45 +6130,6 @@ function initAppEvents() {
       return;
     }
 
-    // Taverna: 24 Saatlik Otomasyon & Tamir Botu Başlat/Uzat (#btn-buy-taverna-bot)
-    if (e.target.closest('#btn-start-bot-trial')) {
-      const res = gameState.startBotTrial();
-      showToast(res.message, res.success ? 'success' : 'error');
-      if (res.success) openTownZoneModal('tavern', '🍺 Taverna & Han');
-      renderTopBar();
-      return;
-    }
-    const botPkgBtn = e.target.closest('.btn-buy-bot-package');
-    if (botPkgBtn) {
-      const chkRenew = document.getElementById('chk-bot-auto-renew');
-      if (chkRenew) {
-        gameState.setBotAutoRenew24h(chkRenew.checked);
-      }
-      const siloOpt = document.querySelector('input[name="bot_silo_opt"]:checked');
-      if (siloOpt) {
-        gameState.setBotSiloOption(siloOpt.value === 'upgrade');
-      }
-      const res = gameState.buyTavernaAutomationBot(false, Number(botPkgBtn.dataset.hours) || 24);
-      if (res.success) {
-        showToast(res.message, 'success');
-        if (typeof sound !== 'undefined' && sound.playLevelUp) sound.playLevelUp();
-        openTownZoneModal('tavern', '🍺 Taverna & Han');
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Taverna: Canlı Boş Seferleri Başlat Konsol Butonu (#btn-trigger-bot-cycle)
-    if (e.target.closest('#btn-trigger-bot-cycle')) {
-      gameState.runTavernaAutomationCycle();
-      showToast('🚀 Otonom seferler ve tamir döngüsü hemen tetiklendi!', 'success');
-      renderTopBar();
-      openTownZoneModal('tavern', '🍺 Taverna & Han');
-      return;
-    }
-
     // Karnaval: Sekme Geçişi (.carnival-tab-btn)
     const carnTabBtn = e.target.closest('.carnival-tab-btn');
     if (carnTabBtn) {
@@ -6810,25 +6467,6 @@ function initAppEvents() {
       return;
     }
 
-    // Taverna 24s Bot Silo Doluluk Seçeneği Değişimi
-    if (e.target && e.target.name === 'bot_silo_opt') {
-      const autoUpgrade = e.target.value === 'upgrade';
-      gameState.setBotSiloOption(autoUpgrade);
-      showToast(autoUpgrade ? '🤖 Bot: Silo dolunca otomatik yükseltme modu seçildi.' : '🤖 Bot: Silo dolunca Akıllı Satış modu (Döngü Kazancı + %5 Güvenlik Marjı) seçildi.', 'info');
-      return;
-    }
-
-    // Taverna 24s Bot Otomatik Yenileme Seçeneği Değişimi
-    if (e.target && e.target.id === 'chk-bot-auto-renew') {
-      const isAutoRenew = !!e.target.checked;
-      gameState.setBotAutoRenew24h(isAutoRenew);
-      if (isAutoRenew) {
-        showToast('🔄 24 saat bitince hesapta yeterli ASTRA varsa bot otomatik olarak tekrar satın alınıp devam edecek.', 'success');
-      } else {
-        showToast('⏸️ 24 saat bitince bot otomatik yenilemesi kapatıldı.', 'info');
-      }
-      return;
-    }
   });
 
 }
@@ -7381,32 +7019,6 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
     }
   }
 
-  // 3. Taverna Bot Modalı Açıksa Canlı Fiyat Güncellemesi
-  dom.modalContainer.querySelectorAll('[data-bot-pkg-price]').forEach(el => {
-    const h = Number(el.dataset.botPkgPrice) || 24;
-    el.textContent = `${gameState.getBotPackageCost(h).toLocaleString('tr-TR')} ASTRA`;
-  });
-
-  // 4. Alet Onarım Butonları Açıksa (Balta, Kazma, Orak) Canlı Güncelle
-  const repairBtns = dom.modalContainer.querySelectorAll('.btn-modal-repair');
-  repairBtns.forEach(btn => {
-    const tool = btn.dataset.tool;
-    if (tool) {
-      const cost = gameState.calculateRepairCost(tool);
-      if (cost) {
-        if (cost.missingDurability <= 0) {
-          btn.disabled = true;
-          const toolNames = { axe: 'Balta', pickaxe: 'Kazma', sickle: 'Orak' };
-          btn.innerText = `${toolNames[tool] || 'Alet'} Tamamen Sağlam`;
-        } else {
-          btn.disabled = false;
-          const toolActions = { axe: 'Baltayı Onar', pickaxe: 'Kazmayı Onar', sickle: 'Orağı Onar' };
-          btn.innerText = `${toolActions[tool] || 'Onar'} (${cost.woodCost}🌲 + ${cost.ironCost}⛏️ + ${cost.adAstraCost} 🪙)`;
-        }
-      }
-    }
-  });
-
   // 5. Demirci Teçhizat Dövme Butonları & Canlı AMM ASTRA Fiyatları
   const craftBtns = dom.modalContainer.querySelectorAll('.btn-craft-equipment');
   craftBtns.forEach(btn => {
@@ -7702,28 +7314,6 @@ function uiGameLoop(currentTime) {
     if (loopUiAccMs < 250) return;
     loopUiAccMs = 0;
     tickPlayerGuide(currentTime);
-
-    // Canlı Açık Sefer Modalı Sayacı Güncelleme
-    RES_KEYS().forEach(nodeId => {
-      const timeEl = document.getElementById(`modal-exp-time-${nodeId}`);
-      const pctEl = document.getElementById(`modal-exp-pct-${nodeId}`);
-      const fillEl = document.getElementById(`modal-exp-fill-${nodeId}`);
-      const accEl = document.getElementById(`modal-exp-accrued-${nodeId}`);
-      const partBtn = document.getElementById(`btn-modal-partial-${nodeId}`);
-      if (timeEl && fillEl) {
-        const acc = gameState.getAccruedExpeditionHarvest(nodeId);
-        timeEl.innerText = formatCountdown(acc.remainingSeconds);
-        if (pctEl) pctEl.innerText = `%${acc.pct}`;
-        fillEl.style.width = `${acc.pct}%`;
-        if (accEl) {
-          accEl.innerText = `+${acc.accruedAmount} ${GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId].name} (+${acc.accruedXp || 0} XP)`;
-        }
-        if (partBtn) {
-          partBtn.disabled = acc.accruedAmount <= 0;
-          partBtn.innerText = `⚡ ERKEN TOPLA (+${acc.accruedAmount} Al)`;
-        }
-      }
-    });
 
     // Zindan Üst Barındaki Dinamik Sayıcılar
     const dkKeys = document.getElementById('dungeon-dock-keys');
