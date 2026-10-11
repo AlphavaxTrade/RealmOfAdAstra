@@ -44,7 +44,7 @@ const menuTikla = async (eylem, miktar) => {
   if (eylem === 'reset-council') { await sayfa.locator('[data-v3-tamam]').click({ timeout: 4000 }); }
   await bekle(2500);
 };
-const paletle = async ad => { await sayfa.keyboard.press('Escape'); await bekle(300); await sayfa.keyboard.press('Control+k'); await bekle(500); await sayfa.keyboard.type(ad); await bekle(400); await sayfa.locator('.cmd-palette-item').first().click(); await bekle(1400); };
+const paletle = async ad => { await sayfa.keyboard.press('Escape'); await bekle(300); await sayfa.keyboard.press('Control+k'); await bekle(500); await sayfa.keyboard.type(ad); await bekle(400); await sayfa.locator('.v3-palet-oge').first().click(); await bekle(1400); };
 const modalMetni = () => sayfa.evaluate(() => (document.getElementById('modal-body') || document.body).innerText);
 
 try {

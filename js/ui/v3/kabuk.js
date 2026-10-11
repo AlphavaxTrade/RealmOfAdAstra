@@ -8,6 +8,7 @@ import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
 import { SOZLUK } from './sozluk.js';
 import { kurTur } from './tur.js';
 import { kurLab } from './lab.js';
+import { komutListesi, kurPalet, kisayolHedefi } from './palet.js';
 import { ayarOku, ayarYaz, ayarDogrula, ayarUygula, ayarlarHtml, baglantiDurumu, BAGLANTI_METNI } from './ayarlar.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,7 +18,7 @@ const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
-export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc }) {
+export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc, paletAc }) {
   return {
     merkez: () => api.openDashboard(),
     seferler: () => { api.closeModal(); yanAc(true); },
@@ -42,7 +43,7 @@ export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc
     hazine: () => api.openTreasury(),
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
     rehber: () => api.openOgretici(),
-    komut: () => { api.closeModal(); api.openPalette(); },
+    komut: () => { api.closeModal(); paletAc(); },
     ayarlar: () => ayarlarAc(),
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
     surum: () => api.openChangelog(),
@@ -166,7 +167,35 @@ export function kurV3Kabuk(api) {
     ayarUygula(ayar, document.documentElement);
     ayarlarAc();
   }, true);
-  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc });
+  let palet = null;
+  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc, paletAc: () => palet.ac() });
+  // Bir hub öğesine git: sekme etiketi öğenin bölümünde kalır, panel kapanınca Harita'ya dönülür
+  const git = (anahtar) => {
+    const f = GIT[anahtar];
+    if (!f) return;
+    const bolum = Object.keys(HUB).find((h) => HUB[h].ogeler.some((o) => o.k === anahtar));
+    if (bolum) sekmeSec(bolum);
+    api.closeModal();
+    f();
+  };
+  palet = kurPalet({
+    liste: () => komutListesi({ testMenusuVar: !!lab, kilit: (k) => gs.getFeatureLock(k) }),
+    calistir: git
+  });
+  // Klavye kısayolları (hedefler js/ui/v3/palet.js'te): Tab yalnız panel kapalıyken Krallık merkezini açar,
+  // açık panelde Tab odak gezintisi olarak kalır.
+  window.addEventListener('keydown', (e) => {
+    const t = e.target;
+    const yaziAlani = !!t && (['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || t.isContentEditable);
+    const hedef = kisayolHedefi(e.key, { ctrl: e.ctrlKey, meta: e.metaKey, alt: e.altKey, yaziAlani });
+    if (!hedef) return;
+    if (hedef.palet) { e.preventDefault(); palet.ac(); return; }
+    if (hedef.kapat) { palet.kapat(); api.closeModal(); return; }
+    if (e.key === 'Tab' && (api.isAnyModalOpen() || palet.acikMi())) return;
+    e.preventDefault();
+    if (hedef.git) git(hedef.git);
+    else if (hedef.kaynak) api.openKaynak(hedef.kaynak);
+  });
   if (lab) {
     // T kısayolu laboratuvarı açar/kapatır
     window.addEventListener('keydown', (e) => {
@@ -191,13 +220,7 @@ export function kurV3Kabuk(api) {
     const k = e.target.closest('[data-v3-git]');
     if (!k) return;
     e.stopPropagation();
-    const f = GIT[k.dataset.v3Git];
-    if (!f) return;
-    // Sekme etiketi, panelin ait olduğu bölümde kalır; panel kapanınca Harita'ya dönülür
-    const bolum = Object.keys(HUB).find((h) => HUB[h].ogeler.some((o) => o.k === k.dataset.v3Git));
-    if (bolum) sekmeSec(bolum);
-    api.closeModal();
-    f();
+    git(k.dataset.v3Git);
   }, true);   // yakalama aşaması: eski pencere kodu içerideki tıklamaların yukarı çıkmasını durduruyor
 
   new MutationObserver(() => { if (!$('rpg-modal').classList.contains('active') && !(yan && yan.classList.contains('open'))) sekmeSec('harita'); })
@@ -334,7 +357,7 @@ export function kurV3Kabuk(api) {
     } else kart.hidden = true;
   }
 
-  window.__v3 = { guncelle: () => guncelle(false), hubAc, panelAc: (id) => hubAc(id), tur, git: (anahtar) => { if (GIT[anahtar]) GIT[anahtar](); } };
+  window.__v3 = { guncelle: () => guncelle(false), hubAc, panelAc: (id) => hubAc(id), tur, palet, git: (anahtar) => { if (GIT[anahtar]) GIT[anahtar](); } };
   guncelle(true);
   setTimeout(() => tur.baslat(false), 3500);   // yükleme ekranı bitince; yalnız yeni oyuncuda ve tur bitmemişse başlar
 }

@@ -62,7 +62,7 @@ async function sayfaAc(ad, { mobil = false } = {}) {
 const bannerMetni = s => s.evaluate(() => { const el = document.getElementById('gate-banner'); return { gizli: !el || el.hidden, metin: el ? el.innerText : '', html: el ? el.innerHTML : '' }; });
 const tasmaVar = s => s.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
 const ekran = (s, ad) => s.screenshot({ path: path.join(EKRAN, `senaryo_${ad}.png`) }).catch(() => {});
-const paletle = async (s, komut) => { await s.keyboard.press('Escape'); await bekle(300); await s.keyboard.down('Control'); await s.keyboard.press('k'); await s.keyboard.up('Control'); await bekle(500); await s.click(`.cmd-palette-item[data-cmd-id="${komut}"]`); await bekle(1200); };
+const paletle = async (s, komut) => { await s.keyboard.press('Escape'); await bekle(300); await s.keyboard.down('Control'); await s.keyboard.press('k'); await s.keyboard.up('Control'); await bekle(500); await s.click(`.v3-palet-oge[data-palet-id="${komut}"]`); await bekle(1200); };
 const modalMetni = s => s.evaluate(() => (document.getElementById('modal-body') || document.body).innerText);
 
 try {
@@ -71,7 +71,7 @@ try {
     const o = await sayfaAc('yeni');
     const b = await bannerMetni(o.sayfa);
     kontrol('yeni vatandaş: kapı şeridi gizli', b.gizli, b.metin.slice(0, 80));
-    await paletle(o.sayfa, 'treasury');
+    await paletle(o.sayfa, 'hazine');
     const m = await modalMetni(o.sayfa);
     kontrol('Konsey: "Kapı durumu" kartı (vatandaş sayısı)', /Kapı durumu — vatandaş 7 \/ 8/.test(m), (m.match(/Kapı durumu[^\n]*/) || [''])[0]);
     kontrol('Konsey: "Gelir motoru" kartı hedefleri gösteriyor', /Gelir motoru/.test(m) && /hedef 50 \$/.test(m) && /hedef 16\.7 \$/.test(m) && /şimdilik kilitli/.test(m));
@@ -80,13 +80,13 @@ try {
     await o.sayfa.keyboard.press('Escape'); await bekle(300);
     await o.sayfa.evaluate(() => window.gameState.startExpedition('wheat'));    // oyuncu bir sefer başlatır
     await bekle(2500);
-    await paletle(o.sayfa, 'treasury');
+    await paletle(o.sayfa, 'hazine');
     const m2 = await modalMetni(o.sayfa);
     kontrol('karne: yapılan sefer hazine ekranında hemen ✅ görünüyor', /✅ 🌾 Sefer/.test(m2), (m2.match(/Katılım karnem[\s\S]{0,200}/) || [''])[0].replace(/\s+/g, ' '));
     await o.sayfa.keyboard.press('Escape');
     await o.kapat();
     const ob = await sayfaAc('yeni', { mobil: true });
-    await paletle(ob.sayfa, 'treasury');
+    await paletle(ob.sayfa, 'hazine');
     kontrol('telefon (390 px): Konsey ekranında yatay taşma yok', !(await tasmaVar(ob.sayfa)));
     await ekran(ob.sayfa, 'yeni_konsey_telefon');
     await ob.kapat();
@@ -183,14 +183,14 @@ try {
   // ── 7) Kişisel karne ve izin durumu (Konsey + kapı şeridi) ──
   {
     const o = await sayfaAc('uyarili');
-    await paletle(o.sayfa, 'treasury');
+    await paletle(o.sayfa, 'hazine');
     const m = await modalMetni(o.sayfa);
     kontrol('Konsey: "Katılım karnem" kartı — puan/eşik, 10 kategori, düşük hafta uyarısı, izin hakkı', /Katılım karnem/.test(m) && /bu hafta 0\/2/.test(m) && /☐ 🌾 Sefer/.test(m) && /2 haftadır düşük/.test(m) && /Yıllık izin hakkın: 30 gün/.test(m), (m.match(/Katılım karnem[\s\S]{0,260}/) || [''])[0].replace(/\s+/g, ' '));
     await ekran(o.sayfa, 'karne_uyarili');
     await o.kapat();
     // Sponsorluk: zengin vatandaş Konsey'deki kutudan bir vatandaşa sponsor olur; sunucuda sözleşme ve A'da çekilemez kalem oluşur
     const sp = await sayfaAc('deneyimli');
-    await paletle(sp.sayfa, 'treasury'); await bekle(1500);
+    await paletle(sp.sayfa, 'hazine'); await bekle(1500);
     const ms = await modalMetni(sp.sayfa);
     kontrol('Konsey: "Sponsorluk" kutusu (açıklama, form) görünüyor', /Sponsorluk/.test(ms) && /Sponsor ol/.test(ms) && /çekilemez/.test(ms) && !/NaN|undefined/.test(ms), (ms.match(/Sponsorluk[\s\S]{0,160}/) || [''])[0].replace(/\s+/g, ' '));
     await sp.sayfa.evaluate(() => { const sel = document.getElementById('sp-hedef'); sel.selectedIndex = 0; document.getElementById('sp-miktar').value = '1500'; });
@@ -206,7 +206,7 @@ try {
     const i = await sayfaAc('izinde');
     const b = await bannerMetni(i.sayfa);
     kontrol('izinde: şeritte "İzindesin — N gün kaldı" ve erken bitirme düğmesi', /İzindesin/.test(b.metin) && /btn-izin-bitir-serit/.test(b.html), b.metin.slice(0, 100));
-    await paletle(i.sayfa, 'treasury');
+    await paletle(i.sayfa, 'hazine');
     const mi = await modalMetni(i.sayfa);
     kontrol('izinde: Konsey karnesinde izin bitiş tarihi ve "Üretim Hakkı almazsın" açıklaması', /İzindesin/.test(mi) && /Üretim Hakkı, temel gelir ve ücretsiz oyuncu payı almazsın/.test(mi));
     await i.sayfa.click('#btn-izin-bitir'); await bekle(1500);

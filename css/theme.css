@@ -937,9 +937,6 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
 }
 .spl-chip.is-good { color: #b8f5da; border-color: rgba(67, 209, 154, 0.35); }
 
-/* Dokunmatik cihazda klavye kısayolu ipuçları gizlenir */
-@media (hover: none) { .cmd-palette-item-shortcut { display: none !important; } }
-
 /* Kolezyum maç bedeli satırı */
 
 /* Yan panel rozetleri: gizliyken görünmez, kilitli karede kilit simgesinin üstüne binmez */

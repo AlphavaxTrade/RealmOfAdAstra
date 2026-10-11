@@ -124,7 +124,7 @@ for (const [hesap, seviye] of [['sv1', 1], ['sv30', 30]]) {
       for (const git of liste) {
         const id = `${sekme}/${git}`;
         await s.keyboard.press('Escape'); await bekle(250);
-        await s.evaluate(() => { document.querySelectorAll('.cmd-palette-overlay').forEach((e) => e.remove()); });
+        await s.evaluate(() => { document.querySelectorAll('.v3-palet').forEach((e) => e.remove()); });
         try {
           await s.locator(`[data-v3-sekme="${sekme}"]`).first().click({ timeout: 4000 }); await bekle(350);
           await s.locator(`[data-v3-git="${git}"]`).first().click({ timeout: 4000 }); await bekle(900);

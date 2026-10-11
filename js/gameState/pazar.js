@@ -1,142 +1,157 @@
-// Realm of AdAstra — GameStateManager yöntemleri: AMM pazar alım/satım, hızlı alım planı, komut paleti
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: pazar alım/satım, "hızlı al" planı, depoyu doldurma.
+// 11 Ekim 2026'da baştan yazıldı (komut paleti listesi arayüze, js/ui/v3/palet.js'e taşındı).
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS, kaynakAdi } from './ortak.js';
 
+// Hızlı al planında alım bedeline eklenen pay: yükseltmenin kendi ASTRA bedeli %3 payla hesaba katılır
+const ASTRA_PAYI = 1.03;
+
+const tr = (n) => Number(n).toLocaleString('tr-TR');
+
 export const pazarYontemleri = {
-  // =========================================================================
-  // 🏪 v1.25: PAZAR ALIM-SATIM (tek yerde; taban fiyat, gerçek %2 yakım ve silo kontrolüyle)
-  // =========================================================================
+  // Sandık ve anahtar da pazarda satılır; onlar envanterde değil kendi sayaçlarında durur
+  _pazarStoku(anahtar) {
+    if (anahtar === 'boxes') return this.state.lockedBoxes || 0;
+    if (anahtar === 'keys') return this.state.arenaKeys || 0;
+    return Number(this.state.inventory[anahtar]) || 0;
+  },
+
   marketSell(resKey, qty) {
-    const amount = Number(qty);
-    if (!(amount > 0)) return { success: false, message: 'Lütfen satmak istediğin geçerli bir miktar gir!' };
-    const owned = resKey === 'boxes' ? (this.state.lockedBoxes || 0)
-      : resKey === 'keys' ? (this.state.arenaKeys || 0)
-      : (Number(this.state.inventory[resKey]) || 0);
-    if (owned < amount) {
-      return { success: false, message: `Yetersiz ${kaynakAdi(resKey) || resKey}! Envanterinde ${Math.floor(owned).toLocaleString('tr-TR')} adet var.` };
+    const miktar = Number(qty);
+    if (!(miktar > 0)) return { success: false, message: 'Lütfen satmak istediğin geçerli bir miktar gir!' };
+    const eldeki = this._pazarStoku(resKey);
+    if (eldeki < miktar) {
+      return { success: false, message: `Yetersiz ${kaynakAdi(resKey) || resKey}! Envanterinde ${tr(Math.floor(eldeki))} adet var.` };
     }
-    const res = ammMarket.executeSell(resKey, amount);
-    if (!res.success) return res;
-    if (resKey === 'boxes') this.state.lockedBoxes -= amount;
-    else if (resKey === 'keys') this.state.arenaKeys -= amount;
-    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - amount;
-    this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.adAstraReceived;
-    if (RES_KEYS().includes(resKey)) this._onAdaEarned(res.adAstraReceived, { saleOf: resKey });
-    else this._onAdaEarned(res.adAstraReceived);
+
+    const sonuc = ammMarket.executeSell(resKey, miktar);
+    if (!sonuc.success) return sonuc;
+
+    if (resKey === 'boxes') this.state.lockedBoxes -= miktar;
+    else if (resKey === 'keys') this.state.arenaKeys -= miktar;
+    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - miktar;
+
+    this.state.adAstraBalance = (this.state.adAstraBalance || 0) + sonuc.adAstraReceived;
+    this._onAdaEarned(sonuc.adAstraReceived, RES_KEYS().includes(resKey) ? { saleOf: resKey } : undefined);
     this.saveState();
-    return { ...res, qty: amount };
-  },
-
-  // ⚡ Hızlı al planı: seviye atlama ('levelup') ya da silo yükseltme ('warehouse') için eksik hammaddeler ve pazar bedeli.
-  // ok: hesaptaki ASTRA hem bu alıma hem yükseltmenin kendi ASTRA bedeline (%3 payla) yetiyor mu.
-  getQuickBuyPlan(kind) {
-    const inv = this.state.inventory || {};
-    const cap = this.getWarehouseCapacity();
-    let target = null, extraAda = 0, xpShort = false;
-    if (kind === 'levelup') {
-      const req = this.getNextLevelRequirement();
-      if (!req || req.isMaxLevel) return { ok: false, items: [], reason: 'Maksimum seviyedesin.' };
-      target = { wood: req.wood, iron: req.iron, wheat: req.wheat };
-      extraAda = Number(req.adAstra) || 0;
-      if ((Number(this.state.currentXp) || 0) < req.xp) xpShort = true;
-    } else if (kind === 'warehouse') {
-      const c = this.getWarehouseUpgradeCost();
-      if (!c || c.isMaxLevel) return { ok: false, items: [], reason: 'Silo en üst seviyede.' };
-      // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır (v2: bütün hammaddeler)
-      target = Object.fromEntries((c.keys || RES_KEYS()).map(k => [k, Math.max((c.costs || {})[k] || 0, (c.fills || {})[k] || 0)]));
-      extraAda = Number(c.adAstra) || 0;
-    } else if (String(kind).startsWith('craft:')) {
-      const slot = String(kind).slice(6);
-      if (!(GAME_CONFIG.EQUIPMENT_RECIPES || {})[slot]) return { ok: false, items: [], reason: 'Geçersiz tarif.' };
-      const c = this.calculateEquipmentCraftCost(slot);
-      target = { iron: c.ironCost, wood: c.woodCost, fragments: c.fragCost };
-      extraAda = Number(c.adaCost) || 0;
-    } else return { ok: false, items: [], reason: 'Geçersiz.' };
-    const items = [];
-    let total = 0, capBlocked = false;
-    for (const res of Object.keys(target)) {
-      const have = Math.floor(Number(inv[res]) || 0);
-      let need = Math.max(0, Math.ceil(target[res] - have));
-      const room = cap && cap[res] != null ? Math.max(0, Math.floor(cap[res] - have)) : need;
-      if (need > room) { need = room; capBlocked = true; }
-      if (need <= 0) continue;
-      const cost = ammMarket.getEstimatedCostForBuy(res, need);
-      if (!isFinite(cost)) return { ok: false, items: [], reason: 'Pazarda yeterli hammadde yok.' };
-      items.push({ res, qty: need, cost, name: kaynakAdi(res) });
-      total += cost;
-    }
-    const balance = Number(this.state.adAstraBalance) || 0;
-    const needAda = total + extraAda * 1.03;
-    if (xpShort && items.length) return { ok: false, items, total, extraAda, balance, needAda, capBlocked, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
-    return { ok: items.length > 0 && balance >= needAda && !capBlocked, items, total, extraAda, balance, needAda, capBlocked,
-      reason: !items.length ? 'Eksik hammadde yok.' : capBlocked ? 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.' : balance < needAda ? `ASTRA yetmiyor: alım ~${Math.ceil(total).toLocaleString('tr-TR')} + yükseltme ~${Math.ceil(extraAda).toLocaleString('tr-TR')} ASTRA gerekli.` : '' };
-  },
-
-  // 🧺 Depoyu doldur: siloda boş yer kadar, ASTRA yetmezse alınabilecek en fazla miktar
-  getFillWarehouseQty(resKey) {
-    const cap = this.getWarehouseCapacity()[resKey];
-    const have = Math.floor(Number((this.state.inventory || {})[resKey]) || 0);
-    let qty = Math.max(0, Math.floor((cap || 0) - have));
-    const balance = Number(this.state.adAstraBalance) || 0;
-    const costOf = q => (q > 0 ? ammMarket.getEstimatedCostForBuy(resKey, q) : 0);
-    if (qty > 0 && !(costOf(qty) <= balance)) {
-      let lo = 0, hi = qty;                                   // bütçeye sığan en büyük miktar
-      while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (costOf(mid) <= balance) lo = mid; else hi = mid - 1; }
-      return { qty: lo, room: qty, cost: costOf(lo), limitedByAda: true };
-    }
-    return { qty, room: qty, cost: costOf(qty), limitedByAda: false };
+    return { ...sonuc, qty: miktar };
   },
 
   marketBuy(resKey, qty) {
-    const amount = Number(qty);
-    if (!(amount > 0)) return { success: false, message: 'Lütfen satın almak istediğin geçerli bir miktar gir!' };
-    const est = ammMarket.getEstimatedCostForBuy(resKey, amount);
-    if (!isFinite(est)) return { success: false, message: 'Havuzda bu miktarı karşılayacak yeterli likidite yok!' };
-    if ((this.state.adAstraBalance || 0) < est) {
-      return { success: false, message: `Yetersiz ASTRA! Gereken: ~${est.toFixed(2)} ASTRA, bakiyen: ${(this.state.adAstraBalance || 0).toFixed(2)} ASTRA` };
+    const miktar = Number(qty);
+    if (!(miktar > 0)) return { success: false, message: 'Lütfen satın almak istediğin geçerli bir miktar gir!' };
+
+    const tahmin = ammMarket.getEstimatedCostForBuy(resKey, miktar);
+    if (!isFinite(tahmin)) return { success: false, message: 'Havuzda bu miktarı karşılayacak yeterli likidite yok!' };
+    const bakiye = this.state.adAstraBalance || 0;
+    if (bakiye < tahmin) {
+      return { success: false, message: `Yetersiz ASTRA! Gereken: ~${tahmin.toFixed(2)} ASTRA, bakiyen: ${bakiye.toFixed(2)} ASTRA` };
     }
     if (RES_KEYS().includes(resKey)) {
-      const limit = this.getWarehouseCapacity()[resKey];
-      const cur = Number(this.state.inventory[resKey]) || 0;
-      if (limit != null && cur + amount > limit) {
-        return { success: false, message: `Silo kapasitesi aşılamaz! Alabileceğin en fazla boş alan: ${Math.max(0, Math.floor(limit - cur)).toLocaleString('tr-TR')} ${kaynakAdi(resKey)}` };
+      const sinir = this.getWarehouseCapacity()[resKey];
+      const mevcut = Number(this.state.inventory[resKey]) || 0;
+      if (sinir != null && mevcut + miktar > sinir) {
+        return { success: false, message: `Silo kapasitesi aşılamaz! Alabileceğin en fazla boş alan: ${tr(Math.max(0, Math.floor(sinir - mevcut)))} ${kaynakAdi(resKey)}` };
       }
     }
-    const res = ammMarket.executeBuyAmount(resKey, amount);
-    if (!res.success) return res;
-    this.state.adAstraBalance = (this.state.adAstraBalance || 0) - res.cost;
-    this._onAdaSpent(res.cost, { boughtResource: resKey });
-    if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + res.resourceReceived;
-    else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + res.resourceReceived;
-    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + res.resourceReceived;
+
+    const sonuc = ammMarket.executeBuyAmount(resKey, miktar);
+    if (!sonuc.success) return sonuc;
+
+    this.state.adAstraBalance = (this.state.adAstraBalance || 0) - sonuc.cost;
+    this._onAdaSpent(sonuc.cost, { boughtResource: resKey });
+    if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + sonuc.resourceReceived;
+    else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + sonuc.resourceReceived;
+    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + sonuc.resourceReceived;
     this.saveState();
-    const resume = this.updateBotPauseState();
-    return { ...res, qty: amount, botJustResumed: !!(resume && resume.justResumed) };
+
+    // Duraklamış bot, eksik kaynak alınınca uyanmış olabilir
+    const uyanma = this.updateBotPauseState();
+    return { ...sonuc, qty: miktar, botJustResumed: !!(uyanma && uyanma.justResumed) };
   },
 
-  // =========================================================================
-  // COMMAND PALETTE: ARANABILIR EYLEM LİSTESİ
-  // =========================================================================
-  getCommandPaletteActions() {
-    return [
-      { id: 'dashboard', icon: '🏰', label: 'Krallık Merkezi', shortcut: 'TAB', category: 'Panel' },
-      { id: 'treasury', icon: '🏦', label: 'Krallık Hazinesi & Ödül Havuzları', shortcut: 'H', category: 'Panel' },
-      { id: 'forest', icon: '🌲', label: 'Zümrüt Ormanı & Oduncu', shortcut: '1 / S', category: 'Bina' },
-      { id: 'mine', icon: '⛏️', label: 'Maden Ocağı & Demirci', shortcut: '2 / I', category: 'Bina' },
-      { id: 'farm', icon: '🌾', label: 'Güneş Tarlası & Çiftlik', shortcut: '3 / F', category: 'Bina' },
-      { id: 'barracks', icon: '⚔️', label: 'Kışla & Ordu Yönetimi', shortcut: '4 / B', category: 'Bina' },
-      { id: 'market', icon: '🏪', label: 'AMM Pazar Yeri', shortcut: '5 / M', category: 'Bina' },
-      { id: 'dungeon', icon: '💀', label: 'Zindan', shortcut: '6 / D', category: 'Bina' },
-      { id: 'colosseum', icon: '🏟️', label: 'Kolezyum Arenası', shortcut: '7 / C', category: 'Bina' },
-      { id: 'inventory', icon: '🎒', label: 'Envanter & Karakter', shortcut: 'E', category: 'Panel' },
-      { id: 'quota', icon: '📊', label: 'Kota ve Sınırlar (haftalık kota, zindan, piyango)', shortcut: 'K', category: 'Panel' },
-      { id: 'claimAll', icon: '⚡', label: 'Tüm Seferleri Topla & Yeniden Başlat', shortcut: '', category: 'Eylem' },
-      { id: 'repairAll', icon: '🔨', label: 'Tüm Aletleri Onar', shortcut: '', category: 'Eylem' },
-      { id: 'healAll', icon: '🌾', label: 'Tüm Orduyu İyileştir', shortcut: '', category: 'Eylem' },
-      { id: 'autoEquip', icon: '⚔️', label: 'En İyi Eşyaları Otomatik Dağıt', shortcut: '', category: 'Eylem' },
-      { id: 'economy', icon: '📈', label: 'Ekonomi ve Tokenomi Paneli', shortcut: '', category: 'Panel' },
-    ];
+  /**
+   * ⚡ Hızlı al planı: seviye atlama ('levelup'), silo yükseltme ('warehouse') ya da teçhizat dövme
+   * ('craft:<yuva>') için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
+   * ASTRA bedeline (%3 payla) yetiyor, silo bu miktarı alıyor ve XP tamam.
+   */
+  getQuickBuyPlan(kind) {
+    const depo = this.state.inventory || {};
+    const kapasite = this.getWarehouseCapacity();
+    let hedef;
+    let ekAstra = 0;
+    let xpEksik = false;
+
+    if (kind === 'levelup') {
+      const gerek = this.getNextLevelRequirement();
+      if (!gerek || gerek.isMaxLevel) return { ok: false, items: [], reason: 'Maksimum seviyedesin.' };
+      hedef = { wood: gerek.wood, iron: gerek.iron, wheat: gerek.wheat };
+      ekAstra = Number(gerek.adAstra) || 0;
+      xpEksik = (Number(this.state.currentXp) || 0) < gerek.xp;
+    } else if (kind === 'warehouse') {
+      const bedel = this.getWarehouseUpgradeCost();
+      if (!bedel) return { ok: false, items: [], reason: 'Silo en üst seviyede.' };
+      // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır (bütün hammaddeler)
+      hedef = Object.fromEntries(bedel.keys.map(k => [k, Math.max(bedel.costs[k] || 0, bedel.fills[k] || 0)]));
+      ekAstra = Number(bedel.adAstra) || 0;
+    } else if (String(kind).startsWith('craft:')) {
+      const yuva = String(kind).slice(6);
+      if (!(GAME_CONFIG.EQUIPMENT_RECIPES || {})[yuva]) return { ok: false, items: [], reason: 'Geçersiz tarif.' };
+      const bedel = this.calculateEquipmentCraftCost(yuva);
+      hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, fragments: bedel.fragCost };
+      ekAstra = Number(bedel.adaCost) || 0;
+    } else {
+      return { ok: false, items: [], reason: 'Geçersiz.' };
+    }
+
+    const items = [];
+    let toplam = 0;
+    let siloYetmiyor = false;
+    for (const kaynak of Object.keys(hedef)) {
+      const elde = Math.floor(Number(depo[kaynak]) || 0);
+      let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde));
+      const bosYer = kapasite[kaynak] != null ? Math.max(0, Math.floor(kapasite[kaynak] - elde)) : gerekli;
+      if (gerekli > bosYer) { gerekli = bosYer; siloYetmiyor = true; }
+      if (gerekli <= 0) continue;
+      const bedel = ammMarket.getEstimatedCostForBuy(kaynak, gerekli);
+      if (!isFinite(bedel)) return { ok: false, items: [], reason: 'Pazarda yeterli hammadde yok.' };
+      items.push({ res: kaynak, qty: gerekli, cost: bedel, name: kaynakAdi(kaynak) });
+      toplam += bedel;
+    }
+
+    const balance = Number(this.state.adAstraBalance) || 0;
+    const needAda = toplam + ekAstra * ASTRA_PAYI;
+    const ortak = { items, total: toplam, extraAda: ekAstra, balance, needAda, capBlocked: siloYetmiyor };
+    if (xpEksik && items.length) {
+      return { ok: false, ...ortak, reason: 'Önce deneyimi (XP) tamamla; hammaddeyi seviye atlayabileceğin zaman al.' };
+    }
+
+    let neden = '';
+    if (items.length === 0) neden = 'Eksik hammadde yok.';
+    else if (siloYetmiyor) neden = 'Silon bu kadar hammadde alamıyor: önce siloyu yükselt.';
+    else if (balance < needAda) neden = `ASTRA yetmiyor: alım ~${tr(Math.ceil(toplam))} + yükseltme ~${tr(Math.ceil(ekAstra))} ASTRA gerekli.`;
+    return { ok: items.length > 0 && balance >= needAda && !siloYetmiyor, ...ortak, reason: neden };
   },
+
+  // 🧺 Depoyu doldur: siloda boş yer kadar; ASTRA yetmezse bütçeye sığan en büyük miktar
+  getFillWarehouseQty(resKey) {
+    const kapasite = this.getWarehouseCapacity()[resKey];
+    const mevcut = Math.floor(Number((this.state.inventory || {})[resKey]) || 0);
+    const bosYer = Math.max(0, Math.floor((kapasite || 0) - mevcut));
+    const bakiye = Number(this.state.adAstraBalance) || 0;
+    const bedelOf = (q) => (q > 0 ? ammMarket.getEstimatedCostForBuy(resKey, q) : 0);
+
+    if (bosYer > 0 && !(bedelOf(bosYer) <= bakiye)) {
+      let alt = 0;
+      let ust = bosYer;
+      while (alt < ust) {
+        const orta = Math.ceil((alt + ust) / 2);
+        if (bedelOf(orta) <= bakiye) alt = orta; else ust = orta - 1;
+      }
+      return { qty: alt, room: bosYer, cost: bedelOf(alt), limitedByAda: true };
+    }
+    return { qty: bosYer, room: bosYer, cost: bedelOf(bosYer), limitedByAda: false };
+  }
 };

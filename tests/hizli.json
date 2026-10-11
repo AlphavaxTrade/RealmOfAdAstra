@@ -34,6 +34,8 @@
   "test_cark_cizim.mjs",
   "test_arena.mjs",
   "test_bot_esit_satis_plani.mjs",
+  "test_v3_palet.mjs",
+  "test_pazar_hizli_al.mjs",
   "test_zindan_plan.mjs",
   "test_harita_ortak.mjs",
   "test_demirhane_onarim_hedefi.mjs"

@@ -674,7 +674,6 @@ const RES_META = () => GAME_CONFIG.RESOURCE_META || {};
 const ZONE_OF_NODE = key => ((RES_META()[key] || {}).zone) || key;
 const NODE_OF_ZONE_UI = zoneId => RES_KEYS().find(k => ZONE_OF_NODE(k) === zoneId) || null;
 const ZONE_NAMES = { wheat: 'Güneş Tarlası & Değirmen', stone: 'Taş Ocağı', wood: 'Zümrüt Ormanı & Oduncu', coal: 'Kömür Ocağı', iron: 'Demir Madeni & Tamirhane', herb: 'Şifalı Ot Bahçesi' };
-const ZONE_LABELS = { village: '🏘️ Köy Evleri', council: '🏛️ Sirius Konseyi', healer: '🌿 Şifahane', spaceport: '🚀 Uzay Limanı' };
 const ZONE_TITLE = key => { const m = RES_META()[key] || {}; const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[key] || {}; return `${m.icon || cap.icon || ''} ${ZONE_NAMES[key] || cap.name || key}`; };
 
 // =========================================================================
@@ -975,193 +974,9 @@ function openScrapReportModal(report) {
   }
 }
 
-// =========================================================================
-// 4.13 COMMAND PALETTE (Ctrl+K)
-// =========================================================================
-let cmdPaletteActiveIdx = 0;
-let filteredCmdActions = [];
-
-function openCommandPalette() {
-  closeCommandPalette();
-
-  const overlay = document.createElement('div');
-  overlay.id = 'cmd-palette-overlay';
-  overlay.className = 'cmd-palette-overlay';
-
-  overlay.innerHTML = `
-    <div class="cmd-palette-box">
-      <input type="text" id="cmd-palette-input" class="cmd-palette-input" placeholder="🔍 Krallık eylemi veya bina ara... (ESC ile kapat)" autofocus>
-      <div id="cmd-palette-results" class="cmd-palette-results"></div>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  const input = overlay.querySelector('#cmd-palette-input');
-  input.focus();
-
-  renderCommandPalette('');
-
-  input.addEventListener('input', (e) => {
-    cmdPaletteActiveIdx = 0;
-    renderCommandPalette(e.target.value);
-  });
-
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      cmdPaletteActiveIdx = Math.min(filteredCmdActions.length - 1, cmdPaletteActiveIdx + 1);
-      renderCommandPalette(input.value);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      cmdPaletteActiveIdx = Math.max(0, cmdPaletteActiveIdx - 1);
-      renderCommandPalette(input.value);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (filteredCmdActions[cmdPaletteActiveIdx]) {
-        executeCommand(filteredCmdActions[cmdPaletteActiveIdx].id);
-      }
-    } else if (e.key === 'Escape') {
-      closeCommandPalette();
-    }
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) closeCommandPalette();
-  });
-}
-
-function closeCommandPalette() {
-  const overlay = document.getElementById('cmd-palette-overlay');
-  if (overlay) overlay.remove();
-}
-
-function renderCommandPalette(query) {
-  const resultsContainer = document.getElementById('cmd-palette-results');
-  if (!resultsContainer) return;
-
-  const actions = gameState.getCommandPaletteActions();
-  const q = (query || '').toLowerCase().trim();
-
-  filteredCmdActions = actions.filter(a =>
-    a.label.toLowerCase().includes(q) || a.category.toLowerCase().includes(q)
-  );
-
-  resultsContainer.innerHTML = filteredCmdActions.map((a, i) => `
-    <div class="cmd-palette-item ${i === cmdPaletteActiveIdx ? 'active' : ''}" data-cmd-id="${a.id}">
-      <span class="cmd-palette-item-icon">${a.icon}</span>
-      <span class="cmd-palette-item-label">${a.label}</span>
-      <span class="cmd-palette-item-category">${a.category}</span>
-      ${a.shortcut ? `<span class="cmd-palette-item-shortcut">${a.shortcut}</span>` : ''}
-    </div>
-  `).join('') || '<div style="padding:16px; text-align:center; color:#94a3b8; font-size:0.85rem;">Eşleşen eylem bulunamadı.</div>';
-
-  resultsContainer.querySelectorAll('.cmd-palette-item').forEach(item => {
-    item.addEventListener('click', () => {
-      executeCommand(item.dataset.cmdId);
-    });
-  });
-}
-
-function executeCommand(actionId) {
-  closeCommandPalette();
-  switch (actionId) {
-    case 'dashboard': openDashboardModal(); break;
-    case 'treasury': openTreasuryVaultModal(); break;
-    case 'forest': openTownZoneModal('forest', '🌲 Zümrüt Ormanı & Oduncu'); break;
-    case 'mine': openTownZoneModal('mine', '⛏️ Maden Ocağı & Tamirhane'); break;
-    case 'farm': openTownZoneModal('farm', '🌾 Güneş Tarlası & Değirmen'); break;
-    case 'quarry': case 'coalmine': case 'herbgarden': openTownZoneModal(actionId, ZONE_TITLE(NODE_OF_ZONE_UI(actionId))); break;
-    case 'village': case 'healer': case 'spaceport': openTownZoneModal(actionId, ZONE_LABELS[actionId]); break;
-    case 'council': openTreasuryVaultModal(); break;
-    case 'barracks': openBarracksModal(); break;
-    case 'market': openTownZoneModal('market', '🏪 AMM Pazar Yeri'); break;
-    case 'dungeon': enterDungeonScene(); break;
-    case 'colosseum': openColosseumModal(); break;
-    case 'inventory': openInventoryModal(); break;
-    case 'economy': openEconomyDashboardModal('overview'); break;
-    case 'quota': openDailyLimitsModal(); break;
-    case 'claimAll':
-      const cRes = gameState.claimAndRestartAllExpeditions();
-      if (cRes.staminaWarning) {
-        showToast(cRes.staminaWarning, 'warning');
-      } else if (cRes.messages && cRes.messages.length > 0) {
-        showToast(cRes.messages[0], 'warning');
-      }
-      if (cRes.claimed > 0 || cRes.restarted > 0) {
-        showToast(`⚡ ${cRes.claimed} Sefer Toplandı, ${cRes.restarted} Yeni Sefer Başlatıldı!`, 'success');
-      }
-      renderTopBar();
-      break;
-    case 'repairAll':
-      const rRes = gameState.repairAllTools();
-      if (rRes.repaired > 0) {
-        showToast(`🔨 ${rRes.repaired} alet tamir edildi!`, 'success');
-      } else if (rRes.hasDamagedTools && rRes.missingAda) {
-        showToast('⚠️ Hesapta yeteri kadar ASTRA yok!', 'error');
-      } else {
-        showToast(rRes.message || 'Tamir edilecek alet yok.', 'info');
-      }
-      renderTopBar();
-      break;
-    case 'healAll':
-      const hRes = gameState.instantHealAllSoldiers();
-      showToast(hRes.healed > 0 ? `❤️ ${hRes.healed} asker iyileştirildi!` : 'İyileştirilecek asker yok.', 'success');
-      renderTopBar();
-      break;
-    case 'autoEquip':
-      const eqRes = gameState.autoEquipBest();
-      showToast(eqRes.message, eqRes.success ? 'success' : 'info');
-      break;
-  }
-}
-
 // Event Dinleyicileri
 function initAppEvents() {
-  // Global Klavye Kısayolları (TAB, Ctrl+K, S, I, F, B, M, D, C, E, K, Esc)
-  window.addEventListener('keydown', (e) => {
-    // Ctrl+K veya Cmd+K -> Command Palette
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-      e.preventDefault();
-      openCommandPalette();
-      return;
-    }
-
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      openDashboardModal();
-      return;
-    }
-
-    const key = e.key.toUpperCase();
-    if (key === 'ESCAPE') {
-      closeCommandPalette();
-      closeModal();
-      return;
-    }
-    if (key === '1' || key === 'S') {
-      openTownZoneModal('forest', '🌲 Zümrüt Ormanı & Oduncu');
-    } else if (key === '2' || key === 'I') {
-      openTownZoneModal('mine', '⛏️ Maden Ocağı & Tamirhane');
-    } else if (key === '3' || key === 'F') {
-      openTownZoneModal('farm', '🌾 Güneş Tarlası & Değirmen');
-    } else if (key === '4' || key === 'B') {
-      openBarracksModal();
-    } else if (key === '5' || key === 'M') {
-      openTownZoneModal('market', '🏪 AMM Pazar Yeri');
-    } else if (key === '6' || key === 'D') {
-      enterDungeonScene();
-    } else if (key === '7' || key === 'C') {
-      openColosseumModal();
-    } else if (key === 'E') {
-      openInventoryModal();
-    } else if (key === 'K') {
-      openDailyLimitsModal();
-    }
-  });
-
+  // Klavye kısayolları ve Ctrl+K paleti js/ui/v3/kabuk.js içinde (js/ui/v3/palet.js)
   dom.btnCloseModal.addEventListener('click', closeModal);
   dom.rpgModal.addEventListener('click', (e) => {
     if (e.target === dom.rpgModal) closeModal();
@@ -1620,7 +1435,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openKonsey: () => ekranAc('konsey'), openBarracks: openBarracksModal,
     enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: () => ekranAc('karnaval'),
     openCollection: () => ekranAc('koleksiyon'), openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
-    openChangelog: openChangelogModal, openPalette: openCommandPalette,
+    openChangelog: openChangelogModal,
     openWallet: () => {
       if (!online.active) { showToast('🔐 Hesap ve cüzdan, sunucuya bağlı (çevrimiçi) sürümde açılır. Şu an tek kişilik yerel moddasın: kaydın bu tarayıcıda.', 'info'); return; }
       openWalletPanel();

@@ -138,6 +138,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: Karnaval 3 kısa sekme`, await s.evaluate(() => { const t = [...document.querySelectorAll('#modal-body .ek-sekme')].map((b) => b.innerText.trim()); return t.length === 3 && t.every((x) => x.length <= 14); }));
   kontrol(`${ad}: Karnaval düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .ek-sekme, #modal-body [data-e="cevir"]')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
   kontrol(`${ad}: Karnaval yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+
   kontrol(`${ad}: Karnaval çarkında tek ana düğme, çark çizili ve hammadde seçenekleri katlı`, await s.evaluate(() => { const ana = document.querySelectorAll('#modal-body [data-e="cevir"][data-odeme="ada"]'); const d = document.querySelector('#modal-body details[data-k="cark-hammadde"]'); const t = document.getElementById('ek-cark-tuval'); const g = t && t.getContext('2d').getImageData(t.width / 2 + 60, t.height / 2, 1, 1).data; return ana.length === 1 && !!d && !d.open && !!g && g[3] > 0; }));
   await s.evaluate(() => document.querySelector('#modal-body .ek-sekme[data-sekme="havuzlar"]').click()); await bekle(700);
   kontrol(`${ad}: Karnaval kasaları kart olarak listelenir (≥ 3) ve ayrıntı düğmeleri çalışır`, await s.evaluate(() => document.querySelectorAll('#modal-body .ek-kart').length >= 3 && document.querySelectorAll('#modal-body [data-e="git"]').length >= 2));
@@ -258,6 +259,29 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.evaluate(() => window.__onay({ baslik: 'Devam?' }));
   await tikla('[data-v3-tamam]');
   kontrol(`${ad}: Onayla = evet (true)`, await s.evaluate(() => window.__sonuc === true));
+  // "Ara ve git" paleti (Ctrl+K) ve klavye kısayolları
+  await s.keyboard.press('Escape'); await bekle(300);
+  if (await panelAcik()) { await s.keyboard.press('Escape'); await bekle(300); }
+  await s.keyboard.press('Control+k'); await bekle(400);
+  kontrol(`${ad}: Ctrl+K paleti açar ve yazı alanına odaklanır`, await s.evaluate(() => !!document.getElementById('v3-palet') && document.activeElement?.classList.contains('v3-palet-girdi')));
+  kontrol(`${ad}: palet boşken tüm yerleri listeler (≥ 20)`, await s.evaluate(() => document.querySelectorAll('.v3-palet-oge').length >= 20));
+  await s.keyboard.type('hazine'); await bekle(300); await foto('17_palet');
+  kontrol(`${ad}: palet yazılana göre süzer (hazine ilk sırada)`, await s.evaluate(() => document.querySelector('.v3-palet-oge')?.dataset.paletId === 'hazine'));
+  kontrol(`${ad}: palet taşmaz ve satırlar ≥ 44 px`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2 && [...document.querySelectorAll('.v3-palet-oge')].every((b) => b.getBoundingClientRect().height >= 44)));
+  await s.keyboard.press('Escape'); await bekle(300);
+  kontrol(`${ad}: Esc yalnız paleti kapatır`, await s.evaluate(() => !document.getElementById('v3-palet')));
+  await s.keyboard.press('Control+k'); await bekle(300); await s.keyboard.type('silo'); await bekle(200); await s.keyboard.press('Enter'); await bekle(800);
+  kontrol(`${ad}: Enter seçileni açar ve palet kapanır`, await s.evaluate(() => !document.getElementById('v3-palet')) && /Silo/i.test(await baslik()), await baslik());
+  await s.keyboard.press('Escape'); await bekle(300);
+  await s.keyboard.press('Tab'); await bekle(600);
+  kontrol(`${ad}: Tab Krallık merkezini açar`, /Krallık merkezi/i.test(await baslik()), await baslik());
+  await s.keyboard.press('Escape'); await bekle(300);
+  await s.keyboard.press('4'); await bekle(800);
+  kontrol(`${ad}: 4 tuşu Kışlayı açar`, /Kışla|Ordu/i.test(await baslik()), await baslik());
+  await s.keyboard.press('Escape'); await bekle(300);
+  await s.keyboard.press('Control+k'); await bekle(300); await s.keyboard.type('zzzz'); await bekle(200);
+  kontrol(`${ad}: bulunamayınca bilgi satırı çıkar`, await s.evaluate(() => /Eşleşen yer bulunamadı/.test(document.querySelector('.v3-palet-liste')?.innerText || '')));
+  await s.keyboard.press('Escape'); await bekle(300);
   await baglam.close();
 }
 
