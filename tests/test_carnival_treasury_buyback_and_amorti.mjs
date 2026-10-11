@@ -90,7 +90,7 @@ assert.ok(Math.abs(ammMarket.pools.wood.resourceReserve - (preAmmWoodRes - spinW
 assert.equal(gs.state.inventory.wood, preUserWood + spinWood.buybackInfo.amount, 'Satın alınan odun kullanıcı envanterine teslim edilmeli');
 assert.ok(spinWood.buybackInfo.newPrice > preAmmWoodPrice, `Odun market fiyatı artmalı! Eski: ${preAmmWoodPrice}, Yeni: ${spinWood.buybackInfo.newPrice}`);
 assert.ok(spinWood.buybackInfo.priceDelta > 0, 'Fiyat artışı pozitif olmalı');
-assert(spinWood.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada Karnaval AMM Buyback belirtilmeli');
+assert(spinWood.rewardSummaryText.includes('Karnaval kasası pazardan satın alıp verdi'), 'Açıklamada kasanın pazardan alıp verdiği belirtilmeli');
 console.log(`✅ Hammadde havadan basılmadı; Karnaval Hazinesi bütçesiyle AMM pazarından fiziki buyback yapıldı! Odun Fiyatı: ${preAmmWoodPrice.toFixed(4)} -> ${spinWood.buybackInfo.newPrice.toFixed(4)} ASTRA (+%${spinWood.buybackInfo.priceDeltaPct.toFixed(2)})`);
 
 // Test 5: Teçhizat Parçaları & Pandora Kutu Anahtarları Buyback
@@ -107,7 +107,7 @@ assert.ok(spinKey.buybackInfo, 'buybackInfo nesnesi üretilmeli');
 assert.equal(treasury.state.outflow.carnival, preOutflowKeys + spinKey.buybackInfo.adaSpent, 'Karnaval kasasından anahtar bedeli outflow kaydedilmeli');
 assert.equal(gs.state.arenaKeys, preUserKeys + 1, 'Kullanıcıya 1 Pandora Kutusu Anahtarı teslim edilmeli');
 assert.ok(spinKey.buybackInfo.newPrice > preKeyPrice, `Anahtar market fiyatı artmalı! Eski: ${preKeyPrice}, Yeni: ${spinKey.buybackInfo.newPrice}`);
-assert(spinKey.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada buyback yapıldığı belirtilmeli');
+assert(spinKey.rewardSummaryText.includes('Karnaval kasası pazardan satın alıp verdi'), 'Açıklamada kasanın pazardan alıp verdiği belirtilmeli');
 console.log(`✅ Anahtar fiziki buyback ile fiyata yukarı yönlü etki etti: ${preKeyPrice.toFixed(1)} -> ${spinKey.buybackInfo.newPrice.toFixed(1)} ASTRA`);
 
 // Teçhizat Parçası Testi
@@ -123,7 +123,7 @@ assert.ok(spinFrag.buybackInfo, 'buybackInfo nesnesi üretilmeli');
 assert.equal(treasury.state.outflow.carnival, preOutflowFrag + spinFrag.buybackInfo.adaSpent, 'Karnaval kasasından teçhizat parçası bedeli outflow kaydedilmeli');
 assert.equal(gs.state.inventory.fragments, preUserFrag + 10, 'Kullanıcıya 10 Teçhizat Parçası teslim edilmeli');
 assert.ok(spinFrag.buybackInfo.newPrice > preFragPrice, `Teçhizat parçası fiyatı artmalı! Eski: ${preFragPrice}, Yeni: ${spinFrag.buybackInfo.newPrice}`);
-assert(spinFrag.rewardSummaryText.includes('Karnaval AMM Buyback'), 'Açıklamada buyback yapıldığı belirtilmeli');
+assert(spinFrag.rewardSummaryText.includes('Karnaval kasası pazardan satın alıp verdi'), 'Açıklamada kasanın pazardan alıp verdiği belirtilmeli');
 console.log(`✅ Parça fiziki buyback ile fiyata yukarı yönlü etki etti: ${preFragPrice.toFixed(2)} -> ${spinFrag.buybackInfo.newPrice.toFixed(2)} ASTRA`);
 
 // Restore original rewards
