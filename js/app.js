@@ -200,12 +200,20 @@ ekranBaglamKur({
   bildir: (mesaj, tur) => showToast(mesaj, tur),
   hudYenile: () => renderTopBar(),
   panelKok: () => dom.modalBody,
+  panelAcik: () => !!(dom.rpgModal && dom.rpgModal.classList.contains('active')),
   panelYaz: ([simge, ad], html) => {
     dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
     dom.modalBody.innerHTML = html;
     displayModal();
   },
-  kilit: (anahtar) => gameState.getFeatureLock(anahtar)
+  kilit: (anahtar) => gameState.getFeatureLock(anahtar),
+  // Yeni ekrana taşınmamış bölümler için geçici köprü
+  eskiAc: (id) => {
+    const eski = { kisla: () => openBarracksModal() };
+    if (!eski[id]) return false;
+    eski[id]();
+    return true;
+  }
 });
 
 // Cinematic Loading Bar - Pürüzsüz & Güvenilir Yükleme Akışı
@@ -1465,8 +1473,11 @@ function renderExpeditionActiveBox(nodeId) {
 // =========================================================================
 // 4. BÖLGE MODALLERİ (ORMAN, MADEN, ÇİFTLİK, BALIKÇI, KIŞLA, TAVERNA, AMM PAZAR, KOLEZYUM)
 // =========================================================================
+const YENI_EKRAN_BOLGE = { village: 'koy', healer: 'sifahane', spaceport: 'uzay' };
+
 function openTownZoneModal(zoneId, zoneName) {
   if (!featureGate(zoneId)) return;
+  if (YENI_EKRAN_BOLGE[zoneId]) { ekranAc(YENI_EKRAN_BOLGE[zoneId]); return; }
   if (zoneId === 'barracks') {
     openBarracksModal();
     return;
@@ -1841,92 +1852,6 @@ function openTownZoneModal(zoneId, zoneName) {
 
   // 3. ÇİFTLİK (WHEAT)
   // 3. YENİ BİNALAR (v2 R5/R6): Köy Evleri, Şifahane, Uzay Limanı
-  else if (zoneId === 'village') {
-    const vi = gameState.getVillageInfo();
-    const costTxt = vi.nextHouseCost ? Object.entries(vi.nextHouseCost).map(([k, n]) => `${(RES_META()[k] || {}).icon || ''} ${fmtInt(n)} ${(RES_META()[k] || {}).name || k}`).join(' + ') : '—';
-    const canAfford = vi.nextHouseCost ? Object.entries(vi.nextHouseCost).every(([k, n]) => (state.inventory[k] || 0) >= n) : false;
-    html = `
-      <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🏘️ Köy Evleri</div><div class="card-badge">${vi.houses} ev · ${vi.villagers} / ${vi.capacity} köylü</div></div>
-        <div class="clean-desc">Köylüler günde 2 buğday yer; buğday varsa nüfus günde %2 büyür (ev kapasitesine kadar), ${vi.starveDays} gün aç kalırsa günde %5 göç eder. Her köylü günde 1 emek puanı üretir (Konsey projeleri için). Her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir. Universe açılınca köylüler kolonist olarak gönderilebilir.</div>
-        ${vi.starving ? `<div style="background:rgba(185,28,28,.25); border:1px solid #ef4444; border-radius:8px; padding:8px 12px; margin-bottom:8px; color:#fca5a5; font-weight:700;">⚠️ Köy aç! ${vi.starvingDays} gündür buğday yok; ${vi.starveDays} günden sonra köylüler göç eder. Günlük ihtiyaç: ${vi.wheatPerDay} buğday.</div>` : ''}
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.85rem;">
-          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${vi.villagers}</strong><span class="stat-tile-sub">kapasite ${vi.capacity} · günde +%${Math.round(vi.growthPerDay * 100)}</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Günlük buğday</span><strong>${vi.wheatPerDay}</strong><span class="stat-tile-sub">depoda ${fmtInt(state.inventory.wheat || 0)}</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Emek puanı</span><strong>${fmtInt(vi.labor)}</strong><span class="stat-tile-sub">günde +${vi.laborPerDay}</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Üretim bonusu</span><strong>+%${Math.round(vi.bonus * 100)}</strong><span class="stat-tile-sub">her 10 köylü +%1</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Asker hakkı</span><strong>${vi.soldiers} / ${vi.soldierCap}</strong><span class="stat-tile-sub">her asker 1 köylü</span></div>
-        </div>
-      </div>
-      <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🏗️ Yeni ev</div><span class="card-badge">${vi.houses} / ${vi.maxHouses} (hesap seviyesi kadar)</span></div>
-        <div style="font-size:0.85rem; color:#cbd5e1; margin-bottom:8px;">Bedel: ${costTxt}</div>
-        <button class="btn-clean btn-clean-green" id="btn-build-house" style="width:auto; padding:9px 18px;" ${vi.canBuildHouse && canAfford ? '' : 'disabled'}>🏘️ Ev yap (+${GAME_CONFIG.KOY?.VILLAGERS_PER_HOUSE ?? 10} köylü kapasitesi)</button>
-        ${!vi.canBuildHouse && vi.houseLimitReason ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">${vi.houseLimitReason}.</div>` : (!canAfford ? `<div style="font-size:0.78rem; color:#94a3b8; margin-top:6px;">Malzeme eksik.</div>` : '')}
-      </div>`;
-  }
-  else if (zoneId === 'healer') {
-    const S = GAME_CONFIG.SIFAHANE || {};
-    const herbs = Math.floor(state.inventory.herb || 0);
-    const rows = (state.soldierUnits || []).map((sv, i) => ({ i, sv, info: gameState.getHerbHealInfo(i) })).filter(x => x.info && !x.info.isFull);
-    html = `
-      <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🌿 Şifahane</div><div class="card-badge">${fmtInt(herbs)} şifalı ot</div></div>
-        <div class="clean-desc">Şifalı ot ile iyileştirme: 1 ot = ${S.HP_PER_HERB ?? 5} can; buğday harcanmaz, ASTRA bedeli anında iyileştirmenin %${Math.round((S.ADA_SHARE_WITH_HERB ?? 0.5) * 100)}'i. Şifalı ot yalnız Şifalı Ot Bahçesi seferlerinden gelir.</div>
-        ${rows.length === 0 ? '<div style="color:#4ade80; font-weight:700;">✅ Bütün askerler tam can.</div>' : `
-        <div style="display:grid; gap:6px;">
-          ${rows.map(({ i, sv, info }) => `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(255,255,255,.04); padding:8px 10px; border-radius:8px; font-size:0.85rem;">
-            <span><strong>${sv.name}</strong> · ${info.hp}/${info.maxHp} can</span>
-            <button class="btn-clean btn-clean-green btn-heal-herb" data-soldier-idx="${i}" style="width:auto; padding:6px 12px;" ${herbs >= info.herbsNeeded && (state.adAstraBalance || 0) >= info.herbAdaCost ? '' : 'disabled'}>🌿 İyileştir (${info.herbsNeeded} ot + ${fmt3(info.herbAdaCost)} ASTRA)</button>
-          </div>`).join('')}
-        </div>
-        <button class="btn-clean btn-clean-green" id="btn-heal-herb-all" style="margin-top:10px; width:auto; padding:8px 16px;">🌿 Hepsini otla iyileştir</button>`}
-        <div style="margin-top:10px;"><button class="btn-clean btn-clean-outline" id="btn-healer-open-barracks" style="width:auto; padding:6px 14px;">⚔️ Kışlaya git (buğdayla iyileştirme)</button></div>
-      </div>`;
-  }
-  else if (zoneId === 'spaceport') {
-    const rk = gameState.getRocketStatus();
-    const vi = gameState.getVillageInfo();
-    const soldiers = (state.soldierUnits || []).length;
-    const genesis = !!state.genesisNftMinted;
-    const stage = GAME_CONFIG.UNIVERSE_STAGE || 0;
-    const stageNames = ['Aşama 0 — Realm (Universe kapalı)', 'Aşama 1 — Hazırlık (Hazırlık Deposu açık)', 'Aşama 2 — Ön sipariş', 'Aşama 3 — Universe açık'];
-    const prep = gameState.getUniversePrepProgress();
-    const progress = prep.pct;
-    const dp = prep.depot;
-    const depotRows = dp.rows.map(r => `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.82rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.05);"><span>${r.icon} ${r.name}</span><span><strong>${fmtInt(r.stored)}</strong> / ${fmtInt(r.cap)}</span><span style="display:flex; gap:4px;"><button class="btn-clean btn-clean-outline btn-depot-put" data-res="${r.key}" style="width:auto; padding:4px 8px; font-size:0.74rem;" ${dp.open && r.have >= 2 && r.room > 0 ? '' : 'disabled'} title="Elindekinin yarısını depoya koy">📦 yarısını koy (${fmtInt(Math.min(Math.floor(r.have / 2), r.room))})</button><button class="btn-clean btn-clean-outline btn-depot-take" data-res="${r.key}" style="width:auto; padding:4px 8px; font-size:0.74rem;" ${r.stored > 0 ? '' : 'disabled'} title="Hepsini geri al (%${Math.round(dp.cancelFee * 100)} kesinti)">↩️ geri al</button></span></div>`).join('');
-    const depotHtml = `
-      <div class="clean-card" style="border-color:${dp.open ? '#38bdf8' : '#475569'};">
-        <div class="card-title-row"><div class="card-title">📦 Yük İskelesi — Hazırlık Deposu</div><span class="card-badge">${dp.open ? `doluluk %${Math.round(dp.fill * 100)} · değer ${fmt3(dp.value)} ASTRA` : '🔒 Aşama 1\'de açılır'}</span></div>
-        <div class="clean-desc">Universe'e götüreceğin hammaddeyi buraya koyarsın: silodan çıkar, pazara giremez. Sınır: her hammaddede ${dp.weeksCap} haftalık Üretim Hakkın; dünya toplamı ${fmtInt(dp.worldCap)} ASTRA değeri (şu an ${fmt3(dp.worldTotal)}). Geri alırsan %${Math.round(dp.cancelFee * 100)} kesinti yakılır. Universe açılış günü depoyu Sirius Konseyi teslim alır.</div>
-        ${dp.open ? `<div style="margin-top:8px;">${depotRows}</div>` : ''}
-      </div>`;
-    const partRows = rk.parts.map(p => `<div style="display:flex; justify-content:space-between;"><span>${p.icon} ${p.name}</span><span style="font-weight:800; color:${p.ok ? '#4ade80' : '#f87171'};">${fmtInt(p.have)} / ${fmtInt(p.need)}</span></div>`).join('');
-    html = `
-      <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🚀 Uzay Limanı</div><div class="card-badge">${stageNames[stage] || stageNames[0]}</div></div>
-        <div class="clean-desc">Universe'e hazırlık merkezi: Roket Rampası (roket görevi), Yük İskelesi (Hazırlık Deposu) ve Gözlem Kulesi (kilitli). Realm tek başına en az 1 yıl oynanır; Universe açıldığında geçiş buradan yapılır.</div>
-        <div style="margin:8px 0 4px; font-weight:800; color:#e2e8f0;">Universe'e hazırlık: %${progress}</div>
-        <div style="height:10px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${progress}%; background:linear-gradient(90deg,#38bdf8,#a78bfa);"></div></div>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:8px; font-size:0.82rem; margin-top:10px;">
-          <div class="stat-tile"><span class="stat-tile-label">Roket</span><strong>${rk.ready ? 'Hazır ✅' : 'Yapılmadı'}</strong><span class="stat-tile-sub">hesap seviyesi ${rk.minLevel}+</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Hazırlık Deposu</span><strong>${dp.open ? `%${Math.round(dp.fill * 100)}` : 'Kilitli'}</strong><span class="stat-tile-sub">${dp.open ? `${fmt3(dp.value)} ASTRA değeri` : 'Aşama 1\'de açılır'}</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Köylü</span><strong>${vi.villagers} / 100</strong><span class="stat-tile-sub">kolonist adayı</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Asker</span><strong>${soldiers} / 10</strong><span class="stat-tile-sub">mürettebat adayı</span></div>
-          <div class="stat-tile"><span class="stat-tile-label">Genesis NFT</span><strong>${genesis ? 'Var ✅' : 'Yok'}</strong><span class="stat-tile-sub">gezegen satın alma hakkı</span></div>
-        </div>
-      </div>
-      <div class="clean-card">
-        <div class="card-title-row"><div class="card-title">🛠️ Roket Rampası — roket parçaları</div><span class="card-badge">${rk.ready ? '🏅 Roket hazır' : (rk.levelOk ? 'parçalar' : `seviye ${rk.minLevel} gerekli`)}</span></div>
-        <div style="display:grid; gap:4px; font-size:0.85rem; color:#cbd5e1; background:rgba(0,0,0,.3); border-radius:8px; padding:10px;">${partRows}</div>
-        <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="btn-clean btn-clean-green" id="btn-build-rocket" style="width:auto; padding:9px 18px;" ${rk.canBuild ? '' : 'disabled'}>🚀 Roketi yap</button>
-          ${rk.reason && !rk.ready ? `<span style="font-size:0.8rem; color:#94a3b8;">${rk.reason}</span>` : ''}
-          ${rk.ready ? `<span style="font-size:0.8rem; color:#4ade80;">Roket ${new Date(rk.builtAt).toLocaleDateString('tr-TR')} tarihinde hazırlandı; Universe'e geçiş kilidi burada açılacak.</span>` : ''}
-        </div>
-      </div>
-      ${depotHtml}`;
-  }
 
   // 4. AMM PAZAR YERİ (AUTOMATED MARKET MAKER DEX SWAP & P2P MARKET)
   else if (zoneId === 'market') {
@@ -4358,149 +4283,7 @@ function toggleNotificationPanel() {
   }, 50);
 }
 
-// =========================================================================
-// 4.10 KRALLIK DASHBOARD (MASTER COMMAND CENTER)
-// =========================================================================
-function openDashboardModal() {
-  const summary = gameState.getRealmSummary();
-  const repairCosts = gameState.getAllRepairCost();
-  const healCosts = gameState.getAllHealCost();
-
-  dom.modalTitle.innerHTML = `<span>🏰</span> <span>KRALLIK MERKEZİ</span>`;
-
-  const missingStamina = Math.max(0, summary.maxStamina - Math.floor(summary.stamina));
-  const wheatPerStamina = GAME_CONFIG.WHEAT_PER_STAMINA || 3.15;
-  const wheatNeededForFull = Math.ceil(missingStamina * wheatPerStamina);
-  const userWheat = Math.floor(Number(gameState.state.inventory.wheat) || 0);
-  const isStaminaFull = summary.stamina >= summary.maxStamina;
-  const canRefillStamina = !isStaminaFull && userWheat > 0;
-
-  const scrollHeal = Number(gameState.state.inventory.scroll_heal) || 0;
-  const scrollStamina = Number(gameState.state.inventory.scroll_stamina) || 0;
-
-  // 1-Click Top Actions Bar
-  const quickActionsHtml = `
-    <div class="clean-card" style="background: linear-gradient(135deg, rgba(20,14,8,0.95), rgba(35,22,12,0.95)); border-color: rgba(245,158,11,0.5);">
-      <div class="card-title-row">
-        <div class="card-title">⚡ Tek dokunuşla toplu işlemler</div>
-        <span class="card-badge kbd-hint" style="color: #fde047;">Kısayol: TAB</span>
-      </div>
-      <div class="dashboard-1click-grid">
-        <button class="btn-1click btn-1click-claim-restart-exp" title="Tamamlanan veya sürmekte olan tüm seferlerin biriken kaynaklarını anında topla ve boştakileri başlat">
-          <span>⚡</span> <span>Tüm Seferleri Topla & Başlat</span>
-        </button>
-        <button class="btn-1click btn-1click-refill-stamina" ${!canRefillStamina ? 'disabled' : ''} title="Depodaki buğday ile tüm staminayı tek tıkla tamamen doldur">
-          <span>⚡</span> <span>Tüm Staminayı Doldur (${isStaminaFull ? 'Dolu' : `${wheatNeededForFull} 🌾`})</span>
-        </button>
-        ${scrollStamina > 0 ? `
-          <button class="btn-1click btn-use-scroll" data-scroll="scroll_stamina" ${isStaminaFull ? 'disabled' : ''} style="background: linear-gradient(135deg, rgba(88,28,135,0.4), rgba(59,7,100,0.6)); border-color: #a855f7; color: #f3e8ff;" title="100 Stamina Doldurma Parşömeni Kullanarak Enerjiye +100 Ekle">
-            <span>📜</span> <span>Parşömenle +100 Stamina Doldur (${scrollStamina})</span>
-          </button>
-        ` : ''}
-        <button class="btn-1click btn-1click-repair-tools" ${repairCosts.count === 0 ? 'disabled' : ''} title="Tüm aşınmış aletleri tamir et">
-          <span>🔨</span> <span>Tüm Aletleri Onar (${repairCosts.count === 0 ? 'Tam Sağlam' : `${repairCosts.totalWood} 🌲 ${repairCosts.totalIron} ⛏️ ${repairCosts.totalAda} 🟣`})</span>
-        </button>
-        <button class="btn-1click btn-1click-heal-army" ${healCosts.count === 0 ? 'disabled' : ''} title="Tüm yaralı askerleri doyur ve iyileştir">
-          <span>🌾</span> <span>Tüm Orduyu Doyur (${healCosts.count === 0 ? 'Tam Sağlıklı' : `${healCosts.totalWheat} 🌾 ${healCosts.totalAda.toFixed(1)} 🟣`})</span>
-        </button>
-        ${scrollHeal > 0 ? `
-          <button class="btn-1click btn-use-scroll" data-scroll="scroll_heal" ${healCosts.count === 0 ? 'disabled' : ''} style="background: linear-gradient(135deg, rgba(88,28,135,0.4), rgba(59,7,100,0.6)); border-color: #a855f7; color: #f3e8ff;" title="Ordu İyileştirme Parşömeni Kullanarak Bir Askeri İyileştir">
-            <span>📜</span> <span>Parşömenle Orduyu İyileştir (${scrollHeal})</span>
-          </button>
-        ` : ''}
-      </div>
-    </div>
-  `;
-
-  // 6 Widget Grid
-  const widgetsHtml = `
-    <div class="dashboard-grid">
-      <!-- Widget 1: Genel Bakış -->
-      <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>📊</span> <span>Genel Durum</span></div>
-        <div class="dashboard-stat-row">
-          <span>Karakter Seviyesi</span>
-          <span class="dashboard-stat-value" style="color:#fde047;">Lv.${summary.level}</span>
-        </div>
-        <div class="dashboard-stat-row">
-          <span>ASTRA Bakiyesi</span>
-          <span class="dashboard-stat-value" style="color:#c084fc;">${summary.ada.toLocaleString('tr-TR', { minimumFractionDigits: 2 })} 🟣</span>
-        </div>
-        <div class="dashboard-stat-row">
-          <span>Stamina Enerjisi</span>
-          <span class="dashboard-stat-value" style="color:#38bdf8;">${Math.floor(summary.stamina)} / ${summary.maxStamina} ⚡</span>
-        </div>
-        <div class="dashboard-mini-bar">
-          <div class="dashboard-mini-bar-fill" style="width:${Math.min(100, (summary.stamina / summary.maxStamina) * 100)}%; background:linear-gradient(90deg,#0284c7,#38bdf8);"></div>
-        </div>
-      </div>
-
-      <!-- Widget 2: Aktif Seferler -->
-      <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>⚡</span> <span>Sefer Takipçisi (${summary.activeExps.length}/${RES_KEYS().length})</span></div>
-        ${summary.activeExps.map(e => `
-          <div class="dashboard-stat-row">
-            <span>${e.icon} ${e.name}</span>
-            <span class="dashboard-stat-value" style="color:${e.isCompleted ? '#4ade80' : '#facc15'};">
-              ${e.isCompleted ? '✅ HAZIR' : formatCountdown(e.remainingSeconds)}
-            </span>
-          </div>
-          <div class="dashboard-mini-bar">
-            <div class="dashboard-mini-bar-fill" style="width:${e.pct}%; background:${e.isCompleted ? '#22c55e' : '#f59e0b'};"></div>
-          </div>
-        `).join('') || '<div style="color:#94a3b8; font-size:0.8rem; padding:6px 0;">Şu an aktif sefer yok.</div>'}
-      </div>
-
-      <!-- Widget 3: Alet Sağlığı (72 Saat = 4320 Dakika) -->
-      <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>🔨</span> <span>Alet Dayanıklılıkları (Ort. %${summary.avgToolHealth})</span></div>
-        ${summary.toolSummary.map(t => `
-          <div class="dashboard-stat-row">
-            <span>${t.icon} ${t.name}</span>
-            <span class="dashboard-stat-value" style="color:${t.pct < 20 ? '#ef4444' : '#34d399'};">${t.durability}/${t.maxDurability || 4320}</span>
-          </div>
-          <div class="dashboard-mini-bar">
-            <div class="dashboard-mini-bar-fill" style="width:${t.pct}%; background:${t.pct < 20 ? '#ef4444' : '#10b981'};"></div>
-          </div>
-        `).join('')}
-      </div>
-
-      <!-- Widget 4: Ordu & Sağlık -->
-      <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>🛡️</span> <span>Ordu (%${summary.avgHpPct} Can)</span></div>
-        <div class="dashboard-stat-row">
-          <span>Toplam Savaş Gücü</span>
-          <span class="dashboard-stat-value" style="color:#fde047;">⚔️ ${summary.totalAtk} ATK • ❤️ ${summary.totalHp} HP</span>
-        </div>
-        <div class="dashboard-stat-row">
-          <span>Yaralı Askerler</span>
-          <span class="dashboard-stat-value" style="color:${summary.woundedCount > 0 ? '#ef4444' : '#4ade80'};">
-            ${summary.woundedCount > 0 ? `⚠️ ${summary.woundedCount} Asker Yaralı` : '✅ Tüm Ordu Zinde'}
-          </span>
-        </div>
-        <div class="dashboard-mini-bar">
-          <div class="dashboard-mini-bar-fill" style="width:${summary.avgHpPct}%; background:${summary.avgHpPct < 50 ? '#ef4444' : '#10b981'};"></div>
-        </div>
-      </div>
-
-      <!-- Widget 6: Silo & Depo Doluluk -->
-      <div class="dashboard-widget">
-        <div class="dashboard-widget-title"><span>📦</span> <span>Silo & Depo Kapasitesi (Seviye ${gameState.state.warehouseLevel})</span></div>
-        ${summary.kaynaklar.map((r, i) => `
-          <div class="dashboard-stat-row"${i ? ' style="margin-top:6px;"' : ''}>
-            <span>${r.icon} ${r.name} (%${r.pct})</span>
-            <span class="dashboard-stat-value">${fmtInt(r.amount)} / ${fmtInt(r.cap)}</span>
-          </div>
-          <div class="dashboard-mini-bar">
-            <div class="dashboard-mini-bar-fill" style="width:${r.pct}%; background:${r.pct >= 99 ? '#f59e0b' : r.color};"></div>
-          </div>`).join('')}
-      </div>
-    </div>
-  `;
-
-  dom.modalBody.innerHTML = quickActionsHtml + widgetsHtml;
-  displayModal();
-}
+const openDashboardModal = () => ekranAc('merkez');
 
 // =========================================================================
 // 4.10B KRALLIK HAZİNESİ & ÖDÜL HAVUZLARI MERKEZİ (TREASURY VAULT DASHBOARD)
@@ -5754,39 +5537,7 @@ function initAppEvents() {
   });
 
   dom.modalBody.addEventListener('click', async (e) => {
-    // ── v2 binaları: Köy Evleri, Şifahane, Uzay Limanı, Demirhane geri dönüşümü, Konsey katkısı ──
-    if (e.target.closest('#btn-build-house')) {
-      const r = gameState.buildHouse();
-      showToast(r.message, r.success ? 'success' : 'error');
-      if (r.success) sound.playLevelUp();
-      openTownZoneModal('village', ZONE_LABELS.village);
-      renderTopBar();
-      return;
-    }
-    const herbBtn = e.target.closest('.btn-heal-herb');
-    if (herbBtn) {
-      const r = gameState.healSoldierWithHerb(parseInt(herbBtn.dataset.soldierIdx, 10));
-      showToast(r.message, r.success ? 'success' : 'error');
-      openTownZoneModal('healer', ZONE_LABELS.healer);
-      renderTopBar();
-      return;
-    }
-    if (e.target.closest('#btn-heal-herb-all')) {
-      const r = gameState.healAllWithHerb();
-      showToast(r.message, r.healed > 0 ? 'success' : 'info');
-      openTownZoneModal('healer', ZONE_LABELS.healer);
-      renderTopBar();
-      return;
-    }
-    if (e.target.closest('#btn-healer-open-barracks')) { openBarracksModal(); return; }
-    if (e.target.closest('#btn-build-rocket')) {
-      const r = gameState.buildRocket();
-      showToast(r.message, r.success ? 'success' : 'error');
-      if (r.success) sound.playLevelUp();
-      openTownZoneModal('spaceport', ZONE_LABELS.spaceport);
-      renderTopBar();
-      return;
-    }
+    // ── Demirhane geri dönüşümü, Konsey katkısı ──
     // 🏷️ İlan pazarı: ilan ver / satın al / geri çek (sunucu)
     const sellBtn = e.target.closest('.btn-sell-equipment');
     if (sellBtn) {
@@ -5809,28 +5560,6 @@ function initAppEvents() {
     const cancelBtn = e.target.closest('.btn-ilan-cancel');
     if (cancelBtn) {
       pazar.cancel(Number(cancelBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); }).catch(err => showToast('Geri çekilemedi: ' + err.message, 'error'));
-      return;
-    }
-    // 📦 Hazırlık Deposu: yarısını koy / hepsini geri al
-    const putBtn = e.target.closest('.btn-depot-put');
-    if (putBtn) {
-      const k = putBtn.dataset.res;
-      const half = Math.floor(((gameState.state.inventory || {})[k] || 0) / 2);
-      const r = gameState.depositToPrepDepot({ [k]: half });
-      showToast(r.message, r.success ? 'success' : 'error');
-      openTownZoneModal('spaceport', ZONE_LABELS.spaceport); renderTopBar();
-      return;
-    }
-    const takeBtn = e.target.closest('.btn-depot-take');
-    if (takeBtn) {
-      const k = takeBtn.dataset.res;
-      const st = gameState.getPrepDepotStatus();
-      const row = st.rows.find(x => x.key === k);
-      if (!row || !(row.stored > 0)) return;
-      if (!window.confirm(`${row.stored} ${row.name} depodan geri alınsın mı? %${Math.round(st.cancelFee * 100)} kesinti yakılır.`)) return;
-      const r = gameState.withdrawFromPrepDepot(k, row.stored);
-      showToast(r.message, r.success ? 'success' : 'error');
-      openTownZoneModal('spaceport', ZONE_LABELS.spaceport); renderTopBar();
       return;
     }
     const recBtn = e.target.closest('.btn-recycle-equipment');
@@ -5861,74 +5590,6 @@ function initAppEvents() {
       renderTopBar();
       return;
     }
-    // 1-Click: Tüm Seferleri Topla & Yeniden Başlat
-    const exp1ClickBtn = e.target.closest('.btn-1click-claim-restart-exp');
-    if (exp1ClickBtn) {
-      const res = gameState.claimAndRestartAllExpeditions();
-      if (res.staminaWarning) {
-        showToast(res.staminaWarning, 'warning');
-      } else if (res.messages && res.messages.length > 0) {
-        showToast(res.messages[0], 'warning');
-      }
-      if (res.claimed > 0 || res.partialClaimed > 0 || res.restarted > 0) {
-        const parts = [];
-        if (res.claimed > 0) parts.push(`${res.claimed} Tam Sefer`);
-        if (res.partialClaimed > 0) parts.push(`${res.partialClaimed} Süren Seferden Biriken`);
-        const harvestText = res.totalHarvest > 0 ? ` (+${res.totalHarvest} Kaynak)` : '';
-        showToast(`⚡ ${parts.join(' & ')} Toplandı${harvestText}, ${res.restarted} Sefer Başlatıldı!`, 'success');
-        sound.playHarvest();
-      }
-      openDashboardModal();
-      renderTopBar();
-      return;
-    }
-
-    // 1-Click: Tüm Staminayı Doldur
-    const refill1ClickBtn = e.target.closest('.btn-1click-refill-stamina');
-    if (refill1ClickBtn) {
-      const res = gameState.refillStaminaToMaxWithWheat();
-      if (res.success) {
-        showToast(res.message, 'success');
-      } else {
-        showToast(res.message, 'info');
-      }
-      openDashboardModal();
-      renderTopBar();
-      return;
-    }
-
-    // 1-Click: Tüm Aletleri Onar
-    const repair1ClickBtn = e.target.closest('.btn-1click-repair-tools');
-    if (repair1ClickBtn) {
-      const res = gameState.repairAllTools();
-      if (res.repaired > 0) {
-        showToast(`🔨 ${res.repaired} alet tamir edildi: -${res.totalWood}🌲 -${res.totalIron}⛏️ -${res.totalAda}🟣`, 'success');
-        sound.playRepair();
-      } else if (res.hasDamagedTools && res.missingAda) {
-        showToast('⚠️ Hesapta yeteri kadar ASTRA yok!', 'error');
-      } else {
-        showToast(res.message || 'Tamir edilecek alet yok.', 'info');
-      }
-      openDashboardModal();
-      renderTopBar();
-      return;
-    }
-
-    // 1-Click: Tüm Orduyu Doyur & İyileştir
-    const heal1ClickBtn = e.target.closest('.btn-1click-heal-army');
-    if (heal1ClickBtn) {
-      const res = gameState.instantHealAllSoldiers();
-      if (res.healed > 0) {
-        showToast(`🌾 ${res.healed} asker doyuruldu ve tam cana ulaştı: -${res.totalWheat}🌾 -${res.totalAda}🟣`, 'success');
-        sound.playLevelUp();
-      } else {
-        showToast('İyileştirilecek yaralı asker yok.', 'info');
-      }
-      openDashboardModal();
-      renderTopBar();
-      return;
-    }
-
     // Smart Armory: Otomatik En İyileri Dağıt
     const autoEquipBtn = e.target.closest('.btn-smart-auto-equip');
     if (autoEquipBtn) {
@@ -7666,17 +7327,6 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
   _liveUpgradeUiTimer += deltaSeconds;
   if (_liveUpgradeUiTimer < 1.0 && deltaSeconds < 1.0) return;
   _liveUpgradeUiTimer = 0;
-
-  // 0. Dashboard 1-Click Tüm Aletleri Onar Butonunu Canlı Güncelle
-  const oneClickRepairBtn = document.querySelector('.btn-1click-repair-tools');
-  if (oneClickRepairBtn) {
-    const rCosts = gameState.getAllRepairCost();
-    oneClickRepairBtn.disabled = rCosts.count === 0;
-    const labelSpan = oneClickRepairBtn.querySelector('span:last-child');
-    if (labelSpan) {
-      labelSpan.innerText = `Tüm Aletleri Onar (${rCosts.count === 0 ? 'Tam Sağlam' : `${rCosts.totalWood} 🌲 ${rCosts.totalIron} ⛏️ ${rCosts.totalAda} 🟣`})`;
-    }
-  }
 
   if (!dom.modalContainer || !dom.modalContainer.classList.contains('active')) return;
 

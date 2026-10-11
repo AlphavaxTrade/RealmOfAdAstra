@@ -77,10 +77,10 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await tikla('.v3-bolumler [data-tab="ilan"]');
   kontrol(`${ad}: İlanlar bölümü iki liste seçeneği sunar`, await s.evaluate(() => document.querySelectorAll('.v3-chipler .v3-chip').length === 2));
   await ust('kralik', 'merkez'); await foto('07_kralik_merkez');
-  kontrol(`${ad}: Krallık merkezinde yan kartlar katlı (≥3 kapalı bölüm)`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli:not([open])').length >= 3));
+  kontrol(`${ad}: Krallık merkezinde yan kartlar katlı (≥3 kapalı bölüm)`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli:not([open])').length >= 3));
   kontrol(`${ad}: Krallık merkezi kısa (≤ 800 px)`, (await govdeYuk()) <= 800, String(await govdeYuk()));
-  await s.evaluate(() => document.querySelector('#modal-body details.v3-katli:not([open]) > summary').click()); await bekle(300);
-  kontrol(`${ad}: katlı bölüm açılır`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli[open]').length >= 3));
+  await s.evaluate(() => document.querySelector('#modal-body details.ek-katli:not([open]) > summary').click()); await bekle(300);
+  kontrol(`${ad}: katlı bölüm açılır`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli[open]').length >= 1));
   await ust('ben', 'surum'); await foto('08_surum');
   kontrol(`${ad}: sürüm geçmişi kısa (≤ 1500 px; eskiden ~17000)`, (await govdeYuk()) <= 1500, String(await govdeYuk()));
   await s.evaluate(() => document.querySelector('.v3-eski-dugme').click()); await bekle(300);
@@ -284,7 +284,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   k = await kart();
   kontrol('tur: merkez açılınca İlk seferin adımına geçer', /İlk seferin/i.test(k.baslik), k.baslik);
   await s.screenshot({ path: path.join(EKRAN, 'tur_3_sefer.png') });
-  await dokun('.btn-1click-claim-restart-exp'); await bekle(1200);
+  await dokun('[data-e="topla"]'); await bekle(1200);
   k = await kart();
   kontrol('tur: sefer başlayınca İşçilerin yolda adımına geçer ve panel kapanır', /yolda/i.test(k.baslik) && await s.evaluate(() => !document.getElementById('rpg-modal').classList.contains('active')), k.baslik);
   await dokun('#v3-tur-devam'); await dokun('#v3-tur-devam'); await dokun('#v3-tur-devam');

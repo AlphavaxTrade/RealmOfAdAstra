@@ -35,7 +35,7 @@ export function ekranKaydet(ekran) {
 export const ekranlar = () => [...KAYIT.values()];
 export const ekranVar = (id) => KAYIT.has(id);
 
-// b: { gameState, GAME_CONFIG, globalPool, ammMarket, treasury, online, bildir(m, tur), hudYenile(), panelYaz([simge, ad], html),
+// b: { gameState, GAME_CONFIG, globalPool, ammMarket, treasury, online, bildir(m, tur), hudYenile(), panelYaz([simge, ad], html), panelAcik(),
 //      panelKok(): HTMLElement, panelKapat(), kilit(anahtar): {name, reason}|null }
 export function baglamKur(b) {
   baglam = b;
@@ -48,8 +48,12 @@ export const aktifEkran = () => (aktif ? aktif.ekran.id : null);
 // Ekranı açar. Kilitliyse nedenini bildirir ve false döner.
 export function ac(id, secenek = {}) {
   const ekran = KAYIT.get(id);
-  if (!ekran) throw new Error(`bilinmeyen ekran: ${id}`);
   const b = baglam;
+  if (!ekran) {
+    // Henüz yeni ekrana taşınmamış bölümler eski açıcıya düşer (taşıma süresince)
+    if (b.eskiAc && b.eskiAc(id, secenek)) return true;
+    throw new Error(`bilinmeyen ekran: ${id}`);
+  }
   if (ekran.kilit && b.kilit) {
     const k = b.kilit(ekran.kilit);
     if (k) { b.bildir(`🔒 ${k.name} henüz kapalı: ${k.reason}`, 'info'); return false; }
@@ -67,6 +71,15 @@ export function kapat() {
   aktif = null;
 }
 
+// Panelde hâlâ bu ekranın içeriği duruyor mu? (eski açıcılar ya da başka ekranlar paneli değiştirmiş olabilir)
+function gecerliMi(kok) {
+  if (!aktif) return false;
+  const ilk = kok.firstElementChild;
+  if (ilk && ilk.dataset.ekran === aktif.ekran.id) return true;
+  aktif = null;
+  return false;
+}
+
 function ciz(yeniEkran, html = null) {
   const { ekran, secenek } = aktif;
   const b = baglam;
@@ -81,6 +94,7 @@ function ciz(yeniEkran, html = null) {
   const govde = html == null ? ekran.govde(b, secenek) : html;
   aktif.sonHtml = govde;
   b.panelYaz(ekran.baslik(b, secenek), govde);
+  if (kok.firstElementChild) kok.firstElementChild.dataset.ekran = ekran.id;   // başka bir açıcı paneli değiştirirse fark edilir
 
   // <details data-k="..."> bölümleri: kullanıcının açtığı açık kalır
   for (const d of kok.querySelectorAll('details[data-k]')) {
@@ -105,7 +119,7 @@ function baglaKok(kok) {
 
   // Eski pencere kodu içerideki tıklamaları durduruyordu; bu yüzden yakalama aşamasında dinlenir
   kok.addEventListener('click', (ev) => {
-    if (!aktif) return;
+    if (!gecerliMi(kok)) return;
     const el = ev.target.closest('[data-e]');
     if (!el || !kok.contains(el)) return;
     if (el.disabled || el.getAttribute('aria-disabled') === 'true') return;
@@ -117,7 +131,7 @@ function baglaKok(kok) {
   }, true);
 
   kok.addEventListener('change', (ev) => {
-    if (!aktif) return;
+    if (!gecerliMi(kok)) return;
     const el = ev.target.closest('[data-e-degis]');
     if (!el || !kok.contains(el)) return;
     const fn = aktif.ekran.degisimler && aktif.ekran.degisimler[el.dataset.eDegis];
@@ -148,6 +162,8 @@ async function calistir(fn, el) {
   if (!aktif || aktif.ekran !== ekran) return;   // eylem başka ekrana geçtiyse ya da kapattıysa
   if (sonuc === false) return;
   b.hudYenile();
+  // Eylem sırasında panel kapandıysa (örn. öğretici turu kapattı) yeniden açılmaz
+  if (b.panelAcik && !b.panelAcik()) { aktif = null; return; }
   if (sonuc && typeof sonuc === 'object' && sonuc.git) {
     ac(sonuc.git, sonuc.secenek || {});
     return;
@@ -160,7 +176,8 @@ export function canliTik() {
   if (!aktif) return;
   const b = baglam;
   const kok = b.panelKok();
-  if (!kok) return;
+  if (!kok || !gecerliMi(kok)) return;
+  if (b.panelAcik && !b.panelAcik()) { aktif = null; return; }
   try {
     // canliYenile: gövde yalnız içerik değişmişse yeniden çizilir (dokunma sırasında düğme yerinden oynamasın)
     if (aktif.ekran.canliYenile) {
@@ -185,10 +202,12 @@ export function sayi(v, ondalik = 0) {
 }
 // Aşağı yuvarlanmış tam sayı (miktarları şişirmemek için)
 export const tam = (v) => sayi(Math.floor(Number(v) || 0));
-// ASTRA tutarı: tam sayıysa ondalıksız, değilse en çok 3 ondalık
+// ASTRA tutarı: 1.000 ve üstü ondalıksız, 1 ve üstü 2 ondalık, küçük tutarlar 3 ondalık
 export function astra(v) {
-  const n = Math.round((Number(v) || 0) * 1000) / 1000;
-  return n.toLocaleString(TR, { maximumFractionDigits: 3 });
+  const n = Number(v);
+  if (!isFinite(n)) return '0';
+  const ondalik = Math.abs(n) >= 1000 ? 0 : (Math.abs(n) >= 1 ? 2 : 3);
+  return n.toLocaleString(TR, { minimumFractionDigits: 0, maximumFractionDigits: ondalik });
 }
 export const yuzde = (oran, ondalik = 0) => `%${sayi((Number(oran) || 0) * 100, ondalik)}`;
 export function sure(ms) {
