@@ -140,3 +140,12 @@
 .ek-kutu { display: flex; flex-direction: column; gap: var(--v3-gap-2, 8px); padding: 12px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
 .ek-hizli { display: flex; gap: 6px; flex-wrap: wrap; }
 .ek-hizli > .ek-dugme { min-height: 36px; padding: 4px 12px; font-size: 13px; }
+
+/* Hazine: harcama dağılımı şeridi, etiketler */
+.ek-dilim { display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06); }
+.ek-dilim > i { display: block; height: 100%; width: var(--g, 0%); background: var(--renk, #888); }
+.ek-dilim-aciklama, .ek-oge-etiketler { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--v3-yazi-2, #a9b1c4); }
+.ek-oge-etiket { display: inline-flex; align-items: center; gap: 5px; }
+.ek-oge-etiket.is-sonuk { opacity: .55; }
+.ek-nokta { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--renk, #888); }
+.ek-girdi-dar { width: 110px; }

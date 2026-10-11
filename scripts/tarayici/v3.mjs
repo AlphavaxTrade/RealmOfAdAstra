@@ -88,7 +88,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.evaluate(() => document.querySelector('.v3-eski-dugme').click()); await bekle(300);
   kontrol(`${ad}: "Eski sürümleri göster" hepsini açar`, (await govdeYuk()) > 5000);
   await ust('ben', 'hazine');
-  kontrol(`${ad}: konsey ve hazine sade başlıklı`, (await baslik()) === '🏛️ Konsey ve hazine', await baslik());
+  kontrol(`${ad}: hazine sade başlıklı`, (await baslik()) === '🏛️ Hazine ve gelir', await baslik());
   await s.keyboard.press('Escape'); await bekle(300);
 
   // Demirhane (v3): sade başlık, 2 sade sekme, ana işlemler görünür; pazara koy / geri dönüştür / çıkar "Diğer" altında
@@ -129,7 +129,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   // Hazine, Kotalar, Karnaval (v3): para birimi ASTRA, uzun kart yığınları katlı, kısa sekmeler
   await ust('ben', 'hazine'); await foto('14_hazine');
   kontrol(`${ad}: Hazine'de eski "ADA" yazısı kalmadı`, await s.evaluate(() => !/(^|\s)ADA(\s|$)/.test(document.getElementById('modal-body').innerText)));
-  kontrol(`${ad}: kasa açıklamaları katlı ("Bu kasa ne işe yarar?")`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-ayrinti:not([open])').length >= 3));
+  kontrol(`${ad}: kasa açıklamaları katlı ("Bu kasa ne işe yarar?")`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli:not([open])').length >= 3));
   kontrol(`${ad}: Hazine yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
   await ust('ben', 'kotalar'); await foto('15_kotalar');
   kontrol(`${ad}: Kotalar katlı kartlarla kısa (≤ 1300 px; eskiden ~2300)`, (await govdeYuk()) <= 1300 && await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli').length >= 3), String(await govdeYuk()));
@@ -141,8 +141,8 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.evaluate(() => document.querySelector('.carnival-tab-btn[data-carnival-tab="pools"]').click()); await bekle(700);
   kontrol(`${ad}: Karnaval havuzları kasa satırları olarak listelenir (≥ 5) ve düğmeleri çalışır`, await s.evaluate(() => document.querySelectorAll('#modal-body .v3-havuz').length >= 5 && document.querySelectorAll('#modal-body .btn-eco-pool-jump').length >= 5));
   await ust('ben', 'hazine');
-  kontrol(`${ad}: Hazine kasa satırları (≥ 5) ve ödül düğmeleri`, await s.evaluate(() => document.querySelectorAll('#modal-body .v3-havuz').length >= 5 && document.querySelectorAll('#modal-body .btn-treasury-action').length >= 5));
-  kontrol(`${ad}: Hazine'de ilk kart (kasa özeti) açık`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-katli'); return !!d && d.open && /Büyük Krallık/.test(d.querySelector('summary').innerText); }));
+  kontrol(`${ad}: Hazine kasa kartları (≥ 5) ve ödül düğmeleri`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli[data-k^="kasa-"]').length >= 5 && document.querySelectorAll('#modal-body [data-e="git"]').length >= 5));
+  kontrol(`${ad}: Hazine'de ilk kart (kasa özeti) açık ve görünür`, await s.evaluate(() => { const k = document.querySelector('#modal-body .ek-kart'); return !!k && /Krallık kasaları/.test(k.innerText) && k.offsetParent !== null; }));
   await s.keyboard.press('Escape'); await bekle(300);
 
   // Zindan savaş öncesi pencere (v3): sade başlık, giriş kuralları ve taktik katlı, "Savaşa başla" büyük ve görünür

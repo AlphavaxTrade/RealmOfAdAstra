@@ -26,7 +26,7 @@ export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc
     demirhane: () => api.openZone('blacksmith', '⚒️ Demirhane'),
     sifahane: () => api.openZone('healer', '🌿 Şifahane'),
     koy: () => api.openZone('village', '🏘️ Köy Evleri'),
-    konsey: () => api.openTreasury(),
+    konsey: () => api.openKonsey(),
     uzay: () => api.openZone('spaceport', '🚀 Uzay Limanı'),
     kisla: () => api.openBarracks(),
     zindan: () => api.enterDungeon(),

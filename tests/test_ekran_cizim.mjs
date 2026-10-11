@@ -81,7 +81,10 @@ for (const [durumAdi, kur] of Object.entries(durumlar)) {
     const bozuk = metin.match(/NaN|undefined|\[object|Infinity|\bnull\b/);
     assert.equal(bozuk, null, `${etiket}: bozuk değer görünüyor: ${bozuk && bozuk[0]}`);
     assert.equal(etiketDengesi(html), '', `${etiket}: ${etiketDengesi(html)}`);
-    assert.ok(!/\sstyle="(?![^"]*--p:)/.test(html), `${etiket}: satır içi stil kullanılmış (yalnız --p çubuk değişkenine izin var)`);
+    for (const m of html.matchAll(/\sstyle="([^"]*)"/g)) {
+      const bozukStil = m[1].split(';').map((x) => x.trim()).filter(Boolean).filter((x) => !x.startsWith('--'));
+      assert.equal(bozukStil.length, 0, `${etiket}: satır içi stil kullanılmış (yalnız --değişken izinli): ${bozukStil[0]}`);
+    }
     // data-e adlarının hepsinin eylemi olmalı
     for (const m of html.matchAll(/data-e="([^"]+)"/g)) {
       assert.ok(e.eylemler && typeof e.eylemler[m[1]] === 'function', `${etiket}: data-e="${m[1]}" için eylem yok`);

@@ -178,7 +178,6 @@ console.log('✅ ayarlar ve bağlantı');
 // 9) Karnaval ve Hazine v3 parçaları: düğme kimlikleri korunur, metinler kaçırılır, ana yol tek düğme
 {
   const { cevirSecenekleriHtml, havuzlarHtml } = await import('../js/ui/v3/karnaval.js');
-  const { hazineOzetHtml, hazineKasalarHtml } = await import('../js/ui/v3/hazine.js');
   const cevir = cevirSecenekleriHtml({ costAda: 100, tickets: 0, resSpinsLeft: 3, resSpinsMax: 3, resBtnsHtml: '<button class="btn-spin-wheel" data-pay="wood">x</button>' });
   assert.match(cevir, /data-pay="ada"/);
   assert.match(cevir, /id="btn-spin-wheel-ticket"[^>]*disabled/, 'bilet yoksa bilet düğmesi kapalı');
@@ -191,10 +190,5 @@ console.log('✅ ayarlar ve bağlantı');
   assert.ok(!hv.includes('<img src=x'), 'havuz adı kaçırılır');
   assert.match(hv, /btn-eco-pool-jump" data-action="dungeon"/);
   assert.match(hv, /data-action="lottery"/);
-  const oz = hazineOzetHtml({ totalVaultAda: 1, totalAmmLiquidityAda: 2, burnedNftPool: 3 });
-  assert.match(oz, /Büyük Krallık Kasası/);
-  const ks = hazineKasalarHtml([{ id: 'a', name: 'A<b>', icon: '💀', color: '#000', totalPoolAda: 12, description: 'd', statusBadge: 's', userShareText: 'u', actionType: 'dungeon', actionText: 'Gir', gelirMetni: 'her harcamadan %1 pay' }]);
-  assert.ok(!ks.includes('A<b>'), 'kasa adı kaçırılır');
-  assert.match(ks, /btn-treasury-action" data-action="dungeon"/);
-  console.log('✅ karnaval ve hazine v3 parçaları');
+  console.log('✅ karnaval v3 parçaları');
 }

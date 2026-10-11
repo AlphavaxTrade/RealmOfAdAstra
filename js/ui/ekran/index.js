@@ -9,3 +9,5 @@ import './bolge.js';
 import './taverna.js';
 import './demirhane.js';
 import './pazar.js';
+import './konsey.js';
+import './hazine.js';

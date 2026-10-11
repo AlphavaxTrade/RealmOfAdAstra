@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { globalPool } from '../js/globalPool.js';
 import { GAME_CONFIG } from '../js/config.js';
+import { treasury } from '../js/treasury.js';
 
 console.log('--- 🧪 BUĞDAY SİLO DENGELEMESİ, XP TANKI VE HAZİNE HAVUZLARI TESTİ ---');
 
@@ -72,10 +73,9 @@ const ubiAfter = globalPool.state.ubiPool || 0;
 console.log(`UBI Havuzu: Önce = ${ubiBefore.toFixed(2)}, Sonra = ${ubiAfter.toFixed(2)} (+${(ubiAfter - ubiBefore).toFixed(2)} ASTRA)`);
 assert.ok(ubiAfter > ubiBefore, 'Silo yükseltme ASTRA harcamasından %6 UBI havuzuna aktarılmalıdır');
 
-const vaultSummary = gs.getTreasuryVaultSummary();
-console.log('Hazine ve Havuz Özeti:', vaultSummary.pools.map(p => `${p.name}: ${(p.totalPoolAda || 0).toFixed(2)} ASTRA`));
-const ubiPoolEntry = vaultSummary.pools.find(p => p.id === 'ubi_pool');
-assert.ok(ubiPoolEntry, 'TreasuryVaultSummary içinde UBI Havuzu bulunmalı');
-assert.ok(ubiPoolEntry.totalPoolAda > 0, 'UBI Havuzunda bakiye görünmeli');
+const hazineOzeti = treasury.getSummary();
+console.log('Hazine kasaları:', hazineOzeti.pools.map(p => `${p.name}: ${p.balance.toFixed(2)} ASTRA`));
+assert.ok(hazineOzeti.pools.length >= 9, 'hazine defterinde 9 kasa olmalı');
+assert.ok(globalPool.state.ubiPool > 0, 'UBI havuzunda bakiye görünmeli');
 
 console.log('✅ Silo yükseltme ASTRA dağıtımı ve Hazine/UBI havuz görünürlüğü doğrulandı.');

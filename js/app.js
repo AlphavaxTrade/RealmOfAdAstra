@@ -15,7 +15,6 @@ import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { cevirSecenekleriHtml as karnavalCevirV3, havuzlarHtml as karnavalHavuzlarV3 } from './ui/v3/karnaval.js';
-import { hazineOzetHtml as hazineOzetV3, hazineKasalarHtml as hazineKasalarV3 } from './ui/v3/hazine.js';
 import { yolHtml, yolOzeti } from './ui/v3/ogretici.js';
 import { sadeBaslik } from './ui/v3/panel.js';
 import { resImg, soldierPortrait, rewardImg } from './ui/art.js';
@@ -194,6 +193,8 @@ ekranBaglamKur({
   gameState, GAME_CONFIG, globalPool, ammMarket, treasury,
   get online() { return online; },
   get pazar() { return pazar; },
+  get sponsor() { return sponsor; },
+  girisli: () => isLoggedIn(),
   bildir: (mesaj, tur) => showToast(mesaj, tur),
   hudYenile: () => renderTopBar(),
   panelKok: () => dom.modalBody,
@@ -207,7 +208,16 @@ ekranBaglamKur({
   kilit: (anahtar) => gameState.getFeatureLock(anahtar),
   // Yeni ekrana taşınmamış bölümler için geçici köprü
   eskiAc: (id) => {
-    const eski = { kisla: () => openBarracksModal() };
+    const eski = {
+      kisla: () => openBarracksModal(),
+      zindan: () => enterDungeonScene(),
+      kolezyum: () => openColosseumModal(),
+      savasalani: () => openBattlefieldModal(),
+      karnaval: () => openCarnivalModal('wheel'),
+      rehber: () => openKrallikYoluModal(),
+      ekonomi: () => openEconomyDashboardModal('overview'),
+      koleksiyon: () => openCollectionModal()
+    };
     if (!eski[id]) return false;
     eski[id]();
     return true;
@@ -1339,7 +1349,7 @@ function openTownZoneModal(zoneId, zoneName) {
     return;
   }
   if (zoneId === 'council') {
-    openTreasuryVaultModal();
+    ekranAc('konsey');
     return;
   }
 
@@ -3332,166 +3342,7 @@ function toggleNotificationPanel() {
 
 const openDashboardModal = () => ekranAc('merkez');
 
-// =========================================================================
-// 4.10B KRALLIK HAZİNESİ & ÖDÜL HAVUZLARI MERKEZİ (TREASURY VAULT DASHBOARD)
-// =========================================================================
-function openTreasuryVaultModal() {
-  const summary = gameState.getTreasuryVaultSummary();
-
-  dom.modalTitle.innerHTML = `<span>🏛️</span> <span>Sirius Konseyi & Hazine</span>`;
-
-  // Her 100 ASTRA harcamanın dağılımı ve kasaların payları (ayarlardan)
-  const A = GAME_CONFIG.TREASURY_ALLOCATION || {};
-  const T = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;
-  const shareOf = { world_boss: A.worldBoss, colosseum_arena: A.arena, dungeon_loot: A.dungeon, carnival_events: A.carnival, quest_pool: A.quest, amm_buyback: A.ammBuyback };
-  const pctTxt = v => '%' + (Math.round(v * 1000) / 10).toLocaleString('tr-TR');
-  const split = [
-    ['Oyun kasaları', T, '#e7b94c'], ['Temel gelir (UBI)', GAME_CONFIG.UBI_POOL_RATE ?? 0.06, '#43d19a'],
-    ['Yakım', GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05, '#f06868'], ['Yapımcı payı', GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03, '#a894ff']
-  ];
-  const splitHtml = `
-    <div class="clean-card" style="margin-top: 12px; padding: 12px 14px;">
-      <div style="font-size: 0.86rem; font-weight: 800; color: #e2e8f0; margin-bottom: 8px;">Oyunda harcanan her 100 ASTRA nereye gider?</div>
-      <div style="display: flex; height: 12px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.06);">
-        ${split.map(([, v, c]) => `<div style="width: ${v * 100}%; background: ${c};"></div>`).join('')}
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 0.78rem; color: #cbd5e1;">
-        ${split.map(([l, v, c]) => `<span><span style="display:inline-block; width:9px; height:9px; border-radius:2px; background:${c}; margin-right:5px;"></span>${l} <strong>${Math.round(v * 100)}</strong></span>`).join('')}
-      </div>
-      <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">Oyun kasalarına giden pay aşağıdaki kasalara bölünür; ödüller (zindan, boss, kolezyum, görev, çark) bu kasalardan ödenir, havadan basılmaz.</div>
-    </div>`;
-
-  // v2: Sirius Konseyi — üretim düzeni (kota termostatı, Otorite, ağırlık) ve ortak kasa stoğu
-  const us = gameState.getUretimSummary ? gameState.getUretimSummary() : null;
-  const konseyStock = (typeof globalPool !== 'undefined' && globalPool.getKonseyStock) ? globalPool.getKonseyStock() : {};
-  const konseyHtml = us ? `
-    <div class="clean-card" style="border-color:#a78bfa;">
-      <div class="card-title-row">
-        <div class="card-title" style="color:#c4b5fd;">🏛️ Sirius Konseyi — üretim düzeni ve ortak kasa</div>
-        <span class="card-badge">Otorite sv.${us.otorite.level} · ${Math.round(us.otorite.hours)} sa × ${Math.round(us.otorite.days)} gün</span>
-      </div>
-      <div class="clean-desc">Kişi başı kota (termostat): her hafta kaynağın fiyatı açılışın üstündeyse +%10, altındaysa −%10 (0,05-1,0). Senin ağırlığın ×${us.weight.weight} (seviye ×${us.weight.levelFactor} · katkı kademesi ${us.weight.tier.name} ×${us.weight.tier.mult} · aktiflik ×${us.weight.activity}). Dünya ağırlık toplamı: ${(us.params.sumWeight || 1).toLocaleString('tr-TR')}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.</div>
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; font-size:0.82rem;">
-        ${RES_KEYS().map(k => { const m = RES_META()[k] || {}; const r = us.rights[k]; return `<div class="stat-tile"><span class="stat-tile-label">${m.icon || ''} ${m.name || k}</span><strong>${fmtInt(r.used)} / ${fmtInt(r.weekly)}</strong><span class="stat-tile-sub">kota %${Math.round((r.qpp || 0) * 100)} · ortak kasa ${fmtInt(konseyStock[k] || 0)}</span></div>`; }).join('')}
-      </div>
-      ${(() => { const ot = globalPool.getOtoriteStatus(); const pj = globalPool.getProjectStatus(); const vi = gameState.getVillageInfo(); const inv = gameState.state.inventory || {}; const lbl = k => k === 'labor' ? '💪 Emek' : `${(RES_META()[k] || {}).icon || ''} ${(RES_META()[k] || {}).name || k}`; const row = (k, have, need) => `<div style="display:flex; justify-content:space-between; font-size:0.82rem;"><span>${lbl(k)}</span><span><strong>${fmtInt(have)}</strong> / ${fmtInt(need)}</span></div>`; const giveBtn = (target, k) => k === 'labor' ? `<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="labor" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${Math.floor(vi.labor) >= 1 ? '' : 'disabled'}>💪 Emek ver (hepsi: ${fmtInt(Math.floor(vi.labor))})</button>` : `<span style="display:inline-flex; align-items:center; gap:4px;"><input type="number" class="konsey-amt" data-target="${target}" data-res="${k}" min="1" max="${Math.floor(inv[k] || 0)}" value="${Math.floor((inv[k] || 0) / 2)}" style="width:84px; padding:4px 6px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(0,0,0,.35); color:#e2e8f0; font-size:0.78rem;" title="Verilecek miktar (elinde ${fmtInt(inv[k] || 0)})"><button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="${target}" data-res="${k}" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${(inv[k] || 0) >= 1 ? '' : 'disabled'}>${lbl(k)} ver</button></span>`; return `
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:10px; margin-top:10px;">
-        <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px;">
-          <div style="font-weight:800; color:#e2e8f0;">⛏️ Madencilik Otoritesi — seviye ${ot.level}${ot.maxed ? ' (en üst)' : ` → ${ot.level + 1}`}</div>
-          <div style="font-size:0.78rem; color:#94a3b8; margin:4px 0 6px;">Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: taş %40, demir %20, odun %10; çelik payı %30 Konsey kasasından (${fmtInt(ot.steelAstra)} ASTRA).</div>
-          ${ot.maxed ? '' : `<div style="height:8px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-bottom:6px;"><div style="height:100%; width:${ot.pct}%; background:#a78bfa;"></div></div>
-          ${Object.keys(ot.need).map(k => row(k, ot.progress[k] || 0, ot.need[k])).join('')}
-          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${Object.keys(ot.need).map(k => giveBtn('otorite', k)).join('')}</div>`}
-        </div>
-        <div style="background:rgba(255,255,255,.04); border-radius:8px; padding:10px;">
-          <div style="font-weight:800; color:#e2e8f0;">${pj.active ? `${pj.active.icon} Konsey projesi: ${pj.active.name}` : '✅ Bütün Konsey projeleri bitti'}</div>
-          ${pj.active ? `<div style="font-size:0.78rem; color:#94a3b8; margin:4px 0 6px;">${pj.active.desc} Gereken: ${fmtInt(pj.active.units)} birim hammadde (Otorite karışımı) + ${fmtInt(pj.active.labor)} emek. Senin emek puanın: ${fmtInt(vi.labor)}.</div>
-          <div style="height:8px; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden; margin-bottom:6px;"><div style="height:100%; width:${pj.pct}%; background:#38bdf8;"></div></div>
-          ${Object.keys(pj.need).map(k => row(k, pj.progress[k] || 0, pj.need[k])).join('')}
-          ${row('labor', pj.labor, pj.active.labor)}
-          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${Object.keys(pj.need).map(k => giveBtn('project', k)).join('')}<button class="btn-clean btn-clean-outline btn-konsey-contribute" data-target="project" data-res="labor" style="width:auto; padding:5px 10px; font-size:0.78rem;" ${vi.labor >= 1 ? '' : 'disabled'}>💪 Emek ver (hepsi: ${fmtInt(vi.labor)})</button></div>` : ''}
-          ${pj.done.length ? `<div style="font-size:0.78rem; color:#4ade80; margin-top:6px;">Biten: ${pj.done.map(d => d.icon + ' ' + d.name).join(', ')}</div>` : ''}
-        </div>
-      </div>`; })()}
-    </div>` : '';
-
-  // v2: Kapı durumu (R4/R4c) — vatandaş sınırı, sıra, askı, büyüme göstergesi (sunucudan; çevrimdışı denemede yok)
-  const kp = online.kapi;
-  const kapiHtml = kp ? `
-    <div class="clean-card" style="border-color:#f59e0b;">
-      <div class="card-title-row">
-        <div class="card-title" style="color:#fcd34d;">🚪 Kapı durumu — vatandaş ${fmtInt(kp.citizens)} / ${fmtInt(kp.limit)}</div>
-        <span class="card-badge">aktif ${fmtInt(kp.active || 0)} · sırada ${fmtInt(kp.waiting)} · askıda ${fmtInt(kp.suspended)}</span>
-      </div>
-      <div class="clean-desc">Vadinin vatandaş sınırı ${fmtInt(kp.limit)} (ilk döngü); bunların <strong>${fmtInt(kp.active || 0)}</strong> tanesi bu hafta katılım puanını (sefer, zindan, kolezyum, pazar, Konsey, çark, rehber görevi gibi alanlardan yeterince çeşitli) sağladığı için aktif. Kayıt her zaman açık: yer yoksa hesap bekleme sırasına girer, vadiyi gezer, hazır aday onaylarını verebilir. Katılımı düşük kalan önce uyarılır, sonra izin hakkını kullanmaya davet edilir; cevapsız kalırsa yeri sıradaki hazır adaya geçer (hesap silinmez).</div>
-    </div>` : '';
-
-  // E-planı Faz 2 (8 Ekim, KARAR 1): gelir motoru panosu — dağıtılan + çekilebilen, hedefe uzaklık, trade sitesi geliri (herkese açık)
-  const gm = kp?.indicator, pi = online.partnerIncome;
-  const usd = gm?.usdPerPlayerMonth || 0, wusd = gm?.withdrawableUsdPerPlayerMonth || 0;
-  const esikD = kp?.threshold || 0, esikC = esikD / 3;
-  const uzaklik = v => v > 0 ? (v >= 1 ? '✅ hedef geçildi' : `hedefin %${Math.round(v * 100)}'ü — ${(1 / v).toFixed(1)} kat kaldı`) : 'henüz veri yok';
-  const gelirHtml = kp ? `
-    <div class="clean-card" style="border-color:#34d399;">
-      <div class="card-title-row">
-        <div class="card-title" style="color:#6ee7b7;">💰 Gelir motoru — kişi başı aylık (aktif vatandaş)</div>
-        <span class="card-badge">${gm?.weeks || 0} hafta ortalaması</span>
-      </div>
-      <div class="clean-desc">
-        Dağıtılan (kilitli dahil): <strong>${usd.toLocaleString('tr-TR')} $</strong> / hedef ${esikD} $ — ${uzaklik(esikD > 0 ? usd / esikD : 0)}.<br>
-        Gerçekten çekilebilen: <strong>${wusd.toLocaleString('tr-TR')} $</strong> / hedef ${esikC.toFixed(1)} $ — ${uzaklik(esikC > 0 ? wusd / esikC : 0)}.<br>
-        Büyüme (vatandaş sınırının artması) için <strong>ikisi birden</strong> hedefi geçmeli: ${kp.growthLocked ? '<strong>şimdilik kilitli</strong> (yönetici açana dek)' : 'kilit açık, eşikler geçilince ayda %10 büyür'}.
-        ${pi?.enabled ? `<br>Trade sitesinden gelen gerçek dış gelir — bu hafta <strong>${fmtInt(pi.weekAda)}</strong> / toplam <strong>${fmtInt(pi.totalAda)}</strong> ASTRA.` : ''}
-      </div>
-    </div>` : '';
-  // 🧾 Kişisel katılım karnem (E-planı Bölüm 1.4): bu hafta hangi kategorilere dokundum, eşik ne, izin durumum
-  const KAT_AD = { sefer: '🌾 Sefer', bakim: '🔧 Bakım', kisla: '⚔️ Kışla', zindan: '🏰 Zindan', kolezyum: '🛡️ Kolezyum', boss: '🐉 Dünya Bossu', pazar: '🏪 Pazar', konsey: '🏛️ Konsey', karnaval: '🎪 Karnaval', rehber: '🧭 Rehber' };
-  const ko = kp && gameState.state.katilim ? gameState.getKatilimOzet() : null;
-  const izinKalanGun = ko && ko.izindeMi ? Math.max(0, Math.ceil((Number(ko.izinModu.bitis) - Date.now()) / 86400000)) : 0;
-  const karneHtml = ko ? `
-    <div class="clean-card" style="border-color:#a78bfa;">
-      <div class="card-title-row">
-        <div class="card-title" style="color:#c4b5fd;">🧾 Katılım karnem</div>
-        <span class="card-badge">${ko.izindeMi ? '🏖️ izindesin' : ko.saglikli ? '✅ bu hafta tamam' : `bu hafta ${ko.puan}/${ko.esik}`}</span>
-      </div>
-      <div class="clean-desc">
-        Bu hafta <strong>${ko.puan}</strong> farklı alana dokundun; beklenen en az <strong>${ko.esik}</strong> (seviyen yükseldikçe artar). Aynı alanı tekrarlamak ek puan getirmez.<br>
-        ${ko.kategoriler.map(c => `<span style="display:inline-block;margin:2px 6px 2px 0;opacity:${c.dokunuldu ? 1 : 0.55};">${c.dokunuldu ? '✅' : '☐'} ${KAT_AD[c.id] || c.id}</span>`).join('')}<br>
-        ${ko.dusukHaftaSayisi > 0 ? `⚠️ Katılımın ${ko.dusukHaftaSayisi} haftadır düşük. ` : ''}Yıllık izin hakkın: <strong>${ko.izinYillikKalan}</strong> gün.
-        ${ko.izindeMi ? `<br>🏖️ <strong>İzindesin</strong> (${new Date(Number(ko.izinModu.bitis)).toLocaleDateString('tr-TR')} tarihine kadar, ${izinKalanGun} gün kaldı): yerin korunuyor ama bu sürede Üretim Hakkı, temel gelir ve ücretsiz oyuncu payı almazsın. <button id="btn-izin-bitir" class="btn-clean">İzni şimdi bitir</button>` : ''}
-        ${ko.sonUyari ? '<br>🚨 Son uyarı: izin hakkın bitti, katılımını artırmazsan yerin bekleyen birine geçer.' : ''}
-      </div>
-    </div>` : '';
-  const sponsorHtml = online.active && isLoggedIn() ? '<div id="sponsor-box" class="clean-card" style="border-color:#f472b6;"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Yükleniyor…</div></div>' : '';
-  const v3Kasalar = summary.pools.map(pool => { const sh = shareOf[pool.id]; return { ...pool, gelirMetni: pool.id === 'ubi_pool' ? `her harcamadan ${pctTxt(GAME_CONFIG.UBI_POOL_RATE ?? 0.06)} pay` : sh ? `her harcamadan ${pctTxt(T * sh)} pay` : '' }; });
-  dom.modalBody.innerHTML = hazineOzetV3(summary) + hazineKasalarV3(v3Kasalar) + splitHtml + kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml;
-  if (sponsorHtml) loadSponsorBox();
-  const izinBitirBtn = document.getElementById('btn-izin-bitir');
-  if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };
-
-  document.querySelectorAll('.btn-treasury-action').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const act = btn.dataset.action;
-      if (act === 'boss') openBattlefieldModal();
-      else if (act === 'colosseum') openColosseumModal();
-      else if (act === 'dungeon') { closeModal(); window.dispatchEvent(new CustomEvent('enter-dungeon-view')); }
-      else if (act === 'collection') openCollectionModal();
-      else if (act === 'carnival') openCarnivalModal('wheel');
-      else if (act === 'amm_buyback') ekranAc('pazar', { bolum: 'yakim' });
-      else if (act === 'ubi') openEconomyDashboardModal('overview');
-      else if (act === 'parliament') showToast('🏛️ AdAstra Meclisi yakında: topluluk oylamaları hazırlanıyor.', 'info');
-      else if (act === 'quests') openKrallikYoluModal();
-    });
-  });
-
-  displayModal();
-}
-
-// Sponsorluk kutusu (server/sponsor.js): tablo + benim sözleşmelerim + sponsor ol formu
-async function loadSponsorBox() {
-  const box = document.getElementById('sponsor-box');
-  if (!box) return;
-  let t, m;
-  try { [t, m] = await Promise.all([sponsor.tablo(), sponsor.benim()]); } catch (e) { box.innerHTML = `<div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Alınamadı: ${escHtml(e.message)}</div>`; return; }
-  const c = m.config, pct = Math.round(c.share * 100);
-  const sat = x => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:0.8rem;padding:3px 0;border-top:1px solid rgba(255,255,255,0.06);"><span>${escHtml(x.sponsor === 'Vatandaş #' + String(online.playerId || '').slice(4) ? x.target : x.sponsor)} · ${fmtInt(x.principal)} ASTRA · getiri ${fmtInt(x.returned)}/${fmtInt(x.cap)} · ${x.status}</span>`;
-  const given = m.given.map(x => sat(x) + (x.status === 'active' ? `<button class="btn-clean btn-clean-outline sp-feragat" data-id="${x.id}" style="width:auto;padding:2px 8px;font-size:0.74rem;">Vazgeç</button>` : '') + '</div>').join('');
-  const received = m.received.map(x => sat(x) + (x.status === 'active' && x.returned >= x.principal ? `<button class="btn-clean btn-clean-outline sp-kapat" data-id="${x.id}" style="width:auto;padding:2px 8px;font-size:0.74rem;">Kapat</button>` : '') + '</div>').join('');
-  const opts = t.rows.filter(r => r.id !== online.playerId && !r.izinde).slice(0, 100).map(r => `<option value="${escHtml(r.id)}">${escHtml(r.ad)} · Sv.${r.level} · bu hafta ${r.haftaKategori} kategori · ort. net çekim ${fmtInt(r.ortNetCekim4Hafta)} · ${r.sponsorSayisi} sponsor</option>`).join('');
-  box.innerHTML = `
-    <div class="card-title-row"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><span class="card-badge">sponsorlu paran: ${fmtInt(m.sponsoredBalance)} ASTRA</span></div>
-    <div class="clean-desc">Bir vatandaşa ASTRA ile sponsor olursun; o para <strong>çekilemez</strong>, yalnız oyunda harcanır. Karşılığında o oyuncunun her haftalık <strong>net çekiminin %${pct}'i</strong> (toplam getirin anaparanın ${c.returnCap} katına ya da ${c.days} güne dek) bakiyene eklenir. Anaparayı geri alamazsın; getiri vaadi yoktur — oyuncu çekim yapmazsa pay çıkmaz.</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;"><select id="sp-hedef" style="flex:1 1 260px;min-width:0;">${opts || '<option value="">Sponsor olunabilecek vatandaş yok</option>'}</select><input id="sp-miktar" type="number" min="${c.minAmount}" step="100" placeholder="en az ${c.minAmount}" style="width:120px;"><button id="sp-ol" class="btn-clean" style="width:auto;padding:4px 12px;">Sponsor ol</button></div>
-    ${given ? `<div style="margin-top:6px;font-weight:600;font-size:0.82rem;">Verdiğim</div>${given}` : ''}
-    ${received ? `<div style="margin-top:6px;font-weight:600;font-size:0.82rem;">Aldığım</div>${received}` : ''}`;
-  document.getElementById('sp-ol').onclick = () => {
-    const hedef = document.getElementById('sp-hedef').value, miktar = Number(document.getElementById('sp-miktar').value);
-    if (!hedef) return showToast('Bir vatandaş seç.', 'error');
-    sponsor.ol(hedef, miktar).then(r => { showToast(r.message, 'success'); renderTopBar(); loadSponsorBox(); }).catch(e => showToast('Sponsor olunamadı: ' + e.message, 'error'));
-  };
-  box.querySelectorAll('.sp-feragat').forEach(b => { b.onclick = () => sponsor.feragat(Number(b.dataset.id)).then(r => { showToast(r.message, 'info'); loadSponsorBox(); }).catch(e => showToast(e.message, 'error')); });
-  box.querySelectorAll('.sp-kapat').forEach(b => { b.onclick = () => sponsor.kapat(Number(b.dataset.id)).then(r => { showToast(r.message, 'success'); loadSponsorBox(); }).catch(e => showToast(e.message, 'error')); });
-}
+const openTreasuryVaultModal = () => ekranAc('hazine');
 
 // =========================================================================
 // 4.11 SMART ARMORY (AKILLI SİLAH DEPOSU & ENTITLE MATRİSİ)
@@ -4584,25 +4435,6 @@ function initAppEvents() {
   });
 
   dom.modalBody.addEventListener('click', async (e) => {
-    // ── Demirhane geri dönüşümü, Konsey katkısı ──
-    const kBtn = e.target.closest('.btn-konsey-contribute');
-    if (kBtn) {
-      const res = kBtn.dataset.res, target = kBtn.dataset.target;
-      const inv = gameState.state.inventory || {};
-      let r;
-      if (res === 'labor') r = gameState.contributeToProject({}, Math.floor(gameState.getVillageInfo().labor));
-      else {
-        const box = kBtn.parentElement && kBtn.parentElement.querySelector('input.konsey-amt');
-        const typed = box ? Math.floor(Number(box.value)) : NaN;
-        const amt = Number.isFinite(typed) && typed > 0 ? Math.min(typed, Math.floor(inv[res] || 0)) : Math.floor((inv[res] || 0) / 2);
-        if (!(amt > 0)) { showToast('Geçerli bir miktar yaz.', 'error'); return; }
-        r = target === 'otorite' ? gameState.contributeToOtorite({ [res]: amt }) : gameState.contributeToProject({ [res]: amt }, 0);
-      }
-      showToast(r.message, r.success ? 'success' : 'error');
-      openTreasuryVaultModal();
-      renderTopBar();
-      return;
-    }
     // Smart Armory: Otomatik En İyileri Dağıt
     const autoEquipBtn = e.target.closest('.btn-smart-auto-equip');
     if (autoEquipBtn) {
@@ -6153,7 +5985,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       displayModal();
     },
     openDashboard: openDashboardModal, openWarehouse: openWarehouseModal, openInventory: openInventoryModal,
-    openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openBarracks: openBarracksModal,
+    openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openKonsey: () => ekranAc('konsey'), openBarracks: openBarracksModal,
     enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
     openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
     openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
