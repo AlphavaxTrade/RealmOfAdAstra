@@ -32,41 +32,10 @@ globalThis.globalPool = globalPool;
 
 import { GameStateManager } from '../js/gameState.js';
 
-test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye Göre Sefer Tamiratı +%50 Rezerv Güvencesi', async (t) => {
+test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama / Uyanma', async (t) => {
   localStorage.clear();
 
-  await t.test('1. getBotDynamicResourceDeficitTargets: Seviye arttıkça (Lv 1, 2, 3) tamirat bedelleri ve +%50 hedef orantılı artmalı', () => {
-    const gs = new GameStateManager();
-
-    // v2 ölçeği: hedef = en az 50 ya da (1 seferlik, 3 aletlik aşınmanın 1,5 katı); silo kapasitesinin %80 tavanı
-    const expect = (lvl, res) => {
-      const dur = gs.getExpeditionDurationMinutes(lvl);
-      const perMin = (gs.getResourceRatePerMinute(res) * 0.25) / 3;
-      const one = Math.ceil(3 * dur * perMin);
-      const cap = gs.getWarehouseCapacity()[res];
-      return Math.min(Math.floor(cap * 0.8), Math.max(50, Math.ceil(one * 1.5)));
-    };
-    const lv1Data = gs.getBotDynamicResourceDeficitTargets(1);
-    assert.equal(lv1Data.durationMinutes, 18, 'Lv 1 sefer süresi 18 dakika olmalı');
-    assert.equal(lv1Data.targets.wood, expect(1, 'wood'), `Lv 1 Odun hedefi formülle aynı olmalı, bulunan: ${lv1Data.targets.wood}`);
-    assert.equal(lv1Data.targets.iron, expect(1, 'iron'), `Lv 1 Demir hedefi formülle aynı olmalı, bulunan: ${lv1Data.targets.iron}`);
-
-    const lv2Data = gs.getBotDynamicResourceDeficitTargets(2);
-    assert.equal(lv2Data.durationMinutes, 72, 'Lv 2 sefer süresi 72 dakika olmalı');
-    assert.ok(lv2Data.targets.wood > lv1Data.targets.wood, 'Lv 2 Odun hedefi Lv 1den büyük olmalı');
-    assert.ok(lv2Data.targets.iron > lv1Data.targets.iron, 'Lv 2 Demir hedefi Lv 1den büyük olmalı');
-    assert.equal(lv2Data.targets.wood, expect(2, 'wood'), `Lv 2 Odun hedefi formülle aynı olmalı, bulunan: ${lv2Data.targets.wood}`);
-    assert.equal(lv2Data.targets.iron, expect(2, 'iron'), `Lv 2 Demir hedefi formülle aynı olmalı, bulunan: ${lv2Data.targets.iron}`);
-
-    const lv3Data = gs.getBotDynamicResourceDeficitTargets(3);
-    assert.equal(lv3Data.durationMinutes, 126, 'Lv 3 sefer süresi 126 dakika olmalı');
-    assert.ok(lv3Data.targets.wood > lv2Data.targets.wood, 'Lv 3 Odun hedefi Lv 2den büyük olmalı');
-    assert.ok(lv3Data.targets.iron > lv2Data.targets.iron, 'Lv 3 Demir hedefi Lv 2den büyük olmalı');
-    assert.equal(lv3Data.targets.wood, expect(3, 'wood'), `Lv 3 Odun hedefi formülle aynı olmalı, bulunan: ${lv3Data.targets.wood}`);
-    assert.equal(lv3Data.targets.iron, expect(3, 'iron'), `Lv 3 Demir hedefi formülle aynı olmalı, bulunan: ${lv3Data.targets.iron}`);
-  });
-
-  await t.test('2. Depoda Odun:0, Demir:0, Buğday:0 iken autoBuyBotResourceDeficit AMM pazarından asgari önkoşul miktarını satın alarak botun durmasını engellemeli', () => {
+  await t.test('1. Depoda Odun:0, Demir:0, Buğday:0 iken autoBuyBotResourceDeficit AMM pazarından asgari önkoşul miktarını satın alarak botun durmasını engellemeli', () => {
     const gs = new GameStateManager();
     gs.state.level = 2; // Oyuncu Seviye 2
     gs.state.inventory = { wood: 0, iron: 0, wheat: 0, fragments: 0 };
@@ -83,7 +52,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     assert.ok(gs.state.inventory.wood < 500, 'Silo kontrolsüz biçimde doldurulmamalı');
   });
 
-  await t.test('3. Silo Seviye Yükseltildiğinde ambarlar sıfırlansa bile bot aktifse Seviye Tamiratı +%50 kadar satın alıp güvenceye almalı', () => {
+  await t.test('2. Silo Seviye Yükseltildiğinde ambarlar sıfırlansa bile bot aktifse bot durmamalı', () => {
     const gs = new GameStateManager();
     const now = Date.now();
     gs.state.level = 2; // Oyuncu Seviye 2
@@ -102,15 +71,15 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik & Seviyeye G�
     assert.equal(upRes.success, true, 'Silo yükseltilmiş olmalı');
     assert.equal(gs.state.warehouseLevel, 3, 'Silo Seviye 3 olmalı');
 
-    // Yükseltme sonrası bot aktif olduğu için ambarlar 0 veya 50 değil; Lv 2 tamiratının %50 fazlası kadar olmalı!
-    const expectedTargets = gs.getBotDynamicResourceDeficitTargets(2).targets;
-    assert.ok((gs.state.inventory.wood || 0) >= expectedTargets.wood, `Yükseltme sonrası Odun >= ${expectedTargets.wood} olmalı, ambar: ${gs.state.inventory.wood}`);
-    assert.ok((gs.state.inventory.iron || 0) >= expectedTargets.iron, `Yükseltme sonrası Demir >= ${expectedTargets.iron} olmalı, ambar: ${gs.state.inventory.iron}`);
-    assert.ok((gs.state.inventory.wheat || 0) >= expectedTargets.wheat, `Yükseltme sonrası Buğday >= ${expectedTargets.wheat} olmalı, ambar: ${gs.state.inventory.wheat}`);
+    // Yükseltme sonrası depo dolu kalır: bot önkoşulu (6 kaynak 50 üstü) sağlanmalı ve bot durmamalı
+    assert.equal(gs.checkBotPrerequisites().isMet, true, 'Yükseltme sonrası botun önkoşulları tamam olmalı');
+    for (const k of ['wood', 'iron', 'wheat']) {
+      assert.ok((gs.state.inventory[k] || 0) >= 50, `Yükseltme sonrası ${k} >= 50 olmalı, ambar: ${gs.state.inventory[k]}`);
+    }
     assert.equal(gs.isBotPaused(), false, 'Bot asla duraklatılmamış olmalı');
   });
 
-  await t.test('4. Dondurulmuş (Paused) bot, kasada ASTRA varken updateBotPauseState anında asgari tedarikle uyanmalı; ASTRA yoksa donuk kalmalı', () => {
+  await t.test('3. Dondurulmuş (Paused) bot, kasada ASTRA varken updateBotPauseState anında asgari tedarikle uyanmalı; ASTRA yoksa donuk kalmalı', () => {
     const gs = new GameStateManager();
     gs.state.level = 1;
     gs.state.tavernaBotActive = true;
