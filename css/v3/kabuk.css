@@ -368,16 +368,7 @@ html.v3 :is(.btn-bs-tab, .btn-bs-cat-filter, .btn-craft-equipment, .btn-quick-cr
 html.v3 #select-bs-sort, html.v3 #custom-up-slot, html.v3 #custom-up-level { min-height: 40px; }
 
 /* 15. ZINDAN: SAVAS ONCESI PENCERE VE SAVAS SAHNESI DUGMELERI --------------------------- */
-html.v3 .prebattle-sol-list > div { min-height: var(--v3-tap); }
-html.v3 :is(.btn-toggle-prebattle-row, #btn-pb-auto, #btn-pb-all, .btn-prebattle-preset, #btn-save-prebattle-preset, #btn-prebattle-refill-stamina, #btn-goto-barracks-prebattle, #btn-goto-battlefield-prebattle) { min-height: var(--v3-tap); }
-html.v3 .prebattle-sol-check { width: 22px; height: 22px; }
-html.v3 .pe-fee { min-height: var(--v3-tap); }
-html.v3 .v3-prebattle-aksiyon { position: sticky; bottom: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; padding: 10px 0 2px; background: var(--v3-yuzey); border-top: 1px solid var(--v3-cizgi); }
-html.v3 .v3-prebattle-aksiyon .btn-clean { width: 100% !important; min-height: 48px; margin: 0; }
-html.v3 .v3-prebattle-aksiyon .btn-use-scroll { grid-column: 1 / -1; }
 html.v3 :is(.aa-arena .speed-btn, #aa-closeBtn, #aa-resultBtn, #aa-resultCloseBtn, #sidebar-quota-open) { min-height: var(--v3-tap); min-width: var(--v3-tap); }
-html.v3 .prebattle-grid { display: flex !important; flex-direction: column; gap: 12px; }
-html.v3 .v3-prebattle-aksiyon { display: grid !important; }
 
 /* 17. ARAYÜZ TARAMASI DÜZELTMELERİ (11 Ekim 2026) ------------------------- */
 /* silo kartları iki sütun (üç sütun telefonda taşıyordu); geniş ekranda üç */

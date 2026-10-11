@@ -62,6 +62,8 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   if (anahtar.startsWith('kaynak:')) {   // kaynak tepsisinden bir hammadde bölgesi: kaynak:wood
     await s.click('#v3-kaynak-dugme');
     await s.click(`[data-v3-kaynak="${anahtar.slice(7)}"]`);
+  } else if (anahtar.startsWith('js:')) {   // sayfada çalıştırılacak ifade: js:window.dispatchEvent(...)
+    await s.evaluate(anahtar.slice(3));
   } else {
     await s.evaluate((k) => window.__v3.git(k), anahtar);
   }

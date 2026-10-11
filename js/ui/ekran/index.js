@@ -17,3 +17,4 @@ import './koleksiyon.js';
 import './savasalani.js';
 import './karnaval.js';
 import './kolezyum.js';
+import './savashazirlik.js';

@@ -182,3 +182,19 @@
 .ek-odul-simge .art-ico { width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { .ek-cark-ibre { transition: none; } }
 html.v3-azalt .ek-cark-ibre { transition: none; }
+
+/* 10. SAVAŞA HAZIRLIK ----------------------------------------------------- */
+.ek-dusman-resim { display: grid; place-items: center; width: 72px; height: 72px; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 2px solid rgba(240,104,104,.7); background: rgba(0,0,0,.3); font-size: 34px; }
+.ek-dusman-resim img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ek-asker-liste { display: flex; flex-direction: column; gap: 6px; }
+.ek-asker { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
+.ek-asker.is-secili { border-color: rgba(67,209,154,.55); }
+.ek-asker-sec { all: unset; box-sizing: border-box; flex: 1; min-width: 0; min-height: var(--v3-tap, 44px); display: flex; align-items: center; gap: 8px; padding: 4px 6px; cursor: pointer; border-radius: 10px; -webkit-tap-highlight-color: transparent; }
+.ek-asker-sec:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }
+.ek-asker-isaret { font-size: 17px; }
+.ek-asker-ad { min-width: 0; display: flex; flex-direction: column; }
+.ek-asker-ad > b { font: 800 13.5px/1.25 var(--font-ui); color: var(--v3-yazi, #eceef4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ek-asker-ad > small { font: 600 12px/1.3 var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); }
+.ek-asker > .ek-dugme { flex: none; min-height: 40px; padding: 4px 10px; font-size: 12.5px; }
+.ek-eylem-cubugu { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px; padding: 10px 0 2px; background: var(--v3-yuzey-2, #151a26); border-top: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
+.ek-eylem-cubugu > .ek-dugme { flex: 1 1 140px; min-height: 48px; }
