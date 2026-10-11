@@ -119,22 +119,6 @@ assert(notifiedPrices && notifiedPrices.wheat > 0, 'Dinleyiciye güncel fiyat li
 console.log('✅ [4. Test Başarılı] AMM DEX işlemi anında aboneleri tetikledi. Canlı Buğday Fiyatı:', notifiedPrices.wheat);
 unsubscribe();
 
-// 5. getDynamicEconomyRates ve tickUpgradeCostBot Entegrasyonu
-console.log('\n[5/5] getDynamicEconomyRates ve tickUpgradeCostBot Entegrasyonu Test Ediliyor...');
-const ecoRates = gs.getDynamicEconomyRates();
-assert(ecoRates.prices.wood > 0, 'Dinamik odun fiyatı tanımlı olmalı');
-assert(ecoRates.prices.iron > 0, 'Dinamik demir fiyatı tanımlı olmalı');
-assert(ecoRates.prices.wheat > 0, 'Dinamik buğday fiyatı tanımlı olmalı');
-assert(ecoRates.toolsRepair.count >= 0, 'Alet onarım taraması başarılı olmalı');
-assert(ecoRates.bot.botCostAda > 0, 'Canlı bot fiyatı hesaplanmış olmalı');
-
-const tickResult = gs.tickUpgradeCostBot(1.0);
-assert(tickResult.prices.wheat > 0, 'tickUpgradeCostBot anlık fiyatları taramalı');
-assert(tickResult.toolsRepair, 'tickUpgradeCostBot alet tamir masraflarını taramalı');
-assert(tickResult.bot, 'tickUpgradeCostBot canlı bot verilerini taramalı');
-
-console.log('✅ [5. Test Başarılı] Genel dinamik ekonomi ve yükseltme maliyet botu başarıyla doğrulandı!');
-
 // 6. Teçhizat Dövme (Craft) AMM DEX Pazar Fiyatı Duyarlılığı Testi
 console.log('\n[6/8] Teçhizat Dövme (Craft) Anlık Market Fiyatı Test Ediliyor...');
 const initialWeaponCraft = gs.calculateEquipmentCraftCost('weapon');
@@ -188,14 +172,11 @@ assert(highRepairCost.adaCost > normalRepairCost.adaCost, 'Piyasa yükselince te
 
 console.log(`✅ [7. Test Başarılı] Teçhizat Yükseltme: ${normalUpgradeCost.adAstraCost} -> ${highUpgradeCost.adAstraCost} ASTRA, Onarım: ${normalRepairCost.adaCost} -> ${highRepairCost.adaCost} ASTRA!`);
 
-// 8. getDynamicEconomyRates Teçhizat & Asker İyileştirme Entegrasyonu Testi
-console.log('\n[8/8] getDynamicEconomyRates Teçhizat & Asker İyileştirme Taraması Test Ediliyor...');
+// 8. Teçhizat dövme, teçhizat onarım ve asker iyileştirme maliyetleri pazar fiyatına bağlı hesaplanır
 ammMarket.resetPools();
-const fullEco = gs.getDynamicEconomyRates();
-assert.ok(fullEco.equipmentCraft, 'equipmentCraft nesnesi bulunmalı');
-assert.ok(fullEco.equipmentCraft.weapon, 'weapon dövme maliyeti taranmalı');
-assert.ok(fullEco.equipmentRepair, 'equipmentRepair nesnesi bulunmalı');
-assert.ok(fullEco.soldiersHeal, 'soldiersHeal nesnesi bulunmalı');
-console.log('✅ [8. Test Başarılı] Tüm teçhizat craft, onarım ve asker iyileştirme dinamik fiyatlama motoruna bağlandı!');
+assert.ok(gs.getAllEquipmentCraftCosts().weapon, 'weapon dövme maliyeti hesaplanmalı');
+assert.ok(gs.getAllEquipmentRepairCostInKingdom(), 'krallık teçhizat onarım toplamı hesaplanmalı');
+assert.ok(gs.getAllSoldiersHealCost(), 'asker iyileştirme toplamı hesaplanmalı');
+console.log('✅ [8. Test Başarılı] Teçhizat craft, onarım ve asker iyileştirme maliyetleri hesaplanıyor.');
 
 console.log('\n🎉 TÜM ANLIK AMM DEX VE DİNAMİK ÖDEME MEKANİZMASI TESTLERİ %100 BAŞARIYLA GEÇTİ! 🎉');

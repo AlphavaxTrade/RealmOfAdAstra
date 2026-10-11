@@ -48,15 +48,6 @@ const expectedWhAmm = ammMarket.calculateResourcesAdAstraValue(whCost.costs);
 assert.equal(whCost.adAstra, expectedWhAmm.totalAda, 'Silo yükseltme ASTRA maliyeti AMM DEX toplam pazar değerine eşit olmalı');
 console.log('✅ Silo yükseltme ASTRA maliyeti AMM DEX pazar değeriyle %100 örtüşüyor!');
 
-// 3. Saniye Başı Çalışan Otomatik Canlı Bot (tickUpgradeCostBot) Kontrolü
-const botResult = gs.tickUpgradeCostBot(1.0);
-assert(botResult, 'Bot sonuç üretmeli');
-assert(botResult.warehouse, 'Bot silo maliyetini hesaplamalı');
-assert(botResult.accountLevel, 'Bot hesap seviyesi maliyetini hesaplamalı');
-assert.equal(botResult.warehouse.adAstra, whCost.adAstra, 'Botun silo ASTRA hesabı güncel olmalı');
-assert.equal(botResult.accountLevel.adAstra, lvlReq.adAstra, 'Botun hesap seviyesi ASTRA hesabı güncel olmalı');
-console.log('✅ Otomatik Canlı Bot saniyelik hesaplamayı başarıyla güncelledi!');
-
 // 4. Seviye Atlama Eylemi ve Bakiye Düşüşü
 const initialAda = gs.state.adAstraBalance;
 const lvlUpRes = gs.levelUp();

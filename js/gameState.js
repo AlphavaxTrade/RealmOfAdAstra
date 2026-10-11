@@ -71,13 +71,8 @@ export class GameStateManager {
       this.state.lotteryAmortiPool = Math.round(this.state.lotteryTickets * biletBedeli() * amortiPayi());
       this.saveState();
     }
-    // Pazar fiyatı değişince maliyet botu ve arayüz haberdar olur
-    if (ammMarket && ammMarket.subscribe) {
-      ammMarket.subscribe(() => {
-        this.tickUpgradeCostBot(0);
-        this.notifyListeners();
-      });
-    }
+    // Pazar fiyatı değişince arayüz haberdar olur
+    if (ammMarket && ammMarket.subscribe) ammMarket.subscribe(() => this.notifyListeners());
   }
 
   // ── Zaman ──────────────────────────────────────────────────────────────

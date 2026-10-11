@@ -132,8 +132,8 @@ const adaFundingRes = gs.handleBotSiloSpace('wood', 10);
 assert.equal(adaFundingRes.handled, true);
 assert(adaFundingRes.action === 'sold_for_ada' || adaFundingRes.action === 'upgraded');
 assert(gs.state.adAstraBalance > 0 || adaFundingRes.action === 'upgraded', 'Satıştan ASTRA kazanılmış olmalı');
-assert(gs.state.inventory.wood >= upCost.reqWoodFill, '%80 barajı ASLA delinmemeli');
-console.log(`✅ [4/5] Başarılı: ASTRA eksikliği için %80 barajı korunarak fazlalık satıldı (+${gs.state.adAstraBalance.toFixed(3)} ASTRA). Depo: ${gs.state.inventory.wood} (Baraj: ${upCost.reqWoodFill})`);
+assert(gs.state.inventory.wood >= upCost.fills.wood, '%80 barajı ASLA delinmemeli');
+console.log(`✅ [4/5] Başarılı: ASTRA eksikliği için %80 barajı korunarak fazlalık satıldı (+${gs.state.adAstraBalance.toFixed(3)} ASTRA). Depo: ${gs.state.inventory.wood} (Baraj: ${upCost.fills.wood})`);
 
 // [TEST 5] Bot: Kaynakları Sat Modu (botSiloAutoUpgrade = false) - Silonun %50'sini Koruyup Fazlasını Satma
 console.log('\n[5/5] Bot: Kaynakları Sat Modunda %50 Rezerve Koruma Test Ediliyor...');

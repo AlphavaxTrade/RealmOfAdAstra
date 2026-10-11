@@ -1502,7 +1502,6 @@ function uiGameLoop(currentTime) {
     gameState.runTavernaAutomationCycle();
     gameState.processSoldierPassiveHealing(slowDelta);
     if (gameState.processVillage) gameState.processVillage(slowDelta);
-    gameState.tickUpgradeCostBot(slowDelta);
     gameState.checkWeeklyAutonomousBuyback();
     refreshBarracksLiveUI(slowDelta);
     refreshQuotaTrackerUI();
