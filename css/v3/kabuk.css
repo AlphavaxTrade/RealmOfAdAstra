@@ -380,3 +380,7 @@ html.v3 .leaderboard-table-wrap { overflow-x: auto; }
 html.v3 div:has(> #colosseum-champion-select) { flex-wrap: wrap; width: 100%; }
 html.v3 #colosseum-champion-select { flex: 1 1 200px; min-width: 0; }
 html.v3 #btn-toggle-colosseum-champ-row { flex: 0 0 auto; }
+
+/* 14. KARNAVAL ------------------------------------------------------------------------- */
+html.v3 :is(.carnival-tab-btn, .btn-spin-wheel) { min-height: var(--v3-tap); }
+html.v3 .carnival-wheel-canvas { max-width: 100%; height: auto; }

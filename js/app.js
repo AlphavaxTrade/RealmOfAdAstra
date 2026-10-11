@@ -3118,7 +3118,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
   const shards = state.wheelTicketShards || 0;
   const redeemCodes = state.redeemCodes || [];
 
-  const tabsNavHtml = `
+  const tabsNavHtmlEski = `
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
       <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'wheel' ? 'active' : ''}" data-carnival-tab="wheel" style="padding: 12px 14px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
         <span style="font-size: 1.3rem;">🎡</span>
@@ -3134,6 +3134,15 @@ function renderCarnivalHtml(activeTab = 'wheel') {
       </button>
     </div>
   `;
+
+  const tabsNavHtmlV3 = `
+    <div class="phase2-tab-row v3-bolumler" style="margin-bottom: 14px;">
+      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'wheel' ? 'active' : ''}" data-carnival-tab="wheel">🎡 Çark</button>
+      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'lottery' ? 'active' : ''}" data-carnival-tab="lottery">🎟️ Piyango</button>
+      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'pools' ? 'active' : ''}" data-carnival-tab="pools">🏛️ Havuzlar</button>
+    </div>
+  `;
+  const tabsNavHtml = V3_ARAYUZ ? tabsNavHtmlV3 : tabsNavHtmlEski;
 
   let tabContentHtml = '';
 
@@ -3397,25 +3406,25 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
               <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">Toplam Kilitli Ödül Kasası</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #fde047; margin-top: 4px;">
-                ${eData.totalPoolsBalance.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
+                ${eData.totalPoolsBalance.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ASTRA</span>
               </div>
             </div>
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
               <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">🔥 Toplam Yakılan ASTRA</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #f97316; margin-top: 4px;">
-                ${eData.lifetimeBurnedAda.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
+                ${eData.lifetimeBurnedAda.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ASTRA</span>
               </div>
             </div>
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
               <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">Bugüne Kadar Giren (Inflow)</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #38bdf8; margin-top: 4px;">
-                ${eData.totalDeposited.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
+                ${eData.totalDeposited.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ASTRA</span>
               </div>
             </div>
             <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
               <div style="font-size: 0.74rem; color: #94a3b8; font-weight: 700;">Dağıtılan Ödüller (Outflow)</div>
               <div style="font-size: 1.25rem; font-weight: 900; color: #4ade80; margin-top: 4px;">
-                ${eData.totalWithdrawn.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ADA</span>
+                ${eData.totalWithdrawn.toLocaleString('tr-TR')} <span style="font-size: 0.8rem; color: #c084fc;">ASTRA</span>
               </div>
             </div>
           </div>
@@ -4842,11 +4851,11 @@ function openTreasuryVaultModal() {
             <span style="font-size: 1.7rem; width: 36px; text-align: center;">${pool.icon}</span>
             <div style="flex: 1; min-width: 0;">
               <div style="font-weight: 800; font-size: 0.92rem; color: #fff; line-height: 1.25;">${pool.name}</div>
-              <div style="font-size: 1.12rem; font-weight: 900; color: ${pool.color};">${pool.totalPoolAda.toLocaleString('tr-TR')} <span style="font-size: 0.74rem; color: #c084fc;">ADA</span></div>
+              <div style="font-size: 1.12rem; font-weight: 900; color: ${pool.color};">${pool.totalPoolAda.toLocaleString('tr-TR')} <span style="font-size: 0.74rem; color: #c084fc;">ASTRA</span></div>
             </div>
             <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #cbd5e1; font-weight: 700; align-self: flex-start;">${pool.statusBadge}</span>
           </div>
-          <div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}</div>
+          ${(() => { const acik = `${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}`; return V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Bu kasa ne işe yarar?</summary><div>${acik}</div></details>` : `<div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${acik}</div>`; })()}
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; margin-top: auto;">
             <span style="font-size: 0.78rem; color: #cbd5e1; flex: 1; min-width: 0;">👤 ${pool.userShareText}</span>
             <button class="btn-clean btn-treasury-action" data-action="${pool.actionType}" style="padding: 5px 10px; font-size: 0.76rem; width: auto; border: 1px solid ${pool.color}; background: transparent; color: #fff; white-space: nowrap; flex-shrink: 0;">${pool.actionText} →</button>

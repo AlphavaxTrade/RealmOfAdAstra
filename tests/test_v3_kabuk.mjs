@@ -62,6 +62,8 @@ assert.equal(sadeBaslik('🏰 Krallık'), '🏰 Krallık', 'zaten sade olan değ
 assert.equal(sadeBaslik(''), '');
 // Katlama yalnız bilinen yoğun panellerde; ilk kartlar açık kalır
 assert.deepEqual(katlaKurali('🏰 Krallık merkezi'), { acik: 2 });
+assert.deepEqual(katlaKurali('📊 Kotalarım'), { acik: 1 });
+assert.deepEqual(katlaKurali('🎪 Karnaval'), { acik: 1 });
 assert.equal(katlaKurali('🌿 Şifahane'), null, 'kısa panel katlanmaz');
 assert.equal(katlaKurali('🏪 Pazar'), null, 'işlem ekranı katlanmaz');
 console.log('✅ panel düzenleyicileri');

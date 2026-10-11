@@ -39,7 +39,7 @@ Amaç: oyunu kolay anlaşılır, telefonda rahat, yeni oyuncuyu elinden tutan, h
 - `node scripts/tarayici/v3.mjs` (elle; `npm run dev` açıkken): telefon ve masaüstü boyutunda ~115 gerçek tarayıcı kontrolü + ekran görüntüleri; konsolda hata yok.
 
 ## Dürüst kalanlar (yapılmadı / sınırlı)
-1. Pazar, Krallık merkezi, Karakter, Kışla, sürüm geçmişi, başlıklar yeniden düzenlendi; **Karnaval, Kotalar, Hazine'nin iç düzeni hâlâ eski** (Kolezyum ve Demirhane 11 Ekim 2026'da yenilendi; Kolezyum: kısa sekmeler, taktik seçimi katlı, kurallar "Kurallar ve ödüller" altında; Demirhane: sade başlık/sekmeler, ana işlemler görünür, pazara koy / geri dönüştür / çıkar ve toplu işlemler "Diğer" altında katlı) (yalnız başlık, panel kabuğu, büyük dokunma hedefleri ve varsa kart katlama uygulanır). Her biri ayrı bir "yeniden yaz" işi.
+1. Pazar, Krallık merkezi, Karakter, Kışla, **Demirhane, Kolezyum**, sürüm geçmişi, başlıklar yeniden düzenlendi (Demirhane/Kolezyum 11 Ekim 2026: kısa sekmeler, ana işlemler görünür, ikincil işlemler katlı, 44 px hedefler). **Karnaval, Kotalar ve Hazine** yalnız sadeleştirildi (kısa sekmeler, kartların katlanması, kasa açıklamalarının katlanması, para biriminin ASTRA yazılması); iç düzenleri hâlâ eskidir ve tam yeniden yazım ayrı iş olarak kalır.
 2. Zindan ve savaş sahnesi eski sahne; v3 yalnız zindan başlığını temizler.
 3. Üst çubuk değerleri eski çubuktan okunur (geçiş dönemi). Eski çubuk/kenar çubuğu silinince v3 doğrudan oyun durumundan okuyacak şekilde değiştirilmeli; eski kodun silinmesi (son strangler adımı) yapılmadı.
 4. Test laboratuvarının senaryo sekmesi yalnız yerel (tek kişilik) modda çalışır; çevrimiçi deneme sunucusunda yalnız araçlar var (kayıt sunucuda olduğu için kayıt noktası alınamıyor).

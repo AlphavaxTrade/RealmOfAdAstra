@@ -124,6 +124,19 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: rakipler sekmesi açılır ve taşmaz`, await s.evaluate(() => !!document.getElementById('pvp-panel') && document.documentElement.scrollWidth <= innerWidth + 2));
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Hazine, Kotalar, Karnaval (v3): para birimi ASTRA, uzun kart yığınları katlı, kısa sekmeler
+  await ust('ben', 'hazine'); await foto('14_hazine');
+  kontrol(`${ad}: Hazine'de eski "ADA" yazısı kalmadı`, await s.evaluate(() => !/(^|\s)ADA(\s|$)/.test(document.getElementById('modal-body').innerText)));
+  kontrol(`${ad}: kasa açıklamaları katlı ("Bu kasa ne işe yarar?")`, await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-ayrinti:not([open])').length >= 3));
+  kontrol(`${ad}: Hazine yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+  await ust('ben', 'kotalar'); await foto('15_kotalar');
+  kontrol(`${ad}: Kotalar katlı kartlarla kısa (≤ 1300 px; eskiden ~2300)`, (await govdeYuk()) <= 1300 && await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli').length >= 3), String(await govdeYuk()));
+  await ust('pazar', 'karnaval'); await foto('16_karnaval');
+  kontrol(`${ad}: Karnaval 3 kısa sekme`, await s.evaluate(() => { const t = [...document.querySelectorAll('.carnival-tab-btn')].map((b) => b.innerText.trim()); return t.length === 3 && t.every((x) => x.length <= 14); }));
+  kontrol(`${ad}: Karnaval düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .carnival-tab-btn, #modal-body .btn-spin-wheel')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
+  kontrol(`${ad}: Karnaval yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // Aşama 4: Test laboratuvarı
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());

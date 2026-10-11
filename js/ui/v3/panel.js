@@ -31,6 +31,8 @@ const KATLA_KURALLARI = [
   { baslik: '🏰 Krallık merkezi', acik: 2 },
   { baslik: '🧙 Karakterim', acik: 1 },
   { baslik: '🏛️ Konsey ve hazine', acik: 0 },
+  { baslik: '📊 Kotalarım', acik: 1 },
+  { baslik: '🎪 Karnaval', acik: 1 },
   { baslik: '📈 Ekonomi panosu', acik: 1 },
   { baslik: '🚀 Uzay Limanı', acik: 1 }
 ];
