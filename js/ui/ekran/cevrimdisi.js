@@ -1,6 +1,6 @@
 // Realm of AdAstra — "Sen yokken olanlar": uzakta geçen sürede botun yaptıkları ve kaynakların değişimi.
 // Rapor ekrana seçenek olarak verilir ({ rapor }); oyun durumundan tüketme işini açan taraf yapar.
-import { ekranKaydet, kap, kart, satir, izgara, hucre, not, dugme, sayi } from './cekirdek.js';
+import { ekranKaydet, kap, kart, satir, izgara, hucre, not, dugme, sayi, esc } from './cekirdek.js';
 
 function sureMetni(saniye) {
   const s = Math.max(0, Math.floor(saniye || 0));
@@ -56,7 +56,7 @@ const ekran = {
       const v = r.village;
       notlar.push(not(`🏘️ Köy: ${sayi(v.eaten)} buğday yendi, ${sayi(v.grew, 1)} köylü doğdu${v.lost > 0 ? `, ${sayi(v.lost, 1)} köylü açlıktan göç etti` : ''}; şimdi ${sayi(v.villagers)} köylü.`));
     }
-    if (r.botStoppedReason) notlar.push(not(`⏸️ Bot durdu: ${r.botStoppedReason}`));
+    if (r.botStoppedReason) notlar.push(not(`⏸️ Bot durdu: ${esc(r.botStoppedReason)}`));
     if (r.skippedSeconds > 0) notlar.push(not(`ℹ️ Bot en fazla 7 günü telafi eder; daha eski ${sureMetni(r.skippedSeconds)} hesaba katılmadı.`));
 
     return kap([

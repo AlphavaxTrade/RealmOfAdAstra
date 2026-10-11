@@ -103,12 +103,16 @@ export const hasatYontemleri = {
     const { stored: depolanan, overflow } = this.storeResource(nodeId, cekilen);
     if (alet) alet.totalGathered = (alet.totalGathered || 0) + depolanan;
 
-    const xp = Math.max(1, Math.floor((birikim.accruedXp || 1) * (depolanan / birikim.accruedAmount)));
-    const seviyeSonucu = this.addXp(xp);
-    sefer.claimedXp = (sefer.claimedXp || 0) + xp;
-
     // Kısmi tahsilat claimedAmount'a işlenir
     sefer.claimedAmount = (sefer.claimedAmount || birikim.alreadyClaimed || 0) + depolanan;
+
+    // XP toplanan mahsul oranında verilir ve daha önce verilen düşülür (toplam hiçbir zaman seferin tam XP'sini aşmaz;
+    // eskiden her kısmi toplama birikimin tamamına göre hesaplanıp XP şişiyordu)
+    const hedefXp = birikim.totalYield > 0 ? Math.floor(birikim.totalXp * Math.min(1, sefer.claimedAmount / birikim.totalYield)) : 0;
+    const xp = Math.max(0, hedefXp - (sefer.claimedXp || 0));
+    const seviyeSonucu = xp > 0 ? this.addXp(xp) : null;
+    sefer.claimedXp = (sefer.claimedXp || 0) + xp;
+
     sefer.claimedSeconds = birikim.totalYield > 0
       ? Math.min(sefer.durationSeconds, Math.floor((sefer.claimedAmount / birikim.totalYield) * sefer.durationSeconds))
       : sefer.elapsedSeconds;
@@ -218,9 +222,15 @@ export const hasatYontemleri = {
       : Math.floor(toplamVerim * Math.min(1, (sefer.claimedSeconds || 0) / sefer.durationSeconds));
     const kalan = Math.max(0, toplamVerim - toplanmis);
     if (kalan <= 0) {
+      // Mahsulün hepsi kısmi toplamalarla alınmış: sefer şimdi kapanır; alet aşınması ve kalan XP yine uygulanır
+      // (yoksa seferi önce kısmi, sonra tam toplayan oyuncu aleti hiç aşındırmadan kurtulurdu)
+      const kapanisSaat = sefer.durationHours || parseFloat((dakika / 60).toFixed(2)) || 0.3;
+      const kalanXp = Math.max(0, seferXp(kapanisSaat) - (sefer.claimedXp || 0));
+      if (alet) alet.durability = Math.max(0, (alet.durability != null ? alet.durability : 4320) - dakika);
+      if (kalanXp > 0) this.addXp(kalanXp);
       delete this.state.activeExpeditions[nodeId];
       this.saveState();
-      return { success: true, message: 'Tüm mahsul zaten toplandı.' };
+      return { success: true, xpGained: kalanXp, message: 'Tüm mahsul zaten toplandı.' };
     }
 
     // Silo doluluk ve taşma kontrolü
@@ -401,29 +411,6 @@ export const hasatYontemleri = {
       return { success: true, totalHarvested: toplam, totalXp: toplamXp, message: `✨ Bütün Kasabadan Mahsuller Toplandı: +${ayrinti.join(', ')} (+${toplamXp} XP)` };
     }
     return { success: false, message: 'Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı. Önce tarlalara ve madenlere işçi gönderin!' };
-  },
-
-  // Yalnız biten seferleri toplar
-  sweepCompletedExpeditions() {
-    let toplam = 0;
-    let toplamXp = 0;
-    const ayrinti = [];
-    for (const alan of RES_KEYS()) {
-      const sefer = this.state.activeExpeditions[alan];
-      if (!(sefer && sefer.isCompleted)) continue;
-      const r = this.claimExpedition(alan);
-      if (r && r.success) {
-        toplam += r.amount || 0;
-        toplamXp += r.xpGained || 0;
-        const cfg = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[alan];
-        ayrinti.push(`+${r.amount} ${cfg ? cfg.name : alan}`);
-      }
-    }
-    if (toplam > 0) {
-      this.saveState();
-      return { success: true, totalHarvested: toplam, totalXp: toplamXp, message: `⚡ Biten Seferler Başarıyla Toplandı: ${ayrinti.join(', ')} (+${toplamXp} XP)` };
-    }
-    return { success: false, message: 'Şu an tamamlanmış bir sefer bulunmuyor.' };
   },
 
   // ── Haftalık temel gelir (UBI) ──────────────────────────────────────────

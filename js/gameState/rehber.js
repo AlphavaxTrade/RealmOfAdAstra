@@ -97,6 +97,10 @@ export const rehberYontemleri = {
       granted = draw.granted || 0;
       budgetFull = !!draw.budgetFull;
     }
+    // Haftalık ödeme payı dolduysa ödül işaretlenmez: oyuncu yeni haftada tekrar alabilir (eskiden 0 ASTRA ile "alındı" sayılıp kayboluyordu)
+    if ((q.rewardAda || 0) > 0 && granted <= 0 && budgetFull) {
+      return { success: false, granted: 0, budgetFull: true, message: `⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` };
+    }
     entry.claimed = true;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
     this._onAdaEarned(granted);

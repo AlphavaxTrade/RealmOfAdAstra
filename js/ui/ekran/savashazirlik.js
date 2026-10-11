@@ -15,12 +15,14 @@ let kapiHarciOde = false;
 
 const asBoss = (m) => !!(m.isBoss || m.level === 9 || m.level === 18);
 const askerler = (b) => b.gameState.state.soldierUnits || [];
+// Sunucu tek savaşa en çok 18 asker kabul eder (server/actions.js idxArr); daha fazlası seçilirse işlem reddedilirdi
+const EN_COK_ASKER = 18;
 
 // Seçili asker sırası: var olmayanlar atılır, boşsa herkes seçilir
 function seciliAskerler(b, secenek) {
   const n = askerler(b).length;
-  let sec = (secenek.secili || []).filter((i) => i < n);
-  if (!sec.length && n > 0 && !secenek.secimYapildi) sec = Array.from({ length: n }, (_, i) => i);
+  let sec = (secenek.secili || []).filter((i) => i < n).slice(0, EN_COK_ASKER);
+  if (!sec.length && n > 0 && !secenek.secimYapildi) sec = Array.from({ length: Math.min(n, EN_COK_ASKER) }, (_, i) => i);
   secenek.secili = sec;
   return sec;
 }
@@ -204,12 +206,12 @@ const ekran = {
       const i = parseInt(el.dataset.idx, 10);
       secenek.secimYapildi = true;
       const liste = secenek.secili || [];
-      secenek.secili = liste.includes(i) ? liste.filter((x) => x !== i) : [...liste, i];
+      secenek.secili = liste.includes(i) ? liste.filter((x) => x !== i) : [...liste, i].slice(0, EN_COK_ASKER);
     },
 
     hepsi(b, el, secenek) {
       secenek.secimYapildi = true;
-      secenek.secili = askerler(b).map((_, i) => i);
+      secenek.secili = askerler(b).map((_, i) => i).slice(0, EN_COK_ASKER);
     },
 
     // En güçlülerden başlayarak kazanma şansı %80'e ulaşana kadar (ulaşamazsa hepsi)

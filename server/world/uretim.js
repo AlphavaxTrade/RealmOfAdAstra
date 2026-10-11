@@ -17,8 +17,8 @@ export function olusturUretim(w) {
     for (const p of db.q.playersAll.all()) {
       const st = E.readPlayer(p.address);
       if (!st || (Number(st.lastSeenAt) || 0) < cutoff) continue;
-      const r = E.withPlayer(p.address, gs => gs._getUretimWeightRaw().weight);
-      const w = Number(r && r.result) || 0;
+      // mutatePlayer: kaydı "görüldü" saymaz (withPlayer lastSeenAt'i tazeleyip 3 gündür girmeyen hesaba aktiflik bonusu verirdi)
+      const w = Number(E.mutatePlayer(p.address, gs => gs._getUretimWeightRaw().weight)) || 0;
       sum += w;
       if (w > 0 && w < minPositive) minPositive = w;
     }

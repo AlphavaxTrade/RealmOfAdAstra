@@ -219,13 +219,15 @@ export const orduYontemleri = {
       }
       if (!(kazanilan > 0)) continue;
 
-      this.state.inventory.wheat = Math.max(0, Math.round((bugday - bugdayBedeli) * 100) / 100);
+      // Saniyelik adımlarda kazanç 0,01'in altında kalabilir: 0,01'e yuvarlamak canı sabit bırakıp bedeli yine kesiyordu (hayalet yakım);
+      // can, buğday ve ASTRA aynı hassasiyette (1e-6) tutulur
+      this.state.inventory.wheat = Math.max(0, Math.round((bugday - bugdayBedeli) * 1e6) / 1e6);
       this.burnResource('wheat', bugdayBedeli);
       // 0,001 ASTRA/HP: kuruşa yuvarlamak bedeli siliyordu, bu yüzden 6 ondalık
       this.state.adAstraBalance = Math.max(0, Math.round((bakiye - astraBedeli) * 1e6) / 1e6);
       this._onAdaSpent(bakiye - this.state.adAstraBalance);
       harcananAstra += bakiye - this.state.adAstraBalance;
-      s.hp = Math.min(maxHp, Math.round((mevcutHp + kazanilan) * 100) / 100);
+      s.hp = Math.min(maxHp, Math.round((mevcutHp + kazanilan) * 1e6) / 1e6);
       degisti = true;
     }
 

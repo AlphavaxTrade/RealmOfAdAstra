@@ -133,3 +133,11 @@ Karar bekleyen / sonraya bırakılan:
 30. **Kullanılmayan ama beyaz listede duran `sweepCompletedExpeditions` işlemi** (Seferler paneli kalkınca arayüzde çağıran yok). Altın kayıt işlem sırası listeye bağlı olduğu için şimdilik kaldı; bir sonraki altın kayıt yenilemesinde silinecek. Aynı yenilemede ölü durum alanları da (`botSettings`, `lastBotSiloAction`, `colosseumLeaderboard`) kayıttan çıkarılabilir.
 31. **Kışla'da dayanıklılığı biten eşya takılabilir ama güç vermez** (`calisiyorMu` kuralı): eski ekran bunu yalnız önerilerden ayıklıyordu; yeni ekran aynı davranışı korur ve kırık eşyada "Onar" düğmesini gösterir (karar gerekmez; oyun kuralı olduğu gibi).
 32. **Eski Kışla "Hepsini soy" için tarayıcının `confirm()` penceresini kullanıyordu**; diğer ekranlarla aynı onay penceresine (`onay()`) çevrildi.
+
+### Genel tarama (İş 3, 11 Ekim 2026)
+33. Üç salt-okuma denetim (sunucu, kurallar/ekonomi, ön yüz) 20 + 19 + 21 bulgu üretti; kanıtlananlar düzeltildi ve gerileme testine bağlandı
+    (`test_tarama_2026_10_{sunucu,kurallar,onyuz}.mjs`, `test_istemci_sunucu_imza.mjs`). Ayrıntı, durum ve karar listesi: `docs/v2/TARAMA_2026-10.md`.
+34. Tarama sırasında benim yeni yazdığım kodda da bir hata çıktı (misafir oyuncuda ekran açınca "görüldü" kancası giriş penceresini zorla
+    açıyordu); aynı gün düzeltildi. Ders: ekran kancaları yalnız oturum açmış ve vatandaş hesapta sunucuya işlem gönderir.
+35. Ölü kayıt alanları ve ölü işlem (`botSettings`, `lastBotSiloAction`, `sweepCompletedExpeditions`) bu turda silindi; altın kayıt üç dosyada yenilendi
+    (tarama düzeltmeleri bilerek durumu değiştirdi: kısmi toplama XP/aşınma, pasif iyileşme hassasiyeti, bot paketi ve onarım imzası).

@@ -293,9 +293,11 @@ export const gameStateV2 = {
   getRecycleValue(item) {
     const cum = this.getCumulativeEquipmentResourceCost(item);
     const rate = GAME_CONFIG.RECYCLE_RETURN_RATE ?? 0.7;
-    const P = GAME_CONFIG.BASE_PRODUCTION || {};
-    const coalBase = P.coal > 0 && P.iron > 0 ? Math.round(cum.totalIron * (P.coal / P.iron) / 3) : 0;
-    return { wood: Math.floor(cum.totalWood * rate), iron: Math.floor(cum.totalIron * rate), coal: Math.floor(coalBase * rate) };
+    // Kömür yalnız dövmede harcanır (yükseltmeler kömür istemez): iade, yükseltme düzeyine değil dövme bedeline bağlıdır
+    // (eskiden demir toplamından türetilip Sv.9 bir eşyada ödenmemiş kömür de geri veriliyordu)
+    const coalDovme = item && GAME_CONFIG.EQUIPMENT_RECIPES && GAME_CONFIG.EQUIPMENT_RECIPES[item.slot]
+      ? (this.calculateEquipmentCraftCost(item.slot).coalCost || 0) : 0;
+    return { wood: Math.floor(cum.totalWood * rate), iron: Math.floor(cum.totalIron * rate), coal: Math.floor(coalDovme * rate) };
   },
 
   recycleEquipment({ source, slotKey, armoryIndex = null, soldierIndex = null } = {}) {

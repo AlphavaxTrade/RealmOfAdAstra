@@ -177,7 +177,21 @@ function baglaKok(kok) {
   }, true);
 }
 
+// Bir eylem sürerken (ağ yanıtı, onay penceresi) gelen ikinci dokunuş yok sayılır: para harcayan düğmelere çift dokunmak
+// işlemi iki kez göndermesin.
+let eylemSuruyor = false;
+
 async function calistir(fn, el) {
+  if (eylemSuruyor) return;
+  eylemSuruyor = true;
+  try {
+    await calistirTek(fn, el);
+  } finally {
+    eylemSuruyor = false;
+  }
+}
+
+async function calistirTek(fn, el) {
   const b = baglam;
   const ekran = aktif.ekran;
   let sonuc;

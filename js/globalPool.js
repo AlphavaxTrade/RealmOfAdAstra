@@ -543,7 +543,7 @@ export class GlobalResourceManager {
       amount: miktar,
       playerLevel,
       epochId: this.state.epochId,
-      message: `🏛️ Seviye ${playerLevel} Evrensel Temel Geliriniz (+${miktar.toLocaleString('tr-TR')} 🟣 $ADASTRA) cüzdanınıza aktarıldı!`
+      message: `🏛️ Seviye ${playerLevel} Evrensel Temel Geliriniz (+${miktar.toLocaleString('tr-TR')} 🟣 ASTRA) bakiyene eklendi!`
     };
   }
 

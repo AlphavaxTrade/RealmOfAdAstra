@@ -9,7 +9,7 @@ export function kurToast(kap) {
   return function toast(mesaj, tur = 'info') {
     if (!kap) return;
     const oge = document.createElement('div');
-    oge.className = `toast ${tur}`;
+    oge.className = `toast ${['success', 'error', 'warning', 'info'].includes(tur) ? tur : 'info'}`;
     const simge = document.createElement('span');
     simge.textContent = tur === 'error' ? '⚠️' : '✨';
     const metin = document.createElement('span');

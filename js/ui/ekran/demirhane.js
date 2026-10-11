@@ -86,7 +86,7 @@ function esyaKarti(b, g, sira) {
 
   return kart({
     vurgu: giyili ? 'iyi' : '',
-    icerik: `<div class="ek-oge">${simge(esya.icon)}
+    icerik: `<div class="ek-oge">${simge(esc(esya.icon || '⚔️'))}
         <div class="ek-oge-govde"><b>${esc(esya.name)} <span class="ek-etiket">Seviye ${tam(esya.level || 1)}</span></b>
           <small>${esc(ozellik)}</small>
           <small class="${guncel <= 4 ? 'ek-kotu' : ''}">🛡️ Dayanıklılık ${tam(guncel)}/${tam(enFazla)} · 📍 ${esc(g.locationLabel)}</small>
@@ -229,7 +229,7 @@ const ekran = {
     onar(b, el) {
       const g = b.gameState.getAllArmoryEquipmentList()[Number(el.dataset.sira)];
       if (!g) return false;
-      sonuc(b, b.gameState.repairEquipment(g.item, g.soldierIndex ?? null));
+      sonuc(b, b.gameState.repairEquipment(ref(g)));   // konumla: çevrimiçi modda sunucu eşya nesnesi kabul etmez
       return undefined;
     },
     cikar(b, el) {

@@ -259,7 +259,7 @@ export const topluYontemleri = {
       type: 'warning',
       icon: '⏸️',
       title: '24s Otomasyon Botu Duraklatıldı (Süreniz Donduruldu)',
-      text: `Botun aletleri onarabilmesi ve seferleri aksatmaması için deponuzda en az 50 Demir, 50 Odun, 50 Buğday ve 50 ASTRA bulunmalıdır. Süreniz dondurulmuştur ve asla azalmaz! (Eksikler: ${onKosul.missingText}) — Kaynakları tamamladığınız an bot anında otomatik çalışmaya devam edecektir.`,
+      text: `Botun aletleri onarabilmesi ve seferleri aksatmaması için deponuzda en az ${GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.iron} Demir, ${GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.wood} Odun, ${GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.wheat} Buğday ve ${GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.adAstra} ASTRA bulunmalıdır. Süreniz dondurulmuştur ve asla azalmaz! (Eksikler: ${onKosul.missingText}) — Kaynakları tamamladığınız an bot anında otomatik çalışmaya devam edecektir.`,
       missing: onKosul.missing
     };
   }

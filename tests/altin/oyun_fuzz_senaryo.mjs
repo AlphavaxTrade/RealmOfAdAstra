@@ -60,6 +60,7 @@ function ornekler(E) {
     str: ['', 'a', 'Kara'],
     name: ['Ali', 'Kara Sövalye', 'Ş', 'x'.repeat(24)],
     slot: SLOTS,
+    slotRef: [...SLOTS, { source: 'armory', armoryIndex: 0 }, { source: 'armory', armoryIndex: 1 }, { source: 'soldier', soldierIndex: 0, slotKey: 'weapon' }],
     node: NODES,
     res: [...NODES, 'fragments', 'boxes', 'keys'],
     idxArr: [[0], [0, 1], [0, 1, 2], [1], [2, 3]],

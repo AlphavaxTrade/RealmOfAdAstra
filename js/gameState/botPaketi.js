@@ -156,10 +156,6 @@ export const botPaketiYontemleri = {
   // true: silo dolunca otomatik yükselt · false: fazlasını sat (silonun yarısı korunur)
   setBotSiloOption(autoUpgrade = true) {
     this.state.botSiloAutoUpgrade = !!autoUpgrade;
-    // Eski kayıt alanı: hiçbir yerde okunmuyor, ama altın kayıt durumu bu alanı da içeriyor.
-    // Altın kayıt bir sonraki yenilemede (docs/v2/YENIDEN_YAZIM_GUNLUGU.md "ölü durum alanları") silinecek.
-    if (!this.state.botSettings) this.state.botSettings = {};
-    this.state.botSettings.siloAutoUpgrade = !!autoUpgrade;
     this.saveState();
     return { success: true, autoUpgrade: this.state.botSiloAutoUpgrade };
   },

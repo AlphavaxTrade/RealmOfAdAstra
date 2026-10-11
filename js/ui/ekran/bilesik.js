@@ -9,9 +9,10 @@ export function kaynakSimgesi(b, key) {
   return resImg(key, m.icon || '');
 }
 
+// Hazır HTML'e girer: ad kaçırılmış döner (yapılandırma verisi bile olsa ham HTML bileşenlerine kaçırılmamış metin geçmesin)
 export const kaynakAdi = (b, key) => {
   const m = (b.GAME_CONFIG.RESOURCE_META || {})[key] || {};
-  return m.name || key;
+  return esc(m.name || key);
 };
 
 // "elinde / gereken" satırı: yetiyorsa yeşil, yetmiyorsa kırmızı

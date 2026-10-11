@@ -20,7 +20,6 @@ const KATEGORI_ESLEME = {
   // sefer / hasat
   startExpedition: 'sefer', claimExpedition: 'sefer', claimPartialExpedition: 'sefer',
   claimAllHarvests: 'sefer', claimAllCompletedExpeditions: 'sefer', claimAndRestartAllExpeditions: 'sefer',
-  sweepCompletedExpeditions: 'sefer',
   // alet / teçhizat bakımı (onarım, üretim, geliştirme, taverna optimizasyonu)
   repairTool: 'bakim', repairAllTools: 'bakim', craftEquipment: 'bakim', upgradeEquipment: 'bakim',
   upgradeEquipmentByTypeAndLevel: 'bakim', upgradeAnyEquipment: 'bakim', upgradeAllEquipmentInKingdom: 'bakim',

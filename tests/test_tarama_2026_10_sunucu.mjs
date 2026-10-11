@@ -33,7 +33,7 @@ const call = async (method, p, body, token) => {
   const res = await fetch(base + p, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: res.status, body: await res.json() };
 };
-const sonBaglanti = (tur) => { const m = db.kvJson('dev:outbox', [])[0]; const r = new RegExp('[?&]' + tur + '=([a-f0-9]+)').exec(m ? m.text : ''); return r && r[1]; };
+const sonBaglanti = (tur) => { const m = db.kvJson('dev:outbox', [])[0]; const parca = m ? String(m.text).split(tur + '=')[1] : null; const r = parca ? /^[a-f0-9]+/.exec(parca) : null; return r && r[0]; };
 async function kayit(eposta) {
   const r = await call('POST', '/api/account/register', { email: eposta, password: 'gizli-sifre-123' });
   assert.equal(r.status, 200, JSON.stringify(r.body));

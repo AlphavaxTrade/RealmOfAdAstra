@@ -106,7 +106,7 @@ export async function oyuncularOlustur(base, adminToken, n, paralel = 25) {
   return tokenlar;
 }
 
-const BASIT_ISLEMLER = [['claimAllHarvests', []], ['refillStaminaToMaxWithWheat', []], ['startExpedition', ['wood']], ['startExpedition', ['wheat']], ['sweepCompletedExpeditions', []], ['repairAllTools', []], ['claimWeeklyUbi', []], ['marketBuy', ['wheat', 5]], ['marketSell', ['wheat', 1]], ['carnivalCheer', []]];
+const BASIT_ISLEMLER = [['claimAllHarvests', []], ['refillStaminaToMaxWithWheat', []], ['startExpedition', ['wood']], ['startExpedition', ['wheat']], ['repairAllTools', []], ['claimWeeklyUbi', []], ['marketBuy', ['wheat', 5]], ['marketSell', ['wheat', 1]], ['carnivalCheer', []]];
 export function senaryoIstegi(ad, tokenlar, i, rnd, statikYol) {
   const token = tokenlar[i % tokenlar.length];
   if (ad === 'health') return { yol: '/api/health' };

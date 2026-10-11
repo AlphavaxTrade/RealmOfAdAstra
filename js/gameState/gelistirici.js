@@ -259,7 +259,6 @@ export const gelistiriciYontemleri = {
       totalUbiEarned: 0,
       lastAutoWarehouseUpgradeTime: 0,
       lastBotActions: [],
-      lastBotSiloAction: null,
       lastSeenAt: Date.now(),
       lastLotteryDrawEpoch: donem,
       colosseumStats: {

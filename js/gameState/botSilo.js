@@ -11,18 +11,13 @@ const SATIS_MODU_KORUMA = 0.5;
 
 export const botSiloYontemleri = {
   // Fazlalığı pazarda satıp kasaya yazar; başarılıysa kazancı, olmadıysa null döner.
-  // `neden` verilirse satış `lastBotSiloAction` alanına da yazılır (okunmayan eski kayıt alanı; altın kayıt
-  // durumu içerdiği için şimdilik yazılıyor, bkz. docs/v2/YENIDEN_YAZIM_GUNLUGU.md "ölü durum alanları").
-  _botKaynakSat(nodeId, adet, neden = null) {
+  _botKaynakSat(nodeId, adet) {
     const sonuc = ammMarket.executeSell(nodeId, adet);
     if (!sonuc || !sonuc.success) return null;
     const kazanc = sonuc.adAstraReceived || 0;
     this.state.inventory[nodeId] = Math.max(0, (this.state.inventory[nodeId] || 0) - adet);
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + kazanc;
     this._onAdaEarned(kazanc, { saleOf: nodeId });
-    if (neden) {
-      this.state.lastBotSiloAction = { timestamp: Date.now(), nodeId, amountSold: adet, adAstraEarned: sonuc.adAstraReceived, reason: neden };
-    }
     return { kazanc };
   },
 
@@ -67,7 +62,7 @@ export const botSiloYontemleri = {
         const tasacak = Math.max(0, beklenen - limit);
         const adet = Math.min(mevcut, Math.max(yarimUstu, tasacak));
         if (adet > 0) {
-          const satis = this._botKaynakSat(nodeId, adet, 'sell_mode_keep_half_cap');
+          const satis = this._botKaynakSat(nodeId, adet);
           if (satis) {
             this.saveState();
             return {
@@ -101,7 +96,7 @@ export const botSiloYontemleri = {
       if (fazla > 0 && astraAcigi > 0) {
         const fiyat = ammMarket.getPrice(nodeId) || 1;
         const adet = Math.min(fazla, Math.max(1, Math.ceil(astraAcigi / fiyat)));
-        const satis = this._botKaynakSat(nodeId, adet, 'silo_upgrade_ada_deficit');
+        const satis = this._botKaynakSat(nodeId, adet);
         if (satis) {
           this.saveState();
 
@@ -127,7 +122,7 @@ export const botSiloYontemleri = {
     if (bosYer < gelen) {
       const adet = Math.min(mevcut, gelen - bosYer);
       if (adet > 0) {
-        const satis = this._botKaynakSat(nodeId, adet, 'make_room_for_expedition_yield');
+        const satis = this._botKaynakSat(nodeId, adet);
         if (satis) {
           this.saveState();
           return {

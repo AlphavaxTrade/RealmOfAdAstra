@@ -30,6 +30,7 @@ const T = {
   node: v => NODES.includes(v),
   res: v => RESOURCE_KEYS.includes(v),
   idxArr: v => Array.isArray(v) && v.length >= 1 && v.length <= 18 && v.every(x => Number.isInteger(x) && x >= 0 && x < 64),
+  slotRef: v => T.slot(v) || T.ref(v),
   // Eşya konumu (eşyanın kendisi değil): { source, slotKey, armoryIndex, soldierIndex, itemId }
   ref: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 5 &&
     Object.entries(v).every(([k, x]) => ['source', 'slotKey', 'armoryIndex', 'soldierIndex', 'itemId'].includes(k) &&
@@ -65,7 +66,6 @@ export const ACTIONS = {
   claimAllHarvests: A([]),
   claimAllCompletedExpeditions: A([]),
   claimAndRestartAllExpeditions: A([]),
-  sweepCompletedExpeditions: A([]),
   // Stamina, seviye, silo, aletler
   refillStaminaWithWheat: A(['qty?']),
   refillStaminaExact: A(['qty']),
@@ -99,7 +99,7 @@ export const ACTIONS = {
   upgradeEquipmentByTypeAndLevel: A(['slot', 'int']),
   upgradeAnyEquipment: A(['ref']),
   upgradeAllEquipmentInKingdom: A([]),
-  repairEquipment: A(['slot', 'idx?']),
+  repairEquipment: A(['slotRef', 'idx?']),   // yuva adı (krallık / asker) ya da eşya konumu (cephanelik)
   repairAllEquipmentInKingdom: A([]),
   scrapAllLowTierEquipment: A(['int?']),
   equipSoldierSlot: A(['idx', 'slot']),
@@ -109,7 +109,8 @@ export const ACTIONS = {
   unequipAllSoldiers: A([]),
   autoEquipBest: A([]),
   // Taverna ve bot (bedava bot yalnız deneme ile: useFree her zaman false)
-  buyTavernaAutomationBot: A(['int'], { call: (gs, [hours], cfg) => {
+  // İstemci yöntemi (useFree, saat) imzasıyla çağırır; useFree sunucuda her zaman false sayılır, saat yoksa 24
+  buyTavernaAutomationBot: A(['bool', 'int?'], { call: (gs, [, hours = 24], cfg) => {
     const allowed = cfg.TAVERNA_BOT?.PACKAGE_HOURS || [6, 24];
     if (!allowed.includes(hours)) return { success: false, message: 'Geçersiz bot paketi.' };
     return gs.buyTavernaAutomationBot(false, hours);

@@ -90,7 +90,7 @@ const ekran = {
       ) + `<div class="ek-kucuk">Kullanılan ${tam(hak.used)} · açılan ${tam(hak.released)}${hak.extra > 0 ? ` · başkalarından +${tam(hak.extra)}` : ''}</div>`;
     }).join('');
 
-    const nasil = `Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(otorite.hours)} sa × ${Math.round(otorite.days)} gün) × kişi başı kota × ağırlığın (seviye ×${agirlik.levelFactor} · katkı kademesi ${agirlik.tier.name} ×${agirlik.tier.mult} · aktiflik ×${agirlik.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`;
+    const nasil = `Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(otorite.hours)} sa × ${Math.round(otorite.days)} gün) × kişi başı kota × ağırlığın (seviye ×${agirlik.levelFactor} · katkı kademesi ${esc(agirlik.tier.name)} ×${agirlik.tier.mult} · aktiflik ×${agirlik.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`;
 
     const gunSeridi = `<div class="ek-etiketler">${GUN_ADLARI.map((ad, i) => etiket(`${ad}${i < gunSirasi ? ' ✓' : ''}`, i < gunSirasi ? 'iyi' : (i === gunSirasi ? 'vurgu' : ''))).join('')}</div>`;
     const siriusSatirlari = kaynaklar.map((k) => {

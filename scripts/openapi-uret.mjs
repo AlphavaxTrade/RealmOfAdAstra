@@ -37,6 +37,7 @@ export const TIP_ACIKLAMALARI = {
   node: 'Kaynak alanı / hammadde adı (js/config.js RESOURCE_KEYS)',
   res: 'Hammadde adı ya da fragments, boxes, keys',
   idxArr: '1-18 sıra numarasından oluşan dizi (her biri 0-63)',
+  slotRef: 'Teçhizat yuvası adı (krallık yuvası ya da askerin yuvası) ya da cephanelikteki eşyanın konumu (ref)',
   ref: 'Eşya konumu { source: armory|kingdom|soldier, slotKey, armoryIndex, soldierIndex, itemId } (eşyanın kendisi gönderilemez)',
   buff: 'Taverna güçlendirmesi adı (js/config.js TAVERN_BUFFS)',
   tool: 'Alet adı (js/config.js TOOLS)',

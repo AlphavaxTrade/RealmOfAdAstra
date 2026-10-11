@@ -14,6 +14,7 @@ function botKarti(b) {
   const kalanMetin = `${Math.floor(kalanMs / 3600000)} saat ${Math.floor((kalanMs % 3600000) / 60000)} dakika`;
   const botCfg = b.GAME_CONFIG.TAVERNA_BOT || {};
   const paketler = botCfg.PACKAGE_HOURS || [24];
+  const ON = botCfg.REQUIRED_PREREQUISITES || { iron: 50, wood: 50, wheat: 50, adAstra: 0.5 };   // botun çalışma önkoşulu (yapılandırmadan)
 
   let durumEtiketi;
   if (duraklatildi) durumEtiketi = `<span class="ek-etiket is-uyari">⏸️ Duraklatıldı · ${esc(kalanMetin)} donduruldu</span>`;
@@ -33,7 +34,7 @@ function botKarti(b) {
     rozet: durumEtiketi,
     vurgu: duraklatildi ? 'uyari' : (calisiyor ? 'iyi' : ''),
     icerik: not('Sen yokken altı alanda (buğday, taş, odun, kömür, demir, şifalı ot) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <b>günlük net kârın yarısıdır</b>.')
-      + (duraklatildi ? uyari(`<b>Bot bekliyor:</b> çalışmak ve aletleri onarmak için deponda en az 50 demir, 50 odun, 50 buğday ve 50 ASTRA olmalı. Kalan süren (${esc(kalanMetin)}) bu sırada azalmaz. <b>Eksikler:</b> ${esc(onkosul.missingText)}. Tamamladığın anda bot kaldığı yerden devam eder.`, 'uyari') : '')
+      + (duraklatildi ? uyari(`<b>Bot bekliyor:</b> çalışmak ve aletleri onarmak için deponda en az ${tam(ON.iron)} demir, ${tam(ON.wood)} odun, ${tam(ON.wheat)} buğday ve ${ON.adAstra} ASTRA olmalı. Kalan süren (${esc(kalanMetin)}) bu sırada azalmaz. <b>Eksikler:</b> ${esc(onkosul.missingText)}. Tamamladığın anda bot kaldığı yerden devam eder.`, 'uyari') : '')
       + `<div class="ek-dugmeler">${paketDugmeleri.join('')}</div>`
   });
 }

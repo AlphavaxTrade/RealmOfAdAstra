@@ -99,7 +99,7 @@
  {
   "adim": "bot alindi",
   "oyuncu": [
-   "59cf73dde0a942c2"
+   "8340ffbffb14ed2f"
   ],
   "dunya": "48c13215e6d447e4",
   "sonuc": [
@@ -110,7 +110,7 @@
  {
   "adim": "bot 12 saat calisti",
   "oyuncu": [
-   "03d4742fb81f8d57"
+   "cfa09ea9f7b08441"
   ],
   "dunya": "13edfb951af79273",
   "sonuc": [
@@ -120,7 +120,7 @@
  {
   "adim": "zindan",
   "oyuncu": [
-   "485bb837c2eb2bcd"
+   "152edd01f7236f54"
   ],
   "dunya": "e2be7f7cefeeeb02",
   "sonuc": [
@@ -132,7 +132,7 @@
  {
   "adim": "karnaval",
   "oyuncu": [
-   "f3a940ec8d0ebc9c"
+   "425ca66884d1335b"
   ],
   "dunya": "ca2d09a96148e404",
   "sonuc": [
@@ -145,7 +145,7 @@
  {
   "adim": "piyango bileti",
   "oyuncu": [
-   "48ccce156d68ec79",
+   "c1f18e4125548864",
    "9e649fb650730ab6"
   ],
   "dunya": "cf5817098c90abe4",
@@ -193,10 +193,10 @@
  {
   "adim": "gun 1",
   "oyuncu": [
-   "3b68b433de86a57f",
+   "691b3ec9ca44a017",
    "a1790f731a3b67ad"
   ],
-  "dunya": "35c5b096ebe87d91",
+  "dunya": "70c5385c9310bb51",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
@@ -206,10 +206,10 @@
  {
   "adim": "gun 2",
   "oyuncu": [
-   "adb9cff63812e247",
+   "de9d79a7d63321f1",
    "40a4d7b755907522"
   ],
-  "dunya": "111d5130c4a3670e",
+  "dunya": "2857334354c396fb",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
@@ -219,10 +219,10 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "8da79ca32f2ad2a7",
+   "7444984579016e31",
    "06427016e24edc26"
   ],
-  "dunya": "8b4a65f5889c91e6",
+  "dunya": "ccb1eb9f22e484f0",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:ok",
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "f587f9440490717f",
+   "482a509df02006a2",
    "83fc2b3136e40ce3",
    "c8df017819347a83"
   ],
-  "dunya": "4f70938a9ed541c2",
+  "dunya": "be1c13681e1e14f2",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,11 +245,11 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "6c603fe33cb847a3",
+   "b9fcaad45841f3b7",
    "246a7577da6f1ade",
    "c8df017819347a83"
   ],
-  "dunya": "a9c8828f8773acb2",
+  "dunya": "e0667e2fc901fca4",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",

@@ -85,7 +85,7 @@ export async function senaryoyuCalistir() {
   adim('pazar', [eylem(A, 'marketSell', [NODES[0], 100]), eylem(A, 'marketBuy', [NODES[1], 50]), eylem(A, 'marketSell', [NODES[2], 1e9])], A);
 
   // Bot (24 saat) ve çevrimdışı ilerleme
-  adim('bot alindi', [eylem(A, 'buyTavernaAutomationBot', [24]), eylem(A, 'setBotSiloOption', [true])], A);
+  adim('bot alindi', [eylem(A, 'buyTavernaAutomationBot', [false, 24]), eylem(A, 'setBotSiloOption', [true])], A);
   ilerle(12 * SAAT);
   adim('bot 12 saat calisti', [eylem(A, 'claimAllCompletedExpeditions')], A);
 

@@ -26,7 +26,17 @@ function esyaDakikasi(atk, hp) {
 export const techizatYontemleri = {
   // ── Eşya bulma ──────────────────────────────────────────────────────────
   // itemOrSlot: eşya nesnesi ya da yuva adı; soldierIndex verilirse o askerin üzerindeki, yoksa krallık yuvasındaki eşya
+  // Konum kaydı da kabul edilir: { source: 'armory' | 'kingdom' | 'soldier', slotKey, armoryIndex, soldierIndex }
+  // (sunucuya eşya nesnesi gönderilemez; çevrimiçi modda eşya her zaman konumuyla seçilir)
   _esyaBul(itemOrSlot, soldierIndex = null) {
+    if (itemOrSlot && typeof itemOrSlot === 'object' && ['armory', 'kingdom', 'soldier'].includes(itemOrSlot.source) && typeof itemOrSlot.name !== 'string') {
+      const k = itemOrSlot;
+      if (k.source === 'armory') return (this.state.armoryInventory || [])[Number.isInteger(k.armoryIndex) ? k.armoryIndex : -1] || null;
+      if (!YUVALAR.includes(k.slotKey)) return null;
+      if (k.source === 'kingdom') return (this.state.equipment || {})[k.slotKey] || null;
+      const asker = (this.state.soldierUnits || [])[Number.isInteger(k.soldierIndex) ? k.soldierIndex : -1];
+      return asker && asker.equipment ? asker.equipment[k.slotKey] || null : null;
+    }
     if (typeof itemOrSlot === 'object' && itemOrSlot !== null) return itemOrSlot;
     if (sirasiVar(soldierIndex)) {
       const asker = (this.state.soldierUnits || [])[soldierIndex];
@@ -109,7 +119,7 @@ export const techizatYontemleri = {
     if ((envanter.iron || 0) < bedel.iron) return { success: false, message: `Yetersiz Demir! (${bedel.iron} Demir gerekli)` };
     if ((envanter.wood || 0) < bedel.wood) return { success: false, message: `Yetersiz Odun! (${bedel.wood} Odun gerekli)` };
     if (komurGerekli && (envanter.coal || 0) < bedel.coal) return { success: false, message: `Yetersiz Kömür! (${bedel.coal} Kömür gerekli)` };
-    if (this.state.adAstraBalance < bedel.adAstra) return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstra} ASTRA gerekli)` };
+    if (this.state.adAstraBalance < bedel.adAstra) return { success: false, message: `Yetersiz ASTRA! (${bedel.adAstra} ASTRA gerekli)` };
 
     envanter.fragments = (envanter.fragments || 0) - bedel.fragments;
     this.burnItem('fragments', bedel.fragments);
@@ -192,7 +202,7 @@ export const techizatYontemleri = {
     if ((envanter.fragments || 0) < bedel.fragmentCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragmentCost} Teçhizat Parçaları gerekli)` };
     if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
     if ((envanter.wood || 0) < bedel.woodCost) return { success: false, message: `Yetersiz Odun! (${bedel.woodCost} Odun gerekli)` };
-    if (this.state.adAstraBalance < bedel.adAstraCost) return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstraCost} ASTRA gerekli)` };
+    if (this.state.adAstraBalance < bedel.adAstraCost) return { success: false, message: `Yetersiz ASTRA! (${bedel.adAstraCost} ASTRA gerekli)` };
 
     envanter.fragments = (envanter.fragments || 0) - bedel.fragmentCost;
     this.burnItem('fragments', bedel.fragmentCost);

@@ -31,8 +31,28 @@ const fmt = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
 // VITE_API_URL ile verilir (https://sunucu-adresi); boşsa oyun, açıldığı adresteki sunucuyu kullanır.
 const API_BASE = String((import.meta.env && import.meta.env.VITE_API_URL) || '').replace(/\/+$/, '');
 
+// Hiçbir ağ isteği sonsuza dek asılı kalmaz: yanıt gelmezse istek iptal edilir (asılı bir istek işlem kuyruğunu tıkar,
+// eşitlemeyi durdurur, açılışta oyunu hiç başlatmazdı)
+const ZAMAN_ASIMI_MS = 20000;
+async function fetchZamanAsimli(url, secenek, ms = ZAMAN_ASIMI_MS) {
+  const kontrol = new AbortController();
+  const zamanlayici = setTimeout(() => kontrol.abort(), ms);
+  try {
+    return await fetch(url, { ...secenek, signal: kontrol.signal });
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      const e = new Error('Sunucuya ulaşılamadı (zaman aşımı). Bağlantını kontrol edip tekrar dene.');
+      e.status = 0;
+      throw e;
+    }
+    throw err;
+  } finally {
+    clearTimeout(zamanlayici);
+  }
+}
+
 async function api(method, path, body) {
-  const res = await fetch(API_BASE + path, {
+  const res = await fetchZamanAsimli(API_BASE + path, {
     method,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
     body: body ? JSON.stringify(body) : undefined,
@@ -51,7 +71,7 @@ async function api(method, path, body) {
 
 export async function detectServer() {
   try {
-    const r = await fetch(API_BASE + '/api/health', { cache: 'no-store' });
+    const r = await fetchZamanAsimli(API_BASE + '/api/health', { cache: 'no-store' }, 6000);
     if (!r.ok) return null;
     const j = await r.json();
     return j && j.ok ? j : null;
@@ -89,8 +109,13 @@ function apply(payload) {
 
 async function sync() {
   if (!online.active || !token || online.pending > 0) return;
-  try { apply(await api('GET', '/api/state')); }
-  catch (err) { if (err.status === 401) return relogin(); }
+  const gonderilen = online.gonderilenIslem || 0;
+  try {
+    const yanit = await api('GET', '/api/state');
+    // Yanıt beklenirken oyuncu işlem yaptıysa bu görüntü eskidir: yerel durumu ezmesin (işlem geri alınmış görünür, oyuncu tekrar basardı)
+    if (online.pending > 0 || (online.gonderilenIslem || 0) !== gonderilen) return;
+    apply(yanit);
+  } catch (err) { if (err.status === 401) return relogin(); }
 }
 
 // ── İşlemleri sunucuya gönder ───────────────────────────────────────────
@@ -103,6 +128,7 @@ function cleanArgs(args, spec) {
 
 function send(name, args, { wait = false } = {}) {
   online.pending++;
+  online.gonderilenIslem = (online.gonderilenIslem || 0) + 1;
   const job = queue.then(() => api('POST', '/api/action', { name, args })).then(res => {
     online.pending--;
     if (wait || online.pending === 0) apply(res);
@@ -689,6 +715,13 @@ async function handleEmailLinks() {
     try {
       const r = await api('POST', '/api/account/verify', { token: p.get('verify') });
       if (r.token) {
+        // Açık bir oturum varsa ve bağlantı başka bir hesabınsa sessizce geçilmez (bağlantıyı başkasından alan oyuncu
+        // kendi hesabını bırakıp yabancı bir hesapta oynamasın)
+        if (token && online.playerId && r.playerId && r.playerId !== online.playerId
+          && !window.confirm('Bu bağlantı, şu an açık olan hesabından FARKLI bir hesabın e-postasını doğruluyor. O hesaba geçilsin mi?')) {
+          ctx.toast('Hesap değiştirilmedi.', 'info');
+          return;
+        }
         saveSession(r.token, r.playerId);
         apply(await api('GET', '/api/state'));
         ctx.toast('✅ E-postan doğrulandı. Krallığa hoş geldin! 👑', 'success');
@@ -758,6 +791,12 @@ async function payOnChain(q, setStep) {
   const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
   const from = String(accs && accs[0] || '').toLowerCase();
   if (from !== String(q.wallet).toLowerCase()) throw new Error(`Cüzdanında hesabına bağlı adresi seç: ${short(q.wallet)}`);
+  // Derlemede ödeme sözleşmesi/token adresi verilmişse sunucudan gelen teklif bununla birebir aynı olmalı (sınırsız izin verilen adres sunucuya bırakılmaz)
+  const SABIT_SOZLESME = String((import.meta.env && import.meta.env.VITE_PAYMENTS_CONTRACT) || '').toLowerCase();
+  const SABIT_TOKEN = String((import.meta.env && import.meta.env.VITE_TOKEN_ADDRESS) || '').toLowerCase();
+  if ((SABIT_SOZLESME && String(q.contract).toLowerCase() !== SABIT_SOZLESME) || (SABIT_TOKEN && String(q.token).toLowerCase() !== SABIT_TOKEN)) {
+    throw new Error('Ödeme adresleri bu oyun sürümünün tanıdığıyla uyuşmuyor; işlem durduruldu.');
+  }
   setStep('Avalanche ağına geçiliyor…');
   await ensureChain(q.chainId);
   const amountWei = BigInt(q.amountAda) * 10n ** 18n;
@@ -876,7 +915,11 @@ export const pazar = {
 // Sunucu varsa girişi yapar, kaydı yükler ve true döner; yoksa false (deneme modu).
 export async function startOnline(context) {
   const health = await detectServer();
-  if (!health) return false;
+  if (!health) {
+    // Sunucu adresi derlemede verilmişse (üretim) yanıt vermemesi bir arızadır: oyun sessizce yerel moda düşmesin, uyarılsın
+    online.sunucuBeklendi = !!API_BASE;
+    return false;
+  }
   ctx = context;
   online.active = true;
   online.health = health;

@@ -11,8 +11,13 @@ export const CORRUPT_SUFFIX = '__bozuk';
 
 const events = [];
 
-function hasStorage() {
-  return typeof localStorage !== 'undefined' && localStorage !== null;
+// Tarayıcı site verisini engellediğinde localStorage'a erişmek bile hata fırlatabilir: oyun yine açılır (kayıt yazılamaz uyarısıyla)
+export function hasStorage() {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage !== null;
+  } catch {
+    return false;
+  }
 }
 
 function record(type, key, detail = '') {

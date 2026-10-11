@@ -134,7 +134,7 @@ export class GameStateManager {
       : Math.round((kayit.lotteryTickets || 0) * biletBedeli() * amortiPayi());
     const fiyatCarpani = GAME_CONFIG.ADA_PRICE_MULTIPLIER;
 
-    return {
+    const durum = {
       ...baslangic,
       ...kayit,
       currentXp: kayit.currentXp != null ? Number(kayit.currentXp) : (baslangic.currentXp || 0),
@@ -188,6 +188,19 @@ export class GameStateManager {
       adaPriceMultiplierTarget: kayit.adaPriceMultiplierTarget ?? null,
       adaPriceMultiplierEpoch: kayit.adaPriceMultiplierEpoch ?? null
     };
+
+    // Elle bozulmuş ya da hasarlı kayıtta sayı alanları geçersizse (null, "x", NaN) başlangıç değerine döner:
+    // aksi halde ekranlar "NaN" yazar ve stamina NaN kalınca sefer hiç başlatılamaz
+    const sayisalAlan = (alan, taban, yedek) => {
+      const v = durum[alan];
+      const n = typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN);
+      durum[alan] = Number.isFinite(n) ? Math.max(taban, n) : yedek;
+    };
+    sayisalAlan('level', 1, baslangic.level || 1);
+    sayisalAlan('stamina', 0, baslangic.stamina || 0);
+    sayisalAlan('adAstraBalance', 0, baslangic.adAstraBalance || 0);
+    sayisalAlan('currentXp', 0, baslangic.currentXp || 0);
+    return durum;
   }
 
   // ── Kayıt birleştirme yardımcıları ─────────────────────────────────────

@@ -227,7 +227,7 @@ try {
     const r = await call('POST', '/api/action', { name, args }, tA);
     assert.equal(r.status, 400, `${name} reddedilmeli`);
   }
-  const freeBot = await call('POST', '/api/action', { name: 'buyTavernaAutomationBot', args: [99999] }, tA);
+  const freeBot = await call('POST', '/api/action', { name: 'buyTavernaAutomationBot', args: [false, 99999] }, tA);
   assert.equal(freeBot.body.result.success, false, 'İzin verilmeyen bot paketi reddedilir');
   const badArg = await call('POST', '/api/action', { name: 'marketSell', args: ['adAstra', 5] }, tA);
   assert.equal(badArg.status, 400, 'Geçersiz hammadde adı reddedilir');

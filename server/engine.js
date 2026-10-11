@@ -194,7 +194,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     const e = { ...world() };
     delete e.hotWallet;
     if (e.lastWeekly && typeof e.lastWeekly === 'object') {
-      const { katilim, ...kalan } = e.lastWeekly;
+      const { katilim: _katilim, ...kalan } = e.lastWeekly;
       e.lastWeekly = kalan;
     }
     return e;

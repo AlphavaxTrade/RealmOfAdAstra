@@ -32,6 +32,7 @@ const GECERLI = {
   str: ['', 'a', 'x'.repeat(64), '<script>alert(1)</script>', '__proto__', 'constructor'],
   name: ['', 'Ali', 'x'.repeat(24), '<img src=x onerror=alert(1)>', 'constructor', 'ş'.repeat(24)],
   slot: SLOTS,
+  slotRef: [...SLOTS, { source: 'armory', armoryIndex: 0 }, { source: 'soldier', soldierIndex: 0, slotKey: 'weapon' }, { source: 'kingdom', slotKey: '__proto__' }],
   node: NODES,
   res: [...NODES, 'fragments', 'boxes', 'keys'],
   idxArr: [[0], [0, 1, 2], [63], [0, 0, 0], Array.from({ length: 18 }, (_, i) => i)],

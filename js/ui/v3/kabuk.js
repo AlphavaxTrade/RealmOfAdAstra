@@ -132,7 +132,8 @@ export function kurV3Kabuk(api) {
   // Test laboratuvarı yalnız deneme ve geliştirme sürümünde var
   const lab = api.testSurumu ? kurLab({ gameState: gs, openPanel: api.openPanel, cevrimici: api.cevrimici, bildir: api.bildir, hudYenile: api.hudYenile, vanillaSifirla: api.vanillaSifirla }) : null;
   // Ayarlar (hareketi azalt, yazı boyutu): tarayıcı deposunda; açılışta uygulanır
-  let ayar = ayarOku(localStorage);
+  let ayar;
+  try { ayar = ayarOku(localStorage); } catch { ayar = ayarOku(null); }   // site verisi engelliyse varsayılan ayar
   ayarUygula(ayar, document.documentElement);
   const ayarlarAc = () => api.openPanel(['⚙️', 'Ayarlar ve kısayollar'], ayarlarHtml(ayar, api.cevrimici()));
   $('rpg-modal')?.addEventListener('click', (e) => {

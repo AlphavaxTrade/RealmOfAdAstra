@@ -161,7 +161,7 @@ export const kesifYontemleri = {
     if (bulunan < gereken) return { success: false, message: `Tüm koleksiyonu tamamlamalısın! (${bulunan}/${gereken} Eser)` };
 
     const bedel = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
-    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz AdAstra! (${bedel} ASTRA gerekli)` };
+    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz ASTRA! (${bedel} ASTRA gerekli)` };
 
     this.state.adAstraBalance -= bedel;
     this._onAdaSpent(bedel);

@@ -146,6 +146,10 @@ export const ogreticiYontemleri = {
       granted = draw.granted || 0;
       budgetFull = !!draw.budgetFull;
     }
+    // Haftalık ödeme payı dolduysa bölüm "alındı" sayılmaz (ödül kaybolmasın; yeni haftada tekrar alınır)
+    if (bonus > 0 && granted <= 0 && budgetFull) {
+      return { success: false, granted: 0, budgetFull: true, message: `⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` };
+    }
     alinan[bolumId] = { claimed: true, at: this._now(), granted };
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
     this._onAdaEarned(granted);

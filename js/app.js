@@ -26,8 +26,8 @@ import { kurYol } from './ui/yol.js';
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
 
-window.gameState = gameState;
-window.globalPool = globalPool;
+// Konsoldan oyun nesnelerine erişim yalnız geliştirme ve deneme sürümünde (üretimde elle hile yolu açılmasın)
+if (DEV_TOOLS) { window.gameState = gameState; window.globalPool = globalPool; }
 
 const $ = (id) => document.getElementById(id);
 
@@ -89,6 +89,9 @@ function bolgeAc(bolge) {
 const gorulenler = new Set();   // oturumda bir kez bildirilir; asıl kayıt oyun durumundadır
 function goruldu(anahtar) {
   if (gorulenler.has(anahtar)) return;
+  // Çevrimiçi modda giriş yapmamış (misafir) ya da bekleme sırasındaki hesap sunucuya işlem gönderemez: ekranı gezmek
+  // giriş penceresini açmasın ya da hata bildirimi üretmesin; giriş yapınca ekran yeniden çizildiğinde bildirilir
+  if (online.active && (!isLoggedIn() || (online.gate && online.gate.status && !['citizen', 'new'].includes(online.gate.status)))) return;
   gorulenler.add(anahtar);
   gameState.ogreticiGordu(anahtar);
 }
@@ -208,7 +211,7 @@ function olaylariBagla() {
     ekranAc('savashazirlik', { canavar: monster });
   });
 
-  window.addEventListener('toast-notify', (e) => bildir(e.detail.message, e.detail.type));
+  window.addEventListener('toast-notify', (e) => { if (e.detail && typeof e.detail.message === 'string') bildir(e.detail.message, e.detail.type); });
 }
 
 // ---------------------------------------------------------------------------
@@ -331,10 +334,12 @@ async function haritayiBaslat() {
       try {
         window.__vadi3d = vadi.startVadi3D(kap);
       } catch (hata) {
+        // Yeniden yüklemek ?harita=3d adresiyle aynı hatayı sonsuza dek tekrarlardı: 2B harita yeniden yüklemeden kurulur
         console.error('3B vadi açılamadı, 2B haritaya dönülüyor:', hata);
         document.body.classList.remove('map-3d');
         try { localStorage.removeItem('harita'); } catch { /* yoksay */ }
-        location.reload();
+        try { phaserGame.destroy(true); } catch { /* sahne yoktu */ }
+        phaserGame = new Phaser.Game({ ...ayar, scene: [GrandTownScene, DungeonScene] });
       }
     }
   }
@@ -395,6 +400,10 @@ window.addEventListener('DOMContentLoaded', async () => {
   olaylariBagla();
   // Test laboratuvarı yalnız geliştirme sunucusunda (npm run dev) ve deneme sunucusunda (TEST_MODE) açılır
   const testSurumu = cevrimici ? !!(online.health && online.health.testMode) : DEV_TOOLS;
+  if (testSurumu) { window.gameState = gameState; window.globalPool = globalPool; }   // tarayıcı denetim betikleri için
+  if (!cevrimici && online.sunucuBeklendi) {
+    bildir('⚠️ Sunucuya ulaşılamadı: şu an tek kişilik yerel moddasın. İlerlemen yalnız bu tarayıcıda kalır, sunucudaki hesabına yazılmaz. Sayfayı yenilemeyi dene.', 'error');
+  }
 
   yol = kurYol({
     gs: gameState, bildir,

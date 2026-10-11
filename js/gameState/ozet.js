@@ -180,7 +180,7 @@ export const ozetYontemleri = {
         inflow: Math.round(treasury.state?.inflow?.carnival || 0),
         outflow: Math.round(treasury.state?.outflow?.carnival || 0),
         description: '15 potansiyel ödüllü Şans Çarkındaki doğrudan token ödüllerinin emisyon kasasıdır.',
-        howToEarn: 'Karnavalda 100 ASTRA, hammadde veya biletle şans çarkını çevir.',
+        howToEarn: `Karnavalda ${this.getWheelCostAda()} ASTRA, hammadde veya biletle şans çarkını çevir.`,
         actionType: 'carnival_wheel',
         actionText: '🎡 Şans Çarkı'
       },

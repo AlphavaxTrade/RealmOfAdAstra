@@ -10,6 +10,11 @@ const ASTRA_PAYI = 1.03;
 
 const tr = (n) => Number(n).toLocaleString('tr-TR');
 
+// Sandık, anahtar ve teçhizat parçası bölünemez: kesirli miktar alınıp satılamaz (0,01 kutu + 0,01 anahtarla Pandora açılabiliyordu)
+const TAM_SAYILI = ['boxes', 'keys', 'fragments'];
+const tamSayiHatasi = (anahtar, miktar) => (TAM_SAYILI.includes(anahtar) && !Number.isInteger(miktar)
+  ? { success: false, message: 'Bu varlık bölünemez: tam sayı gir.' } : null);
+
 export const pazarYontemleri = {
   // Sandık ve anahtar da pazarda satılır; onlar envanterde değil kendi sayaçlarında durur
   _pazarStoku(anahtar) {
@@ -21,6 +26,8 @@ export const pazarYontemleri = {
   marketSell(resKey, qty) {
     const miktar = Number(qty);
     if (!(miktar > 0)) return { success: false, message: 'Lütfen satmak istediğin geçerli bir miktar gir!' };
+    const kesir = tamSayiHatasi(resKey, miktar);
+    if (kesir) return kesir;
     const eldeki = this._pazarStoku(resKey);
     if (eldeki < miktar) {
       return { success: false, message: `Yetersiz ${kaynakAdi(resKey) || resKey}! Envanterinde ${tr(Math.floor(eldeki))} adet var.` };
@@ -42,6 +49,8 @@ export const pazarYontemleri = {
   marketBuy(resKey, qty) {
     const miktar = Number(qty);
     if (!(miktar > 0)) return { success: false, message: 'Lütfen satın almak istediğin geçerli bir miktar gir!' };
+    const kesir = tamSayiHatasi(resKey, miktar);
+    if (kesir) return kesir;
 
     const tahmin = ammMarket.getEstimatedCostForBuy(resKey, miktar);
     if (!isFinite(tahmin)) return { success: false, message: 'Havuzda bu miktarı karşılayacak yeterli likidite yok!' };
@@ -49,7 +58,7 @@ export const pazarYontemleri = {
     if (bakiye < tahmin) {
       return { success: false, message: `Yetersiz ASTRA! Gereken: ~${tahmin.toFixed(2)} ASTRA, bakiyen: ${bakiye.toFixed(2)} ASTRA` };
     }
-    if (RES_KEYS().includes(resKey)) {
+    if (RES_KEYS().includes(resKey) || resKey === 'fragments') {   // teçhizat parçasının da silo sınırı vardır
       const sinir = this.getWarehouseCapacity()[resKey];
       const mevcut = Number(this.state.inventory[resKey]) || 0;
       if (sinir != null && mevcut + miktar > sinir) {

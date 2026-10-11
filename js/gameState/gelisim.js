@@ -159,7 +159,7 @@ export const gelisimYontemleri = {
     if ((envanter.wood || 0) < gerek.wood) return { success: false, message: `Yetersiz Odun! (${gerek.wood} Odun gerekli)` };
     if ((envanter.iron || 0) < gerek.iron) return { success: false, message: `Yetersiz Demir! (${gerek.iron} Demir gerekli)` };
     if ((envanter.wheat || 0) < gerek.wheat) return { success: false, message: `Yetersiz Buğday! (${gerek.wheat} Buğday gerekli)` };
-    if (this.state.adAstraBalance < gerek.adAstra) return { success: false, message: `Yetersiz AdAstra! (${gerek.adAstra} ASTRA gerekli)` };
+    if (this.state.adAstraBalance < gerek.adAstra) return { success: false, message: `Yetersiz ASTRA! (${gerek.adAstra} ASTRA gerekli)` };
 
     envanter.wood -= gerek.wood;
     envanter.iron -= gerek.iron;
@@ -236,7 +236,7 @@ export const gelisimYontemleri = {
     if (!guc) return { success: false, message: 'Geçersiz güçlendirme!' };
 
     const bedel = this.adaPrice(guc.costAdAstra);
-    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz AdAstra! (${bedel} ASTRA gerekli)` };
+    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz ASTRA! (${bedel} ASTRA gerekli)` };
 
     this.state.adAstraBalance -= bedel;
     this._onAdaSpent(bedel);

@@ -8,7 +8,7 @@ export const soldierPortraitFor = n => SOLDIER_PORTRAITS[(Math.max(1, Number(n) 
 // Oyuncunun yazdığı isimler başka oyuncuların ekranında da görünür (Kolezyum sıralaması, maç kayıtları):
 // HTML/kod gibi çalışabilecek işaretler ve görünmez karakterler atılır.
 export const cleanName = (s, max = 24) => String(s == null ? '' : s)
-  .replace(/[<>&"'`\\\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e]/g, '')
+  .replace(/[<>&"'`\\\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/g, '')
   .replace(/\s+/g, ' ').trim().slice(0, max);
 
 // v2 (7 Ekim 2026): hammadde anahtarları config'ten (6 kaynak); eski kayıtlar için yedek üçlü
