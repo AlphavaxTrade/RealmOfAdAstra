@@ -30,7 +30,7 @@ export function sadeBaslik(metin) {
 const KATLA_KURALLARI = [
   { baslik: '🏰 Krallık merkezi', acik: 2 },
   { baslik: '🧙 Karakterim', acik: 1 },
-  { baslik: '🏛️ Konsey ve hazine', acik: 0 },
+  { baslik: '🏛️ Konsey ve hazine', acik: 1 },
   { baslik: '📊 Kotalarım', acik: 1 },
   { baslik: '🎪 Karnaval', acik: 1 },
   { baslik: '📈 Ekonomi panosu', acik: 1 },
@@ -50,6 +50,7 @@ const acikKalanlar = new Set();   // kullanıcı bir kartı açtıysa panel yeni
 export function katla(kok, acik, panelAnahtari) {
   const kartlar = [...kok.querySelectorAll(KART)].filter((k) => !k.parentElement.closest(KART) && !k.closest('details.v3-katli'));
   kartlar.forEach((kart, i) => {
+    if (kart.classList.contains('is-winner')) return;   // kazancı çekilmeyi bekleyen kart hep açık kalır
     const baslikSatiri = kart.querySelector(BASLIK);
     if (!baslikSatiri) return;   // başlığı olmayan kart olduğu gibi kalır
     const ad = (baslikSatiri.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 60);

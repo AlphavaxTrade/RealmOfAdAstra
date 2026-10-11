@@ -107,7 +107,11 @@ export function renderDungeonEntryLadder(st) {
 }
 
 // "Kota ve Sınırlar" panelinin tamamı
-export function renderQuotaTracker({ gameState, globalPool, config }) {
+// compact (arayüz v3): uzun açıklamalar "Nasıl hesaplanır?" bölümlerinde katlı, başlıklar kısa
+export function renderQuotaTracker({ gameState, globalPool, config, compact = false }) {
+  const ayrinti = (metin, baslik = 'Nasıl hesaplanır?') => compact
+    ? `<details class="v3-ayrinti"><summary>${baslik}</summary><div>${metin}</div></details>`
+    : `<div class="clean-desc">${metin}</div>`;
   const caps = config.GLOBAL_RESOURCE_CAPS;
   const order = config.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
   const W = gameState.getUretimWeight ? gameState.getUretimWeight() : { weight: 1, levelFactor: 1, tier: { name: 'Yok', mult: 1 }, activity: 1 };
@@ -144,7 +148,7 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
           <div class="card-title">🎫 Üretim Hakkın (bu hafta)</div>
           <span class="card-badge">ağırlık ×${W.weight} · kademe ${W.tier.name}</span>
         </div>
-        <div class="clean-desc">Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(OT.hours)} sa × ${Math.round(OT.days)} gün) × kişi başı kota × ağırlığın (seviye ×${W.levelFactor} · katkı kademesi ${W.tier.name} ×${W.tier.mult} · aktiflik ×${W.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.</div>
+        ${ayrinti(`Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(OT.hours)} sa × ${Math.round(OT.days)} gün) × kişi başı kota × ağırlığın (seviye ×${W.levelFactor} · katkı kademesi ${W.tier.name} ×${W.tier.mult} · aktiflik ×${W.activity}). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`)}
         <div class="quota-res-grid">
           ${order.map(k => { const hk = gameState.getUretimHakki(k); const m = caps[k]; const pc = (n, b) => (b > 0 ? Math.min(100, (n / b) * 100) : 0).toFixed(1); return `
           <div class="quota-res-card" style="--res-color:${m.color}">
@@ -157,10 +161,10 @@ export function renderQuotaTracker({ gameState, globalPool, config }) {
 
       <section class="clean-card quota-section">
         <div class="card-title-row">
-          <div class="card-title">🌍 Sirius Çıkarma Kapasitesi (bu hafta, bütün oyuncular · kota %${Math.round((UP.qpp[order[0]] || 0) * 100)} · Otorite sv.${UP.otoriteLevel})</div>
+          <div class="card-title">${compact ? '🌍 Sirius kapasitesi (herkes)' : `🌍 Sirius Çıkarma Kapasitesi (bu hafta, bütün oyuncular · kota %${Math.round((UP.qpp[order[0]] || 0) * 100)} · Otorite sv.${UP.otoriteLevel})`}</div>
           <span class="card-badge">${dayIndex + 1}. gün / 7</span>
         </div>
-        <div class="clean-desc">Bütün oyuncuların bu hafta çıkarabileceği toplam hammadde. Kota her gün bir parça açılır; açılıp çıkarılmayan kısım hafta içinde birikir. Seferin topladığı miktar, o an alınabilir olanla sınırlıdır.</div>
+        ${ayrinti(`Bütün oyuncuların bu hafta çıkarabileceği toplam hammadde. Kota her gün bir parça açılır; açılıp çıkarılmayan kısım hafta içinde birikir. Seferin topladığı miktar, o an alınabilir olanla sınırlıdır.${compact ? ` Şu an kota %${Math.round((UP.qpp[order[0]] || 0) * 100)}, Otorite seviye ${UP.otoriteLevel}.` : ''}`, 'Bu ne demek?')}
         ${renderDayStrip(dayIndex)}
         <div class="quota-res-list">
           ${order.map(k => renderResourceQuotaCard(k, infos[k], caps[k])).join('')}

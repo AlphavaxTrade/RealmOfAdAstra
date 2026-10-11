@@ -15,6 +15,8 @@ import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { terim } from './ui/v3/sozluk.js';
+import { cevirSecenekleriHtml as karnavalCevirV3, havuzlarHtml as karnavalHavuzlarV3 } from './ui/v3/karnaval.js';
+import { hazineOzetHtml as hazineOzetV3, hazineKasalarHtml as hazineKasalarV3 } from './ui/v3/hazine.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
@@ -730,13 +732,13 @@ function refreshQuotaTrackerUI() {
   const el = dom.modalBody && dom.modalBody.querySelector('.quota-tracker');
   if (!el) return;
   const scroll = dom.modalBody.scrollTop;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
   dom.modalBody.scrollTop = scroll;
 }
 
 function openDailyLimitsModal() {
   dom.modalTitle.innerHTML = `<span>📊</span> <span>KOTA VE SINIRLAR</span>`;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
   displayModal();
 }
 
@@ -3209,6 +3211,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
           return ws.open ? '' : `<div class="clean-card notice-card notice-warn">🎪 Karnaval kasası yenileniyor (${Math.floor(ws.balance).toLocaleString('tr-TR')} / ${ws.minBalance.toLocaleString('tr-TR')} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.</div>`;
         })()}
 
+        ${V3_ARAYUZ ? karnavalCevirV3({ costAda: gameState.getWheelCostAda(), tickets: myTickets, resSpinsLeft: gameState.getWheelResourceSpinsLeft(), resSpinsMax: GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3, resBtnsHtml: wheelResBtns }) : `
         <!-- 4 Farklı Ödeme Yöntemi ile Çarkı Çevir Butonları -->
         <div class="clean-card" style="border-color: #ec4899; background: #120914;">
           <div style="font-size:0.88rem; font-weight:800; color:#f472b6; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
@@ -3225,7 +3228,9 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             </button>
           </div>
         </div>
+        `}
 
+        ${V3_ARAYUZ ? '<details class="v3-ayrinti"><summary>📋 Çarkın 15 ödülü ve şansları</summary><div>' : ''}
         <!-- 15 Ödül Listesi / Detaylı İnceleme Bölümü -->
         <div class="clean-card" style="border-color: rgba(255,255,255,0.1); background: rgba(10,10,18,0.6); padding:12px;">
           <div style="font-size:0.85rem; font-weight:800; color:#cbd5e1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
@@ -3249,6 +3254,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             })()}
           </div>
         </div>
+        ${V3_ARAYUZ ? '</div></details>' : ''}
 
         <div id="carnival-redeem-codes-container">
           ${redeemCodes.length > 0 ? `
@@ -3295,7 +3301,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
         <div class="clean-card">
           <div class="card-title-row">
-            <div class="card-title">🛡️ Balina koruması: haftalık bilet sınırın</div>
+            <div class="card-title">${V3_ARAYUZ ? '🛡️ Haftalık bilet sınırın' : '🛡️ Balina koruması: haftalık bilet sınırın'}</div>
           </div>
           <div class="limit-list">
             ${renderLimitMeter({ icon: '🗓️', label: 'Bu hafta aldığın', used: lot.boughtThisWeek, max: lot.maxPerWeek, note: 'Her hesap haftada en fazla bu kadar bilet alabilir.' })}
@@ -3316,7 +3322,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             </button>
           </div>
           ${blockedBy ? `<div class="pe-note pe-warn">${blockedBy}</div>` : ''}
-          <div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ASTRA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div>
+          ${V3_ARAYUZ ? '<details class="v3-ayrinti"><summary>Bilet bedeli nereye gider?</summary><div>' : ''}<div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ASTRA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div>${V3_ARAYUZ ? '</div></details>' : ''}
         </div>
 
         <div class="clean-card lottery-draw-card ${pending > 0 ? 'is-winner' : ''}">
@@ -3626,6 +3632,15 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
       </div>
     `;
+    if (V3_ARAYUZ) {
+      const lk = gameState.getLockedBalanceInfo(), ct = gameState.getContributionInfo(), fp = gameState.getFreePlayerPoolInfo();
+      const m = ok => (ok ? '✅' : '❌');
+      const ucretsizHtml = (fp.deposited
+        ? 'Hesabına para yatırdığın için ücretsiz oyuncu havuzu senin için değil; kazandığın ödüller devam eder.'
+        : `<strong>Haftalık ücretsiz oyuncu payı</strong><br>${m(fp.levelOk)} En az ${fp.minLevel}. seviye (sen: ${fp.level})<br>${m(fp.contributionOk)} Bu hafta en az ${fp.needContribution.toLocaleString('tr-TR')} katkı puanı (sen: ${fp.weekContribution.toLocaleString('tr-TR')})<br>📧 E-postan doğrulanmış olmalı<br>🔥 Sadakat serin: <strong>${fp.streakWeeks} hafta</strong> → bu haftaki çarpanın ×${fp.streakMultiplier.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} (en çok ×${fp.streakMax}; kaçırılan hafta seriyi yarıya indirir)<br>Pay ${fp.locked ? 'kilitli gelir; oyunda harcadıkça çözülür' : 'her kazanç gibi gelir'}.`)
+        + '<br><br>Oyundan kazandığın ASTRA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ASTRA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Çekim yalnız serbest kısımdan yapılır; ortak haftalık çekim hakkından payını katkı puanın belirler.';
+      tabContentHtml = karnavalHavuzlarV3({ eData, g: { serbest: lk.free, kilitli: lk.locked, katki: ct.week, carpan: gameState.getAdaPriceMultiplier() }, ucretsizHtml });
+    }
   }
 
   return tabsNavHtml + tabContentHtml;
@@ -3634,7 +3649,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 function openCarnivalModal(activeTab = 'wheel') {
   if (!featureGate('carnival')) return;
   window.carnivalActiveTab = activeTab;
-  dom.modalTitle.innerHTML = `<span>🎪</span> <span>KRALLIK KARNAVALI, ŞANS ÇARKI & PİYANGO</span>`;
+  dom.modalTitle.innerHTML = V3_ARAYUZ ? '<span>🎪</span> <span>Karnaval</span>' : `<span>🎪</span> <span>KRALLIK KARNAVALI, ŞANS ÇARKI & PİYANGO</span>`;
   dom.modalBody.innerHTML = renderCarnivalHtml(activeTab);
   displayModal();
   if (activeTab === 'wheel') {
@@ -4947,7 +4962,10 @@ function openTreasuryVaultModal() {
       </div>
     </div>` : '';
   const sponsorHtml = online.active && isLoggedIn() ? '<div id="sponsor-box" class="clean-card" style="border-color:#f472b6;"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Yükleniyor…</div></div>' : '';
-  dom.modalBody.innerHTML = kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  const v3Kasalar = summary.pools.map(pool => { const sh = shareOf[pool.id]; return { ...pool, gelirMetni: pool.id === 'ubi_pool' ? `her harcamadan ${pctTxt(GAME_CONFIG.UBI_POOL_RATE ?? 0.06)} pay` : sh ? `her harcamadan ${pctTxt(T * sh)} pay` : '' }; });
+  dom.modalBody.innerHTML = V3_ARAYUZ
+    ? hazineOzetV3(summary) + hazineKasalarV3(v3Kasalar) + splitHtml + kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml
+    : kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
   if (sponsorHtml) loadSponsorBox();
   const izinBitirBtn = document.getElementById('btn-izin-bitir');
   if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };

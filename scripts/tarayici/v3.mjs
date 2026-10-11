@@ -135,6 +135,12 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: Karnaval 3 kısa sekme`, await s.evaluate(() => { const t = [...document.querySelectorAll('.carnival-tab-btn')].map((b) => b.innerText.trim()); return t.length === 3 && t.every((x) => x.length <= 14); }));
   kontrol(`${ad}: Karnaval düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .carnival-tab-btn, #modal-body .btn-spin-wheel')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
   kontrol(`${ad}: Karnaval yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
+  kontrol(`${ad}: Karnaval çarkında tek ana düğme ve hammadde seçenekleri katlı`, await s.evaluate(() => { const ana = document.querySelectorAll('#modal-body .v3-cevir-ana'); const d = document.querySelector('#modal-body .v3-cevir details'); return ana.length === 1 && !!d && !d.open; }));
+  await s.evaluate(() => document.querySelector('.carnival-tab-btn[data-carnival-tab="pools"]').click()); await bekle(700);
+  kontrol(`${ad}: Karnaval havuzları kasa satırları olarak listelenir (≥ 5) ve düğmeleri çalışır`, await s.evaluate(() => document.querySelectorAll('#modal-body .v3-havuz').length >= 5 && document.querySelectorAll('#modal-body .btn-eco-pool-jump').length >= 5));
+  await ust('ben', 'hazine');
+  kontrol(`${ad}: Hazine kasa satırları (≥ 5) ve ödül düğmeleri`, await s.evaluate(() => document.querySelectorAll('#modal-body .v3-havuz').length >= 5 && document.querySelectorAll('#modal-body .btn-treasury-action').length >= 5));
+  kontrol(`${ad}: Hazine'de ilk kart (kasa özeti) açık`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-katli'); return !!d && d.open && /Büyük Krallık/.test(d.querySelector('summary').innerText); }));
   await s.keyboard.press('Escape'); await bekle(300);
 
   // Zindan savaş öncesi pencere (v3): sade başlık, giriş kuralları ve taktik katlı, "Savaşa başla" büyük ve görünür

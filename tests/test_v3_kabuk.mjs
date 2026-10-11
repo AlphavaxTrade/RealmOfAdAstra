@@ -170,3 +170,27 @@ console.log('✅ test laboratuvarı');
   assert.equal((html.match(/<kbd>/g) || []).length, KISAYOLLAR.length);
 }
 console.log('✅ ayarlar ve bağlantı');
+
+// 9) Karnaval ve Hazine v3 parçaları: düğme kimlikleri korunur, metinler kaçırılır, ana yol tek düğme
+{
+  const { cevirSecenekleriHtml, havuzlarHtml } = await import('../js/ui/v3/karnaval.js');
+  const { hazineOzetHtml, hazineKasalarHtml } = await import('../js/ui/v3/hazine.js');
+  const cevir = cevirSecenekleriHtml({ costAda: 100, tickets: 0, resSpinsLeft: 3, resSpinsMax: 3, resBtnsHtml: '<button class="btn-spin-wheel" data-pay="wood">x</button>' });
+  assert.match(cevir, /data-pay="ada"/);
+  assert.match(cevir, /id="btn-spin-wheel-ticket"[^>]*disabled/, 'bilet yoksa bilet düğmesi kapalı');
+  assert.match(cevir, /<details class="v3-ayrinti"><summary>Hammaddeyle çevir/, 'hammadde seçenekleri katlı');
+  assert.equal((cevir.match(/data-pay="ada"/g) || []).length, 1, 'ASTRA ile tek ana düğme');
+  const eData = { solvencyPct: 100, burnRatePct: 5, ubiRatePct: 6, creatorRatePct: 3, totalPoolsBalance: 1000, lifetimeBurnedAda: 5, totalDeposited: 10, totalWithdrawn: 4,
+    burnedResources: { wood: 1, iron: 2, wheat: 3 }, ammBurnedResources: { wood: 0.5, iron: 0, wheat: 0 }, lottery: { lotteryPool: 12000000, amortiShare: 10, rolloverShare: 20 },
+    pools: [{ id: 'x', name: '<img src=x onerror=alert(1)>', icon: '🏰', color: '#fff', sharePct: 23.2, description: 'd', balance: 5, howToEarn: 'h', actionType: 'dungeon', actionText: 'Git' }] };
+  const hv = havuzlarHtml({ eData, g: { serbest: 1, kilitli: 2, katki: 3, carpan: 1 }, ucretsizHtml: 'u' });
+  assert.ok(!hv.includes('<img src=x'), 'havuz adı kaçırılır');
+  assert.match(hv, /btn-eco-pool-jump" data-action="dungeon"/);
+  assert.match(hv, /data-action="lottery"/);
+  const oz = hazineOzetHtml({ totalVaultAda: 1, totalAmmLiquidityAda: 2, burnedNftPool: 3 });
+  assert.match(oz, /Büyük Krallık Kasası/);
+  const ks = hazineKasalarHtml([{ id: 'a', name: 'A<b>', icon: '💀', color: '#000', totalPoolAda: 12, description: 'd', statusBadge: 's', userShareText: 'u', actionType: 'dungeon', actionText: 'Gir', gelirMetni: 'her harcamadan %1 pay' }]);
+  assert.ok(!ks.includes('A<b>'), 'kasa adı kaçırılır');
+  assert.match(ks, /btn-treasury-action" data-action="dungeon"/);
+  console.log('✅ karnaval ve hazine v3 parçaları');
+}
