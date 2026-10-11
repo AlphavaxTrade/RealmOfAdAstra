@@ -1,6 +1,13 @@
-// AdAstra: Genesis Realm - Gelişmiş Karakter Seviyesi, Ordu, Taverna & Otomasyon Yöneticisi
-// Çekirdek sınıf burada (kurucu, kayıt/yükleme, bildirimler); yöntemler alan bazlı karışımlar olarak js/gameState/*.js içindedir
-// (kurumsal A3.11, 8 Ekim 2026: 7994 satırlık dosyadan AYNEN bölündü).
+// Realm of AdAstra — Oyuncu durumu yöneticisi (GameStateManager)
+// ============================================================================
+// Çekirdek sınıf burada: kurucu, kayıt / yükleme, bildirimler, asker ve alet kayıtlarının
+// birleştirilmesi. Oyun kuralları alan bazlı karışımlar olarak js/gameState/*.js içindedir
+// (her biri `Object.assign(GameStateManager.prototype, ...)` ile eklenir).
+//
+// Aynı sınıf tarayıcıda da sunucuda da çalışır (server/engine.js): kayıt localStorage'a,
+// sunucuda localStorage taklidi üzerinden sqlite'a yazılır.
+// ============================================================================
+
 import { GAME_CONFIG } from './config.js';
 import { globalPool } from './globalPool.js';
 import { ammMarket } from './ammMarket.js';
@@ -33,25 +40,37 @@ import { ogreticiYontemleri, ogreticiIsaretleriKur } from './gameState/ogretici.
 // Oyuncunun yazdığı isimler için temizleyici dışarı da açıktır (sunucu ve testler kullanır)
 export { cleanName } from './gameState/ortak.js';
 
+const DONANIM_YUVALARI = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+const bosDonanim = () => Object.fromEntries(DONANIM_YUVALARI.map(y => [y, null]));
+const SAVAS_ON_AYARLARI = [1, 2, 3];
+const ALET_TAM_DAYANIKLILIK = 4320;   // dakika: 72 saatlik kullanım
+
+// Yeni askerlerin başlangıç yetenekleri: ilk dört asker farklı rol alır
+const ILK_YETENEKLER = ['shieldWall', 'shockwave', 'fieldMedic', 'armorBreaker'];
+
+const piyangoKonfigi = () => (GAME_CONFIG.CARNIVAL && GAME_CONFIG.CARNIVAL.LOTTERY) || {};
+const biletBedeli = () => piyangoKonfigi().TICKET_COST_ADA || 100;
+const amortiPayi = () => piyangoKonfigi().AMORTI_SHARE ?? 0.02;
+
 export class GameStateManager {
   constructor() {
     this.storageKey = 'adastra_player_save_v6';
-    this._simNow = null;       // Simülasyon saati (çevrimdışı telafi / ileri sarma sırasında dolu)
-    this._lastSaveAt = 0;      // Kare döngüsünden gelen kayıtları seyreltmek için
+    this._simNow = null;       // simülasyon saati: çevrimdışı telafi / ileri sarma sırasında dolu
+    this._lastSaveAt = 0;      // kare döngüsünden gelen kayıtları seyreltmek için
     this.state = this.loadState();
     this.listeners = [];
+
     // Piyango: ilk açılışta mevcut haftayı "çekilişi yapılmış" say (yeni hesap geçmiş haftayı çekemez)
     if (this.state.lastLotteryDrawEpoch == null && globalPool && globalPool.state) {
       this.state.lastLotteryDrawEpoch = globalPool.state.epochId || 1;
     }
-    // 🛡️ Amorti İade Havuzu Düzeltmesi: Bilet alınmışsa ve amorti kasası 0 kalmışsa %2 payını anında aktar
-    if (this.state.lotteryTickets > 0 && (!this.state.lotteryAmortiPool || this.state.lotteryAmortiPool === 0)) {
-      const ticketCost = (GAME_CONFIG.CARNIVAL?.LOTTERY?.TICKET_COST_ADA || 100);
-      const amortiRate = (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02);
-      this.state.lotteryAmortiPool = Math.round(this.state.lotteryTickets * ticketCost * amortiRate);
+    // Bileti olup amorti kasası boş kalan kayıtta amorti payı hemen tamamlanır
+    if (this.state.lotteryTickets > 0 && !this.state.lotteryAmortiPool) {
+      this.state.lotteryAmortiPool = Math.round(this.state.lotteryTickets * biletBedeli() * amortiPayi());
       this.saveState();
     }
-    if (typeof ammMarket !== 'undefined' && ammMarket && ammMarket.subscribe) {
+    // Pazar fiyatı değişince maliyet botu ve arayüz haberdar olur
+    if (ammMarket && ammMarket.subscribe) {
       ammMarket.subscribe(() => {
         this.tickUpgradeCostBot(0);
         this.notifyListeners();
@@ -59,184 +78,196 @@ export class GameStateManager {
     }
   }
 
-  // ⏱️ Oyun saati: normalde gerçek saat; çevrimdışı telafi ve ileri sarmada simülasyon saati.
-  // Bot süresi, sefer başlangıcı ve güçlendirme süreleri hep bu saate göre hesaplanır; böylece
-  // "oyun 25 saat kapalı kaldı" gibi durumlarda bot, süresi dolduğu ana kadar doğru çalışır.
+  // ── Zaman ──────────────────────────────────────────────────────────────
+  // Oyun saati: normalde gerçek saat; çevrimdışı telafi ve ileri sarmada simülasyon saati.
+  // Bot süresi, sefer başlangıcı ve güçlendirme süreleri hep bu saate göre hesaplanır.
   _now() {
     return this._simNow != null ? this._simNow : Date.now();
   }
 
-  // Kare döngüsünden gelen küçük değişiklikler (stamina, iyileşme, sefer ilerlemesi) için seyreltilmiş kayıt.
-  // Oyuncu eylemleri saveState() ile hemen kaydedilmeye devam eder.
-  requestSave(minIntervalMs = 2000) {
-    const t = Date.now();
+  // ── Kayıt ──────────────────────────────────────────────────────────────
+  // Kare döngüsünden gelen küçük değişiklikler (stamina, iyileşme, sefer ilerlemesi) için seyreltilmiş
+  // kayıt. Oyuncu eylemleri saveState() ile hemen kaydedilir.
+  requestSave(minAralikMs = 2000) {
     if (this._isFastForwarding) return;
-    if (t - (this._lastSaveAt || 0) >= minIntervalMs) {
-      this.saveState();
-    }
+    if (Date.now() - (this._lastSaveAt || 0) >= minAralikMs) this.saveState();
+  }
+
+  saveState() {
+    this.enforceWarehouseLimits();
+    if (this._isFastForwarding) return;   // simülasyonda diske yazma ve dinleyici tetikleme yok
+    this.state.lastSeenAt = Date.now();
+    this._lastSaveAt = this.state.lastSeenAt;
+    writeJSON(this.storageKey, this.state);
+    this.notifyListeners();
   }
 
   subscribe(fn) {
-    if (typeof fn === 'function') {
-      this.listeners.push(fn);
-    }
-    return () => {
-      this.listeners = this.listeners.filter(l => l !== fn);
-    };
+    if (typeof fn === 'function') this.listeners.push(fn);
+    return () => { this.listeners = this.listeners.filter(l => l !== fn); };
   }
 
   notifyListeners() {
     if (!this.listeners) return;
-    this.listeners.forEach(fn => {
-      try { fn(this.state); } catch (e) { console.error('Listener error:', e); }
-    });
-  }
-
-  loadState() {
-    // Bozuk kayıt son sağlam yedekten açılır (bkz. storage.js)
-    const parsed = readJSON(this.storageKey).data || {};
-    delete parsed.dailyQuests;
-    if (parsed.characterXp != null) {
-      parsed.currentXp = (Number(parsed.currentXp) || 0) + Number(parsed.characterXp);
-      delete parsed.characterXp;
+    for (const fn of this.listeners) {
+      try { fn(this.state); } catch (e) { console.error('Durum dinleyicisi hata verdi:', e); }
     }
+  }
+
+  // Kayıt üzerine başlangıç profili ve eski kayıt onarımları uygulanır. Bozuk kayıt son sağlam
+  // yedekten açılır (bkz. storage.js).
+  loadState() {
+    const kayit = readJSON(this.storageKey).data || {};
+    const baslangic = GAME_CONFIG.STARTING_PROFILE;
+
+    // Eski alanlar: günlük görevler kalktı; karakter XP'si tek sayaçta birleşti
+    delete kayit.dailyQuests;
+    if (kayit.characterXp != null) {
+      kayit.currentXp = (Number(kayit.currentXp) || 0) + Number(kayit.characterXp);
+      delete kayit.characterXp;
+    }
+
+    const piyango = piyangoKonfigi();
+    const piyangoKasasi = (kayit.lotteryPool != null && isFinite(kayit.lotteryPool) && kayit.lotteryPool >= 0)
+      ? kayit.lotteryPool
+      : (piyango.SEED_POOL_ADA || 12000000);   // yalnız hiç kayıt yoksa tohumla başlar (her yüklemede tamamlanmaz)
+    const amortiKasasi = (kayit.lotteryAmortiPool != null && kayit.lotteryAmortiPool > 0)
+      ? kayit.lotteryAmortiPool
+      : Math.round((kayit.lotteryTickets || 0) * biletBedeli() * amortiPayi());
+    const fiyatCarpani = GAME_CONFIG.ADA_PRICE_MULTIPLIER;
+
     return {
-      ...GAME_CONFIG.STARTING_PROFILE,
-      ...parsed,
-      currentXp: parsed.currentXp != null ? Number(parsed.currentXp) : (GAME_CONFIG.STARTING_PROFILE.currentXp || 0),
-      inventory: { ...GAME_CONFIG.STARTING_PROFILE.inventory, ...(parsed.inventory || {}) },
-      tools: this.mergeTools(parsed.tools),
-      army: { ...GAME_CONFIG.STARTING_PROFILE.army, ...(parsed.army || {}) },
-      warehouseLevel: parsed.warehouseLevel || 1,
-      activeBuffs: parsed.activeBuffs || {},
-      activeExpeditions: parsed.activeExpeditions || {},
-      lockedBoxes: parsed.lockedBoxes || 0,
-      arenaKeys: parsed.arenaKeys || 0,
-      genesisNftMinted: parsed.genesisNftMinted || false,
-      uretim: parsed.uretim || null,   // v2: Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
-      rocketReady: !!parsed.rocketReady,
-      rocketBuiltAt: parsed.rocketBuiltAt || 0,
-      grants: Array.isArray(parsed.grants) ? parsed.grants : [],
-      equipment: {
-        weapon: null,
-        helmet: null,
-        armor: null,
-        legs: null,
-        boots: null,
-        ...(parsed.equipment || {})
+      ...baslangic,
+      ...kayit,
+      currentXp: kayit.currentXp != null ? Number(kayit.currentXp) : (baslangic.currentXp || 0),
+      inventory: { ...baslangic.inventory, ...(kayit.inventory || {}) },
+      tools: this.mergeTools(kayit.tools),
+      army: { ...baslangic.army, ...(kayit.army || {}) },
+      warehouseLevel: kayit.warehouseLevel || 1,
+      activeBuffs: kayit.activeBuffs || {},
+      activeExpeditions: kayit.activeExpeditions || {},
+      lockedBoxes: kayit.lockedBoxes || 0,
+      arenaKeys: kayit.arenaKeys || 0,
+      genesisNftMinted: kayit.genesisNftMinted || false,
+      uretim: kayit.uretim || null,   // Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
+      rocketReady: !!kayit.rocketReady,
+      rocketBuiltAt: kayit.rocketBuiltAt || 0,
+      grants: Array.isArray(kayit.grants) ? kayit.grants : [],
+      equipment: { ...bosDonanim(), ...(kayit.equipment || {}) },
+      armoryInventory: Array.isArray(kayit.armoryInventory) ? kayit.armoryInventory : [],
+      collectionArtifacts: this.mergeCollectionArtifacts(kayit.collectionArtifacts),
+      soldierUnits: this.mergeSoldierUnits(kayit.soldierUnits),
+      combatPresets: this.mergeCombatPresets(kayit.combatPresets),
+      dungeonMonsterCurrentHp: kayit.dungeonMonsterCurrentHp || {},
+      lotteryTickets: kayit.lotteryTickets || 0,
+      lotteryPool: piyangoKasasi,
+      lotteryPendingPayout: Number(kayit.lotteryPendingPayout) || 0,
+      lastLotteryDrawEpoch: kayit.lastLotteryDrawEpoch ?? null,
+      lastLotteryResult: kayit.lastLotteryResult || null,
+      lotteryAmortiPool: amortiKasasi,
+      onboarding: (kayit.onboarding && typeof kayit.onboarding === 'object') ? kayit.onboarding : {},
+      botTrialUsed: !!kayit.botTrialUsed,
+      pendingNotices: Array.isArray(kayit.pendingNotices) ? kayit.pendingNotices.slice(-20) : [],
+      offlineReport: kayit.offlineReport || null,
+      lastSeenAt: kayit.lastSeenAt || 0,
+      wheelTicketShards: kayit.wheelTicketShards || 0,
+      botSiloAutoUpgrade: kayit.botSiloAutoUpgrade !== undefined ? kayit.botSiloAutoUpgrade : true,
+      botAutoRenew24h: kayit.botAutoRenew24h !== undefined ? kayit.botAutoRenew24h : false,
+      botActiveUntil: kayit.botActiveUntil || 0,
+      redeemCodes: Array.isArray(kayit.redeemCodes) ? kayit.redeemCodes : [],
+      burnedResources: { ...zeroRes(), ...(kayit.burnedResources || {}) },
+      carnivalBurnedResources: { ...zeroRes(), ...(kayit.carnivalBurnedResources || {}) },
+      village: {
+        ...(baslangic.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }),
+        ...(kayit.village || {})
       },
-      armoryInventory: Array.isArray(parsed.armoryInventory) ? parsed.armoryInventory : [],
-      collectionArtifacts: this.mergeCollectionArtifacts(parsed.collectionArtifacts),
-      soldierUnits: this.mergeSoldierUnits(parsed.soldierUnits),
-      combatPresets: this.mergeCombatPresets(parsed.combatPresets),
-      dungeonMonsterCurrentHp: parsed.dungeonMonsterCurrentHp || {},
-      lotteryTickets: parsed.lotteryTickets || 0,
-      // v1.25: Piyango kasası artık her yüklemede tohuma tamamlanmıyor (sonsuz para açığıydı).
-      // Kayıtlı bakiye neyse o; yalnızca hiç kayıt yoksa tohum ile başlar.
-      // v2 düzeltmesi (E-planı S10, 8 Ekim 2026): yedek değer eskiden 20M'di (R3'te 12M'ye indi); tek kaynak SEED_POOL_ADA.
-      lotteryPool: (parsed.lotteryPool != null && isFinite(parsed.lotteryPool) && parsed.lotteryPool >= 0)
-        ? parsed.lotteryPool
-        : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 12000000),
-      lotteryPendingPayout: Number(parsed.lotteryPendingPayout) || 0,
-      lastLotteryDrawEpoch: parsed.lastLotteryDrawEpoch ?? null,
-      lastLotteryResult: parsed.lastLotteryResult || null,
-      onboarding: (parsed.onboarding && typeof parsed.onboarding === 'object') ? parsed.onboarding : {},
-      botTrialUsed: !!parsed.botTrialUsed,
-      pendingNotices: Array.isArray(parsed.pendingNotices) ? parsed.pendingNotices.slice(-20) : [],
-      offlineReport: parsed.offlineReport || null,
-      lastSeenAt: parsed.lastSeenAt || 0,
-      lotteryAmortiPool: (parsed.lotteryAmortiPool != null && parsed.lotteryAmortiPool > 0)
-        ? parsed.lotteryAmortiPool
-        : Math.round((parsed.lotteryTickets || 0) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.TICKET_COST_ADA || 100) * (GAME_CONFIG.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02)),
-      wheelTicketShards: parsed.wheelTicketShards || 0,
-      botSiloAutoUpgrade: parsed.botSiloAutoUpgrade !== undefined ? parsed.botSiloAutoUpgrade : true,
-      botAutoRenew24h: parsed.botAutoRenew24h !== undefined ? parsed.botAutoRenew24h : false,
-      botActiveUntil: parsed.botActiveUntil || 0,
-      redeemCodes: Array.isArray(parsed.redeemCodes) ? parsed.redeemCodes : [],
-      burnedResources: { ...zeroRes(), ...(parsed.burnedResources || {}) },
-      carnivalBurnedResources: { ...zeroRes(), ...(parsed.carnivalBurnedResources || {}) },
-      // v2 (R5): köy
-      village: { ...(GAME_CONFIG.STARTING_PROFILE.village || { houses: 1, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 }), ...(parsed.village || {}) },
       // Kilitli bakiye eski kayıtlarda yoktu: mevcut bakiye serbest sayılır
-      lockedAda: Math.max(0, Number(parsed.lockedAda) || 0),
-      sponsorAda: Math.max(0, Number(parsed.sponsorAda) || 0),
-      lockUnlock: parsed.lockUnlock || null,
-      contribution: parsed.contribution || null,
-      adaPriceMultiplier: Number(parsed.adaPriceMultiplier) > 0 ? Number(parsed.adaPriceMultiplier) : (GAME_CONFIG.ADA_PRICE_MULTIPLIER?.DEFAULT ?? 1),
-      adaPriceMultiplierTarget: parsed.adaPriceMultiplierTarget ?? null,
-      adaPriceMultiplierEpoch: parsed.adaPriceMultiplierEpoch ?? null
+      lockedAda: Math.max(0, Number(kayit.lockedAda) || 0),
+      sponsorAda: Math.max(0, Number(kayit.sponsorAda) || 0),
+      lockUnlock: kayit.lockUnlock || null,
+      contribution: kayit.contribution || null,
+      adaPriceMultiplier: Number(kayit.adaPriceMultiplier) > 0 ? Number(kayit.adaPriceMultiplier) : (fiyatCarpani?.DEFAULT ?? 1),
+      adaPriceMultiplierTarget: kayit.adaPriceMultiplierTarget ?? null,
+      adaPriceMultiplierEpoch: kayit.adaPriceMultiplierEpoch ?? null
     };
   }
 
-  // 🛡️ 3 Adet Taktiksel Savaş Preseti (Frontline / Backline Mevzileri)
-  mergeCombatPresets(saved) {
-    const defaultPresets = {
-      activePresetId: 1,
-      presets: {
-        1: { id: 1, name: 'Taktik 1: Dengeli', positions: {} },
-        2: { id: 2, name: 'Taktik 2: Savunma Hattı', positions: {} },
-        3: { id: 3, name: 'Taktik 3: Arka Saf Baskını', positions: {} }
-      }
+  // ── Kayıt birleştirme yardımcıları ─────────────────────────────────────
+  // 3 savaş tertibi (ön saf / arka saf mevzileri)
+  mergeCombatPresets(kayitli) {
+    const varsayilan = {
+      1: 'Taktik 1: Dengeli',
+      2: 'Taktik 2: Savunma Hattı',
+      3: 'Taktik 3: Arka Saf Baskını'
     };
-    if (!saved || typeof saved !== 'object') return defaultPresets;
-    const activePresetId = (saved.activePresetId && [1, 2, 3].includes(Number(saved.activePresetId)))
-      ? Number(saved.activePresetId)
+    if (!kayitli || typeof kayitli !== 'object') {
+      return {
+        activePresetId: 1,
+        presets: Object.fromEntries(SAVAS_ON_AYARLARI.map(id => [id, { id, name: varsayilan[id], positions: {} }]))
+      };
+    }
+    const aktif = (kayitli.activePresetId && SAVAS_ON_AYARLARI.includes(Number(kayitli.activePresetId)))
+      ? Number(kayitli.activePresetId)
       : 1;
     const presets = {};
-    [1, 2, 3].forEach(id => {
-      const p = saved.presets?.[id];
+    for (const id of SAVAS_ON_AYARLARI) {
+      const p = kayitli.presets?.[id];
       presets[id] = {
         id,
-        name: p?.name || defaultPresets.presets[id].name,
+        name: p?.name || varsayilan[id],
         positions: (p?.positions && typeof p.positions === 'object') ? { ...p.positions } : {}
       };
-    });
-    return { activePresetId, presets };
+    }
+    return { activePresetId: aktif, presets };
   }
 
-  // 18 Koleksiyon Eserinin Kayıtlı Keşif Durumunu GAME_CONFIG Listesiyle Birleştirir
-  mergeCollectionArtifacts(saved) {
-    const savedMap = new Map((Array.isArray(saved) ? saved : []).map(a => [a.id, a]));
+  // 18 koleksiyon eserinin kayıtlı keşif durumu config listesiyle birleştirilir
+  mergeCollectionArtifacts(kayitli) {
+    const harita = new Map((Array.isArray(kayitli) ? kayitli : []).map(a => [a.id, a]));
     return GAME_CONFIG.COLLECTION_ARTIFACTS.map(cfg => {
-      const existing = savedMap.get(cfg.id);
+      const eski = harita.get(cfg.id);
       return {
         id: cfg.id,
-        discovered: existing ? !!existing.discovered : false,
-        discoveredAt: existing ? (existing.discoveredAt || null) : null
+        discovered: eski ? !!eski.discovered : false,
+        discoveredAt: eski ? (eski.discoveredAt || null) : null
       };
     });
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // ASKER BİRİMİ — TEK TİP ASKER + SKILL LOADOUT & TAKTİKSEL MEVZİ
-  // ═══════════════════════════════════════════════════════════════════════
-  // Askerler sınıf kısıtı olmaksızın eşit Whitepaper stat eğrisini ($100 + 25*(L-1)$ HP,
-  // $25 + 6*(L-1)$ ATK) takip eder. Taktiksel farklılaşma, her askerin taşıdığı
-  // bağımsız Skill Loadout (1-3 aktif + pasif yetenek) ve Ön/Arka Saf (row) konumundan gelir.
+  // 6 alet (config.TOOLS); eski kayıtta olmayan alet tam dayanıklılıkla eklenir.
+  mergeTools(kayitli) {
+    const aletler = GAME_CONFIG.TOOLS || { axe: 1, pickaxe: 1, sickle: 1 };
+    const varsayilan = Object.fromEntries(Object.keys(aletler).map(k => [
+      k, { durability: (GAME_CONFIG.TOOLS?.[k]?.maxDurability) || ALET_TAM_DAYANIKLILIK, totalGathered: 0 }
+    ]));
+    if (!kayitli) return varsayilan;
 
-  createSoldierUnit(index) {
-    const level = 1;
+    // Dayanıklılık dakika cinsindendir; eksik kayıt tam sayılır. (Eski sürümde 100 ve altı değerler "yüzde"
+    // sanılıp 43,2 ile çarpılıyordu: neredeyse kırık alet her yüklemede bedavaya yenileniyordu.)
+    const birlesik = { ...varsayilan, ...kayitli };
+    for (const alet of Object.values(birlesik)) {
+      if (alet && alet.durability == null) alet.durability = ALET_TAM_DAYANIKLILIK;
+    }
+    return birlesik;
+  }
+
+  // ── Askerler ───────────────────────────────────────────────────────────
+  // Tek tip asker + yetenek yükü: sınıf yoktur, farklılık yeteneklerden ve ön/arka saf konumundan gelir.
+  // HP = 100 + 25·(sv−1), ATK = 25 + 6·(sv−1).
+  createSoldierUnit(sira) {
     const maxHp = GAME_CONFIG.SOLDIER_MAX_HP || 100;
     const baseAtk = GAME_CONFIG.SOLDIER_BASE_ATK || 25;
-
-    // İlk askere Kalkan Duvarı, 2. askere Şok Dalgası, 3. askere Sahra Merhemi vb. dengeli dağılım
-    const initialSkills = (index === 1) ? ['shieldWall']
-      : (index === 2) ? ['shockwave']
-      : (index === 3) ? ['fieldMedic']
-      : (index === 4) ? ['armorBreaker']
-      : ['shieldWall'];
-
     return {
-      id: `soldier_${Date.now()}_${index}`,
-      name: `AdAstra Şampiyonu #${index}`,
+      id: `soldier_${Date.now()}_${sira}`,
+      name: `AdAstra Şampiyonu #${sira}`,
       class: 'adastra_champion',
       classId: 'adastra_champion',
       className: 'AdAstra Şampiyonu',
       icon: '⚔️',
-      avatar: soldierPortraitFor(index),
-      row: index <= 2 ? 'front' : 'back',
-      skills: initialSkills,
-      level,
+      avatar: soldierPortraitFor(sira),
+      row: sira <= 2 ? 'front' : 'back',
+      skills: [ILK_YETENEKLER[sira - 1] || 'shieldWall'],
+      level: 1,
       xp: 0,
       maxHp,
       hp: maxHp,
@@ -247,51 +278,28 @@ export class GameStateManager {
       baseCrit: 0.05,
       basePen: 5,
       woundedUntil: 0,
-      equipment: { weapon: null, helmet: null, armor: null, legs: null, boots: null }
+      equipment: bosDonanim()
     };
   }
 
-  mergeTools(saved) {
-    // v2: 6 alet (config.TOOLS); eski kayıtta olmayan alet tam dayanıklılıkla eklenir
-    const defaults = Object.fromEntries(Object.keys(GAME_CONFIG.TOOLS || { axe: 1, pickaxe: 1, sickle: 1 }).map(k => [k, { durability: (GAME_CONFIG.TOOLS?.[k]?.maxDurability) || 4320, totalGathered: 0 }]));
-    if (!saved) return defaults;
-    const merged = { ...defaults, ...saved };
-    Object.keys(merged).forEach(k => {
-      if (merged[k]) {
-        if (merged[k].durability != null && merged[k].durability <= 100) {
-          merged[k].durability = Math.round((merged[k].durability / 100) * 4320);
-        } else if (merged[k].durability == null) {
-          merged[k].durability = 4320;
-        }
-      }
-    });
-    return merged;
-  }
-
-  mergeSoldierUnits(saved) {
-    if (!Array.isArray(saved) || saved.length === 0) {
-      return [];
-    }
-    return saved.map((s, i) => {
+  mergeSoldierUnits(kayitli) {
+    if (!Array.isArray(kayitli) || kayitli.length === 0) return [];
+    return kayitli.map((s, i) => {
       const level = Math.max(1, s.level || 1);
       const maxHp = 100 + (level - 1) * (GAME_CONFIG.SOLDIER_HP_PER_LEVEL || 25);
       const baseAtk = 25 + (level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);
-
-      // Geriye dönük uyumlu yetenek yükleme
-      const skills = s.skills && Array.isArray(s.skills) && s.skills.length > 0
-        ? [...s.skills]
-        : (i === 0 ? ['shieldWall'] : i === 1 ? ['shockwave'] : ['armorBreaker']);
+      const varsayilanYetenek = i === 0 ? ['shieldWall'] : i === 1 ? ['shockwave'] : ['armorBreaker'];
 
       return {
         id: s.id || `soldier_${i + 1}`,
-        // v1.25: Oyuncunun verdiği isim korunur (eskiden her yüklemede varsayılana dönüyordu)
+        // Oyuncunun verdiği isim korunur
         name: (typeof s.name === 'string' && s.name.trim()) ? s.name : `AdAstra Şampiyonu #${i + 1}`,
         class: 'adastra_champion',
         className: 'AdAstra Şampiyonu',
         icon: '⚔️',
         avatar: (s.avatar && s.avatar !== 'assets/soldier_avatar.jpg') ? s.avatar : soldierPortraitFor(i + 1),
         row: s.row || (i < 2 ? 'front' : 'back'),
-        skills,
+        skills: Array.isArray(s.skills) && s.skills.length > 0 ? [...s.skills] : varsayilanYetenek,
         level,
         xp: s.xp || 0,
         maxHp: s.maxHp || maxHp,
@@ -302,70 +310,42 @@ export class GameStateManager {
         baseCrit: 0.05,
         basePen: 5,
         woundedUntil: s.woundedUntil || 0,
-        equipment: {
-          weapon: null, helmet: null, armor: null, legs: null, boots: null,
-          ...(s.equipment || {})
-        }
+        equipment: { ...bosDonanim(), ...(s.equipment || {}) }
       };
     });
   }
 
-  saveState() {
-    this.enforceWarehouseLimits();
-    if (this._isFastForwarding) {
-      // 🚀 Simülasyon sırasında diske senkron yazma ve listener tetikleme, sadece bellek içi state güncelle
-      return;
-    }
-    this.state.lastSeenAt = Date.now();
-    this._lastSaveAt = this.state.lastSeenAt;
-    writeJSON(this.storageKey, this.state);
-    this.notifyListeners();
-  }
-
-  // 📣 Oyuncuya gösterilecek bildirimler (arayüz her karede toplayıp kısa mesaj olarak gösterir)
+  // ── Bildirimler ────────────────────────────────────────────────────────
+  // Oyuncuya gösterilecek kısa mesajlar; arayüz her karede toplayıp gösterir (en fazla 20 bekler)
   pushNotice(message, type = 'info') {
     if (!message) return;
     if (!Array.isArray(this.state.pendingNotices)) this.state.pendingNotices = [];
-    this.state.pendingNotices.push({ message, type, at: this._now() });
-    if (this.state.pendingNotices.length > 20) this.state.pendingNotices.splice(0, this.state.pendingNotices.length - 20);
+    const liste = this.state.pendingNotices;
+    liste.push({ message, type, at: this._now() });
+    if (liste.length > 20) liste.splice(0, liste.length - 20);
   }
 
   consumeNotices() {
-    const list = Array.isArray(this.state.pendingNotices) ? this.state.pendingNotices : [];
+    const liste = Array.isArray(this.state.pendingNotices) ? this.state.pendingNotices : [];
     this.state.pendingNotices = [];
-    return list;
+    return liste;
   }
 }
 
-// Alan bazlı yöntem karışımları (js/gameState/*.js). Sıra önemli değil: hiçbir yöntem adı iki yerde tanımlı değil.
-Object.assign(GameStateManager.prototype, ekonomiYontemleri);
-Object.assign(GameStateManager.prototype, orduYontemleri);
-Object.assign(GameStateManager.prototype, seferYontemleri);
-Object.assign(GameStateManager.prototype, botYontemleri);
-Object.assign(GameStateManager.prototype, hasatYontemleri);
-Object.assign(GameStateManager.prototype, gelisimYontemleri);
-Object.assign(GameStateManager.prototype, techizatYontemleri);
-Object.assign(GameStateManager.prototype, botPaketiYontemleri);
-Object.assign(GameStateManager.prototype, karnavalYontemleri);
-Object.assign(GameStateManager.prototype, kesifYontemleri);
-Object.assign(GameStateManager.prototype, gelistiriciYontemleri);
-Object.assign(GameStateManager.prototype, ozetYontemleri);
-Object.assign(GameStateManager.prototype, topluYontemleri);
-Object.assign(GameStateManager.prototype, zindanYontemleri);
-Object.assign(GameStateManager.prototype, kolezyumYontemleri);
-Object.assign(GameStateManager.prototype, dunyaBossuYontemleri);
-Object.assign(GameStateManager.prototype, p2pYontemleri);
-Object.assign(GameStateManager.prototype, askerGelisimYontemleri);
-Object.assign(GameStateManager.prototype, rehberYontemleri);
-Object.assign(GameStateManager.prototype, pazarYontemleri);
-Object.assign(GameStateManager.prototype, katilimYontemleri);
-
-// v2 (R5/R6/R2): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Konsey katkıları, Genesis hakkı (js/v2/koyVeKonsey.js)
-Object.assign(GameStateManager.prototype, gameStateV2);
-Object.assign(GameStateManager.prototype, gameStateV2Depot);   // Yük İskelesi: Hazırlık Deposu + Universe hazırlık yüzdesi
-// Krallık Yolu (öğretici): bölüm ödülleri + işlemlerin başarıyla bitince "ilk kez yapıldı" işareti düşmesi (tüm karışımlardan SONRA)
-Object.assign(GameStateManager.prototype, ogreticiYontemleri);
+// Alan bazlı yöntem karışımları (js/gameState/*.js). Hiçbir yöntem adı iki yerde tanımlı olmamalı.
+for (const karisim of [
+  ekonomiYontemleri, orduYontemleri, seferYontemleri, botYontemleri, hasatYontemleri, gelisimYontemleri,
+  techizatYontemleri, botPaketiYontemleri, karnavalYontemleri, kesifYontemleri, gelistiriciYontemleri,
+  ozetYontemleri, topluYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri, p2pYontemleri,
+  askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri,
+  // Köy Evleri, Şifahane, geri dönüşüm, roket, Konsey katkıları, Hazırlık Deposu (js/v2/koyVeKonsey.js)
+  gameStateV2, gameStateV2Depot,
+  // Krallık Yolu: bölüm ödülleri ve "ilk kez yapıldı" işaretleri (tüm karışımlardan SONRA)
+  ogreticiYontemleri
+]) {
+  Object.assign(GameStateManager.prototype, karisim);
+}
 ogreticiIsaretleriKur(GameStateManager.prototype);
+
 if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
 export const gameState = new GameStateManager();
-

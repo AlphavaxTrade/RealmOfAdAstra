@@ -25,5 +25,6 @@
   "test_v3_kabuk.mjs",
   "test_senaryo_laboratuvari.mjs",
   "test_savas_motoru_altin.mjs",
-  "test_ekonomi_cekirdegi_altin.mjs"
+  "test_ekonomi_cekirdegi_altin.mjs",
+  "test_alet_dayaniklilik_yukleme.mjs"
 ]

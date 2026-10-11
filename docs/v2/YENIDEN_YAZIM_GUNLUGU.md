@@ -22,6 +22,7 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | `js/treasury.js` (hazine defteri) | Yeniden yazıldı | `tests/test_ekonomi_cekirdegi_altin.mjs`: 4.000 işlem, her adımda üç modülün tüm durumu birebir aynı |
 | `js/ammMarket.js` (pazar motoru) | Yeniden yazıldı | aynı test; kullanılmayan 6 yöntem kaldırıldı |
 | `js/globalPool.js` (küresel havuz, UBI, kota) | Yeniden yazıldı | aynı test; kullanılmayan 5 yöntem kaldırıldı |
+| `js/gameState.js` (oyuncu durumu çekirdeği) | Yeniden yazıldı | tam oyun altın kaydı (21 adım) değişmedi |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -62,3 +63,9 @@ Karar bekleyen / sonraya bırakılan:
    oranlara bağlanacak ya da kaldırılacak.
 8. **Eski gösterim kopyaları** (`totalTreasury`, `treasury`, `buybackFromBroadcasting`, `totalActiveMiners`) hâlâ durumda;
    yalnız eski ekonomi panosu (app.js) okuyor. O panel gidince alanlar da kaldırılacak.
+
+### gameState.js: düzeltilen hata (davranışı değiştiriyor, bilerek)
+9. **Neredeyse kırık alet her yüklemede bedavaya yenileniyordu.** Eski `mergeTools`, dayanıklılığı 100 ve altı olan aleti
+   "eski yüzde sistemi" sanıp 43,2 ile çarpıyordu (40 dakika kalan balta → 1.728). Sunucu her istekte kaydı yüklediği için
+   bu, onarım parası ödemeden alet yenilemenin yoluydu. Yüzde dönüşümü kaldırıldı (yaşayan kayıtlar zaten dakika cinsinden);
+   `tests/test_alet_dayaniklilik_yukleme.mjs` korur. Altın kayıt değişmedi.
