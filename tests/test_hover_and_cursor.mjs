@@ -21,8 +21,8 @@ test('🖱️ Harita & Zindan imleci ve v1.25 ekran yerleşimi', async (t) => {
 
   await t.test('3. Zindan sahnesi imleç ve ipucu konumunu tuval üst kenarına göre hesaplamalı', () => {
     const sceneCode = read('js/dungeonScene.js');
-    assert.ok(sceneCode.includes("setDefaultCursor('pointer')"), 'Zindan oda/portal hover anında pointer imleci ayarlanmalıdır');
-    assert.ok(sceneCode.includes('pointer.y + canvasTop - 45'), 'Zindan ipucu Y koordinatına canvasTop eklenmelidir');
+    assert.ok(sceneCode.includes("_imlec('pointer')") && sceneCode.includes('setDefaultCursor(tur)'), 'Zindan oda/portal hover anında pointer imleci ayarlanmalıdır');
+    assert.ok(sceneCode.includes('_tuvalUstu()') && sceneCode.includes('getBoundingClientRect().top'), 'Zindan ipucu Y koordinatına tuval üst kenarı eklenmelidir');
   });
 
   await t.test('4. Harita alanı üst bar ve telefon alt çubuğunun altından başlamalı', () => {

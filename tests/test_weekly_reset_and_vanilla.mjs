@@ -128,7 +128,7 @@ assert.equal(col.wins, 0, 'Kolezyum galibiyet sayısı 0 olmalı');
 assert.equal(col.losses, 0, 'Kolezyum mağlubiyet sayısı 0 olmalı');
 assert.equal(col.score, 0, 'Kolezyum puanı 0 olmalı');
 assert.equal(col.rating, 1000, 'Kolezyum başlangıç ELO derecesi 1000 olmalı');
-assert.equal(gs.state.colosseumLeaderboard.length, 10, 'Liderlik tablosu 10 gladyatör olmalı');
+assert.equal(gs.state.colosseumLeaderboard, undefined, 'sahte bot liderlik tablosu artık yok (sıralama gerçek oyuncularla)');
 console.log('✅ [5/5] Kolezyum Arenası, ELO derecesi ve Liderlik Tablosu başarıyla sıfırlandı.');
 
 assert.equal(gs.state.dungeonProgress, 1, 'Zindan ilerlemesi Seviye 1 olmalı');
