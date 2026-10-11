@@ -887,111 +887,6 @@ const openDashboardModal = () => ekranAc('merkez');
 const openTreasuryVaultModal = () => ekranAc('hazine');
 
 // =========================================================================
-// 4.11 SMART ARMORY (AKILLI SİLAH DEPOSU & ENTITLE MATRİSİ)
-// =========================================================================
-function openSmartArmoryModal() {
-  dom.modalTitle.innerHTML = `<span>⚔️</span> <span>AKILLI SİLAH DEPOSU & ENTITLE MATRİSİ</span>`;
-
-  const state = gameState.state;
-  const soldiers = state.soldierUnits || [];
-  const playerEquip = state.equipment || {};
-
-  const unassignedItems = [];
-  ['weapon', 'helmet', 'armor', 'legs', 'boots'].forEach(slot => {
-    if (playerEquip && playerEquip[slot]) {
-      unassignedItems.push({ slot, source: 'kingdom', ...playerEquip[slot] });
-    }
-  });
-  (state.armoryInventory || []).forEach((item, armIdx) => {
-    if (item) {
-      unassignedItems.push({ slot: item.slot, source: 'armory', armoryIndex: armIdx, ...item });
-    }
-  });
-
-  const leftPanelHtml = `
-    <div class="armory-inv-panel">
-      <div style="font-weight:800; font-size:0.9rem; color:#fde047; margin-bottom:8px; display:flex; justify-content:space-between;">
-        <span>📦 Boşta Kalan Dövülmüş Eşyalar (${unassignedItems.length})</span>
-      </div>
-      <div class="clean-desc" style="margin-bottom:10px;">Demirci'de dövüp henüz askerlere kuşandırmadığın hazır eşyalar:</div>
-      ${unassignedItems.map(item => `
-        <div class="armory-equip-item">
-          <span style="font-size:1.2rem;">${item.slot === 'weapon' ? '🗡️' : (item.slot === 'helmet' ? '🪖' : (item.slot === 'armor' ? '🛡️' : (item.slot === 'legs' ? '👖' : '👢')))}</span>
-          <div style="flex:1;">
-            <div style="font-weight:700; color:#fff;">${item.name || item.slot}</div>
-            <div style="font-size:0.75rem; color:#94a3b8;">
-              ${item.atkBonus ? `+${item.atkBonus} ATK ` : ''}${item.hpBonus ? `+${item.hpBonus} HP` : ''} • Dayanıklılık: ${item.durability || 100}%
-            </div>
-          </div>
-          <span class="rarity-tag ${(item.rarity || 'rare').toLowerCase()}">${item.rarity || 'RARE'}</span>
-        </div>
-      `).join('') || '<div style="padding:20px; text-align:center; color:#94a3b8; font-size:0.8rem;">Envanterde boş eşya yok. Demirci\'de yeni eşyalar dövebilirsin!</div>'}
-    </div>
-  `;
-
-  const rightPanelHtml = `
-    <div class="armory-soldiers-panel">
-      <div style="font-weight:800; font-size:0.9rem; color:#4ade80; margin-bottom:8px;">
-        <span>🛡️ Ordu Donatım Durumu</span>
-      </div>
-      ${soldiers.map((sol, idx) => {
-        const stats = gameState.getSoldierFullStats(idx);
-        const setBonus = gameState.getSoldierSetBonus(idx);
-        const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-        const filledSlots = slots.filter(s => sol.equipment && sol.equipment[s]).length;
-
-        return `
-          <div class="armory-soldier-mini ${selectedSoldierIndex === idx ? 'selected' : ''}" data-soldier-idx="${idx}">
-            <span style="font-size:1.1rem;">${sol.icon || '⚔️'}</span>
-            <div style="flex:1;">
-              <div style="font-weight:700; color:#fff;">#${idx + 1} ${sol.name}</div>
-              <div style="font-size:0.72rem; color:#94a3b8;">
-                ⚔️ ${stats?.totalAtk || 20} ATK • ❤️ ${sol.hp || 100}/${stats?.totalMaxHp || 100} HP
-                ${setBonus ? `<span style="color:#c084fc; font-weight:700;"> • ✨ ${setBonus.name}</span>` : ''}
-              </div>
-            </div>
-            <div class="armory-slots-mini" title="${filledSlots}/5 Yuva Dolu">
-              ${slots.map(s => `<div class="armory-slot-dot ${sol.equipment && sol.equipment[s] ? 'filled' : ''}"></div>`).join('')}
-            </div>
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-
-  dom.modalBody.innerHTML = `
-    <div class="clean-card" style="margin-bottom:12px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-        <div>
-          <div class="card-title">⚔️ Akıllı Silah Dağıtım & Donatım Hub'ı</div>
-          <div class="clean-desc">Tüm dövülmüş eşyaları tek tıkla orduna dağıt veya tüm teçhizatları tek tıkla sök!</div>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-clean btn-clean-green btn-smart-auto-equip" style="width:auto; padding:8px 14px; font-size:0.8rem;">
-            ⚡ En İyi Eşyaları Otomatik Kuşan
-          </button>
-          <button class="btn-clean btn-clean-gold btn-smart-unequip-all" style="width:auto; padding:8px 14px; font-size:0.8rem;">
-            🔄 Tüm Eşyaları Sök
-          </button>
-          <button class="btn-clean btn-clean-blue btn-smart-repair-all-equip" style="width:auto; padding:8px 14px; font-size:0.8rem;">
-            🔨 Tümünü Onar
-          </button>
-          <button class="btn-clean btn-smart-scrap-low-tier" style="width:auto; padding:8px 14px; font-size:0.8rem; background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5;">
-            ♻️ Düşükleri Hurdaya Çevir
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="armory-layout">
-      ${leftPanelHtml}
-      ${rightPanelHtml}
-    </div>
-  `;
-
-  displayModal();
-}
-
-// =========================================================================
 // ♻️ DEMİRCİ HURDA VE GERİ DÖNÜŞÜM RAPORU AÇILIR PENCERESİ (MODAL)
 // =========================================================================
 function openScrapReportModal(report) {
@@ -1427,317 +1322,6 @@ function initAppEvents() {
     const { message, type } = e.detail;
     showToast(message, type);
   });
-
-  dom.modalBody.addEventListener('click', async (e) => {
-    // Smart Armory: Otomatik En İyileri Dağıt
-    const autoEquipBtn = e.target.closest('.btn-smart-auto-equip');
-    if (autoEquipBtn) {
-      const res = gameState.autoEquipBest();
-      showToast(res.message, res.success ? 'success' : 'info');
-      openSmartArmoryModal();
-      renderTopBar();
-      return;
-    }
-
-    // Smart Armory: Tüm Eşyaları Sök
-    const unequipAllBtn = e.target.closest('.btn-smart-unequip-all');
-    if (unequipAllBtn) {
-      const res = gameState.unequipAllSoldiers();
-      showToast(res.message, res.success ? 'success' : 'info');
-      openSmartArmoryModal();
-      renderTopBar();
-      return;
-    }
-
-    // Smart Armory: Asker Seçimi
-    const armorySolMini = e.target.closest('.armory-soldier-mini');
-    if (armorySolMini) {
-      const idx = parseInt(armorySolMini.dataset.soldierIdx, 10);
-      if (!isNaN(idx)) {
-        selectedSoldierIndex = idx;
-        openSmartArmoryModal();
-      }
-      return;
-    }
-
-    // Kışla Asker Seçimi
-    const selectSoldierBtn = e.target.closest('.btn-select-soldier-card');
-    if (selectSoldierBtn) {
-      const idx = parseInt(selectSoldierBtn.dataset.soldierIdx, 10);
-      if (!isNaN(idx)) {
-        selectedSoldierIndex = idx;
-        editingSoldierNameIndex = null;
-        openBarracksModal();
-      }
-      return;
-    }
-
-    // ✏️ Asker İsmi Değiştirme Tetikleyici
-    const triggerRenameBtn = e.target.closest('.btn-trigger-rename');
-    if (triggerRenameBtn) {
-      const sIdx = parseInt(triggerRenameBtn.dataset.soldierIdx, 10);
-      if (!isNaN(sIdx)) {
-        editingSoldierNameIndex = sIdx;
-        openBarracksModal();
-      }
-      return;
-    }
-
-    // 💾 Asker İsmi Kaydetme
-    const saveNameBtn = e.target.closest('.btn-save-soldier-name');
-    if (saveNameBtn) {
-      const sIdx = parseInt(saveNameBtn.dataset.soldierIdx, 10);
-      const input = document.getElementById('input-soldier-rename');
-      const newName = input ? input.value : '';
-      const res = gameState.renameSoldierUnit(sIdx, newName);
-      if (res.success) {
-        showToast(res.message, 'success');
-        editingSoldierNameIndex = null;
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      return;
-    }
-
-    // ✕ Asker İsmi Değiştirme İptali
-    const cancelNameBtn = e.target.closest('.btn-cancel-soldier-name');
-    if (cancelNameBtn) {
-      editingSoldierNameIndex = null;
-      openBarracksModal();
-      return;
-    }
-
-    // Askere Teçhizat Kuşanma
-    const equipSoldierSlotBtn = e.target.closest('.btn-soldier-equip-slot');
-    if (equipSoldierSlotBtn) {
-      const sIdx = parseInt(equipSoldierSlotBtn.dataset.soldierIdx, 10);
-      const slotKey = equipSoldierSlotBtn.dataset.slot;
-      const res = gameState.equipSoldierSlot(sIdx, slotKey);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Askerden Teçhizat Çıkarma
-    const unequipSoldierSlotBtn = e.target.closest('.btn-soldier-unequip-slot');
-    if (unequipSoldierSlotBtn) {
-      const sIdx = parseInt(unequipSoldierSlotBtn.dataset.soldierIdx, 10);
-      const slotKey = unequipSoldierSlotBtn.dataset.slot;
-      const res = gameState.unequipSoldierSlot(sIdx, slotKey);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // 🛡️ Asker Formasyon Mevzisi Değiştirme (Ön Saf / Arka Saf)
-    const toggleSoldierRowBtn = e.target.closest('.btn-toggle-soldier-row');
-    if (toggleSoldierRowBtn) {
-      const sIdx = parseInt(toggleSoldierRowBtn.dataset.soldierIdx, 10);
-      const soldier = (gameState.state.soldierUnits || [])[sIdx];
-      if (soldier) {
-        const nextRow = soldier.row === 'back' ? 'front' : 'back';
-        const res = gameState.setSoldierRow(sIdx, nextRow);
-        if (res.success) {
-          showToast(`🛡️ ${soldier.name} mevzisi: ${nextRow === 'back' ? '🏹 Arka Saf' : '🛡️ Ön Saf'} olarak ayarlandı.`, 'info');
-          openBarracksModal();
-        }
-      }
-      return;
-    }
-
-    // 🎯 Kışla Preset Seçimi (P1, P2, P3)
-    const barracksPresetBtn = e.target.closest('.btn-barracks-preset');
-    if (barracksPresetBtn) {
-      const pid = parseInt(barracksPresetBtn.dataset.preset, 10);
-      const res = gameState.applyCombatPreset(pid);
-      if (res.success) {
-        showToast(res.message, 'info');
-        openBarracksModal();
-      }
-      return;
-    }
-
-    // 💾 Kışla Presete Kaydetme
-    const barracksSavePresetBtn = e.target.closest('#btn-save-barracks-preset');
-    if (barracksSavePresetBtn) {
-      const activeId = gameState.state.combatPresets?.activePresetId || 1;
-      const res = gameState.saveCombatPreset(activeId);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      }
-      return;
-    }
-
-    // ⚡ Anında Doyur & İyileştir (Tek Asker)
-    const instantHealBtn = e.target.closest('.btn-soldier-instant-heal');
-    if (instantHealBtn) {
-      const sIdx = parseInt(instantHealBtn.dataset.soldierIdx, 10);
-      const res = gameState.instantHealSoldierUnit(sIdx);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // 👑 60+ Yaş Özel: TEK DOKUNUŞLA ORDUMU HAZIRLA (Hem Doyur Hem En İyileri Kuşan)
-    if (e.target.closest('#btn-master-prep-army')) {
-      const healRes = gameState.instantHealAllSoldiers();
-      const equipRes = gameState.autoEquipBest();
-      sound.playLevelUp();
-      showToast(`👑 Ordun Savaşa Hazırlandı! (${healRes.healed} asker doyuruldu, ${equipRes.equipped || 0} eşya kuşandırıldı)`, 'success');
-      openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // ⚡ Akıllı Kuşan (En İyileri Dağıt)
-    const smartAutoEquipBtn = e.target.closest('.btn-smart-auto-equip');
-    if (smartAutoEquipBtn) {
-      const res = gameState.autoEquipBest();
-      showToast(res.message, res.success ? 'success' : 'info');
-      openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // 🔄 Tüm Eşyaları Sök
-    const smartUnequipAllBtn = e.target.closest('.btn-smart-unequip-all');
-    if (smartUnequipAllBtn) {
-      const res = gameState.unequipAllSoldiers();
-      showToast(res.message, res.success ? 'success' : 'info');
-      if (barracksActiveTab === 'armory') openBarracksModal();
-      else if (dom.modalTitle && dom.modalTitle.innerText.includes('Akıllı Silah')) openSmartArmoryModal();
-      else openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // 🔨 Tüm Silah & Zırhları Tek Tıkla Onar
-    const smartRepairAllBtn = e.target.closest('.btn-smart-repair-all-equip');
-    if (smartRepairAllBtn) {
-      const res = gameState.repairAllEquipmentInKingdom();
-      showToast(res.message, res.success ? 'success' : 'info');
-      if (res.success) sound.playRepair();
-      if (barracksActiveTab === 'armory') openBarracksModal();
-      else if (dom.modalTitle && dom.modalTitle.innerText.includes('Akıllı Silah')) openSmartArmoryModal();
-      else openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // ♻️ Düşük Kalite / Fazlalıkları Hurdaya Çevir
-    const smartScrapBtn = e.target.closest('.btn-smart-scrap-low-tier');
-    if (smartScrapBtn) {
-      const res = gameState.scrapAllLowTierEquipment(1);
-      if (res.success) {
-        if (typeof sound !== 'undefined' && sound && sound.playLevelUp) {
-          sound.playLevelUp();
-        }
-        openScrapReportModal(res);
-      } else {
-        showToast(res.message, 'info');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // 🌾 Tüm Orduyu Doyur (Toplu İyileştir)
-    const smartHealAllBtn = e.target.closest('.btn-smart-heal-all');
-    if (smartHealAllBtn) {
-      const res = gameState.instantHealAllSoldiers();
-      if (res.healed > 0) {
-        showToast(`⚡ ${res.healed} asker tam cana ulaştırıldı! (-${res.totalWheat} 🌾, -${res.totalAda} 🟣 ASTRA)`, 'success');
-        sound.playRepair();
-      } else {
-        showToast('İyileştirilecek yaralı asker bulunmuyor veya kaynaklar yetersiz.', 'info');
-      }
-      openBarracksModal();
-      renderTopBar();
-      return;
-    }
-
-    // Kışla Tek Tip Asker Satın Alma
-    if (e.target.closest('#btn-buy-soldier-unit')) {
-      const res = gameState.buySoldierUnit();
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Taverna Güçlendirme Satın Alma
-    const buyBuffBtn = e.target.closest('.btn-modal-buybuff');
-    if (buyBuffBtn) {
-      const buffId = buyBuffBtn.dataset.buff;
-      const res = gameState.buyTavernBuff(buffId);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openTownZoneModal('tavern', '🍺 Taverna & Han');
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Zindan Mağarasına Gir
-    if (e.target.closest('#btn-modal-enter-dungeon')) {
-      enterDungeonScene();
-      return;
-    }
-
-    // Demirci / Tamirhane: Sekme Geçişi
-    const mineTabBtn = e.target.closest('.mine-tab-btn');
-    if (mineTabBtn) {
-      openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
-      return;
-    }
-
-    // Kışla: Sekme Geçişi (Ordu Yönetimi / Akıllı Silah Deposu)
-    const barracksTabBtn = e.target.closest('.barracks-tab-btn');
-    if (barracksTabBtn) {
-      barracksActiveTab = barracksTabBtn.dataset.tab;
-      openBarracksModal();
-      return;
-    }
-
-    const soldierRepairBtn = e.target.closest('.btn-soldier-repair-slot') || e.target.closest('.btn-repair-equipment');
-    if (soldierRepairBtn) {
-      const sIdx = parseInt(soldierRepairBtn.dataset.soldierIdx || soldierRepairBtn.dataset.soldierIndex, 10);
-      const slot = soldierRepairBtn.dataset.slot;
-      const res = gameState.repairEquipment(slot, sIdx);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-  });
-
 }
 
 // =========================================================================
@@ -2037,7 +1621,6 @@ function initDevPanelEvents() {
         const report = gameState.fastForwardTime(hours);
         if (typeof syncDevLiveInputs === 'function') syncDevLiveInputs();
         renderTopBar();
-        if (typeof refreshLiveUpgradeCostUI === 'function') refreshLiveUpgradeCostUI(0);
         const modalContainer = document.getElementById('clean-modal');
         if (modalContainer && !modalContainer.classList.contains('hidden')) {
           if (dom.modalTitle && dom.modalTitle.innerText.includes('TAVERNA')) {
@@ -2229,61 +1812,6 @@ function initDevPanelEvents() {
   });
 }
 
-let _liveUpgradeUiTimer = 0;
-function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
-  _liveUpgradeUiTimer += deltaSeconds;
-  if (_liveUpgradeUiTimer < 1.0 && deltaSeconds < 1.0) return;
-  _liveUpgradeUiTimer = 0;
-
-  if (!dom.modalContainer || !dom.modalContainer.classList.contains('active')) return;
-
-  const adAstra = gameState.state.adAstraBalance || 0;
-  const inv = gameState.state.inventory || {};
-
-  // 7. Teçhizat Onarım Butonları (Tekil ve Toplu)
-  const eqRepairBtns = dom.modalContainer.querySelectorAll('.btn-armory-repair, .btn-equip-repair, .btn-barracks-repair-item');
-  eqRepairBtns.forEach(btn => {
-    const slot = btn.dataset.slot;
-    const sIdx = btn.dataset.soldierIdx;
-    const repCost = gameState.calculateEquipmentRepairCost(slot, sIdx !== '' && sIdx !== undefined ? Number(sIdx) : null);
-    if (repCost && !repCost.isRepaired) {
-      const canAfford = (inv.iron || 0) >= repCost.ironCost &&
-                        (inv.wood || 0) >= repCost.woodCost &&
-                        adAstra >= repCost.adaCost;
-      btn.disabled = !canAfford;
-      btn.innerText = `🔧 Onar (${repCost.adaCost} ASTRA)`;
-    }
-  });
-
-  const repAllArmoryBtn = dom.modalContainer.querySelector('.btn-repair-all-armory');
-  if (repAllArmoryBtn) {
-    const allRepCost = gameState.getAllEquipmentRepairCostInKingdom();
-    repAllArmoryBtn.disabled = allRepCost.count === 0 || !allRepCost.canAfford;
-    repAllArmoryBtn.innerText = allRepCost.count === 0 
-      ? '✨ Tüm Eşyalar Sağlam' 
-      : `🔨 Tüm Hasarlı Eşyaları Onar (${allRepCost.totalWood}🌲 + ${allRepCost.totalIron}⛏️ + ${allRepCost.totalAda}🟣 ASTRA)`;
-  }
-
-  // 8. Kışla Asker Hızlı İyileştirme Butonları
-  const healBtns = dom.modalContainer.querySelectorAll('.btn-heal-soldier-instant');
-  healBtns.forEach(btn => {
-    const sIdx = btn.dataset.soldierIdx;
-    if (sIdx !== undefined && sIdx !== '') {
-      const hInfo = gameState.getSoldierHealInfo(Number(sIdx));
-      if (hInfo) {
-        if (hInfo.isFull) {
-          btn.disabled = true;
-          btn.innerText = '💚 Tam Can';
-        } else {
-          const canAfford = (inv.wheat || 0) >= hInfo.wheatNeeded && adAstra >= hInfo.adaCost;
-          btn.disabled = !canAfford;
-          btn.innerText = `⚡ Anında İyileştir (${hInfo.wheatNeeded}🌾 + ${hInfo.adaCost}🟣 ASTRA)`;
-        }
-      }
-    }
-  });
-}
-
 // =========================================================================
 // 🧭 OYUNCU REHBERİ: bildirimler, "Sen yokken olanlar" raporu ve yeni oyuncu görevleri
 // =========================================================================
@@ -2470,9 +1998,6 @@ function uiGameLoop(currentTime) {
       showToast('🔄 24 saat tamamlandı! Bot otomatik olarak yeniden satın alındı ve bir 24 saat daha devam ediyor.', 'success');
       if (typeof sound !== 'undefined' && sound.playLevelUp) sound.playLevelUp();
       renderTopBar();
-      if (document.getElementById('clean-modal') && !document.getElementById('clean-modal').classList.contains('hidden')) {
-        openTownZoneModal('tavern', '🍺 Taverna & Han');
-      }
     }
 
     gameState.runTavernaAutomationCycle();
@@ -2481,7 +2006,6 @@ function uiGameLoop(currentTime) {
     gameState.tickUpgradeCostBot(slowDelta);
     gameState.checkWeeklyAutonomousBuyback();
     refreshBarracksLiveUI(slowDelta);
-    refreshLiveUpgradeCostUI(slowDelta);
     refreshQuotaTrackerUI();
     ekranCanliTik();
     reportStorageEvents();
@@ -2490,14 +2014,6 @@ function uiGameLoop(currentTime) {
     if (loopUiAccMs < 250) return;
     loopUiAccMs = 0;
     tickPlayerGuide(currentTime);
-
-    // Zindan Üst Barındaki Dinamik Sayıcılar
-    const dkKeys = document.getElementById('dungeon-dock-keys');
-    if (dkKeys) dkKeys.innerText = gameState.state.arenaKeys || 0;
-    const dkBoxes = document.getElementById('dungeon-dock-boxes');
-    if (dkBoxes) dkBoxes.innerText = gameState.state.lockedBoxes || 0;
-    const dkFrags = document.getElementById('dungeon-dock-fragments');
-    if (dkFrags) dkFrags.innerText = gameState.state.inventory.fragments || 0;
 
     renderTopBar();
   } catch (err) {
@@ -2648,7 +2164,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   if (typeof ammMarket !== 'undefined' && ammMarket.subscribe) {
     ammMarket.subscribe(() => {
       if (typeof gameState !== 'undefined' && gameState._isFastForwarding) return;
-      refreshLiveUpgradeCostUI(1.0);
       renderTopBar();
     });
   }
