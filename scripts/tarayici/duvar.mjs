@@ -22,7 +22,7 @@ if (!giris.token) { console.log('❌ giriş yapılamadı'); process.exit(1); }
 const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader'] });
 const baglam = await tarayici.newContext({ viewport: { width: 1280, height: 860 } });
 await baglam.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, ['adastra_session_v1', JSON.stringify({ token: giris.token, playerId: giris.playerId })]);
-await baglam.addInitScript(() => { try { localStorage.setItem('roa_arayuz', 'eski'); } catch { /* */ } });   // bu betik ESKİ test menüsünü (T tuşu, dev-modal) kullanır; yeni arayüz (v3) varsayılan olduğundan eskiye sabitlenir
+await baglam.addInitScript(() => { try { localStorage.setItem('v3_tur_bitti', '1'); } catch { /* */ } });   // tanıtım turu araya girmesinılan olduğundan eskiye sabitlenir
 const sayfa = await baglam.newPage();
 const hatalar = [];
 sayfa.on('pageerror', e => hatalar.push('pageerror: ' + e.message));
@@ -30,11 +30,20 @@ sayfa.on('console', m => { if (m.type() === 'error') hatalar.push('console.error
 
 const durum = () => sayfa.evaluate(() => ({ oran: window.gameState.getWorldBossEarlyUnstakeRate(), biten: window.globalPool.getProjectStatus().done.length, aktif: (window.globalPool.getProjectStatus().active || {}).id || null }));
 const yukle = async () => { await sayfa.waitForFunction(() => window.gameState && window.gameState.state && window.globalPool, null, { timeout: 45000 }); await bekle(4000); };
+// Test laboratuvarı (T) → Araçlar sekmesi: Konsey projesi düğmeleri
 const menuAc = async () => {
-  if (await sayfa.evaluate(() => !document.getElementById('dev-modal').classList.contains('hidden'))) return;
-  await sayfa.keyboard.press('t'); await bekle(500);
+  if (!(await sayfa.evaluate(() => !!document.querySelector('#modal-body .v3-lab')))) { await sayfa.keyboard.press('t'); await bekle(600); }
+  await sayfa.locator('[data-lab="sekme:arac"]').click(); await bekle(300);
 };
-const menuTikla = async (eylem, miktar) => { await menuAc(); const d = sayfa.locator(`[data-dev-action="${eylem}"]${miktar ? `[data-amount="${miktar}"]` : ''}`); await d.scrollIntoViewIfNeeded().catch(() => {}); await d.click({ timeout: 8000 }); await bekle(2500); };
+const menuTikla = async (eylem, miktar) => {
+  await menuAc();
+  const komut = eylem === 'reset-council' ? 'konsey-sifirla' : `konsey:${miktar || 1}`;
+  const d = sayfa.locator(`[data-lab="${komut}"]`);
+  await d.scrollIntoViewIfNeeded().catch(() => {});
+  await d.click({ timeout: 8000 });
+  if (eylem === 'reset-council') { await sayfa.locator('[data-v3-tamam]').click({ timeout: 4000 }); }
+  await bekle(2500);
+};
 const paletle = async ad => { await sayfa.keyboard.press('Escape'); await bekle(300); await sayfa.keyboard.press('Control+k'); await bekle(500); await sayfa.keyboard.type(ad); await bekle(400); await sayfa.locator('.cmd-palette-item').first().click(); await bekle(1400); };
 const modalMetni = () => sayfa.evaluate(() => (document.getElementById('modal-body') || document.body).innerText);
 

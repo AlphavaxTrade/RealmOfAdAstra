@@ -202,7 +202,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: kayıt noktası silinir`, await s.evaluate(() => !/deneme kaydı/.test(document.querySelector('#modal-body')?.innerText || '')));
   await s.keyboard.press('Escape'); await bekle(300);
   await s.keyboard.press('t'); await bekle(700);
-  kontrol(`${ad}: T kısayolu laboratuvarı açar (eski test menüsünü değil)`, /Test laboratuvarı/.test(await baslik()) && await s.evaluate(() => document.getElementById('dev-modal').classList.contains('hidden')));
+  kontrol(`${ad}: T kısayolu laboratuvarı açar`, /Test laboratuvarı/.test(await baslik()));
   await s.keyboard.press('t'); await bekle(500);
   kontrol(`${ad}: T tekrar basınca kapanır`, !(await panelAcik()));
 

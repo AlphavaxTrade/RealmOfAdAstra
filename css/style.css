@@ -341,58 +341,12 @@ body.modal-open .realm-tooltip {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
-.btn-clean-green {
-  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
-  border: 2px solid #6ee7b7;
-  border-bottom: 4px solid #064e3b;
-  color: #ffffff;
-}
-
-.btn-clean-purple {
-  background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
-  border: 2px solid #d8b4fe;
-  border-bottom: 4px solid #3b0764;
-  color: #ffffff;
-}
-
 .btn-clean-outline {
   background: #2b1406;
   border: 2px solid #ca8a04;
   border-bottom: 4px solid #78350f;
   color: #fde047;
 }
-
-.durability-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #110903;
-  padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid #451a03;
-}
-
-.inv-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.inv-slot {
-  background: #110903;
-  border: 2px solid #582a08;
-  border-radius: 12px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.inv-icon { font-size: 1.6rem; }
-.inv-qty { font-family: var(--font-game); font-weight: 800; font-size: 1.1rem; color: #fde047; }
-.inv-name { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
 
 /* Toast */
 .toast-container {
@@ -1243,52 +1197,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    ========================================================================= */
 
 /* --- Sekme (Tab) Sistemi: Modern Segmented Control Tasarımı --- */
-.phase2-tab-row {
-  display: flex;
-  gap: 6px;
-  background: #141721;
-  padding: 5px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  margin-bottom: 8px;
-}
-
-.phase2-tab-btn {
-  flex: 1;
-  padding: 8px 12px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 0.8rem;
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  text-align: center;
-  line-height: 1.2;
-}
-
-.phase2-tab-btn:hover {
-  color: #f8fafc;
-  background: rgba(255, 255, 255, 0.04);
-}
-
-.phase2-tab-btn.active {
-  background: #2563eb;
-  border-color: #3b82f6;
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
-}
-
-.phase2-empty-state {
-  text-align: center;
-  padding: 22px 10px;
-  color: #64748b;
-  font-size: 0.85rem;
-  font-weight: 600;
-  line-height: 1.5;
-}
 
 /* =========================================================================
    7.1 DEMİRCİ (BLACKSMITH) - SİLAH & ZIRH DÖVME KARTLARI
@@ -1303,130 +1211,17 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    7.2 18 KİŞİLİK ORDU - ASKER TEÇHİZAT & SEVİYE KARTLARI
    ========================================================================= */
 
-.soldier-card {
-  background: #140b06;
-  border: 2px solid #451a03;
-  border-radius: 12px;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  transition: all 0.15s ease;
-}
-
-.soldier-name {
-  font-size: 0.66rem;
-  font-weight: 700;
-  color: #cbd5e1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.soldier-slot {
-  flex: 1;
-  height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.92rem;
-  border: 1.5px dashed #451a03;
-  background: #0f0904;
-  color: #4b3a24;
-}
-
-.soldier-slot.filled {
-  border-style: solid;
-  border-color: #ca8a04;
-  background: #241209;
-  color: #fde047;
-}
-
-.soldier-slot.weapon.filled { border-color: #f87171; }
-.soldier-slot.armor.filled { border-color: #38bdf8; }
-
 /* =========================================================================
    7.3 18v18 KOLEZYUM ARENA SAVAŞI
    ========================================================================= */
 
-.arena-unit {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85rem;
-  background: #0f0904;
-  border: 1px solid #312105;
-  border-radius: 5px;
-  transition: all 0.3s ease;
-}
-
-.arena-unit.dead {
-  opacity: 0.25;
-  filter: grayscale(1);
-  transform: scale(0.85);
-}
-
 /* =========================================================================
    7.4 18 PARÇALIK NFT KOLEKSİYON ALBÜMÜ & GENESIS MÜHÜR BANNERI
    ========================================================================= */
-.genesis-banner {
-  border-color: #f59e0b !important;
-  background: linear-gradient(135deg, #241505 0%, #150c04 100%) !important;
-}
-
-.genesis-banner.ready {
-  border-color: #fde047 !important;
-  animation: genesisGlow 2s ease-in-out infinite;
-}
 
 @keyframes genesisGlow {
   0%, 100% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(253, 224, 71, 0.3); }
   50% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 26px rgba(253, 224, 71, 0.65); }
-}
-
-.collection-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-}
-
-.artifact-card {
-  aspect-ratio: 1;
-  background: #110903;
-  border: 2px solid #582a08;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  font-size: 1.35rem;
-  position: relative;
-  transition: transform 0.15s ease;
-}
-
-.artifact-card:hover { transform: translateY(-2px); }
-
-.artifact-card.locked {
-  filter: grayscale(1) brightness(0.5);
-  border-style: dashed;
-}
-
-.artifact-card .artifact-lock-icon {
-  font-size: 0.85rem;
-  position: absolute;
-  bottom: 4px;
-}
-
-.artifact-card.rarity-common { border-color: #94a3b8; box-shadow: 0 0 8px rgba(148,163,184,0.35); }
-.artifact-card.rarity-rare { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56,189,248,0.45); }
-.artifact-card.rarity-epic { border-color: #c084fc; box-shadow: 0 0 12px rgba(192,132,252,0.55); }
-.artifact-card.rarity-legendary {
-  border-color: #fde047;
-  box-shadow: 0 0 16px rgba(253,224,71,0.7);
-  animation: legendaryPulse 2s ease-in-out infinite;
 }
 
 @keyframes legendaryPulse {
@@ -1437,34 +1232,10 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* =========================================================================
    7.5 KİLİTLİ KUTULAR & UNBOXING (MYSTERY BOX)
    ========================================================================= */
-.mystery-box-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-}
-
-.mystery-box-item {
-  aspect-ratio: 1;
-  background: linear-gradient(180deg, #2b1406 0%, #150903 100%);
-  border: 2px solid #ca8a04;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.55rem;
-  animation: boxFloat 2.4s ease-in-out infinite;
-}
 
 @keyframes boxFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-3px); }
-}
-
-.box-reveal-card {
-  border-color: #fde047 !important;
-  background: #241505 !important;
-  text-align: center;
-  animation: craftPulse 1.5s ease-in-out infinite;
 }
 
 /* =========================================================================
@@ -1475,207 +1246,7 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    8. DEVELOPER & QUICK TEST PANEL (DEV CHEAT ENGINE)
    ========================================================================= */
 
-.dev-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(4, 2, 1, 0.82);
-  backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-.dev-modal-overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
-  display: none;
-}
-
-.dev-modal-window {
-  width: 92%;
-  max-width: 680px;
-  max-height: 88vh;
-  background: linear-gradient(180deg, #1b120c 0%, #0d0704 100%);
-  border: 3px solid #10b981;
-  border-radius: 24px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(16, 185, 129, 0.25);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: modalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.dev-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: linear-gradient(90deg, #064e3b 0%, #022c22 100%);
-  border-bottom: 2px solid #10b981;
-}
-
-.dev-modal-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: #34d399;
-  letter-spacing: 0.5px;
-}
-
-.dev-modal-close {
-  background: rgba(0,0,0,0.4);
-  border: 1.5px solid #059669;
-  color: #a7f3d0;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.dev-modal-close:hover {
-  background: #ef4444;
-  border-color: #f87171;
-  color: #fff;
-  transform: rotate(90deg);
-}
-
-.dev-modal-body {
-  padding: 18px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.dev-group {
-  background: rgba(20, 14, 9, 0.85);
-  border: 1.5px solid #3b200a;
-  border-radius: 16px;
-  padding: 14px;
-}
-
-.dev-group-title {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.88rem;
-  color: #fde047;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.dev-btn-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 8px;
-}
-
-.dev-btn {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.82rem;
-  padding: 9px 10px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  transition: all 0.15s ease;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
-  text-align: center;
-}
-
-.dev-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.15);
-}
-
-.dev-btn:active {
-  transform: translateY(1px);
-}
-
-.dev-btn-green {
-  background: linear-gradient(180deg, #059669 0%, #047857 100%);
-  border: 1.5px solid #34d399;
-  color: #ffffff;
-}
-
-.dev-btn-blue {
-  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-  border: 1.5px solid #38bdf8;
-  color: #ffffff;
-}
-
-.dev-btn-yellow {
-  background: linear-gradient(180deg, #d97706 0%, #b45309 100%);
-  border: 1.5px solid #fde047;
-  color: #ffffff;
-}
-
-.dev-btn-purple {
-  background: linear-gradient(180deg, #7c3aed 0%, #6d28d9 100%);
-  border: 1.5px solid #c084fc;
-  color: #ffffff;
-}
-
-.dev-btn-gold {
-  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  border: 1.5px solid #fef08a;
-  color: #3b1b02;
-}
-
-.dev-btn-cyan {
-  background: linear-gradient(180deg, #0891b2 0%, #0e7490 100%);
-  border: 1.5px solid #67e8f9;
-  color: #ffffff;
-}
-
-.dev-btn-orange {
-  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
-  border: 1.5px solid #fdba74;
-  color: #ffffff;
-}
-
-.dev-btn-red {
-  background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);
-  border: 1.5px solid #fca5a5;
-  color: #ffffff;
-}
-
 /* 🍦 Vanilla Hesap Sıfırlama Kutusu (En Belirgin Uyarı Butonu) */
-.dev-vanilla-reset-box {
-  border-color: #fca5a5;
-  background: rgba(127, 29, 29, 0.25);
-  margin-bottom: 14px;
-}
-
-.dev-btn-vanilla-reset {
-  width: 100%;
-  padding: 16px 10px;
-  font-size: 1.05rem;
-  letter-spacing: 0.03em;
-  border-width: 2px;
-  animation: ada-vanilla-pulse 1.8s ease-in-out infinite;
-}
 
 @keyframes ada-vanilla-pulse {
   0%, 100% { box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25), 0 0 0 rgba(220, 38, 38, 0); }
@@ -1683,274 +1254,16 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 
 /* Custom Debug Live Editor & Table */
-.dev-custom-editor-box {
-  background: linear-gradient(135deg, #1f140a 0%, #120904 100%);
-  border: 2px solid #f59e0b;
-  border-radius: 16px;
-  padding: 14px;
-  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
-}
-
-.dev-custom-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.dev-select, .dev-input {
-  background: #0d0704;
-  border: 1.5px solid #78350f;
-  color: #fde047;
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 0.9rem;
-  padding: 8px 12px;
-  border-radius: 10px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.dev-select:focus, .dev-input:focus {
-  border-color: #f59e0b;
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-}
-
-.dev-input {
-  width: 130px;
-}
-
-.dev-custom-actions {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.dev-custom-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-.dev-custom-table tr {
-  border-bottom: 1px solid #2e1a0b;
-}
-
-.dev-custom-table td {
-  padding: 6px 4px;
-  font-family: var(--font-game);
-  font-size: 0.82rem;
-  vertical-align: middle;
-}
-
-.dev-custom-table .res-name {
-  font-weight: 800;
-  color: #cbd5e1;
-  width: 100px;
-}
-
-.dev-mini-input {
-  width: 85px;
-  background: #0d0704;
-  border: 1.5px solid #582a08;
-  color: #fde047;
-  font-family: var(--font-game);
-  font-size: 0.82rem;
-  font-weight: 700;
-  padding: 4px 6px;
-  border-radius: 8px;
-  outline: none;
-}
-
-.dev-mini-input:focus {
-  border-color: #f59e0b;
-}
-
-.dev-mini-btn {
-  border: none;
-  outline: none;
-  cursor: pointer;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.72rem;
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: all 0.1s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  color: #fff;
-}
-
-.dev-mini-btn:hover {
-  filter: brightness(1.25);
-  transform: translateY(-1px);
-}
 
 /* ==========================================================================
    AMM İNTERAKTİF TİCARET VE DEMİRCİ EKİPMAN STİLLERİ
    ========================================================================== */
-.amm-trade-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-}
-
-.amm-card {
-  background: #190f09;
-  border: 1.5px solid #582a08;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-}
-
-.amm-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #3d1c05;
-  padding-bottom: 8px;
-}
-
-.amm-trade-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.amm-trade-box {
-  background: #110906;
-  border: 1px solid #4a2105;
-  border-radius: 10px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.amm-trade-title {
-  font-size: 0.85rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.amm-input-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.amm-number-input {
-  flex: 1;
-  background: #080402;
-  border: 1.5px solid #582a08;
-  color: #fde047;
-  font-family: var(--font-game);
-  font-size: 0.95rem;
-  font-weight: 800;
-  padding: 6px 10px;
-  border-radius: 8px;
-  outline: none;
-  width: 100%;
-}
-
-.amm-number-input:focus {
-  border-color: #f59e0b;
-}
-
-.amm-est-display {
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #1a0f08;
-  border: 1px dashed #78350f;
-  min-height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 
 /* 5 Demirci Ekipman Kartları */
 
 /* =========================================================================
    CANLI SEFER SAYACI & ERKEN TOPLAMA (ACCRUED YIELD)
    ========================================================================= */
-.expedition-active-box {
-  background: #150d07;
-  border: 2px solid #ca8a04;
-  border-radius: 12px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
-}
-
-.exp-active-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.exp-live-label {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #fde047;
-}
-
-.exp-live-pct {
-  font-family: var(--font-game);
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #4ade80;
-  background: #0d2818;
-  padding: 2px 8px;
-  border-radius: 6px;
-  border: 1px solid #16a34a;
-}
-
-.exp-live-track {
-  width: 100%;
-  height: 14px;
-  background: #0a0503;
-  border: 1px solid #78350f;
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.exp-live-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ca8a04, #22c55e);
-  transition: width 0.2s linear;
-}
-
-.exp-accrued-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-  color: #cbd5e1;
-  background: #0f0805;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #451a03;
-}
-
-.exp-accrued-val {
-  color: #4ade80;
-  font-weight: 800;
-}
-
-.exp-btn-row {
-  display: flex;
-  gap: 8px;
-}
 
 /* =========================================================================
    ASKER ENVANTERİ & TEÇHİZAT KUŞANMA UI (SOLDIER EQUIPMENT SHEET)
@@ -1963,33 +1276,7 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 
 /* 2. Toplu Hızlı Aksiyonlar Şeridi */
 
-#btn-buy-soldier-unit:disabled,
-.btn-soldier-instant-heal:disabled {
-  color: #cbd5e1 !important;
-  opacity: 0.75 !important;
-  filter: grayscale(0.5) !important;
-  border-color: rgba(148, 163, 184, 0.35) !important;
-  background: rgba(30, 41, 59, 0.8) !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
-  cursor: not-allowed;
-}
-
 /* 3. 18 Kişilik Ordu Roster Vitrini */
-
-.slot-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #1e293b;
-  border: 1px solid #475569;
-  transition: all 0.2s ease;
-}
-
-.slot-dot.filled {
-  background: #22c55e;
-  border-color: #4ade80;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
-}
 
 /* 4. Seçili Kahraman Donatım Sayfası (Hero Sheet) */
 
@@ -2096,13 +1383,11 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 
 /* Mevcut ilerleme çubuklarına da aynı içten ışıyan parıltıyı ekle */
-.exp-live-fill,
 .sidebar-limit-fill,
 .sidebar-exp-fill {
   position: relative;
   overflow: hidden;
 }
-.exp-live-fill::after,
 .sidebar-limit-fill::after,
 .sidebar-exp-fill::after {
   content: '';
@@ -2143,16 +1428,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65), 0 6px 20px rgba(253, 224, 71, 0.6);
 }
 
-.btn-clean-red {
-  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
-  border: 2px solid #fca5a5;
-  border-bottom: 4px solid #7f1d1d;
-  color: #ffffff;
-}
-.btn-clean-red:hover:not(:disabled) {
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 6px 16px rgba(239, 68, 68, 0.5);
-}
-
 /* ---------- 9.9 SEFER GERİ SAYIM HALKASI (opsiyonel kullanım) ---------- */
 
 /* ---------- 9.10 KENAR ÇUBUĞU (SIDEBAR) CAM PANELLERİ ---------- */
@@ -2164,12 +1439,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* =========================================================================
    10. KRALIK DASHBOARD (MASTER COMMAND CENTER)
    ========================================================================= */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 14px;
-  padding: 6px 0;
-}
 .dashboard-widget {
   background: rgba(15, 10, 5, 0.85);
   border: 1px solid rgba(245, 158, 11, 0.25);
@@ -2193,71 +1462,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   gap: 6px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-.dashboard-stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-  font-size: 0.82rem;
-  color: #d4c8b8;
-}
-.dashboard-stat-row:last-child { border-bottom: none; }
-.dashboard-stat-value {
-  font-weight: 700;
-  color: #fff;
-  font-family: var(--font-game);
-}
-.dashboard-mini-bar {
-  height: 6px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.dashboard-mini-bar-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-.dashboard-1click-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
-}
-.btn-1click {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 12px;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(20,14,8,0.9), rgba(30,20,10,0.9));
-  color: var(--gold-light);
-  font-family: var(--font-game);
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.btn-1click:hover {
-  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.08));
-  border-color: var(--gold-main);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(245,158,11,0.15);
-}
-.btn-1click:active {
-  transform: translateY(1px);
-  box-shadow: none;
-}
-.btn-1click.disabled {
-  opacity: 0.4;
-  pointer-events: none;
 }
 
 /* =========================================================================
@@ -2387,139 +1591,18 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* =========================================================================
    13. PRE-BATTLE FORMATION HUB (SAVAŞ ÖNCESİ TAKTİK PANELİ)
    ========================================================================= */
-.prebattle-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.prebattle-enemy-card {
-  background: rgba(20,10,5,0.9);
-  border: 1px solid rgba(239,68,68,0.3);
-  border-radius: 12px;
-  padding: 16px;
-}
-.prebattle-army-panel {
-  background: rgba(20,10,5,0.9);
-  border: 1px solid rgba(16,185,129,0.3);
-  border-radius: 12px;
-  padding: 16px;
-}
-.prebattle-prediction {
-  text-align: center;
-  padding: 12px;
-  border-radius: 10px;
-  margin-top: 10px;
-  font-family: var(--font-game);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-.prebattle-prediction.hard { background: rgba(239,68,68,0.12); color: var(--red-light); border: 1px solid rgba(239,68,68,0.3); }
 
 /* =========================================================================
    14. SMART ARMORY HUB (AKILLI SİLAH DEPOSU)
    ========================================================================= */
-.armory-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-.armory-inv-panel, .armory-soldiers-panel {
-  background: rgba(15,10,5,0.85);
-  border: 1px solid rgba(245,158,11,0.2);
-  border-radius: 12px;
-  padding: 14px;
-  max-height: 420px;
-  overflow-y: auto;
-}
-.armory-equip-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  font-size: 0.82rem;
-  color: #d4c8b8;
-  transition: all 0.15s;
-}
-.armory-equip-item:hover {
-  border-color: rgba(245,158,11,0.3);
-  background: rgba(245,158,11,0.04);
-}
-.armory-equip-item .rarity-tag {
-  font-size: 0.68rem;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
 .rarity-tag.common { background: rgba(156,163,175,0.15); color: #9ca3af; }
 .rarity-tag.rare { background: rgba(59,130,246,0.15); color: #60a5fa; }
 .rarity-tag.epic { background: rgba(168,85,247,0.15); color: #c084fc; }
 .rarity-tag.legendary { background: rgba(245,158,11,0.15); color: var(--gold-light); }
-.armory-soldier-mini {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-size: 0.8rem;
-  color: #d4c8b8;
-}
-.armory-soldier-mini:hover {
-  border-color: rgba(16,185,129,0.3);
-  background: rgba(16,185,129,0.04);
-}
-.armory-soldier-mini.selected {
-  border-color: var(--gold-main);
-  background: rgba(245,158,11,0.08);
-}
-.armory-slots-mini {
-  display: flex;
-  gap: 4px;
-}
-.armory-slot-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.03);
-}
-.armory-slot-dot.filled {
-  background: var(--gold-main);
-  border-color: var(--gold-main);
-}
 
 /* =========================================================================
    15. INTEGRATED FULLSCREEN BLACKSMITH & ARMORY HUB (GENİŞ EKRAN DEMİRCİ & CEPHANELİK)
    ========================================================================= */
-
-.btn-armory-upgrade {
-  background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%);
-  color: #f3e8ff;
-  border-color: #c084fc;
-}
-
-.btn-armory-upgrade:hover:not(:disabled) {
-  background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
-  box-shadow: 0 0 10px rgba(168, 85, 247, 0.4);
-}
-
-.btn-armory-repair {
-  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
-  color: #e0f2fe;
-  border-color: #38bdf8;
-}
-
-.btn-armory-repair:hover:not(:disabled) {
-  background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%);
-  box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
-}
 
 /* =========================================================================
    12. SAVAŞ EFEKTLERİ: SHAKE, SLASH & FLOAT DAMAGE NUMBERS
@@ -2530,168 +1613,8 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    ========================================================================= */
 
 /* 🎡 KRALLIK KARNAVALI - GERÇEK DÖNEN ŞANS ÇARKI */
-.carnival-wheel-stage {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 6px auto 14px auto;
-  position: relative;
-  width: 100%;
-  max-width: 440px;
-}
-
-.carnival-wheel-wrapper {
-  position: relative;
-  width: 360px;
-  height: 360px;
-  max-width: 88vw;
-  max-height: 88vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
-  padding: 10px 0;
-}
-
-#carnival-wheel-canvas {
-  width: 350px;
-  height: 350px;
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 50%;
-  box-shadow: 0 0 25px rgba(236, 72, 153, 0.45), 0 0 55px rgba(124, 58, 237, 0.35), inset 0 0 15px rgba(0, 0, 0, 0.8);
-  display: block;
-  transform-origin: 50% 50%;
-  will-change: transform;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-.carnival-wheel-pointer {
-  position: absolute;
-  top: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 36px;
-  height: 44px;
-  z-index: 20;
-  pointer-events: none;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 10px #facc15);
-  transform-origin: 50% 15%;
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-.carnival-wheel-pointer svg {
-  width: 100%;
-  height: 100%;
-}
-
-.carnival-wheel-hub {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fef08a 0%, #eab308 65%, #78350f 100%);
-  border: 3px solid #fde047;
-  box-shadow: 0 0 16px rgba(250, 204, 21, 0.6), 0 4px 12px rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 15;
-  pointer-events: none;
-}
-
-.carnival-wheel-hub-inner {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  background: #2e0854;
-  border: 2px solid #c084fc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.1;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.7);
-}
 
 /* 📜 ENVANTER PARŞÖMENLER KARTI */
-.inventory-scrolls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 10px;
-  margin-top: 8px;
-}
-
-.inventory-scroll-card {
-  background: linear-gradient(135deg, rgba(26, 15, 38, 0.95), rgba(15, 10, 25, 0.95));
-  border: 1.5px solid rgba(168, 85, 247, 0.35);
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: all 0.2s ease;
-}
-
-.inventory-scroll-card:hover {
-  border-color: #c084fc;
-  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.25);
-  transform: translateY(-2px);
-}
-
-.inventory-scroll-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.inventory-scroll-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 0.9rem;
-  color: #f3e8ff;
-}
-
-.inventory-scroll-count {
-  font-size: 0.85rem;
-  font-weight: 900;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: rgba(168, 85, 247, 0.25);
-  border: 1px solid #c084fc;
-  color: #fde047;
-}
-
-.inventory-scroll-desc {
-  font-size: 0.78rem;
-  color: #cbd5e1;
-  line-height: 1.35;
-}
-
-.inventory-scroll-btn {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 0.82rem;
-  font-weight: 800;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
 
 /* =========================================================================
    ZİNDAN SAVAŞI RESİMLİ GANİMET & PARŞÖMEN DROP VİTRİNİ

@@ -145,13 +145,13 @@ export function kurV3Kabuk(api) {
     tepsiAc(false); yanAc(false);
     sekmeSec(id);
     if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); return; }
-    api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!$('dev-modal')));
+    api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu));
   };
 
   const uyariMetni = () => (api.duyurular() || []).filter((a) => a.active !== false);
   const tur = kurTur({ gameState: gs, isAnyModalOpen: api.isAnyModalOpen, closeModal: api.closeModal, hesapAnahtari: api.hesapAnahtari });
-  // Test laboratuvarı yalnız deneme sürümünde var (eski test menüsünün öğeleri o sürümde sayfada bulunur)
-  const lab = $('dev-modal') ? kurLab({ gameState: gs, openPanel: api.openPanel, cevrimici: api.cevrimici, bildir: api.bildir, hudYenile: api.hudYenile, vanillaSifirla: api.vanillaSifirla }) : null;
+  // Test laboratuvarı yalnız deneme ve geliştirme sürümünde var
+  const lab = api.testSurumu ? kurLab({ gameState: gs, openPanel: api.openPanel, cevrimici: api.cevrimici, bildir: api.bildir, hudYenile: api.hudYenile, vanillaSifirla: api.vanillaSifirla }) : null;
   // Ayarlar (hareketi azalt, yazı boyutu): tarayıcı deposunda; açılışta uygulanır
   let ayar = ayarOku(localStorage);
   ayarUygula(ayar, document.documentElement);
@@ -168,7 +168,7 @@ export function kurV3Kabuk(api) {
   }, true);
   const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc });
   if (lab) {
-    // T kısayolu v3'te eski test menüsünü değil laboratuvarı açar (yakalama aşaması: eski dinleyiciden önce)
+    // T kısayolu laboratuvarı açar/kapatır
     window.addEventListener('keydown', (e) => {
       if ((e.key !== 't' && e.key !== 'T') || e.ctrlKey || e.metaKey || e.altKey) return;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;

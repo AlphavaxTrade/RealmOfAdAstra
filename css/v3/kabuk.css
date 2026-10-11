@@ -250,16 +250,11 @@ html.v3 #v3-balon[hidden] { display: none; }
 html.v3 #v3-balon b { font: 800 13.5px var(--font-ui); color: var(--v3-vurgu-acik); }
 html.v3 #v3-balon span { font: 500 13px/1.45 var(--font-ui); color: var(--v3-yazi); }
 /* pazar: bolumler (segmentli), kaynak secici, ozet karti, ayrinti */
-html.v3 .phase2-tab-row.v3-bolumler { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-radius: 14px; overflow: visible; }
-html.v3 .v3-bolumler .phase2-tab-btn { min-height: var(--v3-tap); padding: 0 6px; border-radius: 10px; border: 0 !important; background: transparent !important; color: var(--v3-yazi-2) !important; font: 700 13.5px var(--font-ui) !important; white-space: nowrap; }
-html.v3 .v3-bolumler .phase2-tab-btn.active { background: var(--v3-vurgu) !important; color: #1a1405 !important; }
 html.v3 .v3-chipler { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
 html.v3 .v3-chipler::-webkit-scrollbar { display: none; }
 html.v3 .v3-chip { all: unset; box-sizing: border-box; cursor: pointer; flex: none; display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 19px; background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi-guclu); font: 700 13px var(--font-ui); color: var(--v3-yazi-2); white-space: nowrap; }
 html.v3 .v3-chip.active { background: rgba(231,185,76,.16); border-color: var(--v3-vurgu); color: var(--v3-vurgu-acik); }
 html.v3 .v3-chip:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
-html.v3 .v3-bakiye-rozet { font: 800 12.5px var(--font-ui); color: #c9b8ff; white-space: nowrap; }
-html.v3 .v3-ozet-kart .card-title-row { align-items: center; }
 html.v3 details.v3-ayrinti { margin: 2px 0 8px; font: 500 12.5px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
 html.v3 details.v3-ayrinti > summary { cursor: pointer; min-height: var(--v3-tap); display: flex; align-items: center; color: var(--v3-yazi-3); font-weight: 700; }
 html.v3 details.v3-ayrinti > div { padding: 4px 0 0; }
@@ -354,26 +349,14 @@ html.v3 .bk :is(.bk-mini, .bk-btn.sm) { min-height: 40px; padding-left: 12px; pa
 html.v3 .bk .bad { color: var(--v3-kotu); font-weight: 700; }
 
 /* 12. DEMIRHANE (ana islemler gorunur, ikincil islemler "Diger" altinda) -------------------- */
-html.v3 details.v3-daha { flex: 0 0 auto; }
-html.v3 details.v3-daha.v3-genis { flex: 1 1 100%; width: 100%; }
-html.v3 details.v3-daha > summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: var(--v3-tap); padding: 0 14px; border-radius: 12px; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 700 13.5px var(--font-ui); color: var(--v3-yazi-2); }
-html.v3 details.v3-daha > summary::-webkit-details-marker { display: none; }
-html.v3 details.v3-daha > summary::after { content: "▾"; font-size: 12px; color: var(--v3-yazi-3); }
-html.v3 details.v3-daha[open] > summary::after { content: "▴"; }
-html.v3 details.v3-daha > summary:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
-html.v3 details.v3-daha > div { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 8px; }
-html.v3 details.v3-daha > div > .clean-card { flex: 1 1 100%; }
 /* demirhane: dokunma hedefleri >= 44 px */
 html.v3 :is(.btn-bs-tab, .btn-bs-cat-filter, .btn-craft-equipment, .btn-quick-craft, .btn-armory-direct-upgrade, .btn-armory-repair, .btn-armory-repair-all, .btn-armory-upgrade-all, .btn-smart-auto-equip, .btn-smart-unequip-all, .btn-unequip-soldier-slot, .btn-sell-equipment, .btn-recycle-equipment, .btn-goto-armory, .btn-custom-upgrade-shortcut, .btn-trigger-custom-upgrade) { min-height: var(--v3-tap); }
-html.v3 #select-bs-sort, html.v3 #custom-up-slot, html.v3 #custom-up-level { min-height: 40px; }
 
 /* 15. ZINDAN: SAVAS ONCESI PENCERE VE SAVAS SAHNESI DUGMELERI --------------------------- */
 html.v3 :is(.aa-arena .speed-btn, #aa-closeBtn, #aa-resultBtn, #aa-resultCloseBtn, #sidebar-quota-open) { min-height: var(--v3-tap); min-width: var(--v3-tap); }
 
 /* 17. ARAYÜZ TARAMASI DÜZELTMELERİ (11 Ekim 2026) ------------------------- */
 /* silo kartları iki sütun (üç sütun telefonda taşıyordu); geniş ekranda üç */
-html.v3 .rpg-modal-body .inv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-@media (min-width: 700px) { html.v3 .rpg-modal-body .inv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 /* kaynak seçici çipler yan kaydırmak yerine alt satıra geçer: hiçbir kaynak gizli kalmaz */
 html.v3 .v3-chipler { flex-wrap: wrap; overflow: visible; }
 html.v3 .v3-chip { min-height: var(--v3-tap); }
@@ -385,7 +368,6 @@ html.v3 .rpg-modal-body label:has(> input[type="checkbox"], > input[type="radio"
 @media (pointer: coarse) {
   html.v3 .rpg-modal-body :is(button, select) { min-height: var(--v3-tap) !important; }
   html.v3 .rpg-modal-body button { min-width: var(--v3-tap); }
-  html.v3 .rpg-modal-body .phase2-tab-btn { min-height: var(--v3-tap); }
 }
 
 /* 18. ZİNDAN KAT ÇUBUĞU TELEFONDA: altı kat ve kasaba düğmesi tek satıra sığar (11 Ekim 2026) ------------- */

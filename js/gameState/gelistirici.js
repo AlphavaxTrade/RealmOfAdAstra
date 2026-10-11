@@ -69,18 +69,6 @@ export const gelistiriciYontemleri = {
     return this.state.adAstraBalance;
   },
 
-  activateTavernBuff(buffId, durationDays = 1) {
-    const buffConfig = GAME_CONFIG.TAVERN_BUFFS[buffId] || { name: buffId, durationSeconds: durationDays * 86400 };
-    const now = this._now();
-    const durSec = (buffConfig.durationSeconds || durationDays * 86400);
-    this.state.activeBuffs[buffId] = {
-      id: buffId,
-      name: buffConfig.name,
-      expiresAt: now + durSec * 1000
-    };
-    this.saveState();
-  },
-
   // ⏩ TEST MENÜSÜ: ZAMANI İLERİ SAR
   // v1.25: Artık çevrimdışı telafiyle aynı simülasyon motorunu kullanır. Bot süresi simülasyon saatine
   // göre dolar, oto-yenileme tam o anda denenir, doğal stamina yenilenir. Simülasyon bitince oyunun
@@ -407,74 +395,5 @@ export const gelistiriciYontemleri = {
     this.state.arenaKeys = (this.state.arenaKeys || 0) + keys;
     this.saveState();
     return { success: true, message: '⚡ Test Kaynakları Hesaba Eklendi!' };
-  },
-
-  cheatRefillStamina() {
-    this.state.stamina = this.getMaxStamina();
-    this.saveState();
-    return { success: true, message: '⚡ Stamina %100 Dolduruldu!' };
-  },
-
-  cheatUnlockAllArtifacts() {
-    (this.state.collectionArtifacts || []).forEach(a => {
-      a.discovered = true;
-      a.discoveredAt = Date.now();
-    });
-    this.saveState();
-    return { success: true, message: '👑 Tüm 18 Koleksiyon Eseri Açıldı!' };
-  },
-
-  cheatSetDungeonProgress(level) {
-    this.state.dungeonProgress = Math.max(1, Math.min(18, level));
-    this.saveState();
-    return { success: true, message: `💀 Zindan İlerlemesi Seviye ${level} Olarak Ayarlandı!` };
-  },
-
-  cheatLevelUpPlayer() {
-    this.state.level = (this.state.level || 1) + 1;
-    this.state.currentXp = 0;
-    this.state.stamina = this.getMaxStamina();
-    this.saveState();
-    return { success: true, message: `👑 Gezgin Seviye ${this.state.level}'e Yükseltildi!` };
-  },
-
-  cheatMaxEquipAllSoldiers() {
-    const soldiers = this.state.soldierUnits || [];
-    const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-    for (let i = 0; i < soldiers.length; i++) {
-      if (!soldiers[i].equipment) soldiers[i].equipment = {};
-      for (const slot of slots) {
-        const recipe = GAME_CONFIG.EQUIPMENT_RECIPES[slot];
-        soldiers[i].equipment[slot] = {
-          id: `${recipe.id}_cheat_${i}`,
-          slot: recipe.slot,
-          name: recipe.name,
-          icon: recipe.icon,
-          level: 10,
-          baseAtk: recipe.baseAtk,
-          baseHp: recipe.baseHp,
-          atkBonus: Math.round(recipe.baseAtk * (1 + 9 * 0.35)),
-          hpBonus: Math.round(recipe.baseHp * (1 + 9 * 0.35)),
-          durability: 13,
-          maxDurability: 13,
-          craftedAt: Date.now()
-        };
-      }
-      soldiers[i].hp = soldiers[i].maxHp || 100;
-    }
-    this.saveState();
-    return { success: true, message: '⚔️ Tüm Askerlere Lv.10 Master Zırh ve Silah Donatıldı!' };
-  },
-
-  cheatFinishAllExpeditions() {
-    const active = this.state.activeExpeditions;
-    for (const key of Object.keys(active)) {
-      if (active[key]) {
-        active[key].elapsedSeconds = active[key].durationSeconds || 1080;
-        active[key].isCompleted = true;
-      }
-    }
-    this.saveState();
-    return { success: true, message: '⚡ Tüm Seferler Anında Tamamlandı!' };
   },
 };

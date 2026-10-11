@@ -44,10 +44,8 @@ const NODE_OF_ZONE = Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', '
 
 function isAnyModalActive() {
   const rpgModal = document.getElementById('rpg-modal');
-  const devModal = document.getElementById('dev-modal');
   const arena = document.getElementById('battle-arena-modal');
   return (rpgModal && rpgModal.classList.contains('active')) ||
-    (devModal && !devModal.classList.contains('hidden')) ||
     (arena && arena.classList.contains('active')) ||
     document.body.classList.contains('modal-open');
 }
