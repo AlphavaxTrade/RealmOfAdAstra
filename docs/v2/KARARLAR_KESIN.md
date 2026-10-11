@@ -43,7 +43,7 @@ Trade sitesi geliri: her harcamanın %40'ı oyun kasalarına (oyunda normal harc
 
 ## F. Pazar (R4b)
 
-Havuz pazarı: koridor 0,5-2,5 × açılış; komisyon %2 (hazine bölüşümü), mal yakımı %2; tek işlem ≤ havuzun %5'i; işlem öncesi fiyat etkisi uyarısı; geri alım: fiyat < 0,8 × açılış → kasanın haftada %3'ü ile al-yak. İlan pazarı: teçhizat; %2 (1 yakım, 1 kasa); 7 gün; 10 ilan; alıcı önce kilitliden öder, satıcıya %80 kilitli gelir. Geri dönüşüm: Demirhane'de alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez. Universe satırları gri ve açıklamalı; Hazırlık Deposu Yük İskelesi'nde (kişi başı 4 haftalık üretim, toplam 10 M ASTRA değeri; iptal %10 kesinti; açılış günü Konsey alır, mal aynı havuza).
+Havuz pazarı: koridor 0,5-2,5 × açılış; komisyon %2 (hazine bölüşümü), mal yakımı %2; tek işlem ≤ havuzun %5'i; işlem öncesi fiyat etkisi uyarısı; geri alım: fiyat < 0,8 × açılış → kasanın haftada %3'ü ile al-yak. İlan pazarı: teçhizat; %2 (1 yakım, 1 kasa); 7 gün; 10 ilan; alıcı önce serbest bakiyesinden öder (yetmezse kalanı kilitliden), satıcıya en az %80 kilitli gelir (12 Ekim 2026). Geri dönüşüm: Demirhane'de alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez. Universe satırları gri ve açıklamalı; Hazırlık Deposu Yük İskelesi'nde (kişi başı 4 haftalık üretim, toplam 10 M ASTRA değeri; iptal %10 kesinti; açılış günü Konsey alır, mal aynı havuza).
 
 ## G. Nüfus ve ordu (R5)
 

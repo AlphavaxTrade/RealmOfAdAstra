@@ -141,3 +141,10 @@ Karar bekleyen / sonraya bırakılan:
     açıyordu); aynı gün düzeltildi. Ders: ekran kancaları yalnız oturum açmış ve vatandaş hesapta sunucuya işlem gönderir.
 35. Ölü kayıt alanları ve ölü işlem (`botSettings`, `lastBotSiloAction`, `sweepCompletedExpeditions`) bu turda silindi; altın kayıt üç dosyada yenilendi
     (tarama düzeltmeleri bilerek durumu değiştirdi: kısmi toplama XP/aşınma, pasif iyileşme hassasiyeti, bot paketi ve onarım imzası).
+
+### Tarama kararları uygulandı (12 Ekim 2026)
+36. **İlan pazarında kilit aklama kapandı** (S2b): alıcı önce serbest bakiyesinden öder; kilitliden ödenen kısım satıcıda da kilitli kalır (satıcıdaki kilitli pay en az %80). Eskiden iki hesapla al-sat yapmak kilitli ASTRA'nın %20'sini serbest bırakıyordu. Test: `test_v2_ilan_pazari` (5b).
+37. **Kolezyum zafer ödülü ölçeği** (R3): taban 2.500 ASTRA ×0,01 uygulanmadan kalmıştı (kasa tohumunda maç başı ~800); taban 25 ASTRA, lig çarpanıyla 25-50. Değerler `COLOSSEUM.WIN_REWARD_ASTRA` / `WIN_REWARD_POOL_SHARE`. PvP haftalık ilk-10 ödülü kasa payı olduğu için değişmedi.
+38. **Bot ücreti kişisel Üretim Hakkı'na göre** (R4): günlük alınabilecek miktar = en az (üretim, dünya kalanı, kişisel hak). Seviye 1'de tahmin ~700 → ~80 ASTRA/gün, ücret ~350 → ~40.
+39. **Ön-hesap ele geçirme kapandı** (S4): e-posta doğrulama bağlantısı hesabın şifresini yeniden belirletir (şifresiz çağrı bağlantıyı harcamaz); ön yüzde "Hesabını Koru" penceresi. Bu yüzden `POST /api/account/verify` artık `password` alır; testler ve betikler güncellendi.
+    Altın kayıt iki kez yenilendi (Kolezyum ödülü, bot ücreti); her biri ayrı commit.

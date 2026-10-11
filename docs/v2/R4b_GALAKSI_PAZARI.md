@@ -69,7 +69,7 @@ Teçhizat (kılıç, zırh; seviyesi ve eklentisi olan her parça), ileride eser
 - Komisyon yüzde 2: yüzde 1 yakılır, yüzde 1 ödül kasalarına.
 - İlan süresi 7 gün; süre dolunca eşya satıcıya döner. Aynı anda en çok 10 ilan (Gözlemevi paketi gibi bir ayrıcalık sonra genişletebilir).
 - Fiyat tavanı yok ama **manipülasyon koruması** var: aynı cüzdan ailesi arasında alış-satış (kendi eşyanı kendi yan hesabına satıp katkı puanı kasmak) puan getirmez ve komisyon yine kesilir.
-- Satılan ASTRA, alıcının bakiyesinden **önce kilitli kısımdan** düşer (kilitli ASTRA oyun içinde harcanabilir kuralı), satıcıya geçen ASTRA'nın yüzde 20'si serbest, yüzde 80'i kilitli gelir (kazanç kuralıyla aynı). Böylece ilan pazarı kilitten kaçış yolu olmaz.
+- Satılan ASTRA, alıcının bakiyesinden **önce serbest kısımdan** düşer; yetmezse kalanı kilitliden (kilit açma payı yoktur). Satıcıya geçen ASTRA'nın en az yüzde 80'i kilitli gelir; alıcı kilitliden ödediyse kilitli pay o oran kadar yükselir (12 Ekim 2026 kararı). Böylece ilan pazarı kilitten kaçış yolu olmaz: iki hesapla al-sat yapmak kilitli ASTRA'yı serbest bırakmaz.
 
 ## 4. Pazar ile oyunlar arasında mal nasıl taşınır
 
