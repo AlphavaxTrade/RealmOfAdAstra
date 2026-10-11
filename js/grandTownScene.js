@@ -1,474 +1,257 @@
-// Realm of AdAstra — Krallık Haritası (v1.25)
-// ============================================================================
-//  • Harita oranı bozulmadan ekranı doldurur (cover); sürükle-kaydır, tekerlek/iki parmakla yakınlaştır
-//  • Binanın üzerine gelince bilgi kartı (ad, açıklama, canlı durum); biten seferde küçük "Hazır" rozeti
-//  • Hareketli süsler (köylüler, bulut, kuş, duman, gece karartması) kullanıcı isteğiyle kaldırıldı
-// Harita: AdAstra Vadisi (v2, 7 Ekim 2026) 2048×1143; px/py resim oranı, pr tıklama yarıçapı (genişliğe oran).
-// ============================================================================
-import { gameState } from './gameState.js';
-import { ammMarket } from './ammMarket.js';
-import { GAME_CONFIG } from './config.js';
+// Realm of AdAstra — 2B yedek harita (Phaser): ?harita=2d ile açılır, 3B vadi yüklenemezse otomatik devreye girer.
+// Bölge verisi ve canlı durum kuralları js/ui/harita-ortak.js'tedir (3B harita ile ORTAK); burada yalnız 2B kamera
+// (oranı bozmadan doldurma, sürükle, tekerlek/iki parmak yakınlaştırma) ve etiketlerin ekrana yerleşimi vardır.
 import Phaser from 'phaser';
+import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik } from './ui/harita-ortak.js';
+import { KATLAR } from './ui/zindan-plan.js';
 
-const IMG_W = 2048;
-const IMG_H = 1143;
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 2.2;
+export { TOWN_ZONES };
 
-// Konumlar — px/py resim üzerindeki oran, pr tıklama yarıçapı (resim genişliğine oran)
-export const TOWN_ZONES = [
-  { id: 'dungeon',     icon: '💀', name: 'Zindan Mağarası',   sub: '18 seviyeli zindana in',                        px: 0.075, py: 0.540, pr: 0.065, color: '#a855f7' },
-  { id: 'coalmine',    icon: '⚫', name: 'Kömür Ocağı',       sub: 'Kömür seferleri',                               px: 0.085, py: 0.215, pr: 0.055, color: '#64748b' },
-  { id: 'mine',        icon: '⛏️', name: 'Demir Madeni',      sub: 'Demir seferleri',                               px: 0.165, py: 0.200, pr: 0.050, color: '#38bdf8' },
-  { id: 'quarry',      icon: '🪨', name: 'Taş Ocağı',         sub: 'Taş seferleri',                                 px: 0.280, py: 0.165, pr: 0.055, color: '#a8a29e' },
-  { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                                px: 0.620, py: 0.160, pr: 0.090, color: '#4ade80' },
-  { id: 'spaceport',   icon: '🚀', name: 'Uzay Limanı',       sub: 'Roket görevi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.085, color: '#38bdf8' },
-  { id: 'healer',      icon: '🌿', name: 'Şifahane',          sub: 'Şifalı otla asker iyileştirme',                 px: 0.285, py: 0.500, pr: 0.040, color: '#86efac' },
-  { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',                px: 0.385, py: 0.420, pr: 0.050, color: '#ec4899' },
-  { id: 'council',     icon: '🏛️', name: 'Sirius Konseyi',    sub: 'Kasalar, Otorite, projeler, ortak kasa',        px: 0.460, py: 0.305, pr: 0.045, color: '#a78bfa' },
-  { id: 'blacksmith',  icon: '⚒️', name: 'Demirhane',         sub: 'Dövme, onarım, geri dönüşüm',                   px: 0.565, py: 0.350, pr: 0.045, color: '#fb923c' },
-  { id: 'market',      icon: '🏪', name: 'Meydan Pazarı',     sub: 'Havuz pazarı: al ve sat',                       px: 0.500, py: 0.505, pr: 0.065, color: '#f43f5e' },
-  { id: 'village',     icon: '🏘️', name: 'Köy Evleri',        sub: 'Köylüler, emek ve nüfus',                       px: 0.365, py: 0.600, pr: 0.055, color: '#fbbf24' },
-  { id: 'tavern',      icon: '🍺', name: 'Taverna',           sub: 'Otomasyon botu ve rehber',                      px: 0.610, py: 0.630, pr: 0.040, color: '#eab308' },
-  { id: 'colosseum',   icon: '🏟️', name: 'Kolezyum',          sub: 'Gladyatör düelloları',                          px: 0.690, py: 0.450, pr: 0.100, color: '#ef4444' },
-  { id: 'farm',        icon: '🌾', name: 'Güneş Tarlası',     sub: 'Buğday seferleri',                              px: 0.925, py: 0.850, pr: 0.070, color: '#facc15' },
-  { id: 'herbgarden',  icon: '🌿', name: 'Şifalı Ot Bahçesi', sub: 'Şifalı ot seferleri',                           px: 0.780, py: 0.710, pr: 0.045, color: '#86efac' },
-  { id: 'warehouse',   icon: '📦', name: 'Silo',              sub: 'Ambar, envanter ve yükseltme',                  px: 0.870, py: 0.530, pr: 0.075, color: '#fbbf24' },   // iki tahıl kulesi + kırmızı ambar, sağda kolezyum ile tarla arasında (7 Ekim: yeni harita, ahırdan ayrı)
-  { id: 'barracks',    icon: '⚔️', name: 'Kışla',             sub: 'Ordu, asker ve teçhizat',                       px: 0.620, py: 0.860, pr: 0.085, color: '#60a5fa' },   // alt ortadaki ahır + at eğitim alanı
-  { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',                           px: 0.200, py: 0.850, pr: 0.130, color: '#f87171' }
-];
-
-// v2: alan → hammadde eşlemesi config'ten (6 alan)
-const NODE_OF_ZONE = Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [((GAME_CONFIG.RESOURCE_META || {})[k] || {}).zone || k, k]));
-
-function isAnyModalActive() {
-  const rpgModal = document.getElementById('rpg-modal');
-  const arena = document.getElementById('battle-arena-modal');
-  return (rpgModal && rpgModal.classList.contains('active')) ||
-    (arena && arena.classList.contains('active')) ||
-    document.body.classList.contains('modal-open');
-}
-
-function fmtCountdown(sec) {
-  const s = Math.max(0, Math.ceil(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const ss = s % 60;
-  if (h > 0) return `${h}s ${String(m).padStart(2, '0')}d`;
-  return `${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
-}
+const RESIM_W = 2048;
+const RESIM_H = 1143;
+const EN_AZ_YAKIN = 1;
+const EN_COK_YAKIN = 2.2;
+const DURUM_ARALIGI_MS = 500;
 
 export class GrandTownScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GrandTownScene' });
     this.hoverZone = null;
-    this.labels = new Map();
-    this.statusTimer = 0;
+    this.durumSayaci = 0;
   }
 
   preload() {
     const v = Date.now();
     this.load.image('grand_town_map', 'assets/adastra_vadisi.jpg?v=' + v);
     // Zindan katları da burada yüklenir (DungeonScene aynı anahtarları kullanır)
-    this.load.image('dungeon_tex_f1', 'assets/dungeon_map.jpg?v=' + v);
-    this.load.image('dungeon_tex_f2', 'assets/dungeon_floor2.jpg?v=' + v);
-    this.load.image('dungeon_tex_f3', 'assets/dungeon_floor3.jpg?v=' + v);
-    this.load.image('dungeon_tex_f4', 'assets/dungeon_floor4.jpg?v=' + v);
-    this.load.image('dungeon_tex_f5', 'assets/dungeon_floor5.jpg?v=' + v);
-    this.load.image('dungeon_tex_f6', 'assets/dungeon_floor6.jpg?v=' + v);
-    this.load.on('progress', (value) => {
-      if (window.__updateLoadingBar) window.__updateLoadingBar(30 + value * 60);
-    });
-    this.load.on('loaderror', (file) => console.error('[Phaser] Yüklenemedi:', file.key, file.src));
+    KATLAR.forEach((k) => this.load.image(k.doku, `${k.dosya}?v=${v}`));
+    this.load.on('progress', (deger) => { if (window.__updateLoadingBar) window.__updateLoadingBar(30 + deger * 60); });
+    this.load.on('loaderror', (dosya) => console.error('[Phaser] Yüklenemedi:', dosya.key, dosya.src));
   }
 
   create() {
     if (window.__finishLoadingBar) window.__finishLoadingBar();
 
-    if (this.textures.exists('grand_town_map')) {
-      this.map = this.add.image(0, 0, 'grand_town_map').setOrigin(0, 0);
-    } else {
-      this.map = this.add.rectangle(0, 0, IMG_W, IMG_H, 0x1a2a14).setOrigin(0, 0);
-    }
-    this.map.setDepth(0);
+    this.harita = this.textures.exists('grand_town_map')
+      ? this.add.image(0, 0, 'grand_town_map').setOrigin(0, 0)
+      : this.add.rectangle(0, 0, RESIM_W, RESIM_H, 0x1a2a14).setOrigin(0, 0);
+    this.harita.setDepth(0);
 
+    this._yerlesim(true);
+    this._katmanKur();
+    this._girisBagla();
 
-    this.layout(true);
-    this.createOverlay();
-    this.bindInput();
+    this._boyutDegisti = () => this._yerlesim(false);
+    this.scale.on('resize', this._boyutDegisti);
 
-    this.resizeHandler = () => this.layout(false);
-    this.scale.on('resize', this.resizeHandler);
-
-    window.realmMap = {
-      flyTo: (zoneId, opts = {}) => this.flyTo(zoneId, opts),
-      zones: TOWN_ZONES
-    };
+    window.realmMap = { flyTo: (zoneId, opts = {}) => this.flyTo(zoneId, opts), zones: TOWN_ZONES, mode: '2d' };
 
     this.events.once('shutdown', () => {
-      this.scale.off('resize', this.resizeHandler);
-      const overlay = document.getElementById('map-overlay');
-      if (overlay) overlay.classList.add('is-hidden');
-      if (window.realmMap && window.realmMap.flyTo) window.realmMap.flyTo = () => {};
+      this.scale.off('resize', this._boyutDegisti);
+      const katman = document.getElementById('map-overlay');
+      if (katman) katman.classList.add('is-hidden');
+      if (window.realmMap) window.realmMap.flyTo = () => {};
     });
 
-    this.refreshStatuses();
+    this._durumlariYenile();
   }
 
-  // ── Yerleşim: cover ölçek, dünya sınırları, kamera ────────────────────────
-  layout(initial) {
-    const parent = this.game.canvas && this.game.canvas.parentElement;
-    const w = (parent && parent.clientWidth) || window.innerWidth;
-    const h = (parent && parent.clientHeight) || window.innerHeight;
+  // ── Yerleşim: oranı bozmadan doldur, dünya sınırları, kamera ──
+  _yerlesim(ilk) {
+    const ebeveyn = this.game.canvas && this.game.canvas.parentElement;
+    const w = (ebeveyn && ebeveyn.clientWidth) || window.innerWidth;
+    const h = (ebeveyn && ebeveyn.clientHeight) || window.innerHeight;
     try {
       if (this.scale.width !== w || this.scale.height !== h) this.scale.resize(w, h);
     } catch (e) { /* yoksay */ }
 
-    const cam = this.cameras.main;
-    const prevCenter = (!initial && this.worldScale)
-      ? { x: (cam.worldView.centerX) / this.worldScale, y: (cam.worldView.centerY) / this.worldScale }
-      : { x: 1000, y: 600 }; // ilk açılış: kale meydanı
-    const prevZoom = initial ? 1 : cam.zoom;
+    const kam = this.cameras.main;
+    const oncekiMerkez = (!ilk && this.olcek)
+      ? { x: kam.worldView.centerX / this.olcek, y: kam.worldView.centerY / this.olcek }
+      : { x: 1000, y: 600 };   // ilk açılış: kale meydanı
+    const oncekiYakin = ilk ? 1 : kam.zoom;
 
-    this.worldScale = Math.max(w / IMG_W, h / IMG_H);
-    this.worldW = IMG_W * this.worldScale;
-    this.worldH = IMG_H * this.worldScale;
-
-    this.map.setScale(this.worldScale);
-    cam.setSize(w, h);
-    cam.setBounds(0, 0, this.worldW, this.worldH);
-    cam.setZoom(Phaser.Math.Clamp(prevZoom, MIN_ZOOM, MAX_ZOOM));
-    cam.centerOn(prevCenter.x * this.worldScale, prevCenter.y * this.worldScale);
+    this.olcek = Math.max(w / RESIM_W, h / RESIM_H);
+    this.dunyaW = RESIM_W * this.olcek;
+    this.dunyaH = RESIM_H * this.olcek;
+    this.harita.setScale(this.olcek);
+    kam.setSize(w, h);
+    kam.setBounds(0, 0, this.dunyaW, this.dunyaH);
+    kam.setZoom(Phaser.Math.Clamp(oncekiYakin, EN_AZ_YAKIN, EN_COK_YAKIN));
+    kam.centerOn(oncekiMerkez.x * this.olcek, oncekiMerkez.y * this.olcek);
   }
 
-  toWorld(ix, iy) { return { x: ix * this.worldScale, y: iy * this.worldScale }; }
-  zoneWorld(z) { return { x: z.px * this.worldW, y: z.py * this.worldH, r: Math.min(z.pr * this.worldW, 170 * this.worldScale) }; }
+  _bolgeDunya(z) {
+    return { x: z.px * this.dunyaW, y: z.py * this.dunyaH, r: Math.min(z.pr * this.dunyaW, 170 * this.olcek) };
+  }
 
-  // ── Giriş: sürükle, tıkla, yakınlaştır ────────────────────────────────────
-  bindInput() {
+  _bolgeEkranda(sx, sy) {
+    const nokta = this.cameras.main.getWorldPoint(sx, sy);
+    let enIyi = null;
+    let enYakin = Infinity;
+    for (const z of TOWN_ZONES) {
+      const c = this._bolgeDunya(z);
+      const d = Math.hypot(nokta.x - c.x, nokta.y - c.y);
+      if (d <= c.r && d < enYakin) { enIyi = z; enYakin = d; }
+    }
+    return enIyi;
+  }
+
+  // ── Giriş: sürükle, tıkla, yakınlaştır ──
+  _girisBagla() {
     this.input.addPointer(1);
-    const cam = this.cameras.main;
-    let down = null;
-    let pinch = null;
+    const kam = this.cameras.main;
+    let basili = null;
+    let cimdik = null;
 
     this.input.on('pointerdown', (p) => {
-      if (isAnyModalActive()) return;
-      down = { x: p.x, y: p.y, sx: cam.scrollX, sy: cam.scrollY, dragging: false, onCanvas: true };
-      const p1 = this.input.pointer1, p2 = this.input.pointer2;
-      if (p1 && p2 && p1.isDown && p2.isDown) {
-        pinch = { d: Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y), z: cam.zoom };
-      }
+      if (modalAcik()) return;
+      basili = { x: p.x, y: p.y, sx: kam.scrollX, sy: kam.scrollY, surukleniyor: false };
+      const p1 = this.input.pointer1;
+      const p2 = this.input.pointer2;
+      if (p1 && p2 && p1.isDown && p2.isDown) cimdik = { d: Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y), z: kam.zoom };
     });
 
     this.input.on('pointermove', (p) => {
-      if (isAnyModalActive()) { this.setHover(null); return; }
-      const p1 = this.input.pointer1, p2 = this.input.pointer2;
-      if (pinch && p1 && p2 && p1.isDown && p2.isDown) {
+      if (modalAcik()) { this._hover(null); return; }
+      const p1 = this.input.pointer1;
+      const p2 = this.input.pointer2;
+      if (cimdik && p1 && p2 && p1.isDown && p2.isDown) {
         const d = Phaser.Math.Distance.Between(p1.x, p1.y, p2.x, p2.y);
-        this.zoomAt((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, pinch.z * (d / Math.max(1, pinch.d)));
-        if (down) down.dragging = true;
+        this._yakinlastir((p1.x + p2.x) / 2, (p1.y + p2.y) / 2, cimdik.z * (d / Math.max(1, cimdik.d)));
+        if (basili) basili.surukleniyor = true;
         return;
       }
-      if (down && p.isDown) {
-        const dx = p.x - down.x, dy = p.y - down.y;
-        if (!down.dragging && Math.hypot(dx, dy) > 6) down.dragging = true;
-        if (down.dragging) {
-          cam.scrollX = down.sx - dx / cam.zoom;
-          cam.scrollY = down.sy - dy / cam.zoom;
-          this.setHover(null);
+      if (basili && p.isDown) {
+        const dx = p.x - basili.x;
+        const dy = p.y - basili.y;
+        if (!basili.surukleniyor && Math.hypot(dx, dy) > 6) basili.surukleniyor = true;
+        if (basili.surukleniyor) {
+          kam.scrollX = basili.sx - dx / kam.zoom;
+          kam.scrollY = basili.sy - dy / kam.zoom;
+          this._hover(null);
           if (this.game.canvas) this.game.canvas.style.cursor = 'grabbing';
           return;
         }
       }
-      this.setHover(this.zoneAtScreen(p.x, p.y));
+      this._hover(this._bolgeEkranda(p.x, p.y));
     });
 
     this.input.on('pointerup', (p) => {
-      const wasDown = down;
-      down = null;
-      if (!this.input.pointer2 || !this.input.pointer2.isDown) pinch = null;
+      const onceki = basili;
+      basili = null;
+      if (!this.input.pointer2 || !this.input.pointer2.isDown) cimdik = null;
       if (this.game.canvas) this.game.canvas.style.cursor = this.hoverZone ? 'pointer' : 'grab';
-      if (!wasDown || !wasDown.onCanvas || wasDown.dragging) return;
-      if (isAnyModalActive()) return;
-      const z = this.zoneAtScreen(p.x, p.y);
-      if (z) this.openZone(z);
+      if (!onceki || onceki.surukleniyor || modalAcik()) return;
+      const z = this._bolgeEkranda(p.x, p.y);
+      if (z) this._ac(z);
     });
 
-    this.input.on('wheel', (p, _objs, _dx, dy) => {
-      if (isAnyModalActive()) return;
-      const factor = dy > 0 ? 0.9 : 1.1;
-      this.zoomAt(p.x, p.y, cam.zoom * factor);
+    this.input.on('wheel', (p, _nesneler, _dx, dy) => {
+      if (modalAcik()) return;
+      this._yakinlastir(p.x, p.y, kam.zoom * (dy > 0 ? 0.9 : 1.1));
     });
-
-    this.input.on('gameout', () => this.setHover(null));
-
+    this.input.on('gameout', () => this._hover(null));
     if (this.game.canvas) this.game.canvas.style.cursor = 'grab';
   }
 
-  zoomAt(sx, sy, targetZoom) {
-    const cam = this.cameras.main;
-    const z = Phaser.Math.Clamp(targetZoom, MIN_ZOOM, MAX_ZOOM);
-    const before = cam.getWorldPoint(sx, sy);
-    cam.setZoom(z);
-    const after = cam.getWorldPoint(sx, sy);
-    cam.scrollX += before.x - after.x;
-    cam.scrollY += before.y - after.y;
+  _yakinlastir(sx, sy, hedef) {
+    const kam = this.cameras.main;
+    const once = kam.getWorldPoint(sx, sy);
+    kam.setZoom(Phaser.Math.Clamp(hedef, EN_AZ_YAKIN, EN_COK_YAKIN));
+    const sonra = kam.getWorldPoint(sx, sy);
+    kam.scrollX += once.x - sonra.x;
+    kam.scrollY += once.y - sonra.y;
   }
 
-  zoneAtScreen(sx, sy) {
-    const wp = this.cameras.main.getWorldPoint(sx, sy);
-    let best = null, bestD = Infinity;
-    for (const z of TOWN_ZONES) {
-      const c = this.zoneWorld(z);
-      const d = Math.hypot(wp.x - c.x, wp.y - c.y);
-      if (d <= c.r && d < bestD) { best = z; bestD = d; }
-    }
-    return best;
-  }
-
-  setHover(zone) {
+  _hover(zone) {
     if (this.hoverZone === zone) return;
-    if (this.hoverZone) {
-      const el = this.labels.get(this.hoverZone.id);
-      if (el) el.classList.remove('is-hover');
-    }
+    if (this.hoverZone) this.katman.labels.get(this.hoverZone.id)?.classList.remove('is-hover');
     this.hoverZone = zone;
-    if (zone) {
-      const el = this.labels.get(zone.id);
-      if (el) el.classList.add('is-hover');
-    }
-    this.fillCard(zone);
+    if (zone) this.katman.labels.get(zone.id)?.classList.add('is-hover');
+    this.kartBoyu = null;
+    if (this.katman.kartiDoldur(zone)) this._kartiKonumla();
     if (this.game.canvas) this.game.canvas.style.cursor = zone ? 'pointer' : 'grab';
   }
 
-  // ── Bilgi kartı ───────────────────────────────────────────────────────────
-  fillCard(zone) {
-    const card = this.card;
-    if (!card) return;
-    if (!zone) {
-      card.classList.remove('is-visible');
-      return;
-    }
-    card.style.setProperty('--zc', zone.color);
-    card.querySelector('.mc-icon').textContent = zone.icon;
-    card.querySelector('.mc-name').textContent = zone.name;
-    card.querySelector('.mc-sub').textContent = zone.sub;
-    const locked = !gameState.isFeatureUnlocked(zone.id);
-    card.classList.toggle('is-locked', locked);
-    card.querySelector('.mc-hint-text').textContent = locked ? 'Henüz kilitli' : (zone.id === 'dungeon' ? 'Zindana inmek için tıkla' : 'Açmak için tıkla');
-    this.syncCardStatus();
-    this.cardSize = null;
-    card.classList.add('is-visible');
-    this.positionCard();
+  _ac(z) {
+    const sonuc = bolgeyiAc(z);
+    if (sonuc === 'zindan') this.scene.start('DungeonScene');
   }
 
-  syncCardStatus() {
-    if (!this.card || !this.hoverZone) return;
-    const label = this.labels.get(this.hoverZone.id);
-    const text = label ? (label.querySelector('[data-status]')?.textContent || '') : '';
-    const statusEl = this.card.querySelector('.mc-status');
-    this.card.querySelector('.mc-status-text').textContent = text;
-    statusEl.hidden = !text;
-    this.card.dataset.tone = (label && label.dataset.tone) || '';
-  }
-
-  positionCard() {
-    const card = this.card;
-    if (!card || !this.hoverZone) return;
-    const cam = this.cameras.main;
-    const view = cam.worldView;
-    const zoom = cam.zoom;
-    const c = this.zoneWorld(this.hoverZone);
-    const ax = (c.x - view.x) * zoom;
-    const topY = (c.y - c.r * 0.55 - view.y) * zoom;
-    const bottomY = (c.y + c.r * 0.45 - view.y) * zoom;
-    if (!this.cardSize) this.cardSize = { w: card.offsetWidth || 270, h: card.offsetHeight || 120 };
-    const { w, h } = this.cardSize;
-    const gap = 14;
-    const below = topY - h - gap < 8;
-    const y = below ? Math.min(bottomY + gap, cam.height - h - 8) : topY - h - gap;
-    const left = Math.max(8, Math.min(cam.width - w - 8, ax - w / 2));
-    const arrowX = Math.max(18, Math.min(w - 18, ax - left));
-    card.classList.toggle('is-below', below);
-    card.style.setProperty('--arrow-x', `${arrowX.toFixed(0)}px`);
-    card.style.transform = `translate(${left.toFixed(1)}px, ${y.toFixed(1)}px)`;
-  }
-
-  openZone(z) {
-    if (!gameState.isFeatureUnlocked(z.id)) {
-      window.dispatchEvent(new CustomEvent('feature-locked', { detail: { zoneId: z.id } }));
-      return;
-    }
-    if (z.id === 'dungeon') {
-      window.dispatchEvent(new CustomEvent('enter-dungeon-view'));
-      this.scene.start('DungeonScene');
-      return;
-    }
-    window.dispatchEvent(new CustomEvent('open-town-modal', { detail: { zoneId: z.id, zoneName: `${z.icon} ${z.name.toLocaleUpperCase('tr-TR')}` } }));
-  }
-
-  // DFK tarzı: konuma uç, sonra aç
+  // Konuma uç, sonra aç
   flyTo(zoneId, { open = false } = {}) {
-    const z = TOWN_ZONES.find(x => x.id === zoneId);
+    const z = TOWN_ZONES.find((x) => x.id === zoneId);
     if (!z) return;
-    const c = this.zoneWorld(z);
-    const cam = this.cameras.main;
-    const targetZoom = Math.max(cam.zoom, 1.35);
-    cam.pan(c.x, c.y, 550, 'Sine.easeInOut', true);
-    cam.zoomTo(targetZoom, 550, 'Sine.easeInOut', true);
-    this.setHover(z);
-    if (open) this.time.delayedCall(600, () => { this.setHover(null); this.openZone(z); });
+    const c = this._bolgeDunya(z);
+    const kam = this.cameras.main;
+    kam.pan(c.x, c.y, 550, 'Sine.easeInOut', true);
+    kam.zoomTo(Math.max(kam.zoom, 1.35), 550, 'Sine.easeInOut', true);
+    this._hover(z);
+    if (open) this.time.delayedCall(600, () => { this._hover(null); this._ac(z); });
   }
 
-  // ── DOM etiketleri (net yazı, CSS ile tasarlanır) ────────────────────────
-  createOverlay() {
-    const container = document.getElementById('phaser-game-container');
-    if (!container) return;
-    let overlay = document.getElementById('map-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'map-overlay';
-      overlay.className = 'map-overlay';
-      container.appendChild(overlay);
-    }
-    overlay.classList.remove('is-hidden');
-    overlay.innerHTML = '';
-    this.labels.clear();
-    for (const z of TOWN_ZONES) {
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = 'map-label';
-      el.dataset.zone = z.id;
-      el.style.setProperty('--zc', z.color);
-      el.innerHTML = `
-        <span class="ml-icon" aria-hidden="true">${z.icon}</span>
-        <span class="ml-body">
-          <span class="ml-name">${z.name}</span>
-          <span class="ml-status" data-status></span>
-        </span>`;
-      el.setAttribute('aria-label', `${z.name} — ${z.sub}`);
-      el.addEventListener('mouseenter', () => this.setHover(z));
-      el.addEventListener('mouseleave', () => { if (this.hoverZone === z) this.setHover(null); });
-      el.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        if (isAnyModalActive()) return;
-        this.openZone(z);
-      });
-      overlay.appendChild(el);
-      this.labels.set(z.id, el);
-    }
-
-    const card = document.createElement('div');
-    card.className = 'map-card';
-    card.id = 'map-hover-card';
-    card.setAttribute('role', 'tooltip');
-    card.innerHTML = `
-      <div class="mc-head">
-        <span class="mc-icon" aria-hidden="true"></span>
-        <span class="mc-titles"><span class="mc-name"></span><span class="mc-sub"></span></span>
-      </div>
-      <div class="mc-status"><span class="mc-dot"></span><span class="mc-status-text"></span></div>
-      <div class="mc-hint"><span class="mc-hint-text">Açmak için tıkla</span><span class="mc-hint-arrow" aria-hidden="true">→</span></div>`;
-    overlay.appendChild(card);
-    this.card = card;
+  // ── Etiketler ve bilgi kartı ──
+  _katmanKur() {
+    const kap = document.getElementById('phaser-game-container');
+    if (!kap) { this.katman = { labels: new Map(), card: null, kartiDoldur: () => false, durumGuncelle() {} }; return; }
+    this.katman = etiketKatmaniKur(kap, {
+      onHover: (z) => this._hover(z),
+      onLeave: (z) => { if (this.hoverZone === z) this._hover(null); },
+      onOpen: (z) => this._ac(z)
+    });
   }
 
-  positionLabels() {
-    const cam = this.cameras.main;
-    const view = cam.worldView;
-    const zoom = cam.zoom;
-    const compact = cam.width < 720;
+  _etiketleriKonumla() {
+    const kam = this.cameras.main;
+    const gorus = kam.worldView;
+    const dar = kam.width < 720;
     for (const z of TOWN_ZONES) {
-      const el = this.labels.get(z.id);
+      const el = this.katman.labels.get(z.id);
       if (!el) continue;
-      const c = this.zoneWorld(z);
-      const sx = (c.x - view.x) * zoom;
-      const sy = (c.y - c.r * 0.55 - view.y) * zoom;
-      const visible = sx > -80 && sx < cam.width + 80 && sy > -40 && sy < cam.height + 60;
+      const c = this._bolgeDunya(z);
+      const sx = (c.x - gorus.x) * kam.zoom;
+      const sy = (c.y - c.r * 0.55 - gorus.y) * kam.zoom;
+      const gorunur = sx > -80 && sx < kam.width + 80 && sy > -40 && sy < kam.height + 60;
       el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -100%)`;
-      el.classList.toggle('is-offscreen', !visible);
-      el.classList.toggle('is-compact', compact);
+      el.classList.toggle('is-offscreen', !gorunur);
+      el.classList.toggle('is-compact', dar);
     }
   }
 
-  // ── Canlı durum levhaları ─────────────────────────────────────────────────
-  refreshStatuses() {
-    const st = gameState.state;
-    const set = (id, text, tone = '') => {
-      const el = this.labels.get(id);
-      if (!el) return;
-      const s = el.querySelector('[data-status]');
-      if (s && s.textContent !== text) s.textContent = text;
-      el.dataset.tone = tone;
-    };
-
-    for (const zoneId of Object.keys(NODE_OF_ZONE)) {
-      const node = NODE_OF_ZONE[zoneId];
-      const exp = st.activeExpeditions && st.activeExpeditions[node];
-      if (!exp) set(zoneId, 'Boşta · sefer gönder', 'idle');
-      else if (exp.isCompleted) set(zoneId, '✅ Hazır · topla', 'ready');
-      else {
-        const pct = Math.min(100, Math.floor((exp.elapsedSeconds / exp.durationSeconds) * 100));
-        set(zoneId, `⏳ ${fmtCountdown(exp.durationSeconds - exp.elapsedSeconds)} · %${pct}`, 'busy');
-      }
-    }
-
-    // Taverna: bot durumu
-    if (gameState.isBotPaused()) set('tavern', '⏸️ Bot duraklatıldı', 'warn');
-    else if (gameState.hasPurchasedBot()) set('tavern', `🤖 Bot aktif · ${fmtCountdown(gameState.getAutoCollectorRemainingSeconds())}`, 'ready');
-    else set('tavern', st.botTrialUsed ? 'Bot kapalı' : '🎁 Ücretsiz bot denemesi', st.botTrialUsed ? '' : 'gift');
-
-    // Silo doluluğu
-    const cap = gameState.getWarehouseCapacity();
-    const inv = st.inventory || {};
-    const fill = Math.max(...['wood', 'iron', 'wheat'].map(r => (Number(inv[r]) || 0) / Math.max(1, cap[r] || 1)));
-    set('warehouse', `Sv.${st.warehouseLevel || 1} · %${Math.round(fill * 100)} dolu`, fill >= 0.95 ? 'warn' : '');
-
-    // Kışla
-    const units = st.soldierUnits || [];
-    const wounded = units.filter(s => s && s.hp < s.maxHp).length;
-    set('barracks', units.length ? `${units.length} asker${wounded ? ` · ${wounded} yaralı` : ''}` : 'İlk askerini al', wounded ? 'warn' : '');
-
-    // Pazar
-    set('market', `🌲 ${ammMarket.getPrice('wood').toFixed(2)} · ⛏️ ${ammMarket.getPrice('iron').toFixed(2)} ASTRA`, '');
-
-    // Karnaval / piyango
-    if ((st.lotteryPendingPayout || 0) > 0) set('carnival', '🎟️ Piyango kazancın hazır!', 'gift');
-    else set('carnival', `Çark · ${st.lotteryTickets || 0} bilet`, '');
-
-    // Kolezyum
-    const counters = (typeof gameState.getDailyCounters === 'function') ? gameState.getDailyCounters() : { arenaMatches: 0 };
-    const cap10 = (GAME_CONFIG.COLOSSEUM && GAME_CONFIG.COLOSSEUM.DAILY_MATCH_CAP) || 10;
-    set('colosseum', `Bugün ${Math.max(0, cap10 - (counters.arenaMatches || 0))} maç hakkı`, '');
-
-    set('blacksmith', 'Dövme · onarım', '');
-    set('dungeon', `Kat ${Math.ceil((st.dungeonProgress || 1) / 3)} · Sv.${st.dungeonProgress || 1}`, '');
-    set('battlefield', st.worldBoss && st.worldBoss.userStaked ? '🔒 Ordun savaşta' : 'Dünya Bossu', st.worldBoss && st.worldBoss.claimableRewardAda > 0 ? 'gift' : '');
-
-    // 🔓 İlk oturumda henüz açılmamış bölümler: kilit ve nasıl açılacağı
-    for (const z of TOWN_ZONES) {
-      const lock = gameState.getFeatureLock(z.id);
-      const el = this.labels.get(z.id);
-      if (el) el.classList.toggle('is-locked', !!lock);
-      if (lock) set(z.id, `🔒 ${lock.reason.replace(/ açılır\.?$/, '')}`, 'locked');
-    }
-
-    if (this.hoverZone) {
-      const before = this.card && this.card.querySelector('.mc-status-text').textContent;
-      this.syncCardStatus();
-      if (this.card && this.card.querySelector('.mc-status-text').textContent.length !== (before || '').length) this.cardSize = null;
-    }
+  _kartiKonumla() {
+    const kart = this.katman.card;
+    if (!kart || !this.hoverZone) return;
+    const kam = this.cameras.main;
+    const gorus = kam.worldView;
+    const c = this._bolgeDunya(this.hoverZone);
+    const ax = (c.x - gorus.x) * kam.zoom;
+    const ust = (c.y - c.r * 0.55 - gorus.y) * kam.zoom;
+    const alt = (c.y + c.r * 0.45 - gorus.y) * kam.zoom;
+    if (!this.kartBoyu) this.kartBoyu = { w: kart.offsetWidth || 270, h: kart.offsetHeight || 120 };
+    const { w, h } = this.kartBoyu;
+    const bosluk = 14;
+    const asagida = ust - h - bosluk < 8;
+    const y = asagida ? Math.min(alt + bosluk, kam.height - h - 8) : ust - h - bosluk;
+    const sol = Math.max(8, Math.min(kam.width - w - 8, ax - w / 2));
+    kart.classList.toggle('is-below', asagida);
+    kart.style.setProperty('--arrow-x', `${Math.max(18, Math.min(w - 18, ax - sol)).toFixed(0)}px`);
+    kart.style.transform = `translate(${sol.toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
 
-  update(time, delta) {
-    if (this.hoverZone && isAnyModalActive()) this.setHover(null);
-    this.positionCard();
-    this.positionLabels();
+  _durumlariYenile() {
+    this.katman.durumGuncelle(bolgeDurumlari());
+    this.kartBoyu = null;   // durum metni değişince kart boyu yeniden ölçülür
+  }
 
-    this.statusTimer += delta;
-    if (this.statusTimer >= 500) {
-      this.statusTimer = 0;
-      this.refreshStatuses();
+  update(zaman, fark) {
+    if (this.hoverZone && modalAcik()) this._hover(null);
+    this._kartiKonumla();
+    this._etiketleriKonumla();
+    this.durumSayaci += fark;
+    if (this.durumSayaci >= DURUM_ARALIGI_MS) {
+      this.durumSayaci = 0;
+      this._durumlariYenile();
     }
   }
 }

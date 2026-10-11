@@ -9,14 +9,10 @@
 import * as THREE from 'three';
 import Phaser from 'phaser';
 import { gameState } from '../gameState.js';
-import { ammMarket } from '../ammMarket.js';
-import { GAME_CONFIG } from '../config.js';
-import { TOWN_ZONES } from '../grandTownScene.js';
+import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik } from '../ui/harita-ortak.js';
 
 const W = 168, H = 100;                       // dünya birimleri (harita oranı 2048:1143)
 const toWorld = (px, py) => ({ x: px * W - W / 2, z: py * H - H / 2 });
-const NODE_OF_ZONE = Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat']).map(k => [((GAME_CONFIG.RESOURCE_META || {})[k] || {}).zone || k, k]));
-const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 const isMobile = () => window.innerWidth < 720;
 
 // Zindan dokularını yükleyen sessiz Phaser sahnesi (2B haritada bunu kasaba sahnesi yapıyordu)
@@ -29,20 +25,6 @@ export class VadiBootScene extends Phaser.Scene {
     this.load.on('loaderror', (file) => console.error('[Phaser] Yüklenemedi:', file.key, file.src));
   }
   create() { if (window.__finishLoadingBar) window.__finishLoadingBar(); }
-}
-
-function isAnyModalActive() {
-  const rpgModal = document.getElementById('rpg-modal');
-  const arena = document.getElementById('battle-arena-modal');
-  return (rpgModal && rpgModal.classList.contains('active')) ||
-    (arena && arena.classList.contains('active')) ||
-    document.body.classList.contains('modal-open');
-}
-function fmtCountdown(sec) {
-  const s = Math.max(0, Math.ceil(sec));
-  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
-  if (h > 0) return `${h}s ${String(m).padStart(2, '0')}d`;
-  return `${String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
 }
 
 import { buildWorld } from './dunya.js';
@@ -127,7 +109,7 @@ export function startVadi3D(container) {
   };
   const rel = e => { const r = el.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
   el.addEventListener('pointerdown', e => {
-    if (isAnyModalActive()) return;
+    if (modalAcik()) return;
     el.setPointerCapture(e.pointerId); const p = rel(e); pointers.set(e.pointerId, p);
     if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: zoom }; drag = null; return; }
     drag = { x: p.x, y: p.y, tx: target.x, tz: target.z, moved: false };
@@ -141,34 +123,27 @@ export function startVadi3D(container) {
       if (!drag.moved && Math.hypot(dx, dy) > 6) drag.moved = true;
       if (drag.moved) { const u = unitsPerPx(); target.x = drag.tx - (right.x * dx * u) - (fwd.x * dy * u / Math.sin(EL)); target.z = drag.tz - (right.z * dx * u) - (fwd.z * dy * u / Math.sin(EL)); placeCamera(); setHover(null); el.style.cursor = 'grabbing'; return; }
     }
-    if (isAnyModalActive()) { setHover(null); return; }
+    if (modalAcik()) { setHover(null); return; }
     if (e.pointerType === 'mouse') setHover(zoneAt(p.x, p.y));
   });
   const up = e => {
     pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
     const d = drag; drag = null; el.style.cursor = hoverZone ? 'pointer' : 'grab';
-    if (!d || d.moved || isAnyModalActive()) return;
+    if (!d || d.moved || modalAcik()) return;
     const p = rel(e); const z = zoneAt(p.x, p.y); if (z) goAndOpen(z);
   };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', e => { pointers.delete(e.pointerId); drag = null; pinch = null; });
-  el.addEventListener('wheel', e => { if (isAnyModalActive()) return; e.preventDefault(); zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * (e.deltaY > 0 ? 0.9 : 1.1))); placeCamera(); }, { passive: false });
+  el.addEventListener('wheel', e => { if (modalAcik()) return; e.preventDefault(); zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * (e.deltaY > 0 ? 0.9 : 1.1))); placeCamera(); }, { passive: false });
   el.addEventListener('pointerleave', () => setHover(null));
 
-  // ── Etiketler ve bilgi kartı (eski haritayla aynı CSS) ──
-  let overlay = container.querySelector('#map-overlay');
-  if (!overlay) { overlay = document.createElement('div'); overlay.id = 'map-overlay'; overlay.className = 'map-overlay'; container.appendChild(overlay); }
-  overlay.innerHTML = '';
-  const labels = new Map();
-  for (const z of TOWN_ZONES) {
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'map-label'; b.dataset.zone = z.id; b.style.setProperty('--zc', z.color);
-    b.innerHTML = `<span class="ml-icon" aria-hidden="true">${z.icon}</span><span class="ml-body"><span class="ml-name">${z.name}</span><span class="ml-status" data-status></span></span>`;
-    b.addEventListener('mouseenter', () => setHover(z)); b.addEventListener('mouseleave', () => { if (hoverZone === z) setHover(null); });
-    b.addEventListener('click', ev => { ev.stopPropagation(); if (!isAnyModalActive()) goAndOpen(z); });
-    overlay.appendChild(b); labels.set(z.id, b);
-  }
-  const card = document.createElement('div'); card.className = 'map-card'; card.id = 'map-hover-card'; card.setAttribute('role', 'tooltip');
-  card.innerHTML = `<div class="mc-head"><span class="mc-icon" aria-hidden="true"></span><span class="mc-titles"><span class="mc-name"></span><span class="mc-sub"></span></span></div><div class="mc-status"><span class="mc-dot"></span><span class="mc-status-text"></span></div><div class="mc-hint"><span class="mc-hint-text">Açmak için tıkla</span><span class="mc-hint-arrow" aria-hidden="true">→</span></div>`;
-  overlay.appendChild(card);
+  // ── Etiketler ve bilgi kartı (2B haritayla ORTAK: js/ui/harita-ortak.js) ──
+  const katman = etiketKatmaniKur(container, {
+    onHover: (z) => setHover(z),
+    onLeave: (z) => { if (hoverZone === z) setHover(null); },
+    onOpen: (z) => goAndOpen(z)
+  });
+  const labels = katman.labels;
+  const card = katman.card;
   let cardSize = null;
 
   const v3 = new THREE.Vector3();
@@ -179,19 +154,7 @@ export function startVadi3D(container) {
     if (hoverZone) { labels.get(hoverZone.id)?.classList.remove('is-hover'); for (const m of (zoneMeshes.get(hoverZone.id) || [])) m.material = m.userData.baseMat || m.material; }
     hoverZone = zone;
     if (zone) { labels.get(zone.id)?.classList.add('is-hover'); for (const m of (zoneMeshes.get(zone.id) || [])) { if (!m.userData.baseMat) m.userData.baseMat = m.material; m.material = m.userData.baseMat.clone(); m.material.emissive = new THREE.Color(0x3a3a2a); } }
-    fillCard(zone); el.style.cursor = zone ? 'pointer' : 'grab';
-  }
-  function fillCard(zone) {
-    if (!zone) { card.classList.remove('is-visible'); return; }
-    card.style.setProperty('--zc', zone.color);
-    card.querySelector('.mc-icon').textContent = zone.icon; card.querySelector('.mc-name').textContent = zone.name; card.querySelector('.mc-sub').textContent = zone.sub;
-    const locked = !gameState.isFeatureUnlocked(zone.id); card.classList.toggle('is-locked', locked);
-    card.querySelector('.mc-hint-text').textContent = locked ? 'Henüz kilitli' : (zone.id === 'dungeon' ? 'Zindana inmek için tıkla' : 'Açmak için tıkla');
-    syncCardStatus(); cardSize = null; card.classList.add('is-visible'); positionCard();
-  }
-  function syncCardStatus() {
-    if (!hoverZone) return; const label = labels.get(hoverZone.id); const text = label ? (label.querySelector('[data-status]')?.textContent || '') : '';
-    card.querySelector('.mc-status-text').textContent = text; card.querySelector('.mc-status').hidden = !text; card.dataset.tone = (label && label.dataset.tone) || '';
+    cardSize = null; if (katman.kartiDoldur(zone)) positionCard(); el.style.cursor = zone ? 'pointer' : 'grab';
   }
   function positionCard() {
     if (!hoverZone) return;
@@ -206,43 +169,14 @@ export function startVadi3D(container) {
     for (const z of TOWN_ZONES) { const b = labels.get(z.id); const s = screenOf(z.id, zoneTop.get(z.id) + 0.5); const visible = s.x > -80 && s.x < size.w + 80 && s.y > -40 && s.y < size.h + 60; b.style.transform = `translate(${s.x.toFixed(1)}px, ${s.y.toFixed(1)}px) translate(-50%, -100%)`; b.classList.toggle('is-offscreen', !visible); b.classList.toggle('is-compact', compact); }
   }
 
-  // ── Canlı durum levhaları (2B haritayla aynı kurallar) ──
+  // ── Canlı durum levhaları (kurallar ortak modülde) ──
   function refreshStatuses() {
-    const st = gameState.state;
-    const set = (id, text, tone = '') => { const b = labels.get(id); if (!b) return; const s = b.querySelector('[data-status]'); if (s && s.textContent !== text) s.textContent = text; b.dataset.tone = tone; };
-    for (const zoneId of Object.keys(NODE_OF_ZONE)) {
-      const exp = st.activeExpeditions && st.activeExpeditions[NODE_OF_ZONE[zoneId]];
-      if (!exp) set(zoneId, 'Boşta · sefer gönder', 'idle');
-      else if (exp.isCompleted) set(zoneId, '✅ Hazır · topla', 'ready');
-      else set(zoneId, `⏳ ${fmtCountdown(exp.durationSeconds - exp.elapsedSeconds)} · %${Math.min(100, Math.floor((exp.elapsedSeconds / exp.durationSeconds) * 100))}`, 'busy');
-    }
-    if (gameState.isBotPaused()) set('tavern', '⏸️ Bot duraklatıldı', 'warn');
-    else if (gameState.hasPurchasedBot()) set('tavern', `🤖 Bot aktif · ${fmtCountdown(gameState.getAutoCollectorRemainingSeconds())}`, 'ready');
-    else set('tavern', st.botTrialUsed ? 'Bot kapalı' : '🎁 Ücretsiz bot denemesi', st.botTrialUsed ? '' : 'gift');
-    const cap = gameState.getWarehouseCapacity(); const inv = st.inventory || {};
-    const fill = Math.max(...RES_KEYS().map(r => (Number(inv[r]) || 0) / Math.max(1, cap[r] || 1)));
-    set('warehouse', `Sv.${st.warehouseLevel || 1} · %${Math.round(fill * 100)} dolu`, fill >= 0.95 ? 'warn' : '');
-    const units = st.soldierUnits || []; const wounded = units.filter(s => s && s.hp < s.maxHp).length;
-    set('barracks', units.length ? `${units.length} asker${wounded ? ` · ${wounded} yaralı` : ''}` : 'İlk askerini al', wounded ? 'warn' : '');
-    set('market', `🌲 ${ammMarket.getPrice('wood').toFixed(2)} · ⛏️ ${ammMarket.getPrice('iron').toFixed(2)} ASTRA`, '');
-    if ((st.lotteryPendingPayout || 0) > 0) set('carnival', '🎟️ Piyango kazancın hazır!', 'gift'); else set('carnival', `Çark · ${st.lotteryTickets || 0} bilet`, '');
-    const counters = (typeof gameState.getDailyCounters === 'function') ? gameState.getDailyCounters() : { arenaMatches: 0 };
-    const cap10 = (GAME_CONFIG.COLOSSEUM && GAME_CONFIG.COLOSSEUM.DAILY_MATCH_CAP) || 10;
-    set('colosseum', `Bugün ${Math.max(0, cap10 - (counters.arenaMatches || 0))} maç hakkı`, '');
-    set('blacksmith', 'Dövme · onarım', ''); set('dungeon', `Kat ${Math.ceil((st.dungeonProgress || 1) / 3)} · Sv.${st.dungeonProgress || 1}`, '');
-    set('battlefield', st.worldBoss && st.worldBoss.userStaked ? '🔒 Ordun savaşta' : 'Dünya Bossu', st.worldBoss && st.worldBoss.claimableRewardAda > 0 ? 'gift' : '');
-    const vi = gameState.getVillageInfo ? gameState.getVillageInfo() : null; if (vi) set('village', `${vi.villagers} köylü · ${vi.houses} ev`, vi.starving ? 'warn' : '');
-    const rk = gameState.getRocketStatus ? gameState.getRocketStatus() : null; if (rk) set('spaceport', rk.ready ? '🚀 Roket hazır' : 'Roket görevi', rk.ready ? 'ready' : '');
-    for (const z of TOWN_ZONES) { const lock = gameState.getFeatureLock(z.id); const b = labels.get(z.id); if (b) b.classList.toggle('is-locked', !!lock); if (lock) set(z.id, `🔒 ${lock.reason.replace(/ açılır\.?$/, '')}`, 'locked'); }
-    if (hoverZone) syncCardStatus();
+    katman.durumGuncelle(bolgeDurumlari());
+    cardSize = null;   // durum metni değişince kart boyu yeniden ölçülür
   }
 
   // ── Bölgeye git / aç ──
-  function openZone(z) {
-    if (!gameState.isFeatureUnlocked(z.id)) { window.dispatchEvent(new CustomEvent('feature-locked', { detail: { zoneId: z.id } })); return; }
-    if (z.id === 'dungeon') { window.dispatchEvent(new CustomEvent('enter-dungeon-view')); return; }
-    window.dispatchEvent(new CustomEvent('open-town-modal', { detail: { zoneId: z.id, zoneName: `${z.icon} ${z.name.toLocaleUpperCase('tr-TR')}` } }));
-  }
+  function openZone(z) { bolgeyiAc(z); }
   function goAndOpen(z) {
     if (!ready) return;
     if (!gameState.isFeatureUnlocked(z.id)) { openZone(z); return; }
@@ -272,7 +206,7 @@ export function startVadi3D(container) {
     if (walk.from) { walk.t += dt; const k = Math.min(1, walk.t / walk.dur); hero.position.lerpVectors(walk.from, walk.to, k); hero.position.y = Math.abs(Math.sin(k * walk.dur * 14)) * 0.35; if (k >= 1) { hero.position.y = 0; const d = walk.done; walk.from = null; walk.done = null; if (d) d(); } }
     else hero.position.y = Math.sin(t * 2) * 0.05;
     if (fly.from) { fly.t += dt / 0.55; const k = fly.t >= 1 ? 1 : 0.5 - Math.cos(Math.PI * fly.t) / 2; target.lerpVectors(fly.from, fly.to, k); zoom = fly.zoomFrom + (fly.zoomTo - fly.zoomFrom) * k; placeCamera(); if (fly.t >= 1) fly.from = null; }
-    if (hoverZone && isAnyModalActive()) setHover(null);
+    if (hoverZone && modalAcik()) setHover(null);
     positionCard(); positionLabels();
     statusTimer += dt; if (statusTimer >= 0.5) { statusTimer = 0; try { refreshStatuses(); } catch (e) { /* oyun yüklenirken */ } }
     renderer.render(scene, camera);
