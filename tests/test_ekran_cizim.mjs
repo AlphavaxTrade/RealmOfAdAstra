@@ -53,6 +53,8 @@ function zenginHesap(gs) {
   s.warehouseLevel = 3;
   for (let i = 0; i < 4; i++) gs.buySoldierUnit();
   s.dungeonProgress = 5;
+  const esya = (id, yuva, ad, ikon, atk, hp, dayanikli) => ({ id, slot: yuva, name: ad, icon: ikon, level: 2, baseAtk: atk, baseHp: hp, atkBonus: atk, hpBonus: hp, durability: dayanikli, maxDurability: 13, craftedAt: 1 });
+  s.armoryInventory = [esya('t1', 'weapon', 'Deneme Kılıcı', '🗡️', 12, 0, 13), esya('t2', 'helmet', 'Deneme Miğferi', '🪖', 0, 20, 5), esya('t3', 'armor', 'Deneme Zırhı', '🛡️', 0, 40, 13)];
 }
 
 const durumlar = {

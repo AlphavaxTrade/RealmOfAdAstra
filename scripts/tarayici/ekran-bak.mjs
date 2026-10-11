@@ -1,4 +1,4 @@
-/* global window, document, innerWidth */
+/* global window, document, innerWidth, getComputedStyle */
 // Tek bir ekranı gerçek tarayıcıda (telefon ve masaüstü) açıp görüntüsünü ve ölçümlerini verir. ELLE çalıştırılır.
 // Önce geliştirme sunucusu: npm run dev (http://127.0.0.1:5180).
 // Kullanım: node scripts/tarayici/ekran-bak.mjs <hub-anahtarı> [--zengin] [--tikla "css seçici"]...
@@ -46,6 +46,8 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
       for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) st.inventory[k] = 4000;
       st.inventory.fragments = 120; st.warehouseLevel = 3;
       for (let i = 0; i < 4; i++) gs.buySoldierUnit();
+      const e = (id, yuva, ad, ikon, atk, hp, dayanikli) => ({ id, slot: yuva, name: ad, icon: ikon, level: 2, baseAtk: atk, baseHp: hp, atkBonus: atk, hpBonus: hp, durability: dayanikli, maxDurability: 13, craftedAt: Date.now() });
+      st.armoryInventory = [e('t1', 'weapon', 'Deneme Kılıcı', '🗡️', 12, 0, 13), e('t2', 'helmet', 'Deneme Miğferi', '🪖', 0, 20, 5), e('t3', 'armor', 'Deneme Zırhı', '🛡️', 0, 40, 13)];
       gs.saveState();
     });
     await bekle(300);
@@ -64,7 +66,13 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
     const govde = document.getElementById('modal-body');
     const metin = (govde ? govde.innerText : '').replace(/\s+/g, ' ');
     const tasan = [];
-    if (govde) for (const e of govde.querySelectorAll('*')) { const r = e.getBoundingClientRect(); if (r.width > 0 && (r.right > innerWidth + 2 || r.left < -2)) tasan.push(String(e.className).slice(0, 40) || e.tagName); }
+    if (govde) for (const e of govde.querySelectorAll('*')) {
+      const r = e.getBoundingClientRect();
+      if (!(r.width > 0 && (r.right > innerWidth + 2 || r.left < -2))) continue;
+      let kayar = false;   // kendi içinde yana kayan kapsayıcıdaysa sayfayı taşırmaz
+      for (let p = e.parentElement; p && p !== govde; p = p.parentElement) { const ox = getComputedStyle(p).overflowX; if (ox === 'auto' || ox === 'scroll') { kayar = true; break; } }
+      if (!kayar) tasan.push(String(e.className).slice(0, 40) || e.tagName);
+    }
     return {
       baslik: (document.getElementById('modal-title') || {}).innerText?.replace(/\s+/g, ' ').trim(),
       acik: !!document.getElementById('rpg-modal')?.classList.contains('active'),

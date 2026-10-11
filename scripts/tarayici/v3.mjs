@@ -98,14 +98,14 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   });
   await ust('kralik', 'demirhane'); await foto('09_demirhane_dov');
   kontrol(`${ad}: Demirhane sade başlıkla açılır`, (await baslik()) === '⚒️ Demirhane', await baslik());
-  kontrol(`${ad}: Demirhane sekmeleri sade (numara ve bağırma yok)`, await s.evaluate(() => { const t = [...document.querySelectorAll('.btn-bs-tab')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()); return t.length === 2 && !/^\S*\s*\d\./.test(t[0]) && !/[A-ZÇĞİÖŞÜ]{4,}/.test(t.join(' ')); }));
-  await tikla('.btn-bs-tab[data-bstab="armory"]'); await foto('10_demirhane_esyalarim');
-  kontrol(`${ad}: Eşyalarım'da toplu işlemler katlı`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-daha.v3-genis'); return !!d && !d.open; }));
-  kontrol(`${ad}: ana işlem düğmeleri görünür (onar-hepsi, giydir)`, await s.evaluate(() => { const gor = (sel) => { const e = document.querySelector(sel); return !!e && e.offsetParent !== null; }; return gor('.btn-armory-repair-all') && gor('.btn-smart-auto-equip'); }));
-  kontrol(`${ad}: eşya kartında "Diğer" bölümü katlı ve ikincil işlemleri içerir`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-daha:not(.v3-genis)'); return !!d && !d.open && !!d.querySelector('.btn-recycle-equipment, .btn-sell-equipment, .btn-unequip-soldier-slot'); }));
-  kontrol(`${ad}: Demirhane düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .btn-armory-direct-upgrade, #modal-body .btn-smart-auto-equip, #modal-body .btn-bs-tab')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
-  await s.evaluate(() => document.querySelector('#modal-body details.v3-daha:not(.v3-genis) > summary').click()); await bekle(300);
-  kontrol(`${ad}: "Diğer" açılınca ikincil düğmeler görünür`, await s.evaluate(() => { const b = document.querySelector('#modal-body details.v3-daha:not(.v3-genis)[open] button'); return !!b && b.offsetParent !== null; }));
+  kontrol(`${ad}: Demirhane sekmeleri sade (numara ve bağırma yok)`, await s.evaluate(() => { const t = [...document.querySelectorAll('#modal-body .ek-sekmeler')[0].querySelectorAll('.ek-sekme')].map((b) => b.innerText.replace(/\s+/g, ' ').trim()); return t.length === 2 && t.every((x) => x.length <= 22 && !/\d\./.test(x)); }));
+  await tikla('.ek-sekme[data-sekme="esyalar"]'); await foto('10_demirhane_esyalarim');
+  kontrol(`${ad}: Eşyalarım'da toplu işlemler katlı`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.ek-katli[data-k="toplu"]'); return !!d && !d.open; }));
+  kontrol(`${ad}: ana işlem düğmeleri görünür (onar-hepsi, giydir)`, await s.evaluate(() => { const gor = (sel) => { const e = document.querySelector(sel); return !!e && e.offsetParent !== null; }; return gor('[data-e="onarHepsi"]') && gor('[data-e="giydir"]'); }));
+  kontrol(`${ad}: eşya kartında "Diğer" bölümü katlı ve ikincil işlemleri içerir`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.ek-katli[data-k^="diger"]'); return !!d && !d.open && !!d.querySelector('button'); }));
+  kontrol(`${ad}: Demirhane düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body [data-e="gelistir"], #modal-body [data-e="giydir"], #modal-body .ek-sekme')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
+  await s.evaluate(() => document.querySelector('#modal-body details.ek-katli[data-k^="diger"] > summary').click()); await bekle(300);
+  kontrol(`${ad}: "Diğer" açılınca ikincil düğmeler görünür`, await s.evaluate(() => { const b = document.querySelector('#modal-body details.ek-katli[data-k^="diger"][open] button'); return !!b && b.offsetParent !== null; }));
   kontrol(`${ad}: Demirhane yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
   await s.keyboard.press('Escape'); await bekle(300);
 

@@ -7,3 +7,4 @@ import './sifahane.js';
 import './uzay.js';
 import './bolge.js';
 import './taverna.js';
+import './demirhane.js';
