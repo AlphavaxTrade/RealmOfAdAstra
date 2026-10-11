@@ -16,7 +16,7 @@ import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
 import { yolHtml, yolOzeti } from './ui/v3/ogretici.js';
 import { sadeBaslik } from './ui/v3/panel.js';
-import { resImg, soldierPortrait } from './ui/art.js';
+import { resImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 import { ac as ekranAc, baglamKur as ekranBaglamKur, canliTik as ekranCanliTik } from './ui/ekran/index.js';
 
@@ -137,7 +137,7 @@ const OGRETICI_BASLIK_ESLEMESI = [
   ['savaşa hazırlık', 'zindanOnizleme']
 ];
 const OGRETICI_SEKME_ESLEMESI = [
-  ['.colosseum-tab-btn.active[data-tab="leaderboard"]', 'lig'], ['.ek-sekme.is-aktif[data-sekme="havuzlar"]', 'havuzlar']
+  ['.ek-sekme.is-aktif[data-sekme="lig"]', 'lig'], ['.ek-sekme.is-aktif[data-sekme="havuzlar"]', 'havuzlar']
 ];
 function ogreticiPanelGordu(baslik) {
   try {
@@ -203,12 +203,22 @@ ekranBaglamKur({
     displayModal();
   },
   kilit: (anahtar) => gameState.getFeatureLock(anahtar),
+  get pvp() { return pvp; },
+  girisIste: () => requireLogin(),
+  // Canlı savaş arenasını açar ve savaşı başlatır (Kolezyum, gerçek rakipler); arena yoksa false
+  arenaBaslat: (savas) => {
+    const arena = getBattleArena();
+    if (!arena) return false;
+    closeModal();
+    openBattleArenaModal();
+    arena.startBattle(savas);
+    return true;
+  },
   // Yeni ekrana taşınmamış bölümler için geçici köprü
   eskiAc: (id) => {
     const eski = {
       kisla: () => openBarracksModal(),
       zindan: () => enterDungeonScene(),
-      kolezyum: () => openColosseumModal(),
       rehber: () => openKrallikYoluModal(),
       ekonomi: () => openEconomyDashboardModal('overview')
     };
@@ -655,6 +665,7 @@ function openDailyLimitsModal() {
 
 
 const openEconomyDashboardModal = () => ekranAc('ekonomi');
+const openColosseumModal = () => ekranAc('kolezyum');
 
 const openWarehouseModal = () => ekranAc('silo');
 
@@ -777,513 +788,6 @@ function refreshBarracksLiveUI(deltaSeconds) {
   barracksLiveRefreshAccumulator = 0;
 
   barracksUI.liveUpdate(dom.modalBody);
-}
-
-let colosseumActiveTab = 'duel';
-let selectedColosseumChampionIdx = 0;
-
-function openColosseumModal() {
-  if (!featureGate('colosseum')) return;
-  const state = gameState.state;
-  const soldiers = state.soldierUnits || [];
-  const hasSoldiers = soldiers.length > 0;
-  const leaderboard = gameState.getColosseumLeaderboard();
-  const cStats = state.colosseumStats || { wins: 0, losses: 0, score: 0, rank: 11 };
-
-  dom.modalTitle.innerHTML = `<span>🏟️</span> <span>BÜYÜK GLADYATÖR KOLEZYUMU: 1v1 PVP & HAFTALIK LİG</span>`;
-
-  const tabsHtml = `
-    <div class="phase2-tab-row v3-bolumler">
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">⚔️ Düello</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">🏆 Lig</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">🌐 Rakipler</button>
-    </div>
-  `;
-
-  let contentHtml = '';
-
-  if (colosseumActiveTab === 'pvp') {
-    // 🌐 GERÇEK RAKİPLER (sunucu): içerik renderPvpPanel() ile doldurulur
-    contentHtml = `<div id="pvp-panel" class="clean-card" style="border-color:#38bdf8;background:#0b1220;min-height:120px;">⏳ Yükleniyor…</div>`;
-  } else if (colosseumActiveTab === 'leaderboard' && online.active) {
-    // Çevrimiçi oyunda gerçek sıralama sunucuda: bilgisayar sürümünün bot tablosu ve sabit ödülleri gösterilmez
-    contentHtml = `
-      <div class="clean-card" style="border-color: #f59e0b; background: #1c140c; text-align: center; padding: 22px;">
-        <div style="font-size: 1.05rem; font-weight: 800; color: #fde047;">🏆 Haftalık sıralama gerçek oyuncularla</div>
-        <div style="font-size: 0.86rem; color: #cbd5e1; margin: 8px auto 14px; max-width: 560px; line-height: 1.5;">Çevrimiçi oyunda sıralama ve haftalık ödüller sunucuda tutulur. Hafta sonunda ilk 10 oyuncu Kolezyum kasasından pay alır.</div>
-        <button class="phase2-tab-btn colosseum-tab-btn" data-tab="pvp" style="display: inline-block; width: auto; padding: 9px 18px;">🌐 Gerçek Rakipler ve sıralamaya git</button>
-      </div>`;
-  } else if (colosseumActiveTab === 'leaderboard') {
-    // 🏆 HAFTALIK SIRALAMA & ÖDÜLLER (yalnız bilgisayardaki tek oyunculu sürüm)
-    contentHtml = `
-      <div class="clean-card" style="border-color: #f59e0b; background: #1c140c;">
-        <div class="card-title-row">
-          <div class="card-title">🏆 Haftalık Kolezyum Şampiyonluk Ligi</div>
-          <span class="card-badge" style="color: #4ade80;">Pazar 23:59 Sıfırlanır</span>
-        </div>
-        <div class="clean-desc">
-          Kolezyum'da 1v1 maçları kazanarak sıralamada yüksel! Hafta sonunda ilk 10 gladyatöre devasa ödüller dağıtılır:
-          <br><strong>🥇 1. Sıra:</strong> 5 Zindan Anahtarı + 15.000 ASTRA • <strong>🥈 2. Sıra:</strong> 3 Anahtar + 8.000 ASTRA • <strong>🥉 3-10. Sıra:</strong> 1 Anahtar + 2.500 ASTRA
-        </div>
-      </div>
-
-      <div class="clean-card" style="background: #0f172a; border-color: #38bdf8;">
-        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.95rem;">
-          <span style="color: #38bdf8;">🛡️ Senin Derecen: #${cStats.rank || 11} AlphAvax</span>
-          <span style="color: #facc15;">⭐ ${cStats.score || 0} Puan (${cStats.wins || 0} Galibiyet / ${cStats.losses || 0} Mağlubiyet)</span>
-        </div>
-      </div>
-
-      <div class="leaderboard-table-wrap" style="margin-top: 10px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid #ca8a04; color: #fde047; text-align: left;">
-              <th style="padding: 8px;">Sıra</th>
-              <th style="padding: 8px;">Gladyatör / Şampiyon</th>
-              <th style="padding: 8px;">Unvan</th>
-              <th style="padding: 8px; text-align: center;">Galibiyet</th>
-              <th style="padding: 8px; text-align: right;">Haftalık Ödül</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${leaderboard.map(row => `
-              <tr style="border-bottom: 1px solid #332014; background: ${row.rank === 1 ? 'rgba(234,179,8,0.1)' : row.rank <= 3 ? 'rgba(255,255,255,0.03)' : 'transparent'};">
-                <td style="padding: 8px; font-weight: 800; color: ${row.rank === 1 ? '#facc15' : row.rank === 2 ? '#cbd5e1' : row.rank === 3 ? '#b45309' : '#94a3b8'};">
-                  ${row.rank === 1 ? '🥇 #1' : row.rank === 2 ? '🥈 #2' : row.rank === 3 ? '🥉 #3' : `#${row.rank}`}
-                </td>
-                <td style="padding: 8px; font-weight: 700; color: #fff;">${row.icon} ${row.name}</td>
-                <td style="padding: 8px; color: #94a3b8; font-size: 0.78rem;">${row.title}</td>
-                <td style="padding: 8px; text-align: center; color: #4ade80; font-weight: 800;">${row.wins} G</td>
-                <td style="padding: 8px; text-align: right; color: #fde047; font-weight: 700;">
-                  🔑 ${row.rewardKeys} Anahtar + 🟣 ${row.rewardAda.toLocaleString()} ASTRA
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-  } else {
-    // ⚔️ 1v1 GLADYATÖR DÜELLOSU
-    const isArmyStaked = gameState.isArmyStakedInWorldBoss();
-    const champ = soldiers[selectedColosseumChampionIdx] || soldiers[0];
-    const stats = champ ? gameState.getSoldierFullStats(selectedColosseumChampionIdx) : null;
-    const isWounded = champ && (champ.hp || champ.maxHp || 100) < (champ.maxHp || 100);
-    const isBackRow = champ && champ.row === 'back';
-
-    const combatPresets = gameState.getCombatPresets();
-    const activePresetId = combatPresets?.activePresetId || 1;
-    const curPresetObj = combatPresets?.presets?.[activePresetId] || { name: `Taktik ${activePresetId}` };
-
-    const colosseumPresetHtml = `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; flex-wrap:wrap; gap:6px;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.75rem; font-weight:800; color:#cbd5e1;">🎯 Taktiksel Preset:</span>
-          <div style="display:flex; gap:4px;">
-            ${[1, 2, 3].map(pid => {
-              const p = combatPresets.presets?.[pid] || { name: `Taktik ${pid}` };
-              const isActive = pid === activePresetId;
-              return `
-                <button type="button" class="btn-clean btn-colosseum-preset ${isActive ? 'btn-clean-gold' : 'btn-clean-outline'}" data-preset="${pid}" style="padding:3px 8px; font-size:0.72rem; font-weight:800; width:auto; border-radius:6px;" title="${p.name}">
-                  ${pid === 1 ? '🛡️' : pid === 2 ? '⚔️' : '🏹'} P${pid}
-                </button>
-              `;
-            }).join('')}
-          </div>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.72rem; color:#fde047; font-weight:700;">${curPresetObj.name}</span>
-          <button type="button" id="btn-save-colosseum-preset" class="btn-clean btn-clean-sm" style="padding:3px 8px; font-size:0.7rem; width:auto; background:rgba(34,197,94,0.18); border:1px solid #22c55e; color:#4ade80; font-weight:700;" title="Mevcut dizilimi P${activePresetId}'e kaydet">
-            💾 P${activePresetId}'e Kaydet
-          </button>
-        </div>
-      </div>
-    `;
-
-    contentHtml = `
-      <div class="clean-card" style="border-color: #ef4444; background: #1c1012;">
-        <div class="card-title-row">
-          <div class="card-title">⚔️ 1v1 Kolezyum Gladyatör Eşleşmesi</div>
-          <span class="card-badge" style="color: #fde047;">🔑 ${state.arenaKeys || 0} Anahtar</span>
-        </div>
-        <div class="clean-desc">
-          Şampiyonunu seç ve 'Kolezyuma çık' de: rakip bulunur, 1v1 savaş başlar. Yaralanan şampiyon buğdayla iyileşir.
-        </div>
-      </div>
-
-      <details class="v3-daha v3-genis"><summary>Taktik: ${escHtml(curPresetObj.name)}</summary><div>${colosseumPresetHtml}</div></details>
-
-      ${isArmyStaked ? `
-        <div class="clean-card" style="background: #1c0a0a; border: 1px solid #ef4444; padding: 20px; text-align: center;">
-          <div style="font-size: 2rem; margin-bottom: 6px;">🔒</div>
-          <div style="font-weight: 800; font-size: 1rem; color: #f87171;">Ordun World Boss Savaşına Kilitlendi!</div>
-          <div style="font-size: 0.82rem; color: #cbd5e1; margin-top: 6px; max-width: 380px; margin-left: auto; margin-right: auto; line-height: 1.4;">
-            Askerlerin Pazar 18:00 TSİ World Boss savaşı için kilit altındadır. Kolezyumda dövüşebilmek için Savaş Alanından (%${Math.round(gameState.getWorldBossEarlyUnstakeRate() * 100)} ceza ile) ordunu erken çekmeli veya Pazar 18:00 sonrası ödülünle birlikte ordunu toplamalısın.
-          </div>
-          <button class="btn-clean btn-clean-gold" id="btn-goto-battlefield-colosseum" style="margin-top: 12px; width: auto; padding: 8px 18px;">
-            🌋 Savaş Alanı & World Boss'a Git
-          </button>
-        </div>
-      ` : hasSoldiers ? `
-        <!-- Şampiyon Seçim Kartı -->
-        <div class="clean-card" style="background: #151a26; border-color: #ca8a04;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap:wrap; gap:6px;">
-            <div style="font-weight: 800; font-size: 0.95rem; color: #fde047; display:flex; align-items:center; gap:10px;"><img src="${soldierPortrait(soldiers[selectedColosseumChampionIdx] || soldiers[0], soldiers[selectedColosseumChampionIdx] ? selectedColosseumChampionIdx : 0)}" alt="" draggable="false" style="width:52px; height:52px; border-radius:10px; border:2px solid #ca8a04; image-rendering:pixelated; object-fit:cover;"> 🛡️ Arenaya çıkacak şampiyonun:</div>
-            <div style="display:flex; align-items:center; gap:8px;">
-              <select id="colosseum-champion-select" style="background: #24140b; color: #fff; border: 1.5px solid #ca8a04; padding: 5px 10px; border-radius: 6px; font-family: var(--font-game); font-size: 0.85rem;">
-                ${soldiers.map((s, idx) => `
-                  <option value="${idx}" ${idx === selectedColosseumChampionIdx ? 'selected' : ''}>
-                    ${s.name} (Lv.${s.level} - HP: ${s.hp || s.maxHp || 100}/${s.maxHp || 100})
-                  </option>
-                `).join('')}
-              </select>
-              <button type="button" id="btn-toggle-colosseum-champ-row" class="btn-clean" style="padding: 4px 8px; font-size: 0.72rem; width: auto; font-weight: 700; background: ${isBackRow ? 'rgba(56,189,248,0.2)' : 'rgba(245,158,11,0.2)'}; border: 1px solid ${isBackRow ? '#38bdf8' : '#f59e0b'}; color: ${isBackRow ? '#38bdf8' : '#fde047'}; cursor: pointer;" title="Şampiyonun Mevzisini Değiştir">
-                ${isBackRow ? '🏹 Arka Saf' : '🛡️ Ön Saf'}
-              </button>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 8px;">
-            <div style="background: #10141e; padding: 8px 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-              <div style="font-size: 0.75rem; color: #94a3b8;">Toplam Saldırı</div>
-              <div style="font-size: 1.1rem; font-weight: 800; color: #4ade80;">⚔️ ${stats ? stats.totalAtk : 20} ATK</div>
-            </div>
-            <div style="background: #10141e; padding: 8px 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-              <div style="font-size: 0.75rem; color: #94a3b8;">Can Durumu</div>
-              <div style="font-size: 1.1rem; font-weight: 800; color: ${champ.hp <= 25 ? '#ef4444' : '#38bdf8'};">❤️ ${champ.hp || champ.maxHp || 100}/${champ.maxHp || 100}</div>
-            </div>
-            <div style="background: #10141e; padding: 8px 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-              <div style="font-size: 0.75rem; color: #94a3b8;">Mevzi / Saf</div>
-              <div style="font-size: 1.05rem; font-weight: 800; color: ${isBackRow ? '#38bdf8' : '#fde047'};">${isBackRow ? '🏹 Arka Saf' : '🛡️ Ön Saf'}</div>
-            </div>
-          </div>
-
-          ${isWounded ? `
-            <div style="background: #2a0a0a; border: 1px solid #ef4444; border-radius: 6px; padding: 8px 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.82rem; color: #fca5a5;">⚠️ Şampiyonun yaralı! Depodaki buğdayla 18 saatlik tedavi uygulayabilirsin.</span>
-              <button class="btn-clean btn-clean-sm btn-heal-soldier" data-soldier="${selectedColosseumChampionIdx}" style="width: auto; padding: 5px 12px; background: #15803d; border-color: #22c55e;">
-                🌾 Buğdayla İyileştir
-              </button>
-            </div>
-          ` : ''}
-
-          ${(() => {
-            const ce = gameState.getColosseumEntryStatus();
-            const injured = (champ.hp || 100) <= 15;
-            const block = injured ? 'Şampiyon ağır yaralı, önce iyileştir' : ce.blockReason;
-            return `
-          <div class="arena-entry-costs">
-            <span class="${ce.used >= ce.cap ? 'is-bad' : ''}">🏟️ Bugünkü maç: <strong>${ce.used} / ${ce.cap}</strong></span>
-            <span class="${ce.keys < ce.keyCost ? 'is-bad' : ''}">🔑 Bedel: <strong>${ce.keyCost} anahtar</strong> (sende ${ce.keys})</span>
-            <span class="${ce.stamina < ce.staminaCost ? 'is-bad' : ''}">⚡ Bedel: <strong>${ce.staminaCost} stamina</strong> (sende ${ce.stamina})</span>
-          </div>
-          <button id="btn-start-1v1-duel" class="btn-clean btn-clean-green" style="font-size: 1.05rem; padding: 13px; margin-top: 12px; font-weight: 800;" ${block ? 'disabled' : ''}>
-            ${block ? `🔒 ${block}` : ('⚔️ Kolezyuma çık (1v1)')}
-          </button>`;
-          })()}
-        </div>
-
-        <div id="colosseum-duel-log" class="clean-card" style="background: #0b0704; min-height: 80px; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.88rem; text-align: center;">
-          ⚔️ Arenaya çıkmaya hazır mısın? Rakip gladyatör seni bekliyor!
-        </div>
-      ` : `
-        <div class="clean-card" style="text-align: center; color: #94a3b8; padding: 24px;">
-          ⚠️ Kolezyum'da 1v1 savaşmak için önce Kışla'dan asker satın almalısın!
-          <div style="margin-top: 12px;"><button class="btn-clean btn-goto-barracks" style="width:auto; padding:8px 16px; font-weight:800; background:#7c3aed; border-color:#a78bfa; color:#fff;">⚔️ Kışla'ya git</button></div>
-        </div>
-      `}
-    `;
-  }
-
-  dom.modalBody.innerHTML = `${tabsHtml}${contentHtml}`;
-  displayModal();
-
-  const battlefieldColBtn = document.getElementById('btn-goto-battlefield-colosseum');
-  if (battlefieldColBtn) {
-    battlefieldColBtn.addEventListener('click', () => ekranAc('savasalani'));
-  }
-
-  // 🎯 Kolezyum Preset Seçimi (P1, P2, P3)
-  document.querySelectorAll('.btn-colosseum-preset').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const pid = parseInt(btn.dataset.preset, 10);
-      const res = gameState.applyCombatPreset(pid);
-      if (res.success) {
-        showToast(res.message, 'info');
-        openColosseumModal();
-      }
-    });
-  });
-
-  // 💾 Kolezyum Presete Kaydetme
-  const colSaveBtn = document.getElementById('btn-save-colosseum-preset');
-  if (colSaveBtn) {
-    colSaveBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const activeId = gameState.state.combatPresets?.activePresetId || 1;
-      const res = gameState.saveCombatPreset(activeId);
-      if (res.success) {
-        showToast(res.message, 'success');
-        openColosseumModal();
-      }
-    });
-  }
-
-  // 🛡️ Şampiyon Mevzi Değiştirme (Ön Saf / Arka Saf)
-  const champRowBtn = document.getElementById('btn-toggle-colosseum-champ-row');
-  if (champRowBtn) {
-    champRowBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const sol = (gameState.state.soldierUnits || [])[selectedColosseumChampionIdx];
-      if (sol) {
-        const nextRow = sol.row === 'back' ? 'front' : 'back';
-        gameState.setSoldierRow(selectedColosseumChampionIdx, nextRow);
-        openColosseumModal();
-      }
-    });
-  }
-
-  // Şampiyon Seçimi Değişince
-  const champSelect = document.getElementById('colosseum-champion-select');
-  if (champSelect) {
-    champSelect.addEventListener('change', (e) => {
-      selectedColosseumChampionIdx = parseInt(e.target.value, 10) || 0;
-      openColosseumModal();
-    });
-  }
-
-  if (colosseumActiveTab === 'pvp') renderPvpPanel();
-
-  // 1v1 Kolezyuma Çık Butonu (Canlı Savaş Arenası Entegrasyonu)
-  const duelBtn = document.getElementById('btn-start-1v1-duel');
-  if (duelBtn) {
-    duelBtn.addEventListener('click', async () => {
-      const champ = (gameState.state.soldierUnits || [])[selectedColosseumChampionIdx];
-      if (!champ) {
-        showToast('Kolezyuma çıkacak bir şampiyon bulunamadı!', 'error');
-        return;
-      }
-      if ((champ.hp || 0) <= 15) {
-        showToast(`⚠️ ${champ.name} ağır yaralı (Can: ${champ.hp}/${champ.maxHp}). Kolezyuma çıkmadan önce buğdayla iyileştirilmelidir!`, 'error');
-        return;
-      }
-
-      const res = await gameState.executeColosseum1v1Match(selectedColosseumChampionIdx);
-      if (!res.success) {
-        showToast(res.message, 'error');
-        return;
-      }
-
-      const arena = getBattleArena();
-      if (!arena) return;
-
-      closeModal();
-      openBattleArenaModal();
-
-      const champStats = gameState.getSoldierFullStats(selectedColosseumChampionIdx) || { totalAtk: 65, totalMaxHp: 500 };
-      const allyUnit = {
-        uid: res.allyUid,
-        name: res.championName || champ.name,
-        icon: champ.icon || '🦁',
-        avatar: champ.avatar || 'assets/soldier_avatar.jpg',
-        sourceIndex: selectedColosseumChampionIdx,
-        hp: res.championStartHp != null ? res.championStartHp : champStats.totalMaxHp,
-        maxHp: res.championMaxHp || champStats.totalMaxHp,
-        atk: champStats.totalAtk,
-        skills: Array.isArray(champ.skills) && champ.skills.length ? champ.skills : ['shieldWall', 'armorBreaker'],
-        row: champ.row || 'front'
-      };
-
-      const enemyUnit = {
-        uid: res.enemyUid,
-        name: res.opponentName,
-        icon: res.opponentIcon || '🥷',
-        avatar: 'assets/gladiator_rival.jpg',
-        hp: res.opponentHp || 350,
-        maxHp: res.opponentHp || 350,
-        atk: res.opponentAtk || 50,
-        skills: ['armorBreaker', 'cleave'],
-        row: 'front'
-      };
-
-      const loot = [
-        `🪙 +${res.rewardAda} ASTRA${res.budgetFull ? ' · ' + GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : ''}`,
-        `⭐ ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO (Yeni Puan: ${res.newRating})`,
-        res.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık Lig Puanı (+3)'
-      ];
-
-      arena.startBattle({
-        mode: 'colosseum',
-        context: `Haftalık Kolezyum · <strong>${escHtml(res.opponentName)}</strong> ile 1v1 Düello`,
-        rank: `ELO ${res.newRating} · ${res.tier ? res.tier.name : 'Lig Maçı'}`,
-        allies: [allyUnit],
-        enemies: [enemyUnit],
-        loot,
-        replay: res.replay,
-        onComplete: () => {
-          // Can, ödül ve ELO executeColosseum1v1Match içinde işlendi; burada yalnızca bildirim ve sonuç kartı
-          renderTopBar();
-          const eloSatiri = `⭐ ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO (yeni puan ${res.newRating})`;
-          if (res.isVictory) {
-            sound.playLevelUp();
-            showToast(`🏆 Zafer! +${res.rewardAda} ASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!${res.budgetFull ? ' ⏳ ' + GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : ''}`, 'success');
-            return {
-              altBaslik: `${res.opponentName} yenildi`,
-              satirlar: [`🪙 +${res.rewardAda} ASTRA`, eloSatiri, res.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık lig puanı +3'],
-              not: res.budgetFull ? GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : '',
-              eylemler: [{ etiket: '🏟️ Kolezyuma dön', tikla: () => openColosseumModal() }]
-            };
-          }
-          sound.playBreakWarning();
-          showToast('💀 Mağlubiyet! Şampiyonun yaralandı.', 'error');
-          return {
-            baslik: '💀 MAĞLUBİYET',
-            altBaslik: `${res.opponentName} kazandı`,
-            satirlar: [eloSatiri, '🩹 Şampiyonun yaralandı'],
-            not: 'Yaralı şampiyonu buğdayla ya da şifalı otla iyileştirip yeniden dene.',
-            eylemler: [{ etiket: '🌾 Kışlaya git (iyileştir)', birincil: true, tikla: () => openBarracksModal() }, { etiket: '🏟️ Kolezyuma dön', tikla: () => openColosseumModal() }]
-          };
-        }
-      });
-    });
-  }
-}
-
-// =========================================================================
-// 4.6b KOLEZYUM — GERÇEK RAKİPLER (sunucuda eşleşme; js/economy/pvp.js, server/arena.js)
-// =========================================================================
-let pvpMode = '1v1';
-// Başka oyunculardan gelen isimler ekrana yazılmadan önce etkisizleştirilir (sunucu da temizler; ikinci koruma)
-const escHtml = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-let pvpSelected = null;
-
-function pvpUnitView(u, side) {
-  return {
-    uid: u.uid, name: escHtml(u.name), icon: escHtml(u.icon || (side === 'ally' ? '⚔️' : '🥷')),
-    avatar: side === 'ally' ? 'assets/soldier_avatar.jpg' : 'assets/gladiator_rival.jpg',
-    hp: u.maxHp, maxHp: u.maxHp, atk: u.atk,
-    skills: Array.isArray(u.skills) && u.skills.length ? u.skills : ['shieldWall'],
-    row: u.row || 'front'
-  };
-}
-
-function playPvpReplay({ allies, enemies, sim, title, resultText, why }) {
-  const arena = getBattleArena();
-  if (!arena) return;
-  closeModal();
-  openBattleArenaModal();
-  arena.startBattle({
-    mode: 'colosseum',
-    context: title,
-    rank: 'Gerçek rakip · tekrar',
-    allies: allies.map(u => pvpUnitView(u, 'ally')),
-    enemies: enemies.map(u => pvpUnitView(u, 'enemy')),
-    loot: why && why.length ? why.map(t => '💡 ' + t) : [],
-    replay: sim,
-    onComplete: () => {
-      if (resultText) showToast(resultText, resultText.startsWith('🏆') ? 'success' : 'info');
-    }
-  });
-}
-
-async function renderPvpPanel() {
-  const el = document.getElementById('pvp-panel');
-  if (!el) return;
-  if (!online.active) {
-    el.innerHTML = `<div class="card-title">🌐 Gerçek Rakipler</div>
-      <div class="clean-desc">Bu bölüm oyun sunucudan açıldığında çalışır: askerini kilitleyip "Maç ara"ya basarsın, sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır. 1v1 zaferi 1, 3v3 zaferi 3 puan; haftalık ilk 10 ödül alır.</div>`;
-    return;
-  }
-  if (!isLoggedIn()) {
-    el.innerHTML = `<div class="card-title">🌐 Gerçek Rakipler</div>
-      <div class="clean-desc">Gerçek oyunculara karşı maç yapmak için giriş yap ya da hesap aç.</div>
-      <button id="pvp-login" class="btn-clean btn-gold" style="margin-top:8px;">🔐 Giriş Yap</button>`;
-    el.querySelector('#pvp-login').addEventListener('click', async () => { if (await requireLogin()) renderPvpPanel(); });
-    return;
-  }
-  let st;
-  try { st = await pvp.status(); } catch (err) { el.innerHTML = `<div class="clean-desc" style="color:#fca5a5;">${err.message}</div>`; return; }
-  const soldiers = gameState.state.soldierUnits || [];
-  const size = pvpMode === '3v3' ? 3 : 1;
-  if (!Array.isArray(pvpSelected) || pvpSelected.some(i => !soldiers[i])) pvpSelected = soldiers.length ? [Math.min(selectedColosseumChampionIdx || 0, soldiers.length - 1)] : [];
-  const fmtN = v => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
-  const resIcon = { win: '🏆', loss: '💀', draw: '🤝' };
-  const q = st.queue;
-  const soldierList = soldiers.map((s, i) => {
-    const f = gameState.getSoldierFullStats(i) || { totalAtk: 0, totalMaxHp: 0 };
-    const on = pvpSelected.includes(i);
-    return `<label style="display:flex;align-items:center;gap:6px;padding:4px 6px;border:1px solid ${on ? '#38bdf8' : '#334155'};border-radius:6px;cursor:pointer;font-size:0.8rem;">
-      <input type="checkbox" class="pvp-pick" data-idx="${i}" ${on ? 'checked' : ''} ${q ? 'disabled' : ''}>
-      ${s.icon || '⚔️'} ${s.name} · Sv ${s.level || 1} · ⚔️${fmtN(f.totalAtk)} ❤️${fmtN(f.totalMaxHp)}</label>`;
-  }).join('');
-  el.innerHTML = `
-    <div class="card-title-row"><div class="card-title">🌐 Gerçek Rakipler</div><span class="card-badge" style="color:#38bdf8;">Sırada bekleyen: 1v1 ${st.waiting['1v1']} · 3v3 ${st.waiting['3v3']}</span></div>
-    ${(() => {
-      const kurallar = `Askerini kilitle, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <strong>1 puan</strong>, 3v3 zaferi <strong>3 puan</strong>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${Math.round(st.rules.weeklyPoolShare * 100)}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade).`;
-      return `<div class="clean-desc">Askerini seç, "Maç ara"ya bas; ilk bekleyen oyuncuyla maçın sunucuda oynanır.</div><details class="v3-ayrinti"><summary>Kurallar ve ödüller</summary><div>${kurallar}</div></details>`;
-    })()}
-    ${q ? `<div style="margin:10px 0;padding:10px;border:1px dashed #38bdf8;border-radius:8px;">⏳ <strong>${q.mode}</strong> için sıradasın · ${Math.max(1, Math.round((Date.now() - q.at) / 60000))} dakikadır bekliyorsun. Rakip gelince maç kendiliğinden oynanır, bildirim alırsın.
-        <button id="pvp-leave" class="btn-clean btn-clean-outline" style="width:auto;margin-left:8px;padding:5px 10px;">↩️ Sıradan çık</button></div>`
-      : `<div style="display:flex;gap:6px;margin:10px 0;">
-        <button class="btn-clean ${pvpMode === '1v1' ? 'btn-gold' : 'btn-clean-outline'} pvp-mode" data-mode="1v1" style="width:auto;padding:6px 12px;">1v1 (1 asker)</button>
-        <button class="btn-clean ${pvpMode === '3v3' ? 'btn-gold' : 'btn-clean-outline'} pvp-mode" data-mode="3v3" style="width:auto;padding:6px 12px;">3v3 (3 asker)</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;">${soldierList || '<div class="clean-desc">Önce Kışla\'dan asker al.</div>'}</div>
-      <button id="pvp-queue" class="btn-clean btn-gold" style="margin-top:10px;" ${pvpSelected.length === size ? '' : 'disabled'}>⚔️ Maç Ara (${pvpMode}) — ${pvpSelected.length}/${size} asker seçili</button>`}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:12px;">
-      <div>
-        <div style="font-weight:800;color:#fde047;margin-bottom:4px;">🏆 Bu haftanın ilk 10'u</div>
-        ${st.top.length ? `<table style="width:100%;font-size:0.8rem;border-collapse:collapse;">${st.top.map((r, i) => `<tr style="${r.me ? 'color:#4ade80;font-weight:800;' : ''}"><td>${r.rank}.</td><td>${escHtml(r.name)}</td><td>${r.points} puan</td><td style="text-align:right;">~${fmtN(st.prizes[i])} ASTRA</td></tr>`).join('')}</table>` : '<div class="clean-desc">Bu hafta henüz maç yok. İlk puanı sen al!</div>'}
-        ${st.mine ? `<div class="clean-desc" style="margin-top:4px;">Senin sıran: <strong>${st.mine.rank}.</strong> · ${st.mine.points} puan · ${st.mine.wins} galibiyet / ${st.mine.losses} mağlubiyet</div>` : ''}
-      </div>
-      <div>
-        <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">📜 Son maçların</div>
-        ${st.matches.length ? st.matches.map(m => `<div style="border-bottom:1px solid #1e293b;padding:4px 0;font-size:0.8rem;">
-          ${resIcon[m.result] || ''} <strong>${escHtml(m.mode)}</strong> · ${escHtml(m.opponent)} · ${m.points ? '+' + m.points + ' puan' : ''}
-          <button class="btn-clean btn-clean-outline pvp-watch" data-id="${m.id}" style="width:auto;padding:2px 8px;font-size:0.75rem;margin-left:4px;">▶️ İzle</button>
-          ${m.why ? `<div style="color:#fca5a5;margin-top:2px;">Neden kaybettin: ${escHtml(m.why.join(' '))}</div>` : ''}
-        </div>`).join('') : '<div class="clean-desc">Henüz maçın yok.</div>'}
-      </div>
-    </div>`;
-
-  el.querySelectorAll('.pvp-mode').forEach(b => b.addEventListener('click', () => {
-    pvpMode = b.dataset.mode;
-    const need = pvpMode === '3v3' ? 3 : 1;
-    pvpSelected = pvpSelected.slice(0, need);
-    renderPvpPanel();
-  }));
-  el.querySelectorAll('.pvp-pick').forEach(c => c.addEventListener('change', () => {
-    const i = Number(c.dataset.idx);
-    const need = pvpMode === '3v3' ? 3 : 1;
-    if (c.checked) { pvpSelected = need === 1 ? [i] : [...pvpSelected.filter(x => x !== i), i].slice(-need); }
-    else pvpSelected = pvpSelected.filter(x => x !== i);
-    renderPvpPanel();
-  }));
-  el.querySelector('#pvp-leave')?.addEventListener('click', async () => {
-    try { const r = await pvp.leave(); showToast(r.message, r.success ? 'success' : 'error'); } catch (err) { showToast(err.message, 'error'); }
-    renderTopBar();
-    renderPvpPanel();
-  });
-  el.querySelector('#pvp-queue')?.addEventListener('click', async (e) => {
-    e.currentTarget.disabled = true;
-    let r;
-    try { r = await pvp.queue(pvpMode, pvpSelected); } catch (err) { showToast(err.message, 'error'); renderPvpPanel(); return; }
-    renderTopBar();
-    if (!r.success) { showToast(r.message, 'error'); renderPvpPanel(); return; }
-    if (r.queued) { showToast(r.message, 'success'); renderPvpPanel(); return; }
-    playPvpReplay({ allies: r.allies, enemies: r.enemies, sim: r.sim, title: `Gerçek rakip · <strong>${escHtml(r.opponentName)}</strong> (${escHtml(r.mode)})`, resultText: r.message, why: r.why });
-  });
-  el.querySelectorAll('.pvp-watch').forEach(b => b.addEventListener('click', async () => {
-    try {
-      const m = await pvp.match(b.dataset.id);
-      const rec = st.matches.find(x => String(x.id) === String(b.dataset.id));
-      playPvpReplay({ allies: m.a.units, enemies: m.b.units, sim: m.sim, title: `Tekrar · <strong>${escHtml(m.a.name)}</strong> vs <strong>${escHtml(m.b.name)}</strong> (${escHtml(m.mode)})`, resultText: '', why: rec && rec.why });
-    } catch (err) { showToast(err.message, 'error'); }
-  }));
 }
 
 // =========================================================================
@@ -2744,13 +2248,6 @@ function initAppEvents() {
     }
 
 
-    // ⚔️ Kışla'ya git (ör. Kolezyum'da asker yokken)
-    if (e.target.closest('.btn-goto-barracks')) {
-      barracksActiveTab = 'army';
-      openBarracksModal();
-      return;
-    }
-
     // Kışla Tek Tip Asker Satın Alma
     if (e.target.closest('#btn-buy-soldier-unit')) {
       const res = gameState.buySoldierUnit();
@@ -2782,14 +2279,6 @@ function initAppEvents() {
     // Zindan Mağarasına Gir
     if (e.target.closest('#btn-modal-enter-dungeon')) {
       enterDungeonScene();
-      return;
-    }
-
-    // Kolezyum: Sekme Geçişi (1v1 Düello / Liderlik Tablosu)
-    const colosseumTabBtn = e.target.closest('.colosseum-tab-btn');
-    if (colosseumTabBtn) {
-      colosseumActiveTab = colosseumTabBtn.dataset.tab;
-      openColosseumModal();
       return;
     }
 
