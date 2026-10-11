@@ -145,6 +145,9 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 // 8) Bot 25 saat kapalı kalınca işi kaybolmaz (bot süresi dolana kadar çalışır)
 {
   const gs = fresh();
+  // Haftanın hangi günü koşulduğuna bağlı olmasın: Üretim Hakkı haftaya yayılarak açılır (Pazartesi 1/7, Pazar 7/7);
+  // bu senaryo çevrimdışı telafiyi sınar, haftalık açılımı değil. Hafta bitmek üzere (7/7 açık) kabul edilir.
+  globalPool.state.epochEndTime = Date.now() + 3600e3;
   gs.state.warehouseLevel = 6;
   const c6 = gs.getWarehouseCapacity(6);
   gs.state.inventory = { ...Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, Math.floor(c6[k] * 0.6)])), fragments: 0 };
