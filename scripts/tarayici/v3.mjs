@@ -109,6 +109,21 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: Demirhane yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Kolezyum (v3): sade başlık, 3 kısa bölüm, taktik seçimi katlı, ana düğme görünür; rakipler ve lig bölümleri taşmaz
+  await s.evaluate(() => { const g = window.gameState; g.setDevAdAstra(5e6); if (!(g.state.soldierUnits || []).length) { g.buySoldierUnit(); g.buySoldierUnit(); } });
+  await ust('savas', 'kolezyum'); await foto('11_kolezyum_duello');
+  kontrol(`${ad}: Kolezyum sade başlıkla açılır`, (await baslik()) === '🏟️ Kolezyum', await baslik());
+  kontrol(`${ad}: Kolezyum bölümleri 3 kısa sekme`, await s.evaluate(() => { const t = [...document.querySelectorAll('.colosseum-tab-btn')].map((b) => b.innerText.trim()); return t.length === 3 && t.every((x) => x.length <= 14); }));
+  kontrol(`${ad}: taktik seçimi katlı`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-daha.v3-genis'); return !!d && !d.open; }));
+  kontrol(`${ad}: "Kolezyuma çık" düğmesi görünür ve ≥ 44 px`, await s.evaluate(() => { const b = document.getElementById('btn-start-1v1-duel'); return !!b && b.offsetParent !== null && b.getBoundingClientRect().height >= 43.5; }));
+  kontrol(`${ad}: Kolezyum kısa (≤ 900 px)`, (await govdeYuk()) <= 900, String(await govdeYuk()));
+  kontrol(`${ad}: şampiyon satırında düğme ekrandan taşmıyor`, await s.evaluate(() => { const b = document.getElementById('btn-toggle-colosseum-champ-row'); const r = b && b.getBoundingClientRect(); return !!r && r.right <= innerWidth + 1; }));
+  await tikla('.colosseum-tab-btn[data-tab="leaderboard"]'); await foto('12_kolezyum_lig');
+  kontrol(`${ad}: lig sekmesi yatay taşmaz`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2 && document.getElementById('modal-body').scrollWidth <= document.getElementById('modal-body').clientWidth + 2));
+  await tikla('.colosseum-tab-btn[data-tab="pvp"]'); await foto('13_kolezyum_rakipler');
+  kontrol(`${ad}: rakipler sekmesi açılır ve taşmaz`, await s.evaluate(() => !!document.getElementById('pvp-panel') && document.documentElement.scrollWidth <= innerWidth + 2));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // Aşama 4: Test laboratuvarı
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());

@@ -371,3 +371,12 @@ html.v3 details.v3-daha > div > .clean-card { flex: 1 1 100%; }
 /* demirhane: dokunma hedefleri >= 44 px */
 html.v3 :is(.btn-bs-tab, .btn-bs-cat-filter, .btn-craft-equipment, .btn-quick-craft, .btn-armory-direct-upgrade, .btn-armory-repair, .btn-armory-repair-all, .btn-armory-upgrade-all, .btn-smart-auto-equip, .btn-smart-unequip-all, .btn-unequip-soldier-slot, .btn-sell-equipment, .btn-recycle-equipment, .btn-goto-armory, .btn-custom-upgrade-shortcut, .btn-trigger-custom-upgrade) { min-height: var(--v3-tap); }
 html.v3 #select-bs-sort, html.v3 #custom-up-slot, html.v3 #custom-up-level { min-height: 40px; }
+
+/* 13. KOLEZYUM ------------------------------------------------------------------------- */
+html.v3 :is(.colosseum-tab-btn, #btn-start-1v1-duel, .btn-colosseum-preset, #btn-save-colosseum-preset, #btn-toggle-colosseum-champ-row, .btn-heal-soldier, .pvp-mode, #pvp-queue, #pvp-leave, .pvp-watch, #btn-goto-battlefield-colosseum, .btn-goto-barracks) { min-height: var(--v3-tap); }
+html.v3 #colosseum-champion-select { min-height: 40px; max-width: 100%; }
+html.v3 #pvp-panel label:has(.pvp-pick) { min-height: var(--v3-tap); }
+html.v3 .leaderboard-table-wrap { overflow-x: auto; }
+html.v3 div:has(> #colosseum-champion-select) { flex-wrap: wrap; width: 100%; }
+html.v3 #colosseum-champion-select { flex: 1 1 200px; min-width: 0; }
+html.v3 #btn-toggle-colosseum-champ-row { flex: 0 0 auto; }

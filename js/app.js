@@ -3944,10 +3944,10 @@ function openColosseumModal() {
   dom.modalTitle.innerHTML = `<span>🏟️</span> <span>BÜYÜK GLADYATÖR KOLEZYUMU: 1v1 PVP & HAFTALIK LİG</span>`;
 
   const tabsHtml = `
-    <div class="phase2-tab-row">
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">⚔️ 1v1 Gladyatör Düellosu</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">🏆 Haftalık Liderlik Tablosu</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">🌐 Gerçek Rakipler</button>
+    <div class="phase2-tab-row${V3_ARAYUZ ? ' v3-bolumler' : ''}">
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">${V3_ARAYUZ ? '⚔️ Düello' : '⚔️ 1v1 Gladyatör Düellosu'}</button>
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">${V3_ARAYUZ ? '🏆 Lig' : '🏆 Haftalık Liderlik Tablosu'}</button>
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">${V3_ARAYUZ ? '🌐 Rakipler' : '🌐 Gerçek Rakipler'}</button>
     </div>
   `;
 
@@ -4058,11 +4058,13 @@ function openColosseumModal() {
           <span class="card-badge" style="color: #fde047;">🔑 ${state.arenaKeys || 0} Anahtar</span>
         </div>
         <div class="clean-desc">
-          En güçlü şampiyonunu kuşanmış 5 parça teçhizatıyla sahaya sür! 'Kolezyuma Çık' düğmesine bastığında sistem canlı eşleşme yapar ve 1v1 savaş başlar. Savaşta yaralanan şampiyonların canı depodaki buğday ile 18 saatlik tedavi sürecinde iyileşir.
+          ${V3_ARAYUZ
+            ? "Şampiyonunu seç ve 'Kolezyuma çık' de: rakip bulunur, 1v1 savaş başlar. Yaralanan şampiyon buğdayla iyileşir."
+            : "En güçlü şampiyonunu kuşanmış 5 parça teçhizatıyla sahaya sür! 'Kolezyuma Çık' düğmesine bastığında sistem canlı eşleşme yapar ve 1v1 savaş başlar. Savaşta yaralanan şampiyonların canı depodaki buğday ile 18 saatlik tedavi sürecinde iyileşir."}
         </div>
       </div>
 
-      ${colosseumPresetHtml}
+      ${V3_ARAYUZ ? `<details class="v3-daha v3-genis"><summary>Taktik: ${escHtml(curPresetObj.name)}</summary><div>${colosseumPresetHtml}</div></details>` : colosseumPresetHtml}
 
       ${isArmyStaked ? `
         <div class="clean-card" style="background: #1c0a0a; border: 1px solid #ef4444; padding: 20px; text-align: center;">
@@ -4129,7 +4131,7 @@ function openColosseumModal() {
             <span class="${ce.stamina < ce.staminaCost ? 'is-bad' : ''}">⚡ Bedel: <strong>${ce.staminaCost} stamina</strong> (sende ${ce.stamina})</span>
           </div>
           <button id="btn-start-1v1-duel" class="btn-clean btn-clean-green" style="font-size: 1.05rem; padding: 13px; margin-top: 12px; font-weight: 800;" ${block ? 'disabled' : ''}>
-            ${block ? `🔒 ${block}` : '⚔️ KOLEZYUMA ÇIK (1v1 EŞLEŞ)'}
+            ${block ? `🔒 ${block}` : (V3_ARAYUZ ? '⚔️ Kolezyuma çık (1v1)' : '⚔️ KOLEZYUMA ÇIK (1v1 EŞLEŞ)')}
           </button>`;
           })()}
         </div>
@@ -4262,7 +4264,7 @@ function openColosseumModal() {
       };
 
       const loot = [
-        `🪙 +${res.rewardAda} ASTRA`,
+        `🪙 +${res.rewardAda} ASTRA${res.budgetFull ? ' · ' + GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : ''}`,
         `⭐ ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO (Yeni Puan: ${res.newRating})`,
         res.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık Lig Puanı (+3)'
       ];
@@ -4280,7 +4282,7 @@ function openColosseumModal() {
           renderTopBar();
           if (res.isVictory) {
             sound.playLevelUp();
-            showToast(`🏆 Zafer! +${res.rewardAda} ASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!`, 'success');
+            showToast(`🏆 Zafer! +${res.rewardAda} ASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!${res.budgetFull ? ' ⏳ ' + GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : ''}`, 'success');
           } else {
             sound.playBreakWarning();
             showToast('💀 Mağlubiyet! Şampiyonun yaralandı.', 'error');
@@ -4360,7 +4362,12 @@ async function renderPvpPanel() {
   }).join('');
   el.innerHTML = `
     <div class="card-title-row"><div class="card-title">🌐 Gerçek Rakipler</div><span class="card-badge" style="color:#38bdf8;">Sırada bekleyen: 1v1 ${st.waiting['1v1']} · 3v3 ${st.waiting['3v3']}</span></div>
-    <div class="clean-desc">Askerini kilitle, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <strong>1 puan</strong>, 3v3 zaferi <strong>3 puan</strong>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${Math.round(st.rules.weeklyPoolShare * 100)}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade).</div>
+    ${(() => {
+      const kurallar = `Askerini kilitle, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <strong>1 puan</strong>, 3v3 zaferi <strong>3 puan</strong>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${Math.round(st.rules.weeklyPoolShare * 100)}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade).`;
+      return V3_ARAYUZ
+        ? `<div class="clean-desc">Askerini seç, "Maç ara"ya bas; ilk bekleyen oyuncuyla maçın sunucuda oynanır.</div><details class="v3-ayrinti"><summary>Kurallar ve ödüller</summary><div>${kurallar}</div></details>`
+        : `<div class="clean-desc">${kurallar}</div>`;
+    })()}
     ${q ? `<div style="margin:10px 0;padding:10px;border:1px dashed #38bdf8;border-radius:8px;">⏳ <strong>${q.mode}</strong> için sıradasın · ${Math.max(1, Math.round((Date.now() - q.at) / 60000))} dakikadır bekliyorsun. Rakip gelince maç kendiliğinden oynanır, bildirim alırsın.
         <button id="pvp-leave" class="btn-clean btn-clean-outline" style="width:auto;margin-left:8px;padding:5px 10px;">↩️ Sıradan çık</button></div>`
       : `<div style="display:flex;gap:6px;margin:10px 0;">
