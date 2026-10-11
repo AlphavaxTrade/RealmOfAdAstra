@@ -23,6 +23,9 @@ import { gelisimYontemleri } from './gameState/gelisim.js';
 import { techizatYontemleri } from './gameState/techizat.js';
 import { botPaketiYontemleri } from './gameState/botPaketi.js';
 import { karnavalYontemleri } from './gameState/karnaval.js';
+import { piyangoYontemleri } from './gameState/piyango.js';
+import { promoYontemleri } from './gameState/promo.js';
+import { parsomenYontemleri } from './gameState/parsomen.js';
 import { kesifYontemleri } from './gameState/kesif.js';
 import { gelistiriciYontemleri } from './gameState/gelistirici.js';
 import { ozetYontemleri } from './gameState/ozet.js';
@@ -334,7 +337,7 @@ export class GameStateManager {
 // Alan bazlı yöntem karışımları (js/gameState/*.js). Hiçbir yöntem adı iki yerde tanımlı olmamalı.
 for (const karisim of [
   ekonomiYontemleri, orduYontemleri, seferYontemleri, botYontemleri, hasatYontemleri, gelisimYontemleri,
-  techizatYontemleri, botPaketiYontemleri, karnavalYontemleri, kesifYontemleri, gelistiriciYontemleri,
+  techizatYontemleri, botPaketiYontemleri, karnavalYontemleri, piyangoYontemleri, promoYontemleri, parsomenYontemleri, kesifYontemleri, gelistiriciYontemleri,
   ozetYontemleri, topluYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri,
   askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri,
   // Köy Evleri, Şifahane, geri dönüşüm, roket, Konsey katkıları, Hazırlık Deposu (js/v2/koyVeKonsey.js)
