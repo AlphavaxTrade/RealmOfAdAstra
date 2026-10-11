@@ -66,8 +66,6 @@ window.closeBattleArenaModal = closeBattleArenaModal;
 let barracksActiveTab = 'army';
 let selectedSoldierIndex = 0;
 let editingSoldierNameIndex = null;
-let collectionActiveTab = 'koleksiyon';
-let lastBoxResult = null;
 let barracksLiveRefreshAccumulator = 0;
 
 // DOM Referansları
@@ -212,11 +210,9 @@ ekranBaglamKur({
       kisla: () => openBarracksModal(),
       zindan: () => enterDungeonScene(),
       kolezyum: () => openColosseumModal(),
-      savasalani: () => openBattlefieldModal(),
       karnaval: () => openCarnivalModal('wheel'),
       rehber: () => openKrallikYoluModal(),
-      ekonomi: () => openEconomyDashboardModal('overview'),
-      koleksiyon: () => openCollectionModal()
+      ekonomi: () => openEconomyDashboardModal('overview')
     };
     if (!eski[id]) return false;
     eski[id]();
@@ -693,7 +689,7 @@ function openTownZoneModal(zoneId, zoneName) {
     return;
   }
   if (zoneId === 'battlefield') {
-    openBattlefieldModal();
+    ekranAc('savasalani');
     return;
   }
   if (zoneId === 'colosseum') {
@@ -1789,211 +1785,6 @@ function openBarracksModal(opts = {}) {
   if (renameInput) setTimeout(() => { renameInput.focus(); renameInput.select(); }, 50);
 }
 
-function openBattlefieldModal() {
-  if (!featureGate('battlefield')) return;
-  const boss = gameState.getWorldBossInfo();
-  const state = gameState.state;
-  const soldiers = state.soldierUnits || [];
-  const hasSoldiers = soldiers.length > 0;
-  const isStaked = boss.userStaked;
-  const power = gameState.calculateUserWorldBossPower();
-  const claimable = boss.claimableRewardAda || 0;
-  const adaRate = boss.maxBossHp > 0 ? (boss.weeklyAdaPool / boss.maxBossHp) : 0;
-
-  // Henüz kilitlenmemişse mevcut ordunun potansiyel hesaplaması
-  let currentArmyAtk = 0;
-  let currentArmyHp = 0;
-  soldiers.forEach((_, i) => {
-    const sStats = gameState.getSoldierFullStats(i);
-    if (sStats) {
-      currentArmyAtk += sStats.totalAtk;
-      currentArmyHp += sStats.totalMaxHp;
-    }
-  });
-  const diversity = gameState.calculateSquadSkillDiversity();
-  const potentialBaseDamage = Math.floor((currentArmyAtk * 1.0) + (currentArmyHp * 0.25));
-  const potentialDamage = Math.floor(potentialBaseDamage * diversity.diversityMultiplier);
-  const potentialAda = Math.floor((potentialDamage * boss.weeklyAdaPool) / (boss.maxBossHp || 1));
-
-  const displaySoldiersCount = isStaked ? (boss.userStakedSoldiersCount || 0) : soldiers.length;
-  const displayAtk = isStaked ? power.atk : currentArmyAtk;
-  const displayAtkContrib = isStaked ? power.atkContribution : Math.floor(currentArmyAtk * 1.0);
-  const displayHpContrib = isStaked ? power.hpContribution : Math.floor(currentArmyHp * 0.25);
-  const displayDamage = isStaked ? power.calculatedDamage : potentialDamage;
-  const displayExpectedAda = isStaked ? power.estimatedAda : potentialAda;
-
-  dom.modalTitle.innerHTML = `<span>🌋</span> <span>BÜYÜK SAVAŞ ALANI & WORLD BOSS ETKİNLİĞİ</span>`;
-
-  dom.modalBody.innerHTML = `
-    <div class="clean-card" style="border-color: #ef4444; background: #1c0a0a;">
-      <div class="card-title-row">
-        <div class="card-title">🌋 Haftalık Savaş Alanı & World Boss Etkinliği</div>
-        <span class="card-badge" style="color: #fde047; border-color: #fde047;">Ödül Havuzu: 🟣 ${boss.weeklyAdaPool.toLocaleString('tr-TR')} ASTRA</span>
-      </div>
-      <div class="clean-desc" style="line-height: 1.5; color: #cbd5e1;">
-        ⏰ <strong>Otomatik Savaş Mekaniği:</strong> Oyuncular manuel saldırmaz. Hafta boyunca kilitlenen orduların saldırı ve can puanları üzerinden toplam hasar gücü hesaplanır. <strong>Her Pazar TSİ 18:00'da</strong> savaşlar tek seferlik <strong>otomatik</strong> gerçekleşir ve hak edilen ASTRA ödülü bu ekrana düşer.
-      </div>
-      <div style="margin-top: 8px; background: rgba(0,0,0,0.35); padding: 8px 12px; border-radius: 6px; border: 1px dashed #ef4444; font-size: 0.8rem; color: #fca5a5;">
-        📐 <strong>Hasar Formülü:</strong> Hasar = (Toplam ATK × 1.0) + (Toplam HP × 0.25) <span style="color:#fde047;">(ATK 1:1 rasyo • HP 1:0.25 rasyo)</span>
-      </div>
-    </div>
-
-    <!-- 1. KULLANICININ KİLİTLİ ORDUSU & GÜÇ HESABI -->
-    <div class="clean-card" style="background: #151a26; border-color: #ca8a04;">
-      <div class="card-title-row">
-        <div style="font-weight: 800; font-size: 0.95rem; color: #fde047;">
-          🛡️ Senin Kilitlediğin Ordu & Hasar Potansiyeli
-        </div>
-        <span class="card-badge" style="color: ${isStaked ? '#4ade80' : '#f97316'}; border-color: ${isStaked ? '#4ade80' : '#f97316'};">
-          ${isStaked ? '✅ SAVAŞ İÇİN KİLİTLENDİ' : '⚠️ ORDU KİLİTLENMEDİ'}
-        </span>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px;">
-        <div style="background: #10141e; padding: 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-          <div style="font-size: 0.72rem; color: #94a3b8;">${isStaked ? 'Kilitli Asker' : 'Hazır Asker'}</div>
-          <div style="font-size: 1.1rem; font-weight: 800; color: #38bdf8;">⚔️ ${displaySoldiersCount} Asker</div>
-        </div>
-        <div style="background: #10141e; padding: 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-          <div style="font-size: 0.72rem; color: #94a3b8;">Saldırı Gücü (1:1)</div>
-          <div style="font-size: 1.1rem; font-weight: 800; color: #4ade80;">💥 +${displayAtkContrib.toLocaleString('tr-TR')}</div>
-        </div>
-        <div style="background: #10141e; padding: 10px; border-radius: 6px; border: 1px solid #4a250a; text-align: center;">
-          <div style="font-size: 0.72rem; color: #94a3b8;">Can Katkısı (1:0.25)</div>
-          <div style="font-size: 1.1rem; font-weight: 800; color: #facc15;">❤️ +${displayHpContrib.toLocaleString('tr-TR')}</div>
-        </div>
-        <div style="background: #10141e; padding: 10px; border-radius: 6px; border: 1px solid #eab308; text-align: center;">
-          <div style="font-size: 0.72rem; color: #fef08a; font-weight: 700;">HESAPLANAN HASAR</div>
-          <div style="font-size: 1.25rem; font-weight: 900; color: #fde047;">🎯 ${displayDamage.toLocaleString('tr-TR')}</div>
-        </div>
-      </div>
-
-      <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: #0c0805; padding: 10px 14px; border-radius: 8px; flex-wrap: wrap; gap: 8px;">
-        <div style="font-size: 0.85rem; color: #cbd5e1;">
-          🔮 <strong>${isStaked ? 'Kilitli Ordu Pazar Günü Kazancı:' : 'Tahmini Pazar Günü Kazancı:'}</strong>
-          <span style="color: #fde047; font-weight: 900; font-size: 1.05rem;">~${displayExpectedAda.toLocaleString('tr-TR')} ASTRA</span>
-          <span style="color: #94a3b8; font-size: 0.75rem; margin-left: 4px;">(${displayDamage.toLocaleString('tr-TR')} Hasar × ${adaRate.toFixed(3)} ASTRA)</span>
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          ${isStaked ? `
-            <button id="btn-emergency-unstake-boss" class="btn-clean btn-clean-red" style="width: auto; padding: 8px 14px; font-size: 0.8rem;" title="Pazar gününden önce erken çekilme cezası (%${Math.round(power.earlyUnstakePenaltyRate * 100)}${power.earlyUnstakePenaltyRate >= GAME_CONFIG.WORLD_BOSS.EARLY_UNSTAKE_PENALTY ? '; Konseyin Savunma Duvarı projesi bitince düşer' : '; Savunma Duvarı projesi sayesinde düştü'})">
-              🔓 %${Math.round(power.earlyUnstakePenaltyRate * 100)} Ceza ile Erken Çek (${Math.max(1, Math.round(power.estimatedAda * power.earlyUnstakePenaltyRate)).toLocaleString('tr-TR')} ASTRA)
-            </button>
-          ` : ''}
-          <button id="btn-stake-army-boss" class="btn-clean ${isStaked ? 'btn-clean-outline' : 'btn-clean-gold'}" style="width: auto; padding: 8px 18px;" ${!hasSoldiers ? 'disabled' : ''}>
-            ${isStaked ? '🔄 Kilitli Orduyu Güncelle' : '🛡️ Tüm Ordumu Kilitle (Pazar 18:00 İçin)'}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. WORLD BOSS CANI & SAVAŞ ZAMANI -->
-    <div class="clean-card" style="background: #1c0808; border-color: #ef4444; margin-top: 10px;">
-      <div class="card-title-row">
-        <div class="card-title">${boss.icon} ${boss.name}</div>
-        <span class="card-badge" style="color: #ef4444;">Pazar 18:00 TSİ Otomatik Savaş</span>
-      </div>
-
-      <div style="margin: 10px 0;">
-        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 4px;">
-          <span style="color: #fca5a5;">Boss Canı:</span>
-          <span style="color: #fde047;">${boss.bossHp.toLocaleString('tr-TR')} / ${boss.maxBossHp.toLocaleString('tr-TR')} HP (%${Math.floor((boss.bossHp / boss.maxBossHp) * 100)})</span>
-        </div>
-        <div style="background: #2b0c0c; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid #7f1d1d;">
-          <div style="width: ${(boss.bossHp / boss.maxBossHp) * 100}%; background: linear-gradient(90deg, #ef4444, #f59e0b); height: 100%; transition: width 0.3s ease;"></div>
-        </div>
-      </div>
-
-      <div style="background: #0f0505; padding: 12px 14px; border-radius: 8px; font-size: 0.82rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-          <div>📊 <strong>Hasar Başına ASTRA Dağıtım Oranı:</strong> <span style="color:#fde047; font-weight:800;">1 Hasar = ${adaRate.toFixed(3)} ASTRA</span></div>
-          <div>💥 <strong>Önceki Savaşta Verdiğin Toplam Hasar:</strong> <span style="color:#4ade80; font-weight:800;">${(boss.userDamage || 0).toLocaleString('tr-TR')} Hasar</span></div>
-        </div>
-
-        <!-- KULLANICININ İSTEDİĞİ CANLI KİLİTLİ SALDIRI VE HAFTALIK ASTRA KAZANÇ PANELİ -->
-        ${isStaked ? `
-          <div style="margin-top: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid #22c55e; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; box-shadow: 0 4px 14px rgba(34, 197, 94, 0.15);">
-            <div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span class="card-badge" style="background: #22c55e; color: #000; font-weight: 900; font-size: 0.72rem; padding: 2px 8px; border: none;">KİLİTLİ ORDU AKTİF</span>
-                <span style="font-size: 0.82rem; color: #94a3b8; font-weight: 700;">Toplam Saldırı & Hasar Gücü:</span>
-              </div>
-              <div style="font-size: 1.15rem; font-weight: 900; color: #ffffff; margin-top: 3px;">
-                💥 <span style="color: #4ade80;">${displayDamage.toLocaleString('tr-TR')} Saldırı / Hasar</span>
-                <span style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">(${displayAtk.toLocaleString('tr-TR')} ATK + ${displayHpContrib.toLocaleString('tr-TR')} HP)</span>
-              </div>
-              <div style="font-size: 0.75rem; color: #cbd5e1; margin-top: 2px;">
-                📐 Dağıtım Çarpanı: 1 Saldırı = <strong style="color: #fde047;">${adaRate.toFixed(3)} ASTRA</strong>
-              </div>
-            </div>
-            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 8px 16px; text-align: right; min-width: 220px;">
-              <div style="font-size: 0.72rem; color: #fef08a; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">🏆 BU HAFTA WORLD BOSS'TA KAZANILACAK:</div>
-              <div style="font-size: 1.45rem; font-weight: 900; color: #fde047; text-shadow: 0 0 12px rgba(253, 224, 71, 0.5); line-height: 1.2; margin: 2px 0;">
-                ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.95rem; color: #c084fc;">ASTRA</span>
-              </div>
-              <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">
-                Hesap: ${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ASTRA
-              </div>
-            </div>
-          </div>
-        ` : `
-          <div style="margin-top: 10px; background: rgba(234, 179, 8, 0.08); border: 1.5px dashed rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <div style="font-size: 0.82rem; color: #fde047; font-weight: 800; display: flex; align-items: center; gap: 6px;">
-                <span>⚠️ Ordun Henüz World Boss İçin Kilitlenmedi</span>
-              </div>
-              <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 2px;">
-                ${hasSoldiers ? `Mevcut ${soldiers.length} kişilik ordunu kilitlediğinde toplam <strong style="color:#4ade80;">${displayDamage.toLocaleString('tr-TR')} Saldırı Gücü</strong> devreye girer.` : 'Kışladan asker alıp ordunu kilitlediğinde saldırı gücünle orantılı ASTRA kazanırsın.'}
-              </div>
-            </div>
-            ${hasSoldiers ? `
-              <div style="text-align: right;">
-                <div style="font-size: 0.7rem; color: #94a3b8; font-weight: 700;">KİLİTLERSEN BU HAFTA TAHMİNİ KAZANÇ:</div>
-                <div style="font-size: 1.2rem; font-weight: 900; color: #fde047;">
-                  ~${displayExpectedAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
-                </div>
-                <div style="font-size: 0.68rem; color: #94a3b8;">
-                  (${displayDamage.toLocaleString('tr-TR')} Saldırı × ${adaRate.toFixed(3)} ASTRA)
-                </div>
-              </div>
-            ` : ''}
-          </div>
-        `}
-      </div>
-
-      <!-- 3. ÖDÜL TOPLAMA (CLAIM) BÖLÜMÜ -->
-      <div style="background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(234,179,8,0.15)); border: 1px solid #eab308; border-radius: 8px; padding: 14px; text-align: center; margin-top: 10px;">
-        <div style="font-size: 0.85rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Toplanmaya Hazır World Boss Ödülün</div>
-        <div style="font-size: 1.8rem; font-weight: 900; color: #fde047; margin: 4px 0;">
-          🟣 ${claimable.toLocaleString()} <span style="font-size: 1rem; color: #c084fc;">ASTRA</span>
-        </div>
-        <button id="btn-claim-world-boss-reward" class="btn-clean ${claimable > 0 || isStaked ? 'btn-clean-gold' : 'btn-clean-outline'}" style="font-size: 1.05rem; padding: 12px 24px; font-weight: 800; margin-top: 6px; box-shadow: ${claimable > 0 ? '0 0 20px rgba(234,179,8,0.4)' : 'none'};" ${claimable <= 0 && !isStaked ? 'disabled' : ''}>
-          ${claimable > 0 ? `🎁 Hak Edilen ${claimable.toLocaleString()} ASTRA Ödülünü & Ordunu Topla (Claim)` : isStaked ? '⏳ Pazar 18:00 Savaşı Bekleniyor (Ordu Kilitli)' : '⏳ Kilitli Ordu veya Ödül Yok'}
-        </button>
-      </div>
-
-      <!--
-        v1'de burada oyuncunun görebildiği bir "[Test] Pazar Savaşını Şimdi
-        Simüle Et" butonu vardı. Her tıklama hasarı ve toplanabilir ödülü
-        artırıyordu, sınır yoktu: sınırsız ASTRA basımı (denetim bulgusu F-03).
-        Savaş artık gerçek takvime bağlı; buton üretimden kaldırıldı ve
-        yalnızca geliştirici panelinden (T) tetiklenebiliyor.
-      -->
-      <div style="margin-top: 10px; text-align: center; font-size: 0.78rem; color: #94a3b8;">
-        ⏳ Sonraki otomatik savaş: <strong style="color:#fde047;">${(() => {
-          const s = gameState.getWorldBossSchedule();
-          const d = Math.floor(s.msUntilNext / 86400000);
-          const h = Math.floor((s.msUntilNext % 86400000) / 3600000);
-          const m = Math.floor((s.msUntilNext % 3600000) / 60000);
-          return `${d}g ${h}s ${m}dk`;
-        })()}</strong> (Pazar 18:00 TSİ)
-      </div>
-    </div>
-  `;
-
-  displayModal();
-}
-
 // Kışla Paneli açıkken (18 Kişilik Ordu sekmesi) can barlarını, kalan iyileşme süresini
 // ve buğday ihtiyacını canlı tutmak için ~1.5 saniyede bir modal gövdesini yeniden çizer.
 function refreshBarracksLiveUI(deltaSeconds) {
@@ -2229,7 +2020,7 @@ function openColosseumModal() {
 
   const battlefieldColBtn = document.getElementById('btn-goto-battlefield-colosseum');
   if (battlefieldColBtn) {
-    battlefieldColBtn.addEventListener('click', openBattlefieldModal);
+    battlefieldColBtn.addEventListener('click', () => ekranAc('savasalani'));
   }
 
   // 🎯 Kolezyum Preset Seçimi (P1, P2, P3)
@@ -2514,93 +2305,6 @@ async function renderPvpPanel() {
     } catch (err) { showToast(err.message, 'error'); }
   }));
 }
-
-// =========================================================================
-// 4.7 PHASE 2: 18 PARÇALIK NFT KOLEKSİYONU & PANDORA KUTULARI
-// =========================================================================
-function renderCollectionHtml() {
-  const state = gameState.state;
-
-  const tabsHtml = `
-    <div class="phase2-tab-row">
-      <button class="phase2-tab-btn collection-tab-btn ${collectionActiveTab === 'koleksiyon' ? 'active' : ''}" data-tab="koleksiyon">👑 Koleksiyon (18 Eser)</button>
-      <button class="phase2-tab-btn collection-tab-btn ${collectionActiveTab === 'kutular' ? 'active' : ''}" data-tab="kutular">📦 Pandora Kutuları</button>
-    </div>
-  `;
-
-  let contentHtml = '';
-
-  if (collectionActiveTab === 'koleksiyon') {
-    const discoveredCount = state.collectionArtifacts.filter(a => a.discovered).length;
-    const requiredCount = GAME_CONFIG.GENESIS_NFT.requiredArtifacts;
-    const allDiscovered = discoveredCount >= requiredCount;
-    const genesisMinted = state.genesisNftMinted;
-
-    const artifactCards = state.collectionArtifacts.map(a => {
-      const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === a.id);
-      if (!a.discovered) {
-        return `<div class="artifact-card locked" title="Henüz keşfedilmedi"><span>❓</span><span class="artifact-lock-icon">🔒</span></div>`;
-      }
-      return `<div class="artifact-card rarity-${cfg.rarity}" title="${cfg.name}: ${cfg.lore}"><span>${cfg.icon}</span></div>`;
-    }).join('');
-
-    contentHtml = `
-      <div class="clean-card genesis-banner ${allDiscovered && !genesisMinted ? 'ready' : ''}">
-        <div class="card-title-row">
-          <div class="card-title">🏆 ${GAME_CONFIG.GENESIS_NFT.name}</div>
-          <span class="card-badge">${discoveredCount}/${requiredCount} Eser</span>
-        </div>
-        <div class="clean-desc">Zindan bosslarını yenerek ve Pandora Kutuları açarak 18 Koleksiyon Eserinin tamamını topla; ardından efsanevi Genesis NFT'ni bas!</div>
-        <button id="btn-mint-genesis" class="btn-clean btn-clean-purple" ${(!allDiscovered || genesisMinted) ? 'disabled' : ''}>
-          ${genesisMinted ? '✅ Genesis NFT Zaten Basıldı' : `🏆 GENESIS NFT BAS (${GAME_CONFIG.GENESIS_NFT.adAstraCost} ASTRA)`}
-        </button>
-      </div>
-      <div class="collection-grid">${artifactCards}</div>
-    `;
-  } else {
-    const lockedBoxes = state.lockedBoxes || 0;
-    const arenaKeys = state.arenaKeys || 0;
-    const canOpen = lockedBoxes > 0 && arenaKeys > 0;
-
-    let revealHtml = '';
-    if (lastBoxResult) {
-      revealHtml = `<div class="clean-card box-reveal-card"><div class="card-title">🎉 ${lastBoxResult.message}</div></div>`;
-    }
-
-    const boxCount = Math.min(lockedBoxes, 12);
-    const boxesHtml = boxCount > 0
-      ? Array.from({ length: boxCount }, () => `<div class="mystery-box-item">📦</div>`).join('')
-      : `<div class="phase2-empty-state">Şu anda açılacak bir Pandora Kutun yok. Zindanlarda canavar öldürerek şansını dene!</div>`;
-
-    contentHtml = `
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">📦 Pandora Kutuları</div>
-          <span class="card-badge">🔑 ${arenaKeys} Anahtar</span>
-        </div>
-        <div class="clean-desc">Her kutuyu açmak 1 🔑 Anahtar gerektirir. Anahtarlar yalnızca Kolezyum derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir. Koleksiyonu tamamlayanlar fazla kutularını AMM pazarında ~10.000 ASTRA gibi yüksek bir fiyata satabilir!</div>
-      </div>
-      ${revealHtml}
-      <div class="mystery-box-grid">${boxesHtml}</div>
-      <button id="btn-open-mystery-box" class="btn-clean btn-clean-green" ${canOpen ? '' : 'disabled'}>
-        📦 PANDORA KUTUSU AÇ (1 🔑 Anahtar Harca) — ${lockedBoxes} Kutu Mevcut
-      </button>
-    `;
-  }
-
-  return tabsHtml + contentHtml;
-}
-
-function openCollectionModal(initialTab) {
-  if (initialTab) {
-    collectionActiveTab = initialTab;
-    lastBoxResult = null;
-  }
-  dom.modalTitle.innerHTML = `<span>👑</span> <span>18 PARÇALIK NFT KOLEKSİYONU & PANDORA KUTULARI</span>`;
-  dom.modalBody.innerHTML = renderCollectionHtml();
-  displayModal();
-}
-
 
 // =========================================================================
 // 4.9 BİLDİRİM MERKEZİ (NOTIFICATION CENTER)
@@ -3157,7 +2861,7 @@ function openPreBattleModal(monster) {
 
   const battlefieldPreBtn = document.getElementById('btn-goto-battlefield-prebattle');
   if (battlefieldPreBtn) {
-    battlefieldPreBtn.addEventListener('click', openBattlefieldModal);
+    battlefieldPreBtn.addEventListener('click', () => ekranAc('savasalani'));
   }
 
   const barracksBtn = document.getElementById('btn-goto-barracks-prebattle');
@@ -3753,13 +3457,13 @@ function initAppEvents() {
     } else if (zoneId === 'barracks') {
       openBarracksModal();
     } else if (zoneId === 'battlefield') {
-      openBattlefieldModal();
+      ekranAc('savasalani');
     } else if (zoneId === 'colosseum') {
       openColosseumModal();
     } else if (zoneId === 'warehouse' || zoneId === 'silo') {
       openWarehouseModal();
     } else if (zoneId === 'collection') {
-      openCollectionModal();
+      ekranAc('koleksiyon');
     } else if (zoneId === 'council') {
       openTreasuryVaultModal();
     } else if (zoneId === 'blacksmith') {
@@ -4205,57 +3909,6 @@ function initAppEvents() {
       return;
     }
 
-    // World Boss: Ordu Kilitleme (Stake)
-    if (e.target.closest('#btn-stake-army-boss')) {
-      const res = gameState.stakeArmyForWorldBoss();
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBattlefieldModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      return;
-    }
-
-    // World Boss: erken çekilme cezası (%18; Savunma Duvarı bitince %12) ile Erken Çekilme (Emergency Unstake)
-    if (e.target.closest('#btn-emergency-unstake-boss')) {
-      const res = gameState.emergencyUnstakeWorldBossArmy();
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBattlefieldModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // World Boss: Hak Edilen Ödülü Topla (Claim)
-    if (e.target.closest('#btn-claim-world-boss-reward')) {
-      const res = gameState.claimWorldBossReward();
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBattlefieldModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // World Boss: Pazar 18:00 Savaşını Simüle Et — YALNIZCA geliştirici paneli (F-03)
-    if (e.target.closest('#btn-dev-simulate-sunday-boss')) {
-      const res = gameState.executeSundayAutoWorldBossBattle({ force: true });
-      if (res.success) {
-        showToast(res.message, 'success');
-        openBattlefieldModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
     const soldierRepairBtn = e.target.closest('.btn-soldier-repair-slot') || e.target.closest('.btn-repair-equipment');
     if (soldierRepairBtn) {
       const sIdx = parseInt(soldierRepairBtn.dataset.soldierIdx || soldierRepairBtn.dataset.soldierIndex, 10);
@@ -4271,51 +3924,6 @@ function initAppEvents() {
       return;
     }
 
-    // Koleksiyon: Sekme Geçişi (Koleksiyon / Kilitli Kutular)
-    const collectionTabBtn = e.target.closest('.collection-tab-btn');
-    if (collectionTabBtn) {
-      collectionActiveTab = collectionTabBtn.dataset.tab;
-      lastBoxResult = null;
-      openCollectionModal();
-      return;
-    }
-
-    // Genesis NFT Basımı
-    if (e.target.closest('#btn-mint-genesis')) {
-      const res = gameState.mintGenesisNft();
-      if (res.success) {
-        showToast(res.message, 'success');
-      } else {
-        showToast(res.message, 'error');
-      }
-      openCollectionModal();
-      renderTopBar();
-      return;
-    }
-
-    // Pandora Kutusu Açma (1 Arena Anahtarı Karşılığında)
-    if (e.target.closest('#btn-open-mystery-box')) {
-      const st = gameState.state;
-      if ((st.lockedBoxes || 0) <= 0) {
-        showToast('Açılacak Pandora Kutun yok!', 'error');
-        return;
-      }
-      if ((st.arenaKeys || 0) <= 0) {
-        showToast('🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar yalnızca Kolezyum derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir)', 'error');
-        return;
-      }
-      const res = await gameState.unboxMysteryBox();
-      if (res.success) {
-        gameState.saveState();
-        lastBoxResult = res;
-        showToast(res.message, 'success');
-      } else {
-        showToast(res.message, 'error');
-      }
-      openCollectionModal();
-      renderTopBar();
-      return;
-    }
   });
 
 }
@@ -5188,7 +4796,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     openDashboard: openDashboardModal, openWarehouse: openWarehouseModal, openInventory: openInventoryModal,
     openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openKonsey: () => ekranAc('konsey'), openBarracks: openBarracksModal,
     enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
-    openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
+    openCollection: () => ekranAc('koleksiyon'), openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
     openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
     openWallet: () => {
       if (!online.active) { showToast('🔐 Hesap ve cüzdan, sunucuya bağlı (çevrimiçi) sürümde açılır. Şu an tek kişilik yerel moddasın: kaydın bu tarayıcıda.', 'info'); return; }

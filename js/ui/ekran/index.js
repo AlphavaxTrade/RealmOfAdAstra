@@ -13,3 +13,5 @@ import './konsey.js';
 import './hazine.js';
 import './karakter.js';
 import './ekonomi.js';
+import './koleksiyon.js';
+import './savasalani.js';
