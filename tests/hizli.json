@@ -28,5 +28,6 @@
   "test_ekonomi_cekirdegi_altin.mjs",
   "test_alet_dayaniklilik_yukleme.mjs",
   "test_dunya_bossu_odul_kaybi.mjs",
-  "test_ekran_cizim.mjs"
+  "test_ekran_cizim.mjs",
+  "test_demirhane_onarim_hedefi.mjs"
 ]
