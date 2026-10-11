@@ -3,7 +3,7 @@
 Bu listedeki maddeler **şimdi yapılmıyor**; zamanı gelince Claude size hatırlatır. Madde bitince burada işaretlenir.
 
 ## A) Sakin bir bilgisayarda yapılacak (yakın zamanda)
-- [ ] **HTTP yük eşiğini sakin makinede yeniden ölç.** 8-9 Ekim'de `npm run yuk-kontrol` makine yoğunken geçmedi (90-400 istek/sn; alt sınır 350/300). Sakin anda ölçülen: karma senaryo 854 istek/sn, p95 106 ms. Nasıl: başka ağır iş (backtest, Chrome sekmeleri, derleme) kapalıyken `npm run yuk-kontrol` iki kez; geçerse madde kapanır, geçmezse yavaşlamanın kodumuzdan mı makineden mi geldiği `--cpu-prof` ile araştırılır.
+- [x] **HTTP yük eşiği ölçüldü (11 Ekim 2026): GEÇTİ, iki kez.** Makine tam sakin değildi (arka planda %40-65 CPU). 1. koşu: state 752 / karma 702 istek/sn, p95 ≈ 110 ms; 2. koşu: state 1359 / karma 1322 istek/sn, p95 ≈ 53 ms; hata 0 (alt sınırlar 350 / 300). Not: sakin makinede ayrıca tekrar ölçmek gerekmez; 30 dk dayanıklılık testi hâlâ B listesinde. (Eski kayıt: **HTTP yük eşiğini sakin makinede yeniden ölç.** 8-9 Ekim'de `npm run yuk-kontrol` makine yoğunken geçmedi (90-400 istek/sn; alt sınır 350/300). Sakin anda ölçülen: karma senaryo 854 istek/sn, p95 106 ms. Nasıl: başka ağır iş (backtest, Chrome sekmeleri, derleme) kapalıyken `npm run yuk-kontrol` iki kez; geçerse madde kapanır, geçmezse yavaşlamanın kodumuzdan mı makineden mi geldiği `--cpu-prof` ile araştırılır.)
 - [ ] **Hatırlatma zamanı:** bilgisayarı yalnız bu iş için boş bıraktığınızı söylediğinizde ya da test ağına geçmeden önce — hangisi önceyse.
 
 ## B) Gerçek ağa (test ağı / Fuji ve sonrası) çıkarken yapılacak
