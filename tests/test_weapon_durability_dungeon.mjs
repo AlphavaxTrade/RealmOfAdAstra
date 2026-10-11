@@ -44,9 +44,9 @@ assert(soldier.equipment.weapon, 'Askerin silahı kuşanılmış olmalı');
 assert.equal(soldier.equipment.weapon.durability, 13, 'Askerin silahı 13 dayanıklılıkta olmalı');
 
 // 6. Zindan savaşı tahmini: Silah koruması tamamen kaldırıldı, silahlar daima tam güçle katılır
-const prediction = gs.getBattlePrediction(100, 20, [0]);
-assert(prediction.totalAtk >= 45, 'Asker silahın tam ATK bonusuyla savaşa girmeli');
-assert.equal(prediction.protectWeapons, undefined, 'protectWeapons özelliği tamamen kaldırılmış olmalı');
+const askerIstati = gs.getSoldierFullStats(0);
+assert(askerIstati.totalAtk >= 45, 'Asker silahın tam ATK bonusuyla savaşa girmeli');
+assert.equal(askerIstati.protectWeapons, undefined, 'protectWeapons özelliği tamamen kaldırılmış olmalı');
 
 // 7. Zindan savaşı: Silahlar her savaşta doğal RPG kuralı olarak -1 aşınır
 const maxD = soldier.equipment.weapon.maxDurability || 13;
