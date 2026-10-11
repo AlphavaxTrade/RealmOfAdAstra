@@ -161,6 +161,17 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: katlı bölüm açılınca içerik görünür`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-ayrinti[open] > div'); return !!d && d.offsetParent !== null && d.innerText.length > 10; }));
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // v3 üst çubuğu eski çubuktan bağımsız: eski çubuğun metinlerini bozsak da v3 oyun durumundan doğru değeri gösterir
+  await s.keyboard.press('Escape'); await bekle(300);
+  await s.evaluate(() => { for (const id of ['player-level', 'stamina-text', 'adastra-balance', 'res-wood', 'top-bot-status-text', 'advisor-title']) { const e = document.getElementById(id); if (e) e.textContent = 'BOZUK'; } });
+  await bekle(400);
+  await s.evaluate(() => window.__v3.guncelle());
+  const hudMetni = await s.evaluate(() => ({ lv: document.getElementById('v3-lv').textContent, bakiye: document.getElementById('v3-bakiye-deger').textContent, odun: document.querySelector('[data-v3-deger="wood"]')?.textContent, bot: document.getElementById('v3-bot-metin').textContent }));
+  kontrol(`${ad}: v3 üst çubuğu eski çubuğun bozuk metnini göstermez`, !Object.values(hudMetni).some((t) => /BOZUK/.test(t || '')), JSON.stringify(hudMetni));
+  kontrol(`${ad}: v3 seviye ve bakiye oyun durumundan okunur`, await s.evaluate(() => document.getElementById('v3-lv').textContent === `Lv.${window.gameState.state.level}` && document.getElementById('v3-bakiye-deger').textContent.length > 0));
+  kontrol(`${ad}: "Şimdi" kartının düğmesi eylemi doğrudan çalıştırır (konsol hatası yok)`, await s.evaluate(() => { const k = document.getElementById('v3-simdi'); if (k.hidden) return true; document.getElementById('v3-simdi-dugme').click(); return true; }));
+  await bekle(400); await s.keyboard.press('Escape'); await bekle(300);
+
   // Aşama 4: Test laboratuvarı
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());

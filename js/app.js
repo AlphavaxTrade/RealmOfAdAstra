@@ -324,6 +324,80 @@ async function loadIlanPazari() {
   body.innerHTML = `<div style="font-weight:800; color:#e2e8f0; margin-bottom:6px;">Senin ilanların (${(d.mine || []).length}/${d.maxListings})</div>${mine || '<div style="color:#64748b; margin-bottom:8px;">İlanın yok. Cephanelik\'te bir eşyanın yanındaki "Pazara koy" düğmesini kullan.</div>'}<div style="font-weight:800; color:#e2e8f0; margin:10px 0 6px;">Satıştakiler (${(d.listings || []).filter(l => !l.mine).length})</div>${others || '<div style="color:#64748b;">Şu an satışta eşya yok.</div>'}`;
 }
 
+// Kralın danışmanı önerisinin düğmesi: eski kart ve v3 "şimdi" kartı aynı eylemi çalıştırır
+function danismanEylemi(act) {
+  if (act === 'sweep_harvest') {
+    const res = gameState.claimAllHarvests();
+    showToast(res.message, res.success ? 'success' : 'info');
+    if (res.success) sound.playHarvest();
+    renderTopBar();
+  } else if (act === 'open_barracks') {
+    openBarracksModal();
+  } else if (act === 'open_blacksmith') {
+    mineActiveTab = 'blacksmith';
+    openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
+  } else if (act === 'open_dungeon') {
+    enterDungeonScene();
+  } else {
+    openDashboardModal();   // 'open_dashboard' ve bilinmeyen eylemler
+  }
+}
+
+// Üst çubuk bot rozeti: eski çubuk ve v3 üst çubuğu AYNI fonksiyondan okur
+function botHudDurumu() {
+  const isPaused = gameState.isBotPaused();
+  const isBotActive = gameState.isAutoCollectorActive();
+  let botState = 'off';
+  let botText = 'Bot: Kapalı';
+  let botTip = 'Otomasyon botu kapalı — Tavernadan başlat';
+  if (isPaused) {
+    const prereq = gameState.checkBotPrerequisites();
+    botState = 'paused';
+    botText = 'Bot: Durdu';
+    botTip = `Bot durdu, süresi donduruldu. Eksik: ${prereq.missingText || 'kaynak'}`;
+  } else if (isBotActive) {
+    const remText = gameState.getAutoCollectorRemainingText();
+    botState = 'on';
+    botText = `Bot · ${remText}`;
+    botTip = `Bot çalışıyor, kalan süre: ${remText}`;
+  }
+  return { botState, botText, botTip };
+}
+
+// v3 üst çubuğunun ihtiyaç duyduğu değerler: eski çubuğun DOM'undan DEĞİL, doğrudan oyun durumundan üretilir.
+// (renderTopBar eski çubuğu aynı kaynaklardan doldurur; biçim kuralları burada ve orada aynı tutulur.)
+function hudVerisi() {
+  const state = gameState.state;
+  const maxStamina = gameState.getMaxStamina(state.level);
+  const staminaInt = Math.floor(state.stamina);
+  const fullBalance = state.adAstraBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const compactBalance = window.innerWidth <= 520 && state.adAstraBalance >= 100000;
+  const siloCap = gameState.getWarehouseCapacity();
+  const fmtRes = (v) => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
+  const kaynaklar = {};
+  for (const key of RES_KEYS()) {
+    const cur = Number(state.inventory[key]) || 0;
+    const cap = siloCap[key] || 0;
+    const pct = cap > 0 ? Math.max(0, Math.min(100, (cur / cap) * 100)) : 0;
+    kaynaklar[key] = { deger: fmtRes(cur), yuzde: pct, dolu: cap > 0 && pct >= 99.5, ipucu: cap > 0 ? `${fmtRes(cur)} / ${fmtRes(cap)} (silo %${Math.round(pct)})` : '' };
+  }
+  kaynaklar.fragments = { deger: fmtRes(state.inventory.fragments), yuzde: 0, dolu: false, ipucu: '' };
+  const bot = botHudDurumu();
+  const unread = realmNotifications.filter(n => n.unread).length + (gameState.getBotResourceDeficitWarning() ? 1 : 0);
+  const danisman = lastAdvisor || gameState.getRoyalAdvisorAdvice();
+  return {
+    seviye: `Lv.${state.level}`,
+    staminaYuzde: Math.max(0, Math.min(100, (staminaInt / Math.max(1, maxStamina)) * 100)),
+    staminaMetin: `${staminaInt}/${maxStamina}`,
+    bakiye: compactBalance ? state.adAstraBalance.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 }) : fullBalance,
+    kaynaklar,
+    bot: { durum: bot.botState, metin: bot.botText },
+    bildirim: unread,
+    danisman: { simge: danisman.icon || '🧙‍♂️', baslik: danisman.title || 'Kralın Danışmanı', metin: String(danisman.advice || '').replace(/<[^>]*>/g, ''), eylem: danisman.action || '', eylemEtiketi: danisman.actionLabel || '✨ İncele' }
+  };
+}
+let lastAdvisor = null;
+
 function renderTopBar() {
   const state = gameState.state;
   dom.playerLevel.innerText = `Lv.${state.level}`;
@@ -375,22 +449,7 @@ function renderTopBar() {
   const topBotDot = document.getElementById('top-bot-indicator-dot');
   const topBotBtn = document.getElementById('btn-top-taverna-bot-status');
   if (topBotText && topBotDot) {
-    const isPaused = gameState.isBotPaused();
-    const isBotActive = gameState.isAutoCollectorActive();
-    let botState = 'off';
-    let botText = 'Bot: Kapalı';
-    let botTip = 'Otomasyon botu kapalı — Tavernadan başlat';
-    if (isPaused) {
-      const prereq = gameState.checkBotPrerequisites();
-      botState = 'paused';
-      botText = 'Bot: Durdu';
-      botTip = `Bot durdu, süresi donduruldu. Eksik: ${prereq.missingText || 'kaynak'}`;
-    } else if (isBotActive) {
-      const remText = gameState.getAutoCollectorRemainingText();
-      botState = 'on';
-      botText = `Bot · ${remText}`;
-      botTip = `Bot çalışıyor, kalan süre: ${remText}`;
-    }
+    const { botState, botText, botTip } = botHudDurumu();
     if (topBotText.innerText !== botText) topBotText.innerText = botText;
     if (topBotBtn) {
       topBotBtn.dataset.state = botState;
@@ -416,6 +475,7 @@ window.renderHUD = renderTopBar;
 // Akıllı Kral Danışmanı DOM Güncellemesi
 function updateRoyalAdvisorUI() {
   const advisor = gameState.getRoyalAdvisorAdvice();
+  lastAdvisor = advisor;   // v3 üst çubuğu (hudVerisi) aynı öneriyi tekrar hesaplamadan kullanır
   const avatarEl = document.getElementById('advisor-avatar');
   const titleEl = document.getElementById('advisor-title');
   const textEl = document.getElementById('advisor-text');
@@ -6007,26 +6067,7 @@ function initAppEvents() {
   // 🧙‍♂️ Akıllı Kral Danışmanı Aksiyon Butonu
   const btnAdvisorAct = document.getElementById('btn-advisor-action');
   if (btnAdvisorAct) {
-    btnAdvisorAct.addEventListener('click', () => {
-      const act = btnAdvisorAct.dataset.action;
-      if (act === 'sweep_harvest') {
-        const res = gameState.claimAllHarvests();
-        showToast(res.message, res.success ? 'success' : 'info');
-        if (res.success) sound.playHarvest();
-        renderTopBar();
-      } else if (act === 'open_barracks') {
-        openBarracksModal();
-      } else if (act === 'open_blacksmith') {
-        mineActiveTab = 'blacksmith';
-        openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
-      } else if (act === 'open_dashboard') {
-        openDashboardModal();
-      } else if (act === 'open_dungeon') {
-        enterDungeonScene();
-      } else {
-        openDashboardModal();
-      }
-    });
+    btnAdvisorAct.addEventListener('click', () => danismanEylemi(btnAdvisorAct.dataset.action));
   }
 
   const btnNavDash = document.getElementById('btn-nav-dashboard');
@@ -8883,6 +8924,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       senkronYasi: () => (online.active && online.lastSync ? Date.now() - online.lastSync : 0),
       bildir: (m, t) => showToast(m, t),
       hudYenile: () => renderTopBar(),
+      hudVeri: hudVerisi,
+      danismanEylemi,
+      kaynakSimge: (k) => resImg(k, k === 'fragments' ? '🧩' : ((RES_META()[k] || {}).icon || '')),
       // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)
       vanillaSifirla: async () => {
         if (online.active) {

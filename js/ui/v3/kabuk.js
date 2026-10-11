@@ -11,6 +11,8 @@ import { kurLab } from './lab.js';
 import { ayarOku, ayarYaz, ayarDogrula, ayarUygula, ayarlarHtml, baglantiDurumu, BAGLANTI_METNI } from './ayarlar.js';
 
 const $ = (id) => document.getElementById(id);
+// Düğme etiketinin başındaki simgeyi atar ("✨ İncele" → "İncele"); \p{L} yazımı bazı katmanlarda bozulduğu için kodla kurulur
+const BASTAKI_SIMGE = new RegExp('^[^' + String.fromCharCode(92) + 'p{L}]+', 'u');
 const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 
 
@@ -263,7 +265,7 @@ export function kurV3Kabuk(api) {
     if (!tepsi.hidden) tepsiAc(false);
     else if (yan && yan.classList.contains('open')) yanAc(false);
   });
-  $('v3-simdi-dugme').addEventListener('click', () => $('btn-advisor-action')?.click());
+  $('v3-simdi-dugme').addEventListener('click', () => api.danismanEylemi($('v3-simdi').dataset.eylem || ''));
 
   // Risk/duyuru: oturumda bir kez, kapatılabilir tek satır
   const kapali = (() => { try { return sessionStorage.getItem('v3_uyari_kapali') === '1'; } catch { return false; } })();
@@ -277,29 +279,30 @@ export function kurV3Kabuk(api) {
     });
   }
 
-  // ---------------------------------------------------------------- canlı güncelleme (eski çubuktan okur)
+  // ---------------------------------------------------------------- canlı güncelleme (doğrudan oyun durumundan: api.hudVeri)
   const yaz = (el, v) => { if (el && el.textContent !== v) el.textContent = v; };
   function guncelle(zorla) {
     const simdi = performance.now();
     if (!zorla && simdi - son < 250) return;
     son = simdi;
-    yaz($('v3-lv'), $('player-level')?.textContent || 'Lv.1');
-    const dolu = $('v3-st-dolu'), kaynakDolu = $('hud-stamina-fill');
-    if (dolu && kaynakDolu) dolu.style.width = kaynakDolu.style.width || '0%';
-    $('v3-profil').title = `Stamina ${$('stamina-text')?.textContent || ''}`;
-    yaz($('v3-bakiye-deger'), $('adastra-balance')?.textContent || '0');
+    const v = api.hudVeri();
+    yaz($('v3-lv'), v.seviye);
+    const dolu = $('v3-st-dolu');
+    if (dolu) dolu.style.width = `${v.staminaYuzde}%`;
+    $('v3-profil').title = `Stamina ${v.staminaMetin}`;
+    yaz($('v3-bakiye-deger'), v.bakiye);
 
     let doluVar = false;
     for (const k of [...KAYNAKLAR, 'fragments']) {
-      yaz(tepsi.querySelector(`[data-v3-deger="${k}"]`), $(`res-${k === 'fragments' ? 'fragments' : k}`)?.textContent || '0');
-      const pill = $(k === 'fragments' ? 'res-pill-fragments' : `res-pill-${k}`);
+      const r = v.kaynaklar[k];
+      if (!r) continue;
+      yaz(tepsi.querySelector(`[data-v3-deger="${k}"]`), r.deger);
       const ip = tepsi.querySelector(`[data-v3-ipucu="${k}"]`);
       const cubuk = tepsi.querySelector(`[data-v3-dolu="${k}"]`);
-      const cap = $(`res-cap-${k}`);
-      if (ip) yaz(ip, k === 'fragments' ? 'teçhizat parçası' : (pill?.dataset.tip || '').replace(/^[^/]*\//, 'silo ≤'));
-      if (cubuk && cap) { cubuk.style.width = cap.style.width || '0%'; const tam = cap.parentElement?.classList.contains('is-full'); cubuk.parentElement.classList.toggle('is-full', !!tam); if (tam) doluVar = true; }
+      if (ip) yaz(ip, k === 'fragments' ? 'teçhizat parçası' : r.ipucu.replace(/^[^/]*[/]/, 'silo ≤'));
+      if (cubuk) { cubuk.style.width = `${r.yuzde}%`; cubuk.parentElement.classList.toggle('is-full', r.dolu); if (r.dolu) doluVar = true; }
       const simge = tepsi.querySelector(`[data-v3-simge="${k}"]`);
-      if (simge && !simge.firstChild) { const kaynakSimge = pill?.querySelector('.res-icon'); if (kaynakSimge) simge.innerHTML = kaynakSimge.innerHTML; }
+      if (simge && !simge.firstChild && api.kaynakSimge) simge.innerHTML = api.kaynakSimge(k);
     }
     $('v3-kaynak-uyari').hidden = !doluVar;
 
@@ -307,23 +310,22 @@ export function kurV3Kabuk(api) {
     baglanti.hidden = !BAGLANTI_METNI[bd];
     if (BAGLANTI_METNI[bd]) { yaz(baglanti, BAGLANTI_METNI[bd]); baglanti.dataset.durum = bd; }
 
-    const botDugme = $('btn-top-taverna-bot-status');
-    $('v3-bot').dataset.state = botDugme?.dataset.state || 'off';
-    yaz($('v3-bot-metin'), $('top-bot-status-text')?.textContent || 'Bot');
+    $('v3-bot').dataset.state = v.bot.durum;
+    yaz($('v3-bot-metin'), v.bot.metin);
 
-    const rozet = $('notif-badge');
-    const n = rozet && rozet.style.display !== 'none' ? (rozet.textContent || '0') : '0';
+    const n = String(v.bildirim || 0);
     $('v3-zil-sayi').hidden = n === '0'; yaz($('v3-zil-sayi'), n);
 
-    // Şimdi ne yapmalı: kralın danışmanının önerisi (eski kart gizli olsa da hesaplanıyor)
-    const baslik = $('advisor-title')?.textContent, metin = $('advisor-text')?.textContent;
+    // Şimdi ne yapmalı: kralın danışmanının önerisi
     const kart = $('v3-simdi');
-    if (baslik && metin) {
+    const d = v.danisman;
+    if (d && d.baslik && d.metin) {
       kart.hidden = false;
-      yaz($('v3-simdi-simge'), $('advisor-avatar')?.textContent || '🧙');
-      yaz($('v3-simdi-baslik'), baslik);
-      yaz($('v3-simdi-metin'), metin.replace(/\*\*/g, ''));
-      yaz($('v3-simdi-dugme'), ($('btn-advisor-action')?.textContent || 'İncele').replace(/^[^\p{L}]+/u, '').trim());
+      yaz($('v3-simdi-simge'), d.simge);
+      yaz($('v3-simdi-baslik'), d.baslik);
+      yaz($('v3-simdi-metin'), d.metin.replace(/[*][*]/g, ''));
+      yaz($('v3-simdi-dugme'), String(d.eylemEtiketi || 'İncele').replace(BASTAKI_SIMGE, '').trim());
+      kart.dataset.eylem = d.eylem || '';
     } else kart.hidden = true;
   }
 
