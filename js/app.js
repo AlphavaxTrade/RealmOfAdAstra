@@ -14,7 +14,6 @@ import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatD
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { createBarracksUI } from './ui/barracks.js';
-import { terim } from './ui/v3/sozluk.js';
 import { cevirSecenekleriHtml as karnavalCevirV3, havuzlarHtml as karnavalHavuzlarV3 } from './ui/v3/karnaval.js';
 import { hazineOzetHtml as hazineOzetV3, hazineKasalarHtml as hazineKasalarV3 } from './ui/v3/hazine.js';
 import { yolHtml, yolOzeti } from './ui/v3/ogretici.js';
@@ -66,8 +65,6 @@ window.closeBattleArenaModal = closeBattleArenaModal;
 
 // PHASE 2: GAMEFI & RPG EKONOMİSİ - MODAL SEKME & GEÇİCİ DURUM DEĞİŞKENLERİ
 let barracksActiveTab = 'army';
-let marketActiveTab = 'resources';
-let marketSelectedRes = 'wheat';   // v3: Al/Sat bölümünde bir seferde tek kart gösterilir
 let selectedSoldierIndex = 0;
 let editingSoldierNameIndex = null;
 let collectionActiveTab = 'koleksiyon';
@@ -144,7 +141,6 @@ const OGRETICI_BASLIK_ESLEMESI = [
   ['savaşa hazırlık', 'zindanOnizleme']
 ];
 const OGRETICI_SEKME_ESLEMESI = [
-  ['.market-tab-btn.active[data-tab="ilan"]', 'ilan'], ['.market-tab-btn.active[data-tab="buyback_vault"]', 'yakim'],
   ['.colosseum-tab-btn.active[data-tab="leaderboard"]', 'lig'], ['.carnival-tab-btn.active[data-carnival-tab="pools"]', 'havuzlar']
 ];
 function ogreticiPanelGordu(baslik) {
@@ -316,24 +312,6 @@ document.getElementById('gate-banner')?.addEventListener('click', e => {
   if (e.target.closest('#btn-izin-hayir')) { gameState.cevaplaIzinSorusu(false); renderGateBanner(); return; }
   if (e.target.closest('#btn-izin-bitir-serit')) { gameState.bitirIzin(); renderGateBanner(); }
 });
-
-// 🏷️ İlan pazarı (teçhizat; yalnız sunucuda): ilanlar sunucudan ayrıca çekilir, kabuk hemen çizilir
-function renderIlanPazariShell() {
-  if (!online.active) return `<div class="clean-card"><div class="card-title">🏷️ İlan Pazarı</div><div class="clean-desc">Oyuncular arası teçhizat satışı yalnız çevrimiçi sunucuda çalışır (bilgisayardaki deneme modunda kapalı).</div></div>`;
-  return `<div class="clean-card" style="border-color:#f59e0b;"><div class="card-title-row"><div class="card-title" style="color:#fcd34d;">🏷️ İlan Pazarı — oyuncudan oyuncuya teçhizat</div><span class="card-badge">komisyon %2 · 7 gün · 10 ilan</span></div><div class="clean-desc">Cephanelik'teki bir eşyayı "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Alıcı önce kilitli ASTRA'sından öder; satıcıya gelen paranın %80'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya sana döner.</div><div id="ilan-pazari-body" style="margin-top:10px; color:#94a3b8; font-size:0.85rem;">Yükleniyor…</div></div>`;
-}
-async function loadIlanPazari() {
-  const body = document.getElementById('ilan-pazari-body');
-  if (!body || !online.active) return;
-  let d;
-  try { d = await pazar.list(); } catch (e) { body.textContent = 'İlanlar alınamadı: ' + e.message; return; }
-  const left = ms => { const h = Math.max(0, Math.round(ms / 3600000)); return h >= 48 ? `${Math.floor(h / 24)} gün` : `${h} sa`; };
-  const itemTxt = it => `${it.icon || '🛡️'} <strong>${it.name || 'Eşya'}</strong> sv.${it.level || 1} · ⚔️${it.atkBonus || 0} ❤️${it.hpBonus || 0} · dayanıklılık ${it.durability ?? '?'}/${it.maxDurability ?? '?'}`;
-  const card = (l, btn) => `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:6px; flex-wrap:wrap;"><div style="font-size:0.84rem;">${itemTxt(l.item)}<div style="font-size:0.75rem; color:#94a3b8;">${l.mine ? 'senin ilanın' : 'satıcı ' + String(l.seller).slice(0, 10) + '…'} · kalan ${left(l.expires - d.now)}</div></div><div style="display:flex; align-items:center; gap:8px;"><strong style="color:#facc15;">${fmt3(l.price)} ASTRA</strong>${btn}</div></div>`;
-  const mine = (d.mine || []).map(l => card(l, `<button class="btn-clean btn-clean-outline btn-ilan-cancel" data-id="${l.id}" style="width:auto; padding:6px 10px; font-size:0.78rem;">↩️ Geri çek</button>`)).join('');
-  const others = (d.listings || []).filter(l => !l.mine).map(l => card(l, `<button class="btn-clean btn-ilan-buy" data-id="${l.id}" data-price="${l.price}" data-name="${String(l.item.name || 'Eşya').replace(/"/g, '')}" style="width:auto; padding:6px 12px; font-size:0.8rem;">🛒 Satın al</button>`)).join('');
-  body.innerHTML = `<div style="font-weight:800; color:#e2e8f0; margin-bottom:6px;">Senin ilanların (${(d.mine || []).length}/${d.maxListings})</div>${mine || '<div style="color:#64748b; margin-bottom:8px;">İlanın yok. Cephanelik\'te bir eşyanın yanındaki "Pazara koy" düğmesini kullan.</div>'}<div style="font-weight:800; color:#e2e8f0; margin:10px 0 6px;">Satıştakiler (${(d.listings || []).filter(l => !l.mine).length})</div>${others || '<div style="color:#64748b;">Şu an satışta eşya yok.</div>'}`;
-}
 
 // Kralın danışmanı önerisinin düğmesi: eski kart ve v3 "şimdi" kartı aynı eylemi çalıştırır
 function danismanEylemi(act) {
@@ -1337,12 +1315,11 @@ const NODE_OF_ZONE_UI = zoneId => RES_KEYS().find(k => ZONE_OF_NODE(k) === zoneI
 const ZONE_NAMES = { wheat: 'Güneş Tarlası & Değirmen', stone: 'Taş Ocağı', wood: 'Zümrüt Ormanı & Oduncu', coal: 'Kömür Ocağı', iron: 'Demir Madeni & Tamirhane', herb: 'Şifalı Ot Bahçesi' };
 const ZONE_LABELS = { village: '🏘️ Köy Evleri', council: '🏛️ Sirius Konseyi', healer: '🌿 Şifahane', spaceport: '🚀 Uzay Limanı' };
 const ZONE_TITLE = key => { const m = RES_META()[key] || {}; const cap = (GAME_CONFIG.GLOBAL_RESOURCE_CAPS || {})[key] || {}; return `${m.icon || cap.icon || ''} ${ZONE_NAMES[key] || cap.name || key}`; };
-const fmt3 = v => (Math.round((Number(v) || 0) * 1000) / 1000).toLocaleString('tr-TR', { maximumFractionDigits: 3 });
 
 // =========================================================================
 // 4. BÖLGE MODALLERİ (ORMAN, MADEN, ÇİFTLİK, BALIKÇI, KIŞLA, TAVERNA, AMM PAZAR, KOLEZYUM)
 // =========================================================================
-const YENI_EKRAN_BOLGE = { village: 'koy', healer: 'sifahane', spaceport: 'uzay', tavern: 'taverna', blacksmith: 'demirhane' };
+const YENI_EKRAN_BOLGE = { village: 'koy', healer: 'sifahane', spaceport: 'uzay', tavern: 'taverna', blacksmith: 'demirhane', market: 'pazar' };
 
 function openTownZoneModal(zoneId, zoneName) {
   if (!featureGate(zoneId)) return;
@@ -1366,356 +1343,12 @@ function openTownZoneModal(zoneId, zoneName) {
     return;
   }
 
-  const state = gameState.state;
   dom.modalTitle.innerHTML = `<span>📍</span> <span>${zoneName}</span>`;
 
   let html = '';
 
-  // PAZAR (AMM): al-sat, ilanlar, yakım
-  if (zoneId === 'market') {
-    // v3: 5 sekme yerine 3 bölüm (Al/Sat · İlanlar · Yakım); Al/Sat içinde kaynak seçimi, İlanlar içinde iki liste
-    const marketV3Html = () => {
-      const bolum = ['resources', 'fragments'].includes(marketActiveTab) ? 'alsat' : (['ilan', 'p2p_collection'].includes(marketActiveTab) ? 'ilan' : 'yakim');
-      const bolumDugme = (tab, etiket, acik) => `<button type="button" class="phase2-tab-btn market-tab-btn ${acik ? 'active' : ''}" data-tab="${tab}">${etiket}</button>`;
-      let alt = '';
-      if (bolum === 'alsat') {
-        alt = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments', 'boxes', 'keys'].filter(k => k === 'fragments' || ammMarket.pools[k]).map(k => {
-          if (k === 'fragments') return `<button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'fragments' ? 'active' : ''}" data-tab="fragments">🧩 Parça</button>`;
-          const aktif = marketActiveTab === 'resources' && marketSelectedRes === k;
-          return `<button type="button" class="v3-chip ${aktif ? 'active' : ''}" data-v3-res="${k}">${ammMarket.pools[k].name}</button>`;
-        }).join('');
-      } else if (bolum === 'ilan') {
-        alt = `<button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'ilan' ? 'active' : ''}" data-tab="ilan">⚔️ Teçhizat ilanları</button>
-               <button type="button" class="v3-chip market-tab-btn ${marketActiveTab === 'p2p_collection' ? 'active' : ''}" data-tab="p2p_collection">👑 Koleksiyon eserleri</button>`;
-      }
-      return `<div class="phase2-tab-row v3-bolumler">${bolumDugme('resources', '💱 Al / Sat', bolum === 'alsat')}${bolumDugme('ilan', '🏷️ İlanlar', bolum === 'ilan')}${bolumDugme('buyback_vault', `🔥 Yakım`, bolum === 'yakim')}</div>${alt ? `<div class="v3-chipler">${alt}</div>` : ''}`;
-    };
-    const marketTabsHtml = marketV3Html();
-
-    html = `
-      <div class="clean-card v3-ozet-kart">
-        <div class="card-title-row">
-          <div class="card-title">🏪 Pazar</div>
-          <span class="v3-bakiye-rozet">Bakiye: ${state.adAstraBalance.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ASTRA</span>
-        </div>
-        <div class="clean-desc">Al ve sat. Fiyatı ${terim('amm', 'takas havuzu')} belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde ${terim('yakim', 'yakılır')}, %2 ASTRA ${terim('harc', 'harç')} oyun kasalarına gider.</div>
-      </div>
-      ${marketTabsHtml}
-    `;
-
-    const renderAmmTradeCard = (resKey) => {
-      const pool = ammMarket.pools[resKey];
-      if (!pool) return '';
-      const price = ammMarket.getPrice(resKey);
-      const invAmount = resKey === 'boxes'
-        ? (state.lockedBoxes || 0)
-        : resKey === 'keys'
-          ? (state.arenaKeys || 0)
-          : (state.inventory[resKey] || 0);
-
-      const initialBuy = 1;
-      const initialSell = Math.min(1, invAmount > 0 ? invAmount : 1);
-
-      const buyCost = ammMarket.getEstimatedCostForBuy(resKey, initialBuy);
-      const sellGain = ammMarket.getEstimatedAdAstraForSell(resKey, initialSell);
-
-      return `
-        <div class="amm-card" data-res="${resKey}">
-          <div class="amm-card-header">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <span style="width: 44px; height: 44px; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center;">${resImg(resKey, pool.icon, 'width:44px;height:44px;')}</span>
-              <div>
-                <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name}</div>
-                
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-size: 0.95rem; font-weight: 800; color: #facc15;">1 ${pool.name} = ${price >= 1000 ? price.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : price.toFixed(4)} ASTRA</div>
-              ${(() => {
-                const capAll = RES_KEYS().includes(resKey) ? gameState.getWarehouseCapacity() : null;
-                const cap = capAll ? capAll[resKey] : null;
-                if (!cap) return `<div style="font-size: 0.78rem; color: #cbd5e1;">Elinde: <strong style="color: #4ade80;">${invAmount.toLocaleString('tr-TR')}</strong></div>`;
-                const pct = Math.min(100, Math.round(invAmount / cap * 100));
-                return `<div style="font-size: 0.78rem; color: #cbd5e1;">Silo: <strong style="color: #4ade80;">${Math.floor(invAmount).toLocaleString('tr-TR')}</strong> / ${cap.toLocaleString('tr-TR')}</div>
-                  <div style="height:4px; width:140px; margin:4px 0 0 auto; background:rgba(255,255,255,.08); border-radius:99px; overflow:hidden;"><div style="height:100%; width:${pct}%; background:${pct >= 95 ? '#f2b23a' : '#43d19a'};"></div></div>`;
-              })()}
-            </div>
-          </div>
-
-          <details class="v3-ayrinti"><summary>${terim('havuz', 'Havuz')} bilgisi</summary><div>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name} • ${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</div></details>
-          <div class="amm-trade-grid">
-            <!-- Satın Al (Buy) -->
-            <div class="amm-trade-box">
-              <div class="amm-trade-title" style="color: #4ade80;">
-                <span>🛒</span> <span>${pool.name} Satın Al</span>
-              </div>
-              <div class="amm-input-row">
-                <input type="number" min="1" class="amm-number-input amm-buy-qty" data-res="${resKey}" value="${initialBuy}" placeholder="Adet..." />
-              </div>
-              <div style="display:flex; gap:4px; flex-wrap:wrap;">${[100, 1000, 10000].map(q => `<button type="button" class="btn-amm-q" data-side="buy" data-res="${resKey}" data-q="${q}" style="padding:3px 8px; font-size:0.72rem; font-weight:700; border-radius:6px; border:1px solid #334155; background:transparent; color:#cbd5e1; cursor:pointer;">+${q.toLocaleString('tr-TR')}</button>`).join('')}</div>
-              <div class="amm-est-display">
-                <span style="color: #94a3b8;">Ödeyeceğin (harç dahil):</span>
-                <strong class="amm-est-cost-text" data-res="${resKey}" style="color: #f87171;">
-                  ${isFinite(buyCost) ? `~${buyCost.toFixed(2)} ASTRA` : 'Yetersiz Likidite'}
-                </strong>
-              </div>
-              <button class="btn-clean btn-clean-green btn-amm-confirm-buy" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem;">
-                Satın al
-              </button>
-              ${RES_KEYS().includes(resKey) ? (() => {
-                const fq = gameState.getFillWarehouseQty(resKey);
-                return `<button class="btn-clean btn-amm-fill" data-res="${resKey}" ${fq.qty > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #4ade80; color: #86efac;" title="Silo dolana kadar al (ASTRA yetmezse alınabildiği kadar)">
-                  Depoyu doldur (${fq.qty.toLocaleString('tr-TR')} adet · ~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA${fq.limitedByAda ? ', ASTRA kadar' : ''})
-                </button>`;
-              })() : ''}
-            </div>
-
-            <!-- Sat (Sell) -->
-            <div class="amm-trade-box">
-              <div class="amm-trade-title" style="color: #facc15;">
-                <span>💰</span> <span>${pool.name} Sat</span>
-              </div>
-              <div class="amm-input-row">
-                <input type="number" min="1" class="amm-number-input amm-sell-qty" data-res="${resKey}" value="${initialSell}" placeholder="Adet..." />
-              </div>
-              <div style="display:flex; gap:4px; flex-wrap:wrap;">${[['%25', 0.25], ['Yarısı', 0.5], ['%75', 0.75]].map(([l, f]) => `<button type="button" class="btn-amm-q" data-side="sell" data-res="${resKey}" data-frac="${f}" style="padding:3px 8px; font-size:0.72rem; font-weight:700; border-radius:6px; border:1px solid #334155; background:transparent; color:#cbd5e1; cursor:pointer;">${l}</button>`).join('')}</div>
-              <div class="amm-est-display">
-                <span style="color: #94a3b8;">Eline geçecek (harç sonrası):</span>
-                <strong class="amm-est-gain-text" data-res="${resKey}" style="color: #4ade80;">
-                  ~${sellGain.toFixed(2)} ASTRA
-                </strong>
-              </div>
-              <button class="btn-clean btn-clean-outline btn-amm-confirm-sell" data-res="${resKey}" style="padding: 8px 12px; font-size: 0.82rem; border-color: #facc15; color: #fde047;">
-                Sat
-              </button>
-              ${typeof (gameState.state.inventory || {})[resKey] === 'number' ? `
-              <button class="btn-clean btn-amm-sell-all" data-res="${resKey}" ${Math.floor(gameState.state.inventory[resKey] || 0) > 0 ? '' : 'disabled'} style="padding: 7px 12px; font-size: 0.8rem; margin-top: 6px; background: transparent; border: 1px dashed #facc15; color: #fde047;" title="Silodaki bütün ${pool.name} tek seferde satılır">
-                Hepsini sat (${Math.floor(gameState.state.inventory[resKey] || 0).toLocaleString('tr-TR')} adet)
-              </button>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    };
-
-    if (marketActiveTab === 'ilan') {
-      html += renderIlanPazariShell();
-      dom.modalBody.innerHTML = html;
-      displayModal();
-      loadIlanPazari();
-      return;
-    }
-
-    if (marketActiveTab === 'fragments') {
-      html += `
-        <div class="amm-trade-container">
-          ${renderAmmTradeCard('fragments')}
-        </div>
-      `;
-      dom.modalBody.innerHTML = html;
-      displayModal();
-      return;
-    }
-
-    if (marketActiveTab === 'p2p_collection') {
-      const listings = gameState.getP2PArtifactListings();
-      const userArtifacts = (state.collectionArtifacts || []).filter(a => a.discovered);
-
-      const listingCards = listings.map(item => {
-        const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === item.artifactId);
-        if (!cfg) return '';
-        const isUser = item.isUserListing;
-
-        return `
-          <div class="clean-card" style="margin-bottom:10px; background:#121824; border-color:${isUser ? '#ca8a04' : '#334155'}; padding:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size:1.8rem;">${cfg.icon}</span>
-                <div>
-                  <div style="font-weight:800; font-size:0.98rem; color:#fff;">${cfg.name}</div>
-                  <div style="font-size:0.75rem; color:#94a3b8;">Satıcı: <strong style="color:${isUser ? '#facc15' : '#38bdf8'};">${item.sellerName} ${isUser ? '(Sen)' : ''}</strong></div>
-                </div>
-              </div>
-              <div style="text-align:right;">
-                <span class="card-badge rarity-${cfg.rarity}" style="font-size:0.7rem;">${cfg.rarity.toUpperCase()}</span>
-                <div style="font-weight:800; font-size:1.05rem; color:#fde047; margin-top:3px;">🟣 ${item.priceAda.toLocaleString()} ASTRA</div>
-              </div>
-            </div>
-            <div style="font-size:0.76rem; color:#cbd5e1; margin:8px 0; font-style:italic;">"${cfg.lore}"</div>
-            <div style="display:flex; justify-content:flex-end;">
-              ${isUser ? `
-                <button class="btn-clean btn-clean-sm btn-p2p-cancel-listing" data-id="${item.id}" style="width:auto; padding:6px 14px; background:#7f1d1d; border-color:#ef4444;">
-                  ❌ İlanı İptal Et
-                </button>
-              ` : `
-                <button class="btn-clean btn-clean-sm btn-p2p-buy-listing" data-id="${item.id}" style="width:auto; padding:6px 16px; background:#15803d; border-color:#22c55e;">
-                  🛒 SATIN AL (${item.priceAda} ASTRA)
-                </button>
-              `}
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const userArtifactOptions = userArtifacts.length > 0 ? userArtifacts.map(a => {
-        const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === a.id);
-        return `<option value="${a.id}">${cfg ? cfg.icon + ' ' + cfg.name : a.id}</option>`;
-      }).join('') : '<option value="">Keşfedilmiş eser yok</option>';
-
-      html += `
-        <div class="clean-card" style="border-color:#ca8a04; background:#161007; margin-bottom:12px;">
-          <div class="card-title-row">
-            <div class="card-title">👑 P2P Koleksiyon Eseri Satış İlanı Oluştur</div>
-            <span class="card-badge" style="color:#fde047;">${userArtifacts.length} Eser Sahip</span>
-          </div>
-          <div class="clean-desc">Zindandan veya Pandora Kutularından çıkardığın nadir koleksiyon eserlerini istediğin ASTRA fiyatı ile diğer oyunculara sat!</div>
-          
-          ${userArtifacts.length > 0 ? `
-            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;">
-              <select id="p2p-artifact-select" style="flex:1; background:#10141e; color:#fff; border:1px solid #ca8a04; padding:8px 12px; border-radius:6px; font-family:var(--font-game);">
-                ${userArtifactOptions}
-              </select>
-              <input type="number" id="p2p-price-input" min="10" value="150" placeholder="ASTRA Fiyat..." style="width:120px; background:#10141e; color:#fde047; border:1px solid #ca8a04; padding:8px 12px; border-radius:6px; font-weight:800; font-family:var(--font-game);" />
-              <button id="btn-create-p2p-listing" class="btn-clean btn-clean-gold" style="width:auto; padding:8px 18px;">
-                🚀 İLAN VER
-              </button>
-            </div>
-          ` : `
-            <div style="color:#94a3b8; font-size:0.82rem; margin-top:8px;">⚠️ Henüz keşfettiğin bir koleksiyon eseri yok. Zindan bosslarını yenerek veya Pandora Kutusu açarak eser kazanabilirsin.</div>
-          `}
-        </div>
-
-        <div style="font-weight:800; font-size:0.95rem; color:#fde047; margin:14px 0 8px 2px;">🛍️ Canlı Pazar İlanları (${listings.length} İlan):</div>
-        <div>
-          ${listings.length > 0 ? listingCards : '<div class="clean-card" style="text-align:center; color:#94a3b8;">Pazarda henüz açık ilan bulunmuyor.</div>'}
-        </div>
-      `;
-
-      dom.modalBody.innerHTML = html;
-      displayModal();
-      return;
-    }
-
-    if (marketActiveTab === 'buyback_vault') {
-      const analysis = ammMarket.getBuybackAnalysis();
-      const lastReport = ammMarket.getLastBuybackReport();
-
-      html += `
-        <div class="clean-card" style="border-color: #38bdf8; background: rgba(15, 23, 42, 0.85); margin-bottom: 12px; padding: 14px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <div style="font-weight: 800; font-size: 1.05rem; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
-                <span>🛡️</span> <span>AMM Hazine Rezervi & Otonom Buyback-Burn Motoru</span>
-              </div>
-              <div style="font-size: 0.78rem; color: #94a3b8; margin-top: 4px; max-width: 580px; line-height: 1.4;">
-                Oyundaki hazineye giren ASTRA'nın <strong>%${Math.round((GAME_CONFIG.TREASURY_ALLOCATION?.ammBuyback || 0) * 100)}'i</strong> (toplam harcamanın ~%${Math.round((GAME_CONFIG.TOKEN_REWARD_POOL_RATE || 0) * (GAME_CONFIG.TREASURY_ALLOCATION?.ammBuyback || 0) * 1000) / 10}'i) bu kasaya akar. Varlıklar başlangıç fiyatından düştükçe üstel katsayıyla (haftada kasanın %${Math.round((GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03) * 100)}'ü tavan) piyasadan malzeme satın alınıp kalıcı yakılır.
-              </div>
-            </div>
-            <div style="text-align: right; background: rgba(30,41,59,0.6); padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(56,189,248,0.2);">
-              <div style="font-size: 0.72rem; color: #94a3b8;">AMM Kasası Mevcut Bakiye:</div>
-              <div style="font-size: 1.25rem; font-weight: 900; color: #facc15;">${analysis.availableTreasury.toLocaleString('tr-TR')} ASTRA</div>
-              <div style="font-size: 0.72rem; color: #38bdf8; margin-top: 2px;">Haftalık Müdahale Tavanı (%${Math.round((GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03) * 100)}): <strong>${analysis.maxCycleFund.toLocaleString('tr-TR')} ASTRA</strong></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 6 Varlık Analiz Tablosu -->
-        <div class="clean-card" style="margin-bottom: 12px; padding: 12px;">
-          <div style="font-weight: 800; font-size: 0.9rem; color: #fde047; margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>📊 6 Varlık Piyasa Durumu & Hazine Tahsis Matrisi (%75 Hammadde Ağırlığı)</span>
-            <span style="font-size:0.75rem; color:#94a3b8;">Aciliyet Katsayısı: %${(analysis.maxUrgency * 100).toFixed(2)}</span>
-          </div>
-
-          <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left;">
-              <thead>
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
-                  <th style="padding: 6px 8px;">Varlık</th>
-                  <th style="padding: 6px 8px;">Genesis Fiyat</th>
-                  <th style="padding: 6px 8px;">Anlık Fiyat</th>
-                  <th style="padding: 6px 8px;">Düşüş (Δ)</th>
-                  <th style="padding: 6px 8px;">Hazine Ağırlığı</th>
-                  <th style="padding: 6px 8px;">Ayrılan Bütçe</th>
-                  <th style="padding: 6px 8px;">Yakılacak Adet</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${analysis.assets.map(a => {
-                  const isCrashed = a.dropPct >= 50;
-                  const isDrop = a.dropPct > 0;
-                  const dropColor = isCrashed ? '#ef4444' : isDrop ? '#f97316' : '#22c55e';
-                  return `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                      <td style="padding: 8px; font-weight: 700; color: #fff;">${a.icon} ${a.name}</td>
-                      <td style="padding: 8px; color: #94a3b8;">${a.genesisPrice.toLocaleString('tr-TR')} ASTRA</td>
-                      <td style="padding: 8px; font-weight: 700; color: #facc15;">${a.currentPrice >= 100 ? a.currentPrice.toLocaleString('tr-TR', { maximumFractionDigits: 1 }) : a.currentPrice.toFixed(3)} ASTRA</td>
-                      <td style="padding: 8px; font-weight: 800; color: ${dropColor};">
-                        ${isDrop ? `-%${a.dropPct}` : '✅ Sağlıklı'}
-                      </td>
-                      <td style="padding: 8px; color: #38bdf8;">%${Math.round(a.weight * 100)}</td>
-                      <td style="padding: 8px; font-weight: 700; color: ${a.allocatedBudget > 0 ? '#f87171' : '#94a3b8'};">
-                        ${a.allocatedBudget > 0 ? `${a.allocatedBudget.toLocaleString('tr-TR')} ASTRA` : '0 ASTRA'}
-                      </td>
-                      <td style="padding: 8px; font-weight: 800; color: ${a.estimatedUnitsToBurn > 0 ? '#4ade80' : '#94a3b8'};">
-                        ${a.estimatedUnitsToBurn > 0 ? `🔥 ~${a.estimatedUnitsToBurn.toLocaleString('tr-TR')} Adet` : '-'}
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-
-          <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <div>
-              <span style="font-size: 0.82rem; color: #94a3b8;">Bu Döngü Kullanılacak Fon:</span>
-              <strong style="font-size: 1.05rem; color: ${analysis.totalFundToSpend > 0 ? '#f87171' : '#4ade80'}; margin-left: 6px;">
-                ${analysis.totalFundToSpend.toLocaleString('tr-TR')} ASTRA
-              </strong>
-            </div>
-            <button id="btn-run-amm-buyback" class="btn-clean btn-clean-gold" style="padding: 8px 18px; font-weight: 800; font-size: 0.85rem; width: auto;" ${analysis.totalFundToSpend <= 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-              ⚡ OTONOM BUYBACK & YAKIM ÇALIŞTIR
-            </button>
-          </div>
-        </div>
-
-        ${lastReport ? `
-          <div class="clean-card" style="background: rgba(30, 41, 59, 0.4); border-color: rgba(255,255,255,0.08); padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-              <span style="font-weight: 800; font-size: 0.85rem; color: #4ade80;">✅ Son Buyback Operasyonu Raporu</span>
-              <span style="font-size: 0.72rem; color: #94a3b8;">${new Date(lastReport.timestamp).toLocaleString('tr-TR')}</span>
-            </div>
-            <div style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 8px;">
-              Hazine Kasasından Toplam <strong>${lastReport.totalSpent.toLocaleString('tr-TR')} ASTRA</strong> harcandı ve malzemeler yakılarak total arzdan silindi:
-            </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-              ${lastReport.items.map(item => `
-                <div style="background: rgba(15,23,42,0.6); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem;">
-                  <span>${item.icon} ${item.name}:</span>
-                  <strong style="color: #4ade80;">-${item.unitsBurned.toLocaleString('tr-TR')} Adet</strong>
-                  <span style="color: #fde047;">(${item.budgetSpent.toLocaleString('tr-TR')} ASTRA)</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-      `;
-
-      dom.modalBody.innerHTML = html;
-      displayModal();
-      return;
-    }
-
-    html += `
-      <!-- Havuzlar: 6 hammadde + Pandora kutusu + anahtar -->
-      <div class="amm-trade-container">
-        ${renderAmmTradeCard(['boxes', 'keys'].includes(marketSelectedRes) || RES_KEYS().includes(marketSelectedRes) ? marketSelectedRes : 'wheat')}
-      </div>
-    `;
-  }
-
-  // 6. KARNAVAL & SİRK (ŞENLİKLER, 14 ÖDÜLLÜ ÇARK & HAFTALIK PİYANGO)
-  else if (zoneId === 'carnival') {
+  // KARNAVAL VE SİRK (şenlikler, çark ve haftalık piyango)
+  if (zoneId === 'carnival') {
     html = renderCarnivalHtml(window.carnivalActiveTab || 'wheel');
   }
 
@@ -3824,7 +3457,7 @@ function openTreasuryVaultModal() {
       else if (act === 'dungeon') { closeModal(); window.dispatchEvent(new CustomEvent('enter-dungeon-view')); }
       else if (act === 'collection') openCollectionModal();
       else if (act === 'carnival') openCarnivalModal('wheel');
-      else if (act === 'amm_buyback') { marketActiveTab = 'buyback_vault'; openTownZoneModal('market', '🏪 AMM Pazar Alanı'); }
+      else if (act === 'amm_buyback') ekranAc('pazar', { bolum: 'yakim' });
       else if (act === 'ubi') openEconomyDashboardModal('overview');
       else if (act === 'parliament') showToast('🏛️ AdAstra Meclisi yakında: topluluk oylamaları hazırlanıyor.', 'info');
       else if (act === 'quests') openKrallikYoluModal();
@@ -4952,18 +4585,6 @@ function initAppEvents() {
 
   dom.modalBody.addEventListener('click', async (e) => {
     // ── Demirhane geri dönüşümü, Konsey katkısı ──
-    // 🏷️ İlan pazarı: ilan ver / satın al / geri çek (sunucu)
-    const buyBtn = e.target.closest('.btn-ilan-buy');
-    if (buyBtn) {
-      if (!window.confirm(`${buyBtn.dataset.name} ${buyBtn.dataset.price} ASTRA'ya alınsın mı? Önce kilitli ASTRA'n kullanılır.`)) return;
-      pazar.buy(Number(buyBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); renderTopBar(); }).catch(err => showToast('Satın alınamadı: ' + err.message, 'error'));
-      return;
-    }
-    const cancelBtn = e.target.closest('.btn-ilan-cancel');
-    if (cancelBtn) {
-      pazar.cancel(Number(cancelBtn.dataset.id)).then(r => { showToast(r.message, r.success ? 'success' : 'error'); loadIlanPazari(); }).catch(err => showToast('Geri çekilemedi: ' + err.message, 'error'));
-      return;
-    }
     const kBtn = e.target.closest('.btn-konsey-contribute');
     if (kBtn) {
       const res = kBtn.dataset.res, target = kBtn.dataset.target;
@@ -5344,169 +4965,6 @@ function initAppEvents() {
       return;
     }
 
-    // Pazar: hızlı miktar düğmeleri (+100 / +1.000 / yarısı …)
-    const ammQBtn = e.target.closest('.btn-amm-q');
-    if (ammQBtn) {
-      const resKey = ammQBtn.dataset.res;
-      const side = ammQBtn.dataset.side;
-      const input = dom.modalBody.querySelector(`.amm-${side}-qty[data-res="${resKey}"]`);
-      if (!input) return;
-      if (side === 'buy') { const cur = parseFloat(input.value) || 0; input.value = Math.max(1, Math.floor((cur <= 1 ? 0 : cur) + Number(ammQBtn.dataset.q))); }
-      else {
-        const have = resKey === 'boxes' ? (gameState.state.lockedBoxes || 0) : resKey === 'keys' ? (gameState.state.arenaKeys || 0) : (gameState.state.inventory[resKey] || 0);
-        input.value = Math.max(1, Math.floor(have * Number(ammQBtn.dataset.frac)));
-      }
-      input.dispatchEvent(new Event('input', { bubbles: true }));
-      return;
-    }
-
-    // 🧺 Pazar: Depoyu doldur (silo dolana kadar al; ASTRA yetmezse alınabildiği kadar)
-    const ammFillBtn = e.target.closest('.btn-amm-fill');
-    if (ammFillBtn) {
-      const resKey = ammFillBtn.dataset.res;
-      const fq = gameState.getFillWarehouseQty(resKey);
-      if (fq.qty <= 0) { showToast(fq.room > 0 ? 'ASTRA yetmiyor.' : 'Silo zaten dolu.', 'info'); return; }
-      const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
-      if (!confirm(`${fq.qty.toLocaleString('tr-TR')} ${name} alınsın mı? (~${Math.ceil(fq.cost).toLocaleString('tr-TR')} ASTRA, %2 harç dahil)${fq.limitedByAda ? `\nADA'n siloyu tamamen doldurmaya yetmiyor; alınabilecek en fazla miktar bu (boş yer: ${fq.room.toLocaleString('tr-TR')}).` : ''}`)) return;
-      const res = await gameState.marketBuy(resKey, fq.qty);
-      if (res && res.success) {
-        showToast(`🧺 ${fq.qty.toLocaleString('tr-TR')} ${name} alındı (−${Number(res.cost || 0).toFixed(2)} ASTRA)`, 'success');
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else showToast((res && res.message) || 'Alım yapılamadı.', 'error');
-      renderTopBar();
-      return;
-    }
-
-    // AMM Pazar: Silodaki bütün hammaddeyi tek tuşla sat (taban fiyat sınırına kadar)
-    const ammSellAllBtn = e.target.closest('.btn-amm-sell-all');
-    if (ammSellAllBtn) {
-      const resKey = ammSellAllBtn.dataset.res;
-      const have = Math.floor((gameState.state.inventory || {})[resKey] || 0);
-      if (have <= 0) { showToast('Siloda satılacak hammadde yok.', 'info'); return; }
-      const maxSell = ammMarket.getMaxSellBeforeFloor ? ammMarket.getMaxSellBeforeFloor(resKey) : Infinity;
-      const qty = Math.min(have, Number.isFinite(maxSell) ? Math.floor(maxSell) : have);
-      if (qty <= 0) { showToast('Pazar fiyatı en alt sınırda; hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.', 'error'); return; }
-      const est = ammMarket.getEstimatedAdAstraForSell ? ammMarket.getEstimatedAdAstraForSell(resKey, qty) : 0;
-      const name = (ammMarket.pools[resKey] && ammMarket.pools[resKey].name) || resKey;
-      const partNote = qty < have ? `\n\nPazar fiyatı en alt sınıra inmesin diye şimdilik ${qty.toLocaleString('tr-TR')} adedi satılabilir; kalan ${(have - qty).toLocaleString('tr-TR')} adet siloda kalır.` : '';
-      if (!confirm(`${qty.toLocaleString('tr-TR')} ${name} satılsın mı?\nTahmini kazanç: ~${Math.floor(est).toLocaleString('tr-TR')} ASTRA (%2 harç sonrası).${partNote}`)) return;
-      const res = await gameState.marketSell(resKey, qty);
-      if (res && res.success) {
-        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName || name} satıldı: +${Number(res.adAstraReceived || 0).toFixed(2)} ASTRA${qty < have ? ` (${(have - qty).toLocaleString('tr-TR')} adet taban fiyat sınırı yüzünden siloda kaldı)` : ''}`, 'success');
-        sound.playLevelUp();
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast((res && res.message) || 'Satış yapılamadı.', 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // AMM Pazar: İnteraktif Onaylı Kaynak Satışı
-    const ammConfirmSellBtn = e.target.closest('.btn-amm-confirm-sell');
-    if (ammConfirmSellBtn) {
-      const resKey = ammConfirmSellBtn.dataset.res;
-      const inputEl = dom.modalBody.querySelector(`.amm-sell-qty[data-res="${resKey}"]`);
-      const qty = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
-
-      if (qty <= 0) {
-        showToast('Lütfen satmak istediğin geçerli bir miktar gir!', 'error');
-        return;
-      }
-      const res = gameState.marketSell(resKey, qty);
-      if (res.success) {
-        const burnInfo = res.resourceBurnFee > 0 ? ` (🔥 %2 Yakım: ${res.resourceBurnFee.toLocaleString('tr-TR')} ${res.resourceName} kalıcı silindi)` : '';
-        showToast(`💰 ${qty.toLocaleString('tr-TR')} ${res.resourceName} satıldı: +${res.adAstraReceived.toFixed(2)} ASTRA cüzdana eklendi! (%2 Harç: ${res.fee.toFixed(2)} ASTRA Hazine Kasalarına & UBI'ye aktarıldı)${burnInfo}`, 'success');
-        sound.playLevelUp();
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast(res.message || 'Satış işlemi gerçekleştirilemedi!', 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // AMM Pazar: İnteraktif Onaylı Kaynak Alışı
-    const ammConfirmBuyBtn = e.target.closest('.btn-amm-confirm-buy');
-    if (ammConfirmBuyBtn) {
-      const resKey = ammConfirmBuyBtn.dataset.res;
-      const inputEl = dom.modalBody.querySelector(`.amm-buy-qty[data-res="${resKey}"]`);
-      const qty = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
-
-      if (qty <= 0) {
-        showToast('Lütfen satın almak istediğin geçerli bir miktar gir!', 'error');
-        return;
-      }
-
-      const res = gameState.marketBuy(resKey, qty);
-      if (res.success) {
-        const burnInfo = res.resourceBurnFee > 0 ? ` (🔥 %2 Yakım: ${res.resourceBurnFee.toLocaleString('tr-TR')} ${res.resourceName} kalıcı silindi)` : '';
-        showToast(`🛒 ${res.cost.toFixed(2)} ASTRA ödendi: +${res.resourceReceived.toLocaleString('tr-TR')} ${res.resourceName} satın alındı! (%2 Harç: ${res.fee.toFixed(2)} ASTRA Hazine Kasalarına aktarıldı)${burnInfo}`, 'success');
-        sound.playLevelUp();
-
-        // 🤖 Bot duraklatılmışsa ve eksik kaynak tamamlandıysa anında devreye girdi
-        if (res.botJustResumed) {
-          showToast('🟢 Gerekli tüm kaynaklar sağlandı! 24s Otomasyon Botu kaldığı yerden devreye girdi ve seferleri başlattı!', 'success');
-        }
-
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast(res.message || 'Alış işlemi gerçekleştirilemedi!', 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // P2P Koleksiyon Eseri İlanı Ver
-    if (e.target.closest('#btn-create-p2p-listing')) {
-      const selectEl = dom.modalBody.querySelector('#p2p-artifact-select');
-      const inputEl = dom.modalBody.querySelector('#p2p-price-input');
-      const artifactId = selectEl ? selectEl.value : '';
-      const priceAda = inputEl ? (parseFloat(inputEl.value) || 0) : 0;
-
-      if (!artifactId) {
-        showToast('Lütfen satılacak bir eser seçin!', 'error');
-        return;
-      }
-      const res = gameState.createP2PArtifactListing(artifactId, priceAda);
-      if (res.success) {
-        showToast(res.message, 'success');
-        marketActiveTab = 'p2p_collection';
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // P2P İlanı Satın Al
-    const p2pBuyBtn = e.target.closest('.btn-p2p-buy-listing');
-    if (p2pBuyBtn) {
-      const id = p2pBuyBtn.dataset.id;
-      const res = gameState.buyP2PArtifactListing(id);
-      if (res.success) {
-        showToast(res.message, 'success');
-        marketActiveTab = 'p2p_collection';
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // P2P İlanı İptal Et
-    const p2pCancelBtn = e.target.closest('.btn-p2p-cancel-listing');
-    if (p2pCancelBtn) {
-      const id = p2pCancelBtn.dataset.id;
-      const res = gameState.cancelP2PArtifactListing(id);
-      showToast(res.message, res.success ? 'info' : 'error');
-      marketActiveTab = 'p2p_collection';
-      openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      return;
-    }
-
     // Kışla Tek Tip Asker Satın Alma
     if (e.target.closest('#btn-buy-soldier-unit')) {
       const res = gameState.buySoldierUnit();
@@ -5651,37 +5109,6 @@ function initAppEvents() {
       return;
     }
 
-    // v3 Pazar: Al/Sat bölümünde kaynak seçimi
-    const marketResChip = e.target.closest('[data-v3-res]');
-    if (marketResChip) {
-      marketSelectedRes = marketResChip.dataset.v3Res;
-      marketActiveTab = 'resources';
-      openTownZoneModal('market', '🏪 Pazar');
-      return;
-    }
-
-    // AMM Pazar: Sekme Geçişi (Hammadde / Parça Ticareti / Buyback)
-    const marketTabBtn = e.target.closest('.market-tab-btn');
-    if (marketTabBtn) {
-      marketActiveTab = marketTabBtn.dataset.tab;
-      openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      return;
-    }
-
-    // 🛡️ AMM Hazine Otonom Buyback & Yakım Çalıştır
-    if (e.target.closest('#btn-run-amm-buyback')) {
-      const res = gameState.executeAmmTreasuryBuyback();
-      if (res.success) {
-        sound.playLevelUp();
-        showToast(res.message, 'success');
-        openTownZoneModal('market', '🏪 AMM Pazar Alanı');
-      } else {
-        showToast(res.message || 'Hazine müdahalesi gerekmiyor.', 'info');
-      }
-      renderTopBar();
-      return;
-    }
-
     // Demirci / Tamirhane: Sekme Geçişi
     const mineTabBtn = e.target.closest('.mine-tab-btn');
     if (mineTabBtn) {
@@ -5808,54 +5235,6 @@ function initAppEvents() {
       renderTopBar();
       return;
     }
-  });
-
-  // AMM Pazar İnteraktif Tahmini Fiyat Hesaplama Girdileri (Canlı Güncelleme)
-  dom.modalBody.addEventListener('input', (e) => {
-    // AMM Satın Al Adet Girdisi Değişimi
-    const buyInput = e.target.closest('.amm-buy-qty');
-    if (buyInput) {
-      const resKey = buyInput.dataset.res;
-      const qty = parseFloat(buyInput.value) || 0;
-      const costEl = dom.modalBody.querySelector(`.amm-est-cost-text[data-res="${resKey}"]`);
-      if (costEl) {
-        if (qty <= 0) {
-          costEl.innerText = '~0.00 ASTRA';
-        } else {
-          const cost = ammMarket.getEstimatedCostForBuy(resKey, qty);
-          costEl.innerText = isFinite(cost) ? `~${cost.toFixed(2)} ASTRA` : 'Yetersiz Likidite';
-        }
-      }
-      return;
-    }
-
-    // AMM Satış Adet Girdisi Değişimi
-    const sellInput = e.target.closest('.amm-sell-qty');
-    if (sellInput) {
-      const resKey = sellInput.dataset.res;
-      const qty = parseFloat(sellInput.value) || 0;
-      const gainEl = dom.modalBody.querySelector(`.amm-est-gain-text[data-res="${resKey}"]`);
-      if (gainEl) {
-        if (qty <= 0) {
-          gainEl.innerText = '~0.00 ASTRA';
-        } else {
-          const gain = ammMarket.getEstimatedAdAstraForSell(resKey, qty);
-          gainEl.innerText = `~${gain.toFixed(2)} ASTRA`;
-        }
-      }
-      return;
-    }
-  });
-
-  // Modal İçi Seçim Değişiklikleri (Demirci Sıralaması & Taverna Bot Silo Tercihi)
-  dom.modalBody.addEventListener('change', (e) => {
-    // Demirci Çantam Sıralama Değişimi
-    if (e.target && e.target.id === 'select-bs-sort') {
-      window.blacksmithSortFilter = e.target.value;
-      openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
-      return;
-    }
-
   });
 
 }

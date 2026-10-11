@@ -8,7 +8,9 @@
 //     baslik: (b, secenek) => ['📦', 'Silo ve depo'],
 //     govde: (b, secenek) => '<div class="ek">…</div>',      // SAF: yalnız metin üretir, DOM'a dokunmaz
 //     eylemler: { yukselt: (b, el, secenek) => … },          // HTML'de data-e="yukselt"
-//     degisimler: { sirala: (b, el, secenek) => … },         // HTML'de data-e-degis="sirala" (select/input)
+//     degisimler: { sirala: (b, el, secenek) => … },         // HTML'de data-e-degis="sirala" (select/input, change olayı)
+//     girdiler: { adet: (b, el, secenek, kok) => … },        // HTML'de data-e-girdi="adet" (input olayı; yeniden çizilmez)
+//     sonra: (b, secenek, kok) => …                          // her çizimden sonra (eşzamansız veri yüklemek için)
 //     canliYenile: true,                                     // panel açıkken saniyede bir gövde hesaplanır, değiştiyse yeniden çizilir
 //     canli: (kok, b, secenek) => …                          // ya da: panel açıkken saniyede bir elle hafif güncelleme
 //   }
@@ -110,6 +112,11 @@ function ciz(yeniEkran, html = null) {
     }
   }
   baglaKok(kok);
+  if (ekran.sonra) {
+    const bu = aktif;
+    Promise.resolve().then(() => { if (aktif === bu) return ekran.sonra(b, secenek, kok); return undefined; })
+      .catch((e) => console.warn('Ekran sonra kancası hata verdi:', e));
+  }
 }
 
 // Panel kökünde tek tek dinleyici: tıklama, değişim ve <details> açılıp kapanması
@@ -138,6 +145,15 @@ function baglaKok(kok) {
     if (!fn) return;
     ev.stopPropagation();
     calistir(fn, el);
+  }, true);
+
+  kok.addEventListener('input', (ev) => {
+    if (!gecerliMi(kok)) return;
+    const el = ev.target.closest('[data-e-girdi]');
+    if (!el || !kok.contains(el)) return;
+    const fn = aktif.ekran.girdiler && aktif.ekran.girdiler[el.dataset.eGirdi];
+    if (!fn) return;
+    try { fn(baglam, el, aktif.secenek, kok); } catch (e) { console.warn('Girdi işleyicisi hata verdi:', e); }
   }, true);
 
   kok.addEventListener('toggle', (ev) => {

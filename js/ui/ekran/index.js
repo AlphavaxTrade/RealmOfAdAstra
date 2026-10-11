@@ -8,3 +8,4 @@ import './uzay.js';
 import './bolge.js';
 import './taverna.js';
 import './demirhane.js';
+import './pazar.js';

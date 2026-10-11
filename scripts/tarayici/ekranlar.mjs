@@ -70,7 +70,7 @@ async function olc(s, mobil) {
       kucuk: kucuk.slice(0, 12), kucukSayi: kucuk.length,
       bozuk: [...new Set(bozuk)],
       eksikHammadde: HAM.filter((h) => !tumMetin.includes(h)),
-      sekmeSayisi: document.querySelectorAll('#modal-body .phase2-tab-btn, #modal-body [data-carnival-tab], #modal-body .v3-chip[data-tab], #modal-body .v3-chip[data-v3-res]').length
+      sekmeSayisi: document.querySelectorAll('#modal-body .phase2-tab-btn, #modal-body [data-carnival-tab], #modal-body .ek-sekme, #modal-body .v3-chip[data-tab], #modal-body .v3-chip[data-v3-res]').length
     };
   }, [HAMMADDE, mobil]);
 }
@@ -146,7 +146,7 @@ for (const [hesap, seviye] of [['sv1', 1], ['sv30', 30]]) {
         // alt sekmeler
         const n = Math.min(o.sekmeSayisi, 8);
         for (let i = 0; i < n && o.acik; i++) {
-          const dugme = s.locator('#modal-body .phase2-tab-btn, #modal-body [data-carnival-tab], #modal-body .v3-chip[data-tab], #modal-body .v3-chip[data-v3-res]').nth(i);
+          const dugme = s.locator('#modal-body .phase2-tab-btn, #modal-body [data-carnival-tab], #modal-body .ek-sekme, #modal-body .v3-chip[data-tab], #modal-body .v3-chip[data-v3-res]').nth(i);
           const etiket = ((await dugme.innerText().catch(() => '')) || `#${i}`).replace(/\s+/g, ' ').slice(0, 24);
           try { await dugme.click({ timeout: 3000 }); await bekle(500); } catch { continue; }
           const t = await olc(s, mobil);

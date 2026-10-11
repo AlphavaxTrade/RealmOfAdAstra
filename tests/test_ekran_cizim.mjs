@@ -86,6 +86,9 @@ for (const [durumAdi, kur] of Object.entries(durumlar)) {
     for (const m of html.matchAll(/data-e="([^"]+)"/g)) {
       assert.ok(e.eylemler && typeof e.eylemler[m[1]] === 'function', `${etiket}: data-e="${m[1]}" için eylem yok`);
     }
+    for (const m of html.matchAll(/data-e-girdi="([^"]+)"/g)) {
+      assert.ok(e.girdiler && typeof e.girdiler[m[1]] === 'function', `${etiket}: data-e-girdi="${m[1]}" için işleyici yok`);
+    }
     for (const m of html.matchAll(/data-e-degis="([^"]+)"/g)) {
       assert.ok(e.degisimler && typeof e.degisimler[m[1]] === 'function', `${etiket}: data-e-degis="${m[1]}" için eylem yok`);
     }

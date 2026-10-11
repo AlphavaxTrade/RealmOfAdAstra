@@ -30,7 +30,6 @@ import { topluYontemleri } from './gameState/toplu.js';
 import { zindanYontemleri } from './gameState/zindan.js';
 import { kolezyumYontemleri } from './gameState/kolezyum.js';
 import { dunyaBossuYontemleri } from './gameState/dunyaBossu.js';
-import { p2pYontemleri } from './gameState/p2p.js';
 import { askerGelisimYontemleri } from './gameState/askerGelisim.js';
 import { rehberYontemleri } from './gameState/rehber.js';
 import { pazarYontemleri } from './gameState/pazar.js';
@@ -336,7 +335,7 @@ export class GameStateManager {
 for (const karisim of [
   ekonomiYontemleri, orduYontemleri, seferYontemleri, botYontemleri, hasatYontemleri, gelisimYontemleri,
   techizatYontemleri, botPaketiYontemleri, karnavalYontemleri, kesifYontemleri, gelistiriciYontemleri,
-  ozetYontemleri, topluYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri, p2pYontemleri,
+  ozetYontemleri, topluYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri,
   askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri,
   // Köy Evleri, Şifahane, geri dönüşüm, roket, Konsey katkıları, Hazırlık Deposu (js/v2/koyVeKonsey.js)
   gameStateV2, gameStateV2Depot,

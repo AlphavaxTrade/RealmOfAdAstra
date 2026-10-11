@@ -135,3 +135,8 @@
 .ek-alan-satiri { display: flex; gap: var(--v3-gap-2, 8px); flex-wrap: wrap; align-items: center; }
 .ek-girdi { box-sizing: border-box; min-height: var(--v3-tap, 44px); padding: 8px 12px; border-radius: 10px; font: 600 14px/1.3 var(--font-ui); color: var(--v3-yazi, #eceef4); background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi-guclu, rgba(255,255,255,.13)); max-width: 100%; }
 .ek-girdi:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }
+
+/* Pazar: alım ve satım kutuları */
+.ek-kutu { display: flex; flex-direction: column; gap: var(--v3-gap-2, 8px); padding: 12px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
+.ek-hizli { display: flex; gap: 6px; flex-wrap: wrap; }
+.ek-hizli > .ek-dugme { min-height: 36px; padding: 4px 12px; font-size: 13px; }
