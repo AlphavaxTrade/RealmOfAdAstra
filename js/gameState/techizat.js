@@ -1,134 +1,100 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Teçhizat: üretim, geliştirme, onarım, kuşandırma, hurdaya ayırma
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: teçhizat dövme, geliştirme, onarım, kuşandırma ve hurdaya ayırma
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
+//
+// Kurallar: 1 ATK = EQUIPMENT_CRAFT_MINUTES.PER_ATK dakikalık taban üretim (odun + demir; kömür demirin üçte biri kadar dakika)
+// + pazar değeri kadar ASTRA + 1 parça. Yükseltmede hammadde x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13
+// (her zafer -1); sıfırlanınca onarım, kümülatif hammaddenin %10'u ve pazar değeri, kısmi hasarda oranlanır.
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-const EKIPMAN_DAYANIKLILIK = 13;   // yeni dövülen ya da yükseltilen eşyanın dayanıklılığı (her zafer -1)
+const YUVA_ADLARI = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı', legs: 'Pantolon', boots: 'Ayakkabı' };
+const YUVA_SIMGELERI = { weapon: '🗡️', helmet: '🪖', armor: '🛡️', legs: '👖', boots: '👢' };
+const EKIPMAN_DAYANIKLILIK = 13;   // yeni dövülen ya da yükseltilen eşyanın dayanıklılığı
+const YUKSELTME_ARTISI = 1.18;
+const DUSUK_SEVIYE_ESIGI = 1;
+
+const sirasiVar = (v) => v !== null && v !== undefined && v !== '';
+
+// Bir eşyanın hammadde karşılığı dakikası: ATK ve CAN başına dakika (EQUIPMENT_CRAFT_MINUTES)
+function esyaDakikasi(atk, hp) {
+  const dakika = GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES || { PER_ATK: 2, PER_HP: 0.8 };
+  return atk * dakika.PER_ATK + hp * dakika.PER_HP;
+}
 
 export const techizatYontemleri = {
-  // Tüm teçhizat yuvalarının anlık dövme (craft) maliyetlerini AMM DEX fiyatlarıyla hesaplar
-  getAllEquipmentCraftCosts() {
-    const maliyetler = {};
-    for (const yuva of YUVALAR) maliyetler[yuva] = this.calculateEquipmentCraftCost(yuva);
-    return maliyetler;
+  // ── Eşya bulma ──────────────────────────────────────────────────────────
+  // itemOrSlot: eşya nesnesi ya da yuva adı; soldierIndex verilirse o askerin üzerindeki, yoksa krallık yuvasındaki eşya
+  _esyaBul(itemOrSlot, soldierIndex = null) {
+    if (typeof itemOrSlot === 'object' && itemOrSlot !== null) return itemOrSlot;
+    if (sirasiVar(soldierIndex)) {
+      const asker = (this.state.soldierUnits || [])[soldierIndex];
+      return asker && asker.equipment ? asker.equipment[itemOrSlot] : null;
+    }
+    return this.state.equipment ? this.state.equipment[itemOrSlot] : null;
   },
 
-  // Krallıktaki (çanta, cephanelik ve ordudaki) tüm hasarlı teçhizatların anlık onarım maliyetini hesaplar
-  getAllEquipmentRepairCostInKingdom() {
-    const all = this.getAllArmoryEquipmentList ? this.getAllArmoryEquipmentList() : [];
-    let totalIron = 0, totalWood = 0, totalAda = 0, repairedCount = 0;
-    all.forEach(entry => {
-      if (entry && entry.item) {
-        const cost = this.calculateEquipmentRepairCost(entry.item);
-        if (cost && cost.missingDurability > 0) {
-          totalIron += cost.ironCost;
-          totalWood += cost.woodCost;
-          totalAda += cost.adaCost;
-          repairedCount++;
+  // Krallıktaki (ana yuvalar, cephanelik deposu, askerlerin üstü) bütün teçhizat tek listede
+  getAllArmoryEquipmentList() {
+    const liste = [];
+    YUVALAR.forEach(yuva => {
+      const esya = this.state.equipment ? this.state.equipment[yuva] : null;
+      if (esya && esya.level > 0) {
+        liste.push({ source: 'kingdom', slotKey: yuva, slotName: YUVA_ADLARI[yuva] || yuva, soldierIndex: null, soldierName: null, locationLabel: 'Krallık Ana Yuvası', item: esya });
+      }
+    });
+    (this.state.armoryInventory || []).forEach((esya, sira) => {
+      if (esya && esya.level > 0) {
+        liste.push({ source: 'armory', armoryIndex: sira, slotKey: esya.slot, slotName: YUVA_ADLARI[esya.slot] || esya.slot, soldierIndex: null, soldierName: null, locationLabel: 'Cephanelik Deposu (Boşta)', item: esya });
+      }
+    });
+    (this.state.soldierUnits || []).forEach((asker, i) => {
+      YUVALAR.forEach(yuva => {
+        const esya = asker.equipment ? asker.equipment[yuva] : null;
+        if (esya && esya.level > 0) {
+          liste.push({ source: 'soldier', slotKey: yuva, slotName: YUVA_ADLARI[yuva] || yuva, soldierIndex: i, soldierName: asker.name, locationLabel: `${asker.name} Üzerinde`, item: esya });
         }
-      }
+      });
     });
-    return {
-      count: repairedCount,
-      totalIron,
-      totalWood,
-      totalAda,
-      canAfford: (this.state.inventory?.iron || 0) >= totalIron &&
-                 (this.state.inventory?.wood || 0) >= totalWood &&
-                 (this.state.adAstraBalance || 0) >= totalAda
-    };
+    return liste;
   },
 
-  // Ordudaki tüm yaralı askerlerin anlık doyurma & iyileştirme maliyetini hesaplar
-  getAllSoldiersHealCost() {
-    const units = this.state.soldierUnits || [];
-    let totalWheat = 0, totalAda = 0, woundedCount = 0;
-    units.forEach((_, idx) => {
-      const info = this.getSoldierHealInfo(idx);
-      if (info && !info.isFull) {
-        totalWheat += info.wheatNeeded;
-        totalAda += info.adaCost;
-        woundedCount++;
-      }
-    });
-    return {
-      woundedCount,
-      totalWheat: Math.round(totalWheat * 100) / 100,
-      totalAda: Math.round(totalAda * 100) / 100,
-      canAfford: (this.state.inventory?.wheat || 0) >= totalWheat &&
-                 (this.state.adAstraBalance || 0) >= totalAda
-    };
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // 🔨 YENİ MATEMATİKSEL TEÇHİZAT CRAFT, UPGRADE VE ONARIM MOTORU
-  // ═══════════════════════════════════════════════════════════════════════
-  // 1 ATK = 18 dk Odun (324) + 18 dk Demir (216) + AMM DEX ASTRA + 1 Parça
-  // 1 HP  = 21 dk Odun (378) + 21 dk Demir (252) + AMM DEX ASTRA + 1 Parça
-  // Upgrade: Hammadde +%18 (1.18x), Parça 2 katı (1 -> 2 -> 4 -> 8 -> 16)
-  // Dayanıklılık: 13/13 (Zafere -1). Sıfırlanınca yenileme: Kümülatif üretimin %10'u
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // ── Dövme ───────────────────────────────────────────────────────────────
+  // Eşyanın bugüne kadar harcanan kümülatif hammaddesi (onarım bedeli bundan oranlanır)
   getCumulativeEquipmentResourceCost(item) {
-    const lvl = Math.max(1, item?.level || 1);
+    const seviye = Math.max(1, item?.level || 1);
     const atk = item?.baseAtk || (item?.slot === 'weapon' ? 25 : 0);
     const hp = item?.baseHp || (item?.slot !== 'weapon' ? 50 : 0);
-    // v2: eşyanın gücü dakikalık taban üretimle çarpılır (GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES; dövme bedeliyle aynı formül)
-    const CM = GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES || { PER_ATK: 2, PER_HP: 0.8 };
-    const minutes = atk * CM.PER_ATK + hp * CM.PER_HP;
-    const baseWood = Math.max(15, Math.round(minutes * (GAME_CONFIG.BASE_PRODUCTION?.wood ?? 18)));
-    const baseIron = Math.max(20, Math.round(minutes * (GAME_CONFIG.BASE_PRODUCTION?.iron ?? 12)));
-
-    let totalWood = 0;
-    let totalIron = 0;
-    for (let l = 1; l <= lvl; l++) {
-      const mult = Math.pow(1.18, l - 1);
-      totalWood += baseWood * mult;
-      totalIron += baseIron * mult;
+    const dakika = esyaDakikasi(atk, hp);
+    const uretim = GAME_CONFIG.BASE_PRODUCTION;
+    const taban = {
+      wood: Math.max(15, Math.round(dakika * (uretim?.wood ?? 18))),
+      iron: Math.max(20, Math.round(dakika * (uretim?.iron ?? 12)))
+    };
+    let odun = 0;
+    let demir = 0;
+    for (let l = 1; l <= seviye; l++) {
+      const carpan = Math.pow(YUKSELTME_ARTISI, l - 1);
+      odun += taban.wood * carpan;
+      demir += taban.iron * carpan;
     }
-    return {
-      baseWood,
-      baseIron,
-      totalWood: Math.round(totalWood),
-      totalIron: Math.round(totalIron)
-    };
+    return { baseWood: taban.wood, baseIron: taban.iron, totalWood: Math.round(odun), totalIron: Math.round(demir) };
   },
 
-  // 1. Ekipman Dövme Maliyetini Hesapla
   calculateEquipmentCraftCost(recipeOrSlot) {
-    const recipe = typeof recipeOrSlot === 'string'
-      ? (GAME_CONFIG.EQUIPMENT_RECIPES[recipeOrSlot] || {})
-      : (recipeOrSlot || {});
-    const atk = recipe.baseAtk || 0;
-    const hp = recipe.baseHp || 0;
-    // v2: 1 ATK ve 1 CAN kaç dakikalık üretim ister (GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES); kömür demirin üçte biri kadar dakika
-    const CM = GAME_CONFIG.EQUIPMENT_CRAFT_MINUTES || { PER_ATK: 2, PER_HP: 0.8 };
-    const minutes = atk * CM.PER_ATK + hp * CM.PER_HP;
-    const P = GAME_CONFIG.BASE_PRODUCTION || {};
-    const wood = Math.max(15, Math.round(minutes * (P.wood ?? 18)));
-    const iron = Math.max(20, Math.round(minutes * (P.iron ?? 12)));
-    const coal = P.coal > 0 ? Math.max(10, Math.round(minutes * P.coal / 3)) : 0;
+    const tarif = typeof recipeOrSlot === 'string' ? (GAME_CONFIG.EQUIPMENT_RECIPES[recipeOrSlot] || {}) : (recipeOrSlot || {});
+    const dakika = esyaDakikasi(tarif.baseAtk || 0, tarif.baseHp || 0);
+    const uretim = GAME_CONFIG.BASE_PRODUCTION || {};
+    const wood = Math.max(15, Math.round(dakika * (uretim.wood ?? 18)));
+    const iron = Math.max(20, Math.round(dakika * (uretim.iron ?? 12)));
+    const coal = uretim.coal > 0 ? Math.max(10, Math.round(dakika * uretim.coal / 3)) : 0;
     const fragments = 1;
-    const adaCost = ammMarket.calculateResourcesAdAstraValue(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
-
-    return {
-      wood,
-      iron,
-      coal,
-      fragments,
-      adAstra: adaCost,
-      woodCost: wood,
-      ironCost: iron,
-      coalCost: coal,
-      fragCost: fragments,
-      adaCost: adaCost
-    };
+    const ada = ammMarket.calculateResourcesAdAstraValue(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
+    return { wood, iron, coal, fragments, adAstra: ada, woodCost: wood, ironCost: iron, coalCost: coal, fragCost: fragments, adaCost: ada };
   },
 
-  // Ekipman dövme (sınırsız): bedel envanterden ve bakiyeden düşer; yuva boşsa eşya doğrudan kuşanılır,
-  // doluysa Cephanelik Deposu'na eklenir.
+  // Sınırsız dövme: bedel envanterden ve bakiyeden düşer; yuva boşsa eşya doğrudan kuşanılır, doluysa cephaneliğe eklenir
   craftEquipment(slotKey) {
     const tarif = GAME_CONFIG.EQUIPMENT_RECIPES[slotKey];
     if (!tarif) return { success: false, message: 'Geçersiz ekipman parçası!' };
@@ -139,16 +105,11 @@ export const techizatYontemleri = {
     const bedel = this.calculateEquipmentCraftCost(tarif);
     const envanter = this.state.inventory;
     const komurGerekli = (bedel.coal || 0) > 0;
-
-    if ((envanter.fragments || 0) < bedel.fragments) {
-      return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragments} Teçhizat Parçaları gerekli)` };
-    }
+    if ((envanter.fragments || 0) < bedel.fragments) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragments} Teçhizat Parçaları gerekli)` };
     if ((envanter.iron || 0) < bedel.iron) return { success: false, message: `Yetersiz Demir! (${bedel.iron} Demir gerekli)` };
     if ((envanter.wood || 0) < bedel.wood) return { success: false, message: `Yetersiz Odun! (${bedel.wood} Odun gerekli)` };
     if (komurGerekli && (envanter.coal || 0) < bedel.coal) return { success: false, message: `Yetersiz Kömür! (${bedel.coal} Kömür gerekli)` };
-    if (this.state.adAstraBalance < bedel.adAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstra} ASTRA gerekli)` };
-    }
+    if (this.state.adAstraBalance < bedel.adAstra) return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstra} ASTRA gerekli)` };
 
     envanter.fragments = (envanter.fragments || 0) - bedel.fragments;
     this.burnItem('fragments', bedel.fragments);
@@ -183,9 +144,7 @@ export const techizatYontemleri = {
       this.state.armoryInventory.push(esya);
       varis = "ve Cephanelik Deposu'na eklendi";
     }
-
     this.saveState();
-
     return {
       success: true,
       message: `⚒️ ${tarif.icon} ${tarif.name} başarıyla dövüldü ${varis}! (${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} Dayanıklılık)`,
@@ -193,500 +152,294 @@ export const techizatYontemleri = {
     };
   },
 
-  // 2. Ekipman Geliştirme Maliyeti (Upgrade Cost)
-  // Kaynaklar +%18 artar, Parçalar 2 katına çıkar, ASTRA ise AMM DEX pazar değerine eşittir
+  // ── Yükseltme ───────────────────────────────────────────────────────────
   calculateEquipmentUpgradeCost(itemOrSlot, soldierIndex = null) {
-    let item = null;
-    if (typeof itemOrSlot === 'object' && itemOrSlot !== null) {
-      item = itemOrSlot;
-    } else if (soldierIndex !== null && soldierIndex !== undefined && soldierIndex !== '') {
-      const soldier = (this.state.soldierUnits || [])[soldierIndex];
-      item = soldier?.equipment ? soldier.equipment[itemOrSlot] : null;
-    } else {
-      item = this.state.equipment ? this.state.equipment[itemOrSlot] : null;
-    }
-    if (!item) return null;
+    const esya = this._esyaBul(itemOrSlot, soldierIndex);
+    if (!esya) return null;
 
-    const currentLvl = item.level || 1;
-    if (currentLvl >= (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10)) {
-      return { isMaxLevel: true, currentLevel: currentLvl };
-    }
+    const simdiki = esya.level || 1;
+    if (simdiki >= (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10)) return { isMaxLevel: true, currentLevel: simdiki };
 
-    const nextLvl = currentLvl + 1;
-    const cum = this.getCumulativeEquipmentResourceCost(item);
-    const mult = Math.pow(1.18, currentLvl);
-    const woodCost = Math.max(15, Math.round(cum.baseWood * mult));
-    const ironCost = Math.max(20, Math.round(cum.baseIron * mult));
-    const fragmentCost = Math.pow(2, currentLvl); // 1 -> 2 -> 4 -> 8 -> 16
+    const sonraki = simdiki + 1;
+    const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
+    const carpan = Math.pow(YUKSELTME_ARTISI, simdiki);
+    const woodCost = Math.max(15, Math.round(kumulatif.baseWood * carpan));
+    const ironCost = Math.max(20, Math.round(kumulatif.baseIron * carpan));
+    const fragmentCost = Math.pow(2, simdiki);
     const adAstraCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost }).totalAda;
-
     return {
       isMaxLevel: false,
-      currentLevel: currentLvl,
-      nextLevel: nextLvl,
+      currentLevel: simdiki,
+      nextLevel: sonraki,
       ironCost,
       woodCost,
       fragmentCost,
       adAstraCost,
-      fragCost: fragmentCost,     // Cephanelik kartı bu adları okur (eskiden undefined yazıyor, düğme hep kapalı kalıyordu)
+      fragCost: fragmentCost,    // cephanelik kartı bu adları okur
       adaCost: adAstraCost,
-      nextAtk: Math.round(item.baseAtk * (1 + (nextLvl - 1) * 0.35)),
-      nextHp: Math.round(item.baseHp * (1 + (nextLvl - 1) * 0.35)),
-      item
+      nextAtk: Math.round(esya.baseAtk * (1 + (sonraki - 1) * 0.35)),
+      nextHp: Math.round(esya.baseHp * (1 + (sonraki - 1) * 0.35)),
+      item: esya
     };
   },
 
-  // Ekipmanı Geliştir
   upgradeEquipment(itemOrSlot, soldierIndex = null) {
-    const cost = this.calculateEquipmentUpgradeCost(itemOrSlot, soldierIndex);
-    if (!cost) return { success: false, message: 'Ekipman bulunamadı!' };
-    if (cost.isMaxLevel) return { success: false, message: 'Bu ekipman zaten maksimum seviyede (Lv.10 Master)!' };
+    const bedel = this.calculateEquipmentUpgradeCost(itemOrSlot, soldierIndex);
+    if (!bedel) return { success: false, message: 'Ekipman bulunamadı!' };
+    if (bedel.isMaxLevel) return { success: false, message: 'Bu ekipman zaten maksimum seviyede (Lv.10 Master)!' };
 
-    const inv = this.state.inventory;
-    if ((inv.fragments || 0) < cost.fragmentCost) {
-      return { success: false, message: `Yetersiz Teçhizat Parçası! (${cost.fragmentCost} Teçhizat Parçaları gerekli)` };
-    }
-    if ((inv.iron || 0) < cost.ironCost) {
-      return { success: false, message: `Yetersiz Demir! (${cost.ironCost} Demir gerekli)` };
-    }
-    if ((inv.wood || 0) < cost.woodCost) {
-      return { success: false, message: `Yetersiz Odun! (${cost.woodCost} Odun gerekli)` };
-    }
-    if (this.state.adAstraBalance < cost.adAstraCost) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstraCost} ASTRA gerekli)` };
-    }
+    const envanter = this.state.inventory;
+    if ((envanter.fragments || 0) < bedel.fragmentCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragmentCost} Teçhizat Parçaları gerekli)` };
+    if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
+    if ((envanter.wood || 0) < bedel.woodCost) return { success: false, message: `Yetersiz Odun! (${bedel.woodCost} Odun gerekli)` };
+    if (this.state.adAstraBalance < bedel.adAstraCost) return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstraCost} ASTRA gerekli)` };
 
-    inv.fragments = (inv.fragments || 0) - cost.fragmentCost;
-    this.burnItem('fragments', cost.fragmentCost);
-    inv.iron -= cost.ironCost;
-    inv.wood -= cost.woodCost;
-    this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
-    this.state.adAstraBalance -= cost.adAstraCost;
-    this._onAdaSpent(cost.adAstraCost);
-    globalPool.recordTokenSpend(cost.adAstraCost);
+    envanter.fragments = (envanter.fragments || 0) - bedel.fragmentCost;
+    this.burnItem('fragments', bedel.fragmentCost);
+    envanter.iron -= bedel.ironCost;
+    envanter.wood -= bedel.woodCost;
+    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost });
+    this.state.adAstraBalance -= bedel.adAstraCost;
+    this._onAdaSpent(bedel.adAstraCost);
+    globalPool.recordTokenSpend(bedel.adAstraCost);
 
-    const item = cost.item;
-    item.level = cost.nextLevel;
-    item.atkBonus = cost.nextAtk;
-    item.hpBonus = cost.nextHp;
-    item.durability = EKIPMAN_DAYANIKLILIK;   // yükseltme dayanıklılığı da tamamlar
-
+    const esya = bedel.item;
+    esya.level = bedel.nextLevel;
+    esya.atkBonus = bedel.nextAtk;
+    esya.hpBonus = bedel.nextHp;
+    esya.durability = EKIPMAN_DAYANIKLILIK;   // yükseltme dayanıklılığı da tamamlar
     this.saveState();
-
     return {
       success: true,
-      message: `✨ ${item.icon} ${item.name} Seviye ${item.level}'e yükseltildi! (+${item.atkBonus} Saldırı, +${item.hpBonus} Can, ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} Dayanıklılık)`
+      message: `✨ ${esya.icon} ${esya.name} Seviye ${esya.level}'e yükseltildi! (+${esya.atkBonus} Saldırı, +${esya.hpBonus} Can, ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} Dayanıklılık)`
     };
   },
 
-  // 3. Teçhizat Onarım Maliyeti (Repair Cost)
-  // Kural: Dayanıklılık sıfırlanınca üretim kaynaklarının %10'u (Odun+Demir+AMM DEX ASTRA). Kısmi hasarda oranlanır.
-  calculateEquipmentRepairCost(itemOrSlot, soldierIndex = null) {
-    let item = null;
-    if (typeof itemOrSlot === 'object' && itemOrSlot !== null) {
-      item = itemOrSlot;
-    } else if (soldierIndex !== null && soldierIndex !== undefined && soldierIndex !== '') {
-      const soldier = (this.state.soldierUnits || [])[soldierIndex];
-      item = soldier?.equipment ? soldier.equipment[itemOrSlot] : null;
-    } else {
-      item = this.state.equipment ? this.state.equipment[itemOrSlot] : null;
-    }
-    if (!item) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true };
-
-    const maxDur = item.maxDurability || EKIPMAN_DAYANIKLILIK;
-    const curDur = item.durability != null ? item.durability : maxDur;
-    const missing = Math.max(0, maxDur - curDur);
-    if (missing <= 0) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true, item };
-
-    const cum = this.getCumulativeEquipmentResourceCost(item);
-    const damageRatio = missing / maxDur;
-    // Sıfır dayanıklılıkta kümülatif kaynağın %10'u, kısmi hasarda oranlanır
-    const woodCost = Math.max(1, Math.round(cum.totalWood * 0.10 * damageRatio));
-    const ironCost = Math.max(1, Math.round(cum.totalIron * 0.10 * damageRatio));
-    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost }).totalAda;
-
-    return {
-      missingDurability: missing,
-      ironCost,
-      woodCost,
-      fragCost: 0,
-      adaCost,
-      isRepaired: false,
-      itemName: item.name,
-      level: item.level || 1,
-      item
-    };
-  },
-
-  repairEquipment(itemOrSlot, soldierIndex = null) {
-    const cost = this.calculateEquipmentRepairCost(itemOrSlot, soldierIndex);
-    if (!cost || !cost.item) return { success: false, message: 'Onarılacak ekipman bulunamadı!' };
-    const item = cost.item;
-    const soldier = (soldierIndex !== null && soldierIndex !== undefined && soldierIndex !== '') ? (this.state.soldierUnits || [])[soldierIndex] : null;
-    if (cost.missingDurability <= 0) {
-      return { success: false, message: `${item.name} zaten tamamen sağlam (${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK})!` };
-    }
-
-    const inv = this.state.inventory;
-    if ((inv.iron || 0) < cost.ironCost) {
-      return { success: false, message: `Yetersiz Demir! (${cost.ironCost} Demir gerekli)` };
-    }
-    if ((inv.wood || 0) < cost.woodCost) {
-      return { success: false, message: `Yetersiz Odun! (${cost.woodCost} Odun gerekli)` };
-    }
-    if ((inv.fragments || 0) < cost.fragCost) {
-      return { success: false, message: `Yetersiz Teçhizat Parçası! (${cost.fragCost} Teçhizat Parçaları gerekli)` };
-    }
-    if ((this.state.adAstraBalance || 0) < cost.adaCost) {
-      return { success: false, message: `Yetersiz ASTRA! (${cost.adaCost} ASTRA gerekli)` };
-    }
-
-    inv.iron -= cost.ironCost;
-    inv.wood -= cost.woodCost;
-    this.burnResources({ wood: cost.woodCost, iron: cost.ironCost });
-    if (cost.fragCost > 0) { inv.fragments = (inv.fragments || 0) - cost.fragCost; this.burnItem('fragments', cost.fragCost); }
-    this.state.adAstraBalance -= cost.adaCost;
-    this._onAdaSpent(cost.adaCost);
-    globalPool.recordTokenSpend(cost.adaCost);
-
-    const maxDur = item.maxDurability || EKIPMAN_DAYANIKLILIK;
-    item.durability = maxDur;
-
-    this.saveState();
-
-    const ownerText = soldier ? `${soldier.name} üzerindeki ` : '';
-    return {
-      success: true,
-      message: `🔨 ${ownerText}${item.name} başarıyla tamir edildi! (${maxDur}/${maxDur} Dayanıklılık)`
-    };
-  },
-
-  repairEquipmentItem(soldierIndex, slot) {
-    return this.repairEquipment(slot, soldierIndex);
-  },
-
-  // =========================================================================
-  // 5.5. GENİŞLETİLMİŞ CEPHANELİK (ARMORY) VE BÜTÜNLEŞİK EŞYA YÖNETİMİ
-  // =========================================================================
-
-  // Krallıktaki tüm teçhizatları (Krallık Ana Yuvaları, Cephanelik Deposu, 18 Asker Üzerindekiler) tek bir listede toplar
-  getAllArmoryEquipmentList() {
-    const list = [];
-    const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-    const slotNames = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı', legs: 'Pantolon', boots: 'Ayakkabı' };
-
-    // 1. Krallık Ana Yuvalarındaki Eşyalar
-    slots.forEach(slot => {
-      const item = this.state.equipment ? this.state.equipment[slot] : null;
-      if (item && item.level > 0) {
-        list.push({
-          source: 'kingdom',
-          slotKey: slot,
-          slotName: slotNames[slot] || slot,
-          soldierIndex: null,
-          soldierName: null,
-          locationLabel: 'Krallık Ana Yuvası',
-          item
-        });
-      }
-    });
-
-    // 2. Cephanelik Deposundaki Boşta Duran Eşyalar
-    (this.state.armoryInventory || []).forEach((item, armoryIdx) => {
-      if (item && item.level > 0) {
-        list.push({
-          source: 'armory',
-          armoryIndex: armoryIdx,
-          slotKey: item.slot,
-          slotName: slotNames[item.slot] || item.slot,
-          soldierIndex: null,
-          soldierName: null,
-          locationLabel: 'Cephanelik Deposu (Boşta)',
-          item
-        });
-      }
-    });
-
-    // 3. Askerlerin Üzerindeki Eşyalar
-    (this.state.soldierUnits || []).forEach((sol, sIdx) => {
-      slots.forEach(slot => {
-        const item = sol.equipment ? sol.equipment[slot] : null;
-        if (item && item.level > 0) {
-          list.push({
-            source: 'soldier',
-            slotKey: slot,
-            slotName: slotNames[slot] || slot,
-            soldierIndex: sIdx,
-            soldierName: sol.name,
-            locationLabel: `${sol.name} Üzerinde`,
-            item
-          });
-        }
-      });
-    });
-
-    return list;
-  },
-
-  // Herhangi bir yerdeki eşyayı (Krallık, Cephanelik veya Asker Üzerindeki) tek tıkla seviye atlatır
+  // Herhangi bir yerdeki eşyayı (krallık, cephanelik, asker) tek tıkla yükseltir; yoksa kimlikle arar
   upgradeAnyEquipment({ source, slotKey, armoryIndex = null, soldierIndex = null, itemId = null }) {
-    let item = null;
+    let esya = null;
     if (source === 'kingdom') {
-      item = this.state.equipment ? this.state.equipment[slotKey] : null;
+      esya = this.state.equipment ? this.state.equipment[slotKey] : null;
     } else if (source === 'armory') {
-      if (armoryIndex !== null && armoryIndex !== undefined && this.state.armoryInventory) {
-        item = this.state.armoryInventory[armoryIndex];
-      }
+      if (armoryIndex !== null && armoryIndex !== undefined && this.state.armoryInventory) esya = this.state.armoryInventory[armoryIndex];
     } else if (source === 'soldier') {
-      const soldier = (this.state.soldierUnits || [])[soldierIndex];
-      item = soldier?.equipment ? soldier.equipment[slotKey] : null;
+      const asker = (this.state.soldierUnits || [])[soldierIndex];
+      esya = asker?.equipment ? asker.equipment[slotKey] : null;
     }
-
-    if (!item && itemId) {
-      // ID bazlı fallback arama
-      const all = this.getAllArmoryEquipmentList();
-      const match = all.find(e => e.item && e.item.id === itemId);
-      if (match) item = match.item;
+    if (!esya && itemId) {
+      const eslesen = this.getAllArmoryEquipmentList().find(e => e.item && e.item.id === itemId);
+      if (eslesen) esya = eslesen.item;
     }
-
-    if (!item) return { success: false, message: 'Yükseltilecek ekipman bulunamadı!' };
-    return this.upgradeEquipment(item);
+    if (!esya) return { success: false, message: 'Yükseltilecek ekipman bulunamadı!' };
+    return this.upgradeEquipment(esya);
   },
 
-  // Cephanelikteki veya Krallıktaki eşyayı seçilen askere kuşandırır
-  equipSoldierFromDepot(soldierIndex, { source, slotKey, armoryIndex }) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return { success: false, message: 'Asker bulunamadı.' };
-    if (!soldier.equipment) soldier.equipment = {};
-
-    let itemToEquip = null;
-
-    if (source === 'armory' && this.state.armoryInventory) {
-      if (armoryIndex >= 0 && armoryIndex < this.state.armoryInventory.length) {
-        itemToEquip = this.state.armoryInventory.splice(armoryIndex, 1)[0];
-      }
-    } else if (source === 'kingdom' && this.state.equipment) {
-      itemToEquip = this.state.equipment[slotKey];
-      delete this.state.equipment[slotKey];
-    }
-
-    if (!itemToEquip) {
-      return { success: false, message: 'Kuşanılacak eşya bulunamadı!' };
-    }
-
-    const targetSlot = itemToEquip.slot || slotKey;
-    const oldItem = soldier.equipment[targetSlot];
-
-    soldier.equipment[targetSlot] = itemToEquip;
-
-    // Eskiden takılı olan eşyayı cephanelik deposuna güvenle aktar
-    if (oldItem) {
-      if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
-      this.state.armoryInventory.push(oldItem);
-    }
-
-    this.saveState();
-
-    return {
-      success: true,
-      message: `🛡️ ${soldier.name} üzerine ${itemToEquip.name} kuşandırıldı!${oldItem ? ` (Eski ${oldItem.name} Cephaneliğe aktarıldı)` : ''}`
-    };
-  },
-
-  // Askerin üzerindeki eşyayı Cephanelik Deposuna çıkarır
-  unequipSoldierToArmory(soldierIndex, slotKey) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier || !soldier.equipment || !soldier.equipment[slotKey]) {
-      return { success: false, message: 'Çıkarılacak ekipman yok.' };
-    }
-
-    const item = soldier.equipment[slotKey];
-    soldier.equipment[slotKey] = null;
-
-    if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
-    this.state.armoryInventory.push(item);
-
-    this.saveState();
-
-    return {
-      success: true,
-      message: `🔄 ${item.name} kuşanmadan çıkarıldı ve Cephanelik Deposu'na eklendi!`
-    };
-  },
-
-  // ♻️ Düşük Kalite / Seviye 1 Fazlalık Boştaki Eşyaları Hurdaya Çevirip Parça Kazanma
-  scrapAllLowTierEquipment(maxLevel = 1) {
-    if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
-    let scrappedCount = 0;
-    let gainedFragments = 0;
-    let gainedIron = 0;
-    const scrappedItems = [];
-
-    const slotIcons = {
-      weapon: '🗡️',
-      helmet: '🪖',
-      armor: '🛡️',
-      legs: '👖',
-      boots: '👢'
-    };
-
-    // Cephanelikteki boşta kalan eşyaları filtrele
-    const remaining = [];
-    for (const item of this.state.armoryInventory) {
-      if (item && (item.level || 1) <= maxLevel) {
-        scrappedCount++;
-        const fragGained = Math.max(1, Math.floor((item.level || 1) * 2));
-        const ironGained = Math.max(5, Math.floor((item.level || 1) * 10));
-        gainedFragments += fragGained;
-        gainedIron += ironGained;
-        scrappedItems.push({
-          name: item.name || `${item.slot || 'Eşya'}`,
-          icon: item.icon || slotIcons[item.slot] || '⚔️',
-          slot: item.slot || 'weapon',
-          level: item.level || 1,
-          fragGained,
-          ironGained
-        });
-      } else if (item) {
-        remaining.push(item);
-      }
-    }
-    this.state.armoryInventory = remaining;
-
-    // Krallık ana yuvasında boşta ve kullanılmayan Lv.1 eşyalar varsa onları da değerlendir
-    const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-    slots.forEach(slot => {
-      const item = this.state.equipment ? this.state.equipment[slot] : null;
-      if (item && (item.level || 1) <= maxLevel) {
-        scrappedCount++;
-        const fragGained = Math.max(1, Math.floor((item.level || 1) * 2));
-        const ironGained = Math.max(5, Math.floor((item.level || 1) * 10));
-        gainedFragments += fragGained;
-        gainedIron += ironGained;
-        scrappedItems.push({
-          name: item.name || `${slot} Yuvası`,
-          icon: item.icon || slotIcons[slot] || '⚔️',
-          slot,
-          level: item.level || 1,
-          fragGained,
-          ironGained
-        });
-        delete this.state.equipment[slot];
-      }
-    });
-
-    if (scrappedCount === 0) {
-      return {
-        success: false,
-        scrappedCount: 0,
-        gainedFragments: 0,
-        gainedIron: 0,
-        scrappedItems: [],
-        message: 'Hurdaya çevrilecek boşta Lv.1 veya düşük seviye eşya bulunamadı.'
-      };
-    }
-
-    this.state.inventory.fragments = (this.state.inventory.fragments || 0) + gainedFragments;
-    this.state.inventory.iron = (this.state.inventory.iron || 0) + gainedIron;
-
-    this.saveState();
-
-    return {
-      success: true,
-      scrappedCount,
-      gainedFragments,
-      gainedIron,
-      scrappedItems,
-      message: `♻️ ${scrappedCount} adet düşük seviye boşta eşya hurdaya ayrıldı! (+${gainedFragments} 💎 Teçhizat Parçaları, +${gainedIron} ⛏️ Demir)`
-    };
-  },
-
-  // Krallıktaki, cephanelikteki ve askerlerdeki tüm hasarlı eşyaları tek seferde onarır
-  // Krallıktaki, cephanelikteki ve askerlerdeki tüm hasarlı eşyaları tek seferde onarır
-  repairAllEquipmentInKingdom() {
-    const all = this.getAllArmoryEquipmentList();
-    let totalIron = 0, totalWood = 0, totalAda = 0, repairedCount = 0;
-    const toRepair = [];
-
-    all.forEach(entry => {
-      const cost = this.calculateEquipmentRepairCost(entry.item);
-      if (cost && cost.missingDurability > 0) {
-        totalIron += cost.ironCost;
-        totalWood += cost.woodCost;
-        totalAda += cost.adaCost;
-        repairedCount++;
-        toRepair.push({ item: entry.item, cost });
-      }
-    });
-
-    if (repairedCount === 0) {
-      return { success: false, message: `Tüm silah ve zırhlar zaten ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} maksimum dayanıklılıkta!` };
-    }
-
-    const inv = this.state.inventory;
-    if ((inv.iron || 0) < totalIron) return { success: false, message: `Yetersiz Demir! (${totalIron} Demir gerekli)` };
-    if ((inv.wood || 0) < totalWood) return { success: false, message: `Yetersiz Odun! (${totalWood} Odun gerekli)` };
-    if ((this.state.adAstraBalance || 0) < totalAda) return { success: false, message: `Yetersiz ASTRA! (${totalAda} ASTRA gerekli)` };
-
-    inv.iron -= totalIron;
-    inv.wood -= totalWood;
-    this.burnResources({ wood: totalWood, iron: totalIron });
-    this.state.adAstraBalance -= totalAda;
-    this._onAdaSpent(totalAda);
-    globalPool.recordTokenSpend(totalAda);
-
-    toRepair.forEach(({ item }) => {
-      item.durability = item.maxDurability || EKIPMAN_DAYANIKLILIK;
-    });
-
-    this.saveState();
-
-    return {
-      success: true,
-      repairedCount,
-      message: `🔨 Krallıktaki ${repairedCount} parça teçhizat tek seferde onarıldı! (-${totalWood} Odun, -${totalIron} Demir, -${totalAda} ASTRA)`
-    };
-  },
-
-  // Özelleştirilmiş Geliştirme: Belirli kategori (silah, miğfer vb.) ve belirli seviyedeki eşyaları geliştirir
-  // Örnek: "Sadece Seviye 2 Silahları Geliştir" veya "Sadece Seviye 1 Miğferleri Geliştir"
+  // Belirli yuvadaki ve/veya belirli seviyedeki eşyaları sırayla yükseltir; kaynak yetmeyince durur
   upgradeEquipmentByTypeAndLevel(targetSlot = null, targetLevel = null) {
-    const all = this.getAllArmoryEquipmentList();
-    let upgradedCount = 0;
-    let messages = [];
-
-    for (const entry of all) {
-      const item = entry.item;
-      if (!item) continue;
-      const matchSlot = !targetSlot || targetSlot === 'all' || item.slot === targetSlot;
-      const matchLevel = targetLevel == null || item.level === targetLevel;
-      if (matchSlot && matchLevel && (item.level || 1) < (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10)) {
-        const res = this.upgradeEquipment(item);
-        if (res.success) {
-          upgradedCount++;
-        } else {
-          messages.push(res.message);
-          break; // Kaynak yetmediğinde dur
-        }
-      }
+    let yukseltilen = 0;
+    const mesajlar = [];
+    const enUst = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+    for (const kayit of this.getAllArmoryEquipmentList()) {
+      const esya = kayit.item;
+      if (!esya) continue;
+      const yuvaUyar = !targetSlot || targetSlot === 'all' || esya.slot === targetSlot;
+      const seviyeUyar = targetLevel == null || esya.level === targetLevel;
+      if (!(yuvaUyar && seviyeUyar && (esya.level || 1) < enUst)) continue;
+      const r = this.upgradeEquipment(esya);
+      if (!r.success) { mesajlar.push(r.message); break; }
+      yukseltilen++;
     }
-
-    if (upgradedCount === 0 && messages.length > 0) {
-      return { success: false, message: messages[0] };
-    }
-    if (upgradedCount === 0) {
-      return { success: false, message: 'Geliştirilecek uygun teçhizat bulunamadı!' };
-    }
-
-    return {
-      success: true,
-      upgradedCount,
-      message: `✨ ${upgradedCount} adet teçhizat başarıyla bir sonraki seviyeye yükseltildi!`
-    };
+    if (yukseltilen === 0 && mesajlar.length > 0) return { success: false, message: mesajlar[0] };
+    if (yukseltilen === 0) return { success: false, message: 'Geliştirilecek uygun teçhizat bulunamadı!' };
+    return { success: true, upgradedCount: yukseltilen, message: `✨ ${yukseltilen} adet teçhizat başarıyla bir sonraki seviyeye yükseltildi!` };
   },
 
-  // Tüm Cephanelikteki Geliştirilebilir Eşyaları Toplu Geliştir
   upgradeAllEquipmentInKingdom() {
     return this.upgradeEquipmentByTypeAndLevel('all', null);
   },
+
+  // ── Onarım ──────────────────────────────────────────────────────────────
+  calculateEquipmentRepairCost(itemOrSlot, soldierIndex = null) {
+    const esya = this._esyaBul(itemOrSlot, soldierIndex);
+    if (!esya) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true };
+
+    const enFazla = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
+    const simdiki = esya.durability != null ? esya.durability : enFazla;
+    const eksik = Math.max(0, enFazla - simdiki);
+    if (eksik <= 0) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true, item: esya };
+
+    const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
+    const hasarOrani = eksik / enFazla;
+    const woodCost = Math.max(1, Math.round(kumulatif.totalWood * 0.10 * hasarOrani));
+    const ironCost = Math.max(1, Math.round(kumulatif.totalIron * 0.10 * hasarOrani));
+    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost }).totalAda;
+    return { missingDurability: eksik, ironCost, woodCost, fragCost: 0, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
+  },
+
+  repairEquipment(itemOrSlot, soldierIndex = null) {
+    const bedel = this.calculateEquipmentRepairCost(itemOrSlot, soldierIndex);
+    if (!bedel || !bedel.item) return { success: false, message: 'Onarılacak ekipman bulunamadı!' };
+    const esya = bedel.item;
+    const asker = sirasiVar(soldierIndex) ? (this.state.soldierUnits || [])[soldierIndex] : null;
+    if (bedel.missingDurability <= 0) {
+      return { success: false, message: `${esya.name} zaten tamamen sağlam (${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK})!` };
+    }
+
+    const envanter = this.state.inventory;
+    if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
+    if ((envanter.wood || 0) < bedel.woodCost) return { success: false, message: `Yetersiz Odun! (${bedel.woodCost} Odun gerekli)` };
+    if ((envanter.fragments || 0) < bedel.fragCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragCost} Teçhizat Parçaları gerekli)` };
+    if ((this.state.adAstraBalance || 0) < bedel.adaCost) return { success: false, message: `Yetersiz ASTRA! (${bedel.adaCost} ASTRA gerekli)` };
+
+    envanter.iron -= bedel.ironCost;
+    envanter.wood -= bedel.woodCost;
+    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost });
+    if (bedel.fragCost > 0) {
+      envanter.fragments = (envanter.fragments || 0) - bedel.fragCost;
+      this.burnItem('fragments', bedel.fragCost);
+    }
+    this.state.adAstraBalance -= bedel.adaCost;
+    this._onAdaSpent(bedel.adaCost);
+    globalPool.recordTokenSpend(bedel.adaCost);
+
+    const enFazla = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
+    esya.durability = enFazla;
+    this.saveState();
+    return {
+      success: true,
+      message: `🔨 ${asker ? `${asker.name} üzerindeki ` : ''}${esya.name} başarıyla tamir edildi! (${enFazla}/${enFazla} Dayanıklılık)`
+    };
+  },
+
+  // Krallıktaki, cephanelikteki ve askerlerdeki bütün hasarlı eşyaları tek seferde onarır
+  repairAllEquipmentInKingdom() {
+    let demir = 0;
+    let odun = 0;
+    let ada = 0;
+    const onarilacak = [];
+    for (const kayit of this.getAllArmoryEquipmentList()) {
+      const bedel = this.calculateEquipmentRepairCost(kayit.item);
+      if (!(bedel && bedel.missingDurability > 0)) continue;
+      demir += bedel.ironCost;
+      odun += bedel.woodCost;
+      ada += bedel.adaCost;
+      onarilacak.push(kayit.item);
+    }
+    if (onarilacak.length === 0) {
+      return { success: false, message: `Tüm silah ve zırhlar zaten ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} maksimum dayanıklılıkta!` };
+    }
+
+    const envanter = this.state.inventory;
+    if ((envanter.iron || 0) < demir) return { success: false, message: `Yetersiz Demir! (${demir} Demir gerekli)` };
+    if ((envanter.wood || 0) < odun) return { success: false, message: `Yetersiz Odun! (${odun} Odun gerekli)` };
+    if ((this.state.adAstraBalance || 0) < ada) return { success: false, message: `Yetersiz ASTRA! (${ada} ASTRA gerekli)` };
+
+    envanter.iron -= demir;
+    envanter.wood -= odun;
+    this.burnResources({ wood: odun, iron: demir });
+    this.state.adAstraBalance -= ada;
+    this._onAdaSpent(ada);
+    globalPool.recordTokenSpend(ada);
+    for (const esya of onarilacak) esya.durability = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
+    this.saveState();
+    return {
+      success: true,
+      repairedCount: onarilacak.length,
+      message: `🔨 Krallıktaki ${onarilacak.length} parça teçhizat tek seferde onarıldı! (-${odun} Odun, -${demir} Demir, -${ada} ASTRA)`
+    };
+  },
+
+  // ── Kuşandırma ──────────────────────────────────────────────────────────
+  // Cephanelikteki ya da krallık yuvasındaki eşyayı seçilen askere takar; eski eşya cephaneliğe gider
+  equipSoldierFromDepot(soldierIndex, { source, slotKey, armoryIndex }) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return { success: false, message: 'Asker bulunamadı.' };
+    if (!asker.equipment) asker.equipment = {};
+
+    let takilacak = null;
+    if (source === 'armory' && this.state.armoryInventory) {
+      if (armoryIndex >= 0 && armoryIndex < this.state.armoryInventory.length) takilacak = this.state.armoryInventory.splice(armoryIndex, 1)[0];
+    } else if (source === 'kingdom' && this.state.equipment) {
+      takilacak = this.state.equipment[slotKey];
+      delete this.state.equipment[slotKey];
+    }
+    if (!takilacak) return { success: false, message: 'Kuşanılacak eşya bulunamadı!' };
+
+    const yuva = takilacak.slot || slotKey;
+    const eski = asker.equipment[yuva];
+    asker.equipment[yuva] = takilacak;
+    if (eski) {
+      if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
+      this.state.armoryInventory.push(eski);
+    }
+    this.saveState();
+    return {
+      success: true,
+      message: `🛡️ ${asker.name} üzerine ${takilacak.name} kuşandırıldı!${eski ? ` (Eski ${eski.name} Cephaneliğe aktarıldı)` : ''}`
+    };
+  },
+
+  unequipSoldierToArmory(soldierIndex, slotKey) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker || !asker.equipment || !asker.equipment[slotKey]) return { success: false, message: 'Çıkarılacak ekipman yok.' };
+
+    const esya = asker.equipment[slotKey];
+    asker.equipment[slotKey] = null;
+    if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
+    this.state.armoryInventory.push(esya);
+    this.saveState();
+    return { success: true, message: `🔄 ${esya.name} kuşanmadan çıkarıldı ve Cephanelik Deposu'na eklendi!` };
+  },
+
+  // ── Hurda ───────────────────────────────────────────────────────────────
+  // Boştaki düşük seviyeli (varsayılan Lv.1) eşyaları parçaya ve demire çevirir
+  scrapAllLowTierEquipment(maxLevel = DUSUK_SEVIYE_ESIGI) {
+    if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
+    let adet = 0;
+    let parca = 0;
+    let demir = 0;
+    const liste = [];
+
+    const hurdala = (esya, varsayilanAd, yuva) => {
+      const seviye = esya.level || 1;
+      const p = Math.max(1, Math.floor(seviye * 2));
+      const d = Math.max(5, Math.floor(seviye * 10));
+      adet++;
+      parca += p;
+      demir += d;
+      liste.push({ name: esya.name || varsayilanAd, icon: esya.icon || YUVA_SIMGELERI[yuva] || '⚔️', slot: esya.slot || yuva, level: seviye, fragGained: p, ironGained: d });
+    };
+
+    const kalan = [];
+    for (const esya of this.state.armoryInventory) {
+      if (esya && (esya.level || 1) <= maxLevel) hurdala(esya, `${esya.slot || 'Eşya'}`, esya.slot || 'weapon');
+      else if (esya) kalan.push(esya);
+    }
+    this.state.armoryInventory = kalan;
+
+    // Krallık ana yuvasında boşta duran düşük seviyeli eşyalar da değerlendirilir
+    YUVALAR.forEach(yuva => {
+      const esya = this.state.equipment ? this.state.equipment[yuva] : null;
+      if (esya && (esya.level || 1) <= maxLevel) {
+        hurdala({ ...esya, slot: yuva }, `${yuva} Yuvası`, yuva);
+        delete this.state.equipment[yuva];
+      }
+    });
+
+    if (adet === 0) {
+      return { success: false, scrappedCount: 0, gainedFragments: 0, gainedIron: 0, scrappedItems: [], message: 'Hurdaya çevrilecek boşta Lv.1 veya düşük seviye eşya bulunamadı.' };
+    }
+
+    this.state.inventory.fragments = (this.state.inventory.fragments || 0) + parca;
+    this.state.inventory.iron = (this.state.inventory.iron || 0) + demir;
+    this.saveState();
+    return {
+      success: true,
+      scrappedCount: adet,
+      gainedFragments: parca,
+      gainedIron: demir,
+      scrappedItems: liste,
+      message: `♻️ ${adet} adet düşük seviye boşta eşya hurdaya ayrıldı! (+${parca} 💎 Teçhizat Parçaları, +${demir} ⛏️ Demir)`
+    };
+  }
 };

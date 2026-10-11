@@ -172,11 +172,4 @@ assert(highRepairCost.adaCost > normalRepairCost.adaCost, 'Piyasa yükselince te
 
 console.log(`✅ [7. Test Başarılı] Teçhizat Yükseltme: ${normalUpgradeCost.adAstraCost} -> ${highUpgradeCost.adAstraCost} ASTRA, Onarım: ${normalRepairCost.adaCost} -> ${highRepairCost.adaCost} ASTRA!`);
 
-// 8. Teçhizat dövme, teçhizat onarım ve asker iyileştirme maliyetleri pazar fiyatına bağlı hesaplanır
-ammMarket.resetPools();
-assert.ok(gs.getAllEquipmentCraftCosts().weapon, 'weapon dövme maliyeti hesaplanmalı');
-assert.ok(gs.getAllEquipmentRepairCostInKingdom(), 'krallık teçhizat onarım toplamı hesaplanmalı');
-assert.ok(gs.getAllSoldiersHealCost(), 'asker iyileştirme toplamı hesaplanmalı');
-console.log('✅ [8. Test Başarılı] Teçhizat craft, onarım ve asker iyileştirme maliyetleri hesaplanıyor.');
-
 console.log('\n🎉 TÜM ANLIK AMM DEX VE DİNAMİK ÖDEME MEKANİZMASI TESTLERİ %100 BAŞARIYLA GEÇTİ! 🎉');
