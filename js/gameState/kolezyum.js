@@ -132,7 +132,7 @@ export const kolezyumYontemleri = {
 
       // Ödül arena kasasından gerçekten çekilir (basılmaz); kademenin çarpanıyla
       const kasa = treasury.getPool('arena');
-      const taban = Math.min(this.adaPrice(2500), Math.round(kasa * 0.0002));
+      const taban = Math.min(this.adaPrice(cfg.WIN_REWARD_ASTRA), Math.round(kasa * cfg.WIN_REWARD_POOL_SHARE));
       const cekim = treasury.withdrawWhole('arena', Math.round(taban * kademe.rewardMult));
       odul = cekim.granted || 0;
       butceDoldu = !!cekim.budgetFull;

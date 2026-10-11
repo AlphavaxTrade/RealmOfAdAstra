@@ -12,6 +12,7 @@ globalThis.localStorage = {
 const { createUnit, simulateBattle, selectTarget } = await import('../js/combat.js');
 const { GameStateManager } = await import('../js/gameState.js');
 const { DUNGEON_LEVELS } = await import('../js/bestiary.js');
+const { GAME_CONFIG } = await import('../js/config.js');
 
 // 1) Birim: mevzi ve yetenek yükü sınıf kısıtlaması olmadan taşınır
 {
@@ -92,6 +93,21 @@ console.log('✅ savaş simülasyonu ve boss fazları');
   assert.ok(mac.combatLog.length > 0);
   assert.ok(mac.tier && mac.tier.name);
   assert.ok(mac.opponentName);
+
+  // Zafer ödülü ölçeği (karar 12 Ekim 2026): bronz ligde 25 ASTRA (eskiden 2.500'lük taban kasanın %0,02'sine, ~800'e düşüyordu)
+  const guclu = { id: 'g2', name: 'Titan', level: 40, hp: 9000, maxHp: 9000, baseAtk: 900, skills: ['shieldWall', 'shockwave'], row: 'front' };
+  const taban = GAME_CONFIG.COLOSSEUM.WIN_REWARD_ASTRA;
+  assert.equal(taban, 25);
+  for (const lig of GAME_CONFIG.COLOSSEUM.LEAGUES) {
+    const g2 = new GameStateManager();
+    g2.state.soldierUnits = [{ ...guclu }];
+    g2.state.arenaKeys = 5;
+    g2.state.colosseumStats = { wins: 0, losses: 0, score: 0, rank: 11, rating: lig.minRating };
+    const m = g2.executeColosseum1v1Match(0);
+    assert.equal(m.isVictory, true, `${lig.id}: çok güçlü asker kazanır`);
+    assert.equal(m.rewardAda, Math.round(taban * lig.rewardMult), `${lig.id}: ödül ${taban} × ${lig.rewardMult}`);
+    assert.ok(m.rewardAda <= taban * 2, 'hiçbir ligde taban ödülün 2 katını aşmaz');
+  }
 
   gs.state.soldierUnits = [
     { name: 'S1', skills: ['shieldWall'], level: 10, hp: 100 },

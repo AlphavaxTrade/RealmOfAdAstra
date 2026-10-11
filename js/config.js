@@ -650,6 +650,11 @@ export const GAME_CONFIG = {
     DAILY_MATCH_CAP: 10,
     STARTING_RATING: 1000,
     K_FACTOR: 32,
+    // Hazır rakibe karşı zafer ödülü: taban WIN_REWARD_ASTRA (lig çarpanıyla), kasanın WIN_REWARD_POOL_SHARE'ini aşmaz.
+    // Karar 12 Ekim 2026: eski 2.500 ASTRA ×0,01 ölçeği uygulanmadan kalmıştı (kasa tohumunda maç başı ~800 ASTRA; bir oyuncu
+    // günde 10 maçla haftalık ödeme bütçesinin büyük kısmını tek başına çekebiliyordu); diğer ödüller 10-50 ASTRA düzeyinde.
+    WIN_REWARD_ASTRA: 25,
+    WIN_REWARD_POOL_SHARE: 0.0002,
     // Ligler (gameState.getColosseumTier), yüksekten düşüğe. rewardMult: maç ödülü çarpanı.
     // weeklyAda / weeklyKeys: ⏳ haftalık lig ödülü — HENÜZ DAĞITILMIYOR (tasarım taslağı).
     LEAGUES: [
