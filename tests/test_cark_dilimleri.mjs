@@ -18,6 +18,18 @@ const toplam = dilimler.reduce((s, r) => s + r.weight, 0);
 const once = dilimler.map((_, i) => dilimler.slice(0, i).reduce((s, r) => s + r.weight, 0));
 const gercekRastgele = Math.random;
 
+// Dilim dağılımı (eski test_wheel_reward_rates.mjs'in denetimleri): 15 dilim, toplam ağırlık 10.000, nadir ödüllerin üst sınırı
+{
+  assert.equal(dilimler.length, 15, 'çarkta tam 15 dilim');
+  assert.equal(toplam, 10000, 'toplam ağırlık 10.000');
+  const oran = (f) => dilimler.filter(f).reduce((s, r) => s + r.weight, 0) / toplam;
+  assert.ok(oran((r) => r.type === 'bot_free' || r.id === 'free_bot_24h') < 0.01, '24 saatlik bot oranı %1 altında');
+  assert.ok(oran((r) => r.key === 'fragments' || r.id.startsWith('frag_')) < 0.01, 'teçhizat parçası toplamı %1 altında');
+  assert.ok(!dilimler.some((r) => (r.key && r.key.startsWith('scroll_')) || (r.id && r.id.startsWith('scroll_'))), 'çarkta parşömen yok (zindana taşındı)');
+  assert.ok(oran((r) => r.type === 'key' || r.id === 'box_key') < 0.001, 'anahtar oranı %0,1 altında');
+  assert.ok(oran((r) => r.type === 'analysis_code' || r.id === 'coin_analysis_code') < 0.01, 'analiz kodu oranı %1 altında');
+}
+
 function yeniOyuncu(kasa) {
   depo.clear();
   const gs = new GameStateManager();

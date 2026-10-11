@@ -167,7 +167,6 @@ export const GAME_CONFIG = {
   // Oran: UBI_POOL_RATE (yukarıda). Dağıtım kuralları: js/economy/ubi.js
   UBI_CONFIG: {
     MAX_SINGLE_CLAIM_SHARE: 0.05,        // 🛡️ TEK ÇEKİM TAVANI: Tek bir kullanıcı haftalık havuzun %5'inden fazlasını çekemez!
-    INITIAL_SEED_POOL: 2400000,          // (v1.25'te kullanılmıyor: UBI yalnızca harcamaların %6'sından beslenir)
     MIN_LEVEL: 3,                        // v1.25: Haftalık temel gelir 3. seviyeden itibaren
     // Tarayıcı sürümünde dünya tek oyuncudur; sunucuya geçince hak sahiplerinin gerçek ağırlık toplamı kullanılır
     LOCAL_OTHER_PLAYERS_WEIGHT: 0
@@ -450,40 +449,7 @@ export const GAME_CONFIG = {
       herb: 6000,
       fragments: 2500
     },
-    fragmentsPerLevel: 140,     // Parça kapasitesi ara seviyelerde doğrusal artar (Lv 18'de maxCapacities)
-    fillRequirementRatio: 0.80, // %80 Doluluk Şartı
-    costRatio: 0.50             // %50 Kapasite Maliyeti
-  },
-
-  // Kışla Asker Tipleri (Barracks Troops)
-  TROOP_TYPES: {
-    infantry: {
-      id: 'infantry',
-      name: 'Kraliyet Muhafızı',
-      icon: '🛡️',
-      costAdAstra: 30,
-      hp: 120,
-      atk: 25,
-      desc: 'Yüksek can havuzuyla düşman darbelerini karşılar.'
-    },
-    archer: {
-      id: 'archer',
-      name: 'Zümrüt Okçusu',
-      icon: '🏹',
-      costAdAstra: 50,
-      hp: 80,
-      atk: 45,
-      desc: 'Uzaktan yüksek kritik hasar vurur.'
-    },
-    knight: {
-      id: 'knight',
-      name: 'Paladin Şampiyonu',
-      icon: '⚔️',
-      costAdAstra: 100,
-      hp: 250,
-      atk: 80,
-      desc: 'Ağır zırhlı ve yüksek saldırı gücüne sahip efsanevi savaşçı.'
-    }
+    fragmentsPerLevel: 140      // Parça kapasitesi ara seviyelerde doğrusal artar (Lv 18'de maxCapacities)
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -631,8 +597,7 @@ export const GAME_CONFIG = {
     icon: '🏆',
     requiredArtifacts: 18,
     adAstraCost: 5,
-    grants: ['universe_planet_purchase'],
-    grantText: 'Universe açılınca gezegen satın alma hakkı (yalnız Genesis sahipleri)'
+    grants: ['universe_planet_purchase']
   },
 
   // ═══════════════════════════════════════════════════════════════════════

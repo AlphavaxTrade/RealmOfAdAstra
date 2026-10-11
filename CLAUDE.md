@@ -40,7 +40,7 @@ node contracts/compile.mjs   # solc -> contracts/build/<Name>.json (gitignored)
 node contracts/deploy.mjs    # env-driven: DEPLOY_RPC, DEPLOYER_PRIVATE_KEY, OWNER_ADDRESS, TREASURY...; mainnet needs CONFIRM_MAINNET=1
 bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (user realm, /srv/realm, 127.0.0.1:8090 behind Caddy, TEST_MODE)
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
-node scripts/generate_doc_tables.mjs             # regenerates docs/LEVEL_PROGRESSION_TABLES.md from the engine
+node scripts/seviye-tablolari-uret.mjs          # regenerates docs/v2/SEVIYE_TABLOLARI.md (level, silo, soldier, craft and dungeon tables) from the engine
 python scripts/gorsel_isle.py ikon <in.jpg> <out.webp>   # Gemini image -> transparent 256x256 webp icon (video_edit venv python)
 ```
 
@@ -88,7 +88,7 @@ Releases and chain deploys happen only at the user's request, local first (see `
 
 - User-facing text, docs, identifiers and most comments are Turkish. Commit titles are plain-word Turkish without Turkish letters (e.g. `v2 K3: vadi sinirli bir ada oldu ...`) listing what changed; `docs:` for document-only commits.
 - Keep every step playable: v2 converts existing code rather than rewriting from zero; don't drop server plumbing or existing tests to make a feature fit.
-- Economy numbers come from the decision docs; a new cost must fit the level-1 silo (one hour of production) or the user cannot play it (`tests/test_new_mechanics_v106.mjs` guards the craft costs).
+- Economy numbers come from the decision docs; a new cost must fit the level-1 silo (one hour of production) or the user cannot play it (`tests/test_asker_sefer_techizat.mjs` guards the craft costs).
 - The map stays static: animated decorations (villagers, clouds, birds, smoke, blinking rings) were removed on request; don't re-add them. Building hover shows the designed info card (`.map-card`, `.map-label`), not rings.
 - three.js 0.186 has no `PCFSoftShadowMap`; use `PCFShadowMap`. Kenney tile scale is `S = 2.3`, world 168 × 100 units, wall panels sit on the +x edge of a tile (`cx = 0.45`, `ry = dir × 90°`, dir 0 east / 1 north / 2 west / 3 south).
 - `npm run dev` never exercises the server path; anything touching accounts, the gate, listings or payouts must be checked against `node server/index.js` or the :8080 trial server, which serves `dist/` (rebuild first).

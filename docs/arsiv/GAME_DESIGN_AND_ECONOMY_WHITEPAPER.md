@@ -294,7 +294,7 @@ Her asker zindan savaşlarından kazandığı tecrübe puanıyla bağımsız sev
 | **Lv.80** | 2.075 HP | 499 ATK | 10 Def | 10 Spd | %5.0 | 5 Pen |
 | **Lv.81 (MAX)** | **2.100 HP** | **505 ATK** | **10 Def** | **10 Spd** | **%5.0** | **5 Pen** |
 
-*(Not: Tablonun 1'den 81'e kadar tüm satırları için [docs/LEVEL_PROGRESSION_TABLES.md](docs/LEVEL_PROGRESSION_TABLES.md) dokümanına başvurabilirsiniz).*
+*(Not: Tablonun 1'den 81'e kadar tüm satırları için [docs/v2/SEVIYE_TABLOLARI.md](../v2/SEVIYE_TABLOLARI.md) dokümanına başvurabilirsiniz).*
 
 ### C) 🛡️ Tek Tip Asker + Yetenek Yükü (Skill Loadout) & Taktik Formasyon:
 Krallık ordusunda askerler sınıf (class) ayrımı olmaksızın **tek tip temel matematiksel stat eğrisine** ($100 + 25 \cdot (L - 1)$ HP, $25 + 6 \cdot (L - 1)$ ATK) tabidir. Ancak ordudaki her asker, taşıdığı **Skill Loadout** (1-3 Aktif + 1 Pasif Yetenek) ve **Mevzi (Front / Back Row)** konumuyla uzmanlaşır.
