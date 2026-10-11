@@ -25,6 +25,12 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | `js/gameState.js` (oyuncu durumu çekirdeği) | Yeniden yazıldı | tam oyun altın kaydı (21 adım) değişmedi |
 | `js/gameState/ordu.js`, `dunyaBossu.js`, `askerGelisim.js`, `kolezyum.js` | Yeniden yazıldı | `tests/test_oyun_kurallari_altin.mjs`: 4.000 rastgele işlem (58 farklı işlem, 3 oyuncu, zaman atlamaları, haftalık hesaplaşma) birebir aynı |
 | `js/gameState/ekonomi.js`, `techizat.js`, `ozet.js` | Eski parçaları yeniden yazıldı | aynı test |
+| `js/gameState/karnaval.js` (çark), `piyango.js`, `promo.js`, `parsomen.js` | Yeniden yazıldı (eski tek dosya 4'e bölündü) | altın kayıt 4.000 işlem birebir; ayrıca eski ve yeni kodla 15 dilim × 8 bedel yolu × 2 kasa durumu (240 koşu) ve 53 promo/parşömen/piyango adımı aynı durum özetini verdi |
+| `js/ui/ekran/*` (silo, merkez, köy, şifahane, uzay, bölge, taverna, demirhane, pazar, konsey, hazine, karakter, ekonomi, koleksiyon, savaş alanı, karnaval, kolezyum, savaşa hazırlık) | 18 ekran sıfırdan yazıldı | `tests/test_ekran_cizim.mjs` (2 hesap durumunda temiz çizim), ekran eylem testleri, `scripts/tarayici/v3.mjs` 195 gerçek tarayıcı denetimi, `ekran-bak.mjs` |
+| `js/ui/arena.js` (savaş arenası) | Yeniden yazıldı; `js/battleArena.js` silindi | `tests/test_arena.mjs`; tarayıcıda düello ve zindan savaşı oynatıldı |
+| `js/dungeonScene.js` + `js/ui/zindan-plan.js` | Yeniden yazıldı (saf plan + ince sahne) | `tests/test_zindan_plan.mjs` |
+| `js/grandTownScene.js`, `js/vadi3d/vadi.js` (ortak kısım) + `js/ui/harita-ortak.js` | Yinelenen kod tek modüle toplandı | `tests/test_harita_ortak.mjs`; iki harita da tarayıcıda açıldı |
+| Geliştirici paneli (`#dev-modal`, ~720 satır), `js/audio.js` ve 75 `sound.*` çağrısı, ölü CSS (1.197 satır), kullanılmayan dinleyiciler | Silindi | `ekranlar.mjs` taraması, `v3.mjs`, `npm test` 148/148 |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -85,3 +91,31 @@ Karar bekleyen / sonraya bırakılan:
     duruyor. app.js yeniden yazılırken çağrılar ve modül birlikte silinecek.
 14. **Kolezyum ve gerçek PvP'de düşman taraf yetenek kullanmıyor** (combat.js bulgu 2). Kolezyum hazır rakibine
     `skills: ['shieldWall','shockwave']` veriliyor ama motor düşman taraf için `abilities` okuyor: yazılan yetenekler etkisiz.
+
+### Arayüz ve kural yeniden yazımı (ikinci tur): bulgular
+15. **Sahte "yakılan NFT havuzu", olmayan "Meclis staking" havuzu, v1 oranlı (%18/%82) simülatör, uydurma kontrat adresi,
+    "DeepSeek" başlığı ve yalnız 3 hammaddeli envanter** eski ekonomi ve karakter ekranlarındaydı: ekranlar baştan yazılırken
+    gerçek hazine defteri, gerçek kasalar ve 6 hammaddeyle değiştirildi.
+16. **Koleksiyon "Pandora kutusu" ekranı** eski "Ad" simgesini 3 hammadde için bildiriyordu; çark ödül resmi/simgesi
+    yalnız odun/demir/buğday için vardı (diğer 3 hammaddenin simgesi kutu emojisi alıyordu). Kaynak tablosundan okunur.
+17. **Çarkın "bedelini geri alma" şansı** v1 ölçeğinden kalma sabit 100 ASTRA eşiğine bakıyordu (bedel artık 1); ekran gerçek
+    bedele göre hesaplıyor (~%31).
+18. **Kuponlar "Redeem Aktif" yazıyordu** ama kod trade sitesinde geçmiyor (`pending_integration`): ekran dürüstçe
+    "site bağlantısı bekleniyor" yazıyor. **Karar bekliyor:** çarkın %0,5'lik "Coin analiz kuponu" dilimi hâlâ site tanımayan sahte
+    kod üretiyor; ya site bağlanana kadar çarktan çıkarılmalı ya da kupon gerçek bir hakka bağlanmalı.
+19. **Kolezyum "Buğdayla İyileştir" düğmesinin dinleyicisi yoktu** (ölü düğme); anlık iyileştirme gerçek maliyetiyle bağlandı.
+20. **Kolezyum Lig sekmesi sahte "Gladyatör Botu #1…#10" tablosu** gösteriyordu, ödülleri v1 ölçeğindeydi (15.000 ASTRA).
+    Yerelde yalnız oyuncunun gerçek puanı/kademesi gösteriliyor; sıralama çevrimiçi modda gerçek oyuncularla. (`getColosseumLeaderboard`
+    kuralı ve kayıttaki `colosseumLeaderboard` alanı altın kayıt değişmesin diye bırakıldı; sonraki kayıt göçünde silinebilir.)
+21. **Parşömen kullanımı zindan hazırlığında hiçbir şeyi tazelemiyordu**: genel dinleyici pencere başlığına bakıp ("SAVAŞ ÖNCESİ")
+    envanter ekranını açıyordu; başlık değişince bu dal ölüydü. Yeni ekranda parşömen sonrası ekran tazeleniyor.
+22. **Zindan haritasında zafer sonrası levhalar tazelenmiyordu** (`monster-defeated` olayını kimse göndermiyordu) ve ipucu
+    "Chamber N" diye İngilizce yazıyordu: düzeltildi.
+23. **2B haritada silo doluluğu yalnız odun/demir/buğdaya bakıyordu; Köy ve Uzay Limanı durumları 2B haritada hiç görünmüyordu**
+    (iki harita kuralları ayrı kopyalıyordu): ortak modüle taşındı.
+24. **Ölü koda ulaşan düğmeler:** hiçbir yerden açılmayan "Akıllı Silah Deposu" penceresi (~105 satır) ve 6 eski Kışla/Taverna/Demirci
+    düğmesini dinleyen ~300 satırlık genel dinleyici (üretici ekranlar silinmişti); silindi. Tarama aracı:
+    app.js'te dinlenen `#kimlik`/`.sınıf` değerlerinin başka bir yerde üretilip üretilmediğine bakar.
+25. **Hızlı kapı yavaş altın kaydı içermiyor** (`test_oyun_kurallari_altin.mjs` ~50 sn): `server/actions.js` değişiminde bir normal işlemi
+    yanlışlıkla test işlemleri listesine yazmıştım; yalnız `npm test`/elle koşu yakaladı. **Kural:** `js/gameState/*` ya da
+    `server/actions.js` değişen her işte commit'ten önce `node tests/test_oyun_kurallari_altin.mjs` koşulur.
