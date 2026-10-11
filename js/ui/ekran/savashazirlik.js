@@ -353,6 +353,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         b.bildir(entry.rewarded
           ? `🏆 Zafer! ${m.name} mağlup edildi! (+${tam(outcome.adaReward)} ASTRA)`
           : `🏋️ Antrenman zaferi: ${m.name} yenildi (yalnızca deneyim)`, 'success');
+        window.dispatchEvent(new CustomEvent('monster-defeated', { detail: { level: m.level } }));   // zindan haritası levhaları tazeler
       } else {
         b.bildir(`💀 Bozgun! Ordun ${m.name} karşısında geri çekildi. Kalan can: ${outcome.remainingEnemyHp}/${m.hp}`, 'error');
       }

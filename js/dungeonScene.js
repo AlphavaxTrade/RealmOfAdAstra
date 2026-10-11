@@ -1,442 +1,207 @@
-// AdAstra: Genesis Realm - 6 Eşsiz Katlı & 18 Seviyeli Master Zindan Motoru (Kilitli Tek Ekran / Sıfır Çökme)
-import { gameState } from './gameState.js';
-import { getFloorMonsters } from './bestiary.js';
+// Realm of AdAstra — Zindan sahnesi (Phaser): 6 kat, her katta 3 canavar odası ve bir sonraki kata geçit.
+// Yerleşim ve kurallar js/ui/zindan-plan.js içindedir (saf, testli); bu dosya yalnızca çizer ve tıklamaları olaya çevirir.
+// Dışarıyla konuşma (pencere olayları): 'switch-dungeon-floor' {floor}, 'monster-defeated' {level},
+// 'open-monster-battle' {monster}, 'toast-notify' {message, type}. 'monster-defeated' zafer sonrası levhaları tazeler.
 import Phaser from 'phaser';
+import { gameState } from './gameState.js';
+import {
+  KATLAR, KAT_SAYISI, katCanavarlari, yerlestir, odaDurumu, kilitMesaji, odaEtiketi, odaIpucu
+} from './ui/zindan-plan.js';
 
-const MAX_LEVEL = 18;
+const UST_CUBUK_YUKSEKLIGI = 92;
 
-// 6 KATIN TAMAMI İÇİN 6 FARKLI VE EŞSİZ MASTER GÖRSEL
-const TEXTURES = {
-  FLOOR1: 'dungeon_tex_f1', // Goblin & Örümcek Doğal Mağarası
-  FLOOR2: 'dungeon_tex_f2', // Kemik Mahzeni & İskelet Kriptosu
-  FLOOR3: 'dungeon_tex_f3', // Kadim Tapınak & Taş Golyat (ARA BOSS)
-  FLOOR4: 'dungeon_tex_f4', // Lanetli Firavun Mezarı & Hayaletler
-  FLOOR5: 'dungeon_tex_f5', // Kaynayan Lav Çukuru & İblisler
-  FLOOR6: 'dungeon_tex_f6'  // Kıyamet Mabedi & Efsanevi Ejderha
-};
-
-// 6 Kat x 3 Seviye = 18 Seviye Tam Konfigürasyonu (Her Katın Kendi Taş Levha Koordinatlarıyla)
-const PAGES = [
-  // 1. KAT: DOĞAL MAĞARA & GOBLİN İNİ
-  {
-    floor: 1,
-    title: '1. Kat: Kristal Mağarası & Goblin İni',
-    badge: '1. KAT (Lv.1 - 3)',
-    texture: TEXTURES.FLOOR1,
-    chambers: [
-      { px: 0.200, py: 0.720, bw: 0.250, bh: 0.085 },
-      { px: 0.520, py: 0.720, bw: 0.250, bh: 0.085 },
-      { px: 0.785, py: 0.720, bw: 0.250, bh: 0.085 }
-    ],
-    portal: { px: 0.940, py: 0.945, bw: 0.115, bh: 0.085 },
-    levels: getFloorMonsters(1)
-  },
-  // 2. KAT: KEMİK MAHZENİ & İSKELET KRİPTOSU
-  {
-    floor: 2,
-    title: '2. Kat: Kemik Mahzeni & İskelet Kriptosu',
-    badge: '2. KAT (Lv.4 - 6)',
-    texture: TEXTURES.FLOOR2,
-    chambers: [
-      { px: 0.185, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.500, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.770, py: 0.952, bw: 0.250, bh: 0.085 }
-    ],
-    portal: { px: 0.940, py: 0.952, bw: 0.115, bh: 0.085 },
-    levels: getFloorMonsters(2)
-  },
-  // 3. KAT: KADİM TAPINAK & TAŞ GOLYAT (ARA BOSS)
-  {
-    floor: 3,
-    title: '3. Kat: Kadim Tapınak & Taş Golyat (ARA BOSS)',
-    badge: '3. KAT (Lv.7 - 9 ARA BOSS)',
-    texture: TEXTURES.FLOOR3,
-    chambers: [
-      { px: 0.180, py: 0.865, bw: 0.250, bh: 0.078 },
-      { px: 0.490, py: 0.865, bw: 0.250, bh: 0.078 },
-      { px: 0.775, py: 0.865, bw: 0.250, bh: 0.078 }
-    ],
-    portal: { px: 0.950, py: 0.970, bw: 0.098, bh: 0.060 },
-    levels: getFloorMonsters(3)
-  },
-  // 4. KAT: LANETLİ FİRAVUN MEZARI & HAYALETLER
-  {
-    floor: 4,
-    title: '4. Kat: Lanetli Firavun Mezarı & Hayaletler',
-    badge: '4. KAT (Lv.10 - 12)',
-    texture: TEXTURES.FLOOR4,
-    chambers: [
-      { px: 0.185, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.500, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.770, py: 0.952, bw: 0.250, bh: 0.085 }
-    ],
-    portal: { px: 0.940, py: 0.952, bw: 0.115, bh: 0.085 },
-    levels: getFloorMonsters(4)
-  },
-  // 5. KAT: KAYNAYAN LAV MAĞARASI & İBLİSLER
-  {
-    floor: 5,
-    title: '5. Kat: Kaynayan Lav Çukuru & İblisler',
-    badge: '5. KAT (Lv.13 - 15)',
-    texture: TEXTURES.FLOOR5,
-    chambers: [
-      { px: 0.180, py: 0.865, bw: 0.250, bh: 0.078 },
-      { px: 0.490, py: 0.865, bw: 0.250, bh: 0.078 },
-      { px: 0.775, py: 0.865, bw: 0.250, bh: 0.078 }
-    ],
-    portal: [
-      { px: 0.945, py: 0.865, bw: 0.115, bh: 0.085 }, // Floor 6 Taş Butonu
-      { px: 0.955, py: 0.460, bw: 0.090, bh: 0.220 }  // Sağdaki Lav Portal Kapısı
-    ],
-    levels: getFloorMonsters(5)
-  },
-  // 6. KAT: KIYAMET MABEDİ & BÜYÜK BOSS (EFSANEVİ EJDERHA)
-  {
-    floor: 6,
-    title: '6. Kat: Kıyamet Mabedi & BÜYÜK BOSS',
-    badge: '6. KAT (Lv.16 - 18 FİNAL)',
-    texture: TEXTURES.FLOOR6,
-    chambers: [
-      { px: 0.185, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.500, py: 0.952, bw: 0.250, bh: 0.085 },
-      { px: 0.770, py: 0.952, bw: 0.250, bh: 0.085 }
-    ],
-    portal: null, // Son kat
-    levels: getFloorMonsters(6)
-  }
-];
-
-const TOP_BAR_HEIGHT = 92;
-function getViewportSize() {
+function gorunumBoyutu() {
   return {
     w: window.innerWidth,
-    h: (window.getStageSize ? window.getStageSize().h : Math.max(300, window.innerHeight - TOP_BAR_HEIGHT))
+    h: (window.getStageSize ? window.getStageSize().h : Math.max(300, window.innerHeight - UST_CUBUK_YUKSEKLIGI))
   };
 }
+
+// Fare/parmak ipucu kutusu (index.html #realm-hover-tooltip)
+const ipucu = {
+  kutu: () => document.getElementById('realm-hover-tooltip'),
+  goster(baslik, renk, alt, x, y) {
+    const kutu = this.kutu();
+    const b = document.getElementById('realm-tooltip-title');
+    const a = document.getElementById('realm-tooltip-sub');
+    if (!kutu || !b || !a) return;
+    b.textContent = baslik;
+    b.style.color = renk;
+    a.textContent = alt;
+    kutu.classList.remove('hidden');
+    kutu.classList.add('visible');
+    this.tasi(x, y);
+  },
+  tasi(x, y) {
+    const kutu = this.kutu();
+    if (!kutu || !kutu.classList.contains('visible')) return;
+    kutu.style.left = `${Math.min(window.innerWidth - 130, Math.max(130, x))}px`;
+    kutu.style.top = `${y - 45}px`;
+  },
+  gizle() {
+    const kutu = this.kutu();
+    if (!kutu) return;
+    kutu.classList.remove('visible');
+    kutu.classList.add('hidden');
+  }
+};
+
+const bildir = (message, type) => window.dispatchEvent(new CustomEvent('toast-notify', { detail: { message, type } }));
+const panelAcik = () => {
+  const m = document.getElementById('rpg-modal');
+  return !!(m && m.classList.contains('active'));
+};
 
 export class DungeonScene extends Phaser.Scene {
   constructor() {
     super({ key: 'DungeonScene' });
-    this.currentPage = 1;
-    this.maxUnlockedLevel = gameState.state.dungeonProgress || 1;
+    this.sayfa = 1;
   }
 
   preload() {
-    this.load.image(TEXTURES.FLOOR1, 'assets/dungeon_map.jpg');
-    this.load.image(TEXTURES.FLOOR2, 'assets/dungeon_floor2.jpg');
-    this.load.image(TEXTURES.FLOOR3, 'assets/dungeon_floor3.jpg');
-    this.load.image(TEXTURES.FLOOR4, 'assets/dungeon_floor4.jpg');
-    this.load.image(TEXTURES.FLOOR5, 'assets/dungeon_floor5.jpg');
-    this.load.image(TEXTURES.FLOOR6, 'assets/dungeon_floor6.jpg');
+    KATLAR.forEach((k) => this.load.image(k.doku, k.dosya));
   }
 
   create() {
-    // Sabit HTML kat seçici çubuğunu göster
-    const floorBar = document.getElementById('dungeon-floor-bar');
-    if (floorBar) floorBar.classList.remove('hidden');
+    const katCubugu = document.getElementById('dungeon-floor-bar');
+    if (katCubugu) katCubugu.classList.remove('hidden');
 
-    // Tek geniş ekran kilitli kamera (Fareyle büyütme/küçültme/sürükleme yok)
-    this.setupFixedScreen();
+    this._kameraKilitle();
+    this._sayfayiCiz();
 
-    // Zindan Sayfasını Çiz
-    this.renderCurrentPage();
+    this._boyutDegisti = () => { this._kameraKilitle(); this._sayfayiCiz(); };
+    this.scale.on('resize', this._boyutDegisti);
 
-    this.resizeHandler = () => {
-      this.setupFixedScreen();
-      this.renderCurrentPage();
-    };
-    this.scale.on('resize', this.resizeHandler);
-
-    // Kat Değiştirme Olayını Dinle
-    this.floorSwitchHandler = (e) => {
-      const targetFloor = e.detail.floor;
-      if (targetFloor >= 1 && targetFloor <= 6 && this.currentPage !== targetFloor) {
-        this.currentPage = targetFloor;
-        this.renderCurrentPage();
+    // Kat çubuğundan ya da geçitten kat değişimi
+    this._katDegisti = (e) => {
+      const hedef = e.detail.floor;
+      if (hedef >= 1 && hedef <= KAT_SAYISI && this.sayfa !== hedef) {
+        this.sayfa = hedef;
+        this._sayfayiCiz();
       }
     };
-    window.addEventListener('switch-dungeon-floor', this.floorSwitchHandler);
+    window.addEventListener('switch-dungeon-floor', this._katDegisti);
 
-    this.monsterDefeatedHandler = (e) => {
-      const defeatedLvl = e.detail.level;
-      if (defeatedLvl >= this.maxUnlockedLevel && this.maxUnlockedLevel <= MAX_LEVEL) {
-        this.maxUnlockedLevel = Math.min(MAX_LEVEL, defeatedLvl + 1);
-        gameState.state.dungeonProgress = this.maxUnlockedLevel;
-        gameState.saveState();
-        this.renderCurrentPage();
-      }
-    };
-    window.addEventListener('monster-defeated', this.monsterDefeatedHandler);
+    // Zafer sonrası ilerleme kural tarafından zaten işlenmiştir; levhalar yeni duruma göre yeniden çizilir
+    this._canavarYenildi = () => this._sayfayiCiz();
+    window.addEventListener('monster-defeated', this._canavarYenildi);
 
     this.events.once('shutdown', () => {
-      if (floorBar) floorBar.classList.add('hidden');
-      this.scale.off('resize', this.resizeHandler);
-      window.removeEventListener('switch-dungeon-floor', this.floorSwitchHandler);
-      window.removeEventListener('monster-defeated', this.monsterDefeatedHandler);
+      if (katCubugu) katCubugu.classList.add('hidden');
+      this.scale.off('resize', this._boyutDegisti);
+      window.removeEventListener('switch-dungeon-floor', this._katDegisti);
+      window.removeEventListener('monster-defeated', this._canavarYenildi);
+      ipucu.gizle();
     });
   }
 
-  setupFixedScreen() {
-    // NOT: this.scale.resize() BURADA ÇAĞRILMAZ. ScaleManager.resize() her
-    // çağrıldığında (boyut değişmese bile) 'resize' event'ini tekrar fırlatır;
-    // bu metod zaten o event'in handler'ı olduğundan sonsuz senkron döngü ve
-    // sekme çökmesine (kara ekran) yol açar. Gerçek canvas boyutlandırması
-    // zaten Phaser'ın RESIZE scale modu ve app.js'teki window resize
-    // dinleyicisi tarafından yapılıyor; burada sadece kamerayı güncel boyuta göre kilitliyoruz.
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    this.cameras.main.setSize(w, h);
+  // Kamera tek geniş ekrana kilitlidir (büyütme/kaydırma yok). NOT: burada scale.resize() ÇAĞRILMAZ: resize olayını
+  // yeniden fırlatır, bu metod o olayın işleyicisi olduğundan sonsuz döngü ve kara ekran doğurur.
+  _kameraKilitle() {
+    this.cameras.main.setSize(window.innerWidth, window.innerHeight);
     this.cameras.main.setScroll(0, 0);
     this.cameras.main.setZoom(1);
   }
 
-  renderCurrentPage() {
+  _sayfayiCiz() {
     this.tweens.killAll();
-    if (this.activeZones) {
-      this.activeZones.forEach(z => {
-        if (z) {
-          try {
-            z.disableInteractive();
-            z.removeAllListeners();
-            z.destroy();
-          } catch (_) { /* bölge zaten yok edilmiş: sahne kapanırken beklenen durum */ }
-        }
-      });
-    }
-    this.activeZones = [];
+    (this._bolgeler || []).forEach((z) => {
+      try { z.disableInteractive(); z.removeAllListeners(); z.destroy(); } catch (_) { /* bölge zaten yok edilmiş: sahne kapanırken beklenen durum */ }
+    });
+    this._bolgeler = [];
     this.children.removeAll(true);
-    this.buildPage(this.currentPage);
-    this.syncHTMLFloorTabs();
-  }
+    this._katiKur(this.sayfa);
 
-  syncHTMLFloorTabs() {
-    document.querySelectorAll('.floor-tab').forEach(tab => {
-      const f = parseInt(tab.dataset.floor, 10);
-      if (f === this.currentPage) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
-      }
+    document.querySelectorAll('.floor-tab').forEach((t) => {
+      t.classList.toggle('active', parseInt(t.dataset.floor, 10) === this.sayfa);
     });
-    window.dispatchEvent(new CustomEvent('switch-dungeon-floor', { detail: { floor: this.currentPage } }));
+    window.dispatchEvent(new CustomEvent('switch-dungeon-floor', { detail: { floor: this.sayfa } }));
   }
 
-  buildPage(pageIndex) {
-    const page = PAGES[pageIndex - 1];
-    if (!page) return;
+  _katiKur(kat) {
+    const plan = KATLAR[kat - 1];
+    if (!plan) return;
+    const { w, h } = gorunumBoyutu();
 
-    const { w, h } = getViewportSize();
+    const harita = this.add.image(0, 0, plan.doku).setOrigin(0, 0);
+    harita.setDisplaySize(w, h);
 
-    // Arka Plan Haritası (Tek geniş ekran, sıfır kırpılma)
-    this.map = this.add.image(0, 0, page.texture).setOrigin(0, 0);
-    this.map.setDisplaySize(w, h);
-
-    // 3 Canavar Odası (Taş Levhaları 100% Tam Kapatan 3D Katı Altın Çerçeveli Butonlar)
-    const monsters = page.levels.map((lvl, i) => {
-      const layout = page.chambers[i];
-      return {
-        ...lvl,
-        id: `monster_lv${lvl.level}`,
-        x: layout.px * w,
-        y: layout.py * h,
-        bw: layout.bw * w,
-        bh: layout.bh * h
-      };
+    katCanavarlari(kat).forEach((canavar, sira) => {
+      this._odaKur({ ...canavar, id: `monster_lv${canavar.level}` }, sira, yerlestir(plan.odalar[sira], w, h));
     });
-
-    monsters.forEach((m, idx) => this.createMonsterZone(m, idx));
-
-    // Sonraki Kat Portalı (Sağ Alttaki Taş Levha & Portal)
-    if (page.portal) {
-      const portalList = Array.isArray(page.portal) ? page.portal : [page.portal];
-      portalList.forEach(p => {
-        this.createNextPortal({
-          x: p.px * w,
-          y: p.py * h,
-          bw: p.bw * w,
-          bh: p.bh * h
-        }, pageIndex);
-      });
-    }
+    plan.gecitler.forEach((g) => this._gecitKur(yerlestir(g, w, h), kat + 1));
   }
 
-  // Taş levhanın üstüne Türkçe etiket çizer: seviye, canavar adı ve durum. Dokunmatik ekranda "üzerine gelince"
-  // ipucu olmadığı için kilit/zafer/sıra bilgisi artık levhanın kendisinde görünür (levhalardaki İngilizce yazı kapanır).
-  drawChamberPlate(m) {
-    const current = gameState.state.dungeonProgress || 1;
-    const cleared = current > m.level;
-    const locked = current < m.level;
-    const isBoss = m.level === 9 || m.level === 18;
-    const accent = locked ? 0x64748b : (cleared ? 0x4ade80 : 0xfde047);
-    const plate = this.add.rectangle(m.x, m.y, m.bw, m.bh, 0x0b0f17, 0.97).setStrokeStyle(2, accent, 0.95);
-    plate.setDepth(5);
-    const status = locked ? '🔒 Kilitli' : (cleared ? '✅ Yenildi · tekrar' : '⚔️ Savaşa gir');
-    const size = Math.max(11, Math.min(17, Math.round(m.bw * 0.075)));
-    const family = (typeof document !== 'undefined' && getComputedStyle(document.body).fontFamily) || 'sans-serif';
-    const head = `${isBoss ? '👑 ' : ''}Seviye ${m.level}`;
-    const label = this.add.text(m.x, m.y, `${head}\n${m.name}\n${status}`, {
-      fontFamily: family, fontSize: `${size}px`, color: locked ? '#cbd5e1' : '#f8fafc', align: 'center', fontStyle: '700',
-      lineSpacing: 2, wordWrap: { width: Math.max(40, m.bw - 14) }
+  // ── bir canavar odası: levha, etiket ve tıklama alanı ──
+  _odaKur(canavar, sira, yer) {
+    const ilerleme = gameState.state.dungeonProgress || 1;
+    const durum = odaDurumu(canavar.level, ilerleme);
+    const vurgu = durum.kilitli ? 0x64748b : (durum.yenildi ? 0x4ade80 : 0xfde047);
+    this.add.rectangle(yer.x, yer.y, yer.bw, yer.bh, 0x0b0f17, 0.97).setStrokeStyle(2, vurgu, 0.95).setDepth(5);
+    const boy = Math.max(11, Math.min(17, Math.round(yer.bw * 0.075)));
+    const yaziAilesi = getComputedStyle(document.body).fontFamily || 'sans-serif';
+    const etiket = this.add.text(yer.x, yer.y, odaEtiketi(canavar, durum), {
+      fontFamily: yaziAilesi, fontSize: `${boy}px`, color: durum.kilitli ? '#cbd5e1' : '#f8fafc', align: 'center',
+      fontStyle: '700', lineSpacing: 2, wordWrap: { width: Math.max(40, yer.bw - 14) }
     }).setOrigin(0.5).setDepth(6);
     // Küçük levhada metin taşarsa yazı küçülür (adı iki satıra düşen canavarlar)
-    let fs = size;
-    while (label.height > m.bh - 6 && fs > 8) { fs -= 1; label.setFontSize(`${fs}px`); }
-    return { plate, label };
-  }
+    let fs = boy;
+    while (etiket.height > yer.bh - 6 && fs > 8) { fs -= 1; etiket.setFontSize(`${fs}px`); }
 
-  // Sonraki kat portalının levhası: "Floor N" yazısı kapanır, Türkçe yönlendirme çıkar
-  drawPortalPlate(p, targetFloor) {
-    const plate = this.add.rectangle(p.x, p.y, p.bw, p.bh, 0x1a1030, 0.97).setStrokeStyle(2, 0xc084fc, 0.95).setDepth(5);
-    const size = Math.max(10, Math.min(15, Math.round(p.bw * 0.11)));
-    const family = (typeof document !== 'undefined' && getComputedStyle(document.body).fontFamily) || 'sans-serif';
-    const label = this.add.text(p.x, p.y, `🌀 ${targetFloor}. Kat`, { fontFamily: family, fontSize: `${size}px`, color: '#e9d5ff', fontStyle: '700', align: 'center', wordWrap: { width: Math.max(30, p.bw - 8) } }).setOrigin(0.5).setDepth(6);
-    return { plate, label };
-  }
-
-  createMonsterZone(m, chamberIndex = 0) {
-    this.drawChamberPlate(m);
-    // Şeffaf İnteraktif Tıklama Alanı (Görseldeki taş kartların üzerine %100 oturur)
-    const zone = this.add.rectangle(m.x, m.y, m.bw, m.bh, 0x000000, 0.001)
-      .setInteractive({ cursor: 'pointer', useHandCursor: true });
-
-    if (!this.activeZones) this.activeZones = [];
-    this.activeZones.push(zone);
-
-    // Hover esnasında dinamik kontrol ile tooltip göster
-    zone.on('pointerover', (pointer) => {
-      if (this.input) this.input.setDefaultCursor('pointer');
-      if (this.game && this.game.canvas) this.game.canvas.style.cursor = 'pointer';
-
-      const currentLevel = gameState.state.dungeonProgress || 1;
-      const isCleared = currentLevel > m.level;
-      const isCurrent = currentLevel === m.level;
-      const isLocked = currentLevel < m.level;
-
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      const titleEl = document.getElementById('realm-tooltip-title');
-      const subEl = document.getElementById('realm-tooltip-sub');
-      const canvasTop = (this.game && this.game.canvas) ? this.game.canvas.getBoundingClientRect().top : 92;
-      if (tooltipEl && titleEl && subEl) {
-        titleEl.textContent = `Chamber ${chamberIndex + 1} — Lv.${m.level}: ${m.name}`;
-        titleEl.style.color = isCurrent ? '#fde047' : (isCleared ? '#4ade80' : '#a8a29e');
-        subEl.textContent = isLocked ? `🔒 Kilitli (Önce Seviye ${currentLevel} tamamlanmalı)` : (isCurrent ? '⚔️ Tıkla ve Savaşa Gir!' : '⚔️ Tamamlandı (Tekrar Savaş)');
-        tooltipEl.classList.remove('hidden');
-        tooltipEl.classList.add('visible');
-        tooltipEl.style.left = `${pointer.x}px`;
-        tooltipEl.style.top = `${pointer.y + canvasTop - 45}px`;
-      }
+    const alan = this._alan(yer);
+    alan.on('pointerover', (p) => {
+      const g = odaDurumu(canavar.level, gameState.state.dungeonProgress || 1);
+      const bilgi = odaIpucu(canavar, sira, g, gameState.state.dungeonProgress || 1);
+      ipucu.goster(bilgi.baslik, bilgi.renk, bilgi.alt, p.x, p.y + this._tuvalUstu());
     });
-
-    zone.on('pointermove', (pointer) => {
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      const canvasTop = (this.game && this.game.canvas) ? this.game.canvas.getBoundingClientRect().top : 92;
-      if (tooltipEl && tooltipEl.classList.contains('visible')) {
-        tooltipEl.style.left = `${pointer.x}px`;
-        tooltipEl.style.top = `${pointer.y + canvasTop - 45}px`;
-      }
-    });
-
-    zone.on('pointerout', () => {
-      if (this.input) this.input.setDefaultCursor('default');
-      if (this.game && this.game.canvas) this.game.canvas.style.cursor = 'default';
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      if (tooltipEl) {
-        tooltipEl.classList.remove('visible');
-        tooltipEl.classList.add('hidden');
-      }
-    });
-
-    zone.on('pointerup', () => {
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      if (tooltipEl) {
-        tooltipEl.classList.remove('visible');
-        tooltipEl.classList.add('hidden');
-      }
-
-      const rpgModal = document.getElementById('rpg-modal');
-      if (rpgModal && rpgModal.classList.contains('active')) return;
-
-      const currentLevel = gameState.state.dungeonProgress || 1;
-      if (m.level > currentLevel) {
-        window.dispatchEvent(new CustomEvent('toast-notify', {
-          detail: {
-            message: `🔒 Şu an Seviye ${currentLevel}'desiniz! [Seviye ${m.level}] ${m.name} bölümüne girmek için önce Seviye ${currentLevel} ve önceki bölümleri tamamlamalısınız.`,
-            type: 'error'
-          }
-        }));
-        return;
-      }
-
-      window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: m } }));
+    alan.on('pointermove', (p) => ipucu.tasi(p.x, p.y + this._tuvalUstu()));
+    alan.on('pointerout', () => { ipucu.gizle(); this._imlec('default'); });
+    alan.on('pointerup', () => {
+      ipucu.gizle();
+      if (panelAcik()) return;
+      const simdiki = gameState.state.dungeonProgress || 1;
+      if (canavar.level > simdiki) { bildir(kilitMesaji(simdiki, canavar), 'error'); return; }
+      window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: canavar } }));
     });
   }
 
-  createNextPortal(portalCoord, pageIndex) {
-    if (!portalCoord) return;
-    const targetFloor = pageIndex + 1;
-    if (targetFloor > 6) return;
+  // ── sonraki kata geçit ──
+  _gecitKur(yer, hedefKat) {
+    if (hedefKat > KAT_SAYISI) return;
+    this.add.rectangle(yer.x, yer.y, yer.bw, yer.bh, 0x1a1030, 0.97).setStrokeStyle(2, 0xc084fc, 0.95).setDepth(5);
+    const boy = Math.max(10, Math.min(15, Math.round(yer.bw * 0.11)));
+    this.add.text(yer.x, yer.y, `🌀 ${hedefKat}. Kat`, {
+      fontFamily: getComputedStyle(document.body).fontFamily || 'sans-serif', fontSize: `${boy}px`, color: '#e9d5ff',
+      fontStyle: '700', align: 'center', wordWrap: { width: Math.max(30, yer.bw - 8) }
+    }).setOrigin(0.5).setDepth(6);
 
-    this.drawPortalPlate(portalCoord, targetFloor);
-    // Şeffaf Portal Tıklama Alanı (Sağ alttaki Floor N taş kartının üzerine %100 oturur)
-    const portalZone = this.add.rectangle(portalCoord.x, portalCoord.y, portalCoord.bw, portalCoord.bh, 0x000000, 0.001)
-      .setInteractive({ cursor: 'pointer', useHandCursor: true });
-
-    if (!this.activeZones) this.activeZones = [];
-    this.activeZones.push(portalZone);
-
-    portalZone.on('pointerover', (pointer) => {
-      if (this.input) this.input.setDefaultCursor('pointer');
-      if (this.game && this.game.canvas) this.game.canvas.style.cursor = 'pointer';
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      const titleEl = document.getElementById('realm-tooltip-title');
-      const subEl = document.getElementById('realm-tooltip-sub');
-      const canvasTop = (this.game && this.game.canvas) ? this.game.canvas.getBoundingClientRect().top : 92;
-      if (tooltipEl && titleEl && subEl) {
-        titleEl.textContent = `🌀 ${targetFloor}. KAT PORTALI`;
-        titleEl.style.color = '#c084fc';
-        subEl.textContent = 'Tıkla ve Sonraki Kata Işınlan';
-        tooltipEl.classList.remove('hidden');
-        tooltipEl.classList.add('visible');
-        const posX = Math.min(window.innerWidth - 130, Math.max(130, pointer.x));
-        tooltipEl.style.left = `${posX}px`;
-        tooltipEl.style.top = `${pointer.y + canvasTop - 45}px`;
-      }
+    const alan = this._alan(yer);
+    alan.on('pointerover', (p) => ipucu.goster(`🌀 ${hedefKat}. KAT GEÇİDİ`, '#c084fc', 'Tıkla ve sonraki kata ışınlan', p.x, p.y + this._tuvalUstu()));
+    alan.on('pointermove', (p) => ipucu.tasi(p.x, p.y + this._tuvalUstu()));
+    alan.on('pointerout', () => { ipucu.gizle(); this._imlec('default'); });
+    alan.on('pointerup', () => {
+      ipucu.gizle();
+      this._imlec('default');
+      if (panelAcik()) return;
+      window.dispatchEvent(new CustomEvent('switch-dungeon-floor', { detail: { floor: hedefKat } }));
+      bildir(`🌀 ${hedefKat}. Kata ışınlanıldı!`, 'success');
     });
+  }
 
-    portalZone.on('pointermove', (pointer) => {
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      const canvasTop = (this.game && this.game.canvas) ? this.game.canvas.getBoundingClientRect().top : 92;
-      if (tooltipEl && tooltipEl.classList.contains('visible')) {
-        const posX = Math.min(window.innerWidth - 130, Math.max(130, pointer.x));
-        tooltipEl.style.left = `${posX}px`;
-        tooltipEl.style.top = `${pointer.y + canvasTop - 45}px`;
-      }
-    });
+  // Şeffaf tıklama alanı: levhanın üstüne tam oturur
+  _alan(yer) {
+    const alan = this.add.rectangle(yer.x, yer.y, yer.bw, yer.bh, 0x000000, 0.001).setInteractive({ cursor: 'pointer', useHandCursor: true });
+    alan.on('pointerover', () => this._imlec('pointer'));
+    this._bolgeler.push(alan);
+    return alan;
+  }
 
-    portalZone.on('pointerout', () => {
-      if (this.input) this.input.setDefaultCursor('default');
-      if (this.game && this.game.canvas) this.game.canvas.style.cursor = 'default';
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      if (tooltipEl) {
-        tooltipEl.classList.remove('visible');
-        tooltipEl.classList.add('hidden');
-      }
-    });
+  _imlec(tur) {
+    if (this.input) this.input.setDefaultCursor(tur);
+    if (this.game && this.game.canvas) this.game.canvas.style.cursor = tur;
+  }
 
-    portalZone.on('pointerup', () => {
-      if (this.input) this.input.setDefaultCursor('default');
-      if (this.game && this.game.canvas) this.game.canvas.style.cursor = 'default';
-      const tooltipEl = document.getElementById('realm-hover-tooltip');
-      if (tooltipEl) {
-        tooltipEl.classList.remove('visible');
-        tooltipEl.classList.add('hidden');
-      }
-
-      const rpgModal = document.getElementById('rpg-modal');
-      if (rpgModal && rpgModal.classList.contains('active')) return;
-
-      window.dispatchEvent(new CustomEvent('switch-dungeon-floor', { detail: { floor: targetFloor } }));
-      window.dispatchEvent(new CustomEvent('toast-notify', { detail: { message: `🌀 ${targetFloor}. Kata Işınlanıldı!`, type: 'success' } }));
-    });
+  _tuvalUstu() {
+    return (this.game && this.game.canvas) ? this.game.canvas.getBoundingClientRect().top : UST_CUBUK_YUKSEKLIGI;
   }
 }

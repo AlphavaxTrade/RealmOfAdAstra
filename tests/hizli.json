@@ -33,5 +33,6 @@
   "test_cark_dilimleri.mjs",
   "test_cark_cizim.mjs",
   "test_arena.mjs",
+  "test_zindan_plan.mjs",
   "test_demirhane_onarim_hedefi.mjs"
 ]
