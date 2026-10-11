@@ -3,7 +3,6 @@
 // bu dosya her görevin NASIL algılandığını tek yerde tutar. Görevler oyun durumundan otomatik algılanır (tarayıcının
 // beyanı sayılmaz: çevrimiçi modda aynı koşullar sunucuda, oyuncunun kaydından hesaplanır).
 import { GAME_CONFIG } from '../config.js';
-import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
 
 const ilk = (gs, anahtar) => !!(gs.state.firsts || {})[anahtar];
@@ -150,7 +149,6 @@ export const ogreticiYontemleri = {
     alinan[bolumId] = { claimed: true, at: this._now(), granted };
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
     this._onAdaEarned(granted);
-    sound.playLevelUp();
     this.saveState();
     const ad = isFinal ? final.title : bolum.title;
     const budgetNote = budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : '';

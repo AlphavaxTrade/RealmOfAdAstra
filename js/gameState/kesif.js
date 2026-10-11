@@ -2,7 +2,6 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
 
 export const kesifYontemleri = {
@@ -82,7 +81,6 @@ export const kesifYontemleri = {
       };
     }
 
-    sound.playLevelUp();
     this.saveState();
 
     return { xpGained, adAstraGained, fragmentsGained, boxGained, artifactDiscovered, scrollGained, isBoss: isMajorBoss, budgetCapped, budgetFull, baseAda: base.ada };
@@ -160,7 +158,6 @@ export const kesifYontemleri = {
     const rarityBadge = chosenConfig.rarity === 'legendary' ? '💎 EFSANEVİ' : (chosenConfig.rarity === 'epic' ? '🟣 EPİK' : (chosenConfig.rarity === 'rare' ? '🔵 NADİR' : '🟢 YAYGIN'));
     const isDuplicate = wasDiscovered;
 
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -209,7 +206,6 @@ export const kesifYontemleri = {
     // v2 (M): Genesis NFT = Universe'de gezegen satın alma hakkı
     this.state.grants = Array.from(new Set([...(Array.isArray(this.state.grants) ? this.state.grants : []), ...((GAME_CONFIG.GENESIS_NFT && GAME_CONFIG.GENESIS_NFT.grants) || ['universe_planet_purchase'])]));
 
-    sound.playLevelUp();
     this.saveState();
 
     return { success: true, message: `🏆 ${GAME_CONFIG.GENESIS_NFT.name} başarıyla basıldı! Efsane tamamlandı!` };

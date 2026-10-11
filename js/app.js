@@ -4,7 +4,6 @@ import { GAME_CONFIG } from './config.js';
 import { gameState } from './gameState.js';
 import { globalPool } from './globalPool.js';
 import { ammMarket } from './ammMarket.js';
-import { sound } from './audio.js';
 import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
 // 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
@@ -328,7 +327,6 @@ function danismanEylemi(act) {
   if (act === 'sweep_harvest') {
     const res = gameState.claimAllHarvests();
     showToast(res.message, res.success ? 'success' : 'info');
-    if (res.success) sound.playHarvest();
     renderTopBar();
   } else if (act === 'open_barracks') {
     openBarracksModal();
@@ -1224,7 +1222,6 @@ function initAppEvents() {
       const res = gameState.sweepCompletedExpeditions();
       if (res.success) {
         showToast(res.message, 'success');
-        sound.playHarvest();
       } else {
         showToast(res.message, 'info');
       }
@@ -1238,7 +1235,6 @@ function initAppEvents() {
       const res = gameState.repairAllTools();
       if (res.success) {
         showToast(res.message, 'success');
-        sound.playLevelUp();
       } else {
         showToast(res.message, 'error');
       }
@@ -1497,11 +1493,9 @@ function uiGameLoop(currentTime) {
     const botPauseStatus = gameState.updateBotPauseState();
     if (botPauseStatus && botPauseStatus.justResumed) {
       showToast('🟢 Gerekli tüm kaynaklar tamamlandı! 24s Otomasyon Botu anında devreye girdi.', 'success');
-      sound.playLevelUp();
     }
     if (botPauseStatus && botPauseStatus.justRenewed) {
       showToast('🔄 24 saat tamamlandı! Bot otomatik olarak yeniden satın alındı ve bir 24 saat daha devam ediyor.', 'success');
-      if (typeof sound !== 'undefined' && sound.playLevelUp) sound.playLevelUp();
       renderTopBar();
     }
 

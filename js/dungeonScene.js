@@ -1,6 +1,5 @@
 // AdAstra: Genesis Realm - 6 Eşsiz Katlı & 18 Seviyeli Master Zindan Motoru (Kilitli Tek Ekran / Sıfır Çökme)
 import { gameState } from './gameState.js';
-import { sound } from './audio.js';
 import { getFloorMonsters } from './bestiary.js';
 import Phaser from 'phaser';
 
@@ -368,7 +367,6 @@ export class DungeonScene extends Phaser.Scene {
         return;
       }
 
-      sound.playPickaxe();
       window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: m } }));
     });
   }
@@ -437,7 +435,6 @@ export class DungeonScene extends Phaser.Scene {
       const rpgModal = document.getElementById('rpg-modal');
       if (rpgModal && rpgModal.classList.contains('active')) return;
 
-      sound.playLevelUp();
       window.dispatchEvent(new CustomEvent('switch-dungeon-floor', { detail: { floor: targetFloor } }));
       window.dispatchEvent(new CustomEvent('toast-notify', { detail: { message: `🌀 ${targetFloor}. Kata Işınlanıldı!`, type: 'success' } }));
     });

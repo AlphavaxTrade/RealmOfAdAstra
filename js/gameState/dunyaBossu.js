@@ -5,7 +5,6 @@
 // → ödül hazinenin worldBoss kasasından çekilir (basılmaz) ve talep edilebilir bakiyeye yazılır → oyuncu talep eder.
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
 
 const HAFTA_MS = 7 * 24 * 3600 * 1000;
@@ -124,7 +123,6 @@ export const dunyaBossuYontemleri = {
     boss.totalStakedHp = (boss.totalStakedHp || 0) + hp;
 
     const guc = this.calculateUserWorldBossPower();
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -179,7 +177,6 @@ export const dunyaBossuYontemleri = {
     boss.lastBattleTimestamp = Date.now();
     boss.userStaked = false;   // ordu kilidi savaştan sonra açılır
 
-    sound.playLevelUp();
     this.saveState();
 
     const oranlandi = cekim.scaleFactor < 0.999;
@@ -212,7 +209,6 @@ export const dunyaBossuYontemleri = {
     boss.claimableRewardAda = 0;
     const serbest = kilidiBirak(boss);
 
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -255,7 +251,6 @@ export const dunyaBossuYontemleri = {
     // Önceki savaştan kalan talep edilebilir ödüle dokunulmaz: o ASTRA kasadan çoktan çekildi, oyuncunundur
     const serbest = kilidiBirak(boss);
 
-    sound.playPickaxe();
     this.saveState();
 
     return {

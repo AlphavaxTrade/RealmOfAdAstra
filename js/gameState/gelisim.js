@@ -2,7 +2,6 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS, zeroRes, round3 } from './ortak.js';
 
@@ -236,7 +235,6 @@ export const gelisimYontemleri = {
     this.state.maxStamina = this.getMaxStamina(this.state.level);
     this.state.stamina = this.state.maxStamina;
 
-    sound.playLevelUp();
     this.saveState();
 
     const newDuration = this.getExpeditionDurationHours();
@@ -266,7 +264,6 @@ export const gelisimYontemleri = {
     globalPool.recordTokenSpend(troopCost);
 
     this.state.army[troopId] = (this.state.army[troopId] || 0) + 1;
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -313,7 +310,6 @@ export const gelisimYontemleri = {
       expiresAt: currentExpire + buffConfig.durationSeconds * 1000
     };
 
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -440,7 +436,6 @@ export const gelisimYontemleri = {
     const maxDur = (this.state.tools[toolId]?.maxDurability != null) ? this.state.tools[toolId].maxDurability : (GAME_CONFIG.TOOLS[toolId]?.maxDurability || 4320);
     this.state.tools[toolId].durability = maxDur;
 
-    sound.playRepair();
     this.saveState();
 
     return {
@@ -452,7 +447,6 @@ export const gelisimYontemleri = {
   faucetAdAstra(amount = 100) {
     this.state.adAstraBalance += amount;
     this._onAdaEarned(amount);
-    sound.playLevelUp();
     this.saveState();
     return this.state.adAstraBalance;
   },
@@ -576,7 +570,6 @@ export const gelisimYontemleri = {
     globalPool.recordTokenSpend(cost.adAstra);
 
     this.state.warehouseLevel += 1;
-    sound.playLevelUp();
 
     this.saveState();
 

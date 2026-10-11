@@ -2,7 +2,6 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS } from './ortak.js';
 
@@ -116,7 +115,6 @@ export const hasatYontemleri = {
       exp.claimedSeconds = exp.elapsedSeconds;
     }
 
-    sound.playHarvest();
     this.saveState();
 
     const stillWaiting = Math.max(0, accruedInfo.accruedAmount - harvestedAmount);
@@ -345,8 +343,6 @@ export const hasatYontemleri = {
 
       delete this.state.activeExpeditions[nodeId];
 
-      if (playerTool.durability === 0) sound.playBreakWarning();
-      else sound.playHarvest();
 
       // 🤖 KURAL 2 (Adım 4 A Seçeneği 2. Bölüm): Her sefer bitiminde tetikle ve olabiliyorsa yap!
       if (isBotActive && this.state.botSiloAutoUpgrade) {
@@ -387,7 +383,6 @@ export const hasatYontemleri = {
         }
       }
 
-      sound.playHarvest();
       this.saveState();
       const quotaMsg = quotaWait > 0 ? `⏳ Üretim Hakkı: +${harvestedAmount} ${nodeConfig.name} toplandı (+${xpGained} XP); hakkın doldu (${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')}). Kalan ${stillRemaining} ${rLabel} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.` : null;
 
@@ -439,7 +434,6 @@ export const hasatYontemleri = {
     }
 
     if (totalHarvested > 0) {
-      sound.playLevelUp();
       this.saveState();
       return {
         success: true,
@@ -475,7 +469,6 @@ export const hasatYontemleri = {
     }
 
     if (totalHarvested > 0) {
-      sound.playLevelUp();
       this.saveState();
       return {
         success: true,
@@ -505,7 +498,6 @@ export const hasatYontemleri = {
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.amount;
       this._onAdaEarned(res.amount);
       this.state.totalUbiEarned = (this.state.totalUbiEarned || 0) + res.amount;
-      sound.playLevelUp();
       this.saveState();
     }
     return res;

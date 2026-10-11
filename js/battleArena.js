@@ -1,6 +1,5 @@
 // AdAstra: Canlı Savaş Arenası — DOM Tabanlı Sinematik Savaş Motoru
 // Zindan (Dungeon) ve Kolezyum (Colosseum) Canlı Savaş Görselleştirmesi
-import { sound } from './audio.js';
 
 // Savaş kaydı innerHTML ile yazılır; asker adları başka oyunculardan gelebilir (kaynakta cleanName ile temizlenir, burası ek savunma katmanı)
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -369,9 +368,6 @@ export class AdAstraBattleArena {
       if (target.hp <= 0 && !target.dead) {
         target.dead = true;
         log(`💀 <b>${esc(target.name)}</b> yere serildi!`, 'dmg');
-        if (sound && sound.playBreakWarning) sound.playBreakWarning();
-      } else {
-        if (sound && sound.playPickaxe) sound.playPickaxe();
       }
       updateUnitDom(target);
       flash(target.id);
@@ -386,7 +382,6 @@ export class AdAstraBattleArena {
       updateUnitDom(target);
       if (healed > 0) {
         spawnDmg(target.id, '+' + healed, 'heal');
-        if (sound && sound.playHarvest) sound.playHarvest();
       }
       return healed;
     }
@@ -411,7 +406,6 @@ export class AdAstraBattleArena {
         u.cd[usable.id] = usable.cd;
         spawnBurst(u.id);
         caption(usable.icon + ' ' + usable.name);
-        if (sound && sound.playLevelUp) sound.playLevelUp();
 
         if (usable.heal) {
           const target = allies.filter(a => !a.dead).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
@@ -479,7 +473,6 @@ export class AdAstraBattleArena {
           phaseIndexUsed[idx] = true;
           showPhaseBanner(ph.text || ph.name, ph.sub || 'Düşman öfkeleniyor!');
           log(`⚡ <b class="num">${ph.text || ph.name}</b> — ${boss.name} güçleniyor!`, 'system');
-          if (sound && sound.playBreakWarning) sound.playBreakWarning();
         }
       });
     }
@@ -541,7 +534,6 @@ export class AdAstraBattleArena {
         });
         if (win) {
           log('🎉 <b>Savaş kazanıldı!</b>', 'system');
-          if (sound && sound.playLevelUp) sound.playLevelUp();
         } else {
           log('☠️ Ordu geri çekildi. Yeniden denemek için askerlerini iyileştir.', 'system');
         }
@@ -602,7 +594,6 @@ export class AdAstraBattleArena {
               updateUnitDom(target);
               flash(target.id);
               spawnDmg(target.id, (ev.isCrit ? '💥 ' : '') + '-' + ev.amount, ev.isCrit ? 'dmg crit' : 'dmg');
-              if (sound && sound.playPickaxe) sound.playPickaxe();
             }
           }
           const how = ev.label && ev.label !== 'Saldırı' ? ` <span class="muted">(${ev.label})</span>` : '';
@@ -636,7 +627,6 @@ export class AdAstraBattleArena {
           if (animate) {
             const m = /FAZ \d+:\s*([^—]+)—\s*(.*)/.exec(ev.text || '');
             showPhaseBanner(m ? m[1].trim() : (ev.text || 'YENİ FAZ'), m ? m[2].trim() : '');
-            if (sound && sound.playBreakWarning) sound.playBreakWarning();
           }
           log(`⚡ <b class="num">${ev.text}</b>`, 'system');
           break;

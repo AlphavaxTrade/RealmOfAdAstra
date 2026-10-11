@@ -11,7 +11,6 @@ import Phaser from 'phaser';
 import { gameState } from '../gameState.js';
 import { ammMarket } from '../ammMarket.js';
 import { GAME_CONFIG } from '../config.js';
-import { sound } from '../audio.js';
 import { TOWN_ZONES } from '../grandTownScene.js';
 
 const W = 168, H = 100;                       // dünya birimleri (harita oranı 2048:1143)
@@ -241,7 +240,6 @@ export function startVadi3D(container) {
   // ── Bölgeye git / aç ──
   function openZone(z) {
     if (!gameState.isFeatureUnlocked(z.id)) { window.dispatchEvent(new CustomEvent('feature-locked', { detail: { zoneId: z.id } })); return; }
-    try { sound.playPickaxe(); } catch (e) { /* ses kapalı olabilir */ }
     if (z.id === 'dungeon') { window.dispatchEvent(new CustomEvent('enter-dungeon-view')); return; }
     window.dispatchEvent(new CustomEvent('open-town-modal', { detail: { zoneId: z.id, zoneName: `${z.icon} ${z.name.toLocaleUpperCase('tr-TR')}` } }));
   }

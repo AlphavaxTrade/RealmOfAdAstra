@@ -8,7 +8,6 @@
 import { gameState } from './gameState.js';
 import { ammMarket } from './ammMarket.js';
 import { GAME_CONFIG } from './config.js';
-import { sound } from './audio.js';
 import Phaser from 'phaser';
 
 const IMG_W = 2048;
@@ -300,7 +299,6 @@ export class GrandTownScene extends Phaser.Scene {
       window.dispatchEvent(new CustomEvent('feature-locked', { detail: { zoneId: z.id } }));
       return;
     }
-    try { sound.playPickaxe(); } catch (e) { /* ses kapalı olabilir */ }
     if (z.id === 'dungeon') {
       window.dispatchEvent(new CustomEvent('enter-dungeon-view'));
       this.scene.start('DungeonScene');

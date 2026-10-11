@@ -1,7 +1,6 @@
 // Realm of AdAstra — GameStateManager yöntemleri: Rehber görevleri ve özellik kilitleri
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
-import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
 import { OGRETICI_KOSULLARI } from './ogretici.js';
 
@@ -101,7 +100,6 @@ export const rehberYontemleri = {
     entry.claimed = true;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + granted;
     this._onAdaEarned(granted);
-    sound.playLevelUp();
     this.saveState();
     const budgetNote = budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : '';
     return { success: true, granted, budgetFull, message: `🧭 ${q.title} ödülü: +${granted.toLocaleString('tr-TR')} ASTRA (Krallık Hazinesinden)${budgetNote}` };

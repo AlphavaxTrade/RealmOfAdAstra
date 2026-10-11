@@ -2,7 +2,6 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { RES_KEYS } from './ortak.js';
 
 export const seferYontemleri = {
@@ -165,7 +164,6 @@ export const seferYontemleri = {
     inv.wheat = Math.max(0, inv.wheat - requiredWheat);
     this.burnResource('wheat', requiredWheat);
     this.state.stamina = Math.min(maxStam, curStam + actualGain);
-    sound.playStaminaRefill();
     this.saveState();
     return {
       success: true,
@@ -203,7 +201,6 @@ export const seferYontemleri = {
     inv.wheat = Math.max(0, inv.wheat - wheatToUse);
     this.burnResource('wheat', wheatToUse);
     this.state.stamina = Math.min(maxStam, curStam + gainedStamina);
-    sound.playStaminaRefill();
     this.saveState();
 
     return {
@@ -258,7 +255,6 @@ export const seferYontemleri = {
     const toolId = nodeConfig.requiredTool;
     const tool = this.state.tools[toolId];
     if (!tool || tool.durability <= 0) {
-      sound.playBreakWarning();
       return { success: false, message: `Gereken alet (${GAME_CONFIG.TOOLS[toolId].name}) kırık! Önce tamir etmelisin.` };
     }
 
@@ -287,9 +283,6 @@ export const seferYontemleri = {
       isCompleted: false
     };
 
-    if (toolId === 'axe') sound.playChop();
-    else if (toolId === 'pickaxe') sound.playPickaxe();
-    else sound.playHarvest();
 
     this.saveState();
     return { success: true, message: `${hours} Saatlik ${nodeConfig.name} görevi başlatıldı! (-${staminaCost} ⚡)` };

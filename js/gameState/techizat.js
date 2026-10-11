@@ -2,7 +2,6 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { ammMarket } from '../ammMarket.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
@@ -185,7 +184,6 @@ export const techizatYontemleri = {
       varis = "ve Cephanelik Deposu'na eklendi";
     }
 
-    sound.playRepair();
     this.saveState();
 
     return {
@@ -273,7 +271,6 @@ export const techizatYontemleri = {
     item.hpBonus = cost.nextHp;
     item.durability = EKIPMAN_DAYANIKLILIK;   // yükseltme dayanıklılığı da tamamlar
 
-    sound.playLevelUp();
     this.saveState();
 
     return {
@@ -355,7 +352,6 @@ export const techizatYontemleri = {
     const maxDur = item.maxDurability || EKIPMAN_DAYANIKLILIK;
     item.durability = maxDur;
 
-    sound.playRepair();
     this.saveState();
 
     const ownerText = soldier ? `${soldier.name} üzerindeki ` : '';
@@ -489,7 +485,6 @@ export const techizatYontemleri = {
       this.state.armoryInventory.push(oldItem);
     }
 
-    sound.playRepair();
     this.saveState();
 
     return {
@@ -511,7 +506,6 @@ export const techizatYontemleri = {
     if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
     this.state.armoryInventory.push(item);
 
-    sound.playRepair();
     this.saveState();
 
     return {
@@ -595,9 +589,6 @@ export const techizatYontemleri = {
     this.state.inventory.fragments = (this.state.inventory.fragments || 0) + gainedFragments;
     this.state.inventory.iron = (this.state.inventory.iron || 0) + gainedIron;
 
-    if (typeof sound !== 'undefined' && sound && sound.playRepair) {
-      sound.playRepair();
-    }
     this.saveState();
 
     return {
@@ -648,7 +639,6 @@ export const techizatYontemleri = {
       item.durability = item.maxDurability || EKIPMAN_DAYANIKLILIK;
     });
 
-    sound.playRepair();
     this.saveState();
 
     return {

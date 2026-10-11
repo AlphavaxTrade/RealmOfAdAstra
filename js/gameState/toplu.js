@@ -1,7 +1,6 @@
 // Realm of AdAstra — GameStateManager yöntemleri: Toplu işlemler: sefer yenileme, tamir, iyileştirme, otomatik kuşanma, savaş tahmini
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
-import { sound } from '../audio.js';
 import { createUnit, predictBattle, DEFAULT_BOSS_PHASES } from '../combat.js';
 import { getDungeonEntry } from '../bestiary.js';
 import { RES_KEYS } from './ortak.js';
@@ -201,7 +200,6 @@ export const topluYontemleri = {
       }
     }
     if (totalEquipped > 0) {
-      sound.playRepair();
       this.saveState();
     }
     return { 
@@ -231,7 +229,6 @@ export const topluYontemleri = {
       }
     }
     if (totalUnequipped > 0) {
-      sound.playRepair();
       this.saveState();
     }
     return { 

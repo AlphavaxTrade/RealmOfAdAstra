@@ -2,7 +2,6 @@
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { sound } from '../audio.js';
 import { cleanName, round3 } from './ortak.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
@@ -54,7 +53,6 @@ export const orduYontemleri = {
     const yeni = this.createSoldierUnit(sira);
     asker.push(yeni);
     this.saveState();
-    sound.playLevelUp();
     return {
       success: true,
       message: `⚔️ ${yeni.icon} ${yeni.name} (${yeni.className}) orduya katıldı! (-${bedel.toLocaleString()} ASTRA)`,
@@ -272,7 +270,6 @@ export const orduYontemleri = {
     asker.hp = asker.maxHp || 100;
     if (bilgi.adaCost > 0) globalPool.recordTokenSpend(bilgi.adaCost);
 
-    sound.playRepair();
     this.saveState();
     const yakimYuzde = Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100);
     return {
@@ -302,7 +299,6 @@ export const orduYontemleri = {
     delete this.state.equipment[slotKey];
     if (eskiEsya) this.state.equipment[slotKey] = eskiEsya;
 
-    sound.playRepair();
     this.saveState();
     return { success: true, message: `🛡️ ${asker.name} üzerine ${esya.name} başarıyla kuşandırıldı!` };
   },
@@ -325,7 +321,6 @@ export const orduYontemleri = {
       this.state.armoryInventory.push(esya);
     }
 
-    sound.playRepair();
     this.saveState();
     return { success: true, message: `🛡️ ${esya.name} kuşanmadan çıkarıldı ve depoya aktarıldı!` };
   }
