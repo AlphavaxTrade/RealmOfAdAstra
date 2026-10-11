@@ -33,7 +33,6 @@ const yukle = async () => { await sayfa.waitForFunction(() => window.gameState &
 const menuAc = async () => {
   if (await sayfa.evaluate(() => !document.getElementById('dev-modal').classList.contains('hidden'))) return;
   await sayfa.keyboard.press('t'); await bekle(500);
-  if (await sayfa.evaluate(() => document.getElementById('dev-modal').classList.contains('hidden'))) { await sayfa.click('#btn-dev-panel-toggle'); await bekle(500); }
 };
 const menuTikla = async (eylem, miktar) => { await menuAc(); const d = sayfa.locator(`[data-dev-action="${eylem}"]${miktar ? `[data-amount="${miktar}"]` : ''}`); await d.scrollIntoViewIfNeeded().catch(() => {}); await d.click({ timeout: 8000 }); await bekle(2500); };
 const paletle = async ad => { await sayfa.keyboard.press('Escape'); await bekle(300); await sayfa.keyboard.press('Control+k'); await bekle(500); await sayfa.keyboard.type(ad); await bekle(400); await sayfa.locator('.cmd-palette-item').first().click(); await bekle(1400); };

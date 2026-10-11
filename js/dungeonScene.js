@@ -132,11 +132,9 @@ export class DungeonScene extends Phaser.Scene {
   }
 
   create() {
-    // Sabit HTML Kat Seçici Barını Göster, Kasaba Menüsünü Gizle
+    // Sabit HTML kat seçici çubuğunu göster
     const floorBar = document.getElementById('dungeon-floor-bar');
-    const topNavMenu = document.querySelector('.top-nav-menu');
     if (floorBar) floorBar.classList.remove('hidden');
-    if (topNavMenu) topNavMenu.classList.add('hidden');
 
     // Tek geniş ekran kilitli kamera (Fareyle büyütme/küçültme/sürükleme yok)
     this.setupFixedScreen();
@@ -173,7 +171,6 @@ export class DungeonScene extends Phaser.Scene {
 
     this.events.once('shutdown', () => {
       if (floorBar) floorBar.classList.add('hidden');
-      if (topNavMenu) topNavMenu.classList.remove('hidden');
       this.scale.off('resize', this.resizeHandler);
       window.removeEventListener('switch-dungeon-floor', this.floorSwitchHandler);
       window.removeEventListener('monster-defeated', this.monsterDefeatedHandler);

@@ -27,7 +27,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   const s = await baglam.newPage();
   s.on('pageerror', e => hatalar.push(`${ad} pageerror: ${e.message}`));
   s.on('console', m => { if (m.type() === 'error') hatalar.push(`${ad} console.error: ${m.text().slice(0, 200)}`); });
-  await s.goto(BASE + '/?arayuz=3', { waitUntil: 'load' });
+  await s.goto(BASE + '/', { waitUntil: 'load' });
   await s.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 });
   await bekle(4000);
   const foto = n => s.screenshot({ path: path.join(EKRAN, `${ad}_${n}.png`) });
@@ -161,13 +161,10 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: katlı bölüm açılınca içerik görünür`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-ayrinti[open] > div'); return !!d && d.offsetParent !== null && d.innerText.length > 10; }));
   await s.keyboard.press('Escape'); await bekle(300);
 
-  // v3 üst çubuğu eski çubuktan bağımsız: eski çubuğun metinlerini bozsak da v3 oyun durumundan doğru değeri gösterir
+  // Eski üst çubuk, alt çubuk, duyuru şeridi ve danışman bandı sayfadan kaldırıldı; v3 üst çubuğu doğrudan oyun durumundan okur
   await s.keyboard.press('Escape'); await bekle(300);
-  await s.evaluate(() => { for (const id of ['player-level', 'stamina-text', 'adastra-balance', 'res-wood', 'top-bot-status-text', 'advisor-title']) { const e = document.getElementById(id); if (e) e.textContent = 'BOZUK'; } });
-  await bekle(400);
   await s.evaluate(() => window.__v3.guncelle());
-  const hudMetni = await s.evaluate(() => ({ lv: document.getElementById('v3-lv').textContent, bakiye: document.getElementById('v3-bakiye-deger').textContent, odun: document.querySelector('[data-v3-deger="wood"]')?.textContent, bot: document.getElementById('v3-bot-metin').textContent }));
-  kontrol(`${ad}: v3 üst çubuğu eski çubuğun bozuk metnini göstermez`, !Object.values(hudMetni).some((t) => /BOZUK/.test(t || '')), JSON.stringify(hudMetni));
+  kontrol(`${ad}: eski çubuk, alt çubuk, duyuru şeridi ve danışman bandı sayfada yok`, await s.evaluate(() => ['player-level', 'stamina-text', 'adastra-balance', 'res-pill-wood', 'top-bot-status-text', 'mobile-tabbar', 'top-announcement-ticker', 'royal-advisor-banner', 'btn-sidebar-toggle', 'btn-dev-panel-toggle'].every((id) => !document.getElementById(id))));
   kontrol(`${ad}: v3 seviye ve bakiye oyun durumundan okunur`, await s.evaluate(() => document.getElementById('v3-lv').textContent === `Lv.${window.gameState.state.level}` && document.getElementById('v3-bakiye-deger').textContent.length > 0));
   kontrol(`${ad}: "Şimdi" kartının düğmesi eylemi doğrudan çalıştırır (konsol hatası yok)`, await s.evaluate(() => { const k = document.getElementById('v3-simdi'); if (k.hidden) return true; document.getElementById('v3-simdi-dugme').click(); return true; }));
   await bekle(400); await s.keyboard.press('Escape'); await bekle(300);
@@ -224,13 +221,9 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: kasabaya dönünce v3 çubukları geri gelir`, !don.iceride && don.hud !== 'none' && don.tab !== 'none', JSON.stringify(don));
   const varsayilan = await baglam.newPage();
   await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); await bekle(1500);
-  kontrol(`${ad}: adres parametresi olmadan da yeni arayüz açılır (varsayılan)`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar')));
-  await varsayilan.goto(BASE + '/?arayuz=eski', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
-  kontrol(`${ad}: ?arayuz=eski eski arayüzü açar`, await varsayilan.evaluate(() => !document.documentElement.classList.contains('v3') && !document.getElementById('v3-tabbar')));
-  await varsayilan.goto(BASE + '/', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
-  kontrol(`${ad}: eski tercih tarayıcıda hatırlanır`, await varsayilan.evaluate(() => !document.documentElement.classList.contains('v3')));
-  await varsayilan.goto(BASE + '/?arayuz=3', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState, null, { timeout: 60000 }); await bekle(1500);
-  kontrol(`${ad}: ?arayuz=3 yeni arayüze döndürür ve tercihi siler`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && localStorage.getItem('roa_arayuz') === null));
+  kontrol(`${ad}: adres parametresi olmadan yeni arayüz açılır`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar')));
+  await varsayilan.goto(BASE + '/?arayuz=eski', { waitUntil: 'load' }); await varsayilan.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); await bekle(1500);
+  kontrol(`${ad}: ?arayuz=eski artık etkisiz (tek arayüz)`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar') && localStorage.getItem('roa_arayuz') === null));
   await varsayilan.close();
 
   // Kışla (compact kip): ikincil işlemler katlı, dokunma hedefleri büyük
@@ -268,7 +261,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   const s = await baglam.newPage();
   s.on('pageerror', e => hatalar.push(`tur pageerror: ${e.message}`));
   s.on('console', m => { if (m.type() === 'error') hatalar.push(`tur console.error: ${m.text().slice(0, 200)}`); });
-  const yukle = async () => { await s.goto(BASE + '/?arayuz=3', { waitUntil: 'load' }); await s.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); };
+  const yukle = async () => { await s.goto(BASE + '/', { waitUntil: 'load' }); await s.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 }); };
   const kart = () => s.evaluate(() => ({ gorunur: !document.getElementById('v3-tur').hidden, baslik: document.getElementById('v3-tur-baslik').textContent, say: document.getElementById('v3-tur-say').textContent }));
   const dokun = async sel => { await s.locator(sel).first().click({ timeout: 5000 }); await bekle(800); };
   const kayit = () => s.evaluate(() => localStorage.getItem('roa_v3_tur_yerel'));

@@ -33,12 +33,8 @@ html.v3 {
   --tabbar-h: var(--v3-tab-h);
 }
 
-/* 2. ESKİ KABUĞUN GİZLENMESİ -------------------------------------------- */
-html.v3 #top-announcement-ticker,
-html.v3 #mobile-tabbar,
-html.v3 #btn-dev-panel-toggle,
-html.v3 #btn-sidebar-toggle { display: none !important; }
-/* zindan kendi kat çubuğunu eski üst şeritte taşıyor (Aşama 2'de yenilenecek): zindandayken eski şerit açık, v3 kabuk kapalı */
+/* 2. KASABA / ZİNDAN GEÇİŞİ --------------------------------------------- */
+/* zindan kendi kat çubuğunu #top-nav-strip içinde taşır: kasabada çubuk gizli (v3 çubukları açık), zindanda tersi */
 html.v3 body:not(.in-dungeon) #top-nav-strip { display: none !important; }
 html.v3 body.in-dungeon :is(#v3-hud, #v3-tabbar, #v3-dock, #v3-kaynak-tepsi, #v3-uyari) { display: none !important; }
 html.v3 body.in-dungeon { --hud-h: var(--v3-hud-h); --tabbar-h: 0px; }
@@ -201,7 +197,6 @@ html.v3 #v3-dock .guide-widget { position: static !important; left: auto !import
 html.v3 #realm-sidebar { top: var(--v3-hud-h) !important; height: calc(100dvh - var(--v3-hud-h) - var(--v3-tab-h) - var(--safe-b, 0px)) !important; max-height: none !important; z-index: 1250 !important; }
 @media (min-width: 900px) { html.v3 #realm-sidebar { height: calc(100dvh - var(--v3-hud-h) - 84px) !important; } }
 html.v3 .v3-yan-kapat { all: unset; box-sizing: border-box; cursor: pointer; align-self: flex-end; min-height: var(--v3-tap); padding: 0 14px; border-radius: 12px; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 700 13px/1 var(--font-ui); color: var(--v3-yazi); display: inline-flex; align-items: center; flex: none; }
-html.v3 .sidebar-top-bar, html.v3 #side-btn-repair-all { }
 
 /* 9. ERİŞİLEBİLİRLİK ----------------------------------------------------- */
 html.v3 :is(#v3-hud button, #v3-tabbar button, .v3-kart, .v3-kaynak, .v3-birincil, .v3-yan-kapat):focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }

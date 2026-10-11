@@ -66,6 +66,6 @@ export function ayarlarHtml(ayar, cevrimici) {
     <section><h3>Hareket</h3><div class="v3-chipler">${dugme('hareket', 'ac', 'Hareketi azalt', ayar.hareketAzalt)}${dugme('hareket', 'kapat', 'Normal', !ayar.hareketAzalt)}</div>
       <small class="v3-lab-not">Kayan geçişleri ve canlandırmaları kapatır. Cihazın "hareketi azalt" ayarı açıksa zaten uygulanır.</small></section>
     <section><h3>Klavye kısayolları</h3><div class="v3-kisayol">${KISAYOLLAR.map(([k, a]) => `<div><kbd>${esc(k)}</kbd><span>${esc(a)}</span></div>`).join('')}</div></section>
-    <section><h3>Bu arayüz</h3><p class="v3-lab-not">Yeni arayüzü kullanıyorsun. ${cevrimici ? 'Çevrimiçi mod açık: kaydın sunucuda tutuluyor.' : 'Tek kişilik yerel moddasın: kaydın bu tarayıcıda.'} Eski görünüme geçmek için adresin sonuna <b>?arayuz=eski</b> yaz; yeniye dönmek için <b>?arayuz=3</b>.</p></section>
+    <section><h3>Bu arayüz</h3><p class="v3-lab-not">${cevrimici ? 'Çevrimiçi mod açık: kaydın sunucuda tutuluyor.' : 'Tek kişilik yerel moddasın: kaydın bu tarayıcıda.'}</p></section>
   </div>`;
 }

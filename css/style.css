@@ -54,78 +54,10 @@ html, body {
 /* =========================================================================
    0. TOP ANNOUNCEMENT & RISK WARNING TICKER (KAYAN DUYURU & UYARI PANELI)
    ========================================================================= */
-.top-announcement-ticker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 32px;
-  background: linear-gradient(90deg, #180808 0%, #2d0d0d 15%, #1f0a0a 50%, #2d0d0d 85%, #180808 100%);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.4);
-  box-shadow: 0 2px 12px rgba(220, 38, 38, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  z-index: 1005;
-  user-select: text;
-  box-sizing: border-box;
-}
-
-.ticker-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  height: 100%;
-  background: linear-gradient(90deg, #991b1b 0%, #dc2626 100%);
-  color: #ffffff;
-  font-family: var(--font-game, 'Cinzel', serif);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  white-space: nowrap;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.6);
-  z-index: 10;
-  flex-shrink: 0;
-  border-right: 1px solid rgba(254, 202, 202, 0.3);
-}
-
-.ticker-pulse-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fef08a;
-  box-shadow: 0 0 8px #fef08a;
-  animation: tickerPulseDot 1.2s infinite ease-in-out;
-}
 
 @keyframes tickerPulseDot {
   0%, 100% { transform: scale(0.85); opacity: 0.7; }
   50% { transform: scale(1.25); opacity: 1; box-shadow: 0 0 10px #fef08a; }
-}
-
-.ticker-track {
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
-  mask-image: linear-gradient(90deg, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0px, black 20px, black calc(100% - 20px), transparent 100%);
-}
-
-.ticker-marquee-inner {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
-  will-change: transform;
-  animation: tickerMarqueeScroll 60s linear infinite;
-}
-
-.top-announcement-ticker:hover .ticker-marquee-inner {
-  animation-play-state: paused;
 }
 
 @keyframes tickerMarqueeScroll {
@@ -201,84 +133,10 @@ html, body {
 /* =========================================================================
    0. TOP ANNOUNCEMENT & RISK WARNING TICKER (CANLI KAYAN DUYURU PANOSU)
    ========================================================================= */
-.top-announcement-ticker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 32px;
-  background: linear-gradient(90deg, rgba(20, 10, 15, 0.98) 0%, rgba(35, 12, 18, 0.95) 15%, rgba(18, 10, 25, 0.96) 50%, rgba(35, 12, 18, 0.95) 85%, rgba(20, 10, 15, 0.98) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.35);
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(239, 68, 68, 0.2);
-  display: flex;
-  align-items: center;
-  z-index: 1002;
-  overflow: hidden;
-  user-select: none;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-}
-
-.ticker-badge {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  background: linear-gradient(135deg, rgba(220, 38, 38, 0.35) 0%, rgba(153, 27, 27, 0.5) 100%);
-  border-right: 1px solid rgba(239, 68, 68, 0.4);
-  padding: 0 14px;
-  height: 100%;
-  flex-shrink: 0;
-  z-index: 2;
-  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.6);
-}
-
-.ticker-pulse-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: #ef4444;
-  box-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444;
-  animation: tickerDotPulse 1.4s infinite ease-in-out;
-}
 
 @keyframes tickerDotPulse {
   0%, 100% { transform: scale(0.9); opacity: 0.75; box-shadow: 0 0 6px #ef4444; }
   50% { transform: scale(1.35); opacity: 1; box-shadow: 0 0 14px #ef4444, 0 0 22px #f87171; }
-}
-
-.ticker-badge-title {
-  font-size: 0.74rem;
-  font-weight: 800;
-  color: #fca5a5;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-}
-
-.ticker-track {
-  position: relative;
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 1) 2%, rgba(0, 0, 0, 1) 98%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 1) 2%, rgba(0, 0, 0, 1) 98%, transparent 100%);
-}
-
-.ticker-marquee-inner {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  animation: tickerMarquee 55s linear infinite;
-  will-change: transform;
-}
-
-.top-announcement-ticker:hover .ticker-marquee-inner {
-  animation-play-state: paused;
 }
 
 @keyframes tickerMarquee {
@@ -466,22 +324,6 @@ html, body {
 }
 
 /* Orta Hızlı Şerit Menü Butonları (Penpot Navigation Pill Capsules) */
-.top-nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1 1 auto;
-  flex-wrap: nowrap;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  padding: 2px 4px;
-}
-
-.top-nav-menu::-webkit-scrollbar {
-  display: none;
-}
 
 .top-menu-btn {
   background: linear-gradient(180deg, rgba(38, 20, 14, 0.85) 0%, rgba(18, 9, 6, 0.95) 100%);
@@ -526,7 +368,8 @@ html, body {
 }
 
 /* Sağ Hammadde Kutucukları (Penpot Thematic Resource Gems) */
-.top-resource-dock, .pixi-resource-dock, .pixi-resources-bar {
+.pixi-resource-dock,
+.pixi-resources-bar {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -539,11 +382,7 @@ html, body {
   padding: 2px 0;
 }
 
-.top-resource-dock::-webkit-scrollbar {
-  display: none;
-}
-
-.top-res-pill, .pixi-res-pill {
+.pixi-res-pill {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -563,83 +402,15 @@ html, body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 3px 6px rgba(0, 0, 0, 0.4);
 }
 
-.top-res-pill:hover, .pixi-res-pill:hover {
+.pixi-res-pill:hover {
   transform: translateY(-2px);
   border-color: #fde047;
   box-shadow: 0 4px 12px rgba(253, 224, 71, 0.4);
 }
 
 /* v1.25: kaynak renkleri theme.css içinde (.res-wheat / .res-wood / .res-iron) */
-.top-res-pill.fragment-pill, .pixi-res-pill.fragment-pill {
-  background: linear-gradient(180deg, rgba(38, 14, 60, 0.75) 0%, rgba(18, 6, 30, 0.9) 100%);
-  border-color: rgba(192, 132, 252, 0.5);
-  color: #f3e8ff;
-}
-.top-res-pill.fragment-pill:hover {
-  border-color: #d8b4fe;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.45);
-}
 
 /* Bildirim Çanı (Notification Gem) */
-.notif-bell {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(26, 16, 36, 0.85);
-  border: 1.5px solid rgba(192, 132, 252, 0.45);
-  border-radius: 11px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.18s ease;
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-}
-
-.notif-bell:hover {
-  transform: translateY(-2px);
-  border-color: #e879f9;
-  box-shadow: 0 4px 12px rgba(232, 121, 249, 0.4);
-}
-
-.notif-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  background: #ef4444;
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 900;
-  padding: 1px 5px;
-  border-radius: 10px;
-  border: 1.5px solid #0c0603;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
-}
-
-.sidebar-toggle-btn-inline {
-  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
-  border: 1.5px solid #fde047;
-  color: #1e0e04;
-  font-family: var(--font-game);
-  font-weight: 900;
-  font-size: 0.82rem;
-  padding: 7px 13px;
-  border-radius: 11px;
-  cursor: pointer;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 4px 10px rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  flex-shrink: 0;
-  white-space: nowrap;
-}
-
-.sidebar-toggle-btn-inline:hover {
-  transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 6px 16px rgba(245, 158, 11, 0.6);
-}
 
 .pixi-res-pill.wheat { color: #facc15; }
 .pixi-res-pill.wood { color: #4ade80; }
@@ -839,12 +610,10 @@ body.modal-open .pixi-top-bar,
 body.modal-open .realm-sidebar,
 body.modal-open .sidebar-toggle-btn,
 body.modal-open .dungeon-floor-nav,
-body.modal-open .dev-panel-toggle-btn,
 body.modal-open .realm-tooltip {
   pointer-events: none !important;
   user-select: none !important;
 }
-
 
 .rpg-modal-header {
   background: #161922;
@@ -1277,10 +1046,6 @@ body.modal-open .realm-tooltip {
   background: transparent;
 }
 
-body.in-dungeon .top-nav-menu {
-  display: none !important;
-}
-
 body.in-dungeon #dungeon-floor-bar {
   display: flex !important;
   position: static;
@@ -1292,16 +1057,8 @@ body.in-dungeon #dungeon-floor-bar {
   gap: 4px;
 }
 
-body.in-dungeon .top-resource-dock .top-res-pill:not(.fragment-pill) {
-  display: none !important;
-}
-
 body:not(.in-dungeon) #dungeon-floor-bar {
   display: none !important;
-}
-
-body:not(.in-dungeon) .top-nav-menu {
-  display: flex !important;
 }
 
 .floor-tab {
@@ -1677,84 +1434,6 @@ body:not(.in-dungeon) .top-nav-menu {
 .realm-sidebar::-webkit-scrollbar-thumb { background: #ca8a04; border-radius: 4px; }
 
 /* 1. ÜST KOMPAKT DURUM ŞERİDİ */
-.sidebar-top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.sidebar-user-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(43, 24, 13, 0.85);
-  border: 1px solid rgba(234, 179, 8, 0.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.sidebar-user-pill:hover {
-  background: rgba(69, 26, 3, 0.95);
-  border-color: #facc15;
-  transform: translateY(-1px);
-}
-
-.user-avatar-mini {
-  font-size: 1.15rem;
-}
-
-.user-meta-mini {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.user-name-mini {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.85rem;
-  color: #fff;
-}
-
-.sidebar-bot-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(30, 41, 59, 0.85);
-  border: 1px solid rgba(148, 163, 184, 0.3);
-  padding: 4px 10px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: var(--font-game);
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: #94a3b8;
-  transition: all 0.2s ease;
-}
-
-.sidebar-bot-pill.active {
-  background: rgba(16, 185, 129, 0.18);
-  border-color: #10b981;
-  color: #4ade80;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
-}
-
-.sidebar-bot-pill.paused {
-  background: rgba(234, 179, 8, 0.2);
-  border-color: #eab308;
-  color: #fde047;
-  box-shadow: 0 0 10px rgba(234, 179, 8, 0.35);
-  animation: pulse-border-gold 2s infinite ease-in-out;
-}
-
-.sidebar-bot-pill:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-}
 
 /* KART & BÖLÜM ÇERÇEVELERİ */
 .sidebar-section {
@@ -1935,116 +1614,9 @@ body:not(.in-dungeon) .top-nav-menu {
   flex-shrink: 0;
 }
 
-.sidebar-control-title {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.74rem;
-  color: #fde047;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.sidebar-grid-menu {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-}
-
-.grid-menu-btn {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 8px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(26, 16, 10, 0.75);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-  transition: all 0.15s ease;
-  overflow: hidden;
-  text-align: left;
-}
-
-.grid-menu-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
-  filter: brightness(1.15);
-}
-
-.grid-btn-icon {
-  font-size: 1.25rem;
-  margin-bottom: 2px;
-}
-
-.grid-btn-title {
-  font-family: var(--font-game);
-  font-weight: 900;
-  font-size: 0.74rem;
-  letter-spacing: 0.3px;
-  color: #ffffff;
-}
-
-.grid-btn-sub {
-  font-size: 0.62rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
 /* Renk kodlu buton bordür ve hafif arkaplan tonları */
-.btn-grid-orange { border-color: rgba(249, 115, 22, 0.4); background: linear-gradient(135deg, rgba(67, 20, 7, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-orange:hover { border-color: #f97316; }
-
-.btn-grid-red { border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(69, 10, 10, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-red:hover { border-color: #ef4444; }
-
-.btn-grid-purple { border-color: rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(59, 7, 100, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-purple:hover { border-color: #a855f7; }
-
-.btn-grid-yellow { border-color: rgba(234, 179, 8, 0.4); background: linear-gradient(135deg, rgba(66, 40, 5, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-yellow:hover { border-color: #eab308; }
-
-.btn-grid-gold { border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(80, 45, 8, 0.8), rgba(26, 16, 10, 0.85)); }
-.btn-grid-gold:hover { border-color: #fbbf24; }
-
-.btn-grid-green { border-color: rgba(34, 197, 94, 0.4); background: linear-gradient(135deg, rgba(14, 55, 28, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-green:hover { border-color: #22c55e; }
-
-.btn-grid-amber { border-color: rgba(217, 119, 6, 0.4); background: linear-gradient(135deg, rgba(60, 30, 8, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-amber:hover { border-color: #f59e0b; }
-
-.btn-grid-blue { border-color: rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(8, 47, 73, 0.7), rgba(26, 16, 10, 0.8)); }
-.btn-grid-blue:hover { border-color: #38bdf8; }
 
 /* Grid Buton Rozetleri */
-.sidebar-badge-red {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: #dc2626;
-  color: #fff;
-  border: 1px solid #fca5a5;
-  font-size: 0.6rem;
-  font-weight: 800;
-  padding: 1px 5px;
-  border-radius: 6px;
-  animation: pulseRedAlert 2s infinite;
-}
-
-.sidebar-badge-blue {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  background: #0284c7;
-  color: #fff;
-  border: 1px solid #7dd3fc;
-  font-size: 0.62rem;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 6px;
-}
 
 /* TÜM ALETLERİ ONAR BUTONU */
 .sidebar-repair-all-btn {
@@ -2091,11 +1663,6 @@ body:not(.in-dungeon) .top-nav-menu {
 .sidebar-mini-badge.hidden { display: none; }
 
 /* Parça (Fragment) Kaynak Rozeti */
-.pixi-res-pill.fragment-pill {
-  color: #c084fc;
-  border-color: #6b21a8;
-  text-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
-}
 
 /* =========================================================================
    7. PHASE 2: GAMEFI & RPG EKONOMİSİ - DEMİRCİ, 18 KİŞİLİK ORDU,
@@ -2586,32 +2153,6 @@ body:not(.in-dungeon) .top-nav-menu {
 /* =========================================================================
    8. DEVELOPER & QUICK TEST PANEL (DEV CHEAT ENGINE)
    ========================================================================= */
-.dev-panel-toggle-btn {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, #059669 0%, #065f46 100%);
-  border: 2.5px solid #34d399;
-  border-radius: 20px;
-  padding: 10px 18px;
-  color: #ffffff;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.92rem;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4), inset 0 2px 0 rgba(255,255,255,0.3);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.dev-panel-toggle-btn:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.6), inset 0 2px 0 rgba(255,255,255,0.4);
-  border-color: #6ee7b7;
-}
 
 .dev-modal-overlay {
   position: fixed;
@@ -3604,7 +3145,7 @@ body:not(.in-dungeon) .top-nav-menu {
   transform: translateX(-50%);
 }
 
-.top-res-pill, .pixi-res-pill {
+.pixi-res-pill {
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(202, 138, 4, 0.16));
@@ -3613,12 +3154,8 @@ body:not(.in-dungeon) .top-nav-menu {
   box-shadow: var(--ada-shadow-inner), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.top-res-pill:hover, .pixi-res-pill:hover {
+.pixi-res-pill:hover {
   box-shadow: var(--ada-shadow-inner), 0 0 16px var(--ada-glow-gold);
-}
-
-.top-res-pill.fragment-pill, .pixi-res-pill.fragment-pill {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(88, 28, 135, 0.18));
 }
 
 /* ---------- 9.4 18 ASKER ROSTERİ & RARITY (COMMON / RARE / EPIC / LEGENDARY) ---------- */
@@ -4015,33 +3552,6 @@ body:not(.in-dungeon) .top-nav-menu {
 /* =========================================================================
    12. NOTIFICATION CENTER (BİLDİRİM MERKEZİ)
    ========================================================================= */
-.notif-bell {
-  position: relative;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 4px 8px;
-  border-radius: 8px;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.notif-bell:hover { background: rgba(245,158,11,0.12); }
-.notif-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  background: var(--red-main);
-  color: #fff;
-  font-size: 0.6rem;
-  font-weight: 800;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
 .notif-panel {
   position: fixed;
   top: 48px;
@@ -4470,103 +3980,10 @@ body:not(.in-dungeon) .top-nav-menu {
 /* =========================================================================
    13. 🧙‍♂️ ROYAL ADVISOR GUIDANCE BAR (AKILLI KRAL DANIŞMANI)
    ========================================================================= */
-.royal-advisor-bar {
-  position: fixed;
-  top: 68px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 990;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(16px);
-  border: 1.5px solid rgba(245, 158, 11, 0.4);
-  border-radius: 40px;
-  padding: 6px 18px 6px 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 15px rgba(245, 158, 11, 0.15);
-  pointer-events: auto;
-  max-width: 90vw;
-  animation: advisorSlideDown 0.3s ease-out;
-  transition: all 0.2s ease;
-}
-
-.royal-advisor-bar:hover {
-  border-color: #fbbf24;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(245, 158, 11, 0.3);
-}
 
 @keyframes advisorSlideDown {
   from { opacity: 0; transform: translate(-50%, -10px); }
   to { opacity: 1; transform: translate(-50%, 0); }
-}
-
-.advisor-avatar {
-  font-size: 1.6rem;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1.5px solid rgba(245, 158, 11, 0.5);
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.advisor-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.advisor-title {
-  font-family: var(--font-game);
-  font-size: 0.75rem;
-  font-weight: 800;
-  color: #f59e0b;
-  letter-spacing: 0.5px;
-}
-
-.advisor-text {
-  font-family: var(--font-game);
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: #f8fafc;
-  line-height: 1.2;
-}
-
-.advisor-action-btn {
-  background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
-  border: 1px solid #fde68a;
-  color: #0f172a;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.82rem;
-  padding: 6px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
-  transition: all 0.15s ease;
-}
-
-.advisor-action-btn:hover {
-  background: #fbbf24;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
-}
-
-.advisor-action-btn:active {
-  transform: translateY(1px);
-}
-
-body.in-dungeon .royal-advisor-bar {
-  display: none !important;
 }
 
 /* 🎡 KRALLIK KARNAVALI - GERÇEK DÖNEN ŞANS ÇARKI */
@@ -4939,8 +4356,6 @@ body.in-dungeon .royal-advisor-bar {
   color: #cbd5e1;
   line-height: 1.3;
 }
-
-
 
 /* v2: yeni hammadde çubukları */
 .sidebar-exp-fill.stone { background: linear-gradient(90deg, #d6d3d1, #78716c); }

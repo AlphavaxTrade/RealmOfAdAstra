@@ -1,7 +1,7 @@
-// Realm of AdAstra — arayüz v3 kabuğu (yalnız ?arayuz=3 ile açılır; eski arayüz değişmeden çalışır).
-// Tek satırlık üst çubuk, 5 sekmeli alt çubuk, tek tip panel (eski #rpg-modal'ın v3 görünümü), "şimdi ne yapmalı" kartı.
-// Geçiş dönemi: üst çubuktaki değerler eski çubuktan OKUNUR (aynı kimlikler, tek hesap yeri); eski çubuk silinince doğrudan oyun durumundan okunacak.
-// Panel içerikleri hâlâ eski ekranlardır; Aşama 2'de tek tek bu kabuğun bileşenleriyle yeniden yazılır.
+// Realm of AdAstra — arayüz v3 kabuğu (tek kabuk: eski üst şerit, alt çubuk ve kenar menüsü kaldırıldı).
+// Tek satırlık üst çubuk, 5 sekmeli alt çubuk, tek tip panel (#rpg-modal'ın v3 görünümü), "şimdi ne yapmalı" kartı.
+// Üst çubuktaki değerler doğrudan oyun durumundan gelir (api.hudVeri); eski çubuğa bağımlılık yoktur.
+// Kenar menüsü yalnız "Seferler" paneli olarak kalır (sefer sayaçları, üretim hakkı, toplu hasat ve onarım).
 
 import { SEKMELER, HUB, hubHtml, esc } from './hub.js';
 import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
@@ -257,7 +257,7 @@ export function kurV3Kabuk(api) {
     const k = e.target.closest('[data-v3-kaynak]');
     if (!k) return;
     tepsiAc(false);
-    k.dataset.v3Kaynak === 'fragments' ? api.openZone('market', '🏪 Meydan Pazarı') : $(`res-pill-${k.dataset.v3Kaynak}`)?.click();
+    k.dataset.v3Kaynak === 'fragments' ? api.openZone('market', '🏪 Meydan Pazarı') : api.openKaynak(k.dataset.v3Kaynak);
   });
   document.addEventListener('click', (e) => { if (!tepsi.hidden && !e.target.closest('#v3-kaynak-tepsi, #v3-kaynak-dugme')) tepsiAc(false); });
   document.addEventListener('keydown', (e) => {

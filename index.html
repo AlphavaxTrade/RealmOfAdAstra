@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" class="v3">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -38,69 +38,14 @@
   </div>
   <script src="/boot.js"></script>
 
-  <!-- ============================================================
-       0. TOP ANNOUNCEMENT & RISK WARNING TICKER (KAYAN DUYURU PANELI)
-       ============================================================ -->
-  <div id="top-announcement-ticker" class="top-announcement-ticker" role="region" aria-label="Canlı Duyuru ve Risk Bildirim Paneli">
-    <div class="ticker-badge">
-      <span class="ticker-pulse-dot"></span>
-      <span class="ticker-badge-title">Risk uyarısı</span>
-    </div>
-    <div class="ticker-track">
-      <div id="ticker-marquee-inner" class="ticker-marquee-inner">
-        <!-- JS tarafından GAME_CONFIG.ANNOUNCEMENTS ile doldurulur -->
-      </div>
-    </div>
-  </div>
-
   <!-- Kapı kuralı: bekleme sırasındaki / askıdaki hesaba durum şeridi (sunucu doldurur) -->
   <div id="gate-banner" class="gate-banner" hidden></div>
 
   <!-- ============================================================
-       1. TOP GAME MENU STRIP (HARİTADAN AYRI ÜST ŞERİT MENÜ)
+       1. ZİNDAN KAT ÇUBUĞU (kasabadaki üst çubuk js/ui/v3/kabuk.js tarafından kurulur)
        ============================================================ -->
   <header id="top-nav-strip" class="top-nav-strip hud">
-    <!-- SOL: Karakter & Cüzdan -->
-    <div class="hud-left">
-      <button type="button" class="hud-profile" id="profile-badge-btn" title="Karakter gelişimi ve envanter">
-        <span class="hud-avatar">🧙‍♂️</span>
-        <span class="hud-profile-text">
-          <span class="hud-name">AlphAvax <span id="player-level" class="hud-level">Lv.1</span></span>
-          <span class="hud-stamina" title="Stamina">
-            <span class="hud-stamina-icon">⚡</span>
-            <span class="hud-meter"><span id="hud-stamina-fill" class="hud-meter-fill"></span></span>
-            <span id="stamina-text" class="hud-stamina-text">100/100</span>
-          </span>
-        </span>
-      </button>
-      <div class="hud-wallet" title="ASTRA bakiyen">
-        <span class="hud-coin" aria-hidden="true"></span>
-        <span id="adastra-balance" class="hud-wallet-value">250,00</span>
-        <span class="hud-unit">ASTRA</span>
-      </div>
-    </div>
-
-    <!-- ORTA (KASABA): Ana menü -->
-    <nav class="top-nav-menu hud-nav" id="town-nav-menu" aria-label="Ana menü">
-      <button type="button" class="hud-btn" id="btn-nav-dashboard" title="Krallık merkezi ve toplu işlemler">
-        <span class="hud-btn-icon">🏰</span><span class="hud-btn-label">Krallık</span>
-      </button>
-      <button type="button" class="hud-btn hud-bot" id="btn-top-taverna-bot-status" data-state="off" title="24 saatlik otomasyon botu">
-        <span class="bot-indicator-dot" id="top-bot-indicator-dot"></span>
-        <span id="top-bot-status-text" class="hud-btn-label">Bot: Kapalı</span>
-      </button>
-      <button type="button" class="hud-btn" id="btn-daily-limits" title="Haftalık kota, günlük açılan kota ve kişisel sınırların">
-        <span class="hud-btn-icon">📊</span><span class="hud-btn-label">Kotalar</span>
-      </button>
-      <button type="button" class="hud-btn" id="btn-carnival-pill" title="Şans çarkı ve piyango">
-        <span class="hud-btn-icon">🎪</span><span class="hud-btn-label">Karnaval</span>
-      </button>
-      <button type="button" class="hud-btn hud-btn-dev" id="btn-open-test-menu" title="Geliştirici test menüsü (yalnızca geliştirme sürümünde)">
-        <span class="hud-btn-icon">🧪</span><span class="hud-btn-label">Test</span>
-      </button>
-    </nav>
-
-    <!-- ORTA (ZİNDAN): Zindandayken görünür -->
+    <!-- Zindandayken görünen kat çubuğu (kasabada v3 üst çubuğu kullanılır) -->
     <nav id="dungeon-floor-bar" class="dungeon-floor-nav hidden" aria-label="Zindan katları">
       <button id="btn-dungeon-return-town" class="dungeon-home-btn" title="Kasabaya dön">
         <span>🏰</span> <span>Kasabaya Dön</span>
@@ -126,53 +71,6 @@
         </div>
       </div>
     </nav>
-
-    <!-- SAĞ: Kaynaklar & araçlar -->
-    <div class="top-resource-dock hud-resources" aria-label="Ambar">
-      <button type="button" class="top-res-pill res-wheat" id="res-pill-wheat" title="Buğday — Güneş Tarlası'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_wheat.webp" alt="" draggable="false" data-fb="text:🌾"></span>
-        <span class="res-body"><span id="res-wheat" class="res-value">0</span><span class="res-cap"><span id="res-cap-wheat"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill res-stone" id="res-pill-stone" title="Taş — Taş Ocağı'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_stone.webp" alt="" draggable="false" data-fb="text:🪨"></span>
-        <span class="res-body"><span id="res-stone" class="res-value">0</span><span class="res-cap"><span id="res-cap-stone"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill res-wood" id="res-pill-wood" title="Odun — Zümrüt Ormanı'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_wood.webp" alt="" draggable="false" data-fb="text:🌲"></span>
-        <span class="res-body"><span id="res-wood" class="res-value">0</span><span class="res-cap"><span id="res-cap-wood"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill res-coal" id="res-pill-coal" title="Kömür — Kömür Ocağı'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_coal.webp" alt="" draggable="false" data-fb="text:⚫"></span>
-        <span class="res-body"><span id="res-coal" class="res-value">0</span><span class="res-cap"><span id="res-cap-coal"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill res-iron" id="res-pill-iron" title="Demir — Demir Madeni'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_iron.webp" alt="" draggable="false" data-fb="text:⛏️"></span>
-        <span class="res-body"><span id="res-iron" class="res-value">0</span><span class="res-cap"><span id="res-cap-iron"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill res-herb" id="res-pill-herb" title="Şifalı Ot — Şifalı Ot Bahçesi'nı aç">
-        <span class="res-icon"><img src="/assets/ui/res_herb.webp" alt="" draggable="false" data-fb="text:🌿"></span>
-        <span class="res-body"><span id="res-herb" class="res-value">0</span><span class="res-cap"><span id="res-cap-herb"></span></span></span>
-      </button>
-      <button type="button" class="top-res-pill fragment-pill res-frag" id="res-pill-fragments" title="Teçhizat parçası — Pazarı aç">
-        <span class="res-icon"><img src="/assets/ui/res_fragments.webp" alt="" draggable="false" data-fb="text:🧩"></span>
-        <span class="res-body"><span id="res-fragments" class="res-value">0</span></span>
-      </button>
-    </div>
-
-    <div class="hud-actions">
-      <button type="button" class="hud-icon-btn changelog-pill" id="btn-changelog-pill" title="Sürüm geçmişi">
-        <span class="hud-version">v2.0a</span>
-      </button>
-      <button type="button" class="hud-icon-btn notif-bell" id="btn-notif-bell" title="Bildirimler">
-        <span>🔔</span>
-        <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
-      </button>
-      <button type="button" id="btn-sidebar-toggle" class="hud-menu-btn sidebar-toggle-btn-inline" title="Yan menüyü aç / kapat">
-        <span id="sidebar-toggle-arrow" class="hud-menu-arrow">◀</span>
-        <span class="hud-menu-bars" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="hud-btn-label">Menü</span>
-      </button>
-    </div>
   </header>
 
   <!-- ============================================================
@@ -185,17 +83,6 @@
   <!-- 🧭 Yeni oyuncu rehberi (görevler & ödüller) -->
   <section id="guide-widget" class="guide-widget" aria-label="Krallık rehberi" hidden></section>
 
-  <!-- 📱 Telefon alt gezinme çubuğu -->
-  <nav id="mobile-tabbar" class="mobile-tabbar" aria-label="Hızlı menü">
-    <button type="button" data-tab="map" class="active"><span>🗺️</span><small>Harita</small></button>
-    <button type="button" data-tab="kingdom"><span>🏰</span><small>Krallık</small></button>
-    <button type="button" data-tab="bot"><span>🤖</span><small>Bot</small></button>
-    <button type="button" data-tab="market"><span>🏪</span><small>Pazar</small></button>
-    <button type="button" data-tab="menu"><span>☰</span><small>Menü</small></button>
-  </nav>
-
-
-
   <!-- ============================================================
        1.8 ULTRA-CRISP HTML HOVER TOOLTIP (KRİSTAL NETLİĞİNDE BAŞLIK)
        ============================================================ -->
@@ -204,26 +91,9 @@
     <div id="realm-tooltip-sub" class="realm-tooltip-sub">Tıkla ve İncele</div>
   </div>
 
-
   <aside id="realm-sidebar" class="realm-sidebar">
 
-    <!-- 1. BÖLÜM: Üst Kompakt Durum Şeridi (Mini Karakter & Canlı Otomasyon Botu) -->
-    <div class="sidebar-top-bar">
-      <div id="sidebar-character-card" class="sidebar-user-pill" title="Karakter Detayları & İlerleme">
-        <span class="user-avatar-mini">🧙‍♂️</span>
-        <div class="user-meta-mini">
-          <span class="user-name-mini">AlphAvax</span>
-          <span id="sidebar-player-level" class="sidebar-lvl-badge">Lv.1</span>
-        </div>
-      </div>
-
-      <div id="sidebar-bot-pill" class="sidebar-bot-pill" title="24s Otomasyon Botu Durumu (Tıklayarak Yönet)">
-        <span class="bot-icon">🤖</span>
-        <span id="sidebar-bot-status-text" class="bot-status-text">Bot: Pasif</span>
-      </div>
-    </div>
-
-    <!-- 2. BÖLÜM: Aktif İşçi Seferleri & Hızlı Hasat -->
+    <!-- 1. BÖLÜM: Aktif İşçi Seferleri & Hızlı Hasat -->
     <div class="sidebar-section sidebar-expeditions-box">
       <div class="sidebar-section-title" style="display:flex; justify-content:space-between; align-items:center;">
         <span>⏳ AKTİF İŞÇİ SEFERLERİ</span>
@@ -290,7 +160,7 @@
       </button>
     </div>
 
-    <!-- 3. BÖLÜM: Kompakt kota özeti (ayrıntı: Kotalar paneli) -->
+    <!-- 2. BÖLÜM: Kompakt kota özeti (ayrıntı: Kotalar paneli) -->
     <div class="sidebar-section sidebar-weekly-box">
       <button type="button" id="sidebar-quota-open" class="sidebar-section-title sidebar-quota-head" title="Kota ve sınırların ayrıntısı">
         <span>🎫 ÜRETİM HAKKIN · BUGÜN</span>
@@ -326,61 +196,8 @@
       <div id="sidebar-personal-limits" class="sidebar-personal-limits"></div>
     </div>
 
-    <!-- 4. BÖLÜM: Krallık Kontrol Paneli (Modern Glassmorphism 2x4 Grid) -->
+    <!-- 3. BÖLÜM: Toplu işlem -->
     <div class="sidebar-control-panel">
-      <div class="sidebar-control-title">🧭 KRALLIK KONTROL MERKEZİ</div>
-      <div class="sidebar-grid-menu">
-        <button id="side-btn-inventory" class="grid-menu-btn btn-grid-orange" title="Envanter ve Ekipman Çantası">
-          <span class="grid-btn-icon">🎒</span>
-          <span class="grid-btn-title">ENVANTER</span>
-          <span class="grid-btn-sub">Çanta & Eşyalar</span>
-        </button>
-
-        <button id="side-btn-barracks" class="grid-menu-btn btn-grid-red" title="Kışla & Şampiyon Askerler">
-          <span class="grid-btn-icon">⚔️</span>
-          <span class="grid-btn-title">KIŞLA</span>
-          <span class="grid-btn-sub">Ordu & Şampiyon</span>
-          <span id="side-badge-barracks" class="sidebar-badge-red hidden">1 Yaralı</span>
-        </button>
-
-        <button id="side-btn-dungeon" class="grid-menu-btn btn-grid-purple" title="Zindan & Kat Canavarları">
-          <span class="grid-btn-icon">🏰</span>
-          <span class="grid-btn-title">ZİNDAN</span>
-          <span class="grid-btn-sub">6 Kat & Bosslar</span>
-        </button>
-
-        <button id="side-btn-colosseum" class="grid-menu-btn btn-grid-yellow" title="Kolezyum Gladyatör Arena">
-          <span class="grid-btn-icon">🏟️</span>
-          <span class="grid-btn-title">KOLEZYUM</span>
-          <span class="grid-btn-sub">18v18 Gladyatör</span>
-        </button>
-
-        <button id="side-btn-carnival" class="grid-menu-btn btn-grid-gold" title="Krallık Karnavalı: Şans Çarkı & Piyango">
-          <span class="grid-btn-icon">🎪</span>
-          <span class="grid-btn-title">KARNAVAL</span>
-          <span class="grid-btn-sub">Çark & Piyango</span>
-        </button>
-
-        <button id="side-btn-market" class="grid-menu-btn btn-grid-green" title="AMM Pazar: Kaynak Al-Sat">
-          <span class="grid-btn-icon">🏪</span>
-          <span class="grid-btn-title">AMM PAZAR</span>
-          <span class="grid-btn-sub">Canlı Borsa</span>
-        </button>
-
-        <button id="side-btn-tavern" class="grid-menu-btn btn-grid-amber" title="Gece Kuşu Tavernası & 24s Bot">
-          <span class="grid-btn-icon">🍻</span>
-          <span class="grid-btn-title">TAVERNA</span>
-          <span class="grid-btn-sub">Bot & İksirler</span>
-        </button>
-
-        <button id="side-btn-boxes" class="grid-menu-btn btn-grid-blue" title="Sandıklar, Anahtarlar & NFT Koleksiyonu">
-          <span class="grid-btn-icon">📦</span>
-          <span class="grid-btn-title">SANDIKLAR</span>
-          <span class="grid-btn-sub">NFT & Mühür</span>
-          <span id="sidebar-box-badge" class="sidebar-badge-blue hidden">0</span>
-        </button>
-      </div>
-
       <!-- Tek Tıkla Tüm Aletleri Onar Butonu -->
       <button id="side-btn-repair-all" class="sidebar-repair-all-btn" title="Tüm Aletleri Anlık Pazar Değeriyle Onar">
         <span>🔨 TÜM ALETLERİ ONAR</span>
@@ -389,20 +206,6 @@
     </div>
 
   </aside>
-
-  <!-- ============================================================
-       1.9 🧙‍♂️ AKILLI KRAL DANIŞMANI BANNERI (TEK CÜMLELİK YOL GÖSTERİCİ)
-       ============================================================ -->
-  <div id="royal-advisor-banner" class="royal-advisor-bar" style="display:none !important;">
-    <div class="advisor-avatar" id="advisor-avatar">🧙‍♂️</div>
-    <div class="advisor-content">
-      <div class="advisor-title" id="advisor-title">Kralın Bilge Danışmanı</div>
-      <div class="advisor-text" id="advisor-text">Yükleniyor...</div>
-    </div>
-    <button id="btn-advisor-action" class="advisor-action-btn">
-      ✨ <span>İncele</span>
-    </button>
-  </div>
 
   <!-- ============================================================
        4. SIMPLIFIED CLEAN RPG MODAL OVERLAY
@@ -426,10 +229,6 @@
   <!-- ============================================================
        5. 🧪 FLOATING TEST & DEVELOPER PANEL (TEST MENÜSÜ)
        ============================================================ -->
-  <button id="btn-dev-panel-toggle" class="dev-panel-toggle-btn" title="Hızlı Test & Geliştirici Menüsü (Klavye Kısayolu: T)">
-    <span>🧪</span>
-    <span>TEST MENÜSÜ</span>
-  </button>
 
   <div id="dev-modal" class="dev-modal-overlay hidden">
     <div class="dev-modal-window">

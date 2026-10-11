@@ -20,18 +20,6 @@ import { hazineOzetHtml as hazineOzetV3, hazineKasalarHtml as hazineKasalarV3 } 
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
-// Arayüz v3 (yeni kabuk) varsayılandır. Eski görünüm: adrese ?arayuz=eski (tarayıcı hatırlar), yeniye dönüş: ?arayuz=3.
-// Sınıf en başta konur ki ilk çizimde eski çubuk görünmesin.
-const V3_ARAYUZ = (() => {
-  const istek = new URLSearchParams(location.search).get('arayuz');
-  try {
-    if (istek === 'eski') localStorage.setItem('roa_arayuz', 'eski');
-    else if (istek === '3') localStorage.removeItem('roa_arayuz');
-    return istek === 'eski' ? false : (istek === '3' ? true : localStorage.getItem('roa_arayuz') !== 'eski');
-  } catch (e) { return istek !== 'eski'; }   // depolama kapalı: yalnız adres belirler
-})();
-if (V3_ARAYUZ) document.documentElement.classList.add('v3');
-
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
 
@@ -86,49 +74,11 @@ let barracksLiveRefreshAccumulator = 0;
 
 // DOM Referansları
 const dom = {
-  playerLevel: document.getElementById('player-level'),
-  staminaText: document.getElementById('stamina-text'),
-  adAstraBalance: document.getElementById('adastra-balance'),
-  resWheat: document.getElementById('res-wheat'),
-  resWood: document.getElementById('res-wood'),
-  resIron: document.getElementById('res-iron'),
-  resFragments: document.getElementById('res-fragments'),
-  btnDailyLimits: document.getElementById('btn-daily-limits'),
-  profileBadgeBtn: document.getElementById('profile-badge-btn'),
-  btnDockWorkers: document.getElementById('btn-dock-workers'),
-  btnDockInventory: document.getElementById('btn-dock-inventory'),
-  btnDockBarracks: document.getElementById('btn-dock-barracks'),
-  btnDockMarket: document.getElementById('btn-dock-market'),
-  btnDockMap: document.getElementById('btn-dock-map'),
-  btnAudioToggle: document.getElementById('btn-audio-toggle'),
   btnDungeonReturnTown: document.getElementById('btn-dungeon-return-town'),
   dungeonHudFragVal: document.getElementById('dungeon-hud-frag-val'),
   dungeonHudBoxVal: document.getElementById('dungeon-hud-box-val'),
   dungeonBadgeFrag: document.getElementById('dungeon-badge-frag'),
   dungeonBadgeBox: document.getElementById('dungeon-badge-box'),
-
-  // Sağ Menü Paneli (Realm Sidebar)
-  sidebarCharacterCard: document.getElementById('sidebar-character-card'),
-  sidebarPlayerLevel: document.getElementById('sidebar-player-level'),
-  sidebarStaminaText: document.getElementById('sidebar-stamina-text'),
-  sidebarStaminaFill: document.getElementById('sidebar-stamina-fill'),
-  sidebarAdAstraBalance: document.getElementById('sidebar-adastra-balance'),
-  sidebarAvaxBalance: document.getElementById('sidebar-avax-balance'),
-  sidebarFragmentRate: document.getElementById('sidebar-fragment-rate'),
-  sidebarBoxRate: document.getElementById('sidebar-box-rate'),
-  sideBtnInventory: document.getElementById('side-btn-inventory'),
-  sideBtnWorkers: document.getElementById('side-btn-workers'),
-  sideBtnBarracks: document.getElementById('side-btn-barracks'),
-  sideBtnColosseum: document.getElementById('side-btn-colosseum'),
-  sideBtnCollection: document.getElementById('side-btn-collection'),
-  sideBtnBoxes: document.getElementById('side-btn-boxes'),
-  sidebarBoxBadge: document.getElementById('sidebar-box-badge'),
-  expFillIron: document.getElementById('exp-fill-iron'),
-  expTimeIron: document.getElementById('exp-time-iron'),
-  expFillWood: document.getElementById('exp-fill-wood'),
-  expTimeWood: document.getElementById('exp-time-wood'),
-  expFillWheat: document.getElementById('exp-fill-wheat'),
-  expTimeWheat: document.getElementById('exp-time-wheat'),
   sidebarResetTimer: document.getElementById('sidebar-reset-timer'),
   toastContainer: document.getElementById('toast-container'),
   rpgModal: document.getElementById('rpg-modal'),
@@ -147,7 +97,6 @@ const barracksUI = createBarracksUI({
   showToast: (...a) => showToast(...a),
   renderTopBar: () => renderTopBar(),
   reopen: (o) => openBarracksModal(o || {}),
-  compact: V3_ARAYUZ,
   getSelected: () => selectedSoldierIndex, setSelected: (i) => { selectedSoldierIndex = i; },
   getTab: () => barracksActiveTab, setTab: (t) => { barracksActiveTab = t; },
   getEditing: () => editingSoldierNameIndex, setEditing: (i) => { editingSoldierNameIndex = i; },
@@ -399,97 +348,21 @@ function hudVerisi() {
 let lastAdvisor = null;
 
 function renderTopBar() {
-  const state = gameState.state;
-  dom.playerLevel.innerText = `Lv.${state.level}`;
-
-  const maxStamina = gameState.getMaxStamina(state.level);
-  const staminaInt = Math.floor(state.stamina);
-  dom.staminaText.innerText = `${staminaInt}/${maxStamina}`;
-  const stFill = document.getElementById('hud-stamina-fill');
-  if (stFill) stFill.style.width = `${Math.max(0, Math.min(100, (staminaInt / Math.max(1, maxStamina)) * 100))}%`;
-
-  // Dar ekranda büyük bakiye kısaltılır (1,97 Mn); tam değer ipucunda
-  const fullBalance = state.adAstraBalance.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const compactBalance = window.innerWidth <= 520 && state.adAstraBalance >= 100000;
-  dom.adAstraBalance.innerText = compactBalance
-    ? state.adAstraBalance.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 })
-    : fullBalance;
-  if (dom.adAstraBalance.parentElement) {
-    const lk = gameState.getLockedBalanceInfo();
-    const f2 = v => v.toLocaleString('tr-TR', { maximumFractionDigits: 0 });
-    dom.adAstraBalance.parentElement.title = `ASTRA bakiyen: ${fullBalance}\n🔓 Serbest: ${f2(lk.free)} · 🔒 Kilitli: ${f2(lk.locked)}`;
-  }
-
-  const siloCap = gameState.getWarehouseCapacity();
-  const fmtRes = (v) => Math.floor(Number(v) || 0).toLocaleString('tr-TR');
-  RES_KEYS().map(key => [key, document.getElementById('res-' + key)]).forEach(([key, el]) => {
-    const cur = Number(state.inventory[key]) || 0;
-    const cap = siloCap[key] || 0;
-    if (el) el.innerText = fmtRes(cur);
-    const capEl = document.getElementById(`res-cap-${key}`);
-    if (capEl && cap > 0) {
-      const pct = Math.max(0, Math.min(100, (cur / cap) * 100));
-      capEl.style.width = `${pct}%`;
-      capEl.parentElement.classList.toggle('is-full', pct >= 99.5);
-      capEl.parentElement.classList.toggle('is-high', pct >= 80 && pct < 99.5);
-      const pill = document.getElementById(`res-pill-${key}`);
-      if (pill) pill.dataset.tip = `${fmtRes(cur)} / ${fmtRes(cap)} (silo %${Math.round(pct)})`;
-    }
-  });
-  if (dom.resFragments) dom.resFragments.innerText = fmtRes(state.inventory.fragments);
-
-  if (dom.sidebarBoxBadge) {
-    const boxCount = state.lockedBoxes || 0;
-    dom.sidebarBoxBadge.innerText = boxCount;
-    dom.sidebarBoxBadge.classList.toggle('hidden', boxCount <= 0);
-  }
-
-  // 🤖 Üst Menü Canlı Bot Durumu Güncellemesi
-  const topBotText = document.getElementById('top-bot-status-text');
-  const topBotDot = document.getElementById('top-bot-indicator-dot');
-  const topBotBtn = document.getElementById('btn-top-taverna-bot-status');
-  if (topBotText && topBotDot) {
-    const { botState, botText, botTip } = botHudDurumu();
-    if (topBotText.innerText !== botText) topBotText.innerText = botText;
-    if (topBotBtn) {
-      topBotBtn.dataset.state = botState;
-      topBotBtn.title = botTip;
-    }
-    document.querySelectorAll('#mobile-tabbar [data-tab="bot"]').forEach(b => { b.dataset.state = botState; });
-  }
-
-  // 🧙‍♂️ Akıllı Kral Danışmanı Canlı Güncellemesi
   updateRoyalAdvisorUI();
+  renderRealmSidebar();
 
-  renderRealmSidebar(state, maxStamina, staminaInt);
-
-  // Zindandayken Canlı Ganimet Rozetlerini Güncel Tut
+  // Zindandayken canlı ganimet rozetlerini güncel tut
   if (document.body.classList.contains('in-dungeon')) {
     updateDungeonLiveDropRatesUI();
   }
 
-  if (window.__v3) window.__v3.guncelle();   // v3 üst çubuğu eski çubuktaki değerleri okur
-}
-window.renderHUD = renderTopBar;
+  if (window.__v3) window.__v3.guncelle();   // v3 üst çubuğu değerlerini hudVerisi()'nden okur
+}window.renderHUD = renderTopBar;
 
 // Akıllı Kral Danışmanı DOM Güncellemesi
 function updateRoyalAdvisorUI() {
-  const advisor = gameState.getRoyalAdvisorAdvice();
-  lastAdvisor = advisor;   // v3 üst çubuğu (hudVerisi) aynı öneriyi tekrar hesaplamadan kullanır
-  const avatarEl = document.getElementById('advisor-avatar');
-  const titleEl = document.getElementById('advisor-title');
-  const textEl = document.getElementById('advisor-text');
-  const actBtn = document.getElementById('btn-advisor-action');
-
-  if (avatarEl) avatarEl.innerText = advisor.icon || '🧙‍♂️';
-  if (titleEl) titleEl.innerText = advisor.title || 'Kralın Danışmanı';
-  if (textEl) textEl.innerHTML = advisor.advice || '';
-  if (actBtn) {
-    actBtn.innerHTML = `<span>${advisor.actionLabel || '✨ İncele'}</span>`;
-    actBtn.dataset.action = advisor.action || '';
-  }
+  lastAdvisor = gameState.getRoyalAdvisorAdvice();   // hudVerisi() aynı öneriyi tekrar hesaplamadan kullanır
 }
-
 // =========================================================================
 // SAĞ MENÜ PANELİ (REALM SIDEBAR) - KARAKTER KARTI & SEFER TAKİPÇİSİ
 // =========================================================================
@@ -536,42 +409,8 @@ function renderExpeditionTracker(nodeId, fillEl, timeEl) {
   }
 }
 
-function renderRealmSidebar(state, maxStamina, staminaInt) {
-  // Kilitli bölümlerin yan menü düğmeleri soluk ve kilit simgeli görünür
-  [['side-btn-barracks', 'barracks'], ['side-btn-dungeon', 'dungeon'], ['side-btn-colosseum', 'colosseum'], ['side-btn-carnival', 'carnival'], ['side-btn-market', 'market']].forEach(([id, zone]) => {
-    const btn = document.getElementById(id);
-    if (!btn) return;
-    const lock = gameState.getFeatureLock(zone);
-    btn.classList.toggle('is-locked', !!lock);
-    if (lock) btn.dataset.lock = lock.reason; else delete btn.dataset.lock;
-  });
-  if (dom.sidebarPlayerLevel) dom.sidebarPlayerLevel.innerText = `Lv.${state.level}`;
-
-  // 1. Canlı Otomasyon Botu Rozeti
-  const botPill = document.getElementById('sidebar-bot-pill');
-  const botText = document.getElementById('sidebar-bot-status-text');
-  if (botPill && botText) {
-    const isPaused = gameState.isBotPaused();
-    const isBotActive = gameState.isAutoCollectorActive();
-    if (isPaused) {
-      botPill.classList.remove('active');
-      botPill.classList.add('paused');
-      botText.innerText = '⏸️ Bot: Duraklatıldı';
-      botText.style.color = '#fde047';
-    } else if (isBotActive) {
-      botPill.classList.add('active');
-      botPill.classList.remove('paused');
-      const remSec = gameState.getAutoCollectorRemainingSeconds();
-      botText.innerText = `Bot: ${formatCountdown(remSec)}`;
-      botText.style.color = '#4ade80';
-    } else {
-      botPill.classList.remove('active', 'paused');
-      botText.innerText = 'Bot: Pasif';
-      botText.style.color = '';
-    }
-  }
-
-  // 2. Aktif Seferler & Tamamlanma Sayacı
+function renderRealmSidebar() {
+  // 1. Aktif seferler ve tamamlanma sayacı
   let readyCount = 0;
   for (const k of RES_KEYS()) {
     if (renderExpeditionTracker(k, document.getElementById(`exp-fill-${k}`), document.getElementById(`exp-time-${k}`))) readyCount++;
@@ -592,8 +431,7 @@ function renderRealmSidebar(state, maxStamina, staminaInt) {
     sweepBtn.innerHTML = readyCount > 0 ? `⚡ ${readyCount} BİTEN SEFERİ TOPLA` : '⚡ BİTEN TÜM SEFERLERİ TOPLA';
   }
 
-  // 3. Kota özeti: çubuğun açık kısmı bugüne kadar açılan kota, dolu kısmı şu an çıkarılabilecek miktar
-  // v2: kenar çubuğu kişisel Üretim Hakkı'nı gösterir (açık kısım bugüne kadar açılan hak, dolu kısım şu an alınabilir)
+  // 2. Kota özeti: kişisel Üretim Hakkı (açık kısım bugüne kadar açılan hak, dolu kısım şu an alınabilir)
   for (const key of RES_KEYS()) {
     const hak = gameState.getUretimHakki(key);
     const base = hak.weekly || 1;
@@ -621,32 +459,7 @@ function renderRealmSidebar(state, maxStamina, staminaInt) {
     if (personalEl.innerHTML !== html) personalEl.innerHTML = html;
   }
 
-  // 4. Kışla Yaralı Asker Rozeti
-  const barracksBadge = document.getElementById('side-badge-barracks');
-  if (barracksBadge) {
-    const soldierList = Array.isArray(state.soldierUnits) ? state.soldierUnits : [];
-    const injuredSoldiers = soldierList.filter(s => s && s.hp != null && s.maxHp != null && s.hp < s.maxHp).length;
-    if (injuredSoldiers > 0) {
-      barracksBadge.classList.remove('hidden');
-      barracksBadge.innerText = `${injuredSoldiers} Yaralı`;
-    } else {
-      barracksBadge.classList.add('hidden');
-    }
-  }
-
-  // 5. Sandık Rozeti
-  const boxBadge = document.getElementById('sidebar-box-badge');
-  if (boxBadge) {
-    const boxCount = (state.inventory?.lootbox || 0) + (state.lockedBoxes || 0);
-    if (boxCount > 0) {
-      boxBadge.classList.remove('hidden');
-      boxBadge.innerText = boxCount;
-    } else {
-      boxBadge.classList.add('hidden');
-    }
-  }
-
-  // 6. Tüm Aletleri Onar Butonu Canlı Maliyet
+  // 3. Tüm aletleri onar düğmesi: canlı maliyet
   const repairAllBtn = document.getElementById('side-btn-repair-all');
   const repairCostLabel = document.getElementById('side-repair-all-cost');
   if (repairAllBtn && repairCostLabel) {
@@ -660,7 +473,6 @@ function renderRealmSidebar(state, maxStamina, staminaInt) {
     }
   }
 }
-
 // =========================================================================
 // ZİNDAN CANLI GANİMET (TEÇHİZAT PARÇASI & PANDORA KUTUSU) ORANLARI HUD'I
 // =========================================================================
@@ -733,11 +545,9 @@ function enterDungeonScene() {
     if (window.__vadi3d) window.__vadi3d.hide();   // 3B vadi gizlenir, zindan (Phaser) görünür
     phaserGame.scene.start('DungeonScene');
 
-    // Üst şerit menüyü Zindan Menüsüyle değiştir & hammadde pillerini gizle
+    // Kat çubuğu açılır (v3 üst/alt çubukları zindanda CSS ile gizlenir)
     document.body.classList.add('in-dungeon');
-    const topNavMenu = document.querySelector('.top-nav-menu');
     const floorBar = document.getElementById('dungeon-floor-bar');
-    if (topNavMenu) topNavMenu.classList.add('hidden');
     if (floorBar) floorBar.classList.remove('hidden');
 
     // Canlı ganimet oranlarını güncelle
@@ -754,11 +564,9 @@ function returnToTown() {
   if (window.__vadi3d) window.__vadi3d.show();
   else phaserGame.scene.start('GrandTownScene');
 
-  // Üst şerit menüyü Kasaba Menüsüne geri döndür
+  // Kat çubuğu kapanır, v3 çubukları geri gelir
   document.body.classList.remove('in-dungeon');
-  const topNavMenu = document.querySelector('.top-nav-menu');
   const floorBar = document.getElementById('dungeon-floor-bar');
-  if (topNavMenu) topNavMenu.classList.remove('hidden');
   if (floorBar) floorBar.classList.add('hidden');
 
   showToast('🏰 Kasaba meydanına dönüldü!', 'info');
@@ -792,13 +600,13 @@ function refreshQuotaTrackerUI() {
   const el = dom.modalBody && dom.modalBody.querySelector('.quota-tracker');
   if (!el) return;
   const scroll = dom.modalBody.scrollTop;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
   dom.modalBody.scrollTop = scroll;
 }
 
 function openDailyLimitsModal() {
   dom.modalTitle.innerHTML = `<span>📊</span> <span>KOTA VE SINIRLAR</span>`;
-  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG, compact: V3_ARAYUZ });
+  dom.modalBody.innerHTML = renderQuotaTracker({ gameState, globalPool, config: GAME_CONFIG });
   displayModal();
 }
 
@@ -1808,11 +1616,11 @@ function openTownZoneModal(zoneId, zoneName) {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
         <button class="phase2-tab-btn btn-bs-tab ${activeBlacksmithTab === 'forge' ? 'active' : ''}" data-bstab="forge" style="padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span style="font-size: 1.3rem;">🔥</span>
-          <span>${V3_ARAYUZ ? 'Yeni eşya dök' : '1. YENİ SİLAH & ZIRH DÖV'}</span>
+          <span>Yeni eşya dök</span>
         </button>
         <button class="phase2-tab-btn btn-bs-tab ${activeBlacksmithTab === 'armory' ? 'active' : ''}" data-bstab="armory" style="padding: 12px; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span style="font-size: 1.3rem;">🎒</span>
-          <span>${V3_ARAYUZ ? `Eşyalarım (${armoryList.length})` : `2. ÇANTAM & EŞYALARIM (${armoryList.length})`}</span>
+          <span>Eşyalarım (${armoryList.length})</span>
         </button>
       </div>
 
@@ -1825,7 +1633,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <span>🔨 Ocağın Başı: Ne Üretmek İstersin?</span>
             </div>
             <div style="font-size: 0.88rem; color: #94a3b8; display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:center;">
-              <span>${V3_ARAYUZ ? 'Bir parça seç ve döv; eksik hammaddeyi tek tuşla pazardan alabilirsin. Askerine Kışla\'dan takarsın.' : 'Bir parça seç ve döv. Eksik hammaddeyi tek tuşla pazardan alabilirsin. Dövülen eşyayı Kışla → Cephanelik\'ten askerine takarsın. Yeni eşyanın dayanıklılığı 13/13.'}</span>
+              <span>Bir parça seç ve döv; eksik hammaddeyi tek tuşla pazardan alabilirsin. Askerine Kışla'dan takarsın.</span>
               <button class="btn-clean btn-goto-armory" style="width:auto; padding:6px 12px; font-size:0.8rem; background:transparent; border:1px solid #475569; color:#cbd5e1;">⚔️ Kışla → Cephanelik</button>
             </div>
           </div>
@@ -1922,23 +1730,23 @@ function openTownZoneModal(zoneId, zoneName) {
             </div>
 
             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-              ${V3_ARAYUZ ? '' : `<button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;"> ⚡ Hepsini Toplu Geliştir </button>`}
+              
               <button class="btn-clean btn-armory-repair-all" style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 8px 14px; font-size: 0.84rem;" ${damagedArmoryItems.length === 0 ? 'disabled' : ''}>
                 🔨 Kırılan Her Şeyi Onar (${damagedArmoryItems.length})
               </button>
               <button class="btn-clean btn-smart-auto-equip" style="width: auto; background: #16a34a; border-color: #4ade80; padding: 8px 14px; font-size: 0.84rem;">
                 ⚡ En İyileri Askerlerime Giydir
               </button>
-              ${V3_ARAYUZ ? `<details class="v3-daha v3-genis"><summary>Toplu işlemler</summary><div><button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;"> ⚡ Hepsini Toplu Geliştir </button>` : ''}
+              <details class="v3-daha v3-genis"><summary>Toplu işlemler</summary><div><button class="btn-clean btn-armory-upgrade-all" style="width: auto; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; padding: 8px 14px; font-size: 0.84rem; font-weight: 800;"> ⚡ Hepsini Toplu Geliştir </button>
               <button class="btn-clean btn-smart-unequip-all" style="width: auto; background: #334155; border-color: #64748b; padding: 8px 14px; font-size: 0.84rem;">
                 🔄 Tümünü Çantaya Topla
               </button>
-              ${V3_ARAYUZ ? '</div></details>' : ''}
+              </div></details>
             </div>
           </div>
 
           <!-- Özelleştirilmiş Hızlı Geliştirme Paneli -->
-          ${V3_ARAYUZ ? '<details class="v3-daha v3-genis"><summary>Tür ve seviyeye göre geliştir</summary><div>' : ''}
+          <details class="v3-daha v3-genis"><summary>Tür ve seviyeye göre geliştir</summary><div>
           <div class="clean-card" style="border-left: 4px solid #f59e0b; padding: 12px 16px; background: rgba(30,20,10,0.4);">
             <div style="font-size: 0.9rem; font-weight: 800; color: #fde047; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
               <span>🎯 Özelleştirilmiş Hızlı Geliştirme</span>
@@ -1988,7 +1796,7 @@ function openTownZoneModal(zoneId, zoneName) {
               </div>
             </div>
           </div>
-          ${V3_ARAYUZ ? '</div></details>' : ''}
+          </div></details>
 
           <!-- Eşya Listesi -->
           <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -1996,7 +1804,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <div class="clean-card" style="text-align: center; padding: 40px 20px; color: #94a3b8;">
                 <div style="font-size: 2.5rem; margin-bottom: 8px;">🎒</div>
                 <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">Bu Kategori İçin Çantanızda Eşya Yok</div>
-                <div style="font-size: 0.9rem; margin-top: 4px;">Yukarıdaki <strong>"${V3_ARAYUZ ? 'Yeni eşya dök' : '1. YENİ SİLAH & ZIRH DÖV'}"</strong> sekmesine tıklayarak ordunuz için yeni eşya üretebilirsiniz.</div>
+                <div style="font-size: 0.9rem; margin-top: 4px;">Yukarıdaki <strong>"Yeni eşya dök"</strong> sekmesine tıklayarak ordunuz için yeni eşya üretebilirsiniz.</div>
               </div>
             ` : filteredArmoryList.map((entry, idx) => {
               const { source, slotKey, slotName, soldierIndex, soldierName, locationLabel, item, armoryIndex } = entry;
@@ -2073,7 +1881,6 @@ function openTownZoneModal(zoneId, zoneName) {
                         <button class="btn-clean btn-armory-repair btn-equip-repair" data-slot="${slotKey}" data-soldier-idx="${soldierIndex !== null ? soldierIndex : ''}" style="width: auto; background: #0284c7; border-color: #38bdf8; padding: 10px 14px; font-size: 0.88rem;" ${canAffordRep ? '' : 'disabled'}>🔧 Onar (${repCost ? repCost.adaCost : 0} ASTRA)</button>` : '';
                       const unequipBtn = `<button class="btn-clean btn-unequip-soldier-slot" data-soldier-idx="${soldierIndex}" data-slot="${slotKey}" style="width: auto; background: #475569; border-color: #64748b; padding: 10px 14px; font-size: 0.88rem;">✕ Üzerinden Çıkar</button>`;
                       const equipBtn = `<button class="btn-clean btn-smart-auto-equip" style="width: auto; background: #16a34a; border-color: #4ade80; padding: 10px 14px; font-size: 0.88rem;">🛡️ Askerime Giydir</button>`;
-                      if (!V3_ARAYUZ) return upBtn + sellBtn + recycleBtn + repairBtn + (isEquipped ? unequipBtn : equipBtn);
                       // arayüz v3: ana işlemler görünür (yükselt / onar / giydir); pazara koy, geri dönüştür, çıkar "Diğer" altında
                       const digerleri = sellBtn + recycleBtn + (isEquipped ? unequipBtn : '');
                       return upBtn + repairBtn + (isEquipped ? '' : equipBtn)
@@ -2183,16 +1990,6 @@ function openTownZoneModal(zoneId, zoneName) {
 
   // 4. AMM PAZAR YERİ (AUTOMATED MARKET MAKER DEX SWAP & P2P MARKET)
   else if (zoneId === 'market') {
-    const marketTabsHtmlEski = `
-      <div class="phase2-tab-row">
-        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'resources' ? 'active' : ''}" data-tab="resources">🪙 Hammadde & Pandora Havuzları</button>
-        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'fragments' ? 'active' : ''}" data-tab="fragments">🧩 Teçhizat Parçaları</button>
-        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'p2p_collection' ? 'active' : ''}" data-tab="p2p_collection">👑 P2P Koleksiyon</button>
-        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'buyback_vault' ? 'active' : ''}" data-tab="buyback_vault" style="${marketActiveTab === 'buyback_vault' ? 'border-color:#38bdf8; color:#38bdf8;' : ''}">🛡️ Otonom Buyback & Yakım</button>
-        <button class="phase2-tab-btn market-tab-btn ${marketActiveTab === 'ilan' ? 'active' : ''}" data-tab="ilan" style="${marketActiveTab === 'ilan' ? 'border-color:#f59e0b; color:#fcd34d;' : ''}">🏷️ İlan Pazarı</button>
-      </div>
-    `;
-
     // v3: 5 sekme yerine 3 bölüm (Al/Sat · İlanlar · Yakım); Al/Sat içinde kaynak seçimi, İlanlar içinde iki liste
     const marketV3Html = () => {
       const bolum = ['resources', 'fragments'].includes(marketActiveTab) ? 'alsat' : (['ilan', 'p2p_collection'].includes(marketActiveTab) ? 'ilan' : 'yakim');
@@ -2210,9 +2007,9 @@ function openTownZoneModal(zoneId, zoneName) {
       }
       return `<div class="phase2-tab-row v3-bolumler">${bolumDugme('resources', '💱 Al / Sat', bolum === 'alsat')}${bolumDugme('ilan', '🏷️ İlanlar', bolum === 'ilan')}${bolumDugme('buyback_vault', `🔥 Yakım`, bolum === 'yakim')}</div>${alt ? `<div class="v3-chipler">${alt}</div>` : ''}`;
     };
-    const marketTabsHtml = V3_ARAYUZ ? marketV3Html() : marketTabsHtmlEski;
+    const marketTabsHtml = marketV3Html();
 
-    html = V3_ARAYUZ ? `
+    html = `
       <div class="clean-card v3-ozet-kart">
         <div class="card-title-row">
           <div class="card-title">🏪 Pazar</div>
@@ -2220,18 +2017,6 @@ function openTownZoneModal(zoneId, zoneName) {
         </div>
         <div class="clean-desc">Al ve sat. Fiyatı ${terim('amm', 'takas havuzu')} belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde ${terim('yakim', 'yakılır')}, %2 ASTRA ${terim('harc', 'harç')} oyun kasalarına gider.</div>
       </div>
-      ${marketTabsHtml}
-    ` : `
-      <div class="clean-card">
-        <div class="card-title-row">
-          <div class="card-title">🏪 AMM Pazar Yeri & P2P Koleksiyon Pazarı</div>
-          <span style="font-size: 0.85rem; color: #c084fc; font-weight: 700;">Bakiye: ${state.adAstraBalance.toFixed(1)} ASTRA</span>
-        </div>
-        <div class="clean-desc">
-          Hammadde, Pandora Kutusu ve anahtar al-sat. Fiyatı havuzdaki arz belirler: çok alınan pahalanır, çok satılan ucuzlar. Her işlemde %2 hammadde yakılır, %2 ASTRA harcı oyun kasalarına gider.
-        </div>
-      </div>
-
       ${marketTabsHtml}
     `;
 
@@ -2258,9 +2043,7 @@ function openTownZoneModal(zoneId, zoneName) {
               <span style="width: 44px; height: 44px; font-size: 1.6rem; display: inline-flex; align-items: center; justify-content: center;">${resImg(resKey, pool.icon, 'width:44px;height:44px;')}</span>
               <div>
                 <div style="font-size: 1.02rem; font-weight: 800; color: #fff;">${pool.name}</div>
-                ${V3_ARAYUZ ? '' : `<div style="font-size: 0.78rem; color: #94a3b8;">
-                  Havuz: <strong>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name}</strong> • <strong>${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</strong>
-                </div>`}
+                
               </div>
             </div>
             <div style="text-align: right;">
@@ -2276,7 +2059,7 @@ function openTownZoneModal(zoneId, zoneName) {
             </div>
           </div>
 
-          ${V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>${terim('havuz', 'Havuz')} bilgisi</summary><div>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name} • ${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</div></details>` : ''}
+          <details class="v3-ayrinti"><summary>${terim('havuz', 'Havuz')} bilgisi</summary><div>${Math.floor(pool.resourceReserve).toLocaleString('tr-TR')} ${pool.name} • ${Math.floor(pool.adAstraReserve).toLocaleString('tr-TR')} ASTRA</div></details>
           <div class="amm-trade-grid">
             <!-- Satın Al (Buy) -->
             <div class="amm-trade-box">
@@ -2543,9 +2326,7 @@ function openTownZoneModal(zoneId, zoneName) {
     html += `
       <!-- Havuzlar: 6 hammadde + Pandora kutusu + anahtar -->
       <div class="amm-trade-container">
-        ${V3_ARAYUZ
-          ? renderAmmTradeCard(['boxes', 'keys'].includes(marketSelectedRes) || RES_KEYS().includes(marketSelectedRes) ? marketSelectedRes : 'wheat')
-          : `${RES_KEYS().map(k => renderAmmTradeCard(k)).join('')}${renderAmmTradeCard('boxes')}${renderAmmTradeCard('keys')}`}
+        ${renderAmmTradeCard(['boxes', 'keys'].includes(marketSelectedRes) || RES_KEYS().includes(marketSelectedRes) ? marketSelectedRes : 'wheat')}
       </div>
     `;
   }
@@ -3180,23 +2961,6 @@ function renderCarnivalHtml(activeTab = 'wheel') {
   const shards = state.wheelTicketShards || 0;
   const redeemCodes = state.redeemCodes || [];
 
-  const tabsNavHtmlEski = `
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px;">
-      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'wheel' ? 'active' : ''}" data-carnival-tab="wheel" style="padding: 12px 14px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span style="font-size: 1.3rem;">🎡</span>
-        <span>1. 15 ÖDÜLLÜ ŞANS ÇARKI</span>
-      </button>
-      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'lottery' ? 'active' : ''}" data-carnival-tab="lottery" style="padding: 12px 14px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
-        <span style="font-size: 1.3rem;">🎟️</span>
-        <span>2. KRALLIK PİYANGOSU</span>
-      </button>
-      <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'pools' ? 'active' : ''}" data-carnival-tab="pools" style="padding: 12px 14px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: #eab308;">
-        <span style="font-size: 1.3rem;">🏛️</span>
-        <span>3. HAZİNE & HAVUZ ÖDÜLLERİ</span>
-      </button>
-    </div>
-  `;
-
   const tabsNavHtmlV3 = `
     <div class="phase2-tab-row v3-bolumler" style="margin-bottom: 14px;">
       <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'wheel' ? 'active' : ''}" data-carnival-tab="wheel">🎡 Çark</button>
@@ -3204,7 +2968,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
       <button class="phase2-tab-btn carnival-tab-btn ${activeTab === 'pools' ? 'active' : ''}" data-carnival-tab="pools">🏛️ Havuzlar</button>
     </div>
   `;
-  const tabsNavHtml = V3_ARAYUZ ? tabsNavHtmlV3 : tabsNavHtmlEski;
+  const tabsNavHtml = tabsNavHtmlV3;
 
   let tabContentHtml = '';
 
@@ -3271,26 +3035,9 @@ function renderCarnivalHtml(activeTab = 'wheel') {
           return ws.open ? '' : `<div class="clean-card notice-card notice-warn">🎪 Karnaval kasası yenileniyor (${Math.floor(ws.balance).toLocaleString('tr-TR')} / ${ws.minBalance.toLocaleString('tr-TR')} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.</div>`;
         })()}
 
-        ${V3_ARAYUZ ? karnavalCevirV3({ costAda: gameState.getWheelCostAda(), tickets: myTickets, resSpinsLeft: gameState.getWheelResourceSpinsLeft(), resSpinsMax: GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3, resBtnsHtml: wheelResBtns }) : `
-        <!-- 4 Farklı Ödeme Yöntemi ile Çarkı Çevir Butonları -->
-        <div class="clean-card" style="border-color: #ec4899; background: #120914;">
-          <div style="font-size:0.88rem; font-weight:800; color:#f472b6; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-            <span>🪙 Çarkı Çevirme Seçenekleri (${gameState.getWheelCostAda().toLocaleString('tr-TR')} ASTRA Eşdeğeri):</span>
-            <span style="font-size:0.75rem; color:#fde047;">Hammaddenin yarısı yakılır, yarısı satılıp Karnaval kasasına girer · bugün hammaddeyle kalan: ${gameState.getWheelResourceSpinsLeft()}/${GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px;">
-            <button class="btn-clean btn-spin-wheel" data-pay="ada" style="background:#7c3aed; border-color:#a78bfa; font-weight:800; padding:10px;">
-              🟣 ${gameState.getWheelCostAda().toLocaleString('tr-TR')} ASTRA İle Çevir
-            </button>
-            ${wheelResBtns}
-            <button id="btn-spin-wheel-ticket" class="btn-clean btn-spin-wheel" data-pay="ticket" ${myTickets > 0 ? '' : 'disabled'} style="background:#db2777; border-color:#f472b6; font-weight:800; padding:10px;">
-              🎟️ 1 Bilet İle Çevir (${myTickets} Bilet)
-            </button>
-          </div>
-        </div>
-        `}
+        ${karnavalCevirV3({ costAda: gameState.getWheelCostAda(), tickets: myTickets, resSpinsLeft: gameState.getWheelResourceSpinsLeft(), resSpinsMax: GAME_CONFIG.CARNIVAL?.WHEEL_RESOURCE_DAILY_LIMIT ?? 3, resBtnsHtml: wheelResBtns })}
 
-        ${V3_ARAYUZ ? '<details class="v3-ayrinti"><summary>📋 Çarkın 15 ödülü ve şansları</summary><div>' : ''}
+        <details class="v3-ayrinti"><summary>📋 Çarkın 15 ödülü ve şansları</summary><div>
         <!-- 15 Ödül Listesi / Detaylı İnceleme Bölümü -->
         <div class="clean-card" style="border-color: rgba(255,255,255,0.1); background: rgba(10,10,18,0.6); padding:12px;">
           <div style="font-size:0.85rem; font-weight:800; color:#cbd5e1; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
@@ -3314,7 +3061,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             })()}
           </div>
         </div>
-        ${V3_ARAYUZ ? '</div></details>' : ''}
+        </div></details>
 
         <div id="carnival-redeem-codes-container">
           ${redeemCodes.length > 0 ? `
@@ -3361,7 +3108,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
         <div class="clean-card">
           <div class="card-title-row">
-            <div class="card-title">${V3_ARAYUZ ? '🛡️ Haftalık bilet sınırın' : '🛡️ Balina koruması: haftalık bilet sınırın'}</div>
+            <div class="card-title">🛡️ Haftalık bilet sınırın</div>
           </div>
           <div class="limit-list">
             ${renderLimitMeter({ icon: '🗓️', label: 'Bu hafta aldığın', used: lot.boughtThisWeek, max: lot.maxPerWeek, note: 'Her hesap haftada en fazla bu kadar bilet alabilir.' })}
@@ -3382,7 +3129,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
             </button>
           </div>
           ${blockedBy ? `<div class="pe-note pe-warn">${blockedBy}</div>` : ''}
-          ${V3_ARAYUZ ? '<details class="v3-ayrinti"><summary>Bilet bedeli nereye gider?</summary><div>' : ''}<div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ASTRA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div>${V3_ARAYUZ ? '</div></details>' : ''}
+          <details class="v3-ayrinti"><summary>Bilet bedeli nereye gider?</summary><div><div class="pe-note">Bilet bedelinin %2'si amorti kasasına (şu an ${fmt(lot.amortiPool)} ASTRA), kalanı piyango kasasına gider. Amorti yalnız kasa biterse kalan tüm biletlere eşit dağıtılır. Beklemek istemezsen biletini çarkta 1 bilet = 1 çevirme olarak kullanabilirsin.</div></div></details>
         </div>
 
         <div class="clean-card lottery-draw-card ${pending > 0 ? 'is-winner' : ''}">
@@ -3692,15 +3439,13 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 
       </div>
     `;
-    if (V3_ARAYUZ) {
-      const lk = gameState.getLockedBalanceInfo(), ct = gameState.getContributionInfo(), fp = gameState.getFreePlayerPoolInfo();
-      const m = ok => (ok ? '✅' : '❌');
-      const ucretsizHtml = (fp.deposited
-        ? 'Hesabına para yatırdığın için ücretsiz oyuncu havuzu senin için değil; kazandığın ödüller devam eder.'
-        : `<strong>Haftalık ücretsiz oyuncu payı</strong><br>${m(fp.levelOk)} En az ${fp.minLevel}. seviye (sen: ${fp.level})<br>${m(fp.contributionOk)} Bu hafta en az ${fp.needContribution.toLocaleString('tr-TR')} katkı puanı (sen: ${fp.weekContribution.toLocaleString('tr-TR')})<br>📧 E-postan doğrulanmış olmalı<br>🔥 Sadakat serin: <strong>${fp.streakWeeks} hafta</strong> → bu haftaki çarpanın ×${fp.streakMultiplier.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} (en çok ×${fp.streakMax}; kaçırılan hafta seriyi yarıya indirir)<br>Pay ${fp.locked ? 'kilitli gelir; oyunda harcadıkça çözülür' : 'her kazanç gibi gelir'}.`)
-        + '<br><br>Oyundan kazandığın ASTRA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ASTRA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Çekim yalnız serbest kısımdan yapılır; ortak haftalık çekim hakkından payını katkı puanın belirler.';
-      tabContentHtml = karnavalHavuzlarV3({ eData, g: { serbest: lk.free, kilitli: lk.locked, katki: ct.week, carpan: gameState.getAdaPriceMultiplier() }, ucretsizHtml });
-    }
+    const lk = gameState.getLockedBalanceInfo(), ct = gameState.getContributionInfo(), fp = gameState.getFreePlayerPoolInfo();
+    const m = ok => (ok ? '✅' : '❌');
+    const ucretsizHtml = (fp.deposited
+      ? 'Hesabına para yatırdığın için ücretsiz oyuncu havuzu senin için değil; kazandığın ödüller devam eder.'
+      : `<strong>Haftalık ücretsiz oyuncu payı</strong><br>${m(fp.levelOk)} En az ${fp.minLevel}. seviye (sen: ${fp.level})<br>${m(fp.contributionOk)} Bu hafta en az ${fp.needContribution.toLocaleString('tr-TR')} katkı puanı (sen: ${fp.weekContribution.toLocaleString('tr-TR')})<br>📧 E-postan doğrulanmış olmalı<br>🔥 Sadakat serin: <strong>${fp.streakWeeks} hafta</strong> → bu haftaki çarpanın ×${fp.streakMultiplier.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} (en çok ×${fp.streakMax}; kaçırılan hafta seriyi yarıya indirir)<br>Pay ${fp.locked ? 'kilitli gelir; oyunda harcadıkça çözülür' : 'her kazanç gibi gelir'}.`)
+      + '<br><br>Oyundan kazandığın ASTRA\'nın %20\'si serbest, %80\'i kilitli başlar. Kilitli ASTRA\'yı oyunda harcayabilirsin; harcadıkça, her gün oynadıkça ve zamanla açılır. Çekim yalnız serbest kısımdan yapılır; ortak haftalık çekim hakkından payını katkı puanın belirler.';
+    tabContentHtml = karnavalHavuzlarV3({ eData, g: { serbest: lk.free, kilitli: lk.locked, katki: ct.week, carpan: gameState.getAdaPriceMultiplier() }, ucretsizHtml });
   }
 
   return tabsNavHtml + tabContentHtml;
@@ -3709,7 +3454,7 @@ function renderCarnivalHtml(activeTab = 'wheel') {
 function openCarnivalModal(activeTab = 'wheel') {
   if (!featureGate('carnival')) return;
   window.carnivalActiveTab = activeTab;
-  dom.modalTitle.innerHTML = V3_ARAYUZ ? '<span>🎪</span> <span>Karnaval</span>' : `<span>🎪</span> <span>KRALLIK KARNAVALI, ŞANS ÇARKI & PİYANGO</span>`;
+  dom.modalTitle.innerHTML = '<span>🎪</span> <span>Karnaval</span>';
   dom.modalBody.innerHTML = renderCarnivalHtml(activeTab);
   displayModal();
   if (activeTab === 'wheel') {
@@ -4028,10 +3773,10 @@ function openColosseumModal() {
   dom.modalTitle.innerHTML = `<span>🏟️</span> <span>BÜYÜK GLADYATÖR KOLEZYUMU: 1v1 PVP & HAFTALIK LİG</span>`;
 
   const tabsHtml = `
-    <div class="phase2-tab-row${V3_ARAYUZ ? ' v3-bolumler' : ''}">
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">${V3_ARAYUZ ? '⚔️ Düello' : '⚔️ 1v1 Gladyatör Düellosu'}</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">${V3_ARAYUZ ? '🏆 Lig' : '🏆 Haftalık Liderlik Tablosu'}</button>
-      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">${V3_ARAYUZ ? '🌐 Rakipler' : '🌐 Gerçek Rakipler'}</button>
+    <div class="phase2-tab-row v3-bolumler">
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'duel' ? 'active' : ''}" data-tab="duel">⚔️ Düello</button>
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'leaderboard' ? 'active' : ''}" data-tab="leaderboard">🏆 Lig</button>
+      <button class="phase2-tab-btn colosseum-tab-btn ${colosseumActiveTab === 'pvp' ? 'active' : ''}" data-tab="pvp">🌐 Rakipler</button>
     </div>
   `;
 
@@ -4142,13 +3887,11 @@ function openColosseumModal() {
           <span class="card-badge" style="color: #fde047;">🔑 ${state.arenaKeys || 0} Anahtar</span>
         </div>
         <div class="clean-desc">
-          ${V3_ARAYUZ
-            ? "Şampiyonunu seç ve 'Kolezyuma çık' de: rakip bulunur, 1v1 savaş başlar. Yaralanan şampiyon buğdayla iyileşir."
-            : "En güçlü şampiyonunu kuşanmış 5 parça teçhizatıyla sahaya sür! 'Kolezyuma Çık' düğmesine bastığında sistem canlı eşleşme yapar ve 1v1 savaş başlar. Savaşta yaralanan şampiyonların canı depodaki buğday ile 18 saatlik tedavi sürecinde iyileşir."}
+          Şampiyonunu seç ve 'Kolezyuma çık' de: rakip bulunur, 1v1 savaş başlar. Yaralanan şampiyon buğdayla iyileşir.
         </div>
       </div>
 
-      ${V3_ARAYUZ ? `<details class="v3-daha v3-genis"><summary>Taktik: ${escHtml(curPresetObj.name)}</summary><div>${colosseumPresetHtml}</div></details>` : colosseumPresetHtml}
+      <details class="v3-daha v3-genis"><summary>Taktik: ${escHtml(curPresetObj.name)}</summary><div>${colosseumPresetHtml}</div></details>
 
       ${isArmyStaked ? `
         <div class="clean-card" style="background: #1c0a0a; border: 1px solid #ef4444; padding: 20px; text-align: center;">
@@ -4215,7 +3958,7 @@ function openColosseumModal() {
             <span class="${ce.stamina < ce.staminaCost ? 'is-bad' : ''}">⚡ Bedel: <strong>${ce.staminaCost} stamina</strong> (sende ${ce.stamina})</span>
           </div>
           <button id="btn-start-1v1-duel" class="btn-clean btn-clean-green" style="font-size: 1.05rem; padding: 13px; margin-top: 12px; font-weight: 800;" ${block ? 'disabled' : ''}>
-            ${block ? `🔒 ${block}` : (V3_ARAYUZ ? '⚔️ Kolezyuma çık (1v1)' : '⚔️ KOLEZYUMA ÇIK (1v1 EŞLEŞ)')}
+            ${block ? `🔒 ${block}` : ('⚔️ Kolezyuma çık (1v1)')}
           </button>`;
           })()}
         </div>
@@ -4448,9 +4191,7 @@ async function renderPvpPanel() {
     <div class="card-title-row"><div class="card-title">🌐 Gerçek Rakipler</div><span class="card-badge" style="color:#38bdf8;">Sırada bekleyen: 1v1 ${st.waiting['1v1']} · 3v3 ${st.waiting['3v3']}</span></div>
     ${(() => {
       const kurallar = `Askerini kilitle, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <strong>1 puan</strong>, 3v3 zaferi <strong>3 puan</strong>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${Math.round(st.rules.weeklyPoolShare * 100)}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade).`;
-      return V3_ARAYUZ
-        ? `<div class="clean-desc">Askerini seç, "Maç ara"ya bas; ilk bekleyen oyuncuyla maçın sunucuda oynanır.</div><details class="v3-ayrinti"><summary>Kurallar ve ödüller</summary><div>${kurallar}</div></details>`
-        : `<div class="clean-desc">${kurallar}</div>`;
+      return `<div class="clean-desc">Askerini seç, "Maç ara"ya bas; ilk bekleyen oyuncuyla maçın sunucuda oynanır.</div><details class="v3-ayrinti"><summary>Kurallar ve ödüller</summary><div>${kurallar}</div></details>`;
     })()}
     ${q ? `<div style="margin:10px 0;padding:10px;border:1px dashed #38bdf8;border-radius:8px;">⏳ <strong>${q.mode}</strong> için sıradasın · ${Math.max(1, Math.round((Date.now() - q.at) / 60000))} dakikadır bekliyorsun. Rakip gelince maç kendiliğinden oynanır, bildirim alırsın.
         <button id="pvp-leave" class="btn-clean btn-clean-outline" style="width:auto;margin-left:8px;padding:5px 10px;">↩️ Sıradan çık</button></div>`
@@ -4618,15 +4359,8 @@ function addNotification(icon, text) {
 }
 
 function updateNotificationBadge() {
-  const badge = document.getElementById('notif-badge');
-  const botWarning = gameState.getBotResourceDeficitWarning();
-  const unreadCount = realmNotifications.filter(n => n.unread).length + (botWarning ? 1 : 0);
-  if (badge) {
-    badge.innerText = unreadCount;
-    badge.style.display = unreadCount > 0 ? 'flex' : 'none';
-  }
+  if (window.__v3) window.__v3.guncelle();   // zil sayısı hudVerisi().bildirim'den gelir
 }
-
 function toggleNotificationPanel() {
   let panel = document.getElementById('notif-dropdown-panel');
   if (panel) {
@@ -4861,38 +4595,6 @@ function openTreasuryVaultModal() {
 
   dom.modalTitle.innerHTML = `<span>🏛️</span> <span>Sirius Konseyi & Hazine</span>`;
 
-  const topOverviewHtml = `
-    <div class="clean-card" style="background: linear-gradient(135deg, rgba(26,18,8,0.95), rgba(45,28,10,0.95)); border-color: #eab308; box-shadow: 0 0 25px rgba(234,179,8,0.15);">
-      <div class="card-title-row">
-        <div class="card-title" style="color: #fef08a; font-size: 1.1rem;">👑 Büyük Krallık Kasası & Tokenomics Rezervi</div>
-        <span class="card-badge" style="color: #4ade80; background: rgba(74,222,128,0.15); border: 1px solid #4ade80;">10 Yıllık Sürdürülebilir Ekonomi</span>
-      </div>
-      <div class="clean-desc" style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.5; margin-top: 4px;">
-        AdAstra ekosistemindeki tüm harcamalar, pazar vergileri, arena girişleri ve NFT alımları bu ana hazinede toplanır ve topluluğa ödül olarak geri dağıtılır.
-      </div>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 14px;">
-        <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">Toplam Kilitli Ödül & Hazine</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #fde047; margin-top: 4px;">
-            ${summary.totalVaultAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
-          </div>
-        </div>
-        <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">AMM Likidite Rezervi</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #38bdf8; margin-top: 4px;">
-            ${summary.totalAmmLiquidityAda.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
-          </div>
-        </div>
-        <div style="background: #151a26; padding: 12px 14px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700;">Kalıcı Yakılan (Deflasyon)</div>
-          <div style="font-size: 1.3rem; font-weight: 900; color: #f97316; margin-top: 4px;">
-            🔥 ${summary.burnedNftPool.toLocaleString('tr-TR')} <span style="font-size: 0.85rem; color: #c084fc;">ASTRA</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
   // Her 100 ASTRA harcamanın dağılımı ve kasaların payları (ayarlardan)
   const A = GAME_CONFIG.TREASURY_ALLOCATION || {};
   const T = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;
@@ -4913,32 +4615,6 @@ function openTreasuryVaultModal() {
       </div>
       <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">Oyun kasalarına giden pay aşağıdaki kasalara bölünür; ödüller (zindan, boss, kolezyum, görev, çark) bu kasalardan ödenir, havadan basılmaz.</div>
     </div>`;
-
-  const poolsGridHtml = `
-    <div style="font-size: 0.95rem; font-weight: 800; color: #facc15; margin: 14px 0 8px;">Ödül kasaları</div>
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
-      ${summary.pools.map(pool => {
-        const sh = shareOf[pool.id];
-        const shareTxt = pool.id === 'ubi_pool' ? `her harcamadan ${pctTxt(GAME_CONFIG.UBI_POOL_RATE ?? 0.06)} pay` : sh ? `her harcamadan ${pctTxt(T * sh)} pay` : '';
-        return `
-        <div class="clean-card" style="margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; border-color: ${pool.color}55;">
-          <div style="display: flex; gap: 10px; align-items: center;">
-            <span style="font-size: 1.7rem; width: 36px; text-align: center;">${pool.icon}</span>
-            <div style="flex: 1; min-width: 0;">
-              <div style="font-weight: 800; font-size: 0.92rem; color: #fff; line-height: 1.25;">${pool.name}</div>
-              <div style="font-size: 1.12rem; font-weight: 900; color: ${pool.color};">${pool.totalPoolAda.toLocaleString('tr-TR')} <span style="font-size: 0.74rem; color: #c084fc;">ASTRA</span></div>
-            </div>
-            <span style="font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.07); color: #cbd5e1; font-weight: 700; align-self: flex-start;">${pool.statusBadge}</span>
-          </div>
-          ${(() => { const acik = `${pool.description}${shareTxt ? ` <span style="color:#e7b94c;">Gelir: ${shareTxt}.</span>` : ''}`; return V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Bu kasa ne işe yarar?</summary><div>${acik}</div></details>` : `<div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.35;">${acik}</div>`; })()}
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,.06); padding-top: 8px; margin-top: auto;">
-            <span style="font-size: 0.78rem; color: #cbd5e1; flex: 1; min-width: 0;">👤 ${pool.userShareText}</span>
-            <button class="btn-clean btn-treasury-action" data-action="${pool.actionType}" style="padding: 5px 10px; font-size: 0.76rem; width: auto; border: 1px solid ${pool.color}; background: transparent; color: #fff; white-space: nowrap; flex-shrink: 0;">${pool.actionText} →</button>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>
-  `;
 
   // v2: Sirius Konseyi — üretim düzeni (kota termostatı, Otorite, ağırlık) ve ortak kasa stoğu
   const us = gameState.getUretimSummary ? gameState.getUretimSummary() : null;
@@ -5023,9 +4699,7 @@ function openTreasuryVaultModal() {
     </div>` : '';
   const sponsorHtml = online.active && isLoggedIn() ? '<div id="sponsor-box" class="clean-card" style="border-color:#f472b6;"><div class="card-title" style="color:#f9a8d4;">🤝 Sponsorluk</div><div class="clean-desc">Yükleniyor…</div></div>' : '';
   const v3Kasalar = summary.pools.map(pool => { const sh = shareOf[pool.id]; return { ...pool, gelirMetni: pool.id === 'ubi_pool' ? `her harcamadan ${pctTxt(GAME_CONFIG.UBI_POOL_RATE ?? 0.06)} pay` : sh ? `her harcamadan ${pctTxt(T * sh)} pay` : '' }; });
-  dom.modalBody.innerHTML = V3_ARAYUZ
-    ? hazineOzetV3(summary) + hazineKasalarV3(v3Kasalar) + splitHtml + kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml
-    : kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml + topOverviewHtml + splitHtml + poolsGridHtml;
+  dom.modalBody.innerHTML = hazineOzetV3(summary) + hazineKasalarV3(v3Kasalar) + splitHtml + kapiHtml + gelirHtml + karneHtml + sponsorHtml + konseyHtml;
   if (sponsorHtml) loadSponsorBox();
   const izinBitirBtn = document.getElementById('btn-izin-bitir');
   if (izinBitirBtn) izinBitirBtn.onclick = () => { gameState.bitirIzin(); openTreasuryVaultModal(); };
@@ -5283,7 +4957,7 @@ let preBattleSelectedSoldiers = [0];
 
 function openPreBattleModal(monster) {
   window.currentPreBattleMonster = monster;
-  dom.modalTitle.innerHTML = V3_ARAYUZ ? '<span>⚔️</span> <span>Savaşa hazırlık</span>' : `<span>⚔️</span> <span>SAVAŞ ÖNCESİ TAKTİK FORMASYON HAZIRLIĞI</span>`;
+  dom.modalTitle.innerHTML = '<span>⚔️</span> <span>Savaşa hazırlık</span>';
 
   const state = gameState.state;
   const soldiers = state.soldierUnits || [];
@@ -5311,7 +4985,7 @@ function openPreBattleModal(monster) {
                <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ASTRA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
              </label>` : '';
   const entryWarnHtml = expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ASTRA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : '';
-  const entryCardHtml = V3_ARAYUZ ? `
+  const entryCardHtml = `
     <div class="prebattle-entry-card ${terms.nextNeedsFee ? 'is-out' : ''}">
       <div class="pe-row">
         <span>🎟️ Bugünkü ${terms.nextEntryNumber}. girişin</span>
@@ -5320,15 +4994,6 @@ function openPreBattleModal(monster) {
       ${entryFeeHtml}
       ${entryWarnHtml}
       <details class="v3-ayrinti"><summary>Giriş kuralları</summary><div>${entryLadderHtml}${entryNoteHtml}</div></details>
-    </div>` : `
-    <div class="prebattle-entry-card ${terms.nextNeedsFee ? 'is-out' : ''}">
-      <div class="pe-row">
-        <span>🎟️ Bugünkü ${terms.nextEntryNumber}. girişin</span>
-        <strong>${terms.nextNeedsFee ? 'Harçlı / antrenman' : 'Ödüllü'}</strong>
-      </div>
-      ${entryLadderHtml}
-      ${terms.nextNeedsFee ? `${entryFeeHtml}${entryNoteHtml}` : entryNoteHtml}
-      ${entryWarnHtml}
     </div>`;
 
   const staminaCost = terms.staminaCost;
@@ -5387,7 +5052,7 @@ function openPreBattleModal(monster) {
       </div>
 
       <div class="prebattle-prediction ${prediction.difficulty.toLowerCase()}">
-        <div>${V3_ARAYUZ ? `Kazanma şansı: %${prediction.winChance} (${prediction.difficulty})` : `KAZANMA ŞANSI: %${prediction.winChance} (${prediction.difficulty.toUpperCase()})`}</div>
+        <div>Kazanma şansı: %${prediction.winChance} (${prediction.difficulty})</div>
         <div style="font-size:0.75rem; font-weight:normal; margin-top:3px; opacity:0.85;">
           ${prediction.winChance >= 75 ? '🔥 Ordun ezici üstünlüğe sahip!' : (prediction.winChance >= 50 ? '⚖️ Dengeli bir savaş, yaralanmalar olabilir.' : '⚠️ Yüksek risk! Ordun yenilgiye uğrayabilir.')}
         </div>
@@ -5479,10 +5144,10 @@ function openPreBattleModal(monster) {
           <button type="button" id="btn-pb-auto" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:800; background:#15803d; border-color:#4ade80; color:#fff;" title="En güçlülerden başlayarak kazanma şansı en az %80 olana kadar seçer (daha az asker = daha az stamina)">⚡ Kazanacak kadar seç</button>
           <button type="button" id="btn-pb-all" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:700; background:transparent; border:1px solid #475569; color:#cbd5e1;">Tümünü seç</button>
         </div>
-        ${V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Taktik ve silahlar</summary><div>${presetSelectorHtml}${activeWeaponsPreviewHtml}</div></details>` : presetSelectorHtml}
-        ${V3_ARAYUZ ? '' : activeWeaponsPreviewHtml}
+        <details class="v3-ayrinti"><summary>Taktik ve silahlar</summary><div>${presetSelectorHtml}${activeWeaponsPreviewHtml}</div></details>
+        
 
-        <div class="prebattle-sol-list" style="${V3_ARAYUZ ? '' : 'max-height:260px; overflow-y:auto; padding-right:4px;'}">
+        <div class="prebattle-sol-list">
           ${soldiers.map((sol, idx) => {
             const stats = gameState.getSoldierFullStats(idx);
             const isChecked = preBattleSelectedSoldiers.includes(idx);
@@ -5519,7 +5184,7 @@ function openPreBattleModal(monster) {
   else if (totalSoldiers === 0) startBtnText = '⚔️ ASKER YOK';
   else if (selectedCount === 0) startBtnText = '⚔️ ASKER SEÇİN';
   else if (isStaminaInsufficient) startBtnText = `⚡ YETERSİZ STAMİNA (${curStamina}/${staminaCost} ⚡)`;
-  if (V3_ARAYUZ) startBtnText = startBtnText.replace('SAVAŞA BAŞLA', 'Savaşa başla').replace('ORDU KİLİTLİ', 'Ordu kilitli').replace('ASKER YOK', 'Asker yok').replace('ASKER SEÇİN', 'Asker seçin').replace('YETERSİZ STAMİNA', 'Yetersiz stamina');
+  startBtnText = startBtnText.replace('SAVAŞA BAŞLA', 'Savaşa başla').replace('ORDU KİLİTLİ', 'Ordu kilitli').replace('ASKER YOK', 'Asker yok').replace('ASKER SEÇİN', 'Asker seçin').replace('YETERSİZ STAMİNA', 'Yetersiz stamina');
 
   dom.modalBody.innerHTML = `
     ${entryCardHtml}
@@ -5527,7 +5192,7 @@ function openPreBattleModal(monster) {
       ${enemyCardHtml}
       ${armySelectHtml}
     </div>
-    <div class="${V3_ARAYUZ ? 'v3-prebattle-aksiyon' : ''}" style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px; flex-wrap: wrap;">
+    <div class="v3-prebattle-aksiyon" style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px; flex-wrap: wrap;">
       ${(state.inventory.scroll_heal || 0) > 0 ? `
         <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_heal" style="width:auto; padding:10px 18px; font-weight:800;" title="Ordu İyileştirme Parşömeni Kullanarak Bir Askeri İyileştir (+10 HP)">
           📜 Parşömenle İyileştir (${state.inventory.scroll_heal} Adet)
@@ -6033,148 +5698,12 @@ function initAppEvents() {
     });
   }
 
-  // Profil Rozetine Tıklama -> Karakter Gelişimi & Envanter
-  if (dom.profileBadgeBtn) dom.profileBadgeBtn.addEventListener('click', openInventoryModal);
-
-  // Günlük Limitler Paneli Butonu
-  if (dom.btnDailyLimits) dom.btnDailyLimits.addEventListener('click', openDailyLimitsModal);
+  // Seferler paneli (v3 "Seferler" düğmesi açar): kota başlığı, toplu hasat, toplu onarım, sefer kartları
   const sidebarQuotaBtn = document.getElementById('sidebar-quota-open');
   if (sidebarQuotaBtn) sidebarQuotaBtn.addEventListener('click', openDailyLimitsModal);
 
-  // Test & Dev Cheat Paneli Butonu
-  const btnTestMenu = document.getElementById('btn-open-test-menu');
-  if (btnTestMenu) btnTestMenu.addEventListener('click', openDevModal);   // tek test menüsü (#dev-modal)
-
-  // 10B Makro Tokenomics & Canlı Simülatör Butonu
-  const btnEconomy = document.getElementById('btn-economy-dashboard');
-  if (btnEconomy) btnEconomy.addEventListener('click', () => openEconomyDashboardModal('overview'));
-
-  // ÜST ŞERİT MENÜ BUTONLARI (TOP NAV STRIP BUTTONS)
-  const btnTopSweep = document.getElementById('btn-top-sweep-harvest');
-  if (btnTopSweep) {
-    btnTopSweep.addEventListener('click', () => {
-      const res = gameState.claimAllHarvests();
-      if (res.success) {
-        showToast(res.message, 'success');
-        sound.playHarvest();
-        renderTopBar();
-      } else {
-        showToast(res.message, 'info');
-      }
-    });
-  }
-
-  // 🧙‍♂️ Akıllı Kral Danışmanı Aksiyon Butonu
-  const btnAdvisorAct = document.getElementById('btn-advisor-action');
-  if (btnAdvisorAct) {
-    btnAdvisorAct.addEventListener('click', () => danismanEylemi(btnAdvisorAct.dataset.action));
-  }
-
-  const btnNavDash = document.getElementById('btn-nav-dashboard');
-  if (btnNavDash) btnNavDash.addEventListener('click', openDashboardModal);
-
-  const btnTopBotStatus = document.getElementById('btn-top-taverna-bot-status');
-  if (btnTopBotStatus) {
-    btnTopBotStatus.addEventListener('click', () => openTownZoneModal('tavern', '🍺 Taverna & Otonom Bot'));
-  }
-
-  const btnNavTreasury = document.getElementById('btn-nav-treasury');
-  if (btnNavTreasury) btnNavTreasury.addEventListener('click', openTreasuryVaultModal);
-
-  const btnNotifBell = document.getElementById('btn-notif-bell');
-  if (btnNotifBell) btnNotifBell.addEventListener('click', toggleNotificationPanel);
-
-  const topBtnInv = document.getElementById('top-btn-inventory');
-  if (topBtnInv) topBtnInv.addEventListener('click', openInventoryModal);
-
-  const topBtnBarracks = document.getElementById('top-btn-barracks');
-  if (topBtnBarracks) topBtnBarracks.addEventListener('click', openBarracksModal);
-
-  const topBtnMarket = document.getElementById('top-btn-market');
-  if (topBtnMarket) topBtnMarket.addEventListener('click', () => openTownZoneModal('market', '🏪 AMM Pazar Alanı'));
-
-  const topBtnTavern = document.getElementById('top-btn-tavern');
-  if (topBtnTavern) topBtnTavern.addEventListener('click', () => openTownZoneModal('tavern', '🍺 Taverna & Han'));
-
-  const topBtnColosseum = document.getElementById('top-btn-colosseum');
-  if (topBtnColosseum) topBtnColosseum.addEventListener('click', openColosseumModal);
-
-  const topBtnDungeon = document.getElementById('top-btn-dungeon');
-  if (topBtnDungeon) {
-    topBtnDungeon.addEventListener('click', () => {
-      enterDungeonScene();
-    });
-  }
-
-  // SAĞ ÜST KÖŞE HAMMADDE KUTUCUKLARI (RESOURCE PILLS TIKLAMA OLAYLARI)
-  for (const k of RES_KEYS()) {
-    const pill = document.getElementById(`res-pill-${k}`);
-    if (pill) pill.addEventListener('click', () => openTownZoneModal(ZONE_OF_NODE(k), ZONE_TITLE(k)));
-  }
-
-  const pillFragments = document.getElementById('res-pill-fragments');
-  if (pillFragments) pillFragments.addEventListener('click', () => openTownZoneModal('market', '🏪 AMM Pazar Alanı'));
-
-  // Üst Bar: Güncelleme Günlüğü (Changelog v1.06) ve Krallık Karnavalı Butonları
-  const pillChangelog = document.getElementById('btn-changelog-pill');
-  if (pillChangelog) pillChangelog.addEventListener('click', openChangelogModal);
-
-  const pillCarnival = document.getElementById('btn-carnival-pill');
-  if (pillCarnival) pillCarnival.addEventListener('click', () => openCarnivalModal('wheel'));
-
-  // Alt 3D Dock Butonları
-  if (dom.btnDockWorkers) dom.btnDockWorkers.addEventListener('click', openInventoryModal);
-  if (dom.btnDockInventory) dom.btnDockInventory.addEventListener('click', openInventoryModal);
-  if (dom.btnDockBarracks) dom.btnDockBarracks.addEventListener('click', openBarracksModal);
-  if (dom.btnDockMarket) dom.btnDockMarket.addEventListener('click', () => openTownZoneModal('market', '🏪 AMM Pazar Alanı'));
-
-  // 📱 Telefon alt gezinme çubuğu
-  const tabbar = document.getElementById('mobile-tabbar');
-  if (tabbar) {
-    tabbar.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-tab]');
-      if (!btn) return;
-      const sidebarEl = document.getElementById('realm-sidebar');
-      const setSidebar = (open) => {
-        if (!sidebarEl) return;
-        sidebarEl.classList.toggle('open', open);
-        document.getElementById('btn-sidebar-toggle')?.classList.toggle('open', open);
-      };
-      const tab = btn.dataset.tab;
-      if (tab !== 'menu') setSidebar(false);
-      if (tab === 'map') {
-        if (isAnyModalOpen()) closeModal();
-      } else if (tab === 'kingdom') {
-        openDashboardModal();
-      } else if (tab === 'bot') {
-        openTownZoneModal('tavern', '🍺 Taverna & Otonom Bot');
-      } else if (tab === 'market') {
-        openTownZoneModal('market', '🏪 Pazar');
-      } else if (tab === 'menu') {
-        if (isAnyModalOpen()) closeModal();
-        setSidebar(!(sidebarEl && sidebarEl.classList.contains('open')));
-      }
-      tabbar.querySelectorAll('[data-tab]').forEach(b => b.classList.toggle('active', b === btn));
-    });
-  }
-
-  // Sağ Menü Açma/Kapama Çekmece Butonu
-  const toggleBtn = document.getElementById('btn-sidebar-toggle');
   const sidebar = document.getElementById('realm-sidebar');
-  const toggleArrow = document.getElementById('sidebar-toggle-arrow');
-
-  if (toggleBtn && sidebar) {
-    toggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sidebar.classList.toggle('open');
-      const isOpen = sidebar.classList.contains('open');
-      toggleBtn.classList.toggle('open', isOpen);
-      if (toggleArrow) toggleArrow.innerText = isOpen ? '▶' : '◀';
-    });
-
-    toggleBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
-    toggleBtn.addEventListener('pointerup', (e) => e.stopPropagation());
-
+  if (sidebar) {
     sidebar.addEventListener('pointerdown', (e) => e.stopPropagation());
     sidebar.addEventListener('pointerup', (e) => e.stopPropagation());
     sidebar.addEventListener('click', (e) => e.stopPropagation());
@@ -6186,13 +5715,6 @@ function initAppEvents() {
       }
     });
   }
-
-  // Sağ Menü Paneli (Realm Sidebar) Butonları
-  const sideCharCard = document.getElementById('sidebar-character-card');
-  if (sideCharCard) sideCharCard.addEventListener('click', openInventoryModal);
-
-  const sideBotPill = document.getElementById('sidebar-bot-pill');
-  if (sideBotPill) sideBotPill.addEventListener('click', () => openTownZoneModal('tavern', '🍻 Gece Kuşu Tavernası'));
 
   const sideSweepBtn = document.getElementById('side-btn-sweep-harvest');
   if (sideSweepBtn) {
@@ -6207,30 +5729,6 @@ function initAppEvents() {
       renderTopBar();
     });
   }
-
-  const sideBtnInv = document.getElementById('side-btn-inventory');
-  if (sideBtnInv) sideBtnInv.addEventListener('click', openInventoryModal);
-
-  const sideBtnBar = document.getElementById('side-btn-barracks');
-  if (sideBtnBar) sideBtnBar.addEventListener('click', openBarracksModal);
-
-  const sideBtnDun = document.getElementById('side-btn-dungeon');
-  if (sideBtnDun) sideBtnDun.addEventListener('click', enterDungeonScene);
-
-  const sideBtnCol = document.getElementById('side-btn-colosseum');
-  if (sideBtnCol) sideBtnCol.addEventListener('click', openColosseumModal);
-
-  const sideBtnCarnival = document.getElementById('side-btn-carnival');
-  if (sideBtnCarnival) sideBtnCarnival.addEventListener('click', () => openCarnivalModal('wheel'));
-
-  const sideBtnMarket = document.getElementById('side-btn-market');
-  if (sideBtnMarket) sideBtnMarket.addEventListener('click', () => openTownZoneModal('market', '🏪 AMM Pazar Alanı'));
-
-  const sideBtnTavern = document.getElementById('side-btn-tavern');
-  if (sideBtnTavern) sideBtnTavern.addEventListener('click', () => openTownZoneModal('tavern', '🍻 Gece Kuşu Tavernası'));
-
-  const sideBtnBoxes = document.getElementById('side-btn-boxes');
-  if (sideBtnBoxes) sideBtnBoxes.addEventListener('click', () => openCollectionModal('kutular'));
 
   const sideBtnRepairAll = document.getElementById('side-btn-repair-all');
   if (sideBtnRepairAll) {
@@ -6253,32 +5751,6 @@ function initAppEvents() {
       if (RES_KEYS().includes(node)) openTownZoneModal(ZONE_OF_NODE(node), ZONE_TITLE(node));
     });
   });
-
-  if (dom.btnDockMap) {
-    dom.btnDockMap.addEventListener('click', () => {
-      if (phaserGame && phaserGame.scene) {
-        // Eğer Zindan sahnesindeyse kasabaya dön
-        const activeScenes = phaserGame.scene.getScenes(true);
-        const isDungeon = activeScenes.some(s => s.scene.key === 'DungeonScene');
-
-        if (isDungeon) {
-          returnToTown();
-        } else if (phaserGame.scene.scenes[0]) {
-          const cam = phaserGame.scene.scenes[0].cameras.main;
-          const minZoom = Math.max(cam.width / 2400, cam.height / 1350);
-          phaserGame.scene.scenes[0].tweens.add({
-            targets: cam,
-            scrollX: (2400 - cam.width) / 2,
-            scrollY: (1350 - cam.height) / 2,
-            zoom: minZoom,
-            duration: 400,
-            ease: 'Sine.easeInOut'
-          });
-          showToast('🗺️ Harita merkeze odaklandı!', 'info');
-        }
-      }
-    });
-  }
 
   if (dom.btnDungeonReturnTown) {
     dom.btnDungeonReturnTown.addEventListener('click', returnToTown);
@@ -7791,13 +7263,6 @@ function initAppEvents() {
     }
   });
 
-  if (dom.btnAudioToggle) {
-    dom.btnAudioToggle.addEventListener('click', () => {
-      sound.isMuted = !sound.isMuted;
-      dom.btnAudioToggle.innerText = sound.isMuted ? '🔇' : '🔊';
-      if (!sound.isMuted) sound.playLevelUp();
-    });
-  }
 }
 
 // =========================================================================
@@ -7850,15 +7315,8 @@ let devPanelEventsBound = false;
 function initDevPanelEvents() {
   if (devPanelEventsBound) return;
   devPanelEventsBound = true;
-  const btnToggle = document.getElementById('btn-dev-panel-toggle');
   const btnClose = document.getElementById('btn-close-dev-modal');
   const modal = document.getElementById('dev-modal');
-
-  if (btnToggle) {
-    btnToggle.addEventListener('click', () => {
-      openDevModal();
-    });
-  }
 
   if (btnClose) {
     btnClose.addEventListener('click', () => {
@@ -7872,9 +7330,9 @@ function initDevPanelEvents() {
     });
   }
 
-  // Klavye Kısayolu: 'T' tuşuna basınca Test Panelini Aç/Kapat
+  // Klavye Kısayolu: 'T' tuşuna basınca Test Panelini Aç/Kapat (panel yalnız deneme sürümünde sayfada bulunur)
   window.addEventListener('keydown', (e) => {
-    if (DEV_TOOLS && (e.key === 't' || e.key === 'T')) {
+    if (modal && (e.key === 't' || e.key === 'T')) {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
       if (modal) {
         if (modal.classList.contains('hidden')) openDevModal();
@@ -8816,47 +8274,6 @@ async function initPhaser() {
   });
 }
 
-// 📢 Canlı Duyuru ve Risk Bildirim Paneli Render Motoru
-export function renderTopAnnouncementTicker() {
-  const container = document.getElementById('ticker-marquee-inner');
-  if (!container) return;
-
-  const tickerConfig = GAME_CONFIG.ANNOUNCEMENT_TICKER || GAME_CONFIG.TICKER_CONFIG || {};
-  if (tickerConfig.enabled === false) {
-    const parentTicker = document.getElementById('top-announcement-ticker');
-    if (parentTicker) parentTicker.style.display = 'none';
-    return;
-  }
-
-  const announcements = GAME_CONFIG.ANNOUNCEMENTS || [];
-  if (!announcements || announcements.length === 0) return;
-
-  if (tickerConfig.speedSeconds) {
-    container.style.animationDuration = `${tickerConfig.speedSeconds}s`;
-  }
-
-  const sep = tickerConfig.separator || '✦';
-
-  const buildItemsHtml = () => {
-    return announcements
-      .filter(a => a.active !== false)
-      .map(item => {
-        const badgeStyle = item.badgeColor ? `style="border-color: ${item.badgeColor}; color: ${item.badgeColor}; background: ${item.badgeColor}26;"` : '';
-        return `
-          <span class="ticker-item">
-            <span class="ticker-item-badge" ${badgeStyle}>${item.badge || 'DUYURU'}</span>
-            <span class="ticker-item-text">${item.text}</span>
-            <span class="ticker-item-sep">${sep}</span>
-          </span>
-        `;
-      }).join('');
-  };
-
-  // Kesintisiz sonsuz kaydırma (seamless marquee) için 2 döngü duplicate eklenir
-  const singleContent = buildItemsHtml();
-  container.innerHTML = singleContent + singleContent;
-}
-
 window.addEventListener('DOMContentLoaded', async () => {
   // 🌐 Oyun bir Realm of AdAstra sunucusundan açıldıysa çevrimiçi mod: cüzdanla giriş, kayıt sunucuda.
   // Sunucu yoksa (bilgisayardaki deneme modu) oyun eskisi gibi tarayıcıda çalışır.
@@ -8868,83 +8285,62 @@ window.addEventListener('DOMContentLoaded', async () => {
       onApplied: () => {
         try { renderTopBar(); } catch (e) { /* ilk açılış */ }
         try { renderGateBanner(); } catch (e) { /* kapı şeridi */ }
-        const wb = document.getElementById('btn-online-wallet');
-        if (wb) wb.textContent = isLoggedIn() ? '🏦' : '🔐 Giriş';
       }
     });
   } catch (e) {
     console.warn('Çevrimiçi mod başlatılamadı:', e);
   }
-  renderTopAnnouncementTicker();
   initPhaser();
   initAppEvents();
   initDevPanelEvents();
-  if (isOnline) {
-    // Cüzdan düğmesi (yatırma / çekim) bakiyenin yanında; bakiyeye tıklamak da açar
-    const balEl = document.getElementById('adastra-balance');
-    const host = balEl && balEl.parentElement;
-    if (host) {
-      const btn = document.createElement('button');
-      btn.id = 'btn-online-wallet';
-      btn.type = 'button';
-      btn.textContent = isLoggedIn() ? '🏦' : '🔐 Giriş';
-      btn.title = 'Hesabım: giriş, cüzdan ve çekim';
-      btn.style.cssText = 'margin-left:6px;background:#1d4ed8;border:1px solid #60a5fa;color:#fff;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:0.85rem;';
-      btn.addEventListener('click', (e) => { e.stopPropagation(); openWalletPanel(); });
-      host.appendChild(btn);
-      host.style.cursor = 'pointer';
-      host.addEventListener('click', () => openWalletPanel());
-    }
-  }
   const showDevTools = isOnline ? !!(online.health && online.health.testMode) : DEV_TOOLS;
   if (!showDevTools) {
-    ['btn-dev-panel-toggle', 'btn-open-test-menu', 'dev-modal'].forEach(id => document.getElementById(id)?.remove());
+    ['dev-modal'].forEach(id => document.getElementById(id)?.remove());
   }
   initPlayerGuide();
   renderTopBar();
-  if (V3_ARAYUZ) {
-    const { kurV3Kabuk } = await import('./ui/v3/kabuk.js');
-    kurV3Kabuk({
-      gameState,
-      isAnyModalOpen, closeModal,
-      openPanel: ([simge, ad], html) => {
-        dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
-        dom.modalBody.innerHTML = html;
-        displayModal();
-      },
-      openDashboard: openDashboardModal, openWarehouse: openWarehouseModal, openInventory: openInventoryModal,
-      openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openBarracks: openBarracksModal,
-      enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
-      openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
-      openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
-      openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
-      duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
-      hesapAnahtari: () => (online.active && online.playerId) || 'yerel',
-      cevrimici: () => !!online.active,
-      senkronYasi: () => (online.active && online.lastSync ? Date.now() - online.lastSync : 0),
-      bildir: (m, t) => showToast(m, t),
-      hudYenile: () => renderTopBar(),
-      hudVeri: hudVerisi,
-      danismanEylemi,
-      kaynakSimge: (k) => resImg(k, k === 'fragments' ? '🧩' : ((RES_META()[k] || {}).icon || '')),
-      // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)
-      vanillaSifirla: async () => {
-        if (online.active) {
-          try {
-            const r = await devVanillaReset();
-            if (r && r.ok) { showToast('🏛️ Sunucu ilk güne döndü; sayfa yenileniyor…', 'success'); setTimeout(() => location.reload(), 1200); }
-            else showToast('Sıfırlama yapılamadı: ' + ((r && r.message) || 'sunucu kabul etmedi'), 'error');
-          } catch (err) { showToast('Sıfırlama yapılamadı: ' + err.message, 'error'); }
-          return;
-        }
-        gameState.vanillaReset();
-        showToast('🏛️ Oyun ilk güne döndü; sayfa yenileniyor…', 'success');
-        renderTopBar();
-        setTimeout(() => location.reload(), 900);
+  const { kurV3Kabuk } = await import('./ui/v3/kabuk.js');
+  kurV3Kabuk({
+    gameState,
+    isAnyModalOpen, closeModal,
+    openPanel: ([simge, ad], html) => {
+      dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
+      dom.modalBody.innerHTML = html;
+      displayModal();
+    },
+    openDashboard: openDashboardModal, openWarehouse: openWarehouseModal, openInventory: openInventoryModal,
+    openZone: openTownZoneModal, openTreasury: openTreasuryVaultModal, openBarracks: openBarracksModal,
+    enterDungeon: enterDungeonScene, openColosseum: openColosseumModal, openCarnival: openCarnivalModal,
+    openCollection: openCollectionModal, openEconomy: openEconomyDashboardModal, openLimits: openDailyLimitsModal,
+    openChangelog: openChangelogModal, openPalette: openCommandPalette, openDev: openDevModal,
+    openWallet: openWalletPanel, toggleNotif: toggleNotificationPanel,
+    duyurular: () => GAME_CONFIG.ANNOUNCEMENTS || [],
+    hesapAnahtari: () => (online.active && online.playerId) || 'yerel',
+    cevrimici: () => !!online.active,
+    senkronYasi: () => (online.active && online.lastSync ? Date.now() - online.lastSync : 0),
+    bildir: (m, t) => showToast(m, t),
+    hudYenile: () => renderTopBar(),
+    hudVeri: hudVerisi,
+    openKaynak: (k) => openTownZoneModal(ZONE_OF_NODE(k), ZONE_TITLE(k)),
+    danismanEylemi,
+    kaynakSimge: (k) => resImg(k, k === 'fragments' ? '🧩' : ((RES_META()[k] || {}).icon || '')),
+    // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)
+    vanillaSifirla: async () => {
+      if (online.active) {
+        try {
+          const r = await devVanillaReset();
+          if (r && r.ok) { showToast('🏛️ Sunucu ilk güne döndü; sayfa yenileniyor…', 'success'); setTimeout(() => location.reload(), 1200); }
+          else showToast('Sıfırlama yapılamadı: ' + ((r && r.message) || 'sunucu kabul etmedi'), 'error');
+        } catch (err) { showToast('Sıfırlama yapılamadı: ' + err.message, 'error'); }
+        return;
       }
-    });
-    renderTopBar();
-  }
+      gameState.vanillaReset();
+      showToast('🏛️ Oyun ilk güne döndü; sayfa yenileniyor…', 'success');
+      renderTopBar();
+      setTimeout(() => location.reload(), 900);
+    }
+  });
+  renderTopBar();
 
   // 🏛️ AMM DEX Anlık Fiyat Değişimlerini İzle ve Dinamik Maliyetleri Anında Yenile
   if (typeof ammMarket !== 'undefined' && ammMarket.subscribe) {
