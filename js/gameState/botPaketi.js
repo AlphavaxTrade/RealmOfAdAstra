@@ -43,13 +43,14 @@ export const botPaketiYontemleri = {
     const aletAstraDakika = aletMalzemeDakika * Number(GAME_CONFIG.TOOL_REPAIR_ADA_SHARE ?? 0.3);
     const aletBedelDakika = aletMalzemeDakika + aletAstraDakika;
 
-    // Üretim Hakkı: kalan hak bir günlük üretimden azsa o kaynağın kazancı hakla sınırlıdır
+    // Üretim Hakkı: bir günde alınabilecek miktar hem dünyanın kalan haftalık kapasitesiyle hem oyuncunun KENDİ hakkıyla
+    // sınırlıdır (karar 12 Ekim 2026: ücret eskiden yalnız dünya kotasına bakıyor, oyuncunun payı küçükken fazla çıkıyordu)
     let brutGun = 0;
     for (const k of anahtarlar) {
       const gunlukUretim = uretim[k] * GUN_DAKIKA;
       const bilgi = globalPool.getResourceInfo(k);
-      const kalan = bilgi ? Number(bilgi.remaining) : gunlukUretim;
-      brutGun += fiyat[k] * Math.min(gunlukUretim, Math.max(0, kalan));
+      const dunyaKalan = bilgi ? Number(bilgi.remaining) : gunlukUretim;
+      brutGun += fiyat[k] * Math.min(gunlukUretim, Math.max(0, dunyaKalan), this._botKisiselGunlukHak(k, gunlukUretim));
     }
 
     const netDakika = Math.max(0.0001, brutDakika - staminaBedelDakika - aletBedelDakika);
@@ -63,6 +64,17 @@ export const botPaketiYontemleri = {
       botCostAda: Math.max(1, round3(net24 * 0.50)),
       dailyWheatNeededForStamina: Math.round(staminaBugdayDakika * GUN_DAKIKA)
     };
+  },
+
+  // Oyuncunun bir günde bu kaynaktan alabileceği miktar: bugün açık olan hak ile günlük açılan pay (haftalık/7) arasında
+  // büyük olan; haftada kalan hakkı (artı başkalarının kullanmadığı paydan akan) aşamaz. Hak okunamazsa sınır koymaz.
+  _botKisiselGunlukHak(key, varsayilan) {
+    if (typeof this.getUretimHakki !== 'function') return varsayilan;
+    const hak = this.getUretimHakki(key);
+    if (!hak) return varsayilan;
+    const gunluk = Math.max(Number(hak.canTake) || 0, (Number(hak.weekly) || 0) / 7);
+    const haftaKalan = Math.max(0, (Number(hak.weekly) || 0) - (Number(hak.used) || 0)) + Math.max(0, Number(hak.extra) || 0);
+    return Math.min(gunluk, haftaKalan);
   },
 
   // Paket ücreti: günlük ücretin süreye oranı (6 saat = günlüğün 1/4'ü)

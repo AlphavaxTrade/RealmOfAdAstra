@@ -50,6 +50,32 @@ const bol = (gs) => {
 }
 console.log('✅ bot bedeli = net kârın yarısı');
 
+// 1b) Kişisel Üretim Hakkı: bedel oyuncunun günde gerçekten alabileceği miktara göre hesaplanır (karar 12 Ekim 2026);
+// eskiden yalnız dünyanın kalan haftalık kapasitesine bakıldığı için payı küçük oyuncuya fazla bedel yazılıyordu
+{
+  const gs = yeni();
+  const gercek = gs.getUretimHakki.bind(gs);
+  const hakla = (hak) => { gs.getUretimHakki = (k) => ({ ...gercek(k), ...hak }); return gs.calculateTavernaBotProfitAndCost(); };
+
+  const normal = gs.calculateTavernaBotProfitAndCost();
+  const sinirsiz = hakla({ weekly: 1e9, canTake: 1e9, used: 0, extra: 0 });
+  assert.ok(sinirsiz.botCostAda > normal.botCostAda, 'hak sınır koymazsa dünya kapasitesi sınırı kalır, bedel daha yüksek');
+
+  const kucuk = hakla({ weekly: 700, canTake: 100, used: 0, extra: 0 });
+  assert.ok(kucuk.botCostAda < normal.botCostAda, `küçük hak bedeli düşürür: ${kucuk.botCostAda} < ${normal.botCostAda}`);
+  const dahaKucuk = hakla({ weekly: 70, canTake: 10, used: 0, extra: 0 });
+  assert.ok(dahaKucuk.botCostAda <= kucuk.botCostAda, 'hak küçüldükçe bedel azalır');
+
+  // Haftalık hak tükenmişse bedel en alt sınıra (1 ASTRA) iner; kalan hak yoksa kâr beklenmez
+  const bitmis = hakla({ weekly: 700, canTake: 0, used: 700, extra: 0 });
+  assert.equal(bitmis.botCostAda, 1, 'hak bitmiş: taban bedel');
+
+  // Paket bedeli bu hesaptan türer
+  gs.getUretimHakki = (k) => ({ ...gercek(k), weekly: 700, canTake: 100, used: 0, extra: 0 });
+  assert.ok(gs.getBotPackageCost(24) <= Math.max(1, kucuk.botCostAda) + 1e-9);
+}
+console.log('✅ bot bedeli kişisel Üretim Hakkı\'na göre');
+
 // 2) Satın alma: yetersiz bakiye reddedilir; başarılıda bakiye düşer, süre eklenir, bedel kasalara gider; süre ve ücretsiz bot birikir
 {
   const gs = yeni();
