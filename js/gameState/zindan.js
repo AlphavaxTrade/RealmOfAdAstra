@@ -229,7 +229,13 @@ export const zindanYontemleri = {
       const drop = this.addDungeonXpAndDrops(monster.level, isBoss, { rewarded: entry.rewarded });
       outcome.adaReward = drop.adAstraGained || 0;
       outcome.budgetFull = !!drop.budgetFull;
+      outcome.budgetCapped = !!drop.budgetCapped;
       outcome.scrollGained = drop.scrollGained || null;
+      // Sonuç ekranı için ganimetin kalanı (yalnız gösterim; durum addDungeonXpAndDrops içinde işlendi)
+      outcome.xpGained = drop.xpGained || 0;
+      outcome.fragmentsGained = drop.fragmentsGained || 0;
+      outcome.boxGained = drop.boxGained || 0;
+      outcome.artifactDiscovered = drop.artifactDiscovered || null;
       for (const idx of selectedIndices) {
         const sRes = this.addSoldierXp(idx, monster.rewardXp);
         if (sRes && sRes.leveledUp) {

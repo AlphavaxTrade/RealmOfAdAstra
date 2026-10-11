@@ -508,41 +508,73 @@ export class AdAstraBattleArena {
       finished = true;
       stop();
       if (stateVal) stateVal.textContent = win ? 'Zafer' : 'Yenilgi';
+      // Ana oyunun geri çağrısı önce çalışır (bildirimler, can/ödül zaten işlenmiş); yapılandırılmış sonuç döndürürse
+      // sonuç kartında gerçekten kazanılanlar gösterilir: { baslik?, altBaslik?, satirlar: string[], not?, eylemler: [{etiket, birincil?, tikla}] }
+      let sonuc = null;
+      if (typeof onCompleteCallback === 'function') {
+        const callback = onCompleteCallback;
+        onCompleteCallback = null; // Mükerrer çağrıyı önle
+        try {
+          sonuc = callback({ win, mode, round, units: [...units] }) || null;
+        } catch (err) {
+          console.error('Savaş sonucu işlenirken hata:', err);
+        }
+      }
+
       const rTitle = $('#aa-resultTitle');
       if (rTitle) {
-        rTitle.textContent = win ? (mode === 'dungeon' ? '🏆 ZAFER!' : '🏆 ARENA ŞAMPİYONU!') : '💀 YENİLGİ';
+        rTitle.textContent = (sonuc && sonuc.baslik) || (win ? (mode === 'dungeon' ? '🏆 ZAFER!' : '🏆 ARENA ŞAMPİYONU!') : '💀 YENİLGİ');
         rTitle.className = 'title ' + (win ? 'win' : 'lose');
       }
+      const rSub = $('#aa-resultSub');
+      if (rSub) rSub.textContent = (sonuc && sonuc.altBaslik) || `${round} turda ${win ? 'kazanıldı' : 'kaybedildi'}`;
 
       const lootWrap = $('#aa-resultLoot');
       if (lootWrap) {
         lootWrap.innerHTML = '';
-        const lootList = (activeMatchConfig && activeMatchConfig.loot) || PRESETS[mode].loot || [];
+        let lootList;
+        if (sonuc && Array.isArray(sonuc.satirlar)) lootList = sonuc.satirlar;
+        else lootList = win ? ((activeMatchConfig && activeMatchConfig.loot) || PRESETS[mode].loot || []) : [];
+        lootList.forEach(l => {
+          const s = document.createElement('span');
+          s.textContent = l;
+          lootWrap.appendChild(s);
+        });
         if (win) {
-          lootList.forEach(l => {
-            const s = document.createElement('span');
-            s.textContent = l;
-            lootWrap.appendChild(s);
-          });
-          log('🎉 <b>Savaş kazanıldı!</b> Ganimet paylaştırılıyor…', 'system');
+          log('🎉 <b>Savaş kazanıldı!</b>', 'system');
           if (sound && sound.playLevelUp) sound.playLevelUp();
         } else {
           log('☠️ Ordu geri çekildi. Yeniden denemek için askerlerini iyileştir.', 'system');
         }
       }
+      const rNote = $('#aa-resultNote');
+      if (rNote) rNote.textContent = (sonuc && sonuc.not) || '';
+
+      const actWrap = $('#aa-resultActions');
+      if (actWrap) {
+        actWrap.innerHTML = '';
+        ((sonuc && sonuc.eylemler) || []).forEach(e => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'ctrl-btn' + (e.birincil ? ' primary' : '');
+          b.textContent = e.etiket;
+          b.addEventListener('click', () => {
+            closeOverlay();
+            if (typeof e.tikla === 'function') e.tikla();
+          });
+          actWrap.appendChild(b);
+        });
+      }
 
       if (resultBanner) resultBanner.classList.add('show');
+    }
 
-      // Callback ile ana oyun durumunu (can, silah, XP, ganimet) güncelle
-      if (typeof onCompleteCallback === 'function') {
-        const callback = onCompleteCallback;
-        onCompleteCallback = null; // Mükerrer çağrıyı önle
-        callback({
-          win,
-          mode,
-          round,
-          units: [...units]
-        });
+    function closeOverlay() {
+      stop();
+      const overlay = root.closest('.battle-arena-modal-overlay') || document.getElementById('battle-arena-modal');
+      if (overlay) {
+        overlay.classList.remove('active');
+        document.body.classList.remove('modal-open');
       }
     }
 
@@ -793,28 +825,10 @@ export class AdAstraBattleArena {
     if (resetBtn) resetBtn.addEventListener('click', reset);
     if (resultBtn) resultBtn.addEventListener('click', reset);
 
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        stop();
-        const overlay = root.closest('.battle-arena-modal-overlay') || document.getElementById('battle-arena-modal');
-        if (overlay) {
-          overlay.classList.remove('active');
-          document.body.classList.remove('modal-open');
-        }
-      });
-    }
+    if (closeBtn) closeBtn.addEventListener('click', closeOverlay);
 
     const resCloseBtn = $('#aa-resultCloseBtn');
-    if (resCloseBtn) {
-      resCloseBtn.addEventListener('click', () => {
-        stop();
-        const overlay = root.closest('.battle-arena-modal-overlay') || document.getElementById('battle-arena-modal');
-        if (overlay) {
-          overlay.classList.remove('active');
-          document.body.classList.remove('modal-open');
-        }
-      });
-    }
+    if (resCloseBtn) resCloseBtn.addEventListener('click', closeOverlay);
 
     root.querySelectorAll('.speed-btn').forEach(b => b.addEventListener('click', () => {
       root.querySelectorAll('.speed-btn').forEach(x => x.classList.remove('active'));

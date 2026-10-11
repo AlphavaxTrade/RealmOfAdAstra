@@ -261,7 +261,41 @@ export class DungeonScene extends Phaser.Scene {
     }
   }
 
+  // Taş levhanın üstüne Türkçe etiket çizer: seviye, canavar adı ve durum. Dokunmatik ekranda "üzerine gelince"
+  // ipucu olmadığı için kilit/zafer/sıra bilgisi artık levhanın kendisinde görünür (levhalardaki İngilizce yazı kapanır).
+  drawChamberPlate(m) {
+    const current = gameState.state.dungeonProgress || 1;
+    const cleared = current > m.level;
+    const locked = current < m.level;
+    const isBoss = m.level === 9 || m.level === 18;
+    const accent = locked ? 0x64748b : (cleared ? 0x4ade80 : 0xfde047);
+    const plate = this.add.rectangle(m.x, m.y, m.bw, m.bh, 0x0b0f17, 0.97).setStrokeStyle(2, accent, 0.95);
+    plate.setDepth(5);
+    const status = locked ? '🔒 Kilitli' : (cleared ? '✅ Yenildi · tekrar' : '⚔️ Savaşa gir');
+    const size = Math.max(11, Math.min(17, Math.round(m.bw * 0.075)));
+    const family = (typeof document !== 'undefined' && getComputedStyle(document.body).fontFamily) || 'sans-serif';
+    const head = `${isBoss ? '👑 ' : ''}Seviye ${m.level}`;
+    const label = this.add.text(m.x, m.y, `${head}\n${m.name}\n${status}`, {
+      fontFamily: family, fontSize: `${size}px`, color: locked ? '#cbd5e1' : '#f8fafc', align: 'center', fontStyle: '700',
+      lineSpacing: 2, wordWrap: { width: Math.max(40, m.bw - 14) }
+    }).setOrigin(0.5).setDepth(6);
+    // Küçük levhada metin taşarsa yazı küçülür (adı iki satıra düşen canavarlar)
+    let fs = size;
+    while (label.height > m.bh - 6 && fs > 8) { fs -= 1; label.setFontSize(`${fs}px`); }
+    return { plate, label };
+  }
+
+  // Sonraki kat portalının levhası: "Floor N" yazısı kapanır, Türkçe yönlendirme çıkar
+  drawPortalPlate(p, targetFloor) {
+    const plate = this.add.rectangle(p.x, p.y, p.bw, p.bh, 0x1a1030, 0.97).setStrokeStyle(2, 0xc084fc, 0.95).setDepth(5);
+    const size = Math.max(10, Math.min(15, Math.round(p.bw * 0.11)));
+    const family = (typeof document !== 'undefined' && getComputedStyle(document.body).fontFamily) || 'sans-serif';
+    const label = this.add.text(p.x, p.y, `🌀 ${targetFloor}. Kat`, { fontFamily: family, fontSize: `${size}px`, color: '#e9d5ff', fontStyle: '700', align: 'center', wordWrap: { width: Math.max(30, p.bw - 8) } }).setOrigin(0.5).setDepth(6);
+    return { plate, label };
+  }
+
   createMonsterZone(m, chamberIndex = 0) {
+    this.drawChamberPlate(m);
     // Şeffaf İnteraktif Tıklama Alanı (Görseldeki taş kartların üzerine %100 oturur)
     const zone = this.add.rectangle(m.x, m.y, m.bw, m.bh, 0x000000, 0.001)
       .setInteractive({ cursor: 'pointer', useHandCursor: true });
@@ -344,6 +378,7 @@ export class DungeonScene extends Phaser.Scene {
     const targetFloor = pageIndex + 1;
     if (targetFloor > 6) return;
 
+    this.drawPortalPlate(portalCoord, targetFloor);
     // Şeffaf Portal Tıklama Alanı (Sağ alttaki Floor N taş kartının üzerine %100 oturur)
     const portalZone = this.add.rectangle(portalCoord.x, portalCoord.y, portalCoord.bw, portalCoord.bh, 0x000000, 0.001)
       .setInteractive({ cursor: 'pointer', useHandCursor: true });

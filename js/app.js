@@ -4115,15 +4115,28 @@ function openColosseumModal() {
         loot,
         replay: res.replay,
         onComplete: () => {
-          // Can, ödül ve ELO executeColosseum1v1Match içinde işlendi; burada yalnızca bildirim
+          // Can, ödül ve ELO executeColosseum1v1Match içinde işlendi; burada yalnızca bildirim ve sonuç kartı
           renderTopBar();
+          const eloSatiri = `⭐ ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO (yeni puan ${res.newRating})`;
           if (res.isVictory) {
             sound.playLevelUp();
             showToast(`🏆 Zafer! +${res.rewardAda} ASTRA ve ${res.ratingDelta >= 0 ? '+' : ''}${res.ratingDelta} ELO kazanıldı!${res.budgetFull ? ' ⏳ ' + GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : ''}`, 'success');
-          } else {
-            sound.playBreakWarning();
-            showToast('💀 Mağlubiyet! Şampiyonun yaralandı.', 'error');
+            return {
+              altBaslik: `${res.opponentName} yenildi`,
+              satirlar: [`🪙 +${res.rewardAda} ASTRA`, eloSatiri, res.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık lig puanı +3'],
+              not: res.budgetFull ? GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE : '',
+              eylemler: [{ etiket: '🏟️ Kolezyuma dön', tikla: () => openColosseumModal() }]
+            };
           }
+          sound.playBreakWarning();
+          showToast('💀 Mağlubiyet! Şampiyonun yaralandı.', 'error');
+          return {
+            baslik: '💀 MAĞLUBİYET',
+            altBaslik: `${res.opponentName} kazandı`,
+            satirlar: [eloSatiri, '🩹 Şampiyonun yaralandı'],
+            not: 'Yaralı şampiyonu buğdayla ya da şifalı otla iyileştirip yeniden dene.',
+            eylemler: [{ etiket: '🌾 Kışlaya git (iyileştir)', birincil: true, tikla: () => openBarracksModal() }, { etiket: '🏟️ Kolezyuma dön', tikla: () => openColosseumModal() }]
+          };
         }
       });
     });
@@ -5467,6 +5480,30 @@ async function executeMonsterBattle(monster, selectedIndices, { payGateFee = fal
         showToast(`💀 Bozgun! Ordun ${monster.name} karşısında geri çekildi. Kalan Can: ${outcome.remainingEnemyHp}/${monster.hp}`, 'error');
       }
       renderTopBar();
+
+      // Sonuç ekranı: gerçekten kazanılanlar ve sonraki adım
+      const satirlar = [];
+      const eylemler = [];
+      if (outcome.victory) {
+        satirlar.push(entry.rewarded ? `🟣 +${(outcome.adaReward || 0).toLocaleString('tr-TR')} ASTRA` : '🏋️ Antrenman girişi: ASTRA yok');
+        satirlar.push(`✨ +${monster.rewardXp} Asker XP`);
+        if (outcome.xpGained) satirlar.push(`🧙 +${outcome.xpGained.toLocaleString('tr-TR')} hesap XP`);
+        if (outcome.fragmentsGained) satirlar.push(`🧩 +${outcome.fragmentsGained} Teçhizat Parçası`);
+        if (outcome.boxGained) satirlar.push(`📦 +${outcome.boxGained} Pandora Kutusu`);
+        if (outcome.scrollGained) satirlar.push(`📜 ${outcome.scrollGained.name}`);
+        outcome.levelUps.forEach(t => satirlar.push(`🎉 ${t}`));
+        if (outcome.weaponsWorn.length) satirlar.push(`⚔️ Silah aşındı: ${outcome.weaponsWorn.join(', ')}`);
+        satirlar.push(`⚡ -${staminaCost} Stamina`);
+        eylemler.push({ etiket: '⚔️ Kışlaya git', tikla: () => openBarracksModal() });
+        const not = outcome.budgetFull ? GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE
+          : (outcome.budgetCapped ? 'Bu haftaki ödeme payı sınırı yüzünden ödül azaldı; Pazartesi yenilenir.' : '');
+        return { altBaslik: `${monster.name} yenildi`, satirlar, not, eylemler };
+      }
+      satirlar.push(`💀 ${monster.name}: ${outcome.remainingEnemyHp}/${monster.hp} can kaldı`);
+      satirlar.push(`⚡ -${staminaCost} Stamina`);
+      eylemler.push({ etiket: '🌾 Askerleri iyileştir', birincil: true, tikla: () => openBarracksModal() });
+      eylemler.push({ etiket: '↻ Tekrar dene', tikla: () => openPreBattleModal(monster) });
+      return { baslik: '💀 BOZGUN', altBaslik: `${monster.name} karşısında geri çekildin`, satirlar, not: 'Düşmanın kalan canı kaydedildi. Askerlerini iyileştirip yeniden girince kaldığın yerden devam edersin.', eylemler };
     }
   });
 }

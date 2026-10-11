@@ -446,3 +446,30 @@
     max-height: 96vh;
     overflow-y: auto;
   }
+
+  /* ===================== SAVAŞ SONUCU KARTI (11 Ekim 2026) ===================== */
+  /* Sonuç tüm ekranı kaplar (sahne alanı telefonda 300 px: uzun liste taşıyordu), kısa kalırsa ortalanır, uzunsa kayar */
+  .battle-arena-modal-overlay .aa-arena .result-banner{
+    position:fixed; inset:0; padding:20px 16px; overflow-y:auto; justify-content:flex-start;
+    background: rgba(8,4,12,.92); z-index:20;
+  }
+  .battle-arena-modal-overlay .aa-arena .result-banner > *{ flex:none; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .title{ margin-top:auto; text-align:center; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .sub{ font-size:.95rem; color:var(--ink-dim); text-align:center; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .loot{ flex-direction:column; align-items:stretch; width:min(420px,100%); gap:6px; font-size:1rem; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .loot span{ text-align:left; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .loot:empty{ display:none; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .note{ width:min(420px,100%); font-size:.85rem; line-height:1.4; color:var(--gold-bright); text-align:center; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .note:empty{ display:none; }
+  .battle-arena-modal-overlay .aa-arena .result-banner .actions{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; width:min(420px,100%); }
+  .battle-arena-modal-overlay .aa-arena .result-banner .actions:empty{ display:none; }
+  .battle-arena-modal-overlay .aa-arena .result-banner > div:last-child{ margin-bottom:auto; }
+  .battle-arena-modal-overlay .aa-arena .result-banner button{ min-height:44px; }
+  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn:not(.primary){ background:rgba(255,255,255,.1); color:#f1f5f9; border:1px solid rgba(255,255,255,.28); opacity:1; }
+  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn.primary{ background:#f6c453; color:#1a1405; opacity:1; font-weight:800; }
+  @media (max-width: 720px){
+    .aa-arena .controls{ flex-wrap:wrap; justify-content:center; }
+    .aa-arena .ctrl-btn, .aa-arena .speed-btn{ min-height:44px; }
+    .aa-arena .speed-group{ margin-left:0; }
+    .battle-arena-modal-overlay .aa-arena .result-banner .title{ font-size:1.7rem; }
+  }

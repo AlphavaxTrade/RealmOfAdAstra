@@ -340,7 +340,7 @@ html.v3 body.in-dungeon #top-nav-strip > :not(#dungeon-floor-bar) { display: non
 html.v3 body.in-dungeon #dungeon-floor-bar:not(.hidden) { display: flex !important; position: static !important; transform: none !important; justify-content: flex-start !important; flex: 1; min-width: 0; max-width: none !important; max-height: none !important; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 0; padding: 0; background: transparent; border: 0; box-shadow: none; }
 html.v3 body.in-dungeon #btn-dungeon-return-town { position: static !important; }
 html.v3 body.in-dungeon #dungeon-floor-bar::-webkit-scrollbar { display: none; }
-html.v3 body.in-dungeon #dungeon-floor-bar > * { flex: none; min-height: 40px; }
+html.v3 body.in-dungeon #dungeon-floor-bar > * { flex: none; min-height: var(--v3-tap); }
 html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-nav-divider { display: none; }
 
 /* 16. KISLA (js/ui/barracks.js compact kipi) ------------------------------- */
@@ -438,4 +438,14 @@ html.v3 .rpg-modal-body label:has(> input[type="checkbox"], > input[type="radio"
   html.v3 .rpg-modal-body :is(button, select) { min-height: var(--v3-tap) !important; }
   html.v3 .rpg-modal-body button { min-width: var(--v3-tap); }
   html.v3 .rpg-modal-body .phase2-tab-btn { min-height: var(--v3-tap); }
+}
+
+/* 18. ZİNDAN KAT ÇUBUĞU TELEFONDA: altı kat ve kasaba düğmesi tek satıra sığar (11 Ekim 2026) ------------- */
+@media (max-width: 560px) {
+  html.v3 body.in-dungeon #dungeon-floor-bar { overflow-x: visible; gap: 4px; }
+  html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-home-btn > span:last-child { display: none; }
+  html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-home-btn { min-width: var(--v3-tap); justify-content: center; padding: 0 10px; }
+  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab { min-width: var(--v3-tap); padding: 0 6px; justify-content: center; gap: 2px; }
+  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab > span:last-child { display: none; }
+  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab::after { content: attr(data-floor); font: 800 13px var(--font-ui); }
 }

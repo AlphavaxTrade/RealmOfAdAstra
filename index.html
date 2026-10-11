@@ -47,7 +47,7 @@
   <header id="top-nav-strip" class="top-nav-strip hud">
     <!-- Zindandayken görünen kat çubuğu (kasabada v3 üst çubuğu kullanılır) -->
     <nav id="dungeon-floor-bar" class="dungeon-floor-nav hidden" aria-label="Zindan katları">
-      <button id="btn-dungeon-return-town" class="dungeon-home-btn" title="Kasabaya dön">
+      <button id="btn-dungeon-return-town" class="dungeon-home-btn" title="Kasabaya dön" aria-label="Kasabaya dön">
         <span>🏰</span> <span>Kasabaya Dön</span>
       </button>
       <span class="dungeon-nav-divider"></span>
@@ -471,7 +471,7 @@
        BATTLE ARENA OVERLAY (CANLI SAVAŞ ARENASI - ZİNDAN & KOLEZYUM)
        ============================================================ -->
   <div id="battle-arena-modal" class="battle-arena-modal-overlay">
-    <div class="shell aa-arena" data-mode="dungeon">
+    <div class="shell aa-arena" data-mode="dungeon" data-theme="dark">
 
       <!-- HUD -->
       <div class="hud">
@@ -506,10 +506,13 @@
           <div class="phase-banner" id="aa-phaseBanner"><div class="txt" id="aa-phaseTxt"></div></div>
           <div class="result-banner" id="aa-resultBanner">
             <div class="title" id="aa-resultTitle"></div>
+            <div class="sub" id="aa-resultSub"></div>
             <div class="loot" id="aa-resultLoot"></div>
+            <div class="note" id="aa-resultNote"></div>
+            <div class="actions" id="aa-resultActions"></div>
             <div style="display:flex; gap:10px; justify-content:center; margin-top:12px; flex-wrap:wrap;">
               <button id="aa-resultBtn" class="ctrl-btn">↺ Tekrar İzle</button>
-              <button id="aa-resultCloseBtn" class="ctrl-btn primary">✨ Tamamla & Devam Et</button>
+              <button id="aa-resultCloseBtn" class="ctrl-btn primary">✓ Tamam</button>
             </div>
           </div>
         </div>
