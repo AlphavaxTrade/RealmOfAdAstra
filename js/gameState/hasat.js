@@ -1,505 +1,445 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Hasat, depolama, taşan kaynak satışı, sefer toplama, temel gelir
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: üretim hızı, sefer hasadı (erken ve tam toplama), silo depolama ve taşan
+// kaynağın pazarda satılması, tek tıkla toplama, haftalık temel gelir.
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS } from './ortak.js';
 
+// Seferin kayıtlı süresi: dakika (yoksa saatten, o da yoksa saniyeden) ve saat
+function seferSuresi(sefer) {
+  const dakika = sefer.durationMinutes || Math.round((sefer.durationHours || 0.3) * 60) || Math.max(1, Math.round(sefer.durationSeconds / 60));
+  const saat = sefer.durationHours || parseFloat((dakika / 60).toFixed(2));
+  return { dakika, saat };
+}
+
+// Seferin toplam XP'si: süreyle orantılı
+const seferXp = (saat) => Math.max(5, Math.floor(35 * saat));
+
 export const hasatYontemleri = {
-  // Belirli bir kaynak için dakika başına fix (sabit) üretim miktarı
-  // Her seviyede fix kalır: Seviye arttıkça dakikalık üretim artmaz, sadece sefer süresi uzar.
-  // v1.25: Taban üretim × seviye bonusu (her seviye +%1,5)
+  // Bir kaynağın dakika başına üretimi: taban üretim x seviye bonusu x köylü bonusu (+%1 / 10 köylü, en çok +%20;
+  // Şifa Bahçesi projesi şifalı ota +%5). Seviye arttıkça dakikalık üretim değil sefer süresi uzar.
   getResourceRatePerMinute(nodeId, level = this.state.level) {
-    const base = (GAME_CONFIG.BASE_PRODUCTION && GAME_CONFIG.BASE_PRODUCTION[nodeId]) || 15;
-    // v2 (R5): köylü bonusu (+%1 / 10 köylü, en çok +%20) ve Şifa Bahçesi projesi (şifalı ot +%5)
-    return base * this.getLevelProductionMultiplier(level) * (this.getVillageProductionMultiplier ? this.getVillageProductionMultiplier(nodeId) : 1);
+    const taban = (GAME_CONFIG.BASE_PRODUCTION && GAME_CONFIG.BASE_PRODUCTION[nodeId]) || 15;
+    return taban * this.getLevelProductionMultiplier(level) * (this.getVillageProductionMultiplier ? this.getVillageProductionMultiplier(nodeId) : 1);
   },
 
+  // Sefer şu ana kadar ne kadar mahsul biriktirdi (kısmi toplama sonrası kalan dahil)
   getAccruedExpeditionHarvest(nodeId) {
-    const exp = this.state.activeExpeditions[nodeId];
-    if (!exp) return { accruedAmount: 0, totalYield: 0, pct: 0, remainingSeconds: 0, elapsedSeconds: 0, durationSeconds: 0, isCompleted: false };
+    const sefer = this.state.activeExpeditions[nodeId];
+    if (!sefer) return { accruedAmount: 0, totalYield: 0, pct: 0, remainingSeconds: 0, elapsedSeconds: 0, durationSeconds: 0, isCompleted: false };
 
     // Sefer başladığı andaki üretim hızı kullanılır (sefer sırasında seviye atlamak geçmişe dönük artırmaz)
-    const ratePm = exp.ratePerMinute || this.getResourceRatePerMinute(nodeId);
+    const hiz = sefer.ratePerMinute || this.getResourceRatePerMinute(nodeId);
+    const { dakika, saat } = seferSuresi(sefer);
+    const toplamVerim = Math.max(10, Math.floor(hiz * dakika));
+    const toplamXp = seferXp(saat);
 
-    const speedMult = this.getExpeditionSpeedMultiplier();
-    const durationMins = exp.durationMinutes || Math.round((exp.durationHours || 0.3) * 60) || Math.max(1, Math.round(exp.durationSeconds / 60));
-    const durationHours = exp.durationHours || parseFloat((durationMins / 60).toFixed(2));
-    const totalYield = Math.max(10, Math.floor(ratePm * durationMins * speedMult));
-    const totalXp = Math.max(5, Math.floor(35 * durationHours));
-
-    const progressRatio = Math.min(1, exp.elapsedSeconds / exp.durationSeconds);
-    let alreadyClaimed = 0;
-    if (exp.claimedAmount != null) {
-      alreadyClaimed = exp.claimedAmount;
-    } else if (exp.claimedSeconds) {
-      alreadyClaimed = Math.floor(totalYield * Math.min(1, exp.claimedSeconds / exp.durationSeconds));
-    }
-
-    const earnedSoFar = Math.floor(totalYield * progressRatio);
-    const accruedAmount = Math.max(0, earnedSoFar - alreadyClaimed);
-    const accruedXp = exp.isCompleted ? totalXp : Math.max(1, Math.floor(totalXp * progressRatio));
-    const pct = Math.min(100, Math.floor(progressRatio * 100));
-    const remainingSeconds = Math.max(0, Math.ceil(exp.durationSeconds - exp.elapsedSeconds));
+    const ilerleme = Math.min(1, sefer.elapsedSeconds / sefer.durationSeconds);
+    let toplanmis = 0;
+    if (sefer.claimedAmount != null) toplanmis = sefer.claimedAmount;
+    else if (sefer.claimedSeconds) toplanmis = Math.floor(toplamVerim * Math.min(1, sefer.claimedSeconds / sefer.durationSeconds));
 
     return {
-      accruedAmount,
-      totalYield,
-      alreadyClaimed,
-      accruedXp,
-      totalXp,
-      pct,
-      remainingSeconds,
-      elapsedSeconds: exp.elapsedSeconds,
-      durationSeconds: exp.durationSeconds,
-      isCompleted: exp.isCompleted
+      accruedAmount: Math.max(0, Math.floor(toplamVerim * ilerleme) - toplanmis),
+      totalYield: toplamVerim,
+      alreadyClaimed: toplanmis,
+      accruedXp: sefer.isCompleted ? toplamXp : Math.max(1, Math.floor(toplamXp * ilerleme)),
+      totalXp: toplamXp,
+      pct: Math.min(100, Math.floor(ilerleme * 100)),
+      remainingSeconds: Math.max(0, Math.ceil(sefer.durationSeconds - sefer.elapsedSeconds)),
+      elapsedSeconds: sefer.elapsedSeconds,
+      durationSeconds: sefer.durationSeconds,
+      isCompleted: sefer.isCompleted
     };
   },
 
+  // Bitmemiş seferin o ana kadar biriken mahsulünü (silodaki boş yer ve Üretim Hakkı kadarını) erken toplar
   claimPartialExpedition(nodeId) {
-    const exp = this.state.activeExpeditions[nodeId];
-    if (!exp) return { success: false, message: 'Aktif sefer bulunamadı.' };
+    const sefer = this.state.activeExpeditions[nodeId];
+    if (!sefer) return { success: false, message: 'Aktif sefer bulunamadı.' };
 
-    const accruedInfo = this.getAccruedExpeditionHarvest(nodeId);
-    if (accruedInfo.accruedAmount <= 0) {
+    const birikim = this.getAccruedExpeditionHarvest(nodeId);
+    if (birikim.accruedAmount <= 0) {
       return { success: false, message: 'Henüz toplanabilir bir kaynak birikmedi (En az 1 adet birikmeli).' };
     }
 
-    const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-    const playerTool = this.state.tools[nodeConfig.requiredTool];
+    const alan = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
+    const alet = this.state.tools[alan.requiredTool];
 
-    // SİLO / DEPO DOLULUK VE TAŞMA KONTROLÜ (Erken Toplama)
-    const cap = this.getWarehouseCapacity();
-    const limit = cap[nodeId];
-    const currentAmount = Number(this.state.inventory[nodeId]) || 0;
-    const availableRoom = limit != null ? Math.max(0, limit - currentAmount) : accruedInfo.accruedAmount;
-    const rLabel = (this.getResourceNameTr(nodeId) || nodeConfig.name).toLocaleLowerCase('tr-TR');
+    // Silo doluluk ve taşma kontrolü
+    const limit = this.getWarehouseCapacity()[nodeId];
+    const mevcut = Number(this.state.inventory[nodeId]) || 0;
+    const bosYer = limit != null ? Math.max(0, limit - mevcut) : birikim.accruedAmount;
+    const etiket = (this.getResourceNameTr(nodeId) || alan.name).toLocaleLowerCase('tr-TR');
 
-    // 1. Durum: Depoda HİÇ boş yer yok
-    if (limit != null && availableRoom <= 0) {
+    if (limit != null && bosYer <= 0) {
       return {
         success: false,
         isWarehouseFull: true,
         nodeId,
-        currentAmount,
+        currentAmount: mevcut,
         limit,
-        remainingToClaim: accruedInfo.accruedAmount,
-        message: `⚠️ Silo'nuz tamamen dolu (${currentAmount}/${limit})! Lütfen ${rLabel} seferini tamamlamak için silonuzu büyütün veya silonuzda yer açın.`
+        remainingToClaim: birikim.accruedAmount,
+        message: `⚠️ Silo'nuz tamamen dolu (${mevcut}/${limit})! Lütfen ${etiket} seferini tamamlamak için silonuzu büyütün veya silonuzda yer açın.`
       };
     }
 
-    // 2. Durum: Depoda yer var - boş yeri tam dolduracak kadarını al, kalanı seferde bırak
-    // v2: erken toplama da Üretim Hakkı ile sınırlı (ortak kasa payı için 1/1,05)
-    const hakP = this.getUretimHakki(nodeId);
-    const wantP = Math.min(accruedInfo.accruedAmount, availableRoom);
-    const amountToHarvest = Math.max(0, Math.min(wantP, Math.floor(hakP.canTake / (1 + Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05)))));
-    if (wantP > 0 && amountToHarvest <= 0) {
-      return { success: false, isQuotaWait: true, nodeId, message: `⏳ Üretim Hakkın doldu (${Math.floor(hakP.used).toLocaleString('tr-TR')} / ${Math.floor(hakP.released).toLocaleString('tr-TR')}); biriken mahsul seferde izin bekliyor. Yeni hak ${this._fmtWait(hakP.nextReleaseAt - this._now())} sonra açılır.` };
-    }
-    const requested = globalPool.harvest(nodeId, amountToHarvest);
-    this._takeKonseyShare(nodeId, requested);
-    const { stored: harvestedAmount, overflow } = this.storeResource(nodeId, requested);
-    if (playerTool) {
-      playerTool.totalGathered = (playerTool.totalGathered || 0) + harvestedAmount;
+    // Boş yeri tam dolduracak kadarını al, kalanı seferde bırak; erken toplama da Üretim Hakkı ile sınırlıdır
+    // (ortak kasa payı için hak 1/1,05'e bölünür)
+    const hak = this.getUretimHakki(nodeId);
+    const istenen = Math.min(birikim.accruedAmount, bosYer);
+    const kasaOrani = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
+    const alinacak = Math.max(0, Math.min(istenen, Math.floor(hak.canTake / (1 + kasaOrani))));
+    if (istenen > 0 && alinacak <= 0) {
+      return {
+        success: false, isQuotaWait: true, nodeId,
+        message: `⏳ Üretim Hakkın doldu (${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')}); biriken mahsul seferde izin bekliyor. Yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.`
+      };
     }
 
-    const xpGained = Math.max(1, Math.floor((accruedInfo.accruedXp || 1) * (harvestedAmount / accruedInfo.accruedAmount)));
-    const levelResult = this.addXp(xpGained);
-    exp.claimedXp = (exp.claimedXp || 0) + xpGained;
+    const cekilen = globalPool.harvest(nodeId, alinacak);
+    this._takeKonseyShare(nodeId, cekilen);
+    const { stored: depolanan, overflow } = this.storeResource(nodeId, cekilen);
+    if (alet) alet.totalGathered = (alet.totalGathered || 0) + depolanan;
 
-    // Kısmi tahsilatı claimedAmount'a ekle
-    exp.claimedAmount = (exp.claimedAmount || accruedInfo.alreadyClaimed || 0) + harvestedAmount;
-    if (accruedInfo.totalYield > 0) {
-      exp.claimedSeconds = Math.min(exp.durationSeconds, Math.floor((exp.claimedAmount / accruedInfo.totalYield) * exp.durationSeconds));
-    } else {
-      exp.claimedSeconds = exp.elapsedSeconds;
-    }
+    const xp = Math.max(1, Math.floor((birikim.accruedXp || 1) * (depolanan / birikim.accruedAmount)));
+    const seviyeSonucu = this.addXp(xp);
+    sefer.claimedXp = (sefer.claimedXp || 0) + xp;
+
+    // Kısmi tahsilat claimedAmount'a işlenir
+    sefer.claimedAmount = (sefer.claimedAmount || birikim.alreadyClaimed || 0) + depolanan;
+    sefer.claimedSeconds = birikim.totalYield > 0
+      ? Math.min(sefer.durationSeconds, Math.floor((sefer.claimedAmount / birikim.totalYield) * sefer.durationSeconds))
+      : sefer.elapsedSeconds;
 
     this.saveState();
 
-    const stillWaiting = Math.max(0, accruedInfo.accruedAmount - harvestedAmount);
-
+    const bekleyen = Math.max(0, birikim.accruedAmount - depolanan);
     return {
       success: true,
-      amount: harvestedAmount,
+      amount: depolanan,
       overflow,
-      xpGained,
-      levelResult,
-      isPartialSiloFill: stillWaiting > 0,
-      stillRemaining: stillWaiting,
-      message: stillWaiting > 0
-        ? `📥 Silodaki boş alan kadar +${harvestedAmount} ${nodeConfig.name} erken toplandı ve ambar doldu (${this.state.inventory[nodeId]}/${limit})! Kalan ${stillWaiting} adet mahsul seferde bekletiliyor.`
-        : `⚡ ${harvestedAmount} ${nodeConfig.name} erken toplandı! (+${xpGained} XP)`
+      xpGained: xp,
+      levelResult: seviyeSonucu,
+      isPartialSiloFill: bekleyen > 0,
+      stillRemaining: bekleyen,
+      message: bekleyen > 0
+        ? `📥 Silodaki boş alan kadar +${depolanan} ${alan.name} erken toplandı ve ambar doldu (${this.state.inventory[nodeId]}/${limit})! Kalan ${bekleyen} adet mahsul seferde bekletiliyor.`
+        : `⚡ ${depolanan} ${alan.name} erken toplandı! (+${xp} XP)`
     };
   },
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════════════════
-  // DEPO KAPASİTESİ — HARD CAP KORUMASI & TAŞMA ENGELLEME
-  // ═══════════════════════════════════════════════════════════════════════
-  // v1.25: Son çare koruması. Normal oyunda silo artık taşmaz: hasat siloya sığmayanı seferde bekletir,
-  // pazar alımı kapasiteyle sınırlıdır, ödüller storeResourceOrSell ile sığmayanı pazarda satar.
-  // Buraya yalnızca test menüsü gibi doğrudan eklemeler düşer; fazla kısım kesilir ve eskisi gibi
-  // sessizce değil, oyuncuya bildirilerek kesilir.
+  // ── Silo ────────────────────────────────────────────────────────────────
+  // Son çare koruması: normal oyunda silo taşmaz (hasat sığmayanı seferde bekletir, pazar alımı kapasiteyle sınırlı,
+  // ödüller storeResourceOrSell ile sığmayanı satar). Buraya yalnız doğrudan eklemeler düşer; fazlası kesilir ve bildirilir.
   enforceWarehouseLimits() {
     if (!this.state || !this.state.inventory) return;
-    const cap = this.getWarehouseCapacity();
-    for (const res of RES_KEYS()) {
-      const limit = cap[res];
-      if (limit != null && typeof limit === 'number' && limit > 0) {
-        const cur = Number(this.state.inventory[res]) || 0;
-        if (cur > limit) {
-          const excess = cur - limit;
-          this.state.inventory[res] = limit;
-          if (!this._isFastForwarding) {
-            const name = this.getResourceNameTr ? this.getResourceNameTr(res) : res;
-            this.pushNotice(`⚠️ Silo dolu: ${Math.floor(excess).toLocaleString('tr-TR')} ${name} siloya sığmadı. Siloyu yükselterek kapasiteyi artırabilirsin.`, 'error');
-          }
-        }
+    const kapasite = this.getWarehouseCapacity();
+    for (const kaynak of RES_KEYS()) {
+      const limit = kapasite[kaynak];
+      if (!(typeof limit === 'number' && limit > 0)) continue;
+      const mevcut = Number(this.state.inventory[kaynak]) || 0;
+      if (mevcut <= limit) continue;
+      this.state.inventory[kaynak] = limit;
+      if (!this._isFastForwarding) {
+        const ad = this.getResourceNameTr ? this.getResourceNameTr(kaynak) : kaynak;
+        this.pushNotice(`⚠️ Silo dolu: ${Math.floor(mevcut - limit).toLocaleString('tr-TR')} ${ad} siloya sığmadı. Siloyu yükselterek kapasiteyi artırabilirsin.`, 'error');
       }
     }
   },
 
-  // Taşan malzemeyi pazarda sat; taban fiyat yüzünden satılamayan kısım bildirilir
+  // Taşan malzemeyi pazarda satar; taban fiyat yüzünden satılamayan kısım bildirilir
   _sellOverflow(resourceKey, qty, reason = 'Silo dolu') {
-    const amount = Math.floor(Number(qty) || 0);
-    if (amount <= 0) return { soldQty: 0, adaGained: 0, lostQty: 0 };
-    let soldQty = 0, adaGained = 0;
-    if (typeof ammMarket !== 'undefined' && ammMarket && ammMarket.executeSell) {
-      const maxSell = ammMarket.getMaxSellBeforeFloor ? ammMarket.getMaxSellBeforeFloor(resourceKey) : amount;
-      const sellQty = Math.min(amount, Math.max(0, Math.floor(maxSell)));
-      if (sellQty > 0) {
-        const r = ammMarket.executeSell(resourceKey, sellQty);
+    const miktar = Math.floor(Number(qty) || 0);
+    if (miktar <= 0) return { soldQty: 0, adaGained: 0, lostQty: 0 };
+    let satilan = 0;
+    let kazanc = 0;
+    if (ammMarket && ammMarket.executeSell) {
+      const tavan = ammMarket.getMaxSellBeforeFloor ? ammMarket.getMaxSellBeforeFloor(resourceKey) : miktar;
+      const satilacak = Math.min(miktar, Math.max(0, Math.floor(tavan)));
+      if (satilacak > 0) {
+        const r = ammMarket.executeSell(resourceKey, satilacak);
         if (r && r.success) {
-          soldQty = sellQty;
-          adaGained = Number(r.adAstraReceived) || 0;
-          this.state.adAstraBalance = (this.state.adAstraBalance || 0) + adaGained;
-          this._onAdaEarned(adaGained, { saleOf: resourceKey });
+          satilan = satilacak;
+          kazanc = Number(r.adAstraReceived) || 0;
+          this.state.adAstraBalance = (this.state.adAstraBalance || 0) + kazanc;
+          this._onAdaEarned(kazanc, { saleOf: resourceKey });
         }
       }
     }
-    const lostQty = amount - soldQty;
-    const name = this.getResourceNameTr ? this.getResourceNameTr(resourceKey) : resourceKey;
+    const kaybolan = miktar - satilan;
+    const ad = this.getResourceNameTr ? this.getResourceNameTr(resourceKey) : resourceKey;
     if (!this._isFastForwarding) {
-      if (soldQty > 0) this.pushNotice(`📦 ${reason}: siloya sığmayan ${soldQty.toLocaleString('tr-TR')} ${name} pazarda satıldı (+${adaGained.toFixed(1)} ASTRA).`, 'info');
-      if (lostQty > 0) this.pushNotice(`⚠️ ${reason}: ${lostQty.toLocaleString('tr-TR')} ${name} siloya sığmadı ve pazar taban fiyatta olduğu için satılamadı.`, 'error');
+      if (satilan > 0) this.pushNotice(`📦 ${reason}: siloya sığmayan ${satilan.toLocaleString('tr-TR')} ${ad} pazarda satıldı (+${kazanc.toFixed(1)} ASTRA).`, 'info');
+      if (kaybolan > 0) this.pushNotice(`⚠️ ${reason}: ${kaybolan.toLocaleString('tr-TR')} ${ad} siloya sığmadı ve pazar taban fiyatta olduğu için satılamadı.`, 'error');
     }
-    return { soldQty, adaGained, lostQty };
+    return { soldQty: satilan, adaGained: kazanc, lostQty: kaybolan };
   },
 
-  // Ödül/teslimat girişi: siloya sığan kısmı depola, sığmayanı pazarda sat
+  // Ödül/teslimat girişi: siloya sığan kısmı depolar, sığmayanı pazarda satar
   storeResourceOrSell(resourceKey, amount, reason = 'Silo dolu') {
-    const qty = Number(amount) || 0;
-    if (qty <= 0) return { stored: 0, soldQty: 0, adaGained: 0, lostQty: 0 };
-    const { stored, overflow } = this.storeResource(resourceKey, qty);
-    const sold = overflow > 0 ? this._sellOverflow(resourceKey, overflow, reason) : { soldQty: 0, adaGained: 0, lostQty: 0 };
-    return { stored, ...sold };
+    const miktar = Number(amount) || 0;
+    if (miktar <= 0) return { stored: 0, soldQty: 0, adaGained: 0, lostQty: 0 };
+    const { stored, overflow } = this.storeResource(resourceKey, miktar);
+    const satis = overflow > 0 ? this._sellOverflow(resourceKey, overflow, reason) : { soldQty: 0, adaGained: 0, lostQty: 0 };
+    return { stored, ...satis };
   },
 
   storeResource(resourceKey, amount) {
     if (!(amount > 0)) return { stored: 0, overflow: 0 };
-    const cap = this.getWarehouseCapacity();
-    const limit = cap[resourceKey];
-    const current = Math.min(limit != null ? limit : Infinity, Number(this.state.inventory[resourceKey]) || 0);
-
+    const limit = this.getWarehouseCapacity()[resourceKey];
+    const mevcut = Math.min(limit != null ? limit : Infinity, Number(this.state.inventory[resourceKey]) || 0);
     if (limit == null) {
-      this.state.inventory[resourceKey] = current + amount;
+      this.state.inventory[resourceKey] = mevcut + amount;
       return { stored: amount, overflow: 0 };
     }
-
-    const room = Math.max(0, limit - current);
-    const stored = Math.min(amount, room);
-    const overflow = amount - stored;
-    this.state.inventory[resourceKey] = Math.min(limit, current + stored);
-    return { stored, overflow };
+    const depolanan = Math.min(amount, Math.max(0, limit - mevcut));
+    this.state.inventory[resourceKey] = Math.min(limit, mevcut + depolanan);
+    return { stored: depolanan, overflow: amount - depolanan };
   },
 
+  // ── Biten seferi toplama ────────────────────────────────────────────────
   claimExpedition(nodeId) {
-    const exp = this.state.activeExpeditions[nodeId];
-    if (!exp || !exp.isCompleted) {
-      return { success: false, message: 'Henüz toplanacak bir sefer tamamlanmadı.' };
-    }
+    const sefer = this.state.activeExpeditions[nodeId];
+    if (!sefer || !sefer.isCompleted) return { success: false, message: 'Henüz toplanacak bir sefer tamamlanmadı.' };
 
-    const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-    const playerTool = this.state.tools[nodeConfig.requiredTool];
+    const alan = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
+    const alet = this.state.tools[alan.requiredTool];
 
-    // Matematiksel Sefer Verimi (Dakika Başı Fix Üretim * Dakika * Hız Çarpanı)
-    // Sefer başladığı andaki üretim hızı kullanılır (sefer sırasında seviye atlamak geçmişe dönük artırmaz)
-    const ratePm = exp.ratePerMinute || this.getResourceRatePerMinute(nodeId);
-    const speedMult = this.getExpeditionSpeedMultiplier();
-    const durationMinutes = exp.durationMinutes || Math.round((exp.durationHours || 0.3) * 60) || Math.max(1, Math.round(exp.durationSeconds / 60));
-    const totalYield = Math.floor(ratePm * durationMinutes * speedMult);
+    // Verim = dakika başı üretim x dakika (sefer başladığı andaki hızla)
+    const hiz = sefer.ratePerMinute || this.getResourceRatePerMinute(nodeId);
+    const dakika = sefer.durationMinutes || Math.round((sefer.durationHours || 0.3) * 60) || Math.max(1, Math.round(sefer.durationSeconds / 60));
+    const toplamVerim = Math.floor(hiz * dakika);
 
-    // Erken veya kısmi toplanan miktarı düş
-    const alreadyClaimed = exp.claimedAmount != null
-      ? exp.claimedAmount
-      : Math.floor(totalYield * Math.min(1, (exp.claimedSeconds || 0) / exp.durationSeconds));
-    const remainingToClaim = Math.max(0, totalYield - alreadyClaimed);
-
-    if (remainingToClaim <= 0) {
+    // Erken ya da kısmen toplanan miktar düşülür
+    const toplanmis = sefer.claimedAmount != null
+      ? sefer.claimedAmount
+      : Math.floor(toplamVerim * Math.min(1, (sefer.claimedSeconds || 0) / sefer.durationSeconds));
+    const kalan = Math.max(0, toplamVerim - toplanmis);
+    if (kalan <= 0) {
       delete this.state.activeExpeditions[nodeId];
       this.saveState();
       return { success: true, message: 'Tüm mahsul zaten toplandı.' };
     }
 
-    // SİLO / DEPO DOLULUK VE TAŞMA KONTROLÜ
-    const cap = this.getWarehouseCapacity();
-    const limit = cap[nodeId];
-    let currentAmount = Number(this.state.inventory[nodeId]) || 0;
-    let availableRoom = limit != null ? Math.max(0, limit - currentAmount) : remainingToClaim;
-    const rLabel = (this.getResourceNameTr(nodeId) || nodeId).toLocaleLowerCase('tr-TR');
+    // Silo doluluk ve taşma kontrolü
+    const limit = this.getWarehouseCapacity()[nodeId];
+    let mevcut = Number(this.state.inventory[nodeId]) || 0;
+    let bosYer = limit != null ? Math.max(0, limit - mevcut) : kalan;
+    const etiket = (this.getResourceNameTr(nodeId) || nodeId).toLocaleLowerCase('tr-TR');
 
-    // 🤖 Otomasyon Botu Aktifse:
-    let botSurplusSold = 0;
-    let botSurplusAdaEarned = 0;
-    // Yalnızca bot var mı diye bakılır; isAutoCollectorActive() önkoşul alım-satımını da tetiklediği için
-    // hasattan önce pazardan gereksiz alım yapıyordu.
-    const isBotActive = this.hasPurchasedBot();
-    if (isBotActive) {
-      const spaceRes = this.handleBotSiloSpace(nodeId, remainingToClaim);
-      if (spaceRes && (spaceRes.action === 'sold' || spaceRes.action === 'sold_for_ada' || spaceRes.action === 'upgraded')) {
-        botSurplusSold = spaceRes.amountSold || (spaceRes.action === 'upgraded' ? 1 : 0);
-        botSurplusAdaEarned = spaceRes.adAstraReceived || 0;
+    // Otomasyon botu varsa siloda yer açar (fazlayı satar ya da siloyu büyütür). isAutoCollectorActive() önkoşul
+    // alım-satımını da tetiklediği için yalnızca bot var mı diye bakılır.
+    let botSatilan = 0;
+    let botKazanc = 0;
+    const botVar = this.hasPurchasedBot();
+    if (botVar) {
+      const yer = this.handleBotSiloSpace(nodeId, kalan);
+      if (yer && (yer.action === 'sold' || yer.action === 'sold_for_ada' || yer.action === 'upgraded')) {
+        botSatilan = yer.amountSold || (yer.action === 'upgraded' ? 1 : 0);
+        botKazanc = yer.adAstraReceived || 0;
       }
-      currentAmount = Number(this.state.inventory[nodeId]) || 0;
-      const updatedCap = this.getWarehouseCapacity();
-      const updatedLimit = updatedCap[nodeId];
-      availableRoom = updatedLimit != null ? Math.max(0, updatedLimit - currentAmount) : remainingToClaim;
+      mevcut = Number(this.state.inventory[nodeId]) || 0;
+      const yeniLimit = this.getWarehouseCapacity()[nodeId];
+      bosYer = yeniLimit != null ? Math.max(0, yeniLimit - mevcut) : kalan;
     }
 
-    // 1. Durum: Depoda HİÇ boş yer yok (0 yer var) VE bot artanı satamadıysa / manuel kullanıcıysa:
-    if (limit != null && availableRoom <= 0 && botSurplusSold <= 0) {
-      exp.isCompleted = true;
-      exp.stillRemaining = remainingToClaim;
+    // Hiç yer yok ve bot da yer açamadıysa: sefer bekler
+    if (limit != null && bosYer <= 0 && botSatilan <= 0) {
+      sefer.isCompleted = true;
+      sefer.stillRemaining = kalan;
       this.saveState();
       return {
         success: false,
         isWarehouseFull: true,
         nodeId,
-        currentAmount,
+        currentAmount: mevcut,
         limit,
-        remainingToClaim,
-        stillRemaining: remainingToClaim,
-        message: `⚠️ Silo'nuz tamamen dolu (${currentAmount}/${limit})! Kalan ${remainingToClaim} ${rLabel} seferde bekletiliyor. Depoda yer açıldığında veya silonuz büyüdüğünde toplanacaktır.`
+        remainingToClaim: kalan,
+        stillRemaining: kalan,
+        message: `⚠️ Silo'nuz tamamen dolu (${mevcut}/${limit})! Kalan ${kalan} ${etiket} seferde bekletiliyor. Depoda yer açıldığında veya silonuz büyüdüğünde toplanacaktır.`
       };
     }
 
-    // 2. Durum: Depoda yer var veya bot artanı markette sattı!
-    // v2: Üretim Hakkı — kişisel haftalık pay gün gün açılır; hak dolunca mahsul seferde bekler (izin bekliyor).
-    // Ortak kasa payı (%5) hakkın içinden ayrıca çıkarılır: hakkın 1/1,05'i siloya girer.
+    // Üretim Hakkı: kişisel haftalık pay gün gün açılır; hak dolunca mahsul seferde izin bekler. Ortak kasa payı (%5) hakkın
+    // içinden ayrıca çıkar: hakkın 1/1,05'i siloya girer.
     const hak = this.getUretimHakki(nodeId);
-    const chestRate = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
-    const wantAmount = Math.min(remainingToClaim, availableRoom);
-    const harvestAmount = Math.max(0, Math.min(wantAmount, Math.floor(hak.canTake / (1 + chestRate))));
-    const quotaWait = Math.max(0, wantAmount - harvestAmount);
-    if (wantAmount > 0 && harvestAmount <= 0) {
-      exp.isCompleted = true;
-      exp.stillRemaining = remainingToClaim;
+    const kasaOrani = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
+    const istenen = Math.min(kalan, bosYer);
+    const alinacak = Math.max(0, Math.min(istenen, Math.floor(hak.canTake / (1 + kasaOrani))));
+    const hakBekleyen = Math.max(0, istenen - alinacak);
+    if (istenen > 0 && alinacak <= 0) {
+      sefer.isCompleted = true;
+      sefer.stillRemaining = kalan;
       this.saveState();
       return {
         success: false,
         isQuotaWait: true,
         nodeId,
-        remainingToClaim,
-        stillRemaining: remainingToClaim,
+        remainingToClaim: kalan,
+        stillRemaining: kalan,
         hak,
-        message: `⏳ Üretim Hakkın doldu: bu hafta ${nodeConfig.name} için ${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')} birim çıkardın. Kalan ${remainingToClaim} ${rLabel} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.`
+        message: `⏳ Üretim Hakkın doldu: bu hafta ${alan.name} için ${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')} birim çıkardın. Kalan ${kalan} ${etiket} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.`
       };
     }
-    let harvestedAmount = 0;
-    let konseyShare = 0;
-    if (harvestAmount > 0) {
-      const fromPool = globalPool.harvest(nodeId, harvestAmount);
-      const storedRes = this.storeResource(nodeId, fromPool);
-      harvestedAmount = storedRes.stored;
-      konseyShare = this._takeKonseyShare(nodeId, fromPool);
+
+    let depolanan = 0;
+    let konseyPayi = 0;
+    if (alinacak > 0) {
+      const cekilen = globalPool.harvest(nodeId, alinacak);
+      depolanan = this.storeResource(nodeId, cekilen).stored;
+      konseyPayi = this._takeKonseyShare(nodeId, cekilen);
     }
 
-    const totalClaimedThisStep = harvestedAmount;
-    exp.claimedAmount = (exp.claimedAmount || alreadyClaimed) + totalClaimedThisStep;
-    exp.claimedSeconds = exp.durationSeconds;
+    sefer.claimedAmount = (sefer.claimedAmount || toplanmis) + depolanan;
+    sefer.claimedSeconds = sefer.durationSeconds;
+    if (alet) alet.totalGathered = (alet.totalGathered || 0) + depolanan;
 
-    if (playerTool) {
-      playerTool.totalGathered = (playerTool.totalGathered || 0) + totalClaimedThisStep;
-    }
+    const hala = Math.max(0, toplamVerim - sefer.claimedAmount);
 
-    const stillRemaining = Math.max(0, totalYield - exp.claimedAmount);
+    // Deneyim: sefer süresine göre tam XP; kısmi toplamada toplanan orana göre
+    const saat = sefer.durationHours || parseFloat((dakika / 60).toFixed(2)) || 0.3;
+    const toplamXp = seferXp(saat);
+    const oncekiXp = sefer.claimedXp || 0;
+    let xp = 0;
 
-    // ✨ Deneyim (XP) Hesabı: Sefer süresine göre tam XP (Karakter Seviyesi ve Level Up için)
-    const durationHours = exp.durationHours || parseFloat((durationMinutes / 60).toFixed(2)) || 0.3;
-    const totalExpXp = Math.max(5, Math.floor(35 * durationHours));
-    const prevClaimedXp = exp.claimedXp || 0;
-    let xpGained = 0;
-
-    // Eğer seferden kalan miktar tamamen bittiyse (0 kaldıysa): Seferi bitir ve temizle!
-    if (stillRemaining <= 0) {
-      playerTool.durability = Math.max(0, (playerTool.durability != null ? playerTool.durability : 4320) - durationMinutes);
-
-      xpGained = Math.max(0, totalExpXp - prevClaimedXp);
-      if (xpGained > 0) {
-        this.addXp(xpGained);
-        exp.claimedXp = prevClaimedXp + xpGained;
+    if (hala <= 0) {
+      // Sefer tamamen bitti: alet aşınır, kalan XP verilir, sefer kaldırılır
+      alet.durability = Math.max(0, (alet.durability != null ? alet.durability : 4320) - dakika);
+      xp = Math.max(0, toplamXp - oncekiXp);
+      if (xp > 0) {
+        this.addXp(xp);
+        sefer.claimedXp = oncekiXp + xp;
       }
-
       delete this.state.activeExpeditions[nodeId];
 
-
-      // 🤖 KURAL 2 (Adım 4 A Seçeneği 2. Bölüm): Her sefer bitiminde tetikle ve olabiliyorsa yap!
-      if (isBotActive && this.state.botSiloAutoUpgrade) {
-        this.tryAutoUpgradeWarehouseWithAdaFinancing();
-      }
-
+      // Her sefer bitiminde bot silo yükseltmeyi dener (ASTRA finansmanıyla)
+      if (botVar && this.state.botSiloAutoUpgrade) this.tryAutoUpgradeWarehouseWithAdaFinancing();
       this.saveState();
 
-      let msg = `🌾 ${harvestedAmount} ${nodeConfig.name} başarıyla toplandı ve ambarınıza eklendi! (+${xpGained} XP)`;
-      if (konseyShare > 0) msg += ` 🏛️ Ortak kasaya ${konseyShare} ${nodeConfig.name} (%5).`;
-      if (botSurplusSold > 0) {
-        msg = `🤖 Ambar doldu: ${harvestedAmount} ${nodeConfig.name} depolandı (%100 silo). Fazla gelen ${botSurplusSold} ${nodeConfig.name} AMM'de satıldı (+${botSurplusAdaEarned.toFixed(1)} ASTRA, +${xpGained} XP). Sefer tamamlandı!`;
+      let mesaj = `🌾 ${depolanan} ${alan.name} başarıyla toplandı ve ambarınıza eklendi! (+${xp} XP)`;
+      if (konseyPayi > 0) mesaj += ` 🏛️ Ortak kasaya ${konseyPayi} ${alan.name} (%5).`;
+      if (botSatilan > 0) {
+        mesaj = `🤖 Ambar doldu: ${depolanan} ${alan.name} depolandı (%100 silo). Fazla gelen ${botSatilan} ${alan.name} AMM'de satıldı (+${botKazanc.toFixed(1)} ASTRA, +${xp} XP). Sefer tamamlandı!`;
       }
-
       return {
         success: true,
         isPartialSiloFill: false,
-        amount: totalClaimedThisStep,
-        harvestedAmount,
-        xpGained,
-        totalExpXp,
-        resourceName: nodeConfig.name,
-        botSurplusSold,
-        botSurplusAdaEarned,
-        konseyShare,
+        amount: depolanan,
+        harvestedAmount: depolanan,
+        xpGained: xp,
+        totalExpXp: toplamXp,
+        resourceName: alan.name,
+        botSurplusSold: botSatilan,
+        botSurplusAdaEarned: botKazanc,
+        konseyShare: konseyPayi,
         stillRemaining: 0,
-        message: msg
-      };
-    } else {
-      // Depo doldu, kalan miktar seferde bekliyor!
-      // Siloya aktarılan miktar oranında XP'yi hesaba işle
-      if (harvestedAmount > 0 && totalYield > 0) {
-        const targetXp = Math.floor(totalExpXp * Math.min(1, exp.claimedAmount / totalYield));
-        xpGained = Math.max(0, targetXp - prevClaimedXp);
-        if (xpGained > 0) {
-          this.addXp(xpGained);
-          exp.claimedXp = prevClaimedXp + xpGained;
-        }
-      }
-
-      this.saveState();
-      const quotaMsg = quotaWait > 0 ? `⏳ Üretim Hakkı: +${harvestedAmount} ${nodeConfig.name} toplandı (+${xpGained} XP); hakkın doldu (${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')}). Kalan ${stillRemaining} ${rLabel} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.` : null;
-
-      return {
-        success: true,
-        isPartialSiloFill: true,
-        amount: harvestedAmount,
-        harvestedAmount,
-        xpGained,
-        totalExpXp,
-        resourceName: nodeConfig.name,
-        stillRemaining,
-        currentAmount: this.state.inventory[nodeId],
-        limit,
-        message: `📥 Silodaki boş alan kadar +${harvestedAmount} ${nodeConfig.name} depoya aktarıldı ve ambarınız doldu (${this.state.inventory[nodeId]}/${limit})! (+${xpGained} XP) Kalan ${stillRemaining} ${nodeConfig.name} seferde bekletiliyor. Depoda yer açtığınızda veya silonuzu büyüttüğünüzde kalan mahsulü de toplayabilirsiniz.`,
-        ...(quotaWait > 0 ? { isQuotaWait: true, message: quotaMsg } : {}),
-        konseyShare
+        message: mesaj
       };
     }
+
+    // Silo doldu ya da hak bitti: kalan miktar seferde bekler; XP toplanan oranda işlenir
+    if (depolanan > 0 && toplamVerim > 0) {
+      const hedefXp = Math.floor(toplamXp * Math.min(1, sefer.claimedAmount / toplamVerim));
+      xp = Math.max(0, hedefXp - oncekiXp);
+      if (xp > 0) {
+        this.addXp(xp);
+        sefer.claimedXp = oncekiXp + xp;
+      }
+    }
+    this.saveState();
+
+    const hakMesaji = hakBekleyen > 0
+      ? `⏳ Üretim Hakkı: +${depolanan} ${alan.name} toplandı (+${xp} XP); hakkın doldu (${Math.floor(hak.used).toLocaleString('tr-TR')} / ${Math.floor(hak.released).toLocaleString('tr-TR')}). Kalan ${hala} ${etiket} seferde izin bekliyor; yeni hak ${this._fmtWait(hak.nextReleaseAt - this._now())} sonra açılır.`
+      : null;
+    return {
+      success: true,
+      isPartialSiloFill: true,
+      amount: depolanan,
+      harvestedAmount: depolanan,
+      xpGained: xp,
+      totalExpXp: toplamXp,
+      resourceName: alan.name,
+      stillRemaining: hala,
+      currentAmount: this.state.inventory[nodeId],
+      limit,
+      message: `📥 Silodaki boş alan kadar +${depolanan} ${alan.name} depoya aktarıldı ve ambarınız doldu (${this.state.inventory[nodeId]}/${limit})! (+${xp} XP) Kalan ${hala} ${alan.name} seferde bekletiliyor. Depoda yer açtığınızda veya silonuzu büyüttüğünüzde kalan mahsulü de toplayabilirsiniz.`,
+      ...(hakBekleyen > 0 ? { isQuotaWait: true, message: hakMesaji } : {}),
+      konseyShare: konseyPayi
+    };
   },
 
-  // ✨ 60+ YAŞ ÖZEL: TEK TIKLA TÜM KASABADAN MAHSUL & VERGİ TOPLA (SWEEP HARVEST)
+  // ── Tek tıkla toplama ───────────────────────────────────────────────────
+  // Bütün alanlardan: biteni toplar, bitmemişin o ana kadar birikenini erken toplar
   claimAllHarvests() {
-    const nodes = RES_KEYS();
-    let totalHarvested = 0;
-    let totalXp = 0;
-    const collectedDetails = [];
-
-    for (const nodeId of nodes) {
-      const exp = this.state.activeExpeditions[nodeId];
-      if (exp) {
-        if (exp.isCompleted) {
-          const res = this.claimExpedition(nodeId);
-          if (res && res.success) {
-            totalHarvested += (res.amount || 0);
-            totalXp += (res.xpGained || 0);
-            collectedDetails.push(`${res.amount} ${res.resourceName || nodeId}`);
-          }
-        } else {
-          const res = this.claimPartialExpedition(nodeId);
-          if (res && res.success) {
-            totalHarvested += (res.amount || 0);
-            totalXp += (res.xpGained || 0);
-            const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-            collectedDetails.push(`${res.amount} ${nodeConfig ? nodeConfig.name : nodeId}`);
-          }
+    let toplam = 0;
+    let toplamXp = 0;
+    const ayrinti = [];
+    for (const alan of RES_KEYS()) {
+      const sefer = this.state.activeExpeditions[alan];
+      if (!sefer) continue;
+      if (sefer.isCompleted) {
+        const r = this.claimExpedition(alan);
+        if (r && r.success) {
+          toplam += r.amount || 0;
+          toplamXp += r.xpGained || 0;
+          ayrinti.push(`${r.amount} ${r.resourceName || alan}`);
+        }
+      } else {
+        const r = this.claimPartialExpedition(alan);
+        if (r && r.success) {
+          toplam += r.amount || 0;
+          toplamXp += r.xpGained || 0;
+          const cfg = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[alan];
+          ayrinti.push(`${r.amount} ${cfg ? cfg.name : alan}`);
         }
       }
     }
-
-    if (totalHarvested > 0) {
+    if (toplam > 0) {
       this.saveState();
-      return {
-        success: true,
-        totalHarvested,
-        totalXp,
-        message: `✨ Bütün Kasabadan Mahsuller Toplandı: +${collectedDetails.join(', ')} (+${totalXp} XP)`
-      };
+      return { success: true, totalHarvested: toplam, totalXp: toplamXp, message: `✨ Bütün Kasabadan Mahsuller Toplandı: +${ayrinti.join(', ')} (+${toplamXp} XP)` };
     }
-
-    return {
-      success: false,
-      message: 'Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı. Önce tarlalara ve madenlere işçi gönderin!'
-    };
+    return { success: false, message: 'Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı. Önce tarlalara ve madenlere işçi gönderin!' };
   },
 
+  // Yalnız biten seferleri toplar
   sweepCompletedExpeditions() {
-    const nodes = RES_KEYS();
-    let totalHarvested = 0;
-    let totalXp = 0;
-    const collectedDetails = [];
-
-    for (const nodeId of nodes) {
-      const exp = this.state.activeExpeditions[nodeId];
-      if (exp && exp.isCompleted) {
-        const res = this.claimExpedition(nodeId);
-        if (res && res.success) {
-          totalHarvested += (res.amount || 0);
-          totalXp += (res.xpGained || 0);
-          const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-          collectedDetails.push(`+${res.amount} ${nodeConfig ? nodeConfig.name : nodeId}`);
-        }
+    let toplam = 0;
+    let toplamXp = 0;
+    const ayrinti = [];
+    for (const alan of RES_KEYS()) {
+      const sefer = this.state.activeExpeditions[alan];
+      if (!(sefer && sefer.isCompleted)) continue;
+      const r = this.claimExpedition(alan);
+      if (r && r.success) {
+        toplam += r.amount || 0;
+        toplamXp += r.xpGained || 0;
+        const cfg = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[alan];
+        ayrinti.push(`+${r.amount} ${cfg ? cfg.name : alan}`);
       }
     }
-
-    if (totalHarvested > 0) {
+    if (toplam > 0) {
       this.saveState();
-      return {
-        success: true,
-        totalHarvested,
-        totalXp,
-        message: `⚡ Biten Seferler Başarıyla Toplandı: ${collectedDetails.join(', ')} (+${totalXp} XP)`
-      };
+      return { success: true, totalHarvested: toplam, totalXp: toplamXp, message: `⚡ Biten Seferler Başarıyla Toplandı: ${ayrinti.join(', ')} (+${toplamXp} XP)` };
     }
-
-    return {
-      success: false,
-      message: 'Şu an tamamlanmış bir sefer bulunmuyor.'
-    };
+    return { success: false, message: 'Şu an tamamlanmış bir sefer bulunmuyor.' };
   },
 
-  // 🏛️ HAFTALIK EVRENSEL TEMEL GELİR (UBI) TALEP ETME METODU
+  // ── Haftalık temel gelir (UBI) ──────────────────────────────────────────
   claimWeeklyUbi() {
-    // Onaylı kural: izindeyken temel gelir alınmaz (yer korunur, ekonomiden pay alınmaz)
-    if (this.izindeMiOkuma && this.izindeMiOkuma()) return { success: false, message: 'İzindeyken haftalık temel gelir alınmaz; izin bitince yeniden alabilirsin.' };
-    const res = globalPool.claimWeeklyUbi(
-      this.state.level || 1,
-      this.state.adAstraBalance || 0,
-      this.state.lastClaimedUbiEpoch || 0
-    );
-    if (res.success) {
-      this.state.lastClaimedUbiEpoch = res.epochId;
-      this.state.adAstraBalance = (this.state.adAstraBalance || 0) + res.amount;
-      this._onAdaEarned(res.amount);
-      this.state.totalUbiEarned = (this.state.totalUbiEarned || 0) + res.amount;
+    // İzindeyken temel gelir alınmaz (yer korunur, ekonomiden pay alınmaz)
+    if (this.izindeMiOkuma && this.izindeMiOkuma()) {
+      return { success: false, message: 'İzindeyken haftalık temel gelir alınmaz; izin bitince yeniden alabilirsin.' };
+    }
+    const r = globalPool.claimWeeklyUbi(this.state.level || 1, this.state.adAstraBalance || 0, this.state.lastClaimedUbiEpoch || 0);
+    if (r.success) {
+      this.state.lastClaimedUbiEpoch = r.epochId;
+      this.state.adAstraBalance = (this.state.adAstraBalance || 0) + r.amount;
+      this._onAdaEarned(r.amount);
+      this.state.totalUbiEarned = (this.state.totalUbiEarned || 0) + r.amount;
       this.saveState();
     }
-    return res;
-  },
+    return r;
+  }
 };

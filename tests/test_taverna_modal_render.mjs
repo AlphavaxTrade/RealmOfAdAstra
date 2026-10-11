@@ -35,9 +35,7 @@ assert.doesNotThrow(() => {
 }, 'Taverna modalı render edilirken toLocaleString() hatası alınmamalı');
 
 // AdAstra ile stamina doldurma devre dışı olmalı; sadece buğday ile doldurulabilir
-const adastraRefillRes = gs.instantRefillStamina();
-assert.equal(adastraRefillRes.success, false, 'AdAstra ile stamina doldurma kesinlikle başarısız olmalı');
-assert(adastraRefillRes.message.includes('buğday'), 'Mesaj buğday ile doldurulabileceğini belirtmeli');
+assert.equal(typeof gs.instantRefillStamina, 'undefined', 'ASTRA ile stamina doldurma yolu hiç olmamalı');
 
 // Buğday ile doldurma mekanizması sorunsuz çalışmalı
 gs.state.stamina = 10;
