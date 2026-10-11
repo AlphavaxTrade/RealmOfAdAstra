@@ -1,7 +1,7 @@
 import { GameStateManager } from '../js/gameState.js';
-import { globalPool } from '../js/globalPool.js';
-import { ammMarket } from '../js/ammMarket.js';
-import { treasury } from '../js/treasury.js';
+import '../js/globalPool.js';
+import '../js/ammMarket.js';
+import '../js/treasury.js';
 import assert from 'assert';
 import { GAME_CONFIG } from '../js/config.js';
 

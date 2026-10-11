@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 describe('Silo Kısmi Doldurma ve Kalan Mahsulü Seferde Bekletme Mekanizması Testi', () => {
   // Mock localStorage

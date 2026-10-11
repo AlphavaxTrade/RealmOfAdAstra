@@ -10,7 +10,6 @@ const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
 const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
 const r2 = v => Math.round((Number(v) || 0) * 100) / 100;
-const DAY_MS = 86400000;
 const resName = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).name || k;
 const resIcon = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).icon || '';
 // Katkı puanı için fiyat: canlı pazar (varsa) yoksa açılış fiyatı (pazar modülü döngüsel içe aktarımı önlemek için küresel nesneden okunur)
@@ -177,7 +176,6 @@ export const gameStateV2 = {
     const level = Math.max(1, Number(this.state.level) || 1);
     const hardMax = K.MAX_HOUSES ?? 20;
     const maxHouses = Math.min(hardMax, level);
-    const now = this._now();
     const starvingDays = v.starvingSince ? Math.max(0, (Number(v.starveSec) || 0) / 86400) : 0;
     const houseLimitReason = v.houses >= hardMax ? `En çok ${hardMax} ev` : (v.houses >= level ? `Ev sayısı hesap seviyesini (${level}) geçemez` : null);
     return {

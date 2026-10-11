@@ -79,7 +79,7 @@ export const ozetYontemleri = {
   getEconomyAndPoolsSummary() {
     const summary = treasury.getSummary();
     const state = this.state;
-    const boss = this.getWorldBossInfo();
+    this.getWorldBossInfo();   // dünya bossu kaydı yoksa burada oluşturulur
 
     // Kasa payları hazine girişinin yüzdesidir (toplam 1); sharePct = hazine payı içindeki yüzde
     const alloc = GAME_CONFIG.TREASURY_ALLOCATION;
@@ -275,7 +275,6 @@ export const ozetYontemleri = {
       : ((GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.INITIAL_SEED_POOL) || 2400000);
     const burnedNftPool = 42500 + ((state.genesisNftMinted ? 1 : 0) * 18000);
     const totalAmmLiquidityAda = (typeof ammMarket !== 'undefined' && ammMarket.getTotalAdAstraLiquidity) ? ammMarket.getTotalAdAstraLiquidity() : 40000000;
-    const lotteryPoolAda = Math.round(state.lotteryPool || 12000000);
     const questPool = (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('quest')) : 8000000;
 
     const totalVaultAda = worldBossPool + colosseumPool + dungeonLootVault + carnivalPool + ammBuybackPool + parliamentStakingPool + ubiPool + questPool + totalAmmLiquidityAda;

@@ -57,7 +57,6 @@ console.log('✅ 3 Parça = 1 Çark/Piyango Bileti tam olarak doğrulandı.');
 
 // Test 3: ASTRA Ödülü - Karnaval Hazine Kasasından Karşılanması
 console.log('\n[3/5] ASTRA Ödüllerinin Karnaval Hazine Kasasından Karşılanması Test Ediliyor...');
-const preCarnivalAda = treasury.state.pools.carnival;
 const preUserAda = gs.state.adAstraBalance;
 const mockAdaReward = { id: 'ada_200', name: '200 ASTRA Nakit Ödül', icon: '🟣', type: 'ada', amount: 200, valAda: 200 };
 GAME_CONFIG.CARNIVAL.WHEEL_REWARDS = [mockAdaReward];
@@ -74,7 +73,6 @@ console.log('✅ ASTRA ödülü havadan basılmadı, doğrudan Karnaval Hazine K
 // Test 4: Hammadde Ödülü - AMM DEX Buyback ve Teslimat
 console.log('\n[4/5] Hammadde Ödüllerinin AMM DEX Buyback Mekanizması Test Ediliyor...');
 const preOutflowCarnival = treasury.state.outflow?.carnival || 0;
-const preAmmWoodAda = ammMarket.pools.wood.adAstraReserve;
 const preAmmWoodRes = ammMarket.pools.wood.resourceReserve;
 const preAmmWoodPrice = ammMarket.getPrice('wood');
 const preUserWood = gs.state.inventory.wood || 0;

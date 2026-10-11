@@ -1,6 +1,5 @@
 import { GameStateManager } from '../js/gameState.js';
 import { GAME_CONFIG } from '../js/config.js';
-import { treasury } from '../js/treasury.js';
 
 console.log('--- 🧪 SİSTEM DENETİMİ DÜZELTMELERİ DOĞRULAMA TESTİ ---');
 
@@ -48,7 +47,6 @@ if (!Array.isArray(gm.state.armoryInventory)) {
 console.log('✅ 4. Madde Başarılı: Vanilla reset armoryInventory alanı tanımlı ve temiz.');
 
 // 4. Zindan Hazine Entegrasyonu Testi
-const initialTreasuryDungeon = treasury.state.pools.dungeon || 0;
 gm.state.level = 5;
 const dropRes = gm.addDungeonXpAndDrops(5, false);
 console.log('Zindan Canavarı Ödül Çekimi:', dropRes);

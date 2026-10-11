@@ -4,7 +4,7 @@
 import assert from 'assert';
 import { createUnit, selectTarget, simulateBattle } from '../js/combat.js';
 import { gameState } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 console.log('🛡️ [TEST] Zindan & Kolezyum Ön Saf / Arka Saf & 3 Preset Testleri Başlatılıyor...\n');
 

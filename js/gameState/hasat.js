@@ -223,7 +223,6 @@ export const hasatYontemleri = {
     }
 
     const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-    const toolConfig = GAME_CONFIG.TOOLS[nodeConfig.requiredTool];
     const playerTool = this.state.tools[nodeConfig.requiredTool];
 
     // Matematiksel Sefer Verimi (Dakika Başı Fix Üretim * Dakika * Hız Çarpanı)

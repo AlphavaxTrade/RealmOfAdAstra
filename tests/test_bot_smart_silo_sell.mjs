@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { ammMarket } from '../js/ammMarket.js';
+import '../js/ammMarket.js';
 
 console.log('--- 🤖 24s OTOMASYON BOTU: AKILLI SİLO ALANI (%5 MARJLI MİNİMAL SATIŞ) TESTİ ---');
 

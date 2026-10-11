@@ -72,7 +72,6 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
-  const isAddr = a => typeof a === 'string' && /^0x[a-fA-F0-9]{40}$/.test(a);
 
   // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
   const rate = new Map();

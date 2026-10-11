@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
-import { treasury } from '../js/treasury.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/treasury.js';
+import '../js/config.js';
 import { isoWeekKey } from '../js/gameState/ozet.js';
 
 console.log('--- 🧪 AMM SERBEST PİYASA, ALET ONARIMI UYARISI VE GÜN SONU BUYBACK TESTİ ---');

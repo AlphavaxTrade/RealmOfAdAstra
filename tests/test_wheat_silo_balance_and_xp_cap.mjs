@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { globalPool } from '../js/globalPool.js';
-import { treasury } from '../js/treasury.js';
 import { GAME_CONFIG } from '../js/config.js';
 
 console.log('--- 🧪 BUĞDAY SİLO DENGELEMESİ, XP TANKI VE HAZİNE HAVUZLARI TESTİ ---');
@@ -62,7 +61,6 @@ gs.state.adAstraBalance = 100000;
 gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 50000]));   // v2: 6 hammadde
 gs.state.warehouseLevel = 1;
 const ubiBefore = globalPool.state.ubiPool || 0;
-const treasuryBefore = treasury.state ? treasury.state.balance : 0;
 
 const upCost = gs.getWarehouseUpgradeCost(1);
 console.log('Silo Seviye 1->2 ASTRA Maliyeti:', upCost.adAstra);

@@ -1,3 +1,5 @@
+> ⚠️ **ARŞİV — GEÇERLİ DEĞİL (11 Ekim 2026).** Bu belge oyunun ilk sürümlerinde (Eylül 2026, Gemini dönemi) yazıldı; sayılar ve kurallar v2 ile uyuşmaz (ör. ADA adı, 10 yıllık kasa dağılımı, 3 hammadde, tek oyunculu tarayıcı modeli). Güncel kararlar: docs/v2/KARARLAR_KESIN.md, docs/v2/EKONOMI_ILKELERI.md, js/config.js. Yalnız tarihçe için saklanır.
+
 # 🌌 Realm of Astra — Kapsamlı Oyun Tasarımı & Ekonomi Dokümantasyonu (Master Whitepaper)
 
 > **Avalanche (AVAX) Ekosisteminde 10 Yıllık Sürdürülebilir Web3 RPG & GameFi Başyapıtı**  

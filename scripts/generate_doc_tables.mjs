@@ -1,7 +1,5 @@
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
 import { DUNGEON_LEVELS } from '../js/bestiary.js';
-import fs from 'fs';
 
 const gs = new GameStateManager();
 

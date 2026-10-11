@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gameState } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 test('Sağ Menü Krallık Kontrol Merkezi & Hızlı Hasat Testi', async (t) => {
   gameState.vanillaReset();

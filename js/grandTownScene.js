@@ -6,7 +6,6 @@
 // Harita: AdAstra Vadisi (v2, 7 Ekim 2026) 2048×1143; px/py resim oranı, pr tıklama yarıçapı (genişliğe oran).
 // ============================================================================
 import { gameState } from './gameState.js';
-import { globalPool } from './globalPool.js';
 import { ammMarket } from './ammMarket.js';
 import { GAME_CONFIG } from './config.js';
 import { sound } from './audio.js';

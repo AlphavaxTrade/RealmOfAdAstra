@@ -12,7 +12,7 @@
     "preview": "vite preview --port 5180 --strictPort",
     "test": "node tests/run_all.mjs",
     "olu-kod": "knip --no-progress --reporter compact",
-    "lint": "eslint server js scripts tests contracts eslint.config.js --max-warnings=94",
+    "lint": "eslint server js scripts tests contracts eslint.config.js --max-warnings=13",
     "gizli-tara": "node scripts/gizli-tara.mjs",
     "audit-uretim": "node scripts/audit-uretim.mjs",
     "kapsam": "c8 node tests/run_all.mjs",

@@ -1,7 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { GameStateManager } from '../js/gameState.js';
-import { ammMarket } from '../js/ammMarket.js';
+import '../js/ammMarket.js';
 import { GAME_CONFIG } from '../js/config.js';
 
 // Mock localStorage for node environment

@@ -2,7 +2,7 @@
 // Tek Tip Asker + Skill Loadout & Taktiksel Savaş Motoru Test Paketi
 
 import assert from 'assert';
-import { createUnit, simulateBattle, selectTarget, PLAYER_SKILLS, DEFAULT_BOSS_PHASES } from '../js/combat.js';
+import { createUnit, simulateBattle, selectTarget } from '../js/combat.js';
 import { gameState } from '../js/gameState.js';
 import { DUNGEON_LEVELS } from '../js/bestiary.js';
 

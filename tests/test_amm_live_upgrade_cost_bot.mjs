@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
-import { globalPool } from '../js/globalPool.js';
+import '../js/globalPool.js';
 
 console.log('--- 🧪 AMM DEX CANLI YÜKSELTME MALİYETİ & OTOMATİK BOT TESTİ BAŞLATILIYOR ---');
 

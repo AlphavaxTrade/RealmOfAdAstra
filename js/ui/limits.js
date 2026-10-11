@@ -2,7 +2,6 @@
 // Kota paneli, piyango sekmesi, zindan giriş kartı ve yan panel aynı bileşenleri kullanır.
 // Fonksiyonlar yalnızca HTML metni üretir; oyun durumunu değiştirmez.
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 const DAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
 export const fmtInt = (n) => Math.floor(Number(n) || 0).toLocaleString('tr-TR');

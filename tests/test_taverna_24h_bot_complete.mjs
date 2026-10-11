@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { ammMarket } from '../js/ammMarket.js';
-import { globalPool } from '../js/globalPool.js';
+import '../js/ammMarket.js';
+import '../js/globalPool.js';
 import { treasury } from '../js/treasury.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 console.log('--- 🤖 TAVERNA 24 SAATLİK OTONOM SEFER & TAMİR BOTU TAM DOĞRULAMA TESTİ ---');
 

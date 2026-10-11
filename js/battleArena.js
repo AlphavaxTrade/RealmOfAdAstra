@@ -133,7 +133,6 @@ export class AdAstraBattleArena {
     let finished = false;
 
     const $ = sel => root.querySelector(sel);
-    const stage = $('#aa-stage');
     const allyFlank = $('#aa-allyFlank');
     const enemyFlank = $('#aa-enemyFlank');
     const fxLayer = $('#aa-fxLayer');

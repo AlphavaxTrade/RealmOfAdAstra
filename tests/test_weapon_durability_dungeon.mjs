@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 console.log('--- 🧪 ZİNDAN SİLAH DAYANIKLILIĞI (DURABILITY) DOĞRULAMA TESTİ BAŞLATILIYOR ---');
 

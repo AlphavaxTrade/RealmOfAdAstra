@@ -3,7 +3,7 @@ import { globalPool } from '../js/globalPool.js';
 import { ammMarket } from '../js/ammMarket.js';
 import { treasury } from '../js/treasury.js';
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 globalThis.localStorage = {
   store: {},

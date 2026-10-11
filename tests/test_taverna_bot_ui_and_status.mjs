@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 test('Taverna Otonom Botu Durum ve Kalan Süre Takip Fonksiyonları Testi', async (t) => {
   const gs = new GameStateManager();

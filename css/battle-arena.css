@@ -185,7 +185,6 @@
   .aa-arena .unit.dead{ opacity:.28; transform:scale(.88) translateY(6px) grayscale(1); }
   .aa-arena .unit.acting{ transform:translateY(-8px); }
   .aa-arena .unit.hit .icon-badge{ animation: shake .35s ease; }
-  .aa-arena .unit.taunting .icon-badge{ box-shadow: 0 0 0 3px var(--teal), 0 0 14px rgba(79,209,197,.7); }
   @keyframes shake{
     0%,100%{ transform:translate(0,0); }
     20%{ transform:translate(-3px,1px); }

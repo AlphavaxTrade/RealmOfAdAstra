@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { GameStateManager } from '../js/gameState.js';
 import { globalPool } from '../js/globalPool.js';
-import { GAME_CONFIG } from '../js/config.js';
+import '../js/config.js';
 
 // Mock localStorage
 const localStorageMock = (function() {

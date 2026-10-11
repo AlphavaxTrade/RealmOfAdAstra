@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
-import { ammMarket } from '../js/ammMarket.js';
+import '../js/ammMarket.js';
 import { GAME_CONFIG } from '../js/config.js';
 
 console.log('--- 🤖 TEST: BOT ARTIK MAHSULÜN MARKETTE SATILMASI VE HER SEFER SONU SİLO YÜKSELTME TETİKLEMESİ ---');

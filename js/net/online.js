@@ -214,7 +214,6 @@ const inputCss = 'width:100%;padding:10px;border-radius:8px;border:1px solid #47
 const btnCss = (bg, border) => `width:100%;padding:11px;border-radius:10px;border:1px solid ${border};background:${bg};color:#fff;font-weight:900;font-size:1rem;cursor:pointer;margin-top:10px;`;
 const linkCss = 'background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin:10px 6px 0;';
 const boxCss = 'text-align:left;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;';
-const isTest = () => !!(online.health && online.health.testMode);
 
 function saveSession(t, playerId) {
   token = t;

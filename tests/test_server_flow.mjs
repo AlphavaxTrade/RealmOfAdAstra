@@ -106,7 +106,7 @@ async function linkWallet(token, wallet) {
 
 try {
   // Hesap: kayıt, hatalı bilgiler, giriş, kilit, şifre sıfırlama
-  const alice = ethers.Wallet.createRandom(), bob = ethers.Wallet.createRandom(), bob2 = ethers.Wallet.createRandom(), eve = ethers.Wallet.createRandom();
+  const bob = ethers.Wallet.createRandom(), bob2 = ethers.Wallet.createRandom(), eve = ethers.Wallet.createRandom();
   assert.equal((await call('POST', '/api/account/register', { email: 'bozuk', password: 'gizli-sifre-123' })).status, 400, 'Geçersiz e-posta');
   assert.equal((await call('POST', '/api/account/register', { email: 'k@s.com', password: 'kisa' })).status, 400, 'Kısa şifre');
   const { token: tA, pid: pidA } = await register('alice@ornek.com');

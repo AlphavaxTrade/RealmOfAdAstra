@@ -59,7 +59,7 @@ test('🤖 Bot Çalışma Sırası, Hasat Önceliği, Hassas Stamina ve Silo Yö
     };
 
     // Döngüyü çalıştır
-    const res = gs.runTavernaAutomationCycle();
+    gs.runTavernaAutomationCycle();
     
     // Hasat toplanmış olmalı ve buğday 10'dan 100+'e çıkmış olmalı!
     assert.ok(gs.state.inventory.wheat > 50, `Hasat toplanmalı ve buğday 50'nin üstüne çıkmalı! Mevcut: ${gs.state.inventory.wheat}`);
@@ -91,7 +91,7 @@ test('🤖 Bot Çalışma Sırası, Hasat Önceliği, Hassas Stamina ve Silo Yö
     gs.state.tools.sickle = { durability: 4320, maxDurability: 4320 };
 
     // Döngüyü çalıştır
-    const res = gs.runTavernaAutomationCycle();
+    gs.runTavernaAutomationCycle();
 
     // Sadece 1 sefer (wheat) başlatılacağı için gereken stamina 20'dir!
     // 20 stamina için yaklaşık 20 * 3.15 = 63 buğday harcanır.

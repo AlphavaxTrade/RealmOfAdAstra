@@ -119,7 +119,6 @@ E.withPlayer(P, () => null);
 
 // 6) Çark: ASTRA bedelinin %80'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
 {
-  const ep = E.globalPool.state.epochId;
   E.mutatePlayer(P, gs => { gs.state.adAstraBalance = 1e6; gs.state.inventory.wood = 1e6; gs.state.warehouseLevel = 18; });
   const rnd = Math.random;
   Math.random = () => 0.99;                       // ödül: bilet parçası (kasaya maliyetsiz)

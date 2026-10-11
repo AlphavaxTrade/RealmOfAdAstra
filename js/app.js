@@ -8,8 +8,8 @@ import { sound } from './audio.js';
 import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
 // 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
-import { createUnit, simulateBattle, DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from './combat.js';
-import { AdAstraBattleArena, getMonsterAvatar, getUnitAvatar } from './battleArena.js';
+import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from './combat.js';
+import { AdAstraBattleArena, getMonsterAvatar } from './battleArena.js';
 import { renderQuotaTracker, renderLimitMeter, renderDungeonEntryLadder, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
@@ -65,7 +65,6 @@ window.closeBattleArenaModal = closeBattleArenaModal;
 
 // PHASE 2: GAMEFI & RPG EKONOMİSİ - MODAL SEKME & GEÇİCİ DURUM DEĞİŞKENLERİ
 let barracksActiveTab = 'army';
-let mineActiveTab = 'mining';
 let marketActiveTab = 'resources';
 let marketSelectedRes = 'wheat';   // v3: Al/Sat bölümünde bir seferde tek kart gösterilir
 let selectedSoldierIndex = 0;
@@ -320,7 +319,6 @@ function danismanEylemi(act) {
   } else if (act === 'open_barracks') {
     openBarracksModal();
   } else if (act === 'open_blacksmith') {
-    mineActiveTab = 'blacksmith';
     openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
   } else if (act === 'open_dungeon') {
     enterDungeonScene();
@@ -890,9 +888,6 @@ function openWarehouseModal() {
   const state = gameState.state;
   dom.modalTitle.innerHTML = `<span>📦</span> <span>KRALLIK SİLO & DEPO YÖNETİMİ</span>`;
 
-  const wood = state.inventory.wood || 0;
-  const iron = state.inventory.iron || 0;
-  const wheat = state.inventory.wheat || 0;
   const adAstra = state.adAstraBalance || 0;
   const RK = RES_KEYS(), RM = RES_META();
   const inv = k => Math.floor(Number(state.inventory[k]) || 0);
@@ -1507,8 +1502,6 @@ function renderExpeditionActiveBox(nodeId) {
   const availableRoom = limit != null ? Math.max(0, limit - currentInv) : accrued.accruedAmount;
   const isCompletelyFull = limit != null && availableRoom <= 0;
   const isPartialRoom = limit != null && availableRoom > 0 && (availableRoom < accrued.accruedAmount);
-  const resourceDisplayNames = Object.fromEntries(RES_KEYS().map(k => [k, ((RES_META()[k] || {}).name || k).toLocaleLowerCase('tr-TR')]));
-  const rLabel = resourceDisplayNames[nodeId] || nodeConfig.name;
 
   return `
     <div class="expedition-active-box" id="modal-exp-box-${nodeId}" style="border-color: ${nodeColor};">
@@ -1585,7 +1578,6 @@ function openTownZoneModal(zoneId, zoneName) {
 
   const state = gameState.state;
   dom.modalTitle.innerHTML = `<span>📍</span> <span>${zoneName}</span>`;
-  const currentDuration = gameState.getExpeditionDurationHours();
 
   let html = '';
 
@@ -1848,7 +1840,7 @@ function openTownZoneModal(zoneId, zoneName) {
                 <div style="font-size: 0.9rem; margin-top: 4px;">Yukarıdaki <strong>"Yeni eşya dök"</strong> sekmesine tıklayarak ordunuz için yeni eşya üretebilirsiniz.</div>
               </div>
             ` : filteredArmoryList.map((entry, idx) => {
-              const { source, slotKey, slotName, soldierIndex, soldierName, locationLabel, item, armoryIndex } = entry;
+              const { source, slotKey, soldierIndex, locationLabel, item, armoryIndex } = entry;
               const isMaxLvl = (item.level || 1) >= (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10);
               const nextLvl = (item.level || 1) + 1;
               const maxDur = item.maxDurability || 13;
@@ -1985,7 +1977,6 @@ function openTownZoneModal(zoneId, zoneName) {
       </div>`;
   }
   else if (zoneId === 'spaceport') {
-    const U = GAME_CONFIG.UZAY_LIMANI || {};
     const rk = gameState.getRocketStatus();
     const vi = gameState.getVillageInfo();
     const soldiers = (state.soldierUnits || []).length;
@@ -3775,31 +3766,6 @@ function refreshBarracksLiveUI(deltaSeconds) {
   barracksUI.liveUpdate(dom.modalBody);
 }
 
-// =========================================================================
-// 4.6 PHASE 2: BÜYÜK KOLEZYUM - 18v18 GLADYATÖR ARENA SAVAŞI
-// =========================================================================
-function buildPlayerArenaSquad(state) {
-  return state.soldierUnits.map((soldier, idx) => {
-    // Kuşanılmış 5 yuvanın (Silah, Miğfer, Zırh, Pantolon, Ayakkabı) tüm bonuslarını ve set bonusunu içerir
-    const fullStats = gameState.getSoldierFullStats(idx) || { totalAtk: soldier.baseAtk || 20, totalMaxHp: soldier.maxHp || 100 };
-    // Kışla'da henüz iyileşmemiş askerler Kolezyum'a eksik canla girer (mevcut HP oranı taşınır)
-    const woundedRatio = Math.min(1, Math.max(0, (soldier.hp != null ? soldier.hp : (soldier.maxHp || 100)) / (soldier.maxHp || 100)));
-    return { icon: soldier.icon || '⚔️', hp: Math.max(1, Math.round(fullStats.totalMaxHp * woundedRatio)), atk: fullStats.totalAtk };
-  });
-}
-
-function buildGladiatorSquad() {
-  const roster = [];
-  for (let i = 0; i < 18; i++) {
-    roster.push({ icon: '⚔️', hp: 120, atk: 22 });
-  }
-  return roster;
-}
-
-function renderArenaUnitGrid(squad, deadCount) {
-  return squad.map((unit, i) => `<div class="arena-unit ${i < deadCount ? 'dead' : ''}">${unit.icon}</div>`).join('');
-}
-
 let colosseumActiveTab = 'duel';
 let selectedColosseumChampionIdx = 0;
 
@@ -4756,7 +4722,7 @@ function openTreasuryVaultModal() {
       else if (act === 'amm_buyback') { marketActiveTab = 'buyback_vault'; openTownZoneModal('market', '🏪 AMM Pazar Alanı'); }
       else if (act === 'ubi') openEconomyDashboardModal('overview');
       else if (act === 'parliament') showToast('🏛️ AdAstra Meclisi yakında: topluluk oylamaları hazırlanıyor.', 'info');
-      else if (act === 'quests') { closeModal(); guideExpanded = true; renderGuideWidget(); }
+      else if (act === 'quests') openKrallikYoluModal();
     });
   });
 
@@ -5856,10 +5822,8 @@ function initAppEvents() {
     } else if (zoneId === 'council') {
       openTreasuryVaultModal();
     } else if (zoneId === 'blacksmith') {
-      mineActiveTab = 'blacksmith';
       openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
     } else if (zoneId === 'mine') {
-      mineActiveTab = 'mining';
       openTownZoneModal('mine', '⛏️ DAĞ MADEN OCAĞI & DEMİR');
     } else {
       openTownZoneModal(zoneId, zoneName);
@@ -6933,7 +6897,7 @@ function initAppEvents() {
 
     // Taverna: Canlı Boş Seferleri Başlat Konsol Butonu (#btn-trigger-bot-cycle)
     if (e.target.closest('#btn-trigger-bot-cycle')) {
-      const res = gameState.runTavernaAutomationCycle();
+      gameState.runTavernaAutomationCycle();
       showToast('🚀 Otonom seferler ve tamir döngüsü hemen tetiklendi!', 'success');
       renderTopBar();
       openTownZoneModal('tavern', '🍺 Taverna & Han');
@@ -7006,9 +6970,7 @@ function initAppEvents() {
       } else if (act === 'lottery') {
         openCarnivalModal('lottery');
       } else if (act === 'quests') {
-        closeModal();
-        guideExpanded = true;
-        renderGuideWidget();
+        openKrallikYoluModal();
       }
       return;
     }
@@ -7092,7 +7054,6 @@ function initAppEvents() {
     // Demirci / Tamirhane: Sekme Geçişi
     const mineTabBtn = e.target.closest('.mine-tab-btn');
     if (mineTabBtn) {
-      mineActiveTab = mineTabBtn.dataset.tab;
       openTownZoneModal('blacksmith', '⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE');
       return;
     }
@@ -7421,7 +7382,6 @@ function initDevPanelEvents() {
 
     let msg = '';
     if (RES_KEYS().includes(target) || target === 'fragments') {
-      const cur = gameState.state.inventory[target] || 0;
       if (mode === 'add') {
         gameState.addDevResource(target, val);
         msg = `🌲 ${target.toUpperCase()}: +${val.toLocaleString()} eklendi! (Yeni: ${gameState.state.inventory[target].toLocaleString()})`;
@@ -8052,7 +8012,6 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
 // 🧭 OYUNCU REHBERİ: bildirimler, "Sen yokken olanlar" raporu ve yeni oyuncu görevleri
 // =========================================================================
 let lastGuideTick = -Infinity;
-let guideExpanded = false;
 
 function fmtNum(n, digits = 0) {
   return Number(n || 0).toLocaleString('tr-TR', { maximumFractionDigits: digits, minimumFractionDigits: digits });
