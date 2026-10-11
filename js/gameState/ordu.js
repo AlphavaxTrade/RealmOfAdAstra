@@ -1,324 +1,283 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Asker satın alma, isim, set bonusu, iyileşme, kuşanma
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: ordu (asker satın alma, isim, set bonusu, iyileşme, kuşanma)
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { sound } from '../audio.js';
 import { cleanName, round3 } from './ortak.js';
 
+const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+const SET_ESIKLERI = [5, 4, 2];   // kaç parça takılıysa hangi set bonusu (en yüksek eşik önce)
+const BUGDAY_YEDEK = 0.30;        // pasif iyileşmede 1 HP için buğday
+const ASTRA_YEDEK = 0.10;         // pasif iyileşmede 1 HP için ASTRA
+const TAM_IYILESME_SN = 86400;    // pasif iyileşme: tam can 24 saat
+
+// Kırılmamış (dayanıklılığı bitmemiş) eşya mı
+const calisiyorMu = esya => !!esya && (esya.durability === undefined || esya.durability > 0);
+const yarali = s => (s.hp != null ? s.hp : (s.maxHp || 100)) < (s.maxHp || 100);
+
 export const orduYontemleri = {
-  // Asker satın alma maliyeti: İlk asker 5.000 ASTRA, 18. asker 1.800.000 ASTRA kademeli artan model
-  getSoldierCost(index = (this.state.soldierUnits || []).length + 1) {
-    const n = Math.max(1, index);
-    const base = GAME_CONFIG.SOLDIER_COST_BASE || 5000;
-    if (n === 1) {
-      return this.adaPrice(base);
-    }
-    if (n === 18 && GAME_CONFIG.SOLDIER_18_TARGET_COST) {
-      return this.adaPrice(GAME_CONFIG.SOLDIER_18_TARGET_COST);
-    }
-    const exponent = (GAME_CONFIG.SOLDIER_COST_EXPONENT != null) ? GAME_CONFIG.SOLDIER_COST_EXPONENT : 2.0364522367650437;
-    const rawCost = base * Math.pow(n, exponent);
-    return this.adaPrice(round3(rawCost));
+  // Asker maliyeti: ilk asker taban fiyat, 18. asker hedef fiyat, aradakiler üstel eğri
+  getSoldierCost(sira = (this.state.soldierUnits || []).length + 1) {
+    const n = Math.max(1, sira);
+    const taban = GAME_CONFIG.SOLDIER_COST_BASE || 5000;
+    if (n === 1) return this.adaPrice(taban);
+    if (n === 18 && GAME_CONFIG.SOLDIER_18_TARGET_COST) return this.adaPrice(GAME_CONFIG.SOLDIER_18_TARGET_COST);
+    const us = GAME_CONFIG.SOLDIER_COST_EXPONENT != null ? GAME_CONFIG.SOLDIER_COST_EXPONENT : 2.0364522367650437;
+    return this.adaPrice(round3(taban * Math.pow(n, us)));
   },
 
   buySoldierUnit() {
-    if (!Array.isArray(this.state.soldierUnits)) {
-      this.state.soldierUnits = [];
+    if (!Array.isArray(this.state.soldierUnits)) this.state.soldierUnits = [];
+    const asker = this.state.soldierUnits;
+
+    const enFazla = GAME_CONFIG.MAX_SOLDIERS ?? Infinity;
+    if (enFazla !== Infinity && asker.length >= enFazla) {
+      return { success: false, message: `Maksimum ${enFazla} askere zaten sahipsin!` };
     }
-    const maxSoldiers = GAME_CONFIG.MAX_SOLDIERS ?? Infinity;
-    if (maxSoldiers !== Infinity && this.state.soldierUnits.length >= maxSoldiers) {
-      return { success: false, message: `Maksimum ${maxSoldiers} askere zaten sahipsin!` };
-    }
-    // v2 (R5): her asker bir köylü ister
+    // Her asker bir köylü ister
     if (this.getVillageInfo) {
-      const vi = this.getVillageInfo();
-      if (this.state.soldierUnits.length + 1 > vi.soldierCap) {
-        return { success: false, message: `🏘️ Yeni asker için köylü gerekir: ${vi.villagers} köylü ile en çok ${vi.soldierCap} asker. Köy Evleri yap, köylüler çoğalsın.` };
+      const koy = this.getVillageInfo();
+      if (asker.length + 1 > koy.soldierCap) {
+        return { success: false, message: `🏘️ Yeni asker için köylü gerekir: ${koy.villagers} köylü ile en çok ${koy.soldierCap} asker. Köy Evleri yap, köylüler çoğalsın.` };
       }
     }
-    const newIdx = this.state.soldierUnits.length + 1;
-    const cost = this.getSoldierCost(newIdx);
-    if ((this.state.adAstraBalance || 0) < cost) {
-      return { success: false, message: `Yetersiz ASTRA! ${newIdx}. asker için ${cost.toLocaleString()} ASTRA gerekir.` };
-    }
-    this.state.adAstraBalance -= cost;
-    this._onAdaSpent(cost);
-    // v1'de bu satır YOKTU: 18 askerlik 324.000 ASTRA'lık harcama ne yakılıyor
-    // ne hazineye giriyordu — muhasebe dışı bir delikti (F-06).
-    globalPool.recordTokenSpend(cost);
 
-    const newUnit = this.createSoldierUnit(newIdx);
-    this.state.soldierUnits.push(newUnit);
+    const sira = asker.length + 1;
+    const bedel = this.getSoldierCost(sira);
+    if ((this.state.adAstraBalance || 0) < bedel) {
+      return { success: false, message: `Yetersiz ASTRA! ${sira}. asker için ${bedel.toLocaleString()} ASTRA gerekir.` };
+    }
+    this.state.adAstraBalance -= bedel;
+    this._onAdaSpent(bedel);
+    globalPool.recordTokenSpend(bedel);   // yakım / UBI / telif / hazine olarak dağılır
+
+    const yeni = this.createSoldierUnit(sira);
+    asker.push(yeni);
     this.saveState();
     sound.playLevelUp();
     return {
       success: true,
-      message: `⚔️ ${newUnit.icon} ${newUnit.name} (${newUnit.className}) orduya katıldı! (-${cost.toLocaleString()} ASTRA)`,
-      soldier: newUnit,
-      cost
+      message: `⚔️ ${yeni.icon} ${yeni.name} (${yeni.className}) orduya katıldı! (-${bedel.toLocaleString()} ASTRA)`,
+      soldier: yeni,
+      cost: bedel
     };
   },
 
   renameSoldierUnit(soldierIndex, newName) {
     if (!Array.isArray(this.state.soldierUnits)) return { success: false, message: 'Ordu bulunamadı.' };
-    const soldier = this.state.soldierUnits[soldierIndex];
-    if (!soldier) return { success: false, message: 'Asker bulunamadı.' };
+    const asker = this.state.soldierUnits[soldierIndex];
+    if (!asker) return { success: false, message: 'Asker bulunamadı.' };
 
     if (String(newName || '').trim().length > 24) return { success: false, message: 'Asker ismi en fazla 24 karakter olabilir.' };
-    const safe = cleanName(newName, 24);
-    if (!safe) return { success: false, message: 'Asker ismi boş bırakılamaz (yalnız harf, rakam ve basit işaretler).' };
+    const temiz = cleanName(newName, 24);
+    if (!temiz) return { success: false, message: 'Asker ismi boş bırakılamaz (yalnız harf, rakam ve basit işaretler).' };
 
-    const oldName = soldier.name;
-    soldier.name = safe;
+    const eskiAd = asker.name;
+    asker.name = temiz;
     this.saveState();
-    return {
-      success: true,
-      message: `⚔️ Asker ismi "${safe}" olarak güncellendi!`,
-      oldName,
-      newName: safe
-    };
+    return { success: true, message: `⚔️ Asker ismi "${temiz}" olarak güncellendi!`, oldName: eskiAd, newName: temiz };
   },
 
+  // Set bonusu yalnız askerin kendi üstündeki (kırılmamış) eşyalardan sayılır; depodaki eşya sayılmaz.
   getSoldierSetBonus(soldierIndex) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return null;
-    const eq = soldier.equipment || {};
-    // v1.25: Yalnızca askerin kendi üstündeki eşyalar sayılır. Eski sürüm, askerin boş yuvası için
-    // depodaki eşyayı da sayıyordu; depodaki tek eşya bütün askerlere aynı anda güç veriyordu.
-    const count = ['weapon', 'helmet', 'armor', 'legs', 'boots'].filter(slot => {
-      const item = eq[slot];
-      return item && (item.durability === undefined || item.durability > 0);
-    }).length;
-
-    if (count >= 5 && GAME_CONFIG.EQUIPMENT_SET_BONUSES && GAME_CONFIG.EQUIPMENT_SET_BONUSES[5]) return { count, ...GAME_CONFIG.EQUIPMENT_SET_BONUSES[5] };
-    if (count >= 4 && GAME_CONFIG.EQUIPMENT_SET_BONUSES && GAME_CONFIG.EQUIPMENT_SET_BONUSES[4]) return { count, ...GAME_CONFIG.EQUIPMENT_SET_BONUSES[4] };
-    if (count >= 2 && GAME_CONFIG.EQUIPMENT_SET_BONUSES && GAME_CONFIG.EQUIPMENT_SET_BONUSES[2]) return { count, ...GAME_CONFIG.EQUIPMENT_SET_BONUSES[2] };
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return null;
+    const donanim = asker.equipment || {};
+    const adet = YUVALAR.filter(y => calisiyorMu(donanim[y])).length;
+    const bonuslar = GAME_CONFIG.EQUIPMENT_SET_BONUSES;
+    for (const esik of SET_ESIKLERI) {
+      if (adet >= esik && bonuslar && bonuslar[esik]) return { count: adet, ...bonuslar[esik] };
+    }
     return null;
   },
 
   getSoldierFullStats(soldierIndex) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return null;
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return null;
 
     let bonusAtk = 0;
     let bonusHp = 0;
-    const eq = soldier.equipment || {};
+    const donanim = asker.equipment || {};
+    for (const y of YUVALAR) {
+      const esya = donanim[y];
+      if (!calisiyorMu(esya)) continue;
+      bonusAtk += (esya.atkBonus || 0);
+      bonusHp += (esya.hpBonus || 0);
+    }
 
-    ['weapon', 'helmet', 'armor', 'legs', 'boots'].forEach(slot => {
-      const item = eq[slot];
-      if (item && (item.durability === undefined || item.durability > 0)) {
-        bonusAtk += (item.atkBonus || 0);
-        bonusHp += (item.hpBonus || 0);
-      }
-    });
-
-    const setBonus = this.getSoldierSetBonus(soldierIndex);
-    const atkMult = setBonus ? setBonus.atkMultiplier : 1.0;
-    const hpMult = setBonus ? setBonus.hpMultiplier : 1.0;
-
-    const baseAtk = soldier.baseAtk || 20;
-    const baseHp = soldier.maxHp || 100;
+    const set = this.getSoldierSetBonus(soldierIndex);
+    const atkCarpani = set ? set.atkMultiplier : 1.0;
+    const hpCarpani = set ? set.hpMultiplier : 1.0;
+    const taban = asker.baseAtk || 20;
+    const tabanHp = asker.maxHp || 100;
 
     return {
-      totalAtk: Math.round((baseAtk + bonusAtk) * atkMult),
-      totalMaxHp: Math.round((baseHp + bonusHp) * hpMult),
+      totalAtk: Math.round((taban + bonusAtk) * atkCarpani),
+      totalMaxHp: Math.round((tabanHp + bonusHp) * hpCarpani),
       bonusAtk,
       bonusHp,
-      setBonus
+      setBonus: set
     };
   },
 
-  // =========================================================================
-  // 🌾 18 KİŞİLİK ORDU: OTOMATİK BUĞDAY İLE PASİF İYİLEŞME DÖNGÜSÜ
-  // =========================================================================
-
-  // Belirli bir askerin anlık iyileşme bilgisini (HP, kalan süre, gereken buğday/ada) hesaplar. UI bu metoda dayanır.
+  // ── İyileşme ───────────────────────────────────────────────────────────
+  // Bir askerin iyileşme bilgisi (HP, kalan süre, gereken buğday / ASTRA); arayüz buna dayanır.
+  // Pasif: 24 saatte tam can, 1 HP = 0,30 buğday + 0,10 ASTRA. Hızlı: 10 kat (1 HP = 3 buğday + 1 ASTRA).
   getSoldierHealInfo(soldierIndex) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return null;
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return null;
 
-    const passiveCfg = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
-    const fastCfg = GAME_CONFIG.SOLDIER_FAST_HEAL || {};
-    const maxHp = soldier.maxHp || 100;
-    const hp = Math.min(maxHp, Math.max(0, soldier.hp != null ? soldier.hp : maxHp));
-    const missingHp = Math.max(0, maxHp - hp);
+    const pasif = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
+    const hizli = GAME_CONFIG.SOLDIER_FAST_HEAL || {};
+    const maxHp = asker.maxHp || 100;
+    const hp = Math.min(maxHp, Math.max(0, asker.hp != null ? asker.hp : maxHp));
+    const eksik = Math.max(0, maxHp - hp);
+    const carpan = this.getAdaPriceMultiplier();
 
-    // 24 Saatlik Otomatik Pasif İyileşme Oranları (1 HP = 0.30 Buğday + 0.10 ASTRA)
-    const passiveWheatRate = passiveCfg.wheatPerHp != null ? passiveCfg.wheatPerHp : 0.30;
-    const passiveAdaRate = (passiveCfg.adaPerHp != null ? passiveCfg.adaPerHp : 0.10) * this.getAdaPriceMultiplier();
-    const passiveWheatNeeded = Math.round(missingHp * passiveWheatRate * 100) / 100;
-    const passiveAdaCost = Math.round(missingHp * passiveAdaRate * 100) / 100;
+    const pasifBugday = pasif.wheatPerHp != null ? pasif.wheatPerHp : BUGDAY_YEDEK;
+    const pasifAstra = (pasif.adaPerHp != null ? pasif.adaPerHp : ASTRA_YEDEK) * carpan;
+    const hizliBugday = hizli.wheatPerHp != null ? hizli.wheatPerHp : 3.0;
+    const hizliAstra = (hizli.adAstraPerHp != null ? hizli.adAstraPerHp : 1.0) * carpan;
+    const gerekenBugday = Math.round(eksik * hizliBugday * 100) / 100;
+    const gerekenAstra = Math.round(eksik * hizliAstra * 100) / 100;
 
-    // Hızlı Doldurma Oranları (24 Saatlik Formülün 10 Katı: 1 HP = 3 Buğday + 1 ASTRA)
-    const fastWheatRate = fastCfg.wheatPerHp != null ? fastCfg.wheatPerHp : 3.0;
-    const fastAdaRate = (fastCfg.adAstraPerHp != null ? fastCfg.adAstraPerHp : 1.0) * this.getAdaPriceMultiplier();
-    const wheatNeeded = Math.round(missingHp * fastWheatRate * 100) / 100;
-    const adaCost = Math.round(missingHp * fastAdaRate * 100) / 100;
-
-    const fullHealSec = passiveCfg.FULL_HEAL_SECONDS || 86400; // 24 Saat
-    const secondsRemaining = missingHp > 0 ? Math.ceil((missingHp / maxHp) * fullHealSec) : 0;
-    const wheatInStock = Math.floor(this.state.inventory?.wheat || 0);
-    const adaInBalance = Number(this.state.adAstraBalance) || 0;   // v2: ASTRA tam sayıya yuvarlanmaz (0,5 ASTRA geçerli bakiye)
-    const isPaused = missingHp > 0 && (wheatInStock < passiveWheatRate || adaInBalance < passiveAdaRate);
+    const tamIyilesmeSn = pasif.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
+    const stokBugday = Math.floor(this.state.inventory?.wheat || 0);
+    const bakiye = Number(this.state.adAstraBalance) || 0;   // ASTRA tam sayıya yuvarlanmaz
+    const duraklatildi = eksik > 0 && (stokBugday < pasifBugday || bakiye < pasifAstra);
 
     return {
       hp: Math.floor(hp),
       maxHp,
-      missingHp: Math.ceil(missingHp),
+      missingHp: Math.ceil(eksik),
       hpPct: Math.floor((hp / maxHp) * 100),
-      isFull: missingHp <= 0,
-      isPaused,
-      pauseMessage: isPaused ? 'Hesabınızda yeteri kadar ASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.' : null,
-      // 24 Saatlik Otomatik Pasif İyileşme
-      passiveWheatRate,
-      passiveAdaRate,
-      passiveWheatNeeded,
-      passiveAdaCost,
-      // Hızlı Doyurma (10x)
-      fastWheatRate,
-      fastAdaRate,
-      wheatNeeded,
-      wheatCost: wheatNeeded,
-      adaCost,
-      adAstraCost: adaCost,
-      secondsRemaining,
-      wheatInStock,
-      adaInBalance
+      isFull: eksik <= 0,
+      isPaused: duraklatildi,
+      pauseMessage: duraklatildi ? 'Hesabınızda yeteri kadar ASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.' : null,
+      passiveWheatRate: pasifBugday,
+      passiveAdaRate: pasifAstra,
+      passiveWheatNeeded: Math.round(eksik * pasifBugday * 100) / 100,
+      passiveAdaCost: Math.round(eksik * pasifAstra * 100) / 100,
+      fastWheatRate: hizliBugday,
+      fastAdaRate: hizliAstra,
+      wheatNeeded: gerekenBugday,
+      wheatCost: gerekenBugday,
+      adaCost: gerekenAstra,
+      adAstraCost: gerekenAstra,
+      secondsRemaining: eksik > 0 ? Math.ceil((eksik / maxHp) * tamIyilesmeSn) : 0,
+      wheatInStock: stokBugday,
+      adaInBalance: bakiye
     };
   },
 
-  // Orduda iyileşmesi gereken ancak kaynak yetersizliğinden durdurulan asker var mı?
+  // Yaralı asker var ama buğday ya da ASTRA yetmediği için iyileşme duruyor mu?
   isArmyPassiveHealBlocked() {
-    const units = this.state.soldierUnits || [];
-    const hasWounded = units.some(s => (s.hp != null ? s.hp : (s.maxHp || 100)) < (s.maxHp || 100));
-    if (!hasWounded) return false;
-
-    const wheat = this.state.inventory?.wheat || 0;
-    const ada = this.state.adAstraBalance || 0;
-    return wheat <= 0 || ada <= 0 || wheat < 0.30 || ada < 0.10;
+    if (!(this.state.soldierUnits || []).some(yarali)) return false;
+    const bugday = this.state.inventory?.wheat || 0;
+    const astra = this.state.adAstraBalance || 0;
+    return bugday <= 0 || astra <= 0 || bugday < BUGDAY_YEDEK || astra < ASTRA_YEDEK;
   },
 
-  // 24 Saatlik Otomatik Pasif Asker İyileşmesi:
-  // Her 1 HP için: 24 saat boyunca toplam 0.30 Buğday + 0.10 ASTRA tüketerek kendi kendine yavaş yavaş dolar.
-  // Kural: Hesapta yeteri kadar buğday VEYA ASTRA yoksa süreç tamamen durdurulur!
+  // Pasif iyileşme: her asker zamanla dolar; harcanan buğday yakılır, ASTRA hazineye dağıtılır.
+  // Buğday ya da ASTRA yetmiyorsa süreç durur.
   processSoldierPassiveHealing(deltaSeconds) {
     if (!deltaSeconds || deltaSeconds <= 0) return { wheatRanOut: false, isPaused: false };
 
     const cfg = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
-    const fullHealSec = cfg.FULL_HEAL_SECONDS || 86400; // 24 Saat
-    const wheatPerHp = cfg.wheatPerHp != null ? cfg.wheatPerHp : 0.30;
-    const adaPerHp = cfg.adaPerHp != null ? cfg.adaPerHp : 0.10;
+    const tamIyilesmeSn = cfg.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
+    const bugdayHp = cfg.wheatPerHp != null ? cfg.wheatPerHp : BUGDAY_YEDEK;
+    const astraHp = cfg.adaPerHp != null ? cfg.adaPerHp : ASTRA_YEDEK;
+    const asker = this.state.soldierUnits || [];
 
-    const units = this.state.soldierUnits || [];
-    let changed = false;
-    let anyWounded = false;
-    let healAdaSpent = 0;
-
-    const availableWheat = this.state.inventory?.wheat || 0;
-    const availableAda = this.state.adAstraBalance || 0;
-
-    // Temel kural: Bakiye veya buğday yetersizse iyileşme süreci derhal durdurulur!
-    if (availableWheat <= 0 || availableAda <= 0) {
-      const hasWounded = units.some(s => (s.hp != null ? s.hp : (s.maxHp || 100)) < (s.maxHp || 100));
-      if (hasWounded) {
+    if ((this.state.inventory?.wheat || 0) <= 0 || (this.state.adAstraBalance || 0) <= 0) {
+      const yaraliVar = asker.some(yarali);
+      if (yaraliVar) {
         this.state.isPassiveHealPaused = true;
         this.state.passiveHealPauseReason = 'insufficient_resources';
       }
-      return { wheatRanOut: true, adaRanOut: true, isPaused: hasWounded };
+      return { wheatRanOut: true, adaRanOut: true, isPaused: yaraliVar };
     }
 
-    units.forEach(soldier => {
-      const maxHp = soldier.maxHp || 100;
-      const currentHp = soldier.hp != null ? soldier.hp : maxHp;
-      if (currentHp >= maxHp) return;
-      anyWounded = true;
+    let degisti = false;
+    let yaraliVar = false;
+    let harcananAstra = 0;
 
-      const missingHp = maxHp - currentHp;
-      const hpPerSecond = maxHp / fullHealSec;
-      const hpGain = Math.min(missingHp, hpPerSecond * deltaSeconds);
-      const wheatCost = hpGain * wheatPerHp;
-      const adaCost = hpGain * adaPerHp;
+    for (const s of asker) {
+      const maxHp = s.maxHp || 100;
+      const mevcutHp = s.hp != null ? s.hp : maxHp;
+      if (mevcutHp >= maxHp) continue;
+      yaraliVar = true;
 
-      const curW = this.state.inventory?.wheat || 0;
-      const curA = this.state.adAstraBalance || 0;
+      const kazanilan = Math.min(maxHp - mevcutHp, (maxHp / tamIyilesmeSn) * deltaSeconds);
+      const bugdayBedeli = kazanilan * bugdayHp;
+      const astraBedeli = kazanilan * astraHp;
+      const bugday = this.state.inventory?.wheat || 0;
+      const bakiye = this.state.adAstraBalance || 0;
 
-      // Hesapta yeteri kadar buğday ve adastra yoksa hp doldurma süreci durdurulsun
-      if (wheatCost > curW || adaCost > curA) {
+      if (bugdayBedeli > bugday || astraBedeli > bakiye) {
         this.state.isPassiveHealPaused = true;
         this.state.passiveHealPauseReason = 'insufficient_resources';
-        return;
+        continue;
       }
+      if (!(kazanilan > 0)) continue;
 
-      if (hpGain > 0) {
-        this.state.inventory.wheat = Math.max(0, Math.round((curW - wheatCost) * 100) / 100);
-        this.burnResource('wheat', wheatCost);
-        this.state.adAstraBalance = Math.max(0, Math.round((curA - adaCost) * 1e6) / 1e6);   // v2: 0,001 ASTRA/HP — kuruşa yuvarlamak bedeli siliyordu
-        this._onAdaSpent(curA - this.state.adAstraBalance);
-        healAdaSpent += curA - this.state.adAstraBalance;
-        soldier.hp = Math.min(maxHp, Math.round((currentHp + hpGain) * 100) / 100);
-        changed = true;
-      }
-    });
-
-    if (anyWounded && !this.isArmyPassiveHealBlocked()) {
-      this.state.isPassiveHealPaused = false;
+      this.state.inventory.wheat = Math.max(0, Math.round((bugday - bugdayBedeli) * 100) / 100);
+      this.burnResource('wheat', bugdayBedeli);
+      // 0,001 ASTRA/HP: kuruşa yuvarlamak bedeli siliyordu, bu yüzden 6 ondalık
+      this.state.adAstraBalance = Math.max(0, Math.round((bakiye - astraBedeli) * 1e6) / 1e6);
+      this._onAdaSpent(bakiye - this.state.adAstraBalance);
+      harcananAstra += bakiye - this.state.adAstraBalance;
+      s.hp = Math.min(maxHp, Math.round((mevcutHp + kazanilan) * 100) / 100);
+      degisti = true;
     }
 
-    // Denetim (6 Ekim 2026): iyileşmede harcanan ASTRA eskiden hiçbir kasaya yazılmıyordu (kayboluyordu).
-    // Artık her harcama gibi dağıtılır. Küçük tutarlar birikir, 1 ASTRA'yı geçince deftere işlenir (her karede yazmamak için).
-    if (healAdaSpent > 0) {
-      const due = (Number(this.state.passiveHealAdaPending) || 0) + healAdaSpent;
-      if (due >= 0.01) {   // v2 ölçeği: 0,01 ASTRA biriktikçe deftere (eski eşik 1 ASTRA idi)
-        globalPool.recordTokenSpend(due);
+    if (yaraliVar && !this.isArmyPassiveHealBlocked()) this.state.isPassiveHealPaused = false;
+
+    // İyileşmede harcanan ASTRA her harcama gibi dağıtılır; küçük tutarlar birikir (her karede yazmamak için)
+    if (harcananAstra > 0) {
+      const toplam = (Number(this.state.passiveHealAdaPending) || 0) + harcananAstra;
+      if (toplam >= 0.01) {
+        globalPool.recordTokenSpend(toplam);
         this.state.passiveHealAdaPending = 0;
       } else {
-        this.state.passiveHealAdaPending = due;
+        this.state.passiveHealAdaPending = toplam;
       }
     }
 
-    if (changed) this.requestSave();
-    return { 
-      wheatRanOut: this.isArmyPassiveHealBlocked(),
-      isPaused: this.isArmyPassiveHealBlocked()
-    };
+    if (degisti) this.requestSave();
+    const engelli = this.isArmyPassiveHealBlocked();
+    return { wheatRanOut: engelli, isPaused: engelli };
   },
 
-  // '⚡ ANINDA DOYUR & İYİLEŞTİR': Kalan Buğday ihtiyacını + hızlı iyileştirme bedelini (ASTRA) anında harcayıp HP'yi MaxHP'ye tamamlar.
+  // Anında doyur ve iyileştir: kalan buğday ihtiyacı + hızlı iyileştirme bedeli (ASTRA) harcanıp can doldurulur
   instantHealSoldierUnit(soldierIndex) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return { success: false, message: 'Asker bulunamadı!' };
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return { success: false, message: 'Asker bulunamadı!' };
 
-    const info = this.getSoldierHealInfo(soldierIndex);
-    if (!info || info.isFull) {
-      return { success: false, message: `${soldier.name} zaten tam can!` };
+    const bilgi = this.getSoldierHealInfo(soldierIndex);
+    if (!bilgi || bilgi.isFull) return { success: false, message: `${asker.name} zaten tam can!` };
+
+    const envanter = this.state.inventory;
+    if ((envanter.wheat || 0) < bilgi.wheatNeeded) {
+      return { success: false, message: `⚠️ Yetersiz Buğday! (${bilgi.wheatNeeded} 🌾 gerekli, Depoda: ${bilgi.wheatInStock})` };
+    }
+    if ((this.state.adAstraBalance || 0) < bilgi.adaCost) {
+      return { success: false, message: `⚠️ Yetersiz ASTRA! (${bilgi.adaCost} 🟣 ASTRA gerekli)` };
     }
 
-    const inv = this.state.inventory;
-    if ((inv.wheat || 0) < info.wheatNeeded) {
-      return { success: false, message: `⚠️ Yetersiz Buğday! (${info.wheatNeeded} 🌾 gerekli, Depoda: ${info.wheatInStock})` };
-    }
-    if ((this.state.adAstraBalance || 0) < info.adaCost) {
-      return { success: false, message: `⚠️ Yetersiz ASTRA! (${info.adaCost} 🟣 ASTRA gerekli)` };
-    }
-
-    inv.wheat -= info.wheatNeeded;
-    this.burnResource('wheat', info.wheatNeeded);
-    this.state.adAstraBalance -= info.adaCost;
-    this._onAdaSpent(info.adaCost);
-    soldier.hp = soldier.maxHp || 100;
-
-    // 🔥 Hazine Muhasebesi ve Deflasyonist Yakım Entegrasyonu
-    // Hızlı doyurulan askerin harcanan ASTRA bedeli: bir kısmı kalıcı yakılır, çoğu hazine havuzlarına aktarılır (bkz. recordTokenSpend)
-    if (info.adaCost > 0) {
-      globalPool.recordTokenSpend(info.adaCost);
-    }
+    envanter.wheat -= bilgi.wheatNeeded;
+    this.burnResource('wheat', bilgi.wheatNeeded);
+    this.state.adAstraBalance -= bilgi.adaCost;
+    this._onAdaSpent(bilgi.adaCost);
+    asker.hp = asker.maxHp || 100;
+    if (bilgi.adaCost > 0) globalPool.recordTokenSpend(bilgi.adaCost);
 
     sound.playRepair();
     this.saveState();
-
+    const yakimYuzde = Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100);
     return {
       success: true,
-      message: `⚡ ${soldier.name} anında tam cana kavuştu! (-${info.wheatNeeded} 🌾 Buğday, -${info.adaCost} 🟣 ASTRA • 🔥 %${Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100)} Yakıldı)`
+      message: `⚡ ${asker.name} anında tam cana kavuştu! (-${bilgi.wheatNeeded} 🌾 Buğday, -${bilgi.adaCost} 🟣 ASTRA • 🔥 %${yakimYuzde} Yakıldı)`
     };
   },
 
@@ -326,49 +285,48 @@ export const orduYontemleri = {
     return this.instantHealSoldierUnit(soldierIndex);
   },
 
+  // ── Kuşanma ────────────────────────────────────────────────────────────
+  // Krallık donanımındaki (Demirci'de dövülmüş) eşyayı askere takar; eski eşya krallık yuvasına döner
   equipSoldierSlot(soldierIndex, slotKey) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier) return { success: false, message: 'Asker bulunamadı.' };
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return { success: false, message: 'Asker bulunamadı.' };
 
-    const playerEquip = this.state.equipment ? this.state.equipment[slotKey] : null;
-    if (!playerEquip) {
+    const esya = this.state.equipment ? this.state.equipment[slotKey] : null;
+    if (!esya) {
       return { success: false, message: `Demirci'de dövülmüş boş bir ${slotKey} bulunamadı! Önce Demirci'de eşya dövmelisin.` };
     }
 
-    if (!soldier.equipment) soldier.equipment = {};
-    const oldItem = soldier.equipment[slotKey];
-
-    soldier.equipment[slotKey] = { ...playerEquip };
+    if (!asker.equipment) asker.equipment = {};
+    const eskiEsya = asker.equipment[slotKey];
+    asker.equipment[slotKey] = { ...esya };
     delete this.state.equipment[slotKey];
-
-    if (oldItem) {
-      this.state.equipment[slotKey] = oldItem;
-    }
+    if (eskiEsya) this.state.equipment[slotKey] = eskiEsya;
 
     sound.playRepair();
     this.saveState();
-    return { success: true, message: `🛡️ ${soldier.name} üzerine ${playerEquip.name} başarıyla kuşandırıldı!` };
+    return { success: true, message: `🛡️ ${asker.name} üzerine ${esya.name} başarıyla kuşandırıldı!` };
   },
 
+  // Askerden çıkarılan eşya boş krallık yuvasına, doluysa depoya (armoryInventory) gider
   unequipSoldierSlot(soldierIndex, slotKey) {
-    const soldier = (this.state.soldierUnits || [])[soldierIndex];
-    if (!soldier || !soldier.equipment || !soldier.equipment[slotKey]) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker || !asker.equipment || !asker.equipment[slotKey]) {
       return { success: false, message: 'Çıkarılacak ekipman yok.' };
     }
 
-    const item = soldier.equipment[slotKey];
-    soldier.equipment[slotKey] = null;
+    const esya = asker.equipment[slotKey];
+    asker.equipment[slotKey] = null;
 
     if (!this.state.equipment) this.state.equipment = {};
     if (!this.state.equipment[slotKey]) {
-      this.state.equipment[slotKey] = item;
+      this.state.equipment[slotKey] = esya;
     } else {
       if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
-      this.state.armoryInventory.push(item);
+      this.state.armoryInventory.push(esya);
     }
 
     sound.playRepair();
     this.saveState();
-    return { success: true, message: `🛡️ ${item.name} kuşanmadan çıkarıldı ve depoya aktarıldı!` };
-  },
+    return { success: true, message: `🛡️ ${esya.name} kuşanmadan çıkarıldı ve depoya aktarıldı!` };
+  }
 };

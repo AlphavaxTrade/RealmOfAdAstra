@@ -6,47 +6,39 @@ import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS, zeroRes, round3 } from './ortak.js';
 
 export const ekonomiYontemleri = {
-  // 🔥 HAMMADDE KALICI YAKIMI (BURN) VE TOTAL ARZDAN DÜŞÜLMESİ
-  // Oyunda bir odun, demir veya buğday harcandığında anında yakılır, sayacı artar ve küresel total arzdan silinir.
+  // Hammadde kalıcı yakımı: harcanan hammadde oyuncunun sayacına yazılır, dünya toplam arzından (haftalık kota)
+  // düşer ve pazar değeri kadar katkı puanı kazandırır. Döndürür: yakılan miktar.
   burnResource(resourceKey, amount) {
-    const qty = Number(amount) || 0;
-    if (qty <= 0) return 0;
+    const miktar = Number(amount) || 0;
+    if (miktar <= 0) return 0;
 
-    if (!this.state.burnedResources) {
-      this.state.burnedResources = zeroRes();
-    }
-    this.state.burnedResources[resourceKey] = (this.state.burnedResources[resourceKey] || 0) + qty;
+    if (!this.state.burnedResources) this.state.burnedResources = zeroRes();
+    this.state.burnedResources[resourceKey] = (this.state.burnedResources[resourceKey] || 0) + miktar;
+    globalPool.recordResourceBurn(resourceKey, miktar);
 
-    try {
-      if (typeof globalPool !== 'undefined' && globalPool && typeof globalPool.recordResourceBurn === 'function') {
-        globalPool.recordResourceBurn(resourceKey, qty);
-      }
-    } catch (e) {
-      console.warn('globalPool recordResourceBurn error:', e);
+    const birimFiyat = Number(ammMarket.getPrice(resourceKey));
+    if (isFinite(birimFiyat) && birimFiyat > 0) {
+      this._addContribution(miktar * birimFiyat * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
     }
-    // Katkı puanı: yakılan hammaddenin pazar değeri
-    const unitPrice = (ammMarket && typeof ammMarket.getPrice === 'function') ? Number(ammMarket.getPrice(resourceKey)) : 0;
-    if (isFinite(unitPrice) && unitPrice > 0) this._addContribution(qty * unitPrice * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
-    return qty;
+    return miktar;
   },
 
-  // Kullanılınca yok olan oyun içi eşyaların yakım kaydı (oyuncu + dünya). Yalnız kayıt; ekonomiyi değiştirmez.
-  // Eksi miktar kaydı geri alır (ör. Kolezyum sırasından çıkınca anahtar iade edilir).
+  // Kullanılınca yok olan eşyaların (parça, anahtar, kutu, parşömen) yakım kaydı: oyuncu + dünya. Yalnız kayıt,
+  // ekonomiyi değiştirmez. Eksi miktar kaydı geri alır (ör. Kolezyum sırasından çıkınca anahtar iade edilir).
   burnItem(kind, amount) {
-    const qty = Number(amount) || 0;
-    if (!qty) return 0;
+    const miktar = Number(amount) || 0;
+    if (!miktar) return 0;
     if (!this.state.burnedItems) this.state.burnedItems = {};
-    this.state.burnedItems[kind] = Math.max(0, (this.state.burnedItems[kind] || 0) + qty);
-    try {
-      if (typeof globalPool !== 'undefined' && globalPool && typeof globalPool.recordItemBurn === 'function') globalPool.recordItemBurn(kind, qty);
-    } catch (e) { /* kayıt hatası işlemi bozmasın */ }
-    return qty;
+    this.state.burnedItems[kind] = Math.max(0, (this.state.burnedItems[kind] || 0) + miktar);
+    globalPool.recordItemBurn(kind, miktar);
+    return miktar;
   },
 
-  // v2: her hammadde için (odun, demir, buğday, taş, kömür, şifalı ot)
+  // Birden çok hammaddeyi birlikte yakar ({ wood: 5, iron: 2 }); tanımsız anahtarlar yok sayılır
   burnResources(amounts = {}) {
+    const anahtarlar = RES_KEYS();
     for (const [k, v] of Object.entries(amounts || {})) {
-      if (RES_KEYS().includes(k) && Number(v) > 0) this.burnResource(k, Number(v));
+      if (anahtarlar.includes(k) && Number(v) > 0) this.burnResource(k, Number(v));
     }
   },
 
@@ -347,15 +339,13 @@ export const ekonomiYontemleri = {
     if (this.processPriceMultiplierWeek()) this.saveState();
   },
 
-  // 🎪 Karnaval Çarkında Anında Yakılan Hammaddeler Sayacı
+  // Karnaval çarkında yakılan hammadde: ayrı sayaca yazılır ve normal yakım gibi işlenir
   recordCarnivalResourceBurn(resourceKey, amount) {
-    const qty = Number(amount) || 0;
-    if (qty <= 0) return 0;
-    if (!this.state.carnivalBurnedResources) {
-      this.state.carnivalBurnedResources = zeroRes();
-    }
-    this.state.carnivalBurnedResources[resourceKey] = (this.state.carnivalBurnedResources[resourceKey] || 0) + qty;
-    this.burnResource(resourceKey, qty);
-    return qty;
+    const miktar = Number(amount) || 0;
+    if (miktar <= 0) return 0;
+    if (!this.state.carnivalBurnedResources) this.state.carnivalBurnedResources = zeroRes();
+    this.state.carnivalBurnedResources[resourceKey] = (this.state.carnivalBurnedResources[resourceKey] || 0) + miktar;
+    this.burnResource(resourceKey, miktar);
+    return miktar;
   },
 };

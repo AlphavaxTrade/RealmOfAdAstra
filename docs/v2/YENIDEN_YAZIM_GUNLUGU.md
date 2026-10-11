@@ -23,6 +23,8 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | `js/ammMarket.js` (pazar motoru) | Yeniden yazıldı | aynı test; kullanılmayan 6 yöntem kaldırıldı |
 | `js/globalPool.js` (küresel havuz, UBI, kota) | Yeniden yazıldı | aynı test; kullanılmayan 5 yöntem kaldırıldı |
 | `js/gameState.js` (oyuncu durumu çekirdeği) | Yeniden yazıldı | tam oyun altın kaydı (21 adım) değişmedi |
+| `js/gameState/ordu.js`, `dunyaBossu.js`, `askerGelisim.js`, `kolezyum.js` | Yeniden yazıldı | `tests/test_oyun_kurallari_altin.mjs`: 4.000 rastgele işlem (58 farklı işlem, 3 oyuncu, zaman atlamaları, haftalık hesaplaşma) birebir aynı |
+| `js/gameState/ekonomi.js`, `techizat.js`, `ozet.js` | Eski parçaları yeniden yazıldı | aynı test |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -69,3 +71,17 @@ Karar bekleyen / sonraya bırakılan:
    "eski yüzde sistemi" sanıp 43,2 ile çarpıyordu (40 dakika kalan balta → 1.728). Sunucu her istekte kaydı yüklediği için
    bu, onarım parası ödemeden alet yenilemenin yoluydu. Yüzde dönüşümü kaldırıldı (yaşayan kayıtlar zaten dakika cinsinden);
    `tests/test_alet_dayaniklilik_yukleme.mjs` korur. Altın kayıt değişmedi.
+
+### Asker ve boss modülleri: bulgular
+10. **Dünya Bossu erken çekilmesi önceki savaşın ödülünü siliyordu (düzeltildi).** Savaş sonrası talep edilmemiş ödül varken
+    ordu yeniden kilitlenip erken çekilince `claimableRewardAda` sıfırlanıyordu; ASTRA kasadan çoktan çekilmişti, oyuncuya
+    hiç geçmeden yok oluyordu (denemede 1.008 ASTRA). `tests/test_dunya_bossu_odul_kaybi.mjs` korur.
+11. **Sahte P2P eser pazarı.** `js/gameState/p2p.js` içinde uydurma satıcılar ("Gezgin_Goblins", "Lord_Kaelen" …) ve uydurma
+    ilanlar var; sunucu işlem listesinde yok, yani çevrimiçi modda çalışmaz, tek kişilik modda oyuncuya gerçek pazar gibi
+    görünür. Silinecek: app.js pazar sekmesi yeniden yazılırken (modül ve ekranı birlikte).
+12. **`learnSoldierSkill` ölü koddu (silindi).** Sunucu listesinde ve arayüzde yoktu; yetenek kilidini seviye şartı olmadan
+    atlatıyordu.
+13. **`js/audio.js` boş bir taklit.** Sesler kapalı ama `sound.playX()` çağrıları ~60 yerde (app.js + oyun kuralları)
+    duruyor. app.js yeniden yazılırken çağrılar ve modül birlikte silinecek.
+14. **Kolezyum ve gerçek PvP'de düşman taraf yetenek kullanmıyor** (combat.js bulgu 2). Kolezyum hazır rakibine
+    `skills: ['shieldWall','shockwave']` veriliyor ama motor düşman taraf için `abilities` okuyor: yazılan yetenekler etkisiz.

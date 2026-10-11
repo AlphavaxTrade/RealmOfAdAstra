@@ -6,70 +6,73 @@ import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { zeroRes, RES_KEYS } from './ortak.js';
 
-// ISO hafta anahtarı ("2026-W41"): haftalık buyback'in günde değil haftada bir çalışmasını sağlar (UTC Pazartesi başlangıçlı)
+// ISO hafta anahtarı ("2026-W41"): haftalık geri alımın günde değil haftada bir çalışmasını sağlar.
+// Hafta UTC Pazartesi başlar.
 export function isoWeekKey(ms) {
   const d = new Date(ms);
   d.setUTCHours(0, 0, 0, 0);
-  d.setUTCDate(d.getUTCDate() + 1 - (d.getUTCDay() || 7));            // haftanın Pazartesi'sine sabitle
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+  d.setUTCDate(d.getUTCDate() + 1 - (d.getUTCDay() || 7));   // haftanın Pazartesi'sine sabitle
+  const yilBasi = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const hafta = Math.ceil((((d - yilBasi) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(hafta).padStart(2, '0')}`;
 }
 
 export const ozetYontemleri = {
-  // =========================================================================
-  // DASHBOARD: KRALIK GENEL BAKIŞ & TOPLU EYLEMLER
-  // =========================================================================
+  // Krallık merkezinin tek veri kaynağı: seferler, aletler, ordu, depo ve altı hammaddenin silo doluluğu
   getRealmSummary() {
     const state = this.state;
-    const tools = state.tools || {};
-    const soldiers = state.soldierUnits || [];
-    const exps = state.activeExpeditions || {};
+    const aletler = state.tools || {};
+    const asker = state.soldierUnits || [];
+    const seferler = state.activeExpeditions || {};
 
-    // Aktif Seferler
-    const activeExps = Object.keys(exps).map(nodeId => {
-      const exp = exps[nodeId];
-      const info = this.getAccruedExpeditionHarvest(nodeId);
-      const nodeConfig = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
-      return { nodeId, name: nodeConfig?.name || nodeId, icon: nodeConfig?.icon || '📦', ...info, isCompleted: exp.isCompleted };
+    const aktifSeferler = Object.keys(seferler).map(nodeId => {
+      const bilgi = this.getAccruedExpeditionHarvest(nodeId);
+      const kaynak = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId];
+      return { nodeId, name: kaynak?.name || nodeId, icon: kaynak?.icon || '📦', ...bilgi, isCompleted: seferler[nodeId].isCompleted };
     });
-    const completedExps = activeExps.filter(e => e.isCompleted);
 
-    // Alet Sağlığı (72 Saat = 4320 Dakika)
-    const toolSummary = Object.keys(tools).map(toolId => {
-      const t = tools[toolId];
-      const cfg = GAME_CONFIG.TOOLS[toolId];
-      const maxDur = cfg?.maxDurability || 4320;
-      const curDur = Math.max(0, Math.min(maxDur, t.durability != null ? t.durability : maxDur));
-      const pct = Math.min(100, Math.max(0, Math.round((curDur / maxDur) * 100)));
-      return { id: toolId, name: cfg?.name || toolId, durability: curDur, maxDurability: maxDur, pct, icon: cfg?.icon || '🔧' };
+    // Alet sağlığı: dayanıklılık dakika cinsinden (varsayılan 72 saat = 4320)
+    const aletOzeti = Object.keys(aletler).map(id => {
+      const cfg = GAME_CONFIG.TOOLS[id];
+      const enFazla = cfg?.maxDurability || 4320;
+      const guncel = Math.max(0, Math.min(enFazla, aletler[id].durability != null ? aletler[id].durability : enFazla));
+      return {
+        id, name: cfg?.name || id, durability: guncel, maxDurability: enFazla,
+        pct: Math.min(100, Math.max(0, Math.round((guncel / enFazla) * 100))),
+        icon: cfg?.icon || '🔧'
+      };
     });
-    const avgToolHealth = toolSummary.length > 0 ? Math.round(toolSummary.reduce((s, t) => s + t.pct, 0) / toolSummary.length) : 100;
+    const aletSagligi = aletOzeti.length > 0 ? Math.round(aletOzeti.reduce((t, a) => t + a.pct, 0) / aletOzeti.length) : 100;
 
-    // Ordu Durumu
-    const totalAtk = soldiers.reduce((s, sol, i) => s + (this.getSoldierFullStats(i)?.totalAtk || 20), 0);
-    const totalHp = soldiers.reduce((s, sol, i) => s + (this.getSoldierFullStats(i)?.totalMaxHp || 100), 0);
-    const woundedCount = soldiers.filter(s => (s.hp || 0) < (s.maxHp || 100)).length;
-    const avgHpPct = soldiers.length > 0 ? Math.round(soldiers.reduce((s, sol) => s + ((sol.hp || 0) / (sol.maxHp || 100)) * 100, 0) / soldiers.length) : 100;
+    // Ordu
+    const toplamAtk = asker.reduce((t, _, i) => t + (this.getSoldierFullStats(i)?.totalAtk || 20), 0);
+    const toplamHp = asker.reduce((t, _, i) => t + (this.getSoldierFullStats(i)?.totalMaxHp || 100), 0);
+    const yaralilar = asker.filter(s => (s.hp || 0) < (s.maxHp || 100)).length;
+    const hpYuzdesi = asker.length > 0
+      ? Math.round(asker.reduce((t, s) => t + ((s.hp || 0) / (s.maxHp || 100)) * 100, 0) / asker.length)
+      : 100;
 
-    // Depo
-    const inv = state.inventory || {};
-    const whCap = this.getWarehouseCapacity();
+    // Depo: oyunun bütün hammaddeleri için doluluk (kapasite 0 ise yüzde 0)
+    const envanter = state.inventory || {};
+    const kapasite = this.getWarehouseCapacity();
+    const meta = GAME_CONFIG.RESOURCE_META || {};
 
     return {
       level: state.level, xp: state.currentXp, ada: state.adAstraBalance,
       stamina: state.stamina, maxStamina: this.getMaxStamina(),
-      activeExps, completedExps,
-      toolSummary, avgToolHealth,
-      soldierCount: soldiers.length, totalAtk, totalHp, woundedCount, avgHpPct,
-      inventory: inv, warehouseCapacity: whCap,
-      // Silo doluluğu: oyunun bütün hammaddeleri için (GAME_CONFIG.RESOURCE_KEYS), cap 0 ise yüzde 0
+      activeExps: aktifSeferler, completedExps: aktifSeferler.filter(e => e.isCompleted),
+      toolSummary: aletOzeti, avgToolHealth: aletSagligi,
+      soldierCount: asker.length, totalAtk: toplamAtk, totalHp: toplamHp, woundedCount: yaralilar, avgHpPct: hpYuzdesi,
+      inventory: envanter, warehouseCapacity: kapasite,
       kaynaklar: RES_KEYS().map(key => {
-        const meta = (GAME_CONFIG.RESOURCE_META || {})[key] || {};
-        const miktar = Number(inv[key]) || 0;
-        const kapasite = Number(whCap[key]) || 0;
-        return { key, name: meta.name || key, icon: meta.icon || '📦', color: meta.color || '#10b981', amount: miktar, cap: kapasite, pct: kapasite > 0 ? Math.min(100, Math.round((miktar / kapasite) * 100)) : 0 };
-      }),
+        const m = meta[key] || {};
+        const miktar = Number(envanter[key]) || 0;
+        const kap = Number(kapasite[key]) || 0;
+        return {
+          key, name: m.name || key, icon: m.icon || '📦', color: m.color || '#10b981',
+          amount: miktar, cap: kap, pct: kap > 0 ? Math.min(100, Math.round((miktar / kap) * 100)) : 0
+        };
+      })
     };
   },
 

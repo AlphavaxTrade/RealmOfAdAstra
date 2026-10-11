@@ -1,20 +1,36 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Dünya Bossu: bilgi, ordu kilitleme, savaş, ödül
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: Dünya Bossu (bilgi, ordu kilitleme, haftalık savaş, ödül)
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
+//
+// Akış: oyuncu ordusunu kilitler (stake) → Pazar 18:00 TSİ'de tek seferlik otomatik savaş hasarı ve payı hesaplar
+// → ödül hazinenin worldBoss kasasından çekilir (basılmaz) ve talep edilebilir bakiyeye yazılır → oyuncu talep eder.
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
 
+const HAFTA_MS = 7 * 24 * 3600 * 1000;
+const KASA_YEDEK = 8000000;   // kasa okunamazsa gösterim için varsayılan haftalık havuz
+
+// Oyuncunun kilitlediği orduyu dünya toplamından düşer ve oyuncunun kilit alanlarını sıfırlar
+function kilidiBirak(boss) {
+  const asker = boss.userStakedSoldiersCount || 0;
+  boss.stakedArmyCount = Math.max(0, (boss.stakedArmyCount || 0) - asker);
+  boss.totalStakedAtk = Math.max(0, (boss.totalStakedAtk || 0) - (boss.userStakedAtk || 0));
+  boss.totalStakedHp = Math.max(0, (boss.totalStakedHp || 0) - (boss.userStakedHp || 0));
+  boss.userStaked = false;
+  boss.userStakedSoldiersCount = 0;
+  boss.userStakedAtk = 0;
+  boss.userStakedHp = 0;
+  return asker;
+}
+
 export const dunyaBossuYontemleri = {
-  // =========================================================================
-  // SAVAŞ ALANI: HAFTALIK WORLD BOSS ORDU STAKE & OTOMATİK SAVAŞ (PAZAR 18:00 TSİ)
-  // =========================================================================
   getWorldBossInfo() {
     if (!this.state.worldBoss) {
       this.state.worldBoss = {
         name: 'Kadim Kıyamet Behemoth\'u (WORLD BOSS)',
         icon: '🌋',
-        weeklyAdaPool: (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('worldBoss')) : 8000000,
+        weeklyAdaPool: Math.round(treasury.getPool('worldBoss')),
         bossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         maxBossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         bossAtk: 500000,
@@ -31,174 +47,47 @@ export const dunyaBossuYontemleri = {
         lastBattleTimestamp: null
       };
     } else {
-      if (typeof treasury !== 'undefined' && treasury.getPool) {
-        this.state.worldBoss.weeklyAdaPool = Math.round(treasury.getPool('worldBoss')) || 8000000;
+      const boss = this.state.worldBoss;
+      boss.weeklyAdaPool = Math.round(treasury.getPool('worldBoss')) || KASA_YEDEK;
+      if (!boss.userStaked) {
+        boss.stakedArmyCount = 0;
+        boss.totalStakedAtk = 0;
+        boss.totalStakedHp = 0;
       }
-      if (!this.state.worldBoss.userStaked) {
-        this.state.worldBoss.stakedArmyCount = 0;
-        this.state.worldBoss.totalStakedAtk = 0;
-        this.state.worldBoss.totalStakedHp = 0;
-      }
-      if (this.state.worldBoss.claimableRewardAda == null) {
-        this.state.worldBoss.claimableRewardAda = 0;
-      }
+      if (boss.claimableRewardAda == null) boss.claimableRewardAda = 0;
     }
     return this.state.worldBoss;
   },
 
-  // Erken çekilme cezası oranı: taban (%18) + biten Konsey projelerinin etkisi. Savunma Duvarı projesi bitince 6 puan düşer (%12).
-  // Bonus ortak dünya durumundan (globalPool) okunur: projeyi bitiren herkes için geçerlidir, sunucuda da aynı yöntem çalışır.
+  // Erken çekilme cezası oranı: taban (%18) + biten Konsey projelerinin etkisi (Savunma Duvarı bitince %12).
+  // Bonus ortak dünya durumundan okunur: projeyi bitiren herkes için geçerlidir, sunucuda da aynı çalışır.
   getWorldBossEarlyUnstakeRate() {
     const taban = GAME_CONFIG.WORLD_BOSS.EARLY_UNSTAKE_PENALTY ?? 0.18;
-    const bonus = (typeof globalPool !== 'undefined' && globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('bossPenaltyPoints') : 0;
-    return Math.max(0, Math.round((taban + bonus) * 10000) / 10000);   // 0,18 − 0,06 = 0,12 tam çıksın (kayan nokta)
+    const bonus = globalPool.getProjectBonus ? globalPool.getProjectBonus('bossPenaltyPoints') : 0;
+    return Math.max(0, Math.round((taban + bonus) * 10000) / 10000);   // 0,18 − 0,06 tam 0,12 çıksın (kayan nokta)
   },
 
-  // Kullanıcının ordusunun Pazar 18:00 TSİ savaşındaki hasar gücünü hesaplar:
-  // Her 1 ATK = 1:1 rasyo, Her 1 HP = 1:0.25 rasyo + Yetenek Çeşitliliği Bonusu (max +%50)
+  // Kilitli ordunun savaştaki hasar gücü: 1 ATK = 1, 1 HP = 0,25; yetenek çeşitliliği bonusuyla (en fazla +%50)
   calculateUserWorldBossPower() {
     const boss = this.getWorldBossInfo();
     const atk = boss.userStakedAtk || 0;
     const hp = boss.userStakedHp || 0;
-    const baseDamage = Math.floor((atk * 1.0) + (hp * 0.25));
+    const tabanHasar = Math.floor((atk * 1.0) + (hp * 0.25));
 
-    // Rol / Yetenek Çeşitliliği Bonusu
-    const diversity = this.calculateSquadSkillDiversity();
-    const calculatedDamage = Math.floor(baseDamage * diversity.diversityMultiplier);
-    const estimatedAda = Math.floor((calculatedDamage * boss.weeklyAdaPool) / boss.maxBossHp);
+    const cesitlilik = this.calculateSquadSkillDiversity();
+    const hasar = Math.floor(tabanHasar * cesitlilik.diversityMultiplier);
     return {
       atk,
       hp,
       atkContribution: Math.floor(atk * 1.0),
       hpContribution: Math.floor(hp * 0.25),
-      baseDamage,
-      calculatedDamage,
-      estimatedAda,
+      baseDamage: tabanHasar,
+      calculatedDamage: hasar,
+      estimatedAda: Math.floor((hasar * boss.weeklyAdaPool) / boss.maxBossHp),
       earlyUnstakePenaltyRate: this.getWorldBossEarlyUnstakeRate(),
-      diversityMultiplier: diversity.diversityMultiplier,
-      uniqueRoles: diversity.uniqueRoles,
-      rolesFound: diversity.rolesFound
-    };
-  },
-
-  stakeArmyForWorldBoss() {
-    const soldiers = this.state.soldierUnits || [];
-    if (soldiers.length === 0) {
-      return { success: false, message: 'World Boss savaşına kilitlemek için ordunuzda asker bulunmalıdır!' };
-    }
-    if (this.state.pvpQueue) {
-      return { success: false, message: '🔒 Askerlerinden biri Kolezyumda maç arıyor. Önce sıradan çık.' };
-    }
-
-    let userAtk = 0;
-    let userHp = 0;
-    for (let i = 0; i < soldiers.length; i++) {
-      const stats = this.getSoldierFullStats(i);
-      userAtk += stats.totalAtk;
-      userHp += stats.totalMaxHp;
-    }
-
-    const boss = this.getWorldBossInfo();
-    if (boss.userStaked) {
-      boss.stakedArmyCount = Math.max(0, (boss.stakedArmyCount || 0) - (boss.userStakedSoldiersCount || 0));
-      boss.totalStakedAtk = Math.max(0, (boss.totalStakedAtk || 0) - (boss.userStakedAtk || 0));
-      boss.totalStakedHp = Math.max(0, (boss.totalStakedHp || 0) - (boss.userStakedHp || 0));
-    }
-    boss.userStaked = true;
-    boss.userStakedSoldiersCount = soldiers.length;
-    boss.userStakedAtk = userAtk;
-    boss.userStakedHp = userHp;
-    boss.stakedArmyCount = (boss.stakedArmyCount || 0) + soldiers.length;
-    boss.totalStakedAtk = (boss.totalStakedAtk || 0) + userAtk;
-    boss.totalStakedHp = (boss.totalStakedHp || 0) + userHp;
-
-    const power = this.calculateUserWorldBossPower();
-
-    sound.playLevelUp();
-    this.saveState();
-
-    return {
-      success: true,
-      message: `🛡️ ${soldiers.length} kişilik ordun (${userAtk} ATK + ${userHp} HP ➔ ${power.calculatedDamage.toLocaleString()} Hasar Gücü) Pazar 18:00 TSİ otomatik World Boss savaşı için başarıyla kilitlendi!`,
-      boss,
-      power
-    };
-  },
-
-  // Bu haftanın savaş zamanı (Pazar 15:00 UTC = 18:00 TSİ) geldi mi?
-  getWorldBossSchedule(now = Date.now()) {
-    const cfg = GAME_CONFIG.WORLD_BOSS;
-    const d = new Date(now);
-    const day = d.getUTCDay();
-    // Bu haftanın Pazar 15:00 UTC anı
-    const thisSunday = new Date(d);
-    thisSunday.setUTCDate(d.getUTCDate() - day + cfg.BATTLE_DAY_UTC);
-    thisSunday.setUTCHours(cfg.BATTLE_HOUR_UTC, 0, 0, 0);
-    let battleTime = thisSunday.getTime();
-    if (battleTime > now) battleTime -= 7 * 24 * 3600 * 1000; // en son geçen savaş anı
-    const nextBattle = battleTime + 7 * 24 * 3600 * 1000;
-    return { lastBattleTime: battleTime, nextBattleTime: nextBattle, msUntilNext: nextBattle - now };
-  },
-
-  // Her Pazar TSİ 18:00'da TEK SEFERLİK otomatik savaş.
-  //
-  // ═══════════════════════════════════════════════════════════════════════
-  // v1'DEKİ EN AĞIR AÇIK (F-03)
-  // ═══════════════════════════════════════════════════════════════════════
-  // Whitepaper savaşın "her Pazar 18:00'da tek seferlik ve otomatik" olduğunu
-  // söylüyordu ama kodda ZAMANLAYICI YOKTU. Bunun yerine savaş alanı modalına,
-  // geliştirici paneline değil OYUNCUNUN GÖRDÜĞÜ EKRANA, bir "[Test] Pazar
-  // Savaşını Şimdi Simüle Et" butonu konmuştu. Her tıklama hasarı ve
-  // toplanabilir ödülü artırıyordu; sınır yoktu. Tam donanımlı 18 askerle
-  // tıklama başına ~901 ASTRA, saniyede birkaç tıklama.
-  //
-  // v2'de savaş gerçek takvime bağlıdır ve haftada bir kez çalışır.
-  executeSundayAutoWorldBossBattle({ force = false } = {}) {
-    const boss = this.getWorldBossInfo();
-    if (!boss.userStaked) {
-      return { success: false, message: 'Kilitli ordunuz bulunmadığı için bu haftaki savaşa dahil olunamadı.' };
-    }
-
-    const sched = this.getWorldBossSchedule();
-    if (!force && (boss.lastBattleTimestamp || 0) >= sched.lastBattleTime) {
-      const hrs = Math.floor(sched.msUntilNext / 3600000);
-      const mins = Math.floor((sched.msUntilNext % 3600000) / 60000);
-      return {
-        success: false,
-        alreadyFought: true,
-        message: `⏳ Bu haftanın World Boss savaşı çoktan gerçekleşti. Sonraki savaşa ${hrs} saat ${mins} dakika kaldı (Pazar 18:00 TSİ).`
-      };
-    }
-
-    const power = this.calculateUserWorldBossPower();
-    const damageDealt = power.calculatedDamage;
-
-    boss.userDamage = damageDealt; // haftalık — birikmez
-    boss.bossHp = Math.max(0, boss.bossHp - damageDealt);
-
-    // YASA 1: ödül hazinenin worldBoss havuzundan çekilir, basılmaz.
-    const request = Math.max(1, Math.floor((damageDealt * boss.weeklyAdaPool) / boss.maxBossHp));
-    const draw = globalPool.withdrawReward('worldBoss', request);
-    const rewardAda = draw.granted;
-
-    boss.claimableRewardAda = (boss.claimableRewardAda || 0) + rewardAda;
-    boss.lastBattleTimestamp = Date.now();
-
-    // Ordu kilidi savaştan sonra açılır
-    boss.userStaked = false;
-
-    sound.playLevelUp();
-    this.saveState();
-
-    return {
-      success: true,
-      damageDealt,
-      rewardAda,
-      requested: request,
-      scaled: draw.scaleFactor < 0.999,
-      budgetFull: !!draw.budgetFull,
-      claimableRewardAda: boss.claimableRewardAda,
-      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${damageDealt.toLocaleString()} hasar vurdu ve ${rewardAda.toLocaleString()} ASTRA kazandı.${draw.budgetFull ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : (draw.scaleFactor < 0.999 ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : '')}`
+      diversityMultiplier: cesitlilik.diversityMultiplier,
+      uniqueRoles: cesitlilik.uniqueRoles,
+      rolesFound: cesitlilik.rolesFound
     };
   },
 
@@ -206,91 +95,175 @@ export const dunyaBossuYontemleri = {
     return !!(this.state.worldBoss && this.state.worldBoss.userStaked);
   },
 
-  // Kullanıcının World Boss ekranına düşen ASTRA ödülünü cüzdanına çekmesi (Claim)
+  // Bütün ordu savaşa kilitlenir; daha önce kilitliyse eski kilidin payı dünya toplamından düşülüp yeniden eklenir
+  stakeArmyForWorldBoss() {
+    const asker = this.state.soldierUnits || [];
+    if (asker.length === 0) {
+      return { success: false, message: 'World Boss savaşına kilitlemek için ordunuzda asker bulunmalıdır!' };
+    }
+    if (this.state.pvpQueue) {
+      return { success: false, message: '🔒 Askerlerinden biri Kolezyumda maç arıyor. Önce sıradan çık.' };
+    }
+
+    let atk = 0;
+    let hp = 0;
+    for (let i = 0; i < asker.length; i++) {
+      const istatistik = this.getSoldierFullStats(i);
+      atk += istatistik.totalAtk;
+      hp += istatistik.totalMaxHp;
+    }
+
+    const boss = this.getWorldBossInfo();
+    if (boss.userStaked) kilidiBirak(boss);
+    boss.userStaked = true;
+    boss.userStakedSoldiersCount = asker.length;
+    boss.userStakedAtk = atk;
+    boss.userStakedHp = hp;
+    boss.stakedArmyCount = (boss.stakedArmyCount || 0) + asker.length;
+    boss.totalStakedAtk = (boss.totalStakedAtk || 0) + atk;
+    boss.totalStakedHp = (boss.totalStakedHp || 0) + hp;
+
+    const guc = this.calculateUserWorldBossPower();
+    sound.playLevelUp();
+    this.saveState();
+
+    return {
+      success: true,
+      message: `🛡️ ${asker.length} kişilik ordun (${atk} ATK + ${hp} HP ➔ ${guc.calculatedDamage.toLocaleString()} Hasar Gücü) Pazar 18:00 TSİ otomatik World Boss savaşı için başarıyla kilitlendi!`,
+      boss,
+      power: guc
+    };
+  },
+
+  // Savaş takvimi: her Pazar 15:00 UTC (= 18:00 TSİ). En son geçen ve bir sonraki savaş anı.
+  getWorldBossSchedule(simdi = Date.now()) {
+    const cfg = GAME_CONFIG.WORLD_BOSS;
+    const d = new Date(simdi);
+    const buPazar = new Date(d);
+    buPazar.setUTCDate(d.getUTCDate() - d.getUTCDay() + cfg.BATTLE_DAY_UTC);
+    buPazar.setUTCHours(cfg.BATTLE_HOUR_UTC, 0, 0, 0);
+    let sonSavas = buPazar.getTime();
+    if (sonSavas > simdi) sonSavas -= HAFTA_MS;
+    const sonraki = sonSavas + HAFTA_MS;
+    return { lastBattleTime: sonSavas, nextBattleTime: sonraki, msUntilNext: sonraki - simdi };
+  },
+
+  // Her Pazar 18:00 TSİ'de TEK SEFERLİK otomatik savaş; haftada bir kez çalışır (force yalnız sunucu zamanlayıcısı için).
+  // Ödül hazinenin worldBoss kasasından çekilir: YASA 1, ödül basılmaz.
+  executeSundayAutoWorldBossBattle({ force = false } = {}) {
+    const boss = this.getWorldBossInfo();
+    if (!boss.userStaked) {
+      return { success: false, message: 'Kilitli ordunuz bulunmadığı için bu haftaki savaşa dahil olunamadı.' };
+    }
+
+    const takvim = this.getWorldBossSchedule();
+    if (!force && (boss.lastBattleTimestamp || 0) >= takvim.lastBattleTime) {
+      const saat = Math.floor(takvim.msUntilNext / 3600000);
+      const dakika = Math.floor((takvim.msUntilNext % 3600000) / 60000);
+      return {
+        success: false,
+        alreadyFought: true,
+        message: `⏳ Bu haftanın World Boss savaşı çoktan gerçekleşti. Sonraki savaşa ${saat} saat ${dakika} dakika kaldı (Pazar 18:00 TSİ).`
+      };
+    }
+
+    const hasar = this.calculateUserWorldBossPower().calculatedDamage;
+    boss.userDamage = hasar;   // haftalık, birikmez
+    boss.bossHp = Math.max(0, boss.bossHp - hasar);
+
+    const istenen = Math.max(1, Math.floor((hasar * boss.weeklyAdaPool) / boss.maxBossHp));
+    const cekim = globalPool.withdrawReward('worldBoss', istenen);
+    const odul = cekim.granted;
+
+    boss.claimableRewardAda = (boss.claimableRewardAda || 0) + odul;
+    boss.lastBattleTimestamp = Date.now();
+    boss.userStaked = false;   // ordu kilidi savaştan sonra açılır
+
+    sound.playLevelUp();
+    this.saveState();
+
+    const oranlandi = cekim.scaleFactor < 0.999;
+    const dipnot = cekim.budgetFull
+      ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}`
+      : (oranlandi ? ' (Havuz doluluğu nedeniyle ödül oranlandı.)' : '');
+    return {
+      success: true,
+      damageDealt: hasar,
+      rewardAda: odul,
+      requested: istenen,
+      scaled: oranlandi,
+      budgetFull: !!cekim.budgetFull,
+      claimableRewardAda: boss.claimableRewardAda,
+      message: `💥 Pazar 18:00 TSİ World Boss savaşı tamamlandı! Ordun ${hasar.toLocaleString()} hasar vurdu ve ${odul.toLocaleString()} ASTRA kazandı.${dipnot}`
+    };
+  },
+
+  // Savaş ödülünü bakiyeye alır ve orduyu serbest bırakır
   claimWorldBossReward() {
     const boss = this.getWorldBossInfo();
-    const claimable = boss.claimableRewardAda || 0;
-    const soldiersCount = boss.userStakedSoldiersCount || 0;
-
-    if (claimable <= 0 && !boss.userStaked) {
+    const talepEdilebilir = boss.claimableRewardAda || 0;
+    if (talepEdilebilir <= 0 && !boss.userStaked) {
       return { success: false, message: 'Toplanacak World Boss ödülü bulunmuyor!' };
     }
 
-    this.state.adAstraBalance += claimable;
-    this._onAdaEarned(claimable);
-    boss.totalClaimedAda = (boss.totalClaimedAda || 0) + claimable;
+    this.state.adAstraBalance += talepEdilebilir;
+    this._onAdaEarned(talepEdilebilir);
+    boss.totalClaimedAda = (boss.totalClaimedAda || 0) + talepEdilebilir;
     boss.claimableRewardAda = 0;
-
-    // Savaştan sonra ordu serbest bırakılır
-    boss.stakedArmyCount = Math.max(0, (boss.stakedArmyCount || 0) - soldiersCount);
-    boss.totalStakedAtk = Math.max(0, (boss.totalStakedAtk || 0) - (boss.userStakedAtk || 0));
-    boss.totalStakedHp = Math.max(0, (boss.totalStakedHp || 0) - (boss.userStakedHp || 0));
-    boss.userStaked = false;
-    boss.userStakedSoldiersCount = 0;
-    boss.userStakedAtk = 0;
-    boss.userStakedHp = 0;
+    const serbest = kilidiBirak(boss);
 
     sound.playLevelUp();
     this.saveState();
 
     return {
       success: true,
-      claimedAda: claimable,
-      unlockedSoldiersCount: soldiersCount,
+      claimedAda: talepEdilebilir,
+      unlockedSoldiersCount: serbest,
       newBalance: this.state.adAstraBalance,
-      message: claimable > 0
-        ? `🎁 ${claimable.toLocaleString()} ASTRA World Boss ödülü cüzdanına aktarıldı ve ordun serbest bırakıldı!`
-        : `🛡️ ${soldiersCount} kişilik ordun serbest bırakıldı!`
+      message: talepEdilebilir > 0
+        ? `🎁 ${talepEdilebilir.toLocaleString()} ASTRA World Boss ödülü cüzdanına aktarıldı ve ordun serbest bırakıldı!`
+        : `🛡️ ${serbest} kişilik ordun serbest bırakıldı!`
     };
   },
 
-  // Erken Çekilme (Emergency Unstake):
-  // Pazar günü etkinlik tamamlanmadan önce ordu çekilirse, ordunun vereceği hasar üzerinden kazanacağı anlık tahmini
-  // ASTRA miktarının %18'i (Savunma Duvarı bitince %12'si) ceza olarak ödenir ve ordu serbest bırakılır.
+  // Erken çekilme: Pazar savaşından önce ordu geri alınırsa tahmini kazancın %18'i (Savunma Duvarı bitince %12'si)
+  // ceza olarak ödenir ve ordu serbest bırakılır.
   emergencyUnstakeWorldBossArmy() {
     const boss = this.getWorldBossInfo();
     if (!boss.userStaked) {
       return { success: false, message: 'Kilitlenmiş bir ordunuz bulunmuyor!' };
     }
 
-    const power = this.calculateUserWorldBossPower();
-    const estimatedAda = power.estimatedAda || 0;
-    const rate = this.getWorldBossEarlyUnstakeRate();
-    const pct = Math.round(rate * 100);
-    const penaltyAda = Math.max(1, Math.round(estimatedAda * rate));
+    const tahmin = this.calculateUserWorldBossPower().estimatedAda || 0;
+    const oran = this.getWorldBossEarlyUnstakeRate();
+    const yuzde = Math.round(oran * 100);
+    const ceza = Math.max(1, Math.round(tahmin * oran));
 
-    if (this.state.adAstraBalance < penaltyAda) {
+    if (this.state.adAstraBalance < ceza) {
       return {
         success: false,
-        penaltyRequired: penaltyAda,
-        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%${pct}) cezası olan ${penaltyAda.toLocaleString()} ASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ASTRA).`
+        penaltyRequired: ceza,
+        message: `❌ Yetersiz bakiye! Ordunu erken çekmek için tahmini kazancının (%${yuzde}) cezası olan ${ceza.toLocaleString()} ASTRA gerekiyor (Mevcut Bakiye: ${this.state.adAstraBalance.toLocaleString()} ASTRA).`
       };
     }
 
-    // Cezayı tahsil et (harcama bölünüşü: yakım + UBI + telif + hazine)
-    this.state.adAstraBalance -= penaltyAda;
-    this._onAdaSpent(penaltyAda);
-    globalPool.recordTokenSpend(penaltyAda);
+    // Ceza harcama gibi bölünür: yakım + UBI + telif + hazine
+    this.state.adAstraBalance -= ceza;
+    this._onAdaSpent(ceza);
+    globalPool.recordTokenSpend(ceza);
 
-    const soldiersCount = boss.userStakedSoldiersCount || 0;
-    boss.stakedArmyCount = Math.max(0, (boss.stakedArmyCount || 0) - soldiersCount);
-    boss.totalStakedAtk = Math.max(0, (boss.totalStakedAtk || 0) - (boss.userStakedAtk || 0));
-    boss.totalStakedHp = Math.max(0, (boss.totalStakedHp || 0) - (boss.userStakedHp || 0));
-    boss.userStaked = false;
-    boss.userStakedSoldiersCount = 0;
-    boss.userStakedAtk = 0;
-    boss.userStakedHp = 0;
-    boss.claimableRewardAda = 0;
+    // Önceki savaştan kalan talep edilebilir ödüle dokunulmaz: o ASTRA kasadan çoktan çekildi, oyuncunundur
+    const serbest = kilidiBirak(boss);
 
     sound.playPickaxe();
     this.saveState();
 
     return {
       success: true,
-      penaltyPaid: penaltyAda,
-      unlockedSoldiersCount: soldiersCount,
+      penaltyPaid: ceza,
+      unlockedSoldiersCount: serbest,
       newBalance: this.state.adAstraBalance,
-      message: `🔓 %${pct} Ceza (${penaltyAda.toLocaleString()} ASTRA) ödendi. ${soldiersCount} kişilik ordunun kilidi başarıyla açıldı!`
+      message: `🔓 %${yuzde} Ceza (${ceza.toLocaleString()} ASTRA) ödendi. ${serbest} kişilik ordunun kilidi başarıyla açıldı!`
     };
-  },
+  }
 };

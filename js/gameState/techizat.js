@@ -5,15 +5,15 @@ import { globalPool } from '../globalPool.js';
 import { sound } from '../audio.js';
 import { ammMarket } from '../ammMarket.js';
 
+const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+const EKIPMAN_DAYANIKLILIK = 13;   // yeni dövülen ya da yükseltilen eşyanın dayanıklılığı (her zafer -1)
+
 export const techizatYontemleri = {
   // Tüm teçhizat yuvalarının anlık dövme (craft) maliyetlerini AMM DEX fiyatlarıyla hesaplar
   getAllEquipmentCraftCosts() {
-    const slots = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
-    const craftCosts = {};
-    slots.forEach(slot => {
-      craftCosts[slot] = this.calculateEquipmentCraftCost(slot);
-    });
-    return craftCosts;
+    const maliyetler = {};
+    for (const yuva of YUVALAR) maliyetler[yuva] = this.calculateEquipmentCraftCost(yuva);
+    return maliyetler;
   },
 
   // Krallıktaki (çanta, cephanelik ve ordudaki) tüm hasarlı teçhizatların anlık onarım maliyetini hesaplar
@@ -128,78 +128,70 @@ export const techizatYontemleri = {
     };
   },
 
-  // 1. Ekipman Dövme (Craft) - Sınırsız Dövme: Boşsa doğrudan kuşanılır, doluysa Cephanelik Deposu'na eklenir
+  // Ekipman dövme (sınırsız): bedel envanterden ve bakiyeden düşer; yuva boşsa eşya doğrudan kuşanılır,
+  // doluysa Cephanelik Deposu'na eklenir.
   craftEquipment(slotKey) {
-    const recipe = GAME_CONFIG.EQUIPMENT_RECIPES[slotKey];
-    if (!recipe) return { success: false, message: 'Geçersiz ekipman parçası!' };
+    const tarif = GAME_CONFIG.EQUIPMENT_RECIPES[slotKey];
+    if (!tarif) return { success: false, message: 'Geçersiz ekipman parçası!' };
 
-    if (!this.state.equipment) {
-      this.state.equipment = { weapon: null, helmet: null, armor: null, legs: null, boots: null };
-    }
-    if (!Array.isArray(this.state.armoryInventory)) {
-      this.state.armoryInventory = [];
-    }
+    if (!this.state.equipment) this.state.equipment = Object.fromEntries(YUVALAR.map(y => [y, null]));
+    if (!Array.isArray(this.state.armoryInventory)) this.state.armoryInventory = [];
 
-    const cost = this.calculateEquipmentCraftCost(recipe);
-    const inv = this.state.inventory;
+    const bedel = this.calculateEquipmentCraftCost(tarif);
+    const envanter = this.state.inventory;
+    const komurGerekli = (bedel.coal || 0) > 0;
 
-    if ((inv.fragments || 0) < cost.fragments) {
-      return { success: false, message: `Yetersiz Teçhizat Parçası! (${cost.fragments} Teçhizat Parçaları gerekli)` };
+    if ((envanter.fragments || 0) < bedel.fragments) {
+      return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragments} Teçhizat Parçaları gerekli)` };
     }
-    if ((inv.iron || 0) < cost.iron) {
-      return { success: false, message: `Yetersiz Demir! (${cost.iron} Demir gerekli)` };
-    }
-    if ((inv.wood || 0) < cost.wood) {
-      return { success: false, message: `Yetersiz Odun! (${cost.wood} Odun gerekli)` };
-    }
-    if ((cost.coal || 0) > 0 && (inv.coal || 0) < cost.coal) {
-      return { success: false, message: `Yetersiz Kömür! (${cost.coal} Kömür gerekli)` };
-    }
-    if (this.state.adAstraBalance < cost.adAstra) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost.adAstra} ASTRA gerekli)` };
+    if ((envanter.iron || 0) < bedel.iron) return { success: false, message: `Yetersiz Demir! (${bedel.iron} Demir gerekli)` };
+    if ((envanter.wood || 0) < bedel.wood) return { success: false, message: `Yetersiz Odun! (${bedel.wood} Odun gerekli)` };
+    if (komurGerekli && (envanter.coal || 0) < bedel.coal) return { success: false, message: `Yetersiz Kömür! (${bedel.coal} Kömür gerekli)` };
+    if (this.state.adAstraBalance < bedel.adAstra) {
+      return { success: false, message: `Yetersiz AdAstra! (${bedel.adAstra} ASTRA gerekli)` };
     }
 
-    inv.fragments = (inv.fragments || 0) - cost.fragments;
-    this.burnItem('fragments', cost.fragments);
-    inv.iron -= cost.iron;
-    inv.wood -= cost.wood;
-    if ((cost.coal || 0) > 0) inv.coal = (inv.coal || 0) - cost.coal;
-    this.burnResources({ wood: cost.wood, iron: cost.iron, coal: cost.coal || 0 });
-    this.state.adAstraBalance -= cost.adAstra;
-    this._onAdaSpent(cost.adAstra);
-    globalPool.recordTokenSpend(cost.adAstra);
+    envanter.fragments = (envanter.fragments || 0) - bedel.fragments;
+    this.burnItem('fragments', bedel.fragments);
+    envanter.iron -= bedel.iron;
+    envanter.wood -= bedel.wood;
+    if (komurGerekli) envanter.coal = (envanter.coal || 0) - bedel.coal;
+    this.burnResources({ wood: bedel.wood, iron: bedel.iron, coal: bedel.coal || 0 });
+    this.state.adAstraBalance -= bedel.adAstra;
+    this._onAdaSpent(bedel.adAstra);
+    globalPool.recordTokenSpend(bedel.adAstra);
 
-    const item = {
-      id: `${recipe.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      slot: recipe.slot,
-      name: recipe.name,
-      icon: recipe.icon,
+    const esya = {
+      id: `${tarif.id}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      slot: tarif.slot,
+      name: tarif.name,
+      icon: tarif.icon,
       level: 1,
-      baseAtk: recipe.baseAtk,
-      baseHp: recipe.baseHp,
-      atkBonus: recipe.baseAtk,
-      hpBonus: recipe.baseHp,
-      durability: 13,
-      maxDurability: 13,
+      baseAtk: tarif.baseAtk,
+      baseHp: tarif.baseHp,
+      atkBonus: tarif.baseAtk,
+      hpBonus: tarif.baseHp,
+      durability: EKIPMAN_DAYANIKLILIK,
+      maxDurability: EKIPMAN_DAYANIKLILIK,
       craftedAt: Date.now()
     };
 
-    let destination = '';
+    let varis;
     if (!this.state.equipment[slotKey]) {
-      this.state.equipment[slotKey] = item;
-      destination = 've krallık ana yuvasına kuşandırıldı';
+      this.state.equipment[slotKey] = esya;
+      varis = 've krallık ana yuvasına kuşandırıldı';
     } else {
-      this.state.armoryInventory.push(item);
-      destination = 've Cephanelik Deposu\'na eklendi';
+      this.state.armoryInventory.push(esya);
+      varis = "ve Cephanelik Deposu'na eklendi";
     }
 
     sound.playRepair();
     this.saveState();
 
-    return { 
-      success: true, 
-      message: `⚒️ ${recipe.icon} ${recipe.name} başarıyla dövüldü ${destination}! (13/13 Dayanıklılık)`, 
-      item 
+    return {
+      success: true,
+      message: `⚒️ ${tarif.icon} ${tarif.name} başarıyla dövüldü ${varis}! (${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} Dayanıklılık)`,
+      item: esya
     };
   },
 
@@ -279,14 +271,14 @@ export const techizatYontemleri = {
     item.level = cost.nextLevel;
     item.atkBonus = cost.nextAtk;
     item.hpBonus = cost.nextHp;
-    item.durability = 13; // Yükseltme yapıldığında dayanıklılık da tamir edilir
+    item.durability = EKIPMAN_DAYANIKLILIK;   // yükseltme dayanıklılığı da tamamlar
 
     sound.playLevelUp();
     this.saveState();
 
     return {
       success: true,
-      message: `✨ ${item.icon} ${item.name} Seviye ${item.level}'e yükseltildi! (+${item.atkBonus} Saldırı, +${item.hpBonus} Can, 13/13 Dayanıklılık)`
+      message: `✨ ${item.icon} ${item.name} Seviye ${item.level}'e yükseltildi! (+${item.atkBonus} Saldırı, +${item.hpBonus} Can, ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} Dayanıklılık)`
     };
   },
 
@@ -304,7 +296,7 @@ export const techizatYontemleri = {
     }
     if (!item) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true };
 
-    const maxDur = item.maxDurability || 13;
+    const maxDur = item.maxDurability || EKIPMAN_DAYANIKLILIK;
     const curDur = item.durability != null ? item.durability : maxDur;
     const missing = Math.max(0, maxDur - curDur);
     if (missing <= 0) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true, item };
@@ -335,7 +327,7 @@ export const techizatYontemleri = {
     const item = cost.item;
     const soldier = (soldierIndex !== null && soldierIndex !== undefined && soldierIndex !== '') ? (this.state.soldierUnits || [])[soldierIndex] : null;
     if (cost.missingDurability <= 0) {
-      return { success: false, message: `${item.name} zaten tamamen sağlam (13/13)!` };
+      return { success: false, message: `${item.name} zaten tamamen sağlam (${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK})!` };
     }
 
     const inv = this.state.inventory;
@@ -360,7 +352,7 @@ export const techizatYontemleri = {
     this._onAdaSpent(cost.adaCost);
     globalPool.recordTokenSpend(cost.adaCost);
 
-    const maxDur = item.maxDurability || 13;
+    const maxDur = item.maxDurability || EKIPMAN_DAYANIKLILIK;
     item.durability = maxDur;
 
     sound.playRepair();
@@ -637,7 +629,7 @@ export const techizatYontemleri = {
     });
 
     if (repairedCount === 0) {
-      return { success: false, message: 'Tüm silah ve zırhlar zaten 13/13 maksimum dayanıklılıkta!' };
+      return { success: false, message: `Tüm silah ve zırhlar zaten ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} maksimum dayanıklılıkta!` };
     }
 
     const inv = this.state.inventory;
@@ -653,7 +645,7 @@ export const techizatYontemleri = {
     globalPool.recordTokenSpend(totalAda);
 
     toRepair.forEach(({ item }) => {
-      item.durability = item.maxDurability || 13;
+      item.durability = item.maxDurability || EKIPMAN_DAYANIKLILIK;
     });
 
     sound.playRepair();

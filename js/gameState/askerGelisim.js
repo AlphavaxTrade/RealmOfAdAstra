@@ -1,221 +1,164 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Asker XP, yetenek, taktik hazırları, Kolezyum ligi
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: asker XP ve yetenek açılımı, taktik hazırları, yetenek çeşitliliği, lig
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { cleanName } from './ortak.js';
 
+const ON_AYAR_KIMLIKLERI = [1, 2, 3];
+
+// Asker seviyesine bağlı otomatik yetenek açılımı: [en düşük seviye, yetenek]
+const SEVIYE_YETENEKLERI = [
+  [10, 'shockwave'],     // 2. slot (başka bir saldırı yeteneği yoksa)
+  [25, 'armorBreaker'],  // 3. slot
+  [45, 'fieldMedic'],    // 4. slot
+  [65, 'lastStand']      // pasif
+];
+
+// Yeteneğin ordudaki rolü (Dünya Bossu yetenek çeşitliliği bonusu için)
+const YETENEK_ROLLERI = {
+  shieldWall: 'Tank',
+  shockwave: 'AoE',
+  fieldMedic: 'Şifacı',
+  armorBreaker: 'Anti-Tank',
+  stunStrike: 'Kontrol',
+  bloodFrenzy: 'Berserker',
+  lastStand: 'Hayatta Kalma'
+};
+
 export const askerGelisimYontemleri = {
-  // Asker Birimlerine Zindan XP'si Ekleme ve Seviye Atlattırma
+  // Askere XP ekler; gereken XP = seviye × 100. Seviye atlayınca temel değerler ve can yenilenir, yetenekler açılır.
   addSoldierXp(soldierIdx, xpAmount) {
-    const s = (this.state.soldierUnits || [])[soldierIdx];
-    if (!s) return { leveledUp: false };
+    const asker = (this.state.soldierUnits || [])[soldierIdx];
+    if (!asker) return { leveledUp: false };
 
-    s.xp = (s.xp || 0) + xpAmount;
-    let leveledUp = false;
-    let newLevel = s.level || 1;
-    let unlockedSkills = [];
+    asker.xp = (asker.xp || 0) + xpAmount;
+    let seviyeAtladi = false;
+    let yeniSeviye = asker.level || 1;
+    const acilanlar = [];
 
-    // Gerekli XP Formülü: Level * 100
-    while (s.xp >= (s.level * 100)) {
-      s.xp -= (s.level * 100);
-      s.level += 1;
-      s.baseAtk = 25 + (s.level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);
-      s.maxHp = 100 + (s.level - 1) * (GAME_CONFIG.SOLDIER_HP_PER_LEVEL || 25);
-      s.hp = s.maxHp;
-      leveledUp = true;
-      newLevel = s.level;
+    while (asker.xp >= (asker.level * 100)) {
+      asker.xp -= (asker.level * 100);
+      asker.level += 1;
+      asker.baseAtk = 25 + (asker.level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);
+      asker.maxHp = 100 + (asker.level - 1) * (GAME_CONFIG.SOLDIER_HP_PER_LEVEL || 25);
+      asker.hp = asker.maxHp;
+      seviyeAtladi = true;
+      yeniSeviye = asker.level;
 
-      // Otomatik yetenek slotu ve kilit açımı
-      const newly = this.checkSoldierSkillUnlock(s);
-      if (newly && newly.length) unlockedSkills.push(...newly);
+      const yeni = this.checkSoldierSkillUnlock(asker);
+      if (yeni && yeni.length) acilanlar.push(...yeni);
     }
 
     this.saveState();
-    return { leveledUp, newLevel, soldierName: s.name, unlockedSkills };
+    return { leveledUp: seviyeAtladi, newLevel: yeniSeviye, soldierName: asker.name, unlockedSkills: acilanlar };
   },
 
-  // ⚔️ Seviye Kademelerinde Otomatik Skill Açımı (Lv.10, Lv.25, Lv.45, Lv.65)
-  checkSoldierSkillUnlock(soldier) {
-    if (!soldier.skills) soldier.skills = ['shieldWall'];
-    const lvl = soldier.level || 1;
-    const newlyUnlocked = [];
+  // Seviye eşiklerinde otomatik yetenek açılımı (Lv.10, 25, 45, 65). Döndürür: yeni açılan yetenekler.
+  checkSoldierSkillUnlock(asker) {
+    if (!asker.skills) asker.skills = ['shieldWall'];
+    const seviye = asker.level || 1;
+    const acilan = [];
 
-    // Seviye 10: 2. Slot (Şok Dalgası)
-    if (lvl >= 10 && !soldier.skills.includes('shockwave') && !soldier.skills.includes('armorBreaker')) {
-      soldier.skills.push('shockwave');
-      newlyUnlocked.push('shockwave');
+    for (const [esik, yetenek] of SEVIYE_YETENEKLERI) {
+      if (seviye < esik || asker.skills.includes(yetenek)) continue;
+      // 2. slot: zaten Zırh Kırıcı olan asker Şok Dalgası almaz (aynı rol ailesi)
+      if (yetenek === 'shockwave' && asker.skills.includes('armorBreaker')) continue;
+      asker.skills.push(yetenek);
+      acilan.push(yetenek);
     }
-    // Seviye 25: 3. Slot (Zırh Kırıcı)
-    if (lvl >= 25 && !soldier.skills.includes('armorBreaker')) {
-      soldier.skills.push('armorBreaker');
-      newlyUnlocked.push('armorBreaker');
-    }
-    // Seviye 45: 4. Slot (Sahra Merhemi)
-    if (lvl >= 45 && !soldier.skills.includes('fieldMedic')) {
-      soldier.skills.push('fieldMedic');
-      newlyUnlocked.push('fieldMedic');
-    }
-    // Seviye 65: Pasif Yetenek (Son Nefes)
-    if (lvl >= 65 && !soldier.skills.includes('lastStand')) {
-      soldier.skills.push('lastStand');
-      newlyUnlocked.push('lastStand');
-    }
-    return newlyUnlocked;
+    return acilan;
   },
 
-  // 🛡️ 3 Adet Taktiksel Savaş Preseti (Preset 1, 2, 3) Yönetimi
+  // ── Taktik hazırları (3 adet: ön / arka saf dizilişi) ──────────────────
   getCombatPresets() {
-    if (!this.state.combatPresets) {
-      this.state.combatPresets = this.mergeCombatPresets(null);
-    }
+    if (!this.state.combatPresets) this.state.combatPresets = this.mergeCombatPresets(null);
     return this.state.combatPresets;
   },
 
-  // 💾 Mevcut Ordu Formasyonunu Presete Kaydetme (1, 2 veya 3)
+  // Mevcut ön/arka saf dizilişini hazıra kaydeder
   saveCombatPreset(presetId = 1, customName = null) {
     const id = Number(presetId) || 1;
-    if (![1, 2, 3].includes(id)) {
+    if (!ON_AYAR_KIMLIKLERI.includes(id)) {
       return { success: false, message: 'Geçersiz preset numarası (1, 2 veya 3 olmalıdır).' };
     }
-    if (!this.state.combatPresets) {
-      this.state.combatPresets = this.mergeCombatPresets(null);
-    }
+    const hazirlar = this.getCombatPresets();
 
-    const positions = {};
-    const soldiers = this.state.soldierUnits || [];
-    soldiers.forEach((s, idx) => {
-      const key = s.id || `soldier_${idx}`;
-      positions[key] = s.row === 'back' ? 'back' : 'front';
+    const konumlar = {};
+    (this.state.soldierUnits || []).forEach((s, i) => {
+      konumlar[s.id || `soldier_${i}`] = s.row === 'back' ? 'back' : 'front';
     });
 
-    if (!this.state.combatPresets.presets[id]) {
-      this.state.combatPresets.presets[id] = { id, name: `Taktik ${id}`, positions: {} };
-    }
-
-    this.state.combatPresets.presets[id].positions = positions;
+    if (!hazirlar.presets[id]) hazirlar.presets[id] = { id, name: `Taktik ${id}`, positions: {} };
+    const hazir = hazirlar.presets[id];
+    hazir.positions = konumlar;
     if (customName && typeof customName === 'string' && customName.trim()) {
-      this.state.combatPresets.presets[id].name = cleanName(customName, 32) || `Taktik ${id}`;
+      hazir.name = cleanName(customName, 32) || `Taktik ${id}`;
     }
-    this.state.combatPresets.activePresetId = id;
+    hazirlar.activePresetId = id;
 
     this.saveState();
-    return {
-      success: true,
-      message: `✅ ${this.state.combatPresets.presets[id].name} başarıyla kaydedildi!`,
-      preset: this.state.combatPresets.presets[id],
-      activePresetId: id
-    };
+    return { success: true, message: `✅ ${hazir.name} başarıyla kaydedildi!`, preset: hazir, activePresetId: id };
   },
 
-  // ⚡ Kayıtlı Preseti Orduya Tek Tıkla Uygulama
+  // Kayıtlı hazırı orduya uygular; konumu kayıtlı olmayan asker için hazıra göre varsayılan konum atanır
   applyCombatPreset(presetId = 1) {
     const id = Number(presetId) || 1;
-    if (![1, 2, 3].includes(id)) {
-      return { success: false, message: 'Geçersiz preset numarası.' };
-    }
-    if (!this.state.combatPresets) {
-      this.state.combatPresets = this.mergeCombatPresets(null);
-    }
+    if (!ON_AYAR_KIMLIKLERI.includes(id)) return { success: false, message: 'Geçersiz preset numarası.' };
+    const hazirlar = this.getCombatPresets();
+    const hazir = hazirlar.presets[id];
+    if (!hazir) return { success: false, message: 'Preset bulunamadı.' };
 
-    const p = this.state.combatPresets.presets[id];
-    if (!p) return { success: false, message: 'Preset bulunamadı.' };
-
-    const soldiers = this.state.soldierUnits || [];
-    soldiers.forEach((s, idx) => {
-      const key = s.id || `soldier_${idx}`;
-      if (p.positions && p.positions[key]) {
-        s.row = p.positions[key] === 'back' ? 'back' : 'front';
-      } else {
-        // Önceden bu askerin pozisyonu kaydedilmemişse mantıklı varsayılan
-        if (id === 2) {
-          s.row = 'front'; // Savunma / Hücum Hattı
-        } else if (id === 3) {
-          s.row = idx === 0 ? 'front' : 'back'; // Arka Saf Ağırlıklı
-        } else {
-          s.row = idx < 2 ? 'front' : 'back'; // Dengeli
-        }
-        if (!p.positions) p.positions = {};
-        p.positions[key] = s.row;
+    (this.state.soldierUnits || []).forEach((s, i) => {
+      const anahtar = s.id || `soldier_${i}`;
+      if (hazir.positions && hazir.positions[anahtar]) {
+        s.row = hazir.positions[anahtar] === 'back' ? 'back' : 'front';
+        return;
       }
+      if (id === 2) s.row = 'front';                    // savunma hattı: herkes ön saf
+      else if (id === 3) s.row = i === 0 ? 'front' : 'back';   // arka saf ağırlıklı
+      else s.row = i < 2 ? 'front' : 'back';            // dengeli
+      if (!hazir.positions) hazir.positions = {};
+      hazir.positions[anahtar] = s.row;
     });
 
-    this.state.combatPresets.activePresetId = id;
+    hazirlar.activePresetId = id;
     this.saveState();
-    return {
-      success: true,
-      message: `🎯 ${p.name} aktif edildi!`,
-      preset: p,
-      activePresetId: id
-    };
+    return { success: true, message: `🎯 ${hazir.name} aktif edildi!`, preset: hazir, activePresetId: id };
   },
 
-  // 🛡️ Tekil Asker Formasyonu (Ön Saf / Arka Saf) Ayarlama
   setSoldierRow(soldierIdx, row) {
-    const s = (this.state.soldierUnits || [])[soldierIdx];
-    if (!s) return { success: false, message: 'Asker bulunamadı!' };
-    s.row = row === 'back' ? 'back' : 'front';
+    const asker = (this.state.soldierUnits || [])[soldierIdx];
+    if (!asker) return { success: false, message: 'Asker bulunamadı!' };
+    asker.row = row === 'back' ? 'back' : 'front';
     this.saveState();
-    return { success: true, soldier: s, row: s.row };
+    return { success: true, soldier: asker, row: asker.row };
   },
 
-  // 📖 Askere Yeni Skill Öğretme (Skill Loadout: Max 3 Aktif + Pasif)
-  learnSoldierSkill(soldierIdx, skillId) {
-    const s = (this.state.soldierUnits || [])[soldierIdx];
-    if (!s) return { success: false, message: 'Asker bulunamadı!' };
-    if (!s.skills) s.skills = ['shieldWall'];
-    if (s.skills.includes(skillId)) {
-      return { success: false, message: 'Bu asker bu yeteneği zaten biliyor!' };
-    }
-
-    const activeSkills = s.skills.filter(sk => sk !== 'lastStand');
-    if (skillId !== 'lastStand' && activeSkills.length >= 3) {
-      // 3 aktif yetenek dolduysa en eskisini çıkarıp yeniyi ekler
-      s.skills = [...activeSkills.slice(1), skillId, ...(s.skills.includes('lastStand') ? ['lastStand'] : [])];
-    } else {
-      s.skills.push(skillId);
-    }
-
-    this.saveState();
-    return { success: true, soldier: s, skills: s.skills };
-  },
-
-  // 🌋 Dünya Bossu & Ordu Yetenek Çeşitliliği Hasar Çarpanı
+  // Ordunun yetenek çeşitliliği: ilk rolden sonraki her farklı rol için bonus (WORLD_BOSS config), tavanlı
   calculateSquadSkillDiversity(soldierIndices = null) {
-    const units = soldierIndices
-      ? soldierIndices.map(i => (this.state.soldierUnits || [])[i]).filter(Boolean)
-      : (this.state.soldierUnits || []);
+    const liste = this.state.soldierUnits || [];
+    const askerler = soldierIndices ? soldierIndices.map(i => liste[i]).filter(Boolean) : liste;
+    if (askerler.length === 0) return { uniqueRoles: 0, diversityMultiplier: 1.0, rolesFound: [] };
 
-    if (units.length === 0) return { uniqueRoles: 0, diversityMultiplier: 1.0, rolesFound: [] };
+    const roller = new Set();
+    for (const a of askerler) {
+      for (const yetenek of (a.skills || ['shieldWall'])) {
+        if (YETENEK_ROLLERI[yetenek]) roller.add(YETENEK_ROLLERI[yetenek]);
+      }
+    }
 
-    const roles = new Set();
-    units.forEach(u => {
-      const skills = u.skills || ['shieldWall'];
-      skills.forEach(sk => {
-        if (sk === 'shieldWall') roles.add('Tank');
-        else if (sk === 'shockwave') roles.add('AoE');
-        else if (sk === 'fieldMedic') roles.add('Şifacı');
-        else if (sk === 'armorBreaker') roles.add('Anti-Tank');
-        else if (sk === 'stunStrike') roles.add('Kontrol');
-        else if (sk === 'bloodFrenzy') roles.add('Berserker');
-        else if (sk === 'lastStand') roles.add('Hayatta Kalma');
-      });
-    });
-
-    const uniqueRoles = roles.size;
-    // İlk rolden sonraki her farklı taktiksel rol için %6 hasar bonusu (örn. 5 farklı rol = 1.24x hasar)
     const { SKILL_DIVERSITY_BONUS_PER_ROLE, MAX_SKILL_DIVERSITY_BONUS } = GAME_CONFIG.WORLD_BOSS;
-    const diversityMultiplier = Math.min(1.0 + MAX_SKILL_DIVERSITY_BONUS, 1.0 + Math.max(0, uniqueRoles - 1) * SKILL_DIVERSITY_BONUS_PER_ROLE);
-
+    const carpan = Math.min(1.0 + MAX_SKILL_DIVERSITY_BONUS, 1.0 + Math.max(0, roller.size - 1) * SKILL_DIVERSITY_BONUS_PER_ROLE);
     return {
-      uniqueRoles,
-      diversityMultiplier: parseFloat(diversityMultiplier.toFixed(2)),
-      rolesFound: Array.from(roles)
+      uniqueRoles: roller.size,
+      diversityMultiplier: parseFloat(carpan.toFixed(2)),
+      rolesFound: Array.from(roller)
     };
   },
 
-  // 🏆 Kolezyum Sabit Lig Kademeleri (Bronz / Gümüş / Altın / Elmas / Şampiyon)
+  // Kolezyum lig kademesi (Bronz / Gümüş / Altın / Elmas / Şampiyon): puana göre sabit
   getColosseumTier(rating = (this.state.colosseumStats?.rating || 1000)) {
-    const leagues = GAME_CONFIG.COLOSSEUM.LEAGUES;
-    const t = leagues.find(l => rating >= l.minRating) || leagues[leagues.length - 1];
-    return { id: t.id, name: t.name, color: t.color, rewardMult: t.rewardMult, minRating: t.minRating };
-  },
+    const ligler = GAME_CONFIG.COLOSSEUM.LEAGUES;
+    const lig = ligler.find(l => rating >= l.minRating) || ligler[ligler.length - 1];
+    return { id: lig.id, name: lig.name, color: lig.color, rewardMult: lig.rewardMult, minRating: lig.minRating };
+  }
 };
