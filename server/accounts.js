@@ -272,9 +272,28 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return { ok: true, playerId: playerIdOf(acc.id) };
   }
 
-  function verifyEmail(token) {
-    const t = takeToken(token, 'verify');
+  // Doğrulanmamış hesapta bağlantı şifreyi YENİDEN belirletir (ön-hesap ele geçirmeye karşı): biri kurbanın e-postasıyla kendi
+  // parolasını koyup hesap açsa bile, bağlantıyı e-postanın gerçek sahibi tıklar ve yazdığı şifre saldırganınkini ezer.
+  // Şifre yoksa bağlantı HARCANMAZ (ön yüz şifre sorup aynı bağlantıyla tekrar dener). Doğrulanmış hesapta şifre istenmez.
+  async function verifyEmail(token, password) {
+    if (typeof token !== 'string' || token.length > 100) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
+    const r = q.tokenGet.get(token);
+    if (!r || r.kind !== 'verify' || r.expires < clock()) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
+    const onceki = q.byId.get(r.account_id);
+    let yeniOzet = null;
+    if (onceki && !onceki.email_verified) {
+      if (typeof password !== 'string' || password.length < 8 || password.length > 128) {
+        return { ok: false, needPassword: true, error: 'Hesabını korumak için bir şifre belirle (en az 8 karakter).' };
+      }
+      yeniOzet = await parolaOzetle(password);
+    }
+    const t = takeToken(token, 'verify');                  // özetleme sırasında başka istek bağlantıyı almış olabilir
     if (!t) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
+    if (yeniOzet) {
+      q.setPass.run(yeniOzet, t.account_id);
+      q.sessionsOf.run(playerIdOf(t.account_id));          // eski şifreyi bilen birinin açtığı oturum kalmasın
+      db.event('verify-password-set', playerIdOf(t.account_id));
+    }
     q.setVerified.run(t.account_id);
     const acc = q.byId.get(t.account_id);
     // Bağlantı oyuncuyu doğrudan oyuna sokar; iki adımlı doğrulama açıksa (eski hesap) yine kodla giriş gerekir

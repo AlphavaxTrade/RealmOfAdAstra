@@ -248,6 +248,39 @@ function saveSession(t, playerId) {
 }
 const tokenFromLink = (url, kind) => { const m = new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(String(url || '')); return m && m[1]; };
 
+// E-posta doğrulama bağlantısı: hesabın şifresi burada yeniden belirlenir. Başkası bu e-postayla önceden hesap açıp kendi
+// şifresini koymuş olsa bile (ön-hesap ele geçirme), bağlantıyı e-postanın gerçek sahibi açar ve yazdığı şifre geçerli olur.
+// Döner: sunucunun doğrulama yanıtı; oyuncu vazgeçerse null.
+function dogrulamaSifresiSor(verifyToken) {
+  return new Promise(resolve => {
+    const el = overlay(`
+      <div style="font-size:2rem;">🔐</div>
+      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Hesabını Koru</div>
+      <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;margin-top:6px;">E-postanı doğruluyorsun. Hesabının şifresini şimdi yaz: kayıtta yazdığınla aynısı olabilir, yenisi de olabilir. Bu şifre geçerli olur; bu e-postayla önceden başka biri hesap açtıysa onun şifresi iptal edilir.</div>
+      <input id="vf-pass" type="password" autocomplete="new-password" placeholder="Şifre (en az 8 karakter)" style="${inputCss}">
+      <input id="vf-pass2" type="password" autocomplete="new-password" placeholder="Şifre (tekrar)" style="${inputCss}">
+      <button id="vf-go" style="${btnCss('#7c3aed', '#c084fc')}">✅ Doğrula ve gir</button>
+      <div id="vf-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>
+      <button id="vf-iptal" style="${linkCss}">Vazgeç</button>`);
+    const msg = t => { el.querySelector('#vf-msg').textContent = t; };
+    el.querySelector('#vf-iptal').onclick = () => { closeOverlay(); resolve(null); };
+    const go = async () => {
+      const p1 = el.querySelector('#vf-pass').value, p2 = el.querySelector('#vf-pass2').value;
+      if (p1.length < 8) return msg('⚠️ Şifre en az 8 karakter olmalı.');
+      if (p1 !== p2) return msg('⚠️ Şifreler aynı değil. İkisini de yeniden yaz.');
+      const btn = el.querySelector('#vf-go');
+      btn.disabled = true;
+      try {
+        const r = await api('POST', '/api/account/verify', { token: verifyToken, password: p1 });
+        closeOverlay();
+        resolve(r);
+      } catch (err) { msg(err.message); btn.disabled = false; }
+    };
+    el.querySelector('#vf-go').onclick = go;
+    el.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+  });
+}
+
 // 🛡️ Kale Kapısı: cüzdan değiştirirken 48 saat beklemenin oyunlaştırılmış açıklaması (kullanıcı isteği)
 export const KALE_KAPISI = `🛡️ <strong>Kale Kapısı Kuralı.</strong> Hazinene giden yolu değiştirmek istedin! Krallığın muhafızları önce sana bir haberci (e-posta) yollayacak ve hazine kapısı <strong>48 saat</strong> mühürlü kalacak. Neden mi? Bir hain senin kılığına girip hazineni kaçırmaya kalkarsa, bu 48 saat içinde haberciyi görür ve kapıyı ona kapatırsın. Bu bekleme seni korumak için: gerçek kral sensin ve kimse hazinene senden önce dokunamaz. 👑`;
 
@@ -444,7 +477,8 @@ function loginFlow(startMode = 'login') {
       el.querySelector('#ol-dev-reset')?.addEventListener('click', () => { location.href = el.querySelector('#ol-dev-reset').dataset.href; });
       el.querySelector('#ol-dev-verify')?.addEventListener('click', async () => {
         try {
-          const r = await api('POST', '/api/account/verify', { token: el.querySelector('#ol-dev-verify').dataset.t });
+          const r = await dogrulamaSifresiSor(el.querySelector('#ol-dev-verify').dataset.t);
+          if (!r) return draw();                         // vazgeçildi: giriş penceresi geri gelir
           if (r.token) { saveSession(r.token, r.playerId); ctx.toast('🧪 Deneme modu: e-posta onayı verildi.', 'success'); closeOverlay(); resolve(true); }
         } catch (err) { msg = err.message; isErr = true; extra = ''; draw(); }
       });
@@ -656,7 +690,7 @@ export async function openWalletPanel() {
     try {
       const r = await api('POST', '/api/account/resend', { email: acc.email });
       const t = tokenFromLink(r.devLink, 'verify');
-      if (t) { await api('POST', '/api/account/verify', { token: t }); ctx.toast('🧪 Deneme modu: e-postan doğrulandı.', 'success'); openWalletPanel(); }
+      if (t) { const v = await dogrulamaSifresiSor(t); if (v) ctx.toast('🧪 Deneme modu: e-postan doğrulandı.', 'success'); openWalletPanel(); }
       else ctx.toast('📧 Doğrulama bağlantısı yeniden gönderildi.', 'success');
     } catch (err) { ctx.toast(err.message, 'error'); }
   };
@@ -713,7 +747,8 @@ async function handleEmailLinks() {
   if (p.get('verify')) {
     clean();
     try {
-      const r = await api('POST', '/api/account/verify', { token: p.get('verify') });
+      const r = await dogrulamaSifresiSor(p.get('verify'));
+      if (!r) return;                                  // oyuncu vazgeçti; bağlantı harcanmadı, e-postadan yeniden açılabilir
       if (r.token) {
         // Açık bir oturum varsa ve bağlantı başka bir hesabınsa sessizce geçilmez (bağlantıyı başkasından alan oyuncu
         // kendi hesabını bırakıp yabancı bir hesapta oynamasın)

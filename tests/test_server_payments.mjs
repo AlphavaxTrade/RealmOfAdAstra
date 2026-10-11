@@ -45,7 +45,7 @@ try {
   // Hesap + bağlı cüzdan (oyuncunun ganache hesabı)
   const reg = await accounts.register('odeme@ornek.com', 'gizli-sifre-123');
   const pid = reg.playerId;
-  accounts.verifyEmail(lastLink('verify'));
+  await accounts.verifyEmail(lastLink('verify'), 'gizli-sifre-123');
   const playerAddr = (await playerW.getAddress()).toLowerCase();
   const msg = accounts.walletNonce(pid, playerAddr).message;
   assert.ok((await accounts.walletLink(pid, await signMsg(3, msg))).ok);

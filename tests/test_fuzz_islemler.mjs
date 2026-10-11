@@ -77,7 +77,7 @@ const lastLink = kind => { const m = db.kvJson('dev:outbox', [])[0]; for (const 
 try {
   const kayit = await post('/api/account/register', JSON.stringify({ email: 'fuzz@ornek.com', password: 'gizli-sifre-123' }));
   assert.equal(kayit.status, 200);
-  const dogru = await post('/api/account/verify', JSON.stringify({ token: lastLink('verify') }));
+  const dogru = await post('/api/account/verify', JSON.stringify({ token: lastLink('verify'), password: 'gizli-sifre-123' }));
   const token = dogru.body.token, pid = dogru.body.playerId;
   // Zengin oyuncu: pahalı işlemler de gerçekten çalışsın (yalnız bakiye/envanter/seviye)
   const zengin = () => engine.mutatePlayer(pid, gs => {

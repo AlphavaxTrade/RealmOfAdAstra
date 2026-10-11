@@ -97,7 +97,7 @@ export async function oyuncularOlustur(base, adminToken, n, paralel = 25) {
       const bag = k.json && k.json.devLink;
       const m = bag && /[?&]verify=([a-f0-9]+)/.exec(bag);
       if (!m) throw new Error('Doğrulama bağlantısı yok: ' + JSON.stringify(k));
-      const v = await api(base, '/api/account/verify', { yontem: 'POST', govde: { token: m[1] } });
+      const v = await api(base, '/api/account/verify', { yontem: 'POST', govde: { token: m[1], password: 'Yuk-Parola-123' } });
       if (!v.json || !v.json.token) throw new Error('Doğrulama başarısız: ' + JSON.stringify(v));
       tokenlar[i] = v.json.token;
     }

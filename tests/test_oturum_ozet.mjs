@@ -63,7 +63,7 @@ const lastLink = kind => {
 
 try {
   await call('POST', '/api/account/register', { email: 'oturum@ornek.com', password: 'gizli-sifre-123' });
-  const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+  const v = await call('POST', '/api/account/verify', { token: lastLink('verify'), password: 'gizli-sifre-123' });
   const token = v.body.token;
   assert.ok(/^[0-9a-f]{64}$/.test(token));
 

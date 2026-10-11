@@ -84,7 +84,7 @@ E.withPlayer(P, () => null);
   const ep = E.globalPool.state.epochId + 10;   // önceki haftaları olan bir dünya
   const mk = async (email, { verify = true, level = 3, week = 0, streak = null } = {}) => {
     const r = await accounts.register(email, 'gizli-sifre-123');
-    if (verify) accounts.verifyEmail(/verify=([a-f0-9]+)/.exec(db.kvJson('dev:outbox', [])[0].text)[1]);
+    if (verify) await accounts.verifyEmail(/verify=([a-f0-9]+)/.exec(db.kvJson('dev:outbox', [])[0].text)[1], 'gizli-sifre-123');
     E.withPlayer(r.playerId, () => null);
     E.mutatePlayer(r.playerId, gs => {
       gs.state.level = level; gs.state.adAstraBalance = 0; gs.state.lockedAda = 0;

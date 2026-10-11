@@ -37,7 +37,7 @@ try {
   const lastLink = kind => new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(db.kvJson('dev:outbox', [])[0].text)[1];
   const reg = await accounts.register('kasa@ornek.com', 'gizli-sifre-123');
   const pid = reg.playerId;
-  accounts.verifyEmail(lastLink('verify'));
+  await accounts.verifyEmail(lastLink('verify'), 'gizli-sifre-123');
   const playerAddr = (await playerW.getAddress()).toLowerCase();
   await accounts.walletLink(pid, await new ethers.Wallet(keys[3]).signMessage(accounts.walletNonce(pid, playerAddr).message));
   accounts.walletConfirm(lastLink('wallet'));

@@ -90,7 +90,7 @@ async function register(email) {
   const r = await call('POST', '/api/account/register', { email, password: 'gizli-sifre-123' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
   assert.ok(!r.body.token && !r.body.playerId, 'Kayıtta oturum açılmaz (e-posta onayıyla girilir)');
-  const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+  const v = await call('POST', '/api/account/verify', { token: lastLink('verify'), password: 'gizli-sifre-123' });
   assert.equal(v.status, 200, 'E-posta doğrulandı');
   assert.ok(v.body.token, 'Onay bağlantısı oyuncuyu oyuna sokar');
   return { token: v.body.token, pid: v.body.playerId };

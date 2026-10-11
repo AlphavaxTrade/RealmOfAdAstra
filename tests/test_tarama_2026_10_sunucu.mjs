@@ -1,6 +1,7 @@
 // 11 Ekim 2026 sunucu güvenlik taramasından düzeltilen bulguların gerileme testleri:
 // (1) ilan pazarında "__proto__" konumuyla yoktan eşya, (2) bekleme sırasındaki hesabın para yollarına girmesi,
-// (3) dünya görüntüsünde işletme cüzdanı ve uyarılan oyuncu kimlikleri, (4) ilan alımının sahte katkı puanı.
+// (3) dünya görüntüsünde işletme cüzdanı ve uyarılan oyuncu kimlikleri, (4) ilan alımının sahte katkı puanı,
+// (5) ön-hesap ele geçirme: doğrulama bağlantısı şifreyi yeniden belirletir (12 Ekim 2026 kararı).
 import assert from 'node:assert/strict';
 import { openDb } from '../server/db.js';
 import { createEngine } from '../server/engine.js';
@@ -37,7 +38,7 @@ const sonBaglanti = (tur) => { const m = db.kvJson('dev:outbox', [])[0]; const p
 async function kayit(eposta) {
   const r = await call('POST', '/api/account/register', { email: eposta, password: 'gizli-sifre-123' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  const v = await call('POST', '/api/account/verify', { token: sonBaglanti('verify') });
+  const v = await call('POST', '/api/account/verify', { token: sonBaglanti('verify'), password: 'gizli-sifre-123' });
   assert.equal(v.status, 200, JSON.stringify(v.body));
   return { token: v.body.token, pid: v.body.playerId };
 }
@@ -104,8 +105,34 @@ try {
   assert.equal(gorunum.lastWeekly.faucet.perPlayer, 3, 'haftalık özet durur');
   assert.ok(db.kvJson('world:economy', {}).hotWallet, 'sunucu kaydı bozulmadı (yönetici ucu görebilir)');
   ok('dünya görüntüsü işletme ve katılım bilgilerini sızdırmıyor');
+
+  // 5) Ön-hesap ele geçirme: saldırgan kurbanın e-postasıyla kendi şifresini koyup hesap açar; bağlantıyı kurban tıklar
+  {
+    const SALDIRGAN = 'saldirgan-sifre-1', KURBAN = 'kurbanin-kendi-sifresi-9';
+    const kay = await call('POST', '/api/account/register', { email: 'kurban@ornek.com', password: SALDIRGAN });
+    assert.equal(kay.status, 200, JSON.stringify(kay.body));
+    const baglanti = sonBaglanti('verify');
+    assert.ok(baglanti, 'kurbana doğrulama bağlantısı gitti');
+    assert.equal((await call('POST', '/api/account/login', { email: 'kurban@ornek.com', password: SALDIRGAN })).status, 401, 'doğrulanmamış hesaba girilemez');
+
+    // Şifresiz ya da kısa şifreli çağrı reddedilir ve bağlantıyı HARCAMAZ
+    const sifresiz = await call('POST', '/api/account/verify', { token: baglanti });
+    assert.equal(sifresiz.status, 400);
+    assert.equal(sifresiz.body.needPassword, true, 'ön yüze şifre sorması söylenir');
+    assert.equal((await call('POST', '/api/account/verify', { token: baglanti, password: 'kisa' })).status, 400, 'kısa şifre');
+    assert.equal((await call('POST', '/api/account/login', { email: 'kurban@ornek.com', password: SALDIRGAN })).status, 401, 'hâlâ doğrulanmamış');
+
+    // Kurban kendi şifresini yazar: hesap onun olur, saldırganın şifresi geçersiz kalır
+    const dogru = await call('POST', '/api/account/verify', { token: baglanti, password: KURBAN });
+    assert.equal(dogru.status, 200, JSON.stringify(dogru.body));
+    assert.ok(dogru.body.token, 'doğrulama oturum açar');
+    assert.equal((await call('POST', '/api/account/login', { email: 'kurban@ornek.com', password: SALDIRGAN })).status, 401, 'saldırganın şifresi artık geçmez');
+    assert.equal((await call('POST', '/api/account/login', { email: 'kurban@ornek.com', password: KURBAN })).status, 200, 'kurbanın şifresi geçer');
+    assert.equal((await call('POST', '/api/account/verify', { token: baglanti, password: KURBAN })).status, 400, 'bağlantı bir kez kullanılır');
+  }
+  ok('ön-hesap ele geçirme: doğrulama şifreyi yeniden belirletir, saldırganın şifresi geçersiz kalır');
 } finally {
   server.close();
 }
-console.log('\n4/4 tarama düzeltmesi testi geçti.');
+console.log('\n5/5 tarama düzeltmesi testi geçti.');
 process.exit(0);

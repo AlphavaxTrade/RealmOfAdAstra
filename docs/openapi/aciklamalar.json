@@ -80,14 +80,18 @@
   },
   "POST /api/account/verify": {
     "etiket": "Hesap",
-    "ozet": "E-posta doğrulama (e-postadaki bağlantı)",
+    "ozet": "E-posta doğrulama (e-postadaki bağlantı; yeni hesapta şifreyi yeniden belirler)",
     "govde": {
       "token": {
         "tur": "string",
         "zorunlu": true
+      },
+      "password": {
+        "tur": "string",
+        "zorunlu": false
       }
     },
-    "yanit": "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
+    "yanit": "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Doğrulanmamış hesapta password zorunludur (ön-hesap ele geçirmeye karşı: yazılan şifre hesabın şifresi olur, bağlantı şifresiz çağrıda harcanmaz, 400 + needPassword döner). Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
   },
   "POST /api/account/resend": {
     "etiket": "Hesap",

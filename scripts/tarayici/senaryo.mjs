@@ -216,6 +216,35 @@ try {
     await i.kapat();
   }
 
+  // ── 7b) E-posta doğrulama bağlantısı şifre sordurur (ön-hesap ele geçirmeye karşı, 12 Ekim 2026) ──
+  {
+    const SALDIRGAN = 'saldirgan-1234', KURBAN = 'kurbanin-sifresi-77';
+    const kay = await api('POST', '/api/account/register', { email: 'on-hesap-kurban@ornek.com', password: SALDIRGAN });
+    const t = /[?&]verify=([a-f0-9]+)/.exec(String((kay.body || {}).devLink || ''));
+    kontrol('doğrulama: deneme sunucusu bağlantıyı veriyor', kay.status === 200 && !!t, JSON.stringify(kay.body).slice(0, 120));
+    if (t) {
+      const baglam = await tarayici.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+      const sayfa = await baglam.newPage();
+      await sayfa.goto(`${BASE}/?verify=${t[1]}`, { waitUntil: 'load' });
+      await sayfa.waitForSelector('#vf-pass', { timeout: 45000 });
+      const metin = await sayfa.evaluate(() => document.getElementById('online-overlay').innerText);
+      kontrol('doğrulama: bağlantı "Hesabını Koru" penceresini açıyor (şifre soruyor)', /Hesabını Koru/.test(metin) && /Doğrula ve gir/.test(metin), metin.replace(/\s+/g, ' ').slice(0, 100));
+      kontrol('doğrulama: telefonda pencere yatay taşmıyor', !(await tasmaVar(sayfa)));
+      await ekran(sayfa, 'dogrulama_sifre');
+      await sayfa.fill('#vf-pass', 'kisa'); await sayfa.fill('#vf-pass2', 'kisa'); await sayfa.click('#vf-go'); await bekle(300);
+      kontrol('doğrulama: kısa şifre uyarı veriyor, pencere kapanmıyor', /en az 8/.test(await sayfa.evaluate(() => document.getElementById('vf-msg').textContent)));
+      await sayfa.fill('#vf-pass', KURBAN); await sayfa.fill('#vf-pass2', KURBAN + 'x'); await sayfa.click('#vf-go'); await bekle(300);
+      kontrol('doğrulama: iki şifre farklıysa uyarı veriyor', /aynı değil/.test(await sayfa.evaluate(() => document.getElementById('vf-msg').textContent)));
+      await sayfa.fill('#vf-pass2', KURBAN); await sayfa.click('#vf-go');
+      await sayfa.waitForFunction(() => window.gameState && window.gameState.state && !document.getElementById('vf-pass'), null, { timeout: 45000 });
+      const oturum = await sayfa.evaluate(() => { try { return JSON.parse(localStorage.getItem('adastra_session_v1') || 'null'); } catch { return null; } });
+      kontrol('doğrulama: şifre yazılınca oturum açıldı', !!(oturum && oturum.token), JSON.stringify(oturum).slice(0, 80));
+      kontrol('doğrulama: saldırganın şifresi artık geçmiyor', (await api('POST', '/api/account/login', { email: 'on-hesap-kurban@ornek.com', password: SALDIRGAN })).status === 401);
+      kontrol('doğrulama: kurbanın yazdığı şifre geçiyor', (await api('POST', '/api/account/login', { email: 'on-hesap-kurban@ornek.com', password: KURBAN })).status === 200);
+      await baglam.close();
+    }
+  }
+
   // ── 8) Genel: konsol hatası yok ──
   const onemli = tumHatalar.filter(h => !/favicon|Failed to load resource.*(404)|WebGL|GPU|swiftshader/i.test(h));
   kontrol('hiçbir sayfada beklenmeyen konsol hatası yok', onemli.length === 0, onemli.slice(0, 3).join(' || '));

@@ -104,7 +104,7 @@ export async function dunyaKur(opts = {}) {
     async hesapAc(eposta) {
       const r = await dunya.call('POST', '/api/account/register', { email: eposta, password: 'gizli-sifre-123' });
       if (r.status !== 200) throw new Error('kayıt: ' + JSON.stringify(r.body));
-      const v = await dunya.call('POST', '/api/account/verify', { token: dunya.sonBaglanti('verify') });
+      const v = await dunya.call('POST', '/api/account/verify', { token: dunya.sonBaglanti('verify'), password: 'gizli-sifre-123' });
       if (v.status !== 200) throw new Error('doğrulama: ' + JSON.stringify(v.body));
       return { token: v.body.token, pid: v.body.playerId };
     },

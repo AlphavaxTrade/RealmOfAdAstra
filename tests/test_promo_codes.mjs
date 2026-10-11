@@ -34,7 +34,7 @@ const lastLink = kind => { const m = db.kvJson('dev:outbox', [])[0]; const r = n
 async function signup(email, promo) {
   const r = await call('POST', '/api/account/register', { email, password: 'gizli-sifre-123', ...(promo ? { promo } : {}) });
   if (r.status !== 200) return r;
-  const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+  const v = await call('POST', '/api/account/verify', { token: lastLink('verify'), password: 'gizli-sifre-123' });
   assert.equal(v.status, 200);
   return { token: v.body.token, pid: v.body.playerId };
 }

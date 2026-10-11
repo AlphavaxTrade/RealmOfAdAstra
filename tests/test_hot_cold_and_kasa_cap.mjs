@@ -27,7 +27,7 @@ const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethe
 const lastLink = kind => new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(db.kvJson('dev:outbox', [])[0].text)[1];
 async function newPlayer(email, withWallet) {
   const r = await accounts.register(email, 'gizli-sifre-123');
-  accounts.verifyEmail(lastLink('verify'));
+  await accounts.verifyEmail(lastLink('verify'), 'gizli-sifre-123');
   if (withWallet) {
     const w = ethers.Wallet.createRandom();
     await accounts.walletLink(r.playerId, await w.signMessage(accounts.walletNonce(r.playerId, w.address).message));

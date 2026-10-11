@@ -39,7 +39,7 @@ const lastLink = kind => { const m = db.kvJson('dev:outbox', [])[0]; const r = {
 async function register(email) {
   const r = await call('POST', '/api/account/register', { email, password: 'gizli-sifre-123' });
   assert.equal(r.status, 200, JSON.stringify(r.body));
-  const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+  const v = await call('POST', '/api/account/verify', { token: lastLink('verify'), password: 'gizli-sifre-123' });
   assert.equal(v.status, 200, JSON.stringify(v.body));
   return { token: v.body.token, pid: v.body.playerId, email };
 }
@@ -160,7 +160,7 @@ try {
     const dalga = await Promise.all(epostalar.map(async e => {
       const m = kutu.find(x => x.to === e);
       const t = /[?&]verify=([a-f0-9]+)/.exec(m ? m.text : '');
-      const v = await call('POST', '/api/account/verify', { token: t && t[1] });
+      const v = await call('POST', '/api/account/verify', { token: t && t[1], password: 'gizli-sifre-123' });
       return { token: v.body && v.body.token, pid: v.body && v.body.playerId };
     }));
     assert.ok(dalga.every(x => x.token), 'tüm doğrulamalar tamamlandı');

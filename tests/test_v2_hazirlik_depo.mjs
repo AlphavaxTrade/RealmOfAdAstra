@@ -159,7 +159,7 @@ const fresh = () => {
   try {
     const lastLink = kind => { const m = db.kvJson('dev:outbox', [])[0]; const r = new RegExp('[?&]' + kind + '=([a-f0-9]+)').exec(m ? m.text : ''); return r && r[1]; };
     await call('POST', '/api/account/register', { email: 'ayse@ornek.com', password: 'gizli-sifre-123' });
-    const v = await call('POST', '/api/account/verify', { token: lastLink('verify') });
+    const v = await call('POST', '/api/account/verify', { token: lastLink('verify'), password: 'gizli-sifre-123' });
     const tok = v.body.token;
     assert.equal((await call('POST', '/api/admin/universe-stage', { stage: 1 })).status, 401, 'Yönetici anahtarı olmadan olmaz');
     assert.equal((await call('POST', '/api/admin/universe-stage', { stage: 7 }, cfg.adminToken)).status, 400, 'Geçersiz aşama');

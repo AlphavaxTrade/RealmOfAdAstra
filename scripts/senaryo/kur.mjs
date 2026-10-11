@@ -38,7 +38,7 @@ const HAZIR = E.GAME_CONFIG.KAPI.READY_TASK_IDS;
 async function hesap(ad) {
   const eposta = `${ad}@ornek.com`;
   const kayit = await accounts.register(eposta, SIFRE);
-  accounts.verifyEmail(sonBaglanti('verify'));
+  await accounts.verifyEmail(sonBaglanti('verify'), SIFRE);
   kapi.admit(kayit.playerId);
   return { ad, eposta, pid: kayit.playerId };
 }

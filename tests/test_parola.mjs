@@ -86,10 +86,10 @@ const eskiOzet = pw => { const salt = crypto.randomBytes(16); return `scrypt$${s
   try {
     await call('/api/account/register', { email: 'yeni@ornek.com', password: 'Yeni-Parola-123' });
     assert.ok(hashOf('yeni@ornek.com').startsWith('scrypt2$'), 'yeni kayıt güncel biçimde');
-    assert.equal((await call('/api/account/verify', { token: lastLink('verify') })).status, 200);
+    assert.equal((await call('/api/account/verify', { token: lastLink('verify'), password: 'Yeni-Parola-123' })).status, 200);
     // Eski özetli hesap: kayıt olup özeti eski biçime çevir
     await call('/api/account/register', { email: 'eski@ornek.com', password: 'Eski-Parola-123' });
-    await call('/api/account/verify', { token: lastLink('verify') });
+    await call('/api/account/verify', { token: lastLink('verify'), password: 'Eski-Parola-123' });
     db.raw.prepare('UPDATE accounts SET pass_hash = ? WHERE email = ?').run(eskiOzet('Eski-Parola-123'), 'eski@ornek.com');
     assert.ok(hashOf('eski@ornek.com').startsWith('scrypt$'));
     assert.equal((await call('/api/account/login', { email: 'eski@ornek.com', password: 'yanlis-parola' })).status, 401);

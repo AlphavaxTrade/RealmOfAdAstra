@@ -5,7 +5,7 @@
 //  GET  /metrics                         Prometheus ölçümleri (yönetici şifresi ya da yalnız yerel adres)
 //  POST /api/account/register {email, password}   kayıt → {token}
 //  POST /api/account/login    {email, password}   giriş → {token}
-//  POST /api/account/verify   {token}             e-posta doğrulama (e-postadaki bağlantı)
+//  POST /api/account/verify   {token, password}   e-posta doğrulama (bağlantı; yeni hesapta şifreyi yeniden belirler)
 //  POST /api/account/forgot   {email}             şifre sıfırlama e-postası
 //  POST /api/account/reset    {token, password}   yeni şifre
 //  POST /api/account/wallet/confirm {token}       cüzdan bağlama onayı (e-postadaki bağlantı)

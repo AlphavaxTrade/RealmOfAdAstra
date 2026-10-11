@@ -35,9 +35,9 @@ export default function hesapRotalari(ctx) {
       return { token: newSession(r.playerId), playerId: r.playerId, backupLeft: r.backupLeft };
     },
     'POST /api/account/verify': async (req) => {
-      const { token } = await readBody(req);
-      const r = accounts.verifyEmail(token);
-      if (!r.ok) return [400, { error: r.error }];
+      const { token, password } = await readBody(req);
+      const r = await accounts.verifyEmail(token, password);
+      if (!r.ok) return [400, { error: r.error, needPassword: !!r.needPassword }];
       if (r.playerId) promo.redeemPending(r.playerId);
       // Kapı: doğrulanmış yeni hesap yer varsa vatandaş olur, yoksa bekleme sırasına girer (misafir gibi gezer)
       if (r.playerId && kapi) { kapi.admit(r.playerId); if (r.canLogin) kapi.onLogin(r.playerId); }

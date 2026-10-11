@@ -191,7 +191,7 @@ paths:
     post:
       tags:
         - Hesap
-      summary: E-posta doğrulama (e-postadaki bağlantı)
+      summary: E-posta doğrulama (e-postadaki bağlantı; yeni hesapta şifreyi yeniden belirler)
       operationId: post_api_account_verify
       security: *a1
       requestBody:
@@ -203,11 +203,13 @@ paths:
               properties:
                 token:
                   type: string
+                password:
+                  type: string
               required:
                 - token
       responses:
         "200":
-          description: "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
+          description: "{ ok } ya da giriş de yapılabiliyorsa { ok, token, playerId }. Doğrulanmamış hesapta password zorunludur (ön-hesap ele geçirmeye karşı: yazılan şifre hesabın şifresi olur, bağlantı şifresiz çağrıda harcanmaz, 400 + needPassword döner). Kapı kuralı: yer varsa vatandaş olur, yoksa bekleme sırasına girer."
           content:
             application/json:
               schema:
