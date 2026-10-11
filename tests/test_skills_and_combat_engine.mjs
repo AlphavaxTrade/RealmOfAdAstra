@@ -40,7 +40,7 @@ assert.strictEqual(soldier1.row, 'front');
 assert.strictEqual(soldier2.row, 'back');
 assert.deepStrictEqual(soldier1.skills, ['shieldWall', 'stunStrike']);
 assert.deepStrictEqual(soldier2.skills, ['shockwave', 'fieldMedic']);
-assert.strictEqual(typeof soldier1.cooldowns.shieldWall, 'number');
+assert.strictEqual(soldier1.cooldown, 0, 'yeni birimin yetenek bekleme süresi sıfır');
 console.log('  ✅ Askerler sınıf kısıtlaması olmadan bağımsız yetenek yükü ve mevzi taşıyor.');
 
 // --------------------------------------------------------------------------
