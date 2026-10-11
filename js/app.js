@@ -5205,7 +5205,7 @@ let preBattleSelectedSoldiers = [0];
 
 function openPreBattleModal(monster) {
   window.currentPreBattleMonster = monster;
-  dom.modalTitle.innerHTML = `<span>⚔️</span> <span>SAVAŞ ÖNCESİ TAKTİK FORMASYON HAZIRLIĞI</span>`;
+  dom.modalTitle.innerHTML = V3_ARAYUZ ? '<span>⚔️</span> <span>Savaşa hazırlık</span>' : `<span>⚔️</span> <span>SAVAŞ ÖNCESİ TAKTİK FORMASYON HAZIRLIĞI</span>`;
 
   const state = gameState.state;
   const soldiers = state.soldierUnits || [];
@@ -5224,21 +5224,33 @@ function openPreBattleModal(monster) {
   const terms = gameState.getDungeonEntryTerms(monster.level, isBossForReward, selectedCount);
   const gateFee = gameState.getDungeonGateFee(monster.level, isBossForReward);
   const expectedAda = Math.min(baseReward.ada, terms.budgetLeft);
-  const entryCardHtml = `
+  const entryLadderHtml = renderDungeonEntryLadder(terms);
+  const entryNoteHtml = !terms.nextNeedsFee
+    ? `<div class="pe-note ${terms.nextWeaponWear ? '' : 'pe-good'}">${terms.nextWeaponWear ? 'Savaşa giren her askerin silahı 1 aşınır.' : 'Günün ilk girişi: silahların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.</div>`
+    : `<div class="pe-note">Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.</div>`;
+  const entryFeeHtml = terms.nextNeedsFee ? `<label class="pe-fee">
+               <input type="checkbox" id="chk-dungeon-gate-fee" ${window.dungeonPayGateFee ? 'checked' : ''} />
+               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ASTRA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
+             </label>` : '';
+  const entryWarnHtml = expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ASTRA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : '';
+  const entryCardHtml = V3_ARAYUZ ? `
     <div class="prebattle-entry-card ${terms.nextNeedsFee ? 'is-out' : ''}">
       <div class="pe-row">
         <span>🎟️ Bugünkü ${terms.nextEntryNumber}. girişin</span>
         <strong>${terms.nextNeedsFee ? 'Harçlı / antrenman' : 'Ödüllü'}</strong>
       </div>
-      ${renderDungeonEntryLadder(terms)}
-      ${!terms.nextNeedsFee
-          ? `<div class="pe-note ${terms.nextWeaponWear ? '' : 'pe-good'}">${terms.nextWeaponWear ? 'Savaşa giren her askerin silahı 1 aşınır.' : 'Günün ilk girişi: silahların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.</div>`
-          : `<label class="pe-fee">
-               <input type="checkbox" id="chk-dungeon-gate-fee" ${window.dungeonPayGateFee ? 'checked' : ''} />
-               <span><strong>Kapı harcı öde: ${gateFee.toLocaleString('tr-TR')} ASTRA</strong> — ödülüyle gir. ${(GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) >= 1 ? 'Harcın tamamı zindan kasasına gider.' : `Harçtan %${Math.round((GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) * 1000) / 10} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`}</span>
-             </label>
-             <div class="pe-note">Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.</div>`}
-      ${expectedAda < baseReward.ada ? `<div class="pe-note pe-warn">Bugünkü zindan kasası bütçesi azaldı: bu zaferin ASTRA ödülü en fazla ${expectedAda.toLocaleString('tr-TR')} olur.</div>` : ''}
+      ${entryFeeHtml}
+      ${entryWarnHtml}
+      <details class="v3-ayrinti"><summary>Giriş kuralları</summary><div>${entryLadderHtml}${entryNoteHtml}</div></details>
+    </div>` : `
+    <div class="prebattle-entry-card ${terms.nextNeedsFee ? 'is-out' : ''}">
+      <div class="pe-row">
+        <span>🎟️ Bugünkü ${terms.nextEntryNumber}. girişin</span>
+        <strong>${terms.nextNeedsFee ? 'Harçlı / antrenman' : 'Ödüllü'}</strong>
+      </div>
+      ${entryLadderHtml}
+      ${terms.nextNeedsFee ? `${entryFeeHtml}${entryNoteHtml}` : entryNoteHtml}
+      ${entryWarnHtml}
     </div>`;
 
   const staminaCost = terms.staminaCost;
@@ -5297,7 +5309,7 @@ function openPreBattleModal(monster) {
       </div>
 
       <div class="prebattle-prediction ${prediction.difficulty.toLowerCase()}">
-        <div>KAZANMA ŞANSI: %${prediction.winChance} (${prediction.difficulty.toUpperCase()})</div>
+        <div>${V3_ARAYUZ ? `Kazanma şansı: %${prediction.winChance} (${prediction.difficulty})` : `KAZANMA ŞANSI: %${prediction.winChance} (${prediction.difficulty.toUpperCase()})`}</div>
         <div style="font-size:0.75rem; font-weight:normal; margin-top:3px; opacity:0.85;">
           ${prediction.winChance >= 75 ? '🔥 Ordun ezici üstünlüğe sahip!' : (prediction.winChance >= 50 ? '⚖️ Dengeli bir savaş, yaralanmalar olabilir.' : '⚠️ Yüksek risk! Ordun yenilgiye uğrayabilir.')}
         </div>
@@ -5389,10 +5401,10 @@ function openPreBattleModal(monster) {
           <button type="button" id="btn-pb-auto" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:800; background:#15803d; border-color:#4ade80; color:#fff;" title="En güçlülerden başlayarak kazanma şansı en az %80 olana kadar seçer (daha az asker = daha az stamina)">⚡ Kazanacak kadar seç</button>
           <button type="button" id="btn-pb-all" class="btn-clean" style="width:auto; padding:5px 10px; font-size:0.76rem; font-weight:700; background:transparent; border:1px solid #475569; color:#cbd5e1;">Tümünü seç</button>
         </div>
-        ${presetSelectorHtml}
-        ${activeWeaponsPreviewHtml}
+        ${V3_ARAYUZ ? `<details class="v3-ayrinti"><summary>Taktik ve silahlar</summary><div>${presetSelectorHtml}${activeWeaponsPreviewHtml}</div></details>` : presetSelectorHtml}
+        ${V3_ARAYUZ ? '' : activeWeaponsPreviewHtml}
 
-        <div style="max-height:260px; overflow-y:auto; padding-right:4px;">
+        <div class="prebattle-sol-list" style="${V3_ARAYUZ ? '' : 'max-height:260px; overflow-y:auto; padding-right:4px;'}">
           ${soldiers.map((sol, idx) => {
             const stats = gameState.getSoldierFullStats(idx);
             const isChecked = preBattleSelectedSoldiers.includes(idx);
@@ -5429,6 +5441,7 @@ function openPreBattleModal(monster) {
   else if (totalSoldiers === 0) startBtnText = '⚔️ ASKER YOK';
   else if (selectedCount === 0) startBtnText = '⚔️ ASKER SEÇİN';
   else if (isStaminaInsufficient) startBtnText = `⚡ YETERSİZ STAMİNA (${curStamina}/${staminaCost} ⚡)`;
+  if (V3_ARAYUZ) startBtnText = startBtnText.replace('SAVAŞA BAŞLA', 'Savaşa başla').replace('ORDU KİLİTLİ', 'Ordu kilitli').replace('ASKER YOK', 'Asker yok').replace('ASKER SEÇİN', 'Asker seçin').replace('YETERSİZ STAMİNA', 'Yetersiz stamina');
 
   dom.modalBody.innerHTML = `
     ${entryCardHtml}
@@ -5436,7 +5449,7 @@ function openPreBattleModal(monster) {
       ${enemyCardHtml}
       ${armySelectHtml}
     </div>
-    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px; flex-wrap: wrap;">
+    <div class="${V3_ARAYUZ ? 'v3-prebattle-aksiyon' : ''}" style="display:flex; justify-content:flex-end; gap:10px; margin-top:14px; flex-wrap: wrap;">
       ${(state.inventory.scroll_heal || 0) > 0 ? `
         <button class="btn-clean btn-clean-purple btn-use-scroll" data-scroll="scroll_heal" style="width:auto; padding:10px 18px; font-weight:800;" title="Ordu İyileştirme Parşömeni Kullanarak Bir Askeri İyileştir (+10 HP)">
           📜 Parşömenle İyileştir (${state.inventory.scroll_heal} Adet)

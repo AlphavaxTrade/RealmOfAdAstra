@@ -137,6 +137,24 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: Karnaval yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
   await s.keyboard.press('Escape'); await bekle(300);
 
+  // Zindan savaş öncesi pencere (v3): sade başlık, giriş kuralları ve taktik katlı, "Savaşa başla" büyük ve görünür
+  await s.evaluate(async () => {
+    const g = window.gameState;
+    g.setDevLevel(30); g.setDevAdAstra(5e6);
+    if (!(g.state.soldierUnits || []).length) { g.buySoldierUnit(); g.buySoldierUnit(); }
+    const { getFloorMonsters } = await import('/js/bestiary.js');
+    window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: getFloorMonsters(1)[0] } }));
+  });
+  await bekle(900); await foto('17_zindan_hazirlik');
+  kontrol(`${ad}: Savaş öncesi pencere sade başlıkla açılır`, (await baslik()) === '⚔️ Savaşa hazırlık', await baslik());
+  kontrol(`${ad}: giriş kuralları ve taktik katlı`, await s.evaluate(() => { const d = [...document.querySelectorAll('#modal-body details.v3-ayrinti')]; return d.length >= 2 && d.every((x) => !x.open); }));
+  kontrol(`${ad}: "Savaşa başla" görünür ve ≥ 44 px`, await s.evaluate(() => { const b = document.getElementById('btn-start-tactical-battle'); return !!b && b.offsetParent !== null && b.getBoundingClientRect().height >= 43.5; }));
+  kontrol(`${ad}: asker satırları ve seçim düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .btn-toggle-prebattle-row, #modal-body #btn-pb-auto, #modal-body #btn-pb-all')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
+  kontrol(`${ad}: savaş öncesi pencere yatay taşmaz`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2 && document.getElementById('modal-body').scrollWidth <= document.getElementById('modal-body').clientWidth + 2));
+  await s.evaluate(() => document.querySelector('#modal-body details.v3-ayrinti > summary').click()); await bekle(250);
+  kontrol(`${ad}: katlı bölüm açılınca içerik görünür`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.v3-ayrinti[open] > div'); return !!d && d.offsetParent !== null && d.innerText.length > 10; }));
+  await s.keyboard.press('Escape'); await bekle(300);
+
   // Aşama 4: Test laboratuvarı
   await ust('ben', 'test'); await foto('09_lab_senaryolar');
   kontrol(`${ad}: Test laboratuvarı açılır`, /Test laboratuvarı/.test(await baslik()), await baslik());

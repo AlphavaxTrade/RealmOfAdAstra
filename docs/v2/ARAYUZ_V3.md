@@ -40,7 +40,7 @@ Amaç: oyunu kolay anlaşılır, telefonda rahat, yeni oyuncuyu elinden tutan, h
 
 ## Dürüst kalanlar (yapılmadı / sınırlı)
 1. Pazar, Krallık merkezi, Karakter, Kışla, **Demirhane, Kolezyum**, sürüm geçmişi, başlıklar yeniden düzenlendi (Demirhane/Kolezyum 11 Ekim 2026: kısa sekmeler, ana işlemler görünür, ikincil işlemler katlı, 44 px hedefler). **Karnaval, Kotalar ve Hazine** yalnız sadeleştirildi (kısa sekmeler, kartların katlanması, kasa açıklamalarının katlanması, para biriminin ASTRA yazılması); iç düzenleri hâlâ eskidir ve tam yeniden yazım ayrı iş olarak kalır.
-2. Zindan ve savaş sahnesi eski sahne; v3 yalnız zindan başlığını temizler.
+2. Zindan: **savaş öncesi pencere v3'e taşındı (11 Ekim 2026)** (sade başlık, giriş kuralları ve taktik katlı, tek sütun, sabit alt düğmeler) ve savaş sahnesinin hız/kapat düğmeleri 44 px yapıldı. Phaser sahnesinin kendisi (oda grafikleri, savaş animasyonu) ve savaş sonucu ekranı eski kaldı.
 3. Üst çubuk değerleri eski çubuktan okunur (geçiş dönemi). Eski çubuk/kenar çubuğu silinince v3 doğrudan oyun durumundan okuyacak şekilde değiştirilmeli; eski kodun silinmesi (son strangler adımı) yapılmadı.
 4. Test laboratuvarının senaryo sekmesi yalnız yerel (tek kişilik) modda çalışır; çevrimiçi deneme sunucusunda yalnız araçlar var (kayıt sunucuda olduğu için kayıt noktası alınamıyor).
 5. Gerçek telefonda denenmedi; Chromium'un telefon taklidi (dokunma + 390×844) kullanıldı. 8080 deneme sunucusunda (başka oturumun testleri sürerken) denenmedi; yalnız `npm run dev` (5180) ve başsız testler.
