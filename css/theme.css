@@ -248,24 +248,6 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 }
 
 /* Kartlar */
-.rpg-modal-body .clean-card {
-  background: var(--c-surface-2) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border-radius: var(--radius-l) !important;
-  padding: 16px 18px !important;
-  box-shadow: none !important;
-  transition: border-color .15s ease !important;
-}
-.rpg-modal-body .clean-card:not([style*="border"]) { border: 1px solid var(--c-line) !important; }
-.rpg-modal-body .clean-card:hover { transform: none !important; box-shadow: none !important; }
-.rpg-modal-body .card-title {
-  font-family: var(--font-ui) !important;
-  font-size: 15px !important;
-  font-weight: 800 !important;
-  color: var(--c-text) !important;
-  letter-spacing: 0 !important;
-}
 .rpg-modal-body strong { color: var(--c-text); }
 .rpg-modal-body code {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -474,7 +456,6 @@ body.modal-open .guide-widget { display: none; }
   .rpg-modal-overlay .rpg-modal-close { height: 36px !important; padding: 0 10px !important; }
   .rpg-modal-overlay .rpg-modal-close .modal-close-text { display: none; }
   .rpg-modal-overlay .rpg-modal-body { padding: 14px 12px 24px !important; }
-  .rpg-modal-body .clean-card { padding: 14px !important; }
   .rpg-modal-body [style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr 1fr; }
 
 }
@@ -495,23 +476,6 @@ body.modal-open .guide-widget { display: none; }
   --ada-glass-border: rgba(231, 185, 76, 0.28);
   --ada-glow-gold: rgba(231, 185, 76, 0.16);
   --gold-light: var(--c-gold-2);
-}
-
-.rpg-modal-body .dashboard-widget {
-  background: var(--c-surface-2) !important;
-  border: 1px solid var(--c-line) !important;
-  border-radius: var(--radius-l) !important;
-  backdrop-filter: none !important;
-  box-shadow: none !important;
-}
-.rpg-modal-body .dashboard-widget:hover { border-color: var(--c-line-strong) !important; box-shadow: none !important; }
-.rpg-modal-body .dashboard-widget-title {
-  font-family: var(--font-ui) !important;
-  font-size: 12.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: .06em !important;
-  text-transform: uppercase;
-  color: var(--c-gold-2) !important;
 }
 
 /* Zindan: eve dönüş düğmesi her zaman görünür */

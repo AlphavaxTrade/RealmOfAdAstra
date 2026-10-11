@@ -38,7 +38,6 @@ const ekran = {
   },
 
   eylemler: {
-    // Kışla henüz yeni ekran mimarisinde değil: ac() eski açıcıya (köprü) düşer
     kisla() { return { git: 'kisla' }; },
     demirhane() { return { git: 'demirhane' }; }
   }

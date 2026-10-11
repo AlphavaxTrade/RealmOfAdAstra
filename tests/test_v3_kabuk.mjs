@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { SEKMELER, HUB, hubHtml, esc } from '../js/ui/v3/hub.js';
 import { gitHaritasi } from '../js/ui/v3/kabuk.js';
 import { istatSatiri, bosDurum, iskelet } from '../js/ui/v3/bilesenler.js';
-import { sadeBaslik, katlaKurali } from '../js/ui/v3/panel.js';
 import { farkSatirlari, farkHtml, sonucHtml, senaryoKartiHtml, gunlukHtml, kayitEkle } from '../js/ui/v3/lab.js';
 import { AYAR_ANAHTARI, AYAR_VARSAYILAN, ayarDogrula, ayarOku, ayarYaz, ayarUygula, yaziOlcegi, baglantiDurumu, ayarlarHtml, KISAYOLLAR } from '../js/ui/v3/ayarlar.js';
 import { TUR_ADIMLARI, turBaslamali, sonrakiAdim, TUR_KAYIT_ANAHTARI } from '../js/ui/v3/tur.js';
@@ -48,29 +47,6 @@ assert.ok(!bosDurum('📦', '<img src=x>', 'm').includes('<img'));
 assert.equal((iskelet(3).match(/<i><\/i>/g) || []).length, 3);
 assert.equal((iskelet(99).match(/<i><\/i>/g) || []).length, 8, 'iskelet satırı sınırlı');
 console.log('✅ bileşenler');
-
-// 5) Panel başlıkları sadeleşir (bağırarak yazılmış ve teknik olanlar), bilinmeyen başlık yalnız 📍 işaretini kaybeder
-assert.equal(sadeBaslik('📍 🏪 AMM Pazar Alanı'), '🏪 Pazar');
-assert.equal(sadeBaslik('🏰 KRALLIK MERKEZİ'), '🏰 Krallık merkezi');
-assert.equal(sadeBaslik('📈 EKONOMİK DENGE, 10B TOKENOMICS & SİMÜLATÖR'), '📈 Ekonomi panosu');
-assert.equal(sadeBaslik('🏛️ Sirius Konseyi & Hazine'), '🏛️ Konsey ve hazine');
-assert.equal(sadeBaslik('📜 ADASTRA REALM SÜRÜM GEÇMİŞİ & GÜNCELLEME LOGU'), '📜 Sürüm geçmişi');
-assert.equal(sadeBaslik('📍 🌿 Şifahane'), '🌿 Şifahane');
-assert.equal(sadeBaslik('🌙 SEN YOKKEN OLANLAR'), '🌙 Sen yokken olanlar');
-assert.equal(sadeBaslik('⚒️ KRALLIK DEMİRCİSİ & TAMİRHANE'), '⚒️ Demirhane');
-assert.equal(sadeBaslik('📍 🌲 Zümrüt Ormanı & Oduncu'), '🌲 Zümrüt Ormanı', 'uzun bölge başlığı kısalır (telefonda "..." ile kesilmesin)');
-assert.equal(sadeBaslik('🌾 Güneş Tarlası & Değirmen'), '🌾 Güneş Tarlası');
-assert.equal(sadeBaslik('⛏️ Maden Ocağı & Tamirhane'), '⛏️ Demir Madeni');
-assert.equal(sadeBaslik('🌋 BÜYÜK SAVAŞ ALANI & WORLD BOSS ETKİNLİĞİ'), '🌋 Savaş alanı');
-assert.equal(sadeBaslik('🏰 Krallık'), '🏰 Krallık', 'zaten sade olan değişmez');
-assert.equal(sadeBaslik(''), '');
-// Katlama yalnız bilinen yoğun panellerde; ilk kartlar açık kalır
-assert.deepEqual(katlaKurali('🏰 Krallık merkezi'), { acik: 2 });
-assert.deepEqual(katlaKurali('📊 Kotalarım'), { acik: 1 });
-assert.deepEqual(katlaKurali('🎪 Karnaval'), { acik: 1 });
-assert.equal(katlaKurali('🌿 Şifahane'), null, 'kısa panel katlanmaz');
-assert.equal(katlaKurali('🏪 Pazar'), null, 'işlem ekranı katlanmaz');
-console.log('✅ panel düzenleyicileri');
 
 // 6) Sözlük: her terimin adı ve en çok iki cümlelik açıklaması var; düğme HTML'i kaçırılır; bilinmeyen terim sayfayı bozmaz
 for (const [k, v] of Object.entries(SOZLUK)) {

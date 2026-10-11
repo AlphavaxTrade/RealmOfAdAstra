@@ -35,6 +35,7 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | `js/gameState/pazar.js` (al/sat, hızlı al planı, depoyu doldur) | Yeniden yazıldı | altın kayıt; `tests/test_pazar_hizli_al.mjs`; hızlı al planında kömür eksiği düzeltildi (bkz. bulgu 26) |
 | `js/ui/v3/palet.js` (Ctrl+K paleti ve kısayollar) | Yeniden yazıldı; komut listesi tek kaynaktan (hub) | `tests/test_v3_palet.mjs`; tarayıcıda paletle ekran açıldı |
 | `js/app.js` (1.700 → ~430 satır) ve yeni küçük modüller `js/ui/{pencere,toast,yukleme,zindan-gecisi,hud-verisi,kapi-seridi,yol}.js`, `js/ui/v3/bildirim.js`, ekranlar `kotalar, surum, cevrimdisi, hurda`; `js/ui/limits.js` silindi | Yeniden yazıldı; Seferler kenar çubuğu ve eski modallar kalktı | `tests/test_arayuz_parcalari.mjs`, `test_v3_bildirim`, `test_kapi_seridi`, `test_yol_kutusu`, `test_ekran_cizim`; `v3.mjs` 213/213, `kabuk-parcalari.mjs` (zil, Krallık Yolu, çevrimdışı rapor, kapı şeridi, görüldü kancası) telefon + masaüstü |
+| `js/ui/barracks.js` (526 satır) + `css/barracks.css` + `js/ui/v3/panel.js` (eski başlık/katlama düzenleyici) | Silindi; Kışla `js/ui/ekran/kisla.js` + saf kurallar `js/ui/kisla-kurallari.js` olarak yeniden yazıldı | `tests/test_kisla_kurallari.mjs`, `tests/test_kisla_ekrani.mjs`, `test_ekran_cizim` (2 hesap durumu); `v3.mjs` 219/219 (yuva seçici, takma, cephanelik sekmesi dahil) |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -130,3 +131,5 @@ Karar bekleyen / sonraya bırakılan:
 28. **Bildirim kutusu başka oyuncuların adlarını HTML olarak yazıyordu** (`innerHTML`): bildirim merkezi yeni modülde her metni kaçırıyor (`tests/test_v3_bildirim.mjs`).
 29. **Sürüm geçmişi her maddeyi ham HTML olarak yazıyordu**; yeni ekran kaçırıyor. Sürüm notundaki "Infinity" sözcüğü ekran testinde bozuk değer sayıldığı için metin "yanlış sayı yazısı" diye düzeltildi.
 30. **Kullanılmayan ama beyaz listede duran `sweepCompletedExpeditions` işlemi** (Seferler paneli kalkınca arayüzde çağıran yok). Altın kayıt işlem sırası listeye bağlı olduğu için şimdilik kaldı; bir sonraki altın kayıt yenilemesinde silinecek. Aynı yenilemede ölü durum alanları da (`botSettings`, `lastBotSiloAction`, `colosseumLeaderboard`) kayıttan çıkarılabilir.
+31. **Kışla'da dayanıklılığı biten eşya takılabilir ama güç vermez** (`calisiyorMu` kuralı): eski ekran bunu yalnız önerilerden ayıklıyordu; yeni ekran aynı davranışı korur ve kırık eşyada "Onar" düğmesini gösterir (karar gerekmez; oyun kuralı olduğu gibi).
+32. **Eski Kışla "Hepsini soy" için tarayıcının `confirm()` penceresini kullanıyordu**; diğer ekranlarla aynı onay penceresine (`onay()`) çevrildi.

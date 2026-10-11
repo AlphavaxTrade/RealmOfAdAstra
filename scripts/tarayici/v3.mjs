@@ -234,20 +234,33 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: ?arayuz=eski artık etkisiz (tek arayüz)`, await varsayilan.evaluate(() => document.documentElement.classList.contains('v3') && !!document.getElementById('v3-tabbar') && localStorage.getItem('roa_arayuz') === null));
   await varsayilan.close();
 
-  // Kışla (compact kip): ikincil işlemler katlı, dokunma hedefleri büyük
+  // Kışla (ekran mimarisi): ikincil işlemler katlı, dokunma hedefleri büyük
   await s.evaluate(() => { const g = window.gameState; g.setDevLevel(30); g.setDevAdAstra(5e6); g.state.soldierUnits = []; for (let i = 0; i < 4; i++) g.buySoldierUnit(); });
   await ust('savas', 'kisla'); await foto('14_kisla');
-  const kis = await s.evaluate(() => ({ ana: document.querySelectorAll('.bk-summary-actions .bk-btn:not(.ghost)').length, ekstra: !!document.querySelector('.bk-extra'), asker: document.querySelectorAll('.bk-row').length, aracGizli: document.querySelector('.bk-roster-tools')?.hidden === true }));
-  kontrol(`${ad}: Kışla'da ilk bakışta yalnız 2 ana düğme (Orduyu hazırla, Yeni asker)`, kis.ana === 2 && !kis.ekstra, JSON.stringify(kis));
-  kontrol(`${ad}: kısa listede ara/süz araçları kapalı, asker listesi görünür`, kis.aracGizli && kis.asker === 4, JSON.stringify(kis));
-  await tikla('[data-ne="diger"]');
-  kontrol(`${ad}: "Diğer işlemler" üç işlemi açar`, await s.evaluate(() => document.querySelectorAll('.bk-extra .bk-btn').length === 3));
-  await tikla('[data-ne="arac"]');
-  kontrol(`${ad}: "Ara, süz, sırala" araçları açar`, await s.evaluate(() => document.querySelector('.bk-roster-tools')?.hidden === false && !!document.querySelector('.bk-search')));
-  const kucuk = await s.evaluate(() => [...document.querySelectorAll('.bk :is(.bk-btn:not(.sm), .bk-chip, .bk-tab, .bk-row)')].filter(e => e.offsetParent && e.getBoundingClientRect().height < 43).length);
-  kontrol(`${ad}: Kışla'da ana dokunma hedefleri ≥ 44 px (küçük olan yok)`, kucuk === 0, String(kucuk));
-  await tikla('[data-ne="taktik"]');
-  kontrol(`${ad}: diziliş seçenekleri açılır`, await s.evaluate(() => document.querySelectorAll('.bk-presets [data-bk="preset"]').length >= 1));
+    const kis = await s.evaluate(() => ({
+    ana: [...document.querySelectorAll('#modal-body [data-e="hazirla"], #modal-body [data-e="yeniAsker"], #modal-body [data-e="doldur"], #modal-body [data-e="hepsiniDoyur"], #modal-body [data-e="soyHepsi"]')].filter((e) => e.checkVisibility()).length,
+    asker: document.querySelectorAll('#modal-body .ek-ordu-satir').length,
+    aracKapali: !!document.querySelector('#modal-body details[data-k="kisla-arama"]:not([open])')
+  }));
+  kontrol(`${ad}: Kışla'da ilk bakışta yalnız 2 ana düğme (Orduyu hazırla, Yeni asker)`, kis.ana === 2, JSON.stringify(kis));
+  kontrol(`${ad}: kısa listede ara/süz araçları kapalı, asker listesi görünür`, kis.aracKapali && kis.asker === 4, JSON.stringify(kis));
+  await s.evaluate(() => document.querySelector('#modal-body details[data-k="kisla-diger"] > summary').click()); await bekle(300);
+  kontrol(`${ad}: "Diğer işlemler" üç işlemi açar`, await s.evaluate(() => [...document.querySelectorAll('#modal-body details[data-k="kisla-diger"] [data-e]')].filter((e) => e.checkVisibility()).length === 3));
+  await s.evaluate(() => document.querySelector('#modal-body details[data-k="kisla-arama"] > summary').click()); await bekle(300);
+  kontrol(`${ad}: "Ara, süz, sırala" araçları açar`, await s.evaluate(() => { const g = document.getElementById('kisla-ara'); return !!g && g.checkVisibility(); }));
+  const kucuk = await s.evaluate(() => [...document.querySelectorAll('#modal-body .ek-dugme, #modal-body .ek-cip, #modal-body .ek-sekme, #modal-body .ek-ordu-satir')].filter((e) => e.checkVisibility() && e.getBoundingClientRect().height < 43).length);
+  kontrol(`${ad}: Kışla'da dokunma hedefleri ≥ 44 px (küçük olan yok)`, kucuk === 0, String(kucuk));
+  await s.evaluate(() => document.querySelector('#modal-body details[data-k="kisla-taktik"] > summary').click()); await bekle(300);
+  kontrol(`${ad}: diziliş seçenekleri açılır`, await s.evaluate(() => [...document.querySelectorAll('#modal-body [data-e="taktik"]')].filter((e) => e.checkVisibility()).length >= 1));
+  // eşya yuvası: dokununca uygun eşyalar listelenir; cephanelik sekmesi açılır
+  await s.evaluate(() => { const g = window.gameState; g.state.armoryInventory = [{ id: 'q1', slot: 'weapon', name: 'Deneme Kılıcı', icon: '🗡️', level: 1, baseAtk: 9, baseHp: 0, atkBonus: 9, hpBonus: 0, durability: 13, maxDurability: 13, craftedAt: 1 }]; });
+  await bekle(1300);
+  await s.evaluate(() => document.querySelector('#modal-body [data-e="secici"][data-yuva="weapon"]').click()); await bekle(400);
+  kontrol(`${ad}: yuvaya dokununca uygun eşya listelenir`, await s.evaluate(() => !!document.querySelector('#kisla-secici [data-e="tak"]')));
+  await s.evaluate(() => document.querySelector('#kisla-secici [data-e="tak"]').click()); await bekle(500);
+  kontrol(`${ad}: eşya askere takılır`, await s.evaluate(() => !!window.gameState.state.soldierUnits[0].equipment.weapon));
+  await s.evaluate(() => document.querySelector('#modal-body [data-e="sekme"][data-sekme="cephanelik"]').click()); await bekle(400);
+  kontrol(`${ad}: cephanelik sekmesi açılır`, await s.evaluate(() => /Cephanelik/.test(document.getElementById('modal-body').innerText) && !!document.querySelector('#modal-body .ek-cip')));
   await s.keyboard.press('Escape'); await bekle(300);
 
   // onay penceresi: Esc vazgeç, Onayla evet

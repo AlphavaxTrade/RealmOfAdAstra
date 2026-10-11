@@ -42,5 +42,7 @@
   "test_arayuz_parcalari.mjs",
   "test_v3_bildirim.mjs",
   "test_kapi_seridi.mjs",
-  "test_yol_kutusu.mjs"
+  "test_yol_kutusu.mjs",
+  "test_kisla_kurallari.mjs",
+  "test_kisla_ekrani.mjs"
 ]

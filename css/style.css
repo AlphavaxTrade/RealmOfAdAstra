@@ -267,29 +267,6 @@ body.modal-open .realm-tooltip {
 }
 
 /* Kart Tasarımları (Minimal & Modern) */
-.clean-card {
-  background: #141721;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 14px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-}
-
-.card-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-title {
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 0.98rem;
-  color: #f8fafc;
-}
 
 /* Butonlar (Modern & Göz Yormayan) */
 .btn-clean {
@@ -1055,18 +1032,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 .rpg-modal-close:active { transform: translateY(0) scale(0.94); }
 
 /* ---------- 9.2 KRİSTAL CAM KARTLAR (.clean-card / .soldier-sheet-card / .stat-pill) ---------- */
-.clean-card {
-  background: var(--ada-card-bg);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.24s ease, border-color 0.24s ease;
-}
-
-.clean-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--ada-primary-gold);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5), var(--ada-shadow-glow);
-}
 
 /* Kristal parıltı utility sınıfı — istenen herhangi bir öğeye eklenebilir */
 
@@ -1116,30 +1081,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* =========================================================================
    10. KRALIK DASHBOARD (MASTER COMMAND CENTER)
    ========================================================================= */
-.dashboard-widget {
-  background: rgba(15, 10, 5, 0.85);
-  border: 1px solid rgba(245, 158, 11, 0.25);
-  border-radius: 12px;
-  padding: 16px;
-  backdrop-filter: blur(8px);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.dashboard-widget:hover {
-  border-color: rgba(245, 158, 11, 0.5);
-  box-shadow: 0 0 18px rgba(245, 158, 11, 0.12);
-}
-.dashboard-widget-title {
-  font-family: var(--font-game);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--gold-light);
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
 
 /* =========================================================================
    12. NOTIFICATION CENTER (BİLDİRİM MERKEZİ)

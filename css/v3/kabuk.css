@@ -228,15 +228,6 @@ html.v3 .toast { border-radius: 14px !important; font: 600 13.5px/1.4 var(--font
 
 /* 11. PANEL DUZENLEYICILERI VE PAZAR (js/ui/v3/panel.js, sozluk.js, app.js pazar) ---------- */
 /* katlanir kartlar */
-html.v3 details.v3-katli { background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); border-radius: var(--v3-r); overflow: hidden; }
-html.v3 details.v3-katli > summary { list-style: none; cursor: pointer; display: flex; align-items: center; min-height: var(--v3-tap); padding: 4px 14px; position: relative; padding-right: 40px; }
-html.v3 details.v3-katli > summary::-webkit-details-marker { display: none; }
-html.v3 details.v3-katli > summary::after { content: "›"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%) rotate(90deg); font-size: 22px; color: var(--v3-yazi-3); transition: transform .15s; }
-html.v3 details.v3-katli[open] > summary::after { transform: translateY(-50%) rotate(-90deg); }
-html.v3 details.v3-katli > summary > * { flex: 1; margin: 0 !important; }
-html.v3 details.v3-katli > .v3-katli-icerik { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-html.v3 details.v3-katli > summary:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: -2px; }
-html.v3 .v3-eski-dugme { all: unset; box-sizing: border-box; cursor: pointer; display: flex; justify-content: center; align-items: center; min-height: var(--v3-tap); border-radius: var(--v3-r); border: 1px dashed var(--v3-cizgi-guclu); color: var(--v3-yazi-2); font: 700 13.5px var(--font-ui); }
 /* terim dugmesi ve balonu */
 html.v3 .v3-terim { all: unset; cursor: pointer; display: inline; border-bottom: 1px dotted var(--v3-yazi-3); color: inherit; }
 html.v3 .v3-terim i { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 3px; border-radius: 50%; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 800 10px/1 var(--font-ui); font-style: normal; color: var(--v3-vurgu-acik); vertical-align: 1px; }
@@ -336,11 +327,7 @@ html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-nav-divider { display: none;
 
 /* 16. KISLA (js/ui/barracks.js compact kipi) ------------------------------- */
 html.v3 .bk [hidden] { display: none !important; }
-html.v3 .bk-extra { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--v3-cizgi); }
-html.v3 .bk-extra .bk-btn { flex: 1 1 auto; }
-html.v3 .bk-tools-toggle { align-self: stretch; margin: 8px 10px 0; justify-content: space-between; }
 html.v3 .bk :is(.bk-btn, .bk-chip, .bk-tab, .bk-seg, .bk-slot-hit, .bk-icon-btn, .bk-row) { min-height: var(--v3-tap) !important; display: inline-flex; align-items: center; }
-html.v3 .bk .bk-row { display: flex; }
 html.v3 .bk :is(.bk-mini, .bk-btn.sm) { min-height: 40px; padding-left: 12px; padding-right: 12px; }
 html.v3 .bk .bad { color: var(--v3-kotu); font-weight: 700; }
 

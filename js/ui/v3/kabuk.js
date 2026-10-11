@@ -4,7 +4,6 @@
 // Eski kenar çubuğu (Seferler paneli) kaldırıldı: seferler, üretim hakkı, toplu hasat ve onarım Krallık merkezi ekranında.
 
 import { SEKMELER, HUB, hubHtml, esc } from './hub.js';
-import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
 import { SOZLUK } from './sozluk.js';
 import { kurTur } from './tur.js';
 import { kurLab } from './lab.js';
@@ -21,7 +20,7 @@ const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 const EKRAN_KIMLIGI = {
   merkez: 'merkez', silo: 'silo', taverna: 'taverna', demirhane: 'demirhane', sifahane: 'sifahane', koy: 'koy',
   konsey: 'konsey', uzay: 'uzay', kolezyum: 'kolezyum', savasalani: 'savasalani', pazar: 'pazar', karnaval: 'karnaval',
-  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum'
+  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum', kisla: 'kisla'
 };
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
@@ -30,7 +29,6 @@ export function gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat, labAc, ayarl
   for (const [anahtar, kimlik] of Object.entries(EKRAN_KIMLIGI)) harita[anahtar] = () => api.ekranAc(kimlik);
   return {
     ...harita,
-    kisla: () => api.kislaAc(),
     zindan: () => api.zindanGir(),
     hesap: () => api.openWallet(),
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
@@ -205,27 +203,6 @@ export function kurV3Kabuk(api) {
 
   new MutationObserver(() => { if (!$('rpg-modal').classList.contains('active')) sekmeSec('harita'); })
     .observe($('rpg-modal'), { attributes: true, attributeFilter: ['class'] });
-
-  // Eski ekranların sadeleştirilmesi: başlıklar sadeleşir, uzun kart yığınları katlanır, sürüm geçmişi kısalır
-  const baslikEl = $('modal-title'), govde = $('modal-body');
-  new MutationObserver(() => {
-    const spanlar = baslikEl.querySelectorAll('span');
-    const son = spanlar[spanlar.length - 1];
-    if (!son) return;
-    const hepsi = (baslikEl.innerText || '').replace(/\s+/g, ' ').trim();
-    const sade = sadeBaslik(hepsi);
-    if (sade === hepsi) return;
-    const [simge, ...kalan] = sade.split(' ');
-    baslikEl.innerHTML = `<span>${esc(simge)}</span> <span>${esc(kalan.join(' '))}</span>`;
-  }).observe(baslikEl, { childList: true });
-  new MutationObserver((mut) => {
-    // kendi taşımalarımız (katlanır bölüm) yeniden işlemeyi tetiklemesin
-    if (mut.every((m) => [...m.addedNodes].every((n) => n.nodeType !== 1 || n.matches('details.v3-katli, .v3-eski-dugme')))) return;
-    const baslik = (baslikEl.innerText || '').replace(/\s+/g, ' ').trim();
-    const kural = katlaKurali(sadeBaslik(baslik));
-    if (kural) katla(govde, kural.acik, baslik);
-    if (/Sürüm geçmişi/i.test(sadeBaslik(baslik))) eskiSurumleriGizle(govde, 3);
-  }).observe(govde, { childList: true });
 
   // Terim balonu: sözlükteki "?" düğmelerine dokununca açıklama gösterilir (yakalama aşaması: eski pencere olayları durduruyor)
   const balon = document.createElement('div');

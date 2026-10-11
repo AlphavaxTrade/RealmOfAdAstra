@@ -8,11 +8,9 @@ import { ammMarket } from './ammMarket.js';
 import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
 // 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
-import { PLAYER_SKILLS } from './combat.js';
 import { SavasArenasi, canavarResmi } from './ui/arena.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
-import { createBarracksUI } from './ui/barracks.js';
 import { resImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 import { ac as ekranAc, baglamKur as ekranBaglamKur, canliTik as ekranCanliTik } from './ui/ekran/index.js';
@@ -75,63 +73,14 @@ const bolgeOf = (kaynak) => (RES_META()[kaynak] || {}).zone || kaynak;
 const kaynakOfBolge = (bolge) => RES_KEYS().find((k) => bolgeOf(k) === bolge) || null;
 
 // Harita bölge kimliği → ekran kimliği (kaynak bölgeleri ayrıca 'bolge' ekranıyla açılır)
-const BOLGE_EKRANI = { village: 'koy', healer: 'sifahane', spaceport: 'uzay', tavern: 'taverna', blacksmith: 'demirhane', market: 'pazar', battlefield: 'savasalani', colosseum: 'kolezyum', council: 'konsey', carnival: 'karnaval' };
+const BOLGE_EKRANI = { barracks: 'kisla', village: 'koy', healer: 'sifahane', spaceport: 'uzay', tavern: 'taverna', blacksmith: 'demirhane', market: 'pazar', battlefield: 'savasalani', colosseum: 'kolezyum', council: 'konsey', carnival: 'karnaval' };
 
 function bolgeAc(bolge) {
   if (!zindan.kapiAcikMi(bolge)) return;
   if (BOLGE_EKRANI[bolge]) { ekranAc(BOLGE_EKRANI[bolge]); return; }
   const kaynak = kaynakOfBolge(bolge);
   if (kaynak) { ekranAc('bolge', { kaynak }); return; }
-  if (bolge === 'barracks') { kislaAc(); return; }
   bildir('Bu bölge şu an açılamıyor.', 'info');
-}
-
-// ---------------------------------------------------------------------------
-// Kışla (js/ui/barracks.js kendi dinleyicileriyle çalışır; ekran mimarisine taşınmayı bekliyor)
-// ---------------------------------------------------------------------------
-let kislaSekmesi = 'army';
-let secilenAsker = 0;
-let adiDuzenlenen = null;
-let kislaCanliSayac = 0;
-
-const barracksUI = createBarracksUI({
-  gameState, GAME_CONFIG, PLAYER_SKILLS,
-  showToast: bildir,
-  renderTopBar: () => renderTopBar(),
-  reopen: (o) => kislaAc(o || {}),
-  getSelected: () => secilenAsker, setSelected: (i) => { secilenAsker = i; },
-  getTab: () => kislaSekmesi, setTab: (t) => { kislaSekmesi = t; },
-  getEditing: () => adiDuzenlenen, setEditing: (i) => { adiDuzenlenen = i; },
-  openScrapReport: (rapor) => ekranAc('hurda', { rapor })
-});
-
-function kislaAc(secenek = {}) {
-  if (!zindan.kapiAcikMi('barracks')) return;
-  if (!['army', 'armory'].includes(kislaSekmesi)) kislaSekmesi = 'army';
-  const govde = pencere.govde;
-  // Yeniden çizimde kaydırma yeri korunur (uzun listelerde başa atlamasın)
-  const ayniEkran = !!govde.querySelector('.bk');
-  const ustKaydirma = ayniEkran ? govde.scrollTop : 0;
-  const listeKaydirma = ayniEkran ? (govde.querySelector('#bk-roster-list')?.scrollTop || 0) : 0;
-  pencere.yaz(['⚔️', 'Kışla'], barracksUI.render());
-  barracksUI.install(govde);
-  if (ayniEkran) {
-    govde.scrollTop = ustKaydirma;
-    const liste = govde.querySelector('#bk-roster-list');
-    if (liste) liste.scrollTop = listeKaydirma;
-  }
-  if (secenek.scrollTo) govde.querySelector(secenek.scrollTo)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  const adGirdisi = $('input-soldier-rename');
-  if (adGirdisi) setTimeout(() => { adGirdisi.focus(); adGirdisi.select(); }, 50);
-}
-
-// Kışla açıkken (ordu sekmesi) can çubukları ve iyileşme süreleri ~1,5 saniyede bir canlı tutulur
-function kislaCanliYenile(saniye) {
-  if (!pencere.acikMi() || kislaSekmesi !== 'army' || !pencere.govde.querySelector('.bk')) return;
-  kislaCanliSayac += saniye;
-  if (kislaCanliSayac < 1.5) return;
-  kislaCanliSayac = 0;
-  barracksUI.liveUpdate(pencere.govde);
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +106,7 @@ function danismanEylemi(eylem) {
     bildir(sonuc.message, sonuc.success ? 'success' : 'info');
     renderTopBar();
   } else if (eylem === 'open_barracks') {
-    kislaAc();
+    ekranAc('kisla');
   } else if (eylem === 'open_blacksmith') {
     bolgeAc('blacksmith');
   } else if (eylem === 'open_dungeon') {
@@ -206,7 +155,6 @@ ekranBaglamKur({
   // Yeni ekrana taşınmamış bölümler için köprü
   eskiAc: (id) => {
     const eski = {
-      kisla: () => kislaAc(),
       zindan: () => zindan.gir(),
       rehber: () => yol.panelAc()
     };
@@ -244,7 +192,6 @@ function olaylariBagla() {
   window.addEventListener('open-town-modal', (e) => {
     const { zoneId } = e.detail;
     if (zoneId === 'dungeon') zindan.gir();
-    else if (zoneId === 'barracks') kislaAc();
     else if (zoneId === 'warehouse' || zoneId === 'silo') ekranAc('silo');
     else if (zoneId === 'collection') ekranAc('koleksiyon');
     else if (zoneId === 'council') ekranAc('hazine');
@@ -321,7 +268,6 @@ function oyunDongusu(simdi) {
       gameState.processSoldierPassiveHealing(yavasSn);
       gameState.processVillage(yavasSn);
       gameState.checkWeeklyAutonomousBuyback();
-      kislaCanliYenile(yavasSn);
       ekranCanliTik();
       kapiSeridi.ciz();
       kayitOlaylariniBildir();
@@ -469,7 +415,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     gameState, testSurumu,
     isAnyModalOpen, closeModal,
     openPanel: (baslik, html) => pencere.yaz(baslik, html),
-    ekranAc, kislaAc,
+    ekranAc,
     zindanGir: zindan.gir,
     openKaynak: (kaynak) => ekranAc('bolge', { kaynak }),
     openOgretici: () => yol.panelAc(),

@@ -53,7 +53,7 @@ export function ac(id, secenek = {}) {
   const ekran = KAYIT.get(id);
   const b = baglam;
   if (!ekran) {
-    // Henüz yeni ekrana taşınmamış bölümler eski açıcıya düşer (taşıma süresince)
+    // Henüz yeni ekrana taşınmamış bölümler köprü açıcıya düşer (taşıma süresince)
     if (b.eskiAc && b.eskiAc(id, secenek)) return true;
     throw new Error(`bilinmeyen ekran: ${id}`);
   }
