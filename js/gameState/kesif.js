@@ -1,116 +1,108 @@
-// Realm of AdAstra — GameStateManager yöntemleri: Zindan ganimeti, eserler, Pandora kutusu, Genesis NFT, Arena anahtarı
-// (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
+// Realm of AdAstra — GameStateManager yöntemleri: zindan ganimeti, koleksiyon eserleri, Pandora kutusu, Genesis NFT, Arena anahtarı
+// Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { treasury } from '../treasury.js';
 
+// Pandora kutusunun nadirlik zarı: [üst sınır, nadirlik]; zar 0-1 arası tek sayıdır
+const NADIRLIK_ESIKLERI = [[0.05, 'legendary'], [0.20, 'epic'], [0.50, 'rare']];
+const NADIRLIK_ROZETI = { legendary: '💎 EFSANEVİ', epic: '🟣 EPİK', rare: '🔵 NADİR', common: '🟢 YAYGIN' };
+
+const rastgeleSec = (liste) => liste[Math.floor(Math.random() * liste.length)];
+
 export const kesifYontemleri = {
-  // =========================================================================
-  // 6. GAMEFI & RPG EKONOMİSİ (PHASE 1)
-  // =========================================================================
-
-  // Zindan Canavarı Yenildiğinde XP, AdAstra ve Şansa Bağlı Ganimet Dağıtır
+  // Zindan canavarı yenildiğinde deneyim, ASTRA (zindan kasasından) ve şansa bağlı ganimet dağıtır.
+  // rewarded=false: antrenman girişi, yalnızca deneyim.
   addDungeonXpAndDrops(level, isBoss = false, { rewarded = true } = {}) {
-    const lvl = Math.max(1, Math.min(18, level));
-    // SADECE Kat 3 (Lv.9 Kadim Taş Golyat) ve Kat 6 (Lv.18 Kıyamet Ejderhası IGNIS) Bosslarında %100 çarpan etkisi (+%100 ekstra şans, 2 katı)
-    const base = this.getDungeonBaseReward(lvl, isBoss);
-    const isMajorBoss = base.isMajorBoss;
-    const bossMultiplier = isMajorBoss ? (GAME_CONFIG.BOSS_DROP_MULTIPLIER || 2.0) : 1.0;
+    const seviye = Math.max(1, Math.min(18, level));
+    const taban = this.getDungeonBaseReward(seviye, isBoss);
+    const buyukBoss = taban.isMajorBoss;
+    // Yalnız kat 3 (Sv.9) ve kat 6 (Sv.18) bosslarında düşme şansları çarpılır
+    const bossCarpani = buyukBoss ? (GAME_CONFIG.BOSS_DROP_MULTIPLIER || 2.0) : 1.0;
 
-    const xpGained = base.xp;
-    this.addXp(xpGained);
-
-    // Antrenman girişi (günlük ödüllü haklar bitti, kapı harcı ödenmedi): yalnızca deneyim
+    this.addXp(taban.xp);
     if (!rewarded) {
       this.saveState();
-      return { success: true, trainingOnly: true, xpGained, adAstraGained: 0, fragmentsGained: 0, boxGained: 0, artifactDiscovered: null, scrollGained: null };
+      return { success: true, trainingOnly: true, xpGained: taban.xp, adAstraGained: 0, fragmentsGained: 0, boxGained: 0, artifactDiscovered: null, scrollGained: null };
     }
 
-    // Günlük zindan bütçesi: kasa bir günde en fazla bakiyesinin %1'ini öder
-    const day = this.getDungeonDayStatus();
-    const targetAdAstra = Math.min(base.ada, day.budgetLeft);
-    let adAstraGained = 0;
-    let budgetFull = false;
-    if (targetAdAstra > 0) {
-      const draw = (typeof treasury !== 'undefined' && treasury && treasury.withdraw)
-        ? treasury.withdraw('dungeon', targetAdAstra)   // yuvarlama yok: kasadan çıkan tam miktar oyuncuya gider (1 ASTRA altı ödül sıfıra inmesin, ASTRA yoktan oluşmasın)
-        : { granted: targetAdAstra };
-      adAstraGained = Math.max(0, draw.granted != null ? draw.granted : targetAdAstra);
-      budgetFull = !!draw.budgetFull;
-      this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + adAstraGained;
+    // Kasa bir günde en fazla bakiyesinin %1'ini öder; çekilen tam miktar oyuncuya gider (yuvarlama yok)
+    const gun = this.getDungeonDayStatus();
+    const hedef = Math.min(taban.ada, gun.budgetLeft);
+    let kazanilanAstra = 0;
+    let butceDoldu = false;
+    if (hedef > 0) {
+      const cekim = treasury && treasury.withdraw ? treasury.withdraw('dungeon', hedef) : { granted: hedef };
+      kazanilanAstra = Math.max(0, cekim.granted != null ? cekim.granted : hedef);
+      butceDoldu = !!cekim.budgetFull;
+      this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + kazanilanAstra;
     }
-    const budgetCapped = adAstraGained < base.ada;
-    this.state.adAstraBalance += adAstraGained;
-    this._onAdaEarned(adAstraGained);
+    const butceKisti = kazanilanAstra < taban.ada;
+    this.state.adAstraBalance += kazanilanAstra;
+    this._onAdaEarned(kazanilanAstra);
 
-    let fragmentsGained = 0;
-    const accountLevel = this.state.level || 1;
-    const fragmentChance = Math.min(0.95, this.getFragmentDropRate(accountLevel) * bossMultiplier);
-    if (Math.random() < fragmentChance) {
-      fragmentsGained = isMajorBoss ? (3 + Math.floor(Math.random() * 4)) : (1 + Math.floor(Math.random() * 2));
-      this.state.inventory.fragments = (this.state.inventory.fragments || 0) + fragmentsGained;
+    const hesapSeviyesi = this.state.level || 1;
+
+    let parca = 0;
+    if (Math.random() < Math.min(0.95, this.getFragmentDropRate(hesapSeviyesi) * bossCarpani)) {
+      parca = buyukBoss ? 3 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2);
+      this.state.inventory.fragments = (this.state.inventory.fragments || 0) + parca;
     }
 
-    let boxGained = 0;
-    const boxChance = Math.min(0.5, this.getBoxDropRate(accountLevel) * bossMultiplier);
-    if (Math.random() < boxChance) {
-      boxGained = 1;
+    let kutu = 0;
+    if (Math.random() < Math.min(0.5, this.getBoxDropRate(hesapSeviyesi) * bossCarpani)) {
+      kutu = 1;
       this.state.lockedBoxes = (this.state.lockedBoxes || 0) + 1;
     }
 
-    let artifactDiscovered = null;
-    if (isMajorBoss) {
-      const artifactChance = Math.min(1, GAME_CONFIG.ARTIFACT_BASE_RATE * lvl * 6);
-      if (Math.random() < artifactChance) {
-        artifactDiscovered = this.discoverArtifact(lvl);
-      }
+    let eser = null;
+    if (buyukBoss && Math.random() < Math.min(1, GAME_CONFIG.ARTIFACT_BASE_RATE * seviye * 6)) {
+      eser = this.discoverArtifact(seviye);
     }
 
-    // 📜 Zindan Zafer Ganimeti: Canavarlardan Düşen Parşömenler (Yalnızca Ordu İyileştirme & 100 Stamina)
-    let scrollGained = null;
-    const scrollChance = isMajorBoss ? 0.40 : 0.07;
-    if (Math.random() < scrollChance) {
-      const isHeal = Math.random() < 0.60;
-      const scrollType = isHeal ? 'scroll_heal' : 'scroll_stamina';
-      this.state.inventory[scrollType] = (this.state.inventory[scrollType] || 0) + 1;
-      scrollGained = {
-        type: scrollType,
-        name: isHeal ? 'Ordu İyileştirme Parşömeni (+10 HP)' : '100 Stamina Doldurma Parşömeni',
-        icon: isHeal ? '📜' : '⚡',
-        image: isHeal ? 'assets/scroll_heal.jpg' : 'assets/scroll_stamina.jpg'
+    // Parşömen: boss %40, normal canavar %7; %60 iyileştirme, %40 stamina
+    let parsomen = null;
+    if (Math.random() < (buyukBoss ? 0.40 : 0.07)) {
+      const iyilestirme = Math.random() < 0.60;
+      const tur = iyilestirme ? 'scroll_heal' : 'scroll_stamina';
+      this.state.inventory[tur] = (this.state.inventory[tur] || 0) + 1;
+      parsomen = {
+        type: tur,
+        name: iyilestirme ? 'Ordu İyileştirme Parşömeni (+10 HP)' : '100 Stamina Doldurma Parşömeni',
+        icon: iyilestirme ? '📜' : '⚡',
+        image: iyilestirme ? 'assets/scroll_heal.jpg' : 'assets/scroll_stamina.jpg'
       };
     }
 
     this.saveState();
-
-    return { xpGained, adAstraGained, fragmentsGained, boxGained, artifactDiscovered, scrollGained, isBoss: isMajorBoss, budgetCapped, budgetFull, baseAda: base.ada };
+    return {
+      xpGained: taban.xp, adAstraGained: kazanilanAstra, fragmentsGained: parca, boxGained: kutu, artifactDiscovered: eser,
+      scrollGained: parsomen, isBoss: buyukBoss, budgetCapped: butceKisti, budgetFull: butceDoldu, baseAda: taban.ada
+    };
   },
 
-  // Henüz Keşfedilmemiş Bir Koleksiyon Eserini Açığa Çıkarır (Varsa Zindan Seviyesine Uygun Olanı Önceliklendirir)
+  // Henüz keşfedilmemiş bir eseri açar; varsa bu zindan seviyesine ait olanı öncelikler
   discoverArtifact(preferredLevel = null) {
-    const undiscovered = this.state.collectionArtifacts.filter(a => !a.discovered);
-    if (undiscovered.length === 0) return null;
+    const bulunmamis = this.state.collectionArtifacts.filter(a => !a.discovered);
+    if (bulunmamis.length === 0) return null;
 
-    const exactMatch = preferredLevel !== null
-      ? undiscovered.find(a => {
+    const tam = preferredLevel !== null
+      ? bulunmamis.find(a => {
         const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === a.id);
         return cfg && cfg.dropLevel === preferredLevel;
       })
       : null;
+    const secilen = tam || rastgeleSec(bulunmamis);
+    secilen.discovered = true;
+    secilen.discoveredAt = Date.now();
 
-    const pick = exactMatch || undiscovered[Math.floor(Math.random() * undiscovered.length)];
-    pick.discovered = true;
-    pick.discoveredAt = Date.now();
-
-    const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === pick.id);
-    return { id: pick.id, name: cfg.name, icon: cfg.icon, rarity: cfg.rarity, lore: cfg.lore };
+    const cfg = GAME_CONFIG.COLLECTION_ARTIFACTS.find(c => c.id === secilen.id);
+    return { id: secilen.id, name: cfg.name, icon: cfg.icon, rarity: cfg.rarity, lore: cfg.lore };
   },
 
-  // Kilitli Sandığı Açar (SADECE 18 Koleksiyon Eserinden Biri Çıkar - Rarity Ağırlıklı)
+  // Pandora kutusunu 1 anahtarla açar: nadirliğe göre ağırlıklı bir koleksiyon eseri çıkar (yinelenebilir)
   unboxMysteryBox() {
-    if ((this.state.lockedBoxes || 0) <= 0) {
-      return { success: false, message: 'Açılacak Pandora Kutun yok!' };
-    }
+    if ((this.state.lockedBoxes || 0) <= 0) return { success: false, message: 'Açılacak Pandora Kutun yok!' };
     if ((this.state.arenaKeys || 0) <= 0) {
       return {
         success: false,
@@ -123,58 +115,36 @@ export const kesifYontemleri = {
     this.burnItem('boxes', 1);
     this.burnItem('keys', 1);
 
-    // Rarity Ağırlıkları: Common (%50), Rare (%30), Epic (%15), Legendary (%5)
-    const roll = Math.random();
-    let selectedRarity = 'common';
-    if (roll < 0.05) {
-      selectedRarity = 'legendary'; // %5 Efsanevi
-    } else if (roll < 0.20) {
-      selectedRarity = 'epic';      // %15 Epik
-    } else if (roll < 0.50) {
-      selectedRarity = 'rare';      // %30 Nadir
-    } else {
-      selectedRarity = 'common';    // %50 Yaygın
+    const zar = Math.random();
+    const esik = NADIRLIK_ESIKLERI.find(([ust]) => zar < ust);
+    const nadirlik = esik ? esik[1] : 'common';
+
+    const eserler = GAME_CONFIG.COLLECTION_ARTIFACTS;
+    const havuz = eserler.filter(c => c.rarity === nadirlik);
+    const secilenCfg = havuz.length > 0 ? rastgeleSec(havuz) : rastgeleSec(eserler);
+
+    if (!this.state.collectionArtifacts) this.state.collectionArtifacts = [];
+    let kayit = this.state.collectionArtifacts.find(a => a.id === secilenCfg.id);
+    if (!kayit) {
+      kayit = { id: secilenCfg.id, discovered: false, discoveredAt: null, count: 0 };
+      this.state.collectionArtifacts.push(kayit);
     }
-
-    // Seçilen rarity'ye ait tüm eserleri bul
-    const pool = GAME_CONFIG.COLLECTION_ARTIFACTS.filter(c => c.rarity === selectedRarity);
-    const chosenConfig = pool.length > 0
-      ? pool[Math.floor(Math.random() * pool.length)]
-      : GAME_CONFIG.COLLECTION_ARTIFACTS[Math.floor(Math.random() * GAME_CONFIG.COLLECTION_ARTIFACTS.length)];
-
-    // Kullanıcının koleksiyonundaki eşleşen eseri bul veya oluştur
-    let userArt = (this.state.collectionArtifacts || []).find(a => a.id === chosenConfig.id);
-    if (!userArt) {
-      userArt = { id: chosenConfig.id, discovered: false, discoveredAt: null, count: 0 };
-      if (!this.state.collectionArtifacts) this.state.collectionArtifacts = [];
-      this.state.collectionArtifacts.push(userArt);
-    }
-
-    const wasDiscovered = userArt.discovered;
-    userArt.discovered = true;
-    if (!userArt.discoveredAt) userArt.discoveredAt = Date.now();
-    userArt.count = (userArt.count || 0) + 1;
-
-    const rarityBadge = chosenConfig.rarity === 'legendary' ? '💎 EFSANEVİ' : (chosenConfig.rarity === 'epic' ? '🟣 EPİK' : (chosenConfig.rarity === 'rare' ? '🔵 NADİR' : '🟢 YAYGIN'));
-    const isDuplicate = wasDiscovered;
+    const yineleniyor = kayit.discovered;
+    kayit.discovered = true;
+    if (!kayit.discoveredAt) kayit.discoveredAt = Date.now();
+    kayit.count = (kayit.count || 0) + 1;
 
     this.saveState();
 
+    const rozet = NADIRLIK_ROZETI[secilenCfg.rarity] || NADIRLIK_ROZETI.common;
     return {
       success: true,
       type: 'artifact',
-      isDuplicate,
-      artifact: {
-        id: chosenConfig.id,
-        name: chosenConfig.name,
-        icon: chosenConfig.icon,
-        rarity: chosenConfig.rarity,
-        lore: chosenConfig.lore,
-        count: userArt.count
-      },
-      message: isDuplicate
-        ? `📦 Pandora Kutusundan [${rarityBadge}] ${chosenConfig.icon} ${chosenConfig.name} çıktı! (Koleksiyonunda ${userArt.count} adet oldu)`
-        : `🎉 TEBRİKLER! Pandora Kutusundan YENİ [${rarityBadge}] ${chosenConfig.icon} ${chosenConfig.name} keşfettin!`
+      isDuplicate: yineleniyor,
+      artifact: { id: secilenCfg.id, name: secilenCfg.name, icon: secilenCfg.icon, rarity: secilenCfg.rarity, lore: secilenCfg.lore, count: kayit.count },
+      message: yineleniyor
+        ? `📦 Pandora Kutusundan [${rozet}] ${secilenCfg.icon} ${secilenCfg.name} çıktı! (Koleksiyonunda ${kayit.count} adet oldu)`
+        : `🎉 TEBRİKLER! Pandora Kutusundan YENİ [${rozet}] ${secilenCfg.icon} ${secilenCfg.name} keşfettin!`
     };
   },
 
@@ -182,39 +152,33 @@ export const kesifYontemleri = {
     return this.unboxMysteryBox();
   },
 
-  // 18 Koleksiyon Eseri Tamamlandığında Genesis NFT'yi Basar
+  // 18 eserin tamamı toplanınca Genesis NFT basılır (Universe'de gezegen satın alma hakkı verir)
   mintGenesisNft() {
-    if (this.state.genesisNftMinted) {
-      return { success: false, message: 'Genesis NFT zaten basıldı!' };
-    }
+    if (this.state.genesisNftMinted) return { success: false, message: 'Genesis NFT zaten basıldı!' };
 
-    const required = GAME_CONFIG.GENESIS_NFT.requiredArtifacts;
-    const discoveredCount = this.state.collectionArtifacts.filter(a => a.discovered).length;
-    if (discoveredCount < required) {
-      return { success: false, message: `Tüm koleksiyonu tamamlamalısın! (${discoveredCount}/${required} Eser)` };
-    }
+    const gereken = GAME_CONFIG.GENESIS_NFT.requiredArtifacts;
+    const bulunan = this.state.collectionArtifacts.filter(a => a.discovered).length;
+    if (bulunan < gereken) return { success: false, message: `Tüm koleksiyonu tamamlamalısın! (${bulunan}/${gereken} Eser)` };
 
-    const cost = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
-    if (this.state.adAstraBalance < cost) {
-      return { success: false, message: `Yetersiz AdAstra! (${cost} ASTRA gerekli)` };
-    }
+    const bedel = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
+    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz AdAstra! (${bedel} ASTRA gerekli)` };
 
-    this.state.adAstraBalance -= cost;
-    this._onAdaSpent(cost);
-    globalPool.recordTokenSpend(cost);
+    this.state.adAstraBalance -= bedel;
+    this._onAdaSpent(bedel);
+    globalPool.recordTokenSpend(bedel);
     this.state.genesisNftMinted = true;
-    // v2 (M): Genesis NFT = Universe'de gezegen satın alma hakkı
-    this.state.grants = Array.from(new Set([...(Array.isArray(this.state.grants) ? this.state.grants : []), ...((GAME_CONFIG.GENESIS_NFT && GAME_CONFIG.GENESIS_NFT.grants) || ['universe_planet_purchase'])]));
+    const mevcut = Array.isArray(this.state.grants) ? this.state.grants : [];
+    const yeni = (GAME_CONFIG.GENESIS_NFT && GAME_CONFIG.GENESIS_NFT.grants) || ['universe_planet_purchase'];
+    this.state.grants = Array.from(new Set([...mevcut, ...yeni]));
 
     this.saveState();
-
     return { success: true, message: `🏆 ${GAME_CONFIG.GENESIS_NFT.name} başarıyla basıldı! Efsane tamamlandı!` };
   },
 
-  // Kolezyum/Arena Girişleri İçin Arena Anahtarı Ekler
+  // Kolezyum girişleri için Arena anahtarı ekler
   addArenaKey(count = 1) {
     this.state.arenaKeys = (this.state.arenaKeys || 0) + count;
     this.saveState();
     return this.state.arenaKeys;
-  },
+  }
 };
