@@ -1,11 +1,15 @@
-// Realm of AdAstra — AMM Swap Motoru (x · y = k)
+// Realm of AdAstra — Pazar Motoru (sabit çarpım havuzu: x · y = k)
 // ============================================================================
-// AMM DEX Dinamik Havuz Mimarisi:
-//  • Rezervler AMM_CORRIDORS hedef fiyatlarından türetilir (YASA 3: kıt olan pahalıdır).
-//  • Derinlik, haftalık küresel kotanın fiyatı ~%7 hareket ettireceği şekilde seçilir.
-//  • %2.00 Market Harcı alınır: %86 Hazine, %5 Kalıcı Yakım, %6 UBI, %3 Telif.
-//  • %2.00 Hammadde Yakımı alınır: Alınan/satılan kaynaktan anında yakılıp total arzdan silinir.
-//  • Fiyat koridoru UYGULANIR: taban altına inen satış reddedilir, tavan aşımı engellenir.
+// Her varlığın (6 hammadde, teçhizat parçası, Pandora kutusu, anahtar, parşömenler)
+// bir havuzu vardır: bir yanda mal, bir yanda ASTRA. Fiyat = ASTRA ÷ mal.
+//
+//  • Havuz derinliği tohumdan gelir (AMM_SEED_ASTRA); mal tarafı = ASTRA ÷ açılış fiyatı.
+//  • Her işlemde %AMM_FEE_RATE komisyon alınır; globalPool.recordTokenSpend() ile
+//    yakım / UBI / telif / hazine olarak bölünür.
+//  • Hammaddede ayrıca işlem miktarının %2'si havuza girmeden kalıcı yakılır.
+//  • Fiyat koridoru uygulanır: taban altına indiren satış ve tavan üstüne çıkaran alım reddedilir.
+//  • Tek işlemde havuzdaki malın en çok %AMM_SINGLE_TRADE_SHARE'i alınıp satılabilir.
+//  • Geri alım: fiyat açılışın TRIGGER_DROP kadar altına inen varlıkları hazine kasasından alıp yakar.
 // ============================================================================
 
 import { GAME_CONFIG } from './config.js';
@@ -13,166 +17,146 @@ import { globalPool } from './globalPool.js';
 import { treasury } from './treasury.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 
-// v2 (R4b): hammaddeler config'ten (6 kaynak); açılış fiyatları koridorların açılış değeri
-const RAW_RESOURCES = GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
+const HAMMADDELER = GAME_CONFIG.RESOURCE_KEYS;
 const META = GAME_CONFIG.RESOURCE_META || {};
-const zeroRaw = () => Object.fromEntries(RAW_RESOURCES.map(k => [k, 0]));
+const sifirHammadde = () => Object.fromEntries(HAMMADDELER.map(k => [k, 0]));
+const koridorlar = () => GAME_CONFIG.AMM_CORRIDORS;
 
-// 🏛️ Lansman / Genesis Değişmez Başlangıç Fiyatları (Tüm düşüşler buna göre hesaplanır)
-export const GENESIS_PRICES = Object.fromEntries(Object.entries(GAME_CONFIG.AMM_CORRIDORS || {}).map(([k, c]) => [k, c.defaultPriceAda]));
+// Lansman fiyatları: düşüşler hep buna göre ölçülür
+export const GENESIS_PRICES = Object.fromEntries(
+  Object.entries(koridorlar()).map(([k, c]) => [k, c.defaultPriceAda])
+);
 
-// ⚖️ Geri alım öncelik ağırlıkları: hammaddeler üretim değerine göre (%75), tüketilenler %25
+// Geri alım öncelik ağırlıkları: hammaddeler üretim değerine göre %75, parça/anahtar/kutu %25
+const uretimDegeri = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 1) * ((koridorlar()[k] || {}).defaultPriceAda || 1);
 export const BUYBACK_ASSET_WEIGHTS = (() => {
+  const toplam = HAMMADDELER.reduce((t, k) => t + uretimDegeri(k), 0) || 1;
   const w = {};
-  const val = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 1) * ((GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 1);
-  const tot = RAW_RESOURCES.reduce((s, k) => s + val(k), 0) || 1;
-  for (const k of RAW_RESOURCES) w[k] = 0.75 * val(k) / tot;
+  for (const k of HAMMADDELER) w[k] = 0.75 * uretimDegeri(k) / toplam;
   w.fragments = 0.10; w.keys = 0.08; w.boxes = 0.07;
   return w;
 })();
 
-// Haftalık arzın fiyatı ne kadar hareket ettireceği (yalnız tohumu tanımsız varlıklar için yedek)
-const TARGET_PRICE_IMPACT = 0.07;
-function resourceBurnRateOf(key) {
-  if (!RAW_RESOURCES.includes(key)) return 0;
-  const r = GAME_CONFIG.AMM_RESOURCE_FEE_RATE ?? GAME_CONFIG.AMM_FEE_RATE ?? 0.02;
-  return Math.max(0, Math.min(0.5, r));
+// ─────────────────────────────────────────────────────────────────────────
+// Havuz tohumları
+// ─────────────────────────────────────────────────────────────────────────
+// Tohumu tanımsız varlıklar için eski derinlik kuralı: haftalık arzın fiyatı ~%7 oynatacağı derinlik
+const HEDEF_FIYAT_ETKISI = 0.07;
+const HAFTALIK_ARZ_YEDEK = { fragments: 9000, boxes: 15, keys: 50, scroll_heal: 1500, scroll_stamina: 1000 };
+
+function haftalikArz(key) {
+  const kota = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key];
+  return kota ? kota.totalCap : (HAFTALIK_ARZ_YEDEK[key] || 1000);
 }
 
-// Kota bilgisi olmayan varlıklar için varsayılan haftalık arz tahmini
-const WEEKLY_SUPPLY_FALLBACK = {
-  fragments: 9000,
-  boxes: 15,
-  keys: 50,
-  scroll_heal: 1500,
-  scroll_stamina: 1000
-};
-
-function weeklySupplyOf(key) {
-  const cap = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key];
-  if (cap) return cap.totalCap;
-  return WEEKLY_SUPPLY_FALLBACK[key] || 1000;
+// Hammadde tohumunun üretim hızı × açılış fiyatı ile ağırlıklı payı
+function hammaddeTohumPayi(key) {
+  const deger = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 0) * ((koridorlar()[k] || {}).defaultPriceAda || 0);
+  const toplam = HAMMADDELER.reduce((t, k) => t + deger(k), 0);
+  return toplam > 0 ? deger(key) / toplam : 1 / HAMMADDELER.length;
 }
 
-// v1.25 (kullanıcı kararı): odun, demir ve buğday havuzu = haftalık dünya kotasının 80 katı.
-// Böylece kotanın TAMAMI her hafta pazara satılsa bile fiyatın %90 düşmesi ~3,4 yıl sürer;
-// oyunda harcanan (tamir, silah dövme/geliştirme, silo, seviye, stamina) kısım bu süreyi uzatır.
-// Diğer varlıklar (parça, kutu, anahtar, parşömen) eski kuralla: haftalık arzın fiyatı ~%7 oynatacağı derinlik.
-// v2 (R3/R4b): havuzun ASTRA tarafı tohumdan (AMM_SEED_ASTRA): hammaddelere 90 M değer ağırlıklı (üretim hızı × açılış
-// fiyatı), tüketilenlere kendi tohumu; mal tarafı = ASTRA ÷ açılış fiyatı. Tohumu olmayan varlıkta eski derinlik kuralı.
-function rawSeedShare(key) {
-  const val = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 0) * ((GAME_CONFIG.AMM_CORRIDORS[k] || {}).defaultPriceAda || 0);
-  const tot = RAW_RESOURCES.reduce((s, k) => s + val(k), 0);
-  return tot > 0 ? val(key) / tot : 1 / RAW_RESOURCES.length;
-}
-function derivePool(key, meta) {
-  const corridor = GAME_CONFIG.AMM_CORRIDORS[key];
-  const price = corridor ? corridor.defaultPriceAda : 1;
-  const seeds = GAME_CONFIG.AMM_SEED_ASTRA || {};
-  let adAstraReserve;
-  if (RAW_RESOURCES.includes(key) && seeds.raw > 0) adAstraReserve = seeds.raw * rawSeedShare(key);
-  else if (seeds[key] > 0) adAstraReserve = seeds[key];
+function havuzKur(key, meta) {
+  const koridor = koridorlar()[key];
+  const fiyat = koridor ? koridor.defaultPriceAda : 1;
+  const tohumlar = GAME_CONFIG.AMM_SEED_ASTRA || {};
+  const hammaddeMi = HAMMADDELER.includes(key);
+
+  let astraRezervi;
+  if (hammaddeMi && tohumlar.raw > 0) astraRezervi = tohumlar.raw * hammaddeTohumPayi(key);
+  else if (tohumlar[key] > 0) astraRezervi = tohumlar[key];
   else {
-    const supply = weeklySupplyOf(key);
-    const depthWeeks = GAME_CONFIG.AMM_RAW_DEPTH_WEEKS || 80;
-    const resourceReserve = RAW_RESOURCES.includes(key)
-      ? Math.round(supply * depthWeeks)
-      : Math.round(supply * (1 - TARGET_PRICE_IMPACT) / TARGET_PRICE_IMPACT);
-    return { resourceReserve, adAstraReserve: Math.round(resourceReserve * price), ...meta };
+    const arz = haftalikArz(key);
+    const maldaRezerv = hammaddeMi
+      ? Math.round(arz * (GAME_CONFIG.AMM_RAW_DEPTH_WEEKS || 80))
+      : Math.round(arz * (1 - HEDEF_FIYAT_ETKISI) / HEDEF_FIYAT_ETKISI);
+    return { resourceReserve: maldaRezerv, adAstraReserve: Math.round(maldaRezerv * fiyat), ...meta };
   }
-  const resourceReserve = Math.round(adAstraReserve / price);
-  return { resourceReserve, adAstraReserve: Math.round(adAstraReserve), ...meta };
+  return { resourceReserve: Math.round(astraRezervi / fiyat), adAstraReserve: Math.round(astraRezervi), ...meta };
 }
 
-function buildDefaultPools() {
-  const pools = {};
-  for (const k of RAW_RESOURCES) pools[k] = derivePool(k, { name: (META[k] || {}).name || k, icon: (META[k] || {}).icon || '' });
-  pools.fragments = derivePool('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' });
-  pools.boxes = derivePool('boxes', { name: 'Pandora Kutusu', icon: '📦' });
-  pools.keys = derivePool('keys', { name: 'Arena Anahtarı', icon: '🔑' });
-  pools.scroll_heal = derivePool('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' });
-  pools.scroll_stamina = derivePool('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' });
-  return pools;
+function varsayilanHavuzlar() {
+  const havuzlar = {};
+  for (const k of HAMMADDELER) {
+    havuzlar[k] = havuzKur(k, { name: (META[k] || {}).name || k, icon: (META[k] || {}).icon || '' });
+  }
+  havuzlar.fragments = havuzKur('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' });
+  havuzlar.boxes = havuzKur('boxes', { name: 'Pandora Kutusu', icon: '📦' });
+  havuzlar.keys = havuzKur('keys', { name: 'Arena Anahtarı', icon: '🔑' });
+  havuzlar.scroll_heal = havuzKur('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' });
+  havuzlar.scroll_stamina = havuzKur('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' });
+  return havuzlar;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Saf hesap: havuz + miktar → miktar (durum değiştirmez)
+// ─────────────────────────────────────────────────────────────────────────
+// Hammaddede işlem miktarının yakılan oranı; diğer varlıklarda yakım yok
+function hammaddeYakimOrani(key) {
+  if (!HAMMADDELER.includes(key)) return 0;
+  const oran = GAME_CONFIG.AMM_RESOURCE_FEE_RATE ?? GAME_CONFIG.AMM_FEE_RATE ?? 0.02;
+  return Math.max(0, Math.min(0.5, oran));
+}
+
+// Satışta havuza giren net mal: yakım oranı düşülür
+const satisNetGiris = (key, miktar) => miktar * (1 - hammaddeYakimOrani(key));
+// Alışta havuzdan çıkan brüt mal: alıcıya istediği kadar teslim edilir, yakım havuzdan fazladan çıkar
+const alisBrutCikis = (key, miktar) => miktar * (1 + hammaddeYakimOrani(key));
+// netGiris mal girerse çıkan brüt ASTRA / grossOut mal çıkarsa ödenen net ASTRA
+const satistaCikanAstra = (h, netGiris) => (h.adAstraReserve * netGiris) / (h.resourceReserve + netGiris);
+const alistaOdenenAstra = (h, brutCikis) => (h.adAstraReserve * brutCikis) / (h.resourceReserve - brutCikis);
+
+const tradCapMesaji = (islem, tavan, ad) =>
+  `⛔ Tek işlemde havuzun en fazla %${Math.round((GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05) * 100)}'i ${islem}: şu an ${tavan.toLocaleString('tr-TR')} ${ad}.`;
 
 export class AMMMarketEngine {
   constructor() {
-    // v10: 40M $ADASTRA Derin AMM Havuzları (10k ASTRA Pandora Kutusu, 1k ASTRA Anahtar)
-    // v11: hammadde havuzları haftalık kotanın 80 katına derinleştirildi (eski kayıtlar yeniden tohumlanır)
-    // v12 (v2): 6 hammadde, 100 M tohum, ölçekli fiyatlar (eski kayıtlar yeniden tohumlanır)
+    // v12: 6 hammadde, 100 M tohum, ölçekli fiyatlar (eski kayıtlar yeniden tohumlanır)
     this.storageKey = 'adastra_amm_pools_v12';
     this.listeners = [];
     this.pools = this.loadPools();
     this.feeStats = this.loadFeeStats();
   }
 
-  // ── Canlı Dinamik Fiyat Abonelik ve Bildirim Sistemi ────────────────
+  // ── Fiyat değişimi aboneliği ───────────────────────────────────────────
   subscribe(fn) {
-    if (typeof fn === 'function') {
-      if (!this.listeners) this.listeners = [];
-      this.listeners.push(fn);
-    }
-    return () => {
-      if (this.listeners) {
-        this.listeners = this.listeners.filter(l => l !== fn);
-      }
-    };
+    if (typeof fn === 'function') this.listeners.push(fn);
+    return () => { this.listeners = this.listeners.filter(l => l !== fn); };
   }
 
   notifyPriceChange() {
-    if (!this.listeners || this.listeners.length === 0) return;
+    if (this.listeners.length === 0) return;
     if (typeof gameState !== 'undefined' && gameState._isFastForwarding) return;
-    const prices = this.getAllPrices();
-    this.listeners.forEach(fn => {
-      try { fn(prices); } catch (e) { console.error('AMM Price listener error:', e); }
-    });
+    const fiyatlar = this.getAllPrices();
+    for (const fn of this.listeners) {
+      try { fn(fiyatlar); } catch (e) { console.error('Fiyat dinleyicisi hata verdi:', e); }
+    }
   }
 
   getAllPrices() {
-    const prices = {};
-    for (const key of Object.keys(this.pools || {})) {
-      prices[key] = this.getPrice(key);
-    }
-    return prices;
+    return Object.fromEntries(Object.keys(this.pools).map(k => [k, this.getPrice(k)]));
   }
 
+  // ── Kayıt ──────────────────────────────────────────────────────────────
   loadPools() {
-    const defaults = buildDefaultPools();
-    if (typeof localStorage === 'undefined') return defaults;
-
-    const { data: parsed } = readJSON(this.storageKey);
-    if (!parsed) return defaults;
-    try {
-      const merged = {};
-      for (const key of Object.keys(defaults)) {
-        merged[key] = parsed[key] && parsed[key].resourceReserve > 0
-          ? { ...defaults[key], ...parsed[key] }
-          : defaults[key];
-      }
-      return merged;
-    } catch (e) {
-      console.error('AMM Pool load error, reseeding:', e);
-      return defaults;
+    const varsayilan = varsayilanHavuzlar();
+    if (typeof localStorage === 'undefined') return varsayilan;
+    const { data } = readJSON(this.storageKey);
+    if (!data) return varsayilan;
+    const birlesik = {};
+    for (const key of Object.keys(varsayilan)) {
+      const kayitli = data[key];
+      birlesik[key] = kayitli && kayitli.resourceReserve > 0 ? { ...varsayilan[key], ...kayitli } : varsayilan[key];
     }
+    return birlesik;
   }
 
   loadFeeStats() {
-    if (typeof localStorage === 'undefined') return { collected: 0, burned: 0, burnedResources: zeroRaw() };
-    try {
-      const data = readJSON(this.storageKey + '_fees').data || { collected: 0, burned: 0 };
-      data.burnedResources = { ...zeroRaw(), ...(data.burnedResources || {}) };
-      return data;
-    } catch (_) {
-      return { collected: 0, burned: 0, burnedResources: zeroRaw() };
-    }
-  }
-
-  getBurnedResources() {
-    if (!this.feeStats) this.feeStats = this.loadFeeStats();
-    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = zeroRaw();
-    const out = {};
-    for (const k of RAW_RESOURCES) out[k] = Math.round((this.feeStats.burnedResources[k] || 0) * 10) / 10;
-    return out;
+    const bos = () => ({ collected: 0, burned: 0, burnedResources: sifirHammadde() });
+    if (typeof localStorage === 'undefined') return bos();
+    const veri = readJSON(this.storageKey + '_fees').data || { collected: 0, burned: 0 };
+    veri.burnedResources = { ...sifirHammadde(), ...(veri.burnedResources || {}) };
+    return veri;
   }
 
   savePools() {
@@ -183,509 +167,362 @@ export class AMMMarketEngine {
     this.notifyPriceChange();
   }
 
-  // 🏛️ AMM DEX Havuzlarını İlk 40M $ADASTRA Tohum Dağıtımına Sıfırla
+  // Havuzları ve sayaçları açılış tohumuna döndürür
   resetPools() {
     if (typeof localStorage !== 'undefined') {
       removeJSON(this.storageKey);
       removeJSON(this.storageKey + '_fees');
     }
-    this.pools = buildDefaultPools();
-    this.feeStats = { collected: 0, burned: 0, burnedResources: zeroRaw() };
+    this.pools = varsayilanHavuzlar();
+    this.feeStats = { collected: 0, burned: 0, burnedResources: sifirHammadde() };
     this.savePools();
     return this.pools;
   }
 
-  // AMM DEX Toplam $ADASTRA Likidite Rezervi
+  // ── Okuma ──────────────────────────────────────────────────────────────
+  getPrice(key) {
+    const h = this.pools[key];
+    if (!h || h.resourceReserve <= 0) return 0;
+    return h.adAstraReserve / h.resourceReserve;
+  }
+
+  getCorridor(key) {
+    return koridorlar()[key] || null;
+  }
+
   getTotalAdAstraLiquidity() {
-    let total = 0;
-    for (const pool of Object.values(this.pools || {})) {
-      total += (pool.adAstraReserve || 0);
-    }
-    return Math.round(total);
+    let toplam = 0;
+    for (const h of Object.values(this.pools)) toplam += (h.adAstraReserve || 0);
+    return Math.round(toplam);
   }
 
-  // ── Fiyatlandırma ───────────────────────────────────────────────────
-  getPrice(resourceKey) {
-    const pool = this.pools[resourceKey];
-    if (!pool || pool.resourceReserve <= 0) return 0;
-    return pool.adAstraReserve / pool.resourceReserve;
+  getBurnedResources() {
+    if (!this.feeStats) this.feeStats = this.loadFeeStats();
+    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = sifirHammadde();
+    const cikti = {};
+    for (const k of HAMMADDELER) cikti[k] = Math.round((this.feeStats.burnedResources[k] || 0) * 10) / 10;
+    return cikti;
   }
 
-  getCorridor(resourceKey) {
-    return GAME_CONFIG.AMM_CORRIDORS[resourceKey] || null;
-  }
-
-  // Fiyatın koridor içindeki konumu: 0 = taban, 1 = tavan
-  getCorridorPosition(resourceKey) {
-    const c = this.getCorridor(resourceKey);
-    if (!c) return 0.5;
-    const p = this.getPrice(resourceKey);
-    return Math.max(0, Math.min(1, (p - c.minPriceAda) / (c.maxPriceAda - c.minPriceAda)));
-  }
-
-  getResourceBurnRate(resourceKey) {
-    return resourceBurnRateOf(resourceKey);
-  }
-
-  // Satışta havuza giren net miktar: %2'si yakılır, kalanı havuza girer
-  getNetSellIntoPool(resourceKey, resourceAmount) {
-    return resourceAmount * (1 - resourceBurnRateOf(resourceKey));
-  }
-
-  // Alışta havuzdan çıkan brüt miktar: alıcıya istediği kadar teslim edilir, işlem miktarının %2'si
-  // ayrıca havuzdan çekilip yakılır (1.000 demir alana tam 20 demir yakım).
-  getGrossOutForBuy(resourceKey, resourceAmount) {
-    return resourceAmount * (1 + resourceBurnRateOf(resourceKey));
-  }
-
-  // dx hammadde sat → dy ASTRA al  (ücret ve %2 yakım düşülmüş net)
-  getEstimatedAdAstraForSell(resourceKey, resourceAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || resourceAmount <= 0) return 0;
-    const netIn = this.getNetSellIntoPool(resourceKey, resourceAmount);
-    const gross = (pool.adAstraReserve * netIn) / (pool.resourceReserve + netIn);
-    return gross * (1 - GAME_CONFIG.AMM_FEE_RATE);
+  // Tek işlemde alınıp satılabilecek en fazla mal (havuzdaki malın AMM_SINGLE_TRADE_SHARE'i)
+  getSingleTradeCap(key) {
+    const h = this.pools[key];
+    if (!h) return 0;
+    return Math.floor(h.resourceReserve * (GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05));
   }
 
   // Koridor tabanına inmeden tek seferde satılabilecek en fazla miktar.
   // Satış sonrası fiyat = A·R / (R + x)²  →  x ≤ √(A·R / taban) − R
-  getMaxSellBeforeFloor(resourceKey) {
-    const pool = this.pools[resourceKey];
-    const corridor = this.getCorridor(resourceKey);
-    if (!pool) return 0;
-    if (!corridor || !(corridor.minPriceAda > 0)) return Infinity;
-    const A = pool.adAstraReserve;
-    const R = pool.resourceReserve;
-    const maxNetIn = Math.sqrt((A * R) / corridor.minPriceAda) - R;
-    if (!(maxNetIn > 0)) return 0;
-    return Math.floor(maxNetIn / (1 - resourceBurnRateOf(resourceKey)));
+  getMaxSellBeforeFloor(key) {
+    const h = this.pools[key];
+    const koridor = this.getCorridor(key);
+    if (!h) return 0;
+    if (!koridor || !(koridor.minPriceAda > 0)) return Infinity;
+    const enFazlaNet = Math.sqrt((h.adAstraReserve * h.resourceReserve) / koridor.minPriceAda) - h.resourceReserve;
+    if (!(enFazlaNet > 0)) return 0;
+    return Math.floor(enFazlaNet / (1 - hammaddeYakimOrani(key)));
   }
 
-  // dx hammadde al → dy ASTRA öde  (ücret eklenmiş brüt; %2 yakım havuzdan fazladan çıkar)
-  getEstimatedCostForBuy(resourceKey, resourceAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || resourceAmount <= 0) return 0;
-    const grossOut = this.getGrossOutForBuy(resourceKey, resourceAmount);
-    if (grossOut >= pool.resourceReserve) return Infinity;
-    const net = (pool.adAstraReserve * grossOut) / (pool.resourceReserve - grossOut);
-    return net * (1 + GAME_CONFIG.AMM_FEE_RATE);
+  // miktar mal satarsan alacağın ASTRA (komisyon ve yakım düşülmüş)
+  getEstimatedAdAstraForSell(key, miktar) {
+    const h = this.pools[key];
+    if (!h || miktar <= 0) return 0;
+    return satistaCikanAstra(h, satisNetGiris(key, miktar)) * (1 - GAME_CONFIG.AMM_FEE_RATE);
   }
 
-  getEstimatedResourceForBuy(resourceKey, adAstraAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || adAstraAmount <= 0) return 0;
-    const net = adAstraAmount / (1 + GAME_CONFIG.AMM_FEE_RATE);
-    return (pool.resourceReserve * net) / (pool.adAstraReserve + net);
+  // miktar mal almak için ödeyeceğin ASTRA (komisyon dahil; yakım havuzdan fazladan çıkar)
+  getEstimatedCostForBuy(key, miktar) {
+    const h = this.pools[key];
+    if (!h || miktar <= 0) return 0;
+    const brut = alisBrutCikis(key, miktar);
+    if (brut >= h.resourceReserve) return Infinity;
+    return alistaOdenenAstra(h, brut) * (1 + GAME_CONFIG.AMM_FEE_RATE);
   }
 
-  // İstenen kaynak paketinin (odun, demir, buğday vb.) AMM DEX pazarındaki anlık toplam $ADASTRA değeri
-  calculateResourcesAdAstraValue(resources = {}) {
-    let totalAda = 0;
-    const breakdown = {};
-    for (const [key, amount] of Object.entries(resources)) {
-      const numAmount = Math.max(0, Number(amount) || 0);
-      if (numAmount <= 0) {
-        breakdown[key] = 0;
-        continue;
-      }
-      let adaVal = 0;
-      if (this.pools && this.pools[key] && this.pools[key].resourceReserve > 0) {
-        adaVal = this.getEstimatedAdAstraForSell(key, numAmount);
-        if (!adaVal || isNaN(adaVal) || adaVal <= 0) {
-          adaVal = numAmount * (this.getPrice(key) || 1.0);
-        }
+  // astra ASTRA ile kaç mal alınır (komisyon düşülmüş)
+  getEstimatedResourceForBuy(key, astra) {
+    const h = this.pools[key];
+    if (!h || astra <= 0) return 0;
+    const net = astra / (1 + GAME_CONFIG.AMM_FEE_RATE);
+    return (h.resourceReserve * net) / (h.adAstraReserve + net);
+  }
+
+  // Bir kaynak paketinin pazardaki anlık toplam ASTRA değeri ({ wood: 100, ... })
+  calculateResourcesAdAstraValue(kaynaklar = {}) {
+    let toplam = 0;
+    const dokum = {};
+    for (const [key, ham] of Object.entries(kaynaklar)) {
+      const miktar = Math.max(0, Number(ham) || 0);
+      if (miktar <= 0) { dokum[key] = 0; continue; }
+
+      let deger;
+      const h = this.pools[key];
+      if (h && h.resourceReserve > 0) {
+        deger = this.getEstimatedAdAstraForSell(key, miktar);
+        if (!deger || isNaN(deger) || deger <= 0) deger = miktar * (this.getPrice(key) || 1.0);
       } else {
-        const corridor = this.getCorridor ? this.getCorridor(key) : null;
-        const fallbackPrice = corridor ? corridor.defaultPriceAda : 1.0;
-        adaVal = numAmount * fallbackPrice;
+        const koridor = this.getCorridor(key);
+        deger = miktar * (koridor ? koridor.defaultPriceAda : 1.0);
       }
-      breakdown[key] = Math.round(adaVal * 1000) / 1000;
-      totalAda += adaVal;
+      dokum[key] = Math.round(deger * 1000) / 1000;
+      toplam += deger;
     }
-    return {
-      // v2: küçük fiyatlar (0,009 ASTRA/buğday) için 1'e yuvarlama kaldırıldı; 3 ondalık
-      totalAda: Math.max(0, Math.round(totalAda * 1000) / 1000),
-      breakdown
-    };
+    // 3 ondalık: küçük fiyatlar (0,009 ASTRA/buğday) 1'e yuvarlanmasın
+    return { totalAda: Math.max(0, Math.round(toplam * 1000) / 1000), breakdown: dokum };
   }
 
-  // İşlem sonrası fiyat ne olur? (koridor kontrolü için)
-  previewPriceAfterSell(resourceKey, amount) {
-    const p = this.pools[resourceKey];
-    if (!p) return 0;
-    const netIn = this.getNetSellIntoPool(resourceKey, amount);
-    const gross = (p.adAstraReserve * netIn) / (p.resourceReserve + netIn);
-    return (p.adAstraReserve - gross) / (p.resourceReserve + netIn);
+  // Bu alım yapılırsa fiyat ne olur? (koridor tavanı kontrolü için)
+  previewPriceAfterBuy(key, miktar) {
+    const h = this.pools[key];
+    const brut = alisBrutCikis(key, miktar);
+    if (!h || brut >= h.resourceReserve) return Infinity;
+    const maliyet = alistaOdenenAstra(h, brut);
+    return (h.adAstraReserve + maliyet) / (h.resourceReserve - brut);
   }
 
-  previewPriceAfterBuy(resourceKey, amount) {
-    const p = this.pools[resourceKey];
-    const grossOut = this.getGrossOutForBuy(resourceKey, amount);
-    if (!p || grossOut >= p.resourceReserve) return Infinity;
-    const cost = (p.adAstraReserve * grossOut) / (p.resourceReserve - grossOut);
-    return (p.adAstraReserve + cost) / (p.resourceReserve - grossOut);
+  // ── Hammadde yakım kaydı ───────────────────────────────────────────────
+  _yakimKaydet(key, miktar) {
+    if (!(miktar > 0)) return;
+    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = sifirHammadde();
+    this.feeStats.burnedResources[key] = (this.feeStats.burnedResources[key] || 0) + miktar;
+    globalPool.recordResourceBurn(key, miktar);
   }
 
-  _recordResourceBurnFee(resourceKey, qty) {
-    if (!(qty > 0)) return;
-    if (!this.feeStats.burnedResources) this.feeStats.burnedResources = zeroRaw();
-    this.feeStats.burnedResources[resourceKey] = (this.feeStats.burnedResources[resourceKey] || 0) + qty;
-    if (typeof globalPool !== 'undefined' && typeof globalPool.recordResourceBurn === 'function') {
-      globalPool.recordResourceBurn(resourceKey, qty);
-    }
+  // Komisyonu ekosistem harcama motoruna (yakım / UBI / telif / hazine) verir; yakılan miktarı döndürür
+  _komisyonIsle(komisyon) {
+    const dagilim = komisyon > 0 ? globalPool.recordTokenSpend(komisyon) : null;
+    const yakilan = dagilim ? dagilim.burned : (komisyon * (GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05));
+    this.feeStats.collected += komisyon;
+    this.feeStats.burned += yakilan;
+    return yakilan;
   }
 
-  // ── İşlemler ────────────────────────────────────────────────────────
-  // v2 (R4b): tek işlemde havuzdaki malın en çok AMM_SINGLE_TRADE_SHARE'i (%5) alınıp satılabilir
-  getSingleTradeCap(resourceKey) {
-    const pool = this.pools[resourceKey];
-    if (!pool) return 0;
-    return Math.floor(pool.resourceReserve * (GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05));
-  }
+  // ── İşlemler ───────────────────────────────────────────────────────────
+  executeSell(key, miktar) {
+    const h = this.pools[key];
+    if (!h || !(miktar > 0)) return { success: false, message: 'Geçersiz miktar!' };
 
-  executeSell(resourceKey, resourceAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || !(resourceAmount > 0)) return { success: false, message: 'Geçersiz miktar!' };
-
-    const tradeCap = this.getSingleTradeCap(resourceKey);
-    if (resourceAmount > tradeCap) {
-      return { success: false, tradeCapBlocked: true, maxSellable: tradeCap, message: `⛔ Tek işlemde havuzun en fazla %${Math.round((GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05) * 100)}'i satılabilir: şu an ${tradeCap.toLocaleString('tr-TR')} ${pool.name}.` };
+    const islemTavani = this.getSingleTradeCap(key);
+    if (miktar > islemTavani) {
+      return { success: false, tradeCapBlocked: true, maxSellable: islemTavani, message: tradCapMesaji('satılabilir', islemTavani, h.name) };
     }
 
-    // 🛡️ Taban fiyat koruması: satış fiyatı koridor tabanının altına itemez
-    const corridor = this.getCorridor(resourceKey);
-    if (corridor && corridor.minPriceAda > 0) {
-      const maxSellable = this.getMaxSellBeforeFloor(resourceKey);
-      if (resourceAmount > maxSellable) {
+    // Taban fiyat koruması: satış fiyatı koridor tabanının altına itemez
+    const koridor = this.getCorridor(key);
+    if (koridor && koridor.minPriceAda > 0) {
+      const satilabilir = this.getMaxSellBeforeFloor(key);
+      if (miktar > satilabilir) {
         return {
           success: false,
           floorBlocked: true,
-          maxSellable,
-          message: maxSellable > 0
-            ? `⛔ Bu satış ${pool.name} fiyatını taban fiyatın (${corridor.minPriceAda} ASTRA) altına düşürür. Şu an en fazla ${maxSellable.toLocaleString('tr-TR')} adet satabilirsin.`
-            : `⛔ ${pool.name} fiyatı taban seviyede (${corridor.minPriceAda} ASTRA). Hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.`
+          maxSellable: satilabilir,
+          message: satilabilir > 0
+            ? `⛔ Bu satış ${h.name} fiyatını taban fiyatın (${koridor.minPriceAda} ASTRA) altına düşürür. Şu an en fazla ${satilabilir.toLocaleString('tr-TR')} adet satabilirsin.`
+            : `⛔ ${h.name} fiyatı taban seviyede (${koridor.minPriceAda} ASTRA). Hazine geri alımı fiyatı toparlayana kadar satış yapılamaz.`
         };
       }
     }
 
-    // 🔥 %2 Hammadde Yakımı: satılan malzemenin %2'si havuza hiç girmez, kalıcı olarak silinir
-    const netIn = this.getNetSellIntoPool(resourceKey, resourceAmount);
-    const resourceBurnFee = resourceAmount - netIn;
-
-    const gross = (pool.adAstraReserve * netIn) / (pool.resourceReserve + netIn);
-    const fee = gross * GAME_CONFIG.AMM_FEE_RATE;
-    const net = gross - fee;
+    const netGiris = satisNetGiris(key, miktar);
+    const yakilanMal = miktar - netGiris;
+    const brut = satistaCikanAstra(h, netGiris);
+    const komisyon = brut * GAME_CONFIG.AMM_FEE_RATE;
+    const net = brut - komisyon;
     if (!(net > 0)) return { success: false, message: 'Kazanç hesaplanamadı!' };
 
-    this._recordResourceBurnFee(resourceKey, resourceBurnFee);
+    this._yakimKaydet(key, yakilanMal);
 
-    // Havuz: net hammadde girer, brüt ASTRA çıkar
-    pool.resourceReserve += netIn;
-    pool.adAstraReserve -= gross;
+    // Havuz: net mal girer, brüt ASTRA çıkar
+    h.resourceReserve += netGiris;
+    h.adAstraReserve -= brut;
 
-    // %2 Market Komisyonu: Doğrudan Ekosistem Token Harcama & Hazine Dağıtım Motoruna aktarılır:
-    // (%86 Hazine 6 Ödül Kasası + %5 Kalıcı Yakım + %6 UBI Temel Gelir + %3 Yapımcı)
-    let spendResult = null;
-    if (fee > 0 && typeof globalPool !== 'undefined' && typeof globalPool.recordTokenSpend === 'function') {
-      spendResult = globalPool.recordTokenSpend(fee);
-    }
-
-    const burned = spendResult ? spendResult.burned : (fee * (GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05));
-    this.feeStats.collected += fee;
-    this.feeStats.burned += burned;
+    const burned = this._komisyonIsle(komisyon);
     this.savePools();
 
     return {
       success: true,
       adAstraReceived: net,
-      gross,
-      fee,
+      gross: brut,
+      fee: komisyon,
       burned,
-      resourceBurnFee,
-      newPrice: this.getPrice(resourceKey),
-      resourceName: pool.name,
-      icon: pool.icon
+      resourceBurnFee: yakilanMal,
+      newPrice: this.getPrice(key),
+      resourceName: h.name,
+      icon: h.icon
     };
   }
 
-  executeBuyAmount(resourceKey, resourceAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || !(resourceAmount > 0)) return { success: false, message: 'Geçersiz miktar!' };
+  executeBuyAmount(key, miktar) {
+    const h = this.pools[key];
+    if (!h || !(miktar > 0)) return { success: false, message: 'Geçersiz miktar!' };
 
-    // Alıcı istediği miktarın tamamını alır; %2 yakım için havuzdan biraz fazlası çıkar
-    const grossOut = this.getGrossOutForBuy(resourceKey, resourceAmount);
-    const tradeCap = this.getSingleTradeCap(resourceKey);
-    if (grossOut > tradeCap) {
-      return { success: false, tradeCapBlocked: true, maxBuyable: tradeCap, message: `⛔ Tek işlemde havuzun en fazla %${Math.round((GAME_CONFIG.AMM_SINGLE_TRADE_SHARE ?? 0.05) * 100)}'i alınabilir: şu an ${tradeCap.toLocaleString('tr-TR')} ${pool.name}.` };
+    // Alıcı istediği miktarın tamamını alır; yakım için havuzdan biraz fazlası çıkar
+    const brutCikis = alisBrutCikis(key, miktar);
+    const islemTavani = this.getSingleTradeCap(key);
+    if (brutCikis > islemTavani) {
+      return { success: false, tradeCapBlocked: true, maxBuyable: islemTavani, message: tradCapMesaji('alınabilir', islemTavani, h.name) };
     }
 
-    const corridor = this.getCorridor(resourceKey);
-    const priceAfter = this.previewPriceAfterBuy(resourceKey, resourceAmount);
-    if (corridor && priceAfter > corridor.maxPriceAda) {
+    const koridor = this.getCorridor(key);
+    if (koridor && this.previewPriceAfterBuy(key, miktar) > koridor.maxPriceAda) {
       return {
         success: false,
-        message: `⛔ Bu alım ${pool.name} fiyatını koridor tavanının (${corridor.maxPriceAda} ASTRA) üstüne çıkarır. Daha küçük bir miktar dene — piyasa tavan koruması devrede.`,
+        message: `⛔ Bu alım ${h.name} fiyatını koridor tavanının (${koridor.maxPriceAda} ASTRA) üstüne çıkarır. Daha küçük bir miktar dene — piyasa tavan koruması devrede.`,
         corridorBlocked: true
       };
     }
 
-    const net = (pool.adAstraReserve * grossOut) / (pool.resourceReserve - grossOut);
-    const fee = net * GAME_CONFIG.AMM_FEE_RATE;
-    const cost = net + fee;
-    if (!isFinite(cost) || cost <= 0) return { success: false, message: 'Maliyet hesaplanamadı!' };
+    const net = alistaOdenenAstra(h, brutCikis);
+    const komisyon = net * GAME_CONFIG.AMM_FEE_RATE;
+    const maliyet = net + komisyon;
+    if (!isFinite(maliyet) || maliyet <= 0) return { success: false, message: 'Maliyet hesaplanamadı!' };
 
-    // 🔥 %2 Hammadde Yakımı: havuzdan çıkan fazlalık alıcıya ulaşmadan kalıcı olarak silinir
-    const resourceBurnFee = grossOut - resourceAmount;
-    this._recordResourceBurnFee(resourceKey, resourceBurnFee);
+    // Havuzdan çıkan fazlalık alıcıya ulaşmadan kalıcı olarak silinir
+    const yakilanMal = brutCikis - miktar;
+    this._yakimKaydet(key, yakilanMal);
 
-    pool.adAstraReserve += net;
-    pool.resourceReserve -= grossOut;
+    h.adAstraReserve += net;
+    h.resourceReserve -= brutCikis;
 
-    // %2 Market Komisyonu: Doğrudan Ekosistem Token Harcama & Hazine Dağıtım Motoruna aktarılır
-    let spendResult = null;
-    if (fee > 0 && typeof globalPool !== 'undefined' && typeof globalPool.recordTokenSpend === 'function') {
-      spendResult = globalPool.recordTokenSpend(fee);
-    }
-
-    const burned = spendResult ? spendResult.burned : (fee * (GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05));
-    this.feeStats.collected += fee;
-    this.feeStats.burned += burned;
+    const burned = this._komisyonIsle(komisyon);
     this.savePools();
 
     return {
       success: true,
-      cost,
+      cost: maliyet,
       netCost: net,
-      fee,
+      fee: komisyon,
       burned,
-      resourceBurnFee,
-      resourceReceived: resourceAmount,
-      newPrice: this.getPrice(resourceKey),
-      resourceName: pool.name,
-      icon: pool.icon
+      resourceBurnFee: yakilanMal,
+      resourceReceived: miktar,
+      newPrice: this.getPrice(key),
+      resourceName: h.name,
+      icon: h.icon
     };
   }
 
-  // ── Hazine destekli buyback ─────────────────────────────────────────
-  // Fiyat koridor tabanına yaklaştığında hazine havuzun ASTRA tarafını besler.
-  // Bu, balinaların çekildiği dönemde F2P satış baskısının havuzu kurutmasını
-  // engelleyen denge valfidir.
-  injectBuyback(resourceKey, adaAmount) {
-    const pool = this.pools[resourceKey];
-    if (!pool || adaAmount <= 0) return 0;
-    pool.adAstraReserve += adaAmount;
-    this.savePools();
-    return adaAmount;
-  }
+  // ── Hazine destekli geri alım ve yakım ─────────────────────────────────
+  // Fiyatı açılışın TRIGGER_DROP kadar altına inen varlıklara, düşüşle orantılı yoğunlukta ve
+  // ağırlıklarına göre bütçe ayrılır. Düşüşler değişmez açılış fiyatına (GENESIS_PRICES) göre ölçülür.
+  getBuybackAnalysis(donguTavani = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
+    const kasa = treasury.getPool('ammBuyback') || 0;
+    const donguFonu = kasa * donguTavani;
+    const tetik = GAME_CONFIG.AMM_BUYBACK?.TRIGGER_DROP ?? 0.2;
 
-  // Hangi havuzlar desteğe muhtaç?
-  getPoolsNeedingSupport(threshold = 0.18) {
-    return Object.keys(this.pools)
-      .filter(k => this.getCorridor(k) && this.getCorridorPosition(k) < threshold)
-      .map(k => ({ key: k, name: this.pools[k].name, position: this.getCorridorPosition(k), price: this.getPrice(k) }));
-  }
+    let toplamSkor = 0;
+    let enYuksekAciliyet = 0;
+    const detay = [];
+    for (const key of [...HAMMADDELER, 'fragments', 'keys', 'boxes']) {
+      const h = this.pools[key];
+      if (!h) continue;
+      const guncel = this.getPrice(key);
+      const acilis = GENESIS_PRICES[key] || 1.0;
+      const dusus = Math.max(0, (acilis - guncel) / acilis);
+      const aciliyet = dusus >= tetik ? Math.min(1, dusus) : 0;   // eşiğin altındaki düşüşe müdahale yok
+      const agirlik = BUYBACK_ASSET_WEIGHTS[key] || 0.1;
+      const skor = agirlik * aciliyet;
 
-  getMarketSummary() {
-    return Object.keys(this.pools).map(key => {
-      const pool = this.pools[key];
-      const corridor = this.getCorridor(key);
-      return {
-        key,
-        name: pool.name,
-        icon: pool.icon,
-        price: this.getPrice(key),
-        resourceReserve: pool.resourceReserve,
-        adAstraReserve: pool.adAstraReserve,
-        corridor,
-        corridorPosition: this.getCorridorPosition(key),
-        tvlAda: pool.adAstraReserve * 2
-      };
-    });
-  }
-
-  // ── 6 Varlıklı Dinamik Buyback & Burn Analiz Raporu ───────────────────
-  // Düşüşler değişmez Genesis Başlangıç Fiyatlarına ($P_{genesis}$) göre hesaplanır.
-  // Ağırlık %75 ana hammadde üçlüsüne (Buğday %30, Demir %25, Odun %20), %25 diğerlerine verilir.
-  getBuybackAnalysis(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
-    const availableTreasury = (typeof treasury !== 'undefined' && treasury.getPool)
-      ? (treasury.getPool('ammBuyback') || 0)
-      : 6000000;
-
-    const maxCycleFund = availableTreasury * cycleBudgetCap;
-    const assets = [...RAW_RESOURCES, 'fragments', 'keys', 'boxes'];
-    const details = [];
-    let totalScore = 0;
-    let maxUrgency = 0;
-    // v2 (R4): yalnız açılışın (1 − TRIGGER_DROP) altına inen varlıklar alınır (eşik %20 düşüş)
-    const trigger = GAME_CONFIG.AMM_BUYBACK?.TRIGGER_DROP ?? 0.2;
-
-    for (const key of assets) {
-      const pool = this.pools[key];
-      if (!pool) continue;
-      const curPrice = this.getPrice(key);
-      const genPrice = GENESIS_PRICES[key] || 1.0;
-      // Düşüş oranı: sadece başlangıç fiyatının altına indiğinde devreye girer
-      const dropRatio = Math.max(0, (genPrice - curPrice) / genPrice);
-      // Eşiğin altında kalan düşüşte müdahale yok; eşik aşılınca düşüşle orantılı yoğunluk
-      const urgency = dropRatio >= trigger ? Math.min(1, dropRatio) : 0;
-      const weight = BUYBACK_ASSET_WEIGHTS[key] || 0.1;
-      const score = weight * urgency;
-
-      totalScore += score;
-      if (urgency > maxUrgency) maxUrgency = urgency;
-
-      details.push({
-        key,
-        name: pool.name,
-        icon: pool.icon,
-        currentPrice: curPrice,
-        genesisPrice: genPrice,
-        dropRatio,
-        dropPct: Math.round(dropRatio * 1000) / 10,
-        urgency,
-        weight,
-        score
+      toplamSkor += skor;
+      if (aciliyet > enYuksekAciliyet) enYuksekAciliyet = aciliyet;
+      detay.push({
+        key, name: h.name, icon: h.icon,
+        currentPrice: guncel, genesisPrice: acilis,
+        dropRatio: dusus, dropPct: Math.round(dusus * 1000) / 10,
+        urgency: aciliyet, weight: agirlik, score: skor
       });
     }
 
-    // Toplam harcanacak bütçe: krizin aciliyetiyle dinamik ölçeklenir
-    const totalFundToSpend = totalScore > 0 ? (maxCycleFund * maxUrgency) : 0;
-
-    // Her varlığa düşen pay ve tahmini yakılacak fiziksel adet
-    for (const d of details) {
-      const share = totalScore > 0 ? (d.score / totalScore) : 0;
-      const budget = totalFundToSpend * share;
-      let estUnits = 0;
-      if (budget > 0 && this.pools[d.key]) {
-        estUnits = this.getEstimatedResourceForBuy(d.key, budget);
-      }
-      d.sharePct = Math.round(share * 1000) / 10;
-      d.allocatedBudget = Math.round(budget * 100) / 100;
-      d.estimatedUnitsToBurn = Math.round(estUnits * 10) / 10;
+    // Harcanacak toplam bütçe krizin aciliyetiyle ölçeklenir
+    const harcanacak = toplamSkor > 0 ? (donguFonu * enYuksekAciliyet) : 0;
+    for (const d of detay) {
+      const pay = toplamSkor > 0 ? (d.score / toplamSkor) : 0;
+      const butce = harcanacak * pay;
+      const tahminiMal = butce > 0 && this.pools[d.key] ? this.getEstimatedResourceForBuy(d.key, butce) : 0;
+      d.sharePct = Math.round(pay * 1000) / 10;
+      d.allocatedBudget = Math.round(butce * 100) / 100;
+      d.estimatedUnitsToBurn = Math.round(tahminiMal * 10) / 10;
     }
 
     return {
-      availableTreasury: Math.round(availableTreasury),
-      cycleBudgetCap,
-      maxCycleFund: Math.round(maxCycleFund),
-      maxUrgency: Math.round(maxUrgency * 10000) / 10000,
-      totalFundToSpend: Math.round(totalFundToSpend * 100) / 100,
-      assets: details
+      availableTreasury: Math.round(kasa),
+      cycleBudgetCap: donguTavani,
+      maxCycleFund: Math.round(donguFonu),
+      maxUrgency: Math.round(enYuksekAciliyet * 10000) / 10000,
+      totalFundToSpend: Math.round(harcanacak * 100) / 100,
+      assets: detay
     };
   }
 
-  // ── Otonom Buyback & Burn Yürütücü (Döngü Başına) ───────────────────
-  executeAutonomousBuyback(cycleBudgetCap = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
-    const analysis = this.getBuybackAnalysis(cycleBudgetCap);
-    if (!analysis.totalFundToSpend || analysis.totalFundToSpend <= 1) {
-      return {
-        success: false,
-        executed: false,
-        message: 'Tüm varlıklar başlangıç fiyatında veya üzerinde, hazine müdahalesine gerek yok.',
-        analysis
-      };
+  executeAutonomousBuyback(donguTavani = (GAME_CONFIG.AMM_BUYBACK?.WEEKLY_RATE ?? 0.03)) {
+    const analiz = this.getBuybackAnalysis(donguTavani);
+    if (!analiz.totalFundToSpend || analiz.totalFundToSpend <= 1) {
+      return { success: false, executed: false, message: 'Tüm varlıklar başlangıç fiyatında veya üzerinde, hazine müdahalesine gerek yok.', analysis: analiz };
+    }
+    if ((treasury.getPool('ammBuyback') || 0) < analiz.totalFundToSpend) {
+      return { success: false, executed: false, message: 'Hazine AMM kasasında yeterli bakiye bulunmuyor.', analysis: analiz };
     }
 
-    const availableTreasury = (typeof treasury !== 'undefined' && treasury.getPool)
-      ? (treasury.getPool('ammBuyback') || 0)
-      : 0;
+    const kalemler = [];
+    let toplamHarcanan = 0;
+    let toplamYakilan = 0;
 
-    if (availableTreasury < analysis.totalFundToSpend) {
-      return {
-        success: false,
-        executed: false,
-        message: 'Hazine AMM kasasında yeterli bakiye bulunmuyor.',
-        analysis
-      };
-    }
+    for (const kalem of analiz.assets) {
+      if (kalem.allocatedBudget <= 0) continue;
+      const h = this.pools[kalem.key];
+      if (!h) continue;
 
-    const reportItems = [];
-    let totalActualSpent = 0;
-    let totalUnitsBurned = 0;
+      const eskiFiyat = this.getPrice(kalem.key);
+      const cekilen = treasury.drawBuyback(kalem.allocatedBudget);
+      if (cekilen <= 0) continue;
 
-    for (const item of analysis.assets) {
-      if (item.allocatedBudget <= 0) continue;
-      const pool = this.pools[item.key];
-      if (!pool) continue;
+      // Hazine kendine komisyon ödemez: çekilen ASTRA'nın tamamı havuza girer
+      const alinanMal = (h.resourceReserve * cekilen) / (h.adAstraReserve + cekilen);
+      h.adAstraReserve += cekilen;
+      h.resourceReserve -= alinanMal;
 
-      const budget = item.allocatedBudget;
-      const oldPrice = this.getPrice(item.key);
-
-      // Hazineden fon tahsis edilir (treasury.drawBuyback doğrudan sayı döndürür)
-      let withdrawn = budget;
-      if (typeof treasury !== 'undefined') {
-        if (typeof treasury.drawBuyback === 'function') {
-          withdrawn = treasury.drawBuyback(budget);
-        } else if (typeof treasury.withdraw === 'function') {
-          const wRes = treasury.withdraw('ammBuyback', budget);
-          withdrawn = typeof wRes === 'object' && wRes ? (wRes.granted || 0) : Number(wRes) || 0;
-        }
-      }
-      if (withdrawn <= 0) continue;
-
-      // AMM Havuzundan satın alınır ($x \cdot y = k$). Hazine kendi kendine komisyon ödemez:
-      // çekilen ASTRA'nın tamamı havuza girer (eski sürümde %2'lik kısım hiçbir yere gitmeden kayboluyordu).
-      const net = withdrawn;
-      const unitsToBuy = (pool.resourceReserve * net) / (pool.adAstraReserve + net);
-
-      pool.adAstraReserve += net;
-      pool.resourceReserve -= unitsToBuy;
-
-      // 🔥 Kalıcı Yakım (Burn): tek bir kez sayılır. Eski sürüm aynı yakımı hem küresel
-      // sayaca hem de oyuncunun kişisel yakım sayacına ikinci kez yazıyordu.
+      // Kalıcı yakım tek sayılır (küresel sayaç + havuz sayacı)
       if (!this.feeStats.burnedResources) this.feeStats.burnedResources = {};
-      this.feeStats.burnedResources[item.key] = (this.feeStats.burnedResources[item.key] || 0) + unitsToBuy;
+      this.feeStats.burnedResources[kalem.key] = (this.feeStats.burnedResources[kalem.key] || 0) + alinanMal;
+      globalPool.recordResourceBurn(kalem.key, alinanMal);
 
-      if (typeof globalPool !== 'undefined' && globalPool && typeof globalPool.recordResourceBurn === 'function') {
-        globalPool.recordResourceBurn(item.key, unitsToBuy);
-      }
-
-      totalActualSpent += withdrawn;
-      totalUnitsBurned += unitsToBuy;
-
-      reportItems.push({
-        key: item.key,
-        name: item.name,
-        icon: item.icon,
-        budgetSpent: Math.round(withdrawn * 100) / 100,
-        unitsBurned: Math.round(unitsToBuy * 10) / 10,
-        oldPrice: Math.round(oldPrice * 1000) / 1000,
-        newPrice: Math.round(this.getPrice(item.key) * 1000) / 1000,
-        dropPct: item.dropPct
+      toplamHarcanan += cekilen;
+      toplamYakilan += alinanMal;
+      kalemler.push({
+        key: kalem.key,
+        name: kalem.name,
+        icon: kalem.icon,
+        budgetSpent: Math.round(cekilen * 100) / 100,
+        unitsBurned: Math.round(alinanMal * 10) / 10,
+        oldPrice: Math.round(eskiFiyat * 1000) / 1000,
+        newPrice: Math.round(this.getPrice(kalem.key) * 1000) / 1000,
+        dropPct: kalem.dropPct
       });
     }
 
     this.savePools();
 
-    const report = {
+    const rapor = {
       timestamp: Date.now(),
-      totalSpent: Math.round(totalActualSpent * 100) / 100,
-      totalUnitsBurned: Math.round(totalUnitsBurned * 10) / 10,
-      remainingTreasury: (typeof treasury !== 'undefined' && treasury.getPool) ? Math.round(treasury.getPool('ammBuyback')) : 0,
-      items: reportItems
+      totalSpent: Math.round(toplamHarcanan * 100) / 100,
+      totalUnitsBurned: Math.round(toplamYakilan * 10) / 10,
+      remainingTreasury: Math.round(treasury.getPool('ammBuyback')),
+      items: kalemler
     };
-
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(this.storageKey + '_last_buyback', JSON.stringify(report));
-    }
-    this.lastBuybackReport = report;
+    writeJSON(this.storageKey + '_last_buyback', rapor);
+    this.lastBuybackReport = rapor;
 
     return {
       success: true,
       executed: true,
-      message: `🎯 Otonom Buyback & Yakım Tamamlandı: ${report.totalSpent.toLocaleString('tr-TR')} ASTRA ile piyasadan malzemeler alınıp kalıcı olarak yakıldı!`,
-      report
+      message: `🎯 Otonom Buyback & Yakım Tamamlandı: ${rapor.totalSpent.toLocaleString('tr-TR')} ASTRA ile piyasadan malzemeler alınıp kalıcı olarak yakıldı!`,
+      report: rapor
     };
   }
 
   getLastBuybackReport() {
     if (this.lastBuybackReport) return this.lastBuybackReport;
     if (typeof localStorage === 'undefined') return null;
-    try {
-      return JSON.parse(localStorage.getItem(this.storageKey + '_last_buyback')) || null;
-    } catch (_) {
-      return null;
-    }
+    return readJSON(this.storageKey + '_last_buyback').data || null;
   }
 }
 

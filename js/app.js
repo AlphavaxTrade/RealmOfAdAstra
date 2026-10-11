@@ -8204,7 +8204,6 @@ function uiGameLoop(currentTime) {
     if (gameState.processVillage) gameState.processVillage(slowDelta);
     gameState.tickUpgradeCostBot(slowDelta);
     gameState.checkWeeklyAutonomousBuyback();
-    globalPool.simulateGlobalActivity(slowDelta);
     refreshBarracksLiveUI(slowDelta);
     refreshLiveUpgradeCostUI(slowDelta);
     refreshQuotaTrackerUI();

@@ -1,26 +1,39 @@
-// AdAstra: Genesis Realm - Küresel Kıtlık Havuzu, 10B Macro Tokenomics & Muhasebe Yöneticisi
-import { GAME_CONFIG } from './config.js';
+// Realm of AdAstra — Küresel Havuz: haftalık kota, ASTRA harcama muhasebesi, UBI
+// ============================================================================
+// Dünyanın ortak durumu (tarayıcıda tek oyunculu, sunucuda herkes için tek):
+//   • Haftalık hammadde kotası (Üretim Hakkı): kişi başı kota termostatı, Otorite, gün gün açılma
+//   • Harcanan her ASTRA'nın dağılımı: %5 yakım, %3 telif, %6 UBI, %86 hazine kasaları
+//   • Evrensel Temel Gelir (UBI): haftalık kasa, seviyeye göre pay
+//   • Konsey ortak kasası ve yakılan hammadde / eşya sayaçları
+// v2 ekleri (Köy Evleri, Konsey projeleri, Hazırlık Deposu) js/v2/koyVeKonsey.js içinden karışır.
+// ============================================================================
 
+import { GAME_CONFIG } from './config.js';
 import { treasury } from './treasury.js';
 import { openWeek, shareOf, isEligible, levelWeight, DEFAULT_UBI_RULES } from './economy/ubi.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
 import { globalPoolV2, globalPoolV2Depot } from './v2/koyVeKonsey.js';
 
-const DAY_MS = 24 * 3600 * 1000;
-const zeroRes = () => Object.fromEntries((GAME_CONFIG.RESOURCE_KEYS || ["wood", "iron", "wheat"]).map(k => [k, 0]));
-const UBI_RULES = { ...DEFAULT_UBI_RULES, minLevel: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3, maxSingleShare: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MAX_SINGLE_CLAIM_SHARE) || 0 };
+const GUN_MS = 24 * 3600 * 1000;
+const HAMMADDELER = GAME_CONFIG.RESOURCE_KEYS;
+const sifirHammadde = () => Object.fromEntries(HAMMADDELER.map(k => [k, 0]));
+const kotaAnahtarlari = () => Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS);
+
+const UBI_KURALLARI = {
+  ...DEFAULT_UBI_RULES,
+  minLevel: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3,
+  maxSingleShare: (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MAX_SINGLE_CLAIM_SHARE) || 0
+};
 
 export const MAX_SUPPLY = 10000000000;
 
-// v1'deki adres 43 karakterdi (hex kısmı 41 hane) — geçerli bir EVM adresi
-// 0x + 40 hanedir, bu yüzden hiçbir cüzdanda çözülmüyordu (denetim bulgusu F-12).
-// Fazladan hane kaldırıldı. GERÇEK sözleşme adresiyle değiştirilmelidir.
+// Oyunun gösterim amaçlı kontrat adresi. Gerçek token kontratı değildir; gerçek adres belli olunca değiştirilmeli.
 export const CONTRACT_ADDRESS = '0xCA29d740502F4bA1Fa8e9DcAfBD85137b4CeBeB0';
 
-
-// Dolaşımdaki arz varsayımı — deflasyon anlatısı MAX_SUPPLY üzerinden değil,
-// dolaşım üzerinden kurulmalıdır (F-11). Gerçek rakamla değiştirin.
+// Dolaşımdaki arz tahmini: deflasyon anlatısı MAX_SUPPLY üzerinden değil dolaşım üzerinden kurulur
 export const CIRCULATING_SUPPLY_ESTIMATE = 1200000000;
+
+const YAPIMCI_CUZDAN_YEDEK = '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C';
 
 export class GlobalResourceManager {
   constructor() {
@@ -31,198 +44,173 @@ export class GlobalResourceManager {
     this.initNetworkTimeSync();
   }
 
-  // Güvenilir zaman: sunucu ofseti mevcutsa uygula, yoksa Date.now() kullan
+  // ── Zaman ──────────────────────────────────────────────────────────────
+  // Güvenilir zaman: sunucudan öğrenilen ofset varsa uygulanır, yoksa yerel saat
   getTrustedTime() {
     return Date.now() + this.serverTimeOffset;
   }
 
-  // Tarayıcı ortamında sunucunun HTTP yanıt başlığından (Date header) gerçek UTC zamanını alır
-  // Böylece oyuncu bilgisayarının saatini 1 hafta ileri alsa dahi sunucu saati bunu otomatik sıfırlar
+  // Tarayıcıda sayfanın HTTP yanıtındaki Date başlığından gerçek UTC zamanını alır;
+  // oyuncu bilgisayar saatini ileri alsa bile hafta sınırı sunucuya göre hesaplanır.
   async initNetworkTimeSync() {
-    if (typeof window !== 'undefined' && typeof fetch === 'function') {
-      try {
-        const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
-        const serverDateStr = res.headers.get('date');
-        if (serverDateStr) {
-          const serverTime = new Date(serverDateStr).getTime();
-          if (!isNaN(serverTime) && serverTime > 0) {
-            this.serverTimeOffset = serverTime - Date.now();
-            this.trustedTimeReady = true;
-            this.checkEpochExpiration();
-          }
-        }
-      } catch (err) {
-        // Çevrimdışı fallback: yerel monotonic saat devam eder
+    if (typeof window === 'undefined' || typeof fetch !== 'function') return;
+    try {
+      const res = await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+      const baslik = res.headers.get('date');
+      const sunucuZamani = baslik ? new Date(baslik).getTime() : NaN;
+      if (!isNaN(sunucuZamani) && sunucuZamani > 0) {
+        this.serverTimeOffset = sunucuZamani - Date.now();
+        this.trustedTimeReady = true;
+        this.checkEpochExpiration();
       }
+    } catch (_) {
+      // Çevrimdışı: yerel saatle devam edilir
     }
   }
 
+  // Bir sonraki Pazartesi 00:01 TSİ (UTC+3 = Pazar 21:01 UTC) anı
+  getNextWeeklyResetTRT(fromTimestamp = null) {
+    const baz = fromTimestamp !== null ? fromTimestamp : this.getTrustedTime();
+    const TSI_FARKI_MS = 3 * 60 * 60 * 1000;
+    const tsi = new Date(baz + TSI_FARKI_MS);
+
+    const gun = tsi.getUTCDay();   // 0 = Pazar, 1 = Pazartesi
+    let pazartesiyeKalan = (1 - gun + 7) % 7;
+    // Bugün Pazartesi ve 00:01 geçtiyse bir sonraki haftanın Pazartesisi
+    if (pazartesiyeKalan === 0 && (tsi.getUTCHours() > 0 || tsi.getUTCMinutes() >= 1)) pazartesiyeKalan = 7;
+
+    const hedef = new Date(tsi);
+    hedef.setUTCDate(tsi.getUTCDate() + pazartesiyeKalan);
+    hedef.setUTCHours(0, 1, 0, 0);
+    return hedef.getTime() - TSI_FARKI_MS;
+  }
+
+  // Hafta sınırı geçtiyse yeni haftayı (epoch) başlatır
   checkEpochExpiration() {
-    const now = this.getTrustedTime();
-    if (this.state && this.state.epochEndTime && now > this.state.epochEndTime) {
+    const simdi = this.getTrustedTime();
+    if (this.state && this.state.epochEndTime && simdi > this.state.epochEndTime) {
       this.createNewEpoch(this.state);
       this.saveState();
     }
   }
 
-  // Pazar'ı Pazartesiye bağlayan gece 00:01 (Türkiye Saati / UTC+3 = Pazar 21:01 UTC) reset zamanını hesaplar
-  getNextWeeklyResetTRT(fromTimestamp = null) {
-    const baseTime = fromTimestamp !== null ? fromTimestamp : this.getTrustedTime();
-    const TRT_OFFSET_MS = 3 * 60 * 60 * 1000;
-    const trtNow = new Date(baseTime + TRT_OFFSET_MS);
-
-    const trtDay = trtNow.getUTCDay(); // 0 = Pazar, 1 = Pazartesi...
-    const trtHour = trtNow.getUTCHours();
-    const trtMin = trtNow.getUTCMinutes();
-
-    let daysUntilMonday = (1 - trtDay + 7) % 7;
-    // Eğer bugün Pazartesi ise ve 00:01 TRT geçtiyse sonraki haftanın Pazartesisine (7 gün sonraya) ata
-    if (daysUntilMonday === 0 && (trtHour > 0 || (trtHour === 0 && trtMin >= 1))) {
-      daysUntilMonday = 7;
-    }
-
-    const targetTrt = new Date(trtNow);
-    targetTrt.setUTCDate(trtNow.getUTCDate() + daysUntilMonday);
-    targetTrt.setUTCHours(0, 1, 0, 0); // 00:01:00.000 TRT
-
-    return targetTrt.getTime() - TRT_OFFSET_MS;
-  }
-
-  // Geriye dönük uyumluluk
-  getNextMonday1800TRT(fromTimestamp = null) {
-    return this.getNextWeeklyResetTRT(fromTimestamp);
-  }
-
+  // ── Kayıt ──────────────────────────────────────────────────────────────
   loadState() {
     if (typeof localStorage === 'undefined') return this.createNewEpoch();
-    const { data: saved } = readJSON(this.storageKey);
-    if (saved) {
-      try {
-        const parsed = saved;
-        const now = this.getTrustedTime();
+    const { data: kayit } = readJSON(this.storageKey);
+    if (!kayit) return this.createNewEpoch();
 
-        // Anti-Tamper: Saat geriye sarılırsa son kaydedilen zamandan önceye gidemez
-        if (parsed.lastSavedTime && now < parsed.lastSavedTime - 60000) {
-          console.warn('[GlobalPool Anti-Tamper] Sistem saati manipülasyonu tespit edildi.');
-        }
-
-        // Zamanı dolduysa yeni haftalık epoch başlat
-        if (now > (parsed.epochEndTime || 0)) {
-          return this.createNewEpoch(parsed);
-        }
-        // Mevcut kaynak limitlerini config ile senkronize et.
-        // ÖNEMLİ: Hafta içinde yakılan miktar kotadan kalıcı olarak düşer. Eski sürüm, yakım
-        // yüzünden totalCap config'den farklı olunca her sayfa yenilemede kotayı baştan dolduruyordu.
-        // Artık haftanın başındaki taban kota (baseCap) ayrıca saklanır; yalnızca config
-        // gerçekten değişmişse yeniden hizalanır, yakılan miktar korunur.
-        if (!parsed.resources) parsed.resources = {};
-        if (!parsed.uretim || !parsed.uretim.qpp) parsed.uretim = this.nextUretim(parsed.uretim || null);
-        if (!parsed.konsey || !parsed.konsey.stock) parsed.konsey = { stock: zeroRes() };
-        if (!parsed.hazirlikDepo) parsed.hazirlikDepo = { totalValue: 0 };
-        const loadParams = this.uretimParams(parsed.uretim);
-        for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
-          const configCap = this.computeWeekCapacity(key, loadParams);
-          const r = parsed.resources[key];
-          if (!r) {
-            parsed.resources[key] = { remaining: configCap, totalCap: configCap, baseCap: configCap, depleted: false };
-            continue;
-          }
-          const baseCap = r.baseCap ?? configCap; // eski kayıtlar: haftanın tabanı config kabul edilir
-          const burnedThisWeek = Math.max(0, baseCap - (r.totalCap ?? baseCap));
-          const totalCap = Math.max(0, configCap - burnedThisWeek);
-          const remaining = Math.max(0, Math.min(totalCap, r.remaining ?? totalCap));
-          const harvested = r.harvested != null ? r.harvested : Math.max(0, (r.baseCap ?? configCap) - (r.remaining ?? configCap) - burnedThisWeek);
-          parsed.resources[key] = { remaining, totalCap, baseCap: configCap, harvested, depleted: remaining <= 0 };
-        }
-        // v1.25 UBI: haftalık kasa modeli (eski "tohum ÷ 12 hafta" modelinden geçiş; tohum dağıtılmaz)
-        if (!parsed.ubiV2) {
-          parsed.ubiV2 = true;
-          parsed.ubiWeekAccrued = 0;
-          parsed.ubiClaimPot = 0;
-          parsed.ubiClaimPotAtOpen = 0;
-          parsed.ubiPool = 0;
-        }
-        if (parsed.creatorRoyaltyTotal === undefined) {
-          parsed.creatorRoyaltyTotal = 0;
-        }
-        if (!parsed.creatorWallet) {
-          parsed.creatorWallet = GAME_CONFIG.CREATOR_WALLET_ADDRESS;
-        }
-        if (!parsed.totalBurnedResources) {
-          parsed.totalBurnedResources = zeroRes();
-        }
-        return parsed;
-      } catch (e) {
-        console.error('Global state parse error, resetting:', e);
+    try {
+      const simdi = this.getTrustedTime();
+      if (kayit.lastSavedTime && simdi < kayit.lastSavedTime - 60000) {
+        console.warn('[Küresel havuz] Sistem saatinin geri alındığı görüldü.');
       }
+      // Süresi dolduysa yeni haftalık epoch
+      if (simdi > (kayit.epochEndTime || 0)) return this.createNewEpoch(kayit);
+
+      if (!kayit.resources) kayit.resources = {};
+      if (!kayit.uretim || !kayit.uretim.qpp) kayit.uretim = this.nextUretim(kayit.uretim || null);
+      if (!kayit.konsey || !kayit.konsey.stock) kayit.konsey = { stock: sifirHammadde() };
+      if (!kayit.hazirlikDepo) kayit.hazirlikDepo = { totalValue: 0 };
+
+      // Kota sınırlarını config ile hizala. Hafta içinde yakılan miktar kotadan kalıcı düşer:
+      // haftanın başındaki taban kota (baseCap) ayrıca saklanır, yakılan = baseCap − totalCap.
+      const params = this.uretimParams(kayit.uretim);
+      for (const key of kotaAnahtarlari()) {
+        const configKota = this.computeWeekCapacity(key, params);
+        const r = kayit.resources[key];
+        if (!r) {
+          kayit.resources[key] = { remaining: configKota, totalCap: configKota, baseCap: configKota, depleted: false };
+          continue;
+        }
+        const tabanKota = r.baseCap ?? configKota;   // eski kayıtlar: haftanın tabanı config sayılır
+        const yakilan = Math.max(0, tabanKota - (r.totalCap ?? tabanKota));
+        const toplamKota = Math.max(0, configKota - yakilan);
+        const kalan = Math.max(0, Math.min(toplamKota, r.remaining ?? toplamKota));
+        const cikarilan = r.harvested != null
+          ? r.harvested
+          : Math.max(0, (r.baseCap ?? configKota) - (r.remaining ?? configKota) - yakilan);
+        kayit.resources[key] = { remaining: kalan, totalCap: toplamKota, baseCap: configKota, harvested: cikarilan, depleted: kalan <= 0 };
+      }
+
+      // UBI haftalık kasa modeli (eski "tohum ÷ 12 hafta" modelinden geçiş; tohum dağıtılmaz)
+      if (!kayit.ubiV2) {
+        kayit.ubiV2 = true;
+        kayit.ubiWeekAccrued = 0;
+        kayit.ubiClaimPot = 0;
+        kayit.ubiClaimPotAtOpen = 0;
+        kayit.ubiPool = 0;
+      }
+      if (kayit.creatorRoyaltyTotal === undefined) kayit.creatorRoyaltyTotal = 0;
+      if (!kayit.creatorWallet) kayit.creatorWallet = GAME_CONFIG.CREATOR_WALLET_ADDRESS;
+      if (!kayit.totalBurnedResources) kayit.totalBurnedResources = sifirHammadde();
+      return kayit;
+    } catch (e) {
+      console.error('Küresel havuz kaydı okunamadı, sıfırdan kuruluyor:', e);
+      return this.createNewEpoch();
     }
-    return this.createNewEpoch();
   }
 
-  createNewEpoch(prevState = null) {
-    // v2: Üretim Hakkı parametreleri (termostat uygulanmış) ve Konsey ortak kasası haftadan haftaya taşınır
-    const uretim = this.nextUretim(prevState && prevState.uretim);
+  saveState() {
+    if (typeof localStorage === 'undefined') return;
+    if (typeof gameState !== 'undefined' && gameState._isFastForwarding) return;
+    if (this.state) this.state.lastSavedTime = this.getTrustedTime();
+    writeJSON(this.storageKey, this.state);
+  }
+
+  // Yeni haftalık epoch. Üretim Hakkı parametreleri (termostat uygulanmış), Konsey kasası, Hazırlık Deposu
+  // ve ömür boyu sayaçlar haftadan haftaya taşınır; kota baştan açılır.
+  createNewEpoch(onceki = null) {
+    const uretim = this.nextUretim(onceki && onceki.uretim);
     const params = this.uretimParams(uretim);
-    const konsey = (prevState && prevState.konsey && prevState.konsey.stock) ? prevState.konsey : { stock: zeroRes() };
-    const hazirlikDepo = (prevState && prevState.hazirlikDepo) ? prevState.hazirlikDepo : { totalValue: 0 };   // depo haftayla sıfırlanmaz
-    const pool = {};
-    for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
-      const cap = this.computeWeekCapacity(key, params);
-      pool[key] = {
-        remaining: cap,
-        totalCap: cap,
-        baseCap: cap,
-        harvested: 0,
-        depleted: false
-      };
+    const konsey = (onceki && onceki.konsey && onceki.konsey.stock) ? onceki.konsey : { stock: sifirHammadde() };
+    const hazirlikDepo = (onceki && onceki.hazirlikDepo) ? onceki.hazirlikDepo : { totalValue: 0 };
+
+    const kaynaklar = {};
+    for (const key of kotaAnahtarlari()) {
+      const kota = this.computeWeekCapacity(key, params);
+      kaynaklar[key] = { remaining: kota, totalCap: kota, baseCap: kota, harvested: 0, depleted: false };
     }
 
     // UBI: geçen haftanın %6 birikimi + çekilmeyen pay bu haftanın dağıtım kasası olur
-    const ubiPot = prevState && prevState.ubiV2
-      ? openWeek({ accruedLastWeek: prevState.ubiWeekAccrued || 0, unclaimedCarry: prevState.ubiClaimPot || 0 })
+    const ubiKasasi = onceki && onceki.ubiV2
+      ? openWeek({ accruedLastWeek: onceki.ubiWeekAccrued || 0, unclaimedCarry: onceki.ubiClaimPot || 0 })
       : 0;
 
+    const hazineKopyasi = {
+      dungeon: 14000000, ammBuyback: 6000000, arena: 8000000, worldBoss: 8000000, carnival: 4000000
+    };
+
     const state = {
-      epochId: prevState ? (prevState.epochId || 1) + 1 : 1,
+      epochId: onceki ? (onceki.epochId || 1) + 1 : 1,
       epochStartTime: Date.now(),
       epochEndTime: this.getNextWeeklyResetTRT(),
-      resources: pool,
+      resources: kaynaklar,
       uretim,
       konsey,
       hazirlikDepo,
-      
-      // 🪙 10 MİLYAR MAKRO TOKENOMİK VE MUHASEBE
+
+      // ASTRA muhasebesi
       maxSupply: MAX_SUPPLY,
       contractAddress: CONTRACT_ADDRESS,
-      totalSpent: prevState ? (prevState.totalSpent || 0) : 0,
-      totalBurned: prevState ? (prevState.totalBurned || 0) : 0, // Kalıcı yakım (TOKEN_BURN_RATE)
-      creatorRoyaltyTotal: prevState ? (prevState.creatorRoyaltyTotal || 0) : 0, // %3 Yapımcı Telifi
-      creatorWallet: GAME_CONFIG.CREATOR_WALLET_ADDRESS || '0x58DBCF66bdd7BfA9da98aDba1965b3794321087C',
-      // %6 Evrensel Temel Gelir: bu hafta birikenler + bu hafta dağıtılan kasa
+      totalSpent: onceki ? (onceki.totalSpent || 0) : 0,
+      totalBurned: onceki ? (onceki.totalBurned || 0) : 0,
+      creatorRoyaltyTotal: onceki ? (onceki.creatorRoyaltyTotal || 0) : 0,
+      creatorWallet: GAME_CONFIG.CREATOR_WALLET_ADDRESS || YAPIMCI_CUZDAN_YEDEK,
+      // UBI: bu hafta birikenler + bu hafta dağıtılan kasa
       ubiV2: true,
       ubiWeekAccrued: 0,
-      ubiClaimPot: ubiPot,
-      ubiClaimPotAtOpen: ubiPot,
-      ubiPool: ubiPot,
-      ubiWeeklyDistributed: prevState ? prevState.ubiWeeklyDistributed || 0 : 0,
-      totalTreasury: prevState ? prevState.totalTreasury || 40000000 : 40000000, // Hazine (TOKEN_REWARD_POOL_RATE)
-      treasury: prevState ? prevState.treasury || {
-        dungeon: 14000000,      // %35 Zindan & Boss Zaferleri
-        ammBuyback: 6000000,    // %15 AMM DEX Likidite Geri Alımı
-        arena: 8000000,         // %20 18v18 Kolezyum Gladyatör Arenası
-        worldBoss: 8000000,     // %20 Dünya Bossu
-        carnival: 4000000       // %10 Şans Çarkı Kasası
-      } : {
-        dungeon: 14000000,
-        ammBuyback: 6000000,
-        arena: 8000000,
-        worldBoss: 8000000,
-        carnival: 4000000
-      },
+      ubiClaimPot: ubiKasasi,
+      ubiClaimPotAtOpen: ubiKasasi,
+      ubiPool: ubiKasasi,
+      ubiWeeklyDistributed: onceki ? onceki.ubiWeeklyDistributed || 0 : 0,
+      // Eski ekonomi panosunun gösterim kopyaları (asıl kayıt treasury defterindedir)
+      totalTreasury: onceki ? onceki.totalTreasury || 40000000 : 40000000,
+      treasury: onceki ? onceki.treasury || hazineKopyasi : hazineKopyasi,
       totalActiveMiners: 342,
-      buybackFromBroadcasting: prevState ? (prevState.buybackFromBroadcasting || 0) : 0,
-      totalBurnedResources: prevState ? (prevState.totalBurnedResources || zeroRes()) : zeroRes(),
-      totalBurnedItems: prevState ? (prevState.totalBurnedItems || {}) : {}
+      buybackFromBroadcasting: onceki ? (onceki.buybackFromBroadcasting || 0) : 0,
+      totalBurnedResources: onceki ? (onceki.totalBurnedResources || sifirHammadde()) : sifirHammadde(),
+      totalBurnedItems: onceki ? (onceki.totalBurnedItems || {}) : {}
     };
 
     this.state = state;
@@ -231,25 +219,26 @@ export class GlobalResourceManager {
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // v2 (R2/R4): ÜRETİM HAKKI — Sirius Çıkarma Kapasitesi, kişi başı kota termostatı, Madencilik Otoritesi, ortak kasa
-  //  • Haftalık kapasite (kaynak başına) = Σ(aktif oyuncu ağırlığı) × taban (dk) × çalışma dakikası × kişi başı kota × Otorite × yönetici
+  // ÜRETİM HAKKI: Sirius çıkarma kapasitesi
+  //  • Haftalık kapasite (kaynak başına) = Σ aktif oyuncu ağırlığı × taban (dk) × çalışma dakikası
+  //                                        × kişi başı kota × Otorite çarpanı × yönetici çarpanı
   //  • Kişi başı kota (qpp): başlangıç 0,40; her hafta fiyat/açılış oranına göre ±%10; 0,05-1,0
   //  • Otorite seviyesi: kapasite +%5/sv, çalışma 20→24 saat, 6→7 gün
   // ═══════════════════════════════════════════════════════════════════════
   uretimParams(u = (this.state && this.state.uretim) || {}) {
     const U = GAME_CONFIG.URETIM_HAKKI || {};
-    const src = u && typeof u === 'object' ? u : {};
+    const kaynak = u && typeof u === 'object' ? u : {};
     const qpp = {};
-    for (const k of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
-      const v = Number(src.qpp && src.qpp[k]);
+    for (const k of kotaAnahtarlari()) {
+      const v = Number(kaynak.qpp && kaynak.qpp[k]);
       qpp[k] = isFinite(v) && v > 0 ? v : (U.QPP_START ?? 0.4);
     }
     return {
       qpp,
-      adminMult: Number(src.adminMult) > 0 ? Number(src.adminMult) : (U.ADMIN_MULT ?? 1),
-      otoriteLevel: Math.max(0, Number(src.otoriteLevel) || 0),
-      sumWeight: Number(src.sumWeight) > 0 ? Number(src.sumWeight) : 1,
-      priceRatio: (src.priceRatio && typeof src.priceRatio === 'object') ? src.priceRatio : {}
+      adminMult: Number(kaynak.adminMult) > 0 ? Number(kaynak.adminMult) : (U.ADMIN_MULT ?? 1),
+      otoriteLevel: Math.max(0, Number(kaynak.otoriteLevel) || 0),
+      sumWeight: Number(kaynak.sumWeight) > 0 ? Number(kaynak.sumWeight) : 1,
+      priceRatio: (kaynak.priceRatio && typeof kaynak.priceRatio === 'object') ? kaynak.priceRatio : {}
     };
   }
 
@@ -263,9 +252,9 @@ export class GlobalResourceManager {
 
   // Bir birim ağırlık için haftalık hak (birim)
   weeklyRightPerWeight(key, params = this.uretimParams()) {
-    const rate = (GAME_CONFIG.BASE_PRODUCTION || {})[key] || 0;
-    const w = this.otoriteWork(params.otoriteLevel);
-    return rate * w.minutes * (params.qpp[key] || 0) * w.mult * params.adminMult;
+    const hiz = (GAME_CONFIG.BASE_PRODUCTION || {})[key] || 0;
+    const calisma = this.otoriteWork(params.otoriteLevel);
+    return hiz * calisma.minutes * (params.qpp[key] || 0) * calisma.mult * params.adminMult;
   }
 
   computeWeekCapacity(key, params = this.uretimParams()) {
@@ -273,302 +262,260 @@ export class GlobalResourceManager {
   }
 
   // Yeni haftanın parametreleri: termostat (fiyat/açılış oranı) kotayı ±%10 oynatır
-  nextUretim(prevU) {
+  nextUretim(oncekiU) {
     const U = GAME_CONFIG.URETIM_HAKKI || {};
-    const p = this.uretimParams(prevU || {});
+    const p = this.uretimParams(oncekiU || {});
     const qpp = { ...p.qpp };
-    const applied = {};
+    const uygulanan = {};
     for (const k of Object.keys(qpp)) {
-      const r = Number((p.priceRatio || {})[k]);
-      if (!isFinite(r) || r <= 0) continue;
-      const step = U.TERMO_STEP ?? 0.1, target = U.TERMO_TARGET ?? 1;
-      let next = qpp[k];
-      if (r > target * 1.0001) next = qpp[k] * (1 + step);
-      else if (r < target * 0.9999) next = qpp[k] * (1 - step);
-      next = Math.max(U.QPP_MIN ?? 0.05, Math.min(U.QPP_MAX ?? 1, Math.round(next * 1000) / 1000));
-      applied[k] = { from: qpp[k], to: next, priceRatio: r };
-      qpp[k] = next;
+      const oran = Number((p.priceRatio || {})[k]);
+      if (!isFinite(oran) || oran <= 0) continue;
+      const adim = U.TERMO_STEP ?? 0.1;
+      const hedef = U.TERMO_TARGET ?? 1;
+      let yeni = qpp[k];
+      if (oran > hedef * 1.0001) yeni = qpp[k] * (1 + adim);
+      else if (oran < hedef * 0.9999) yeni = qpp[k] * (1 - adim);
+      yeni = Math.max(U.QPP_MIN ?? 0.05, Math.min(U.QPP_MAX ?? 1, Math.round(yeni * 1000) / 1000));
+      uygulanan[k] = { from: qpp[k], to: yeni, priceRatio: oran };
+      qpp[k] = yeni;
     }
-    return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, lastTermostat: applied };
+    return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, lastTermostat: uygulanan };
   }
 
-  // v2 düzeltmesi (E-planı S8, 8 Ekim 2026): adalet tavanı — dünyadaki en düşük aktif ağırlığın FAIRNESS_CAP katı.
-  // server/world/uretim.js refreshUretim() saatte bir yazar; js/gameState/ekonomi.js getUretimWeight() uygular.
+  _uretimiHazirla() {
+    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+  }
+
+  // Adalet tavanı: dünyadaki en düşük aktif ağırlığın FAIRNESS_CAP katı.
+  // server/world/uretim.js saatte bir yazar; js/gameState/ekonomi.js getUretimWeight() uygular.
   setFairnessCapWeight(v) {
     if (!this.state) return;
-    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+    this._uretimiHazirla();
     this.state.uretim.fairnessCapWeight = Math.max(0, Number(v) || 0);
     this.saveState();
   }
 
-  recordPriceRatios(ratios, at = this.getTrustedTime()) {
+  recordPriceRatios(oranlar, zaman = this.getTrustedTime()) {
     if (!this.state) return;
-    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
-    this.state.uretim.priceRatio = { ...(ratios || {}) };
-    this.state.uretim.priceAt = at;
+    this._uretimiHazirla();
+    this.state.uretim.priceRatio = { ...(oranlar || {}) };
+    this.state.uretim.priceAt = zaman;
     this.saveState();
   }
 
-  // Aktif oyuncu ağırlıkları toplamı değişince (yeni oyuncu, hafta başı) kapasite yeniden hesaplanır; çıkarılan ve yakılan korunur
-  setSumWeight(sum) {
+  // Aktif oyuncu ağırlıkları toplamı değişince (yeni oyuncu, hafta başı) kapasite yeniden hesaplanır;
+  // çıkarılan ve yakılan korunur
+  setSumWeight(toplam) {
     if (!this.state) return;
-    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
-    this.state.uretim.sumWeight = Math.max(0.001, Number(sum) || 1);
+    this._uretimiHazirla();
+    this.state.uretim.sumWeight = Math.max(0.001, Number(toplam) || 1);
     this.recomputeWeekCapacity();
   }
 
   recomputeWeekCapacity() {
     if (!this.state || !this.state.resources) return;
     const params = this.uretimParams();
-    for (const key of Object.keys(GAME_CONFIG.GLOBAL_RESOURCE_CAPS)) {
+    for (const key of kotaAnahtarlari()) {
       const r = this.state.resources[key];
-      const cap = this.computeWeekCapacity(key, params);
-      if (!r) { this.state.resources[key] = { remaining: cap, totalCap: cap, baseCap: cap, harvested: 0, depleted: false }; continue; }
-      const burned = Math.max(0, (r.baseCap ?? cap) - (r.totalCap ?? cap));
-      const harvested = Math.max(0, Number(r.harvested) || 0);
-      r.baseCap = cap;
-      r.totalCap = Math.max(0, cap - burned);
-      r.remaining = Math.max(0, r.totalCap - harvested);
+      const kota = this.computeWeekCapacity(key, params);
+      if (!r) {
+        this.state.resources[key] = { remaining: kota, totalCap: kota, baseCap: kota, harvested: 0, depleted: false };
+        continue;
+      }
+      const yakilan = Math.max(0, (r.baseCap ?? kota) - (r.totalCap ?? kota));
+      const cikarilan = Math.max(0, Number(r.harvested) || 0);
+      r.baseCap = kota;
+      r.totalCap = Math.max(0, kota - yakilan);
+      r.remaining = Math.max(0, r.totalCap - cikarilan);
       r.depleted = r.remaining <= 0;
     }
     this.saveState();
   }
 
-  // Ortak kasa (Sirius Konseyi): çıkarılan her hammaddenin %5'i kaynak olarak burada birikir
-  addKonseyStock(key, qty) {
-    const q = Math.max(0, Number(qty) || 0);
+  // ── Konsey ortak kasası: çıkarılan her hammaddenin %5'i kaynak olarak burada birikir ──
+  addKonseyStock(key, miktar) {
+    const q = Math.max(0, Number(miktar) || 0);
     if (!q || !this.state) return 0;
-    if (!this.state.konsey || !this.state.konsey.stock) this.state.konsey = { stock: zeroRes() };
+    if (!this.state.konsey || !this.state.konsey.stock) this.state.konsey = { stock: sifirHammadde() };
     this.state.konsey.stock[key] = (Number(this.state.konsey.stock[key]) || 0) + q;
     this.saveState();
     return q;
   }
 
-  // Ortak kasa payı için dünya kapasitesinden çıkarma (oyuncu hasadı sayılmaz; harvest() kancalarına takılmaz)
-  takeForKonsey(key, qty) {
-    const res = this.state && this.state.resources && this.state.resources[key];
-    const q = Math.max(0, Number(qty) || 0);
-    if (!res || !q) return 0;
-    const actual = Math.max(0, Math.min(q, this.getAvailableToday(key)));
-    if (actual <= 0) return 0;
-    res.remaining -= actual;
-    res.harvested = (res.harvested || 0) + actual;
-    if (res.remaining <= 0) { res.remaining = 0; res.depleted = true; }
-    this.addKonseyStock(key, actual);
-    return actual;
+  // Ortak kasa payı dünya kapasitesinden çıkarılır (oyuncu hasadı sayılmaz, harvest() kancalarına takılmaz)
+  takeForKonsey(key, miktar) {
+    const r = this.state && this.state.resources && this.state.resources[key];
+    const q = Math.max(0, Number(miktar) || 0);
+    if (!r || !q) return 0;
+    const gercek = Math.max(0, Math.min(q, this.getAvailableToday(key)));
+    if (gercek <= 0) return 0;
+    r.remaining -= gercek;
+    r.harvested = (r.harvested || 0) + gercek;
+    if (r.remaining <= 0) { r.remaining = 0; r.depleted = true; }
+    this.addKonseyStock(key, gercek);
+    return gercek;
   }
 
   getKonseyStock() {
-    return { ...zeroRes(), ...((this.state && this.state.konsey && this.state.konsey.stock) || {}) };
+    return { ...sifirHammadde(), ...((this.state && this.state.konsey && this.state.konsey.stock) || {}) };
   }
 
-  // 🔥 HAMMADDE KALICI YAKIMI (BURN) VE TOTAL ARZDAN DÜŞÜLMESİ
-  // Oyunda nerede bir odun, demir veya buğday harcanırsa bu metotla yakılır ve total arzdan (totalCap & remaining) kalıcı silinir.
-  recordResourceBurn(resourceKey, amount) {
-    const qty = Number(amount) || 0;
-    if (qty <= 0) return { burned: 0 };
+  // ── Kalıcı yakım ───────────────────────────────────────────────────────
+  // Harcanan hammadde bu yöntemle yakılır ve haftalık toplam arzdan (totalCap, remaining) kalıcı silinir.
+  recordResourceBurn(key, miktar) {
+    const q = Number(miktar) || 0;
+    if (q <= 0) return { burned: 0 };
 
-    if (!this.state.totalBurnedResources) {
-      this.state.totalBurnedResources = zeroRes();
-    }
-    this.state.totalBurnedResources[resourceKey] = (this.state.totalBurnedResources[resourceKey] || 0) + qty;
+    if (!this.state.totalBurnedResources) this.state.totalBurnedResources = sifirHammadde();
+    this.state.totalBurnedResources[key] = (this.state.totalBurnedResources[key] || 0) + q;
 
-    const res = this.state.resources && this.state.resources[resourceKey];
-    if (res) {
-      // Total Cap (Küresel Toplam Arz) kalıcı olarak düşürülür:
-      res.totalCap = Math.max(0, (res.totalCap || 0) - qty);
-      // Kalan arz da güncellenir:
-      res.remaining = Math.max(0, Math.min(res.remaining, res.totalCap));
-      if (res.totalCap <= 0 || res.remaining <= 0) {
-        res.remaining = 0;
-        res.depleted = true;
+    const r = this.state.resources && this.state.resources[key];
+    if (r) {
+      r.totalCap = Math.max(0, (r.totalCap || 0) - q);
+      r.remaining = Math.max(0, Math.min(r.remaining, r.totalCap));
+      if (r.totalCap <= 0 || r.remaining <= 0) {
+        r.remaining = 0;
+        r.depleted = true;
       }
     }
 
     this.saveState();
-    return { resourceKey, amount: qty, remainingCap: res ? res.totalCap : 0, remaining: res ? res.remaining : 0 };
+    return { resourceKey: key, amount: q, remainingCap: r ? r.totalCap : 0, remaining: r ? r.remaining : 0 };
   }
 
-  // Kullanılınca oyundan tamamen çıkan eşyalar (teçhizat parçası, anahtar, kutu, parşömen): yalnız kayıt (denetim 6 Ekim 2026).
+  // Kullanılınca oyundan çıkan eşyalar (parça, anahtar, kutu, parşömen): yalnız kayıt.
   // Hammadde gibi haftalık kotayı etkilemez, katkı puanı vermez.
-  recordItemBurn(kind, amount) {
-    const qty = Number(amount) || 0;
-    if (!qty || !kind) return 0;
+  recordItemBurn(tur, miktar) {
+    const q = Number(miktar) || 0;
+    if (!q || !tur) return 0;
     if (!this.state.totalBurnedItems) this.state.totalBurnedItems = {};
-    this.state.totalBurnedItems[kind] = Math.max(0, (this.state.totalBurnedItems[kind] || 0) + qty);
+    this.state.totalBurnedItems[tur] = Math.max(0, (this.state.totalBurnedItems[tur] || 0) + q);
     this.saveState();
-    return qty;
+    return q;
   }
 
-  saveState() {
-    if (typeof localStorage === 'undefined') return;
-    if (typeof gameState !== 'undefined' && gameState._isFastForwarding) return;
-    if (this.state) {
-      this.state.lastSavedTime = this.getTrustedTime();
+  // ── Kota gün gün açılır: haftalık kotanın her gün 1/7'si; açılan ama çıkarılmayan hafta içinde birikir ──
+  getEpochDayIndex(simdi = this.getTrustedTime()) {
+    const baslangic = (this.state.epochEndTime || simdi) - 7 * GUN_MS;
+    return Math.max(0, Math.min(6, Math.floor((simdi - baslangic) / GUN_MS)));
+  }
+
+  getReleasedCap(key, simdi = this.getTrustedTime()) {
+    const r = this.state.resources[key];
+    if (!r) return 0;
+    const taban = r.baseCap ?? r.totalCap ?? 0;
+    return Math.floor(taban * (this.getEpochDayIndex(simdi) + 1) / 7);
+  }
+
+  getAvailableToday(key, simdi = this.getTrustedTime()) {
+    const r = this.state.resources[key];
+    if (!r) return 0;
+    return Math.max(0, Math.min(r.remaining, this.getReleasedCap(key, simdi) - (r.harvested || 0)));
+  }
+
+  getNextReleaseTime(simdi = this.getTrustedTime()) {
+    const baslangic = (this.state.epochEndTime || simdi) - 7 * GUN_MS;
+    return baslangic + (this.getEpochDayIndex(simdi) + 1) * GUN_MS;
+  }
+
+  // Oyuncu kaynak topladığında dünya kotasından düşer; gerçekten verilen miktarı döndürür
+  harvest(key, miktar) {
+    const r = this.state.resources[key];
+    if (!r) return 0;
+
+    const gercek = Math.max(0, Math.min(miktar, this.getAvailableToday(key)));
+    r.remaining -= gercek;
+    r.harvested = (r.harvested || 0) + gercek;
+    if (r.remaining <= 0) {
+      r.remaining = 0;
+      r.depleted = true;
     }
-    writeJSON(this.storageKey, this.state);
-  }
-
-  // Kullanıcı kaynak topladığında küresel havuzdan düş
-  // ── Kota gün gün açılır: haftalık kotanın her gün 1/7'si açılır, açılan ama çıkarılmayan kısım hafta içinde birikir ──
-  getEpochDayIndex(now = this.getTrustedTime()) {
-    const start = (this.state.epochEndTime || now) - 7 * DAY_MS;
-    return Math.max(0, Math.min(6, Math.floor((now - start) / DAY_MS)));
-  }
-
-  getReleasedCap(resourceKey, now = this.getTrustedTime()) {
-    const res = this.state.resources[resourceKey];
-    if (!res) return 0;
-    const base = res.baseCap ?? res.totalCap ?? 0;
-    return Math.floor(base * (this.getEpochDayIndex(now) + 1) / 7);
-  }
-
-  getAvailableToday(resourceKey, now = this.getTrustedTime()) {
-    const res = this.state.resources[resourceKey];
-    if (!res) return 0;
-    return Math.max(0, Math.min(res.remaining, this.getReleasedCap(resourceKey, now) - (res.harvested || 0)));
-  }
-
-  getNextReleaseTime(now = this.getTrustedTime()) {
-    const start = (this.state.epochEndTime || now) - 7 * DAY_MS;
-    return start + (this.getEpochDayIndex(now) + 1) * DAY_MS;
-  }
-
-  harvest(resourceKey, amount) {
-    const res = this.state.resources[resourceKey];
-    if (!res) return 0;
-
-    const actualHarvested = Math.max(0, Math.min(amount, this.getAvailableToday(resourceKey)));
-    res.remaining -= actualHarvested;
-    res.harvested = (res.harvested || 0) + actualHarvested;
-
-    if (res.remaining <= 0) {
-      res.remaining = 0;
-      res.depleted = true;
-    }
-
     this.saveState();
-    return actualHarvested;
+    return gercek;
   }
 
-  // 🪙 TOKEN HARCANDIĞINDA:
-  // %5 KALICI YAKIM + %3 YAPIMCI TELİFİ + %6 EVRENSEL TEMEL GELİR (UBI) + %86 HAZİNE DEFTERİNE GİRİŞ = %100!
-  recordTokenSpend(adAstraAmount) {
-    if (isNaN(adAstraAmount) || adAstraAmount <= 0) return { burned: 0, creatorRoyalty: 0, ubiShare: 0, treasuryShare: 0 };
+  // ── ASTRA harcama muhasebesi ───────────────────────────────────────────
+  // Harcanan her ASTRA: %5 kalıcı yakım + %3 yapımcı telifi + %6 UBI + %86 hazine kasaları = %100
+  recordTokenSpend(astra) {
+    if (isNaN(astra) || astra <= 0) return { burned: 0, creatorRoyalty: 0, ubiShare: 0, treasuryShare: 0 };
 
-    const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;           // %5 Kalıcı Yakım
-    const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;   // %3 Yapımcı Cüzdanı (0x58DBCF66bdd7BfA9da98aDba1965b3794321087C)
-    const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;              // %6 Evrensel Temel Gelir Havuzu
-    const treasuryRate = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;// %86 Hazine Havuzları
+    const yakimOrani = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
+    const telifOrani = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;
+    const ubiOrani = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;
+    const hazineOrani = GAME_CONFIG.TOKEN_REWARD_POOL_RATE ?? 0.86;
 
-    this.state.totalSpent = (this.state.totalSpent || 0) + adAstraAmount;
+    const s = this.state;
+    s.totalSpent = (s.totalSpent || 0) + astra;
 
-    // 1. Kalıcı Yakım
-    const burned = adAstraAmount * burnRate;
-    this.state.totalBurned = (this.state.totalBurned || 0) + burned;
+    const burned = astra * yakimOrani;
+    s.totalBurned = (s.totalBurned || 0) + burned;
 
-    // 2. %3 Yapımcı Telifi
-    const creatorRoyalty = adAstraAmount * creatorRate;
-    this.state.creatorRoyaltyTotal = (this.state.creatorRoyaltyTotal || 0) + creatorRoyalty;
-    this.state.creatorWallet = GAME_CONFIG.CREATOR_WALLET_ADDRESS;
+    const creatorRoyalty = astra * telifOrani;
+    s.creatorRoyaltyTotal = (s.creatorRoyaltyTotal || 0) + creatorRoyalty;
+    s.creatorWallet = GAME_CONFIG.CREATOR_WALLET_ADDRESS;
 
-    // 3. %6 Evrensel Temel Gelir (Seviye Stake) Havuzu
-    const ubiShare = adAstraAmount * ubiRate;
-    this.state.ubiWeekAccrued = (this.state.ubiWeekAccrued || 0) + ubiShare;
-    this.state.ubiPool = (this.state.ubiClaimPot || 0) + this.state.ubiWeekAccrued;
+    const ubiShare = astra * ubiOrani;
+    s.ubiWeekAccrued = (s.ubiWeekAccrued || 0) + ubiShare;
+    s.ubiPool = (s.ubiClaimPot || 0) + s.ubiWeekAccrued;
 
-    // 4. Hazine Girişi
-    const treasuryShare = adAstraAmount * treasuryRate;
-    this.state.totalTreasury = (this.state.totalTreasury || 0) + treasuryShare;
+    const treasuryShare = astra * hazineOrani;
+    s.totalTreasury = (s.totalTreasury || 0) + treasuryShare;
 
     // Hazine defterine gerçek giriş
-    const result = treasury.deposit(treasuryShare);
+    const dagilim = treasury.deposit(treasuryShare);
     treasury.recordBurn(burned);
 
-    // Geriye dönük uyumluluk
-    this.state.treasury = Object.fromEntries(Object.keys(GAME_CONFIG.TREASURY_SEED || {}).map(k => [k, treasury.getPool(k)]));
+    // Eski panonun gösterim kopyası
+    s.treasury = Object.fromEntries(Object.keys(GAME_CONFIG.TREASURY_SEED || {}).map(k => [k, treasury.getPool(k)]));
 
     this.saveState();
     if (typeof window !== 'undefined' && typeof window.updateUbiCardLive === 'function') {
       try { window.updateUbiCardLive(); } catch (e) { console.warn('UBI kartı yenilenemedi:', e && e.message); }
     }
-    return { burned, creatorRoyalty, ubiShare, treasuryShare, allocations: result.allocations };
+    return { burned, creatorRoyalty, ubiShare, treasuryShare, allocations: dagilim.allocations };
   }
 
-  // 🏛️ EVRENSEL TEMEL GELİR (UBI) BİLGİSİ VE SEVİYEYE GÖRE HESAPLAMA MOTORU
-  // Bu haftanın hak sahiplerinin ağırlık toplamı. Tarayıcı sürümünde dünya tek oyuncudur
-  // (+ ayarlardaki temsili diğer oyuncular); sunucuda bu, gerçek hak sahiplerinin toplamı olur.
+  // Ödül çekimi için tek geçit: hiçbir modül bakiyeye doğrudan ASTRA eklemez. Tam sayı verilir,
+  // kesirli artık kasada kalır.
+  withdrawReward(kasa, miktar) {
+    return treasury.withdrawWhole(kasa, miktar);
+  }
+
+  // ── Evrensel Temel Gelir (UBI) ─────────────────────────────────────────
+  // Bu haftanın hak sahiplerinin ağırlık toplamı. Tarayıcıda dünya tek oyunculu (+ ayarlardaki temsili
+  // diğer oyuncular); sunucuda server/engine.js bunu gerçek hak sahiplerinin toplamıyla değiştirir.
   getUbiTotalWeight(playerLevel = 1) {
-    const others = (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.LOCAL_OTHER_PLAYERS_WEIGHT) || 0;
-    return levelWeight(playerLevel, UBI_RULES) + others;
+    const digerleri = (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.LOCAL_OTHER_PLAYERS_WEIGHT) || 0;
+    return levelWeight(playerLevel, UBI_KURALLARI) + digerleri;
   }
 
   getUbiPoolInfo(playerLevel = 1, lastClaimedEpoch = 0) {
-    const lvl = Math.max(1, Math.min(81, playerLevel || 1));
-    const pot = this.state.ubiClaimPotAtOpen || 0;
-    const payoutFor = (L) => shareOf({ pot, playerLevel: L, totalWeight: this.getUbiTotalWeight(L), rules: UBI_RULES });
-    const payout = payoutFor(lvl);
-    const nextLevel = Math.min(81, lvl + 1);
-    const w = levelWeight(lvl, UBI_RULES);
-    const wNext = levelWeight(nextLevel, UBI_RULES);
+    const seviye = Math.max(1, Math.min(81, playerLevel || 1));
+    const kasa = this.state.ubiClaimPotAtOpen || 0;
+    const paySeviyesi = L => shareOf({ pot: kasa, playerLevel: L, totalWeight: this.getUbiTotalWeight(L), rules: UBI_KURALLARI });
+    const payout = paySeviyesi(seviye);
+    const sonraki = Math.min(81, seviye + 1);
+    const w = levelWeight(seviye, UBI_KURALLARI);
+    const wSonraki = levelWeight(sonraki, UBI_KURALLARI);
     return {
       totalPool: Math.round((this.state.ubiClaimPot || 0) + (this.state.ubiWeekAccrued || 0)),
-      weeklyBudget: Math.round(pot),
+      weeklyBudget: Math.round(kasa),
       claimRemaining: Math.round(this.state.ubiClaimPot || 0),
       accruingThisWeek: Math.round(this.state.ubiWeekAccrued || 0),
       epochId: this.state.epochId,
       alreadyClaimedThisWeek: lastClaimedEpoch === this.state.epochId,
-      eligible: isEligible(lvl, UBI_RULES),
-      minLevel: UBI_RULES.minLevel,
+      eligible: isEligible(seviye, UBI_KURALLARI),
+      minLevel: UBI_KURALLARI.minLevel,
       nextResetTimestamp: this.getNextWeeklyResetTRT(),
-      playerLevel: lvl,
+      playerLevel: seviye,
       playerWeight: Math.round(w * 100) / 100,
-      nextLevelWeight: Math.round(wNext * 100) / 100,
+      nextLevelWeight: Math.round(wSonraki * 100) / 100,
       payout,
-      nextLevelPayout: payoutFor(nextLevel),
-      increasePct: w > 0 ? Math.round(((wNext - w) / w) * 100) : 0
+      nextLevelPayout: paySeviyesi(sonraki),
+      increasePct: w > 0 ? Math.round(((wSonraki - w) / w) * 100) : 0
     };
   }
 
-  // Seviyeye göre (Lv 1 - 81) dengeli UBI dağıtım payı hesabı:
-  // Balina Sömürüsü Koruması: W(L) = 1 + sqrt(L-1)*0.75 ve %5 Tek Çekim Tavanı!
-  calculateLevelUbiPayout(playerLevel = 1, weeklyBudget = null) {
-    const lvl = Math.max(1, Math.min(81, playerLevel || 1));
-    const nextLvl = Math.min(81, lvl + 1);
-
-    const pool = Math.max(0, Number(this.state.ubiPool) || 0);
-    const budget = weeklyBudget !== null ? weeklyBudget : (pool / 12);
-
-    // Dengeli Kök/Logaritmik Fonksiyon: Lv 1 = 1.00, Lv 3 = 2.06, Lv 10 = 3.25, Lv 81 = 7.71
-    const calcWeight = (l) => 1 + Math.sqrt(l - 1) * 0.75;
-    const playerWeight = calcWeight(lvl);
-    const nextPlayerWeight = calcWeight(nextLvl);
-
-    // Her seviyenin haftalık bütçeden aldığı adil pay:
-    // Taban: bütçenin %0.5'i (Lv 1), Lv 81 için bütçenin ~%3.85'i
-    const rawPayout = (budget * 0.005) * playerWeight;
-    const rawNextPayout = (budget * 0.005) * nextPlayerWeight;
-
-    // 🛡️ TEK ÇEKİM TAVANI: Havuzun %5'inden fazlası ASLA tek seferde çekilemez!
-    const maxSingleCap = pool * ((GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MAX_SINGLE_CLAIM_SHARE) || 0.05);
-    const cappedPayout = Math.min(rawPayout, maxSingleCap > 0 ? maxSingleCap : rawPayout);
-
-    // Minimum 0.01 ASTRA, 2 ondalık hassasiyetle anlık canlı değer
-    const payout = Math.max(0.01, Math.round(cappedPayout * 100) / 100);
-    const nextLevelPayout = Math.max(0.01, Math.round(Math.min(rawNextPayout, maxSingleCap > 0 ? maxSingleCap : rawNextPayout) * 100) / 100);
-    const increasePct = payout > 0 ? Math.round(((nextLevelPayout - payout) / payout) * 100) : 0;
-
-    return {
-      playerLevel: lvl,
-      playerWeight: Math.round(playerWeight * 100) / 100,
-      payout,
-      nextLevelPayout,
-      increasePct,
-      maxSingleCap: Math.round(maxSingleCap)
-    };
-  }
-
-  // Haftalık Evrensel Temel Gelir Claim Metodu (Havuz Koruma Tamponu İle)
   claimWeeklyUbi(playerLevel = 1, currentBalance = 0, lastClaimedEpoch = 0) {
     if (lastClaimedEpoch === this.state.epochId) {
       return {
@@ -577,90 +524,52 @@ export class GlobalResourceManager {
       };
     }
 
-    const ubiInfo = this.getUbiPoolInfo(playerLevel, lastClaimedEpoch);
-    if (!ubiInfo.eligible) {
-      return { success: false, message: `Haftalık temel gelir ${ubiInfo.minLevel}. seviyeden itibaren alınabilir.` };
+    const bilgi = this.getUbiPoolInfo(playerLevel, lastClaimedEpoch);
+    if (!bilgi.eligible) {
+      return { success: false, message: `Haftalık temel gelir ${bilgi.minLevel}. seviyeden itibaren alınabilir.` };
     }
-    const amount = Math.min(ubiInfo.payout, this.state.ubiClaimPot || 0);
-    if (amount <= 0) {
+    const miktar = Math.min(bilgi.payout, this.state.ubiClaimPot || 0);
+    if (miktar <= 0) {
       return {
         success: false,
         message: 'Bu haftanın temel gelir kasası boş. Kasa, oyunda harcanan her ASTRA\'nın %6\'sıyla dolar ve Pazartesi 00:01 (TSİ) açılır.'
       };
     }
 
-    // Bu haftanın kasasından düş ve deftere yaz
-    this.state.ubiClaimPot = Math.max(0, (this.state.ubiClaimPot || 0) - amount);
+    this.state.ubiClaimPot = Math.max(0, (this.state.ubiClaimPot || 0) - miktar);
     this.state.ubiPool = this.state.ubiClaimPot + (this.state.ubiWeekAccrued || 0);
-    this.state.ubiWeeklyDistributed = (this.state.ubiWeeklyDistributed || 0) + amount;
+    this.state.ubiWeeklyDistributed = (this.state.ubiWeeklyDistributed || 0) + miktar;
     this.saveState();
 
     return {
       success: true,
-      amount,
+      amount: miktar,
       playerLevel,
       epochId: this.state.epochId,
-      message: `🏛️ Seviye ${playerLevel} Evrensel Temel Geliriniz (+${amount.toLocaleString('tr-TR')} 🟣 $ADASTRA) cüzdanınıza aktarıldı!`
+      message: `🏛️ Seviye ${playerLevel} Evrensel Temel Geliriniz (+${miktar.toLocaleString('tr-TR')} 🟣 $ADASTRA) cüzdanınıza aktarıldı!`
     };
   }
 
-  // Ödül çekimi — tek geçit. Hiçbir modül bakiyeye doğrudan ASTRA eklemez.
-  withdrawReward(poolId, amount) {
-    return treasury.withdrawWhole(poolId, amount);   // tam sayı ödül; kesirli artık kasada kalır (kimsenin bakiyesine girmeyen ASTRA kaybolmasın)
-  }
-
-  // 📺 YAYIN GELİRİ BUYBACK ENJEKSİYONU (%35 Avalanche Arena Geliri)
-  recordBroadcastBuyback(adAstraAmount) {
-    if (isNaN(adAstraAmount) || adAstraAmount <= 0) return 0;
-    this.state.buybackFromBroadcasting = (this.state.buybackFromBroadcasting || 0) + adAstraAmount;
-    // Buyback yapılan tokenlerin %50'si yakılır, %50'si gerçek hazine defterindeki AMM geri alım kasasına girer.
-    // (Eski sürüm %50'yi yalnızca gösterim kopyasına yazıyordu; para hiçbir kasaya ulaşmıyordu.)
-    const half = adAstraAmount * 0.50;
-    this.state.totalBurned = (this.state.totalBurned || 0) + half;
-    treasury.recordBurn(half);
-    treasury.state.pools.ammBuyback = (treasury.state.pools.ammBuyback || 0) + half;
-    treasury.state.inflow.ammBuyback = (treasury.state.inflow.ammBuyback || 0) + half;
-    treasury.state.lifetimeDeposited += half;
-    treasury.save();
-    this.saveState();
-    return adAstraAmount;
-  }
-
-  // 🩺 CANLI EKONOMİK SAĞLIK GÖSTERGELERİ
-  //
-  // v1'DEKİ İKİ HATA:
-  //  1) E_net = hazine/(yakım×1,5) − 1 idi. Yakım her zaman harcamanın %18'i,
-  //     hazine her zaman %82'si olduğu için bu oran daima 0,82/0,27−1 = +2,037
-  //     değerine yakınsıyordu. Gösterge SABİTTİ — hiçbir şey ölçmüyordu (F-09).
-  //  2) Eşik sırası ters yazılmıştı:
-  //         if (E_net > 0.05) uyarı; else if (E_net > 0.15) kritik;
-  //     0,15'ten büyük her değer zaten 0,05'ten de büyük olduğu için "kritik"
-  //     dalı ASLA çalışmıyordu. Panel ne olursa olsun en fazla sarı gösteriyordu.
-  //
-  // v2'de ölçülen şey ÖDEME GÜCÜ: hazineye giren ile hazineden çıkanın oranı.
-  // Bu gerçekten dalgalanır ve gerçekten bir şey söyler.
+  // ── Canlı ekonomik sağlık göstergeleri ─────────────────────────────────
+  // Ölçülen şey ÖDEME GÜCÜ: hazineden çıkanın girene oranı. En ağır eşik önce denetlenir.
   getEconomicHealthMetrics() {
     const t = treasury.getSummary();
 
-    // Net emisyon oranı: dağıtılan ödüller / toplanan hazine.
-    // > 1 → dağıtım girişten fazla (havuzlar eriyor), < 1 → birikim var.
-    const payoutRatio = t.lifetimeDeposited > 0
-      ? t.lifetimeWithdrawn / t.lifetimeDeposited
-      : 0;
-    const E_net = payoutRatio - 1;
+    // > 1 → dağıtım girişten fazla (kasalar eriyor), < 1 → birikim var
+    const odemeOrani = t.lifetimeDeposited > 0 ? t.lifetimeWithdrawn / t.lifetimeDeposited : 0;
+    const E_net = odemeOrani - 1;
 
-    // Kaynak denge katsayıları: artık sabit değil, gerçek havuz tüketiminden.
-    const sigmaOf = (key) => {
-      const res = this.state.resources[key];
-      if (!res || !res.totalCap) return 1;
-      const consumedRatio = 1 - (res.remaining / res.totalCap);
-      const elapsed = Math.max(1, Date.now() - (this.state.epochStartTime || Date.now()));
-      const epochLength = Math.max(1, (this.state.epochEndTime || Date.now()) - (this.state.epochStartTime || Date.now()));
-      const expectedRatio = Math.min(1, elapsed / epochLength);
-      return expectedRatio > 0 ? +(consumedRatio / expectedRatio).toFixed(3) : 1;
+    // Kaynak denge katsayısı: tüketim oranı ÷ haftanın geçen payı (gerçek havuz tüketiminden)
+    const sigmaOf = key => {
+      const r = this.state.resources[key];
+      if (!r || !r.totalCap) return 1;
+      const tuketilen = 1 - (r.remaining / r.totalCap);
+      const gecen = Math.max(1, Date.now() - (this.state.epochStartTime || Date.now()));
+      const uzunluk = Math.max(1, (this.state.epochEndTime || Date.now()) - (this.state.epochStartTime || Date.now()));
+      const beklenen = Math.min(1, gecen / uzunluk);
+      return beklenen > 0 ? +(tuketilen / beklenen).toFixed(3) : 1;
     };
 
-    // ÖNEMLİ: en ağır eşik ÖNCE kontrol edilir.
     let healthStatus, statusText, statusBadgeColor;
     if (E_net > 0.15 || t.avgHealth < 0.25) {
       healthStatus = 'critical';
@@ -676,11 +585,10 @@ export class GlobalResourceManager {
       statusBadgeColor = '#22c55e';
     }
 
-    const circulating = Math.max(0, CIRCULATING_SUPPLY_ESTIMATE - (this.state.totalBurned || 0));
-
+    const yakilan = this.state.totalBurned || 0;
     return {
       E_net: parseFloat(E_net.toFixed(4)),
-      payoutRatio: parseFloat(payoutRatio.toFixed(4)),
+      payoutRatio: parseFloat(odemeOrani.toFixed(4)),
       treasuryHealth: parseFloat(t.avgHealth.toFixed(3)),
       sigmaWheat: sigmaOf('wheat'),
       sigmaIron: sigmaOf('iron'),
@@ -688,102 +596,76 @@ export class GlobalResourceManager {
       healthStatus,
       statusText,
       statusBadgeColor,
-      totalBurned: this.state.totalBurned || 0,
-      // Deflasyon DOLAŞIMDAKİ arz üzerinden raporlanır, max supply üzerinden değil
-      circulatingEstimate: circulating,
-      burnedPctOfCirculating: parseFloat((((this.state.totalBurned || 0) / CIRCULATING_SUPPLY_ESTIMATE) * 100).toFixed(4)),
+      totalBurned: yakilan,
+      // Deflasyon dolaşımdaki arz üzerinden raporlanır, azami arz üzerinden değil
+      circulatingEstimate: Math.max(0, CIRCULATING_SUPPLY_ESTIMATE - yakilan),
+      burnedPctOfCirculating: parseFloat(((yakilan / CIRCULATING_SUPPLY_ESTIMATE) * 100).toFixed(4)),
       treasuryPools: t.pools
     };
   }
 
-  // 🎮 MAKRO EKONOMİ SİMÜLATÖRÜ (1-365 Günlük Oyuncu Projeksiyonu)
-  simulateMacroEconomy(playerCount = 500, days = 30) {
-    const projection = [];
-    let simBurned = this.state.totalBurned;
-    let simTreasury = this.state.totalTreasury;
-    let simCirculating = MAX_SUPPLY - simBurned;
+  // Test menüsündeki makro ekonomi projeksiyonu (1-365 gün). Sabitleri eski v1 oranlarıdır (%18 yakım / %82 hazine).
+  simulateMacroEconomy(oyuncuSayisi = 500, gun = 30) {
+    const projeksiyon = [];
+    let yakilan = this.state.totalBurned;
+    let hazine = this.state.totalTreasury;
 
-    for (let d = 1; d <= days; d++) {
-      // Günlük aktiflik ve harcama tahmini
-      const activeDaily = Math.floor(playerCount * (0.65 + Math.random() * 0.25));
-      const avgSpendPerUser = 85 + Math.random() * 45; // Tamir + Reforge + Boost
-      const dailyTotalSpend = activeDaily * avgSpendPerUser;
+    for (let d = 1; d <= gun; d++) {
+      const aktif = Math.floor(oyuncuSayisi * (0.65 + Math.random() * 0.25));
+      const kisiBasiHarcama = 85 + Math.random() * 45;
+      const gunlukHarcama = aktif * kisiBasiHarcama;
 
-      const dailyBurn = dailyTotalSpend * 0.18;
-      const dailyTreasury = dailyTotalSpend * 0.82;
-      const dailyBroadcastBuyback = (1200 + Math.random() * 800) * 0.35; // Yayın geliri desteği
+      const gunlukYakim = gunlukHarcama * 0.18;
+      const gunlukHazine = gunlukHarcama * 0.82;
+      const yayinDestegi = (1200 + Math.random() * 800) * 0.35;
 
-      simBurned += dailyBurn + (dailyBroadcastBuyback * 0.5);
-      simTreasury += dailyTreasury + (dailyBroadcastBuyback * 0.5);
-      simCirculating = MAX_SUPPLY - simBurned;
+      yakilan += gunlukYakim + (yayinDestegi * 0.5);
+      hazine += gunlukHazine + (yayinDestegi * 0.5);
 
-      projection.push({
+      projeksiyon.push({
         day: d,
-        activePlayers: activeDaily,
-        dailySpend: Math.floor(dailyTotalSpend),
-        dailyBurn: Math.floor(dailyBurn),
-        cumulativeBurned: Math.floor(simBurned),
-        circulatingSupply: Math.floor(simCirculating),
-        dungeonVault: Math.floor(simTreasury * 0.35),
-        ammBuybackVault: Math.floor(simTreasury * 0.30),
-        arenaVault: Math.floor(simTreasury * 0.25),
-        stakingVault: Math.floor(simTreasury * 0.10)
+        activePlayers: aktif,
+        dailySpend: Math.floor(gunlukHarcama),
+        dailyBurn: Math.floor(gunlukYakim),
+        cumulativeBurned: Math.floor(yakilan),
+        circulatingSupply: Math.floor(MAX_SUPPLY - yakilan),
+        dungeonVault: Math.floor(hazine * 0.35),
+        ammBuybackVault: Math.floor(hazine * 0.30),
+        arenaVault: Math.floor(hazine * 0.25),
+        stakingVault: Math.floor(hazine * 0.10)
       });
     }
-
-    return projection;
+    return projeksiyon;
   }
 
-  // Küresel Havuz Aktivite Denetleyicisi:
-  // KURAL: Kimse kaynak çıkartmıyorsa limitler durduk yere ASLA eksilmez!
-  // Havuz yalnızca oyuncular seferlerden kaynak topladığında harvest() metoduyla düşürülür.
-  simulateGlobalActivity(timeDeltaSeconds) {
-    // Otomatik sızıntı kaldırıldı
-    return;
-  }
-
-  getResourceInfo(resourceKey) {
-    const config = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[resourceKey];
-    const current = this.state.resources[resourceKey] || { remaining: 0, totalCap: config.totalCap, depleted: true };
-    const percent = Math.max(0, Math.min(100, (current.remaining / current.totalCap) * 100));
-
+  // ── Bilgi ──────────────────────────────────────────────────────────────
+  getResourceInfo(key) {
+    const config = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key];
+    const guncel = this.state.resources[key] || { remaining: 0, totalCap: config.totalCap, depleted: true };
+    const yuzde = Math.max(0, Math.min(100, (guncel.remaining / guncel.totalCap) * 100));
     return {
       ...config,
-      remaining: Math.floor(current.remaining),
-      percent: percent.toFixed(1),
-      isDepleted: current.remaining <= 0,
-      baseCap: current.baseCap ?? config.totalCap,
-      currentCap: current.totalCap,
-      availableToday: Math.floor(this.getAvailableToday(resourceKey)),
-      releasedCap: this.getReleasedCap(resourceKey),
-      harvestedThisWeek: Math.floor(current.harvested || 0),
+      remaining: Math.floor(guncel.remaining),
+      percent: yuzde.toFixed(1),
+      isDepleted: guncel.remaining <= 0,
+      baseCap: guncel.baseCap ?? config.totalCap,
+      currentCap: guncel.totalCap,
+      availableToday: Math.floor(this.getAvailableToday(key)),
+      releasedCap: this.getReleasedCap(key),
+      harvestedThisWeek: Math.floor(guncel.harvested || 0),
       dayIndex: this.getEpochDayIndex(),
       nextReleaseAt: this.getNextReleaseTime()
     };
   }
 
-  getTimeUntilNextEpoch() {
-    const diff = Math.max(0, this.state.epochEndTime - Date.now());
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    return { days, hours, minutes, seconds, totalMs: diff };
-  }
-
-  getSecondsUntilReset() {
-    const diff = Math.max(0, this.state.epochEndTime - Date.now());
-    return Math.floor(diff / 1000);
-  }
-
+  // ── Sıfırlama ──────────────────────────────────────────────────────────
   resetEpoch() {
     this.state = this.createNewEpoch();
     this.saveState();
     return this.state;
   }
 
-  // 🏛️ Vanilla Reset: Tokenomik yakım, harcama ve sayaçları tam 0'a sıfırlar
+  // Tüm tokenomik sayaçları (yakım, harcama, telif) sıfırlar
   vanillaReset() {
     removeJSON(this.storageKey);
     this.state = this.createNewEpoch(null);
@@ -791,13 +673,13 @@ export class GlobalResourceManager {
     this.state.totalBurned = 0;
     this.state.creatorRoyaltyTotal = 0;
     this.state.buybackFromBroadcasting = 0;
-    this.state.totalBurnedResources = zeroRes();
+    this.state.totalBurnedResources = sifirHammadde();
     this.saveState();
     return this.state;
   }
 }
 
-// v2: Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri) — js/v2/koyVeKonsey.js
+// v2: Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri) ve Hazırlık Deposu
 Object.assign(GlobalResourceManager.prototype, globalPoolV2);
-Object.assign(GlobalResourceManager.prototype, globalPoolV2Depot);   // Hazırlık Deposu dünya toplamı (10 M ASTRA sınırı)
+Object.assign(GlobalResourceManager.prototype, globalPoolV2Depot);
 export const globalPool = new GlobalResourceManager();

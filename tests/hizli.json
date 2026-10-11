@@ -24,5 +24,6 @@
   "test_v2_savunma_duvari.mjs",
   "test_v3_kabuk.mjs",
   "test_senaryo_laboratuvari.mjs",
-  "test_savas_motoru_altin.mjs"
+  "test_savas_motoru_altin.mjs",
+  "test_ekonomi_cekirdegi_altin.mjs"
 ]

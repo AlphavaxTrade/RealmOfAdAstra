@@ -19,6 +19,9 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | Modül | Durum | Kanıt |
 |---|---|---|
 | `js/combat.js` (savaş motoru) | Yeniden yazıldı | `tests/test_savas_motoru_altin.mjs`: 1.500 savaş eski motorla birebir aynı |
+| `js/treasury.js` (hazine defteri) | Yeniden yazıldı | `tests/test_ekonomi_cekirdegi_altin.mjs`: 4.000 işlem, her adımda üç modülün tüm durumu birebir aynı |
+| `js/ammMarket.js` (pazar motoru) | Yeniden yazıldı | aynı test; kullanılmayan 6 yöntem kaldırıldı |
+| `js/globalPool.js` (küresel havuz, UBI, kota) | Yeniden yazıldı | aynı test; kullanılmayan 5 yöntem kaldırıldı |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -38,3 +41,24 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
    karşı taraf yalnız düz saldırı yapıyor. Düzeltmek kolezyum/PvP dengesini değiştirir.
 3. **Hazır durumlar hiçbir yetenekten gelmiyor:** `burn`, `poison`, `haste`, `chill`, `weaken` motorda işleniyor
    ama onları üreten yetenek yok (Sahra Merhemi yalnız temizliyor). Ya yetenek eklenmeli ya da bu dallar sadeleşmeli.
+
+### Ekonomi çekirdeği (hazine + pazar + küresel havuz): bulgular
+Altın kayıt üç modülü birlikte sınar; eski kodla üretmek için `EKONOMI_KOK` ortam değişkeniyle eski `js` klasörü verilir
+(`git archive <eski-commit> js`). Tam oyun altın kaydı (`tests/altin/altin_kayit.json`) hiç değişmedi.
+
+Kaldırılan ölü yöntemler: `injectBuyback`, `getPoolsNeedingSupport`, `getMarketSummary`, `getCorridorPosition`,
+`previewPriceAfterSell`, `getResourceBurnRate` (pazar); `calculateLevelUbiPayout`, `recordBroadcastBuyback`,
+`getTimeUntilNextEpoch`, `getSecondsUntilReset`, `getNextMonday1800TRT`, `simulateGlobalActivity` (havuz; boş işlevdi,
+app.js'teki çağrısı da silindi).
+
+Karar bekleyen / sonraya bırakılan:
+4. **Geri alım çekimi ödeme gücü ölçüsüne yazılmıyor.** `drawBuyback` kasadan para çıkarır ama `lifetimeWithdrawn`'a
+   eklemez; `getSummary().solvency` ve sağlık göstergesi bu yüzden olduğundan iyi görünür. Düzeltmek göstergeyi değiştirir.
+5. **Oyuna görünen sahte kontrat adresi.** `CONTRACT_ADDRESS` (globalPool.js) gerçek token kontratı değil; eski ekonomi panosu
+   (app.js ~682) bunu "Kontrat:" diye oyuncuya gösteriyor. Panel yeniden yazılırken ya gerçek adres ya da satır kaldırılacak.
+6. **Karnaval kasası defteri atlıyor.** `js/gameState/karnaval.js` hazine defterinin `state` alanına doğrudan yazıyor
+   (`pools.carnival`, `outflow`, `lifetimeWithdrawn`). Karnaval modülü yazılırken defterin yöntemleri kullanılacak.
+7. **Test menüsündeki makro simülasyon eski oranlarla** (%18 yakım / %82 hazine, v1). Arayüz yeniden yazılırken ya güncel
+   oranlara bağlanacak ya da kaldırılacak.
+8. **Eski gösterim kopyaları** (`totalTreasury`, `treasury`, `buybackFromBroadcasting`, `totalActiveMiners`) hâlâ durumda;
+   yalnız eski ekonomi panosu (app.js) okuyor. O panel gidince alanlar da kaldırılacak.
