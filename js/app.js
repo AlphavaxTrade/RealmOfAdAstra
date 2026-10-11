@@ -8,7 +8,7 @@ import { GrandTownScene } from './grandTownScene.js';
 import { DungeonScene } from './dungeonScene.js';
 // 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
 import { PLAYER_SKILLS } from './combat.js';
-import { AdAstraBattleArena, getMonsterAvatar } from './battleArena.js';
+import { SavasArenasi, canavarResmi } from './ui/arena.js';
 import { renderQuotaTracker, formatDuration, fmtInt } from './ui/limits.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
@@ -33,7 +33,7 @@ function getBattleArena() {
   if (!battleArenaInstance) {
     const rootEl = document.getElementById('battle-arena-modal');
     if (rootEl) {
-      battleArenaInstance = new AdAstraBattleArena(rootEl);
+      battleArenaInstance = new SavasArenasi(rootEl);
     }
   }
   return battleArenaInstance;
@@ -197,7 +197,7 @@ ekranBaglamKur({
   },
   kilit: (anahtar) => gameState.getFeatureLock(anahtar),
   get pvp() { return pvp; },
-  canavarResmi: (seviye, ad) => getMonsterAvatar(seviye, ad),
+  canavarResmi,
   bildirimEkle: (simge, metin) => addNotification(simge, metin),
   girisIste: () => requireLogin(),
   // Canlı savaş arenasını açar ve savaşı başlatır (Kolezyum, gerçek rakipler); arena yoksa false

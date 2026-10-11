@@ -70,10 +70,10 @@ const YASAK = /[<>&"'`\\\u0000-\u001f\u200b-\u200f\u2028-\u202e]/;
   ok('ekran: showToast düz yazı, rakip adları escHtml ile');
 }
 
-// 4) Savaş ekranı (js/battleArena.js): savaş kaydı innerHTML ile yazılır, asker adları esc() ile geçer
+// 4) Savaş ekranı (js/ui/arena.js): savaş kaydı innerHTML ile yazılır, asker adları esc() ile geçer
 {
   const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const src = fs.readFileSync(path.join(kok, 'js/battleArena.js'), 'utf8');
+  const src = fs.readFileSync(path.join(kok, 'js/ui/arena.js'), 'utf8');
   const ham = src.match(/\$\{(?:u\.name|t\.name|target\.name|ev\.actor|ev\.target)\}/g) || [];
   assert.deepEqual(ham, [], 'savaş ekranında kaçışsız ad ifadesi var: ' + ham.join(', '));
   assert.ok(/const esc = /.test(src), 'esc yardımcısı tanımlı olmalı');

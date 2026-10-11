@@ -472,3 +472,9 @@
     .aa-arena .speed-group{ margin-left:0; }
     .battle-arena-modal-overlay .aa-arena .result-banner .title{ font-size:1.7rem; }
   }
+
+  /* Oynatıcı (js/ui/arena.js) */
+  .aa-arena .mode-badge[hidden]{ display:none; }
+  .aa-arena .unit-hp-text{ font-size:.68rem; color:#cbd5e1; text-align:center; font-weight:700; margin-top:1px; }
+  .aa-arena .avatar-fallback{ font-size:1.4rem; }
+  .aa-arena .log-line .muted{ color:var(--ink-faint); }
