@@ -237,6 +237,7 @@ function kasaSekmesi(b) {
 
 const ekran = {
   id: 'karnaval',
+  goruldu: (b, secenek) => (secenek.sekme === 'havuzlar' ? 'havuzlar' : null),
   kilit: 'carnival',
   ornekSecenekler: () => [{ sekme: 'cark' }, { sekme: 'piyango' }, { sekme: 'havuzlar' }],
   baslik: () => ['🎪', 'Karnaval'],

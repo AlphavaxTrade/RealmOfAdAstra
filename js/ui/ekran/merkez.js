@@ -17,6 +17,7 @@ function seferToplamaBildirimi(b, r) {
 
 const ekran = {
   id: 'merkez',
+  goruldu: 'merkez',
   canliYenile: true,
   baslik: () => ['🏰', 'Krallık merkezi'],
 
@@ -59,6 +60,19 @@ const ekran = {
       )).join('')
       : not('Şu an sefer yok. Bir bölgeye işçi göndererek hammadde toplayabilirsin.');
 
+    // Bu haftaki üretim hakkın: çubuğun dolu kısmı şu an alınabilen, tamamı haftalık pay (ayrıntı Kotalarım'da)
+    const meta = b.GAME_CONFIG.RESOURCE_META || {};
+    const haklar = b.GAME_CONFIG.RESOURCE_KEYS.map((k) => {
+      const hak = gs.getUretimHakki(k);
+      const m = meta[k] || {};
+      return cubukSatiri(
+        `${esc(m.icon || '')} ${esc(m.name || k)}`,
+        `${tam(hak.canTake)} / ${tam(hak.weekly)}`,
+        hak.weekly > 0 ? (hak.canTake / hak.weekly) * 100 : 0,
+        { renk: m.color || '' }
+      );
+    }).join('');
+
     const aletler = ozet.toolSummary.map((a) => cubukSatiri(
       `${esc(a.icon)} ${esc(a.name)}`, `${tam(a.durability)} / ${tam(a.maxDurability)}`, a.pct, { ton: a.pct < 20 ? 'kotu' : '' }
     )).join('');
@@ -77,6 +91,7 @@ const ekran = {
       kart({ baslik: '⚡ Tek dokunuşla toplu işlemler', vurgu: 'vurgu', icerik: toplu }),
       genel,
       kart({ baslik: `⏳ Seferler (${ozet.activeExps.length}/${b.GAME_CONFIG.RESOURCE_KEYS.length})`, icerik: seferler }),
+      katli('🎫 Üretim hakkın (bu hafta)', haklar + dugmeler(dugme({ e: 'kotalar', metin: '📊 Kotalarım ve günlük sınırlar', ton: 'hayalet' })), { k: 'uretim-hakki' }),
       katli(`🔨 Aletler (ort. %${ozet.avgToolHealth})`, aletler, { k: 'aletler' }),
       katli(`🛡️ Ordu (%${ozet.avgHpPct} can)`, ordu, { k: 'ordu' }),
       katli(`📦 Silo seviye ${gs.state.warehouseLevel}`, `<div class="ek-ambarlar">${silo}</div>`, { k: 'silo' })
@@ -102,6 +117,7 @@ const ekran = {
       if (r.healed > 0) b.bildir(`🌾 ${r.healed} asker doyuruldu ve tam cana ulaştı: -${tam(r.totalWheat)}🌾 -${astra(r.totalAda)}🟣`, 'success');
       else b.bildir('İyileştirilecek yaralı asker yok.', 'info');
     },
+    kotalar() { return { git: 'kotalar' }; },
     parsomen(b, el) {
       const r = b.gameState.useScroll(el.dataset.parsomen, null);
       b.bildir(r.message, r.success ? 'success' : 'error');

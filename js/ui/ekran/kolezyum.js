@@ -239,6 +239,7 @@ function tekrarOynat(b, { allies, enemies, sim, title, resultText, why }) {
 
 const ekran = {
   id: 'kolezyum',
+  goruldu: (b, secenek) => (secenek.sekme === 'lig' ? 'lig' : null),
   kilit: 'colosseum',
   ornekSecenekler: () => [{ sekme: 'duel' }, { sekme: 'lig' }, { sekme: 'pvp' }],
   baslik: () => ['🏟️', 'Kolezyum'],

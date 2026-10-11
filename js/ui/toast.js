@@ -1,0 +1,27 @@
+// Realm of AdAstra — kısa süreli bildirim (toast): ekranın köşesinde 3,5 saniye görünür.
+// Mesaj DÜZ YAZI olarak konur (HTML olarak değil): bildirimler başka oyuncuların adlarını içerebilir.
+
+const SURE_MS = 3500;
+const SOLMA_MS = 250;
+
+/** @param {Element|null} kap  #toast-container */
+export function kurToast(kap) {
+  return function toast(mesaj, tur = 'info') {
+    if (!kap) return;
+    const oge = document.createElement('div');
+    oge.className = `toast ${tur}`;
+    const simge = document.createElement('span');
+    simge.textContent = tur === 'error' ? '⚠️' : '✨';
+    const metin = document.createElement('span');
+    metin.textContent = String(mesaj ?? '');
+    oge.append(simge, ' ', metin);
+    kap.appendChild(oge);
+
+    setTimeout(() => {
+      oge.style.opacity = '0';
+      oge.style.transform = 'translateY(10px)';
+      oge.style.transition = `all ${SOLMA_MS}ms ease`;
+      setTimeout(() => oge.remove(), SOLMA_MS);
+    }, SURE_MS);
+  };
+}

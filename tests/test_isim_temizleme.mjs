@@ -58,14 +58,13 @@ const YASAK = /[<>&"'`\\\u0000-\u001f\u200b-\u200f\u2028-\u202e]/;
   ok('asker adı, taktik adı, Kolezyum rakip adı, bildirimler ve maç kaydı temiz');
 }
 
-// 3) Ekran tarafı savunma katmanları (js/app.js kaynağı): bildirim kutusu düz yazı kullanır, rakip adları kaçışlanır
+// 3) Ekran tarafı savunma katmanları: bildirim kutusu (js/ui/toast.js) düz yazı kullanır, rakip adları kaçışlanır
 {
   const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const src = fs.readFileSync(path.join(kok, 'js/app.js'), 'utf8');
-  const bas = src.indexOf('function showToast(');
-  const gov = src.slice(bas, src.indexOf('\n}\n', bas));
-  assert.ok(gov.includes('textContent'), 'showToast mesajı textContent ile koymalı');
-  assert.ok(!/innerHTML[^;\n]*\$\{message\}/.test(gov), 'showToast mesajı innerHTML içine koymamalı');
+  const toast = fs.readFileSync(path.join(kok, 'js/ui/toast.js'), 'utf8');
+  assert.ok(toast.includes('metin.textContent = String(mesaj'), 'toast mesajı textContent ile koymalı');
+  assert.ok(!/innerHTML/.test(toast), 'toast hiçbir yerde innerHTML kullanmamalı');
   for (const m of src.matchAll(/<strong>\$\{([^}]*opponent[^}]*)\}<\/strong>/gi)) assert.ok(/^escHtml\(/.test(m[1].trim()), 'rakip adı kaçışlanmadan HTML\'e girmiş: ' + m[1]);
   ok('ekran: showToast düz yazı, rakip adları escHtml ile');
 }

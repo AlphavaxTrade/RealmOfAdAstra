@@ -1,7 +1,7 @@
 // Realm of AdAstra — arayüz v3 kabuğu (tek kabuk: eski üst şerit, alt çubuk ve kenar menüsü kaldırıldı).
 // Tek satırlık üst çubuk, 5 sekmeli alt çubuk, tek tip panel (#rpg-modal'ın v3 görünümü), "şimdi ne yapmalı" kartı.
 // Üst çubuktaki değerler doğrudan oyun durumundan gelir (api.hudVeri); eski çubuğa bağımlılık yoktur.
-// Kenar menüsü yalnız "Seferler" paneli olarak kalır (sefer sayaçları, üretim hakkı, toplu hasat ve onarım).
+// Eski kenar çubuğu (Seferler paneli) kaldırıldı: seferler, üretim hakkı, toplu hasat ve onarım Krallık merkezi ekranında.
 
 import { SEKMELER, HUB, hubHtml, esc } from './hub.js';
 import { sadeBaslik, katlaKurali, katla, eskiSurumleriGizle } from './panel.js';
@@ -17,38 +17,29 @@ const BASTAKI_SIMGE = new RegExp('^[^' + String.fromCharCode(92) + 'p{L}]+', 'u'
 const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 
 
+// Hub öğesi anahtarı → açılan ekranın kimliği (js/ui/ekran/*). Öğenin ekranı yoksa aşağıdaki özel eylemler çalışır.
+const EKRAN_KIMLIGI = {
+  merkez: 'merkez', silo: 'silo', taverna: 'taverna', demirhane: 'demirhane', sifahane: 'sifahane', koy: 'koy',
+  konsey: 'konsey', uzay: 'uzay', kolezyum: 'kolezyum', savasalani: 'savasalani', pazar: 'pazar', karnaval: 'karnaval',
+  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum'
+};
+
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
-export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc, paletAc }) {
+export function gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc, paletAc }) {
+  const harita = {};
+  for (const [anahtar, kimlik] of Object.entries(EKRAN_KIMLIGI)) harita[anahtar] = () => api.ekranAc(kimlik);
   return {
-    merkez: () => api.openDashboard(),
-    seferler: () => { api.closeModal(); yanAc(true); },
-    silo: () => api.openWarehouse(),
-    taverna: () => api.openZone('tavern', '🍺 Taverna ve Bot'),
-    demirhane: () => api.openZone('blacksmith', '⚒️ Demirhane'),
-    sifahane: () => api.openZone('healer', '🌿 Şifahane'),
-    koy: () => api.openZone('village', '🏘️ Köy Evleri'),
-    konsey: () => api.openKonsey(),
-    uzay: () => api.openZone('spaceport', '🚀 Uzay Limanı'),
-    kisla: () => api.openBarracks(),
-    zindan: () => api.enterDungeon(),
-    kolezyum: () => api.openColosseum(),
-    savasalani: () => api.openZone('battlefield', '🚩 Savaş Alanı'),
-    pazar: () => api.openZone('market', '🏪 Meydan Pazarı'),
-    karnaval: () => api.openCarnival('wheel'),
-    koleksiyon: () => api.openCollection(),
-    ekonomi: () => api.openEconomy(),
-    profil: () => api.openInventory(),
+    ...harita,
+    kisla: () => api.kislaAc(),
+    zindan: () => api.zindanGir(),
     hesap: () => api.openWallet(),
-    kotalar: () => api.openLimits(),
-    hazine: () => api.openTreasury(),
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
     rehber: () => api.openOgretici(),
     komut: () => { api.closeModal(); paletAc(); },
     ayarlar: () => ayarlarAc(),
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
-    surum: () => api.openChangelog(),
     test: () => labAc()
-    };
+  };
 }
 
 export function kurV3Kabuk(api) {
@@ -120,17 +111,6 @@ export function kurV3Kabuk(api) {
   const pencere = document.querySelector('#rpg-modal .rpg-modal-window');
   if (pencere) { pencere.setAttribute('role', 'dialog'); pencere.setAttribute('aria-modal', 'true'); pencere.setAttribute('aria-labelledby', 'modal-title'); }
 
-  // Kenar çubuğu (seferler/üretim hakkı) v3'te kapatılabilir bir panel olur
-  const yan = $('realm-sidebar');
-  let yanKapat = null;
-  if (yan) {
-    yanKapat = document.createElement('button');
-    yanKapat.type = 'button'; yanKapat.className = 'v3-yan-kapat'; yanKapat.textContent = '✕ Kapat';
-    yanKapat.addEventListener('click', () => yanAc(false));
-    yan.prepend(yanKapat);
-  }
-  const yanAc = (ac) => { if (yan) yan.classList.toggle('open', ac); };
-
   // ---------------------------------------------------------------- paneller
   const tepsiAc = (ac) => {
     tepsi.hidden = !ac;
@@ -143,7 +123,7 @@ export function kurV3Kabuk(api) {
   };
 
   const hubAc = (id) => {
-    tepsiAc(false); yanAc(false);
+    tepsiAc(false);
     sekmeSec(id);
     if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); return; }
     api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu));
@@ -168,7 +148,7 @@ export function kurV3Kabuk(api) {
     ayarlarAc();
   }, true);
   let palet = null;
-  const GIT = gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc, paletAc: () => palet.ac() });
+  const GIT = gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat: () => tur.baslat(true), labAc: () => { if (lab) lab.ac(); }, ayarlarAc, paletAc: () => palet.ac() });
   // Bir hub öğesine git: sekme etiketi öğenin bölümünde kalır, panel kapanınca Harita'ya dönülür
   const git = (anahtar) => {
     const f = GIT[anahtar];
@@ -223,7 +203,7 @@ export function kurV3Kabuk(api) {
     git(k.dataset.v3Git);
   }, true);   // yakalama aşaması: eski pencere kodu içerideki tıklamaların yukarı çıkmasını durduruyor
 
-  new MutationObserver(() => { if (!$('rpg-modal').classList.contains('active') && !(yan && yan.classList.contains('open'))) sekmeSec('harita'); })
+  new MutationObserver(() => { if (!$('rpg-modal').classList.contains('active')) sekmeSec('harita'); })
     .observe($('rpg-modal'), { attributes: true, attributeFilter: ['class'] });
 
   // Eski ekranların sadeleştirilmesi: başlıklar sadeleşir, uzun kart yığınları katlanır, sürüm geçmişi kısalır
@@ -276,22 +256,21 @@ export function kurV3Kabuk(api) {
     balonKapat();
   }, true);
 
-  $('v3-profil').addEventListener('click', () => { tepsiAc(false); api.openInventory(); });
+  $('v3-profil').addEventListener('click', () => { tepsiAc(false); api.ekranAc('karakter'); });
   $('v3-bakiye').addEventListener('click', () => { tepsiAc(false); api.openWallet(); });
-  $('v3-bot').addEventListener('click', () => { tepsiAc(false); api.openZone('tavern', '🍺 Taverna ve Bot'); });
+  $('v3-bot').addEventListener('click', () => { tepsiAc(false); api.ekranAc('taverna'); });
   $('v3-zil').addEventListener('click', () => { tepsiAc(false); api.toggleNotif(); });
   $('v3-kaynak-dugme').addEventListener('click', () => tepsiAc(tepsi.hidden));
   tepsi.addEventListener('click', (e) => {
     const k = e.target.closest('[data-v3-kaynak]');
     if (!k) return;
     tepsiAc(false);
-    k.dataset.v3Kaynak === 'fragments' ? api.openZone('market', '🏪 Meydan Pazarı') : api.openKaynak(k.dataset.v3Kaynak);
+    k.dataset.v3Kaynak === 'fragments' ? api.ekranAc('pazar') : api.openKaynak(k.dataset.v3Kaynak);
   });
   document.addEventListener('click', (e) => { if (!tepsi.hidden && !e.target.closest('#v3-kaynak-tepsi, #v3-kaynak-dugme')) tepsiAc(false); });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!tepsi.hidden) tepsiAc(false);
-    else if (yan && yan.classList.contains('open')) yanAc(false);
   });
   $('v3-simdi-dugme').addEventListener('click', () => api.danismanEylemi($('v3-simdi').dataset.eylem || ''));
 

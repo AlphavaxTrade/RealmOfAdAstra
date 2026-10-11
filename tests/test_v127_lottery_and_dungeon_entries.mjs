@@ -14,7 +14,7 @@ const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 const { GAME_CONFIG } = await import('../js/config.js');
-const { renderQuotaTracker, renderDungeonEntryLadder } = await import('../js/ui/limits.js');
+const { default: kotalarEkrani } = await import('../js/ui/ekran/kotalar.js');
 
 const fresh = () => {
   localStorage.clear();
@@ -167,15 +167,19 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
 // 9) Kota paneli ve giriş basamakları hatasız üretilir
 {
   const gs = fresh();
-  const html = renderQuotaTracker({ gameState: gs, globalPool, config: GAME_CONFIG });
-  for (const s of ['quota-tracker', 'day-strip', 'Zümrüt Meşe Odunu', 'Piyango: bu hafta aldığın bilet', 'Kolezyum maçı', 'entry-ladder']) {
-    assert.ok(html.includes(s), `Panelde "${s}" olmalı`);
+  const html = kotalarEkrani.govde({ gameState: gs, globalPool, GAME_CONFIG });
+  for (const s of ['Üretim hakkın', 'Sirius kapasitesi', GAME_CONFIG.RESOURCE_META.wood.name, 'Zindan: harçsız ödüllü giriş', 'Piyango: bu hafta aldığın bilet', 'Kolezyum maçı']) {
+    assert.ok(html.includes(s), `Ekranda "${s}" olmalı`);
   }
-  assert.ok(!/NaN|undefined|Infinity/.test(html), 'Panelde NaN/undefined/Infinity olmamalı');
-  const ladder = renderDungeonEntryLadder({ freeTotal: 5, entriesToday: 2 });
-  assert.equal((ladder.match(/is-done/g) || []).length, 2);
-  assert.equal((ladder.match(/is-current/g) || []).length, 1);
-  ok('Kota paneli: tüm bölümler hatasız üretiliyor');
+  assert.ok(!/NaN|undefined|Infinity/.test(html), 'Ekranda NaN/undefined/Infinity olmamalı');
+  // Zindan giriş basamakları: kullanılanlar yeşil, sıradaki vurgulu
+  const ozel = Object.create(gs);
+  ozel.getDungeonDayStatus = () => ({ ...gs.getDungeonDayStatus(), freeTotal: 5, entriesToday: 2, freeUsed: 2 });
+  const basamak = kotalarEkrani.govde({ gameState: ozel, globalPool, GAME_CONFIG });
+  const etiketler = basamak.match(/<div class="ek-etiketler">.*?<[/]div>/gs).find((e) => e.includes('1. giriş'));
+  assert.equal((etiketler.match(/is-iyi/g) || []).length, 2);
+  assert.equal((etiketler.match(/is-vurgu/g) || []).length, 1);
+  ok('Kotalarım ekranı: tüm bölümler hatasız üretiliyor');
 }
 
 console.log(`\n${passed} v1.27 testi geçti.`);

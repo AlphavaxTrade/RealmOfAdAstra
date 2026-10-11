@@ -158,6 +158,7 @@ function yakimBolumu(b) {
 
 const ekran = {
   id: 'pazar',
+  goruldu: (b, secenek) => (secenek.bolum === 'ilan' || secenek.bolum === 'yakim' ? secenek.bolum : null),
   kilit: 'market',
   ornekSecenekler: () => [{ bolum: 'alsat' }, { bolum: 'alsat', kaynak: 'fragments' }, { bolum: 'ilan' }, { bolum: 'yakim' }],
   baslik: () => ['🏪', 'Pazar'],
@@ -201,8 +202,6 @@ const ekran = {
     bolum(b, el, secenek) {
       durum(secenek).bolum = el.dataset.sekme;
       if (secenek.bolum === 'ilan') secenek.ilanVeri = null;   // her açılışta taze liste
-      // Krallık Yolu: ilanlar ve yakım bölümlerine bakmak bir görev sayılır
-      if (secenek.bolum === 'ilan' || secenek.bolum === 'yakim') b.gameState.ogreticiGordu(secenek.bolum);
     },
     kaynakSec(b, el, secenek) { durum(secenek).kaynak = el.dataset.kaynak; },
 

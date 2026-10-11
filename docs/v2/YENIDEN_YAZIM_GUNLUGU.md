@@ -31,6 +31,10 @@ Bilinen bir hatayı yeniden yazım sırasında sessizce düzeltmem: oyun dengesi
 | `js/dungeonScene.js` + `js/ui/zindan-plan.js` | Yeniden yazıldı (saf plan + ince sahne) | `tests/test_zindan_plan.mjs` |
 | `js/grandTownScene.js`, `js/vadi3d/vadi.js` (ortak kısım) + `js/ui/harita-ortak.js` | Yinelenen kod tek modüle toplandı | `tests/test_harita_ortak.mjs`; iki harita da tarayıcıda açıldı |
 | Geliştirici paneli (`#dev-modal`, ~720 satır), `js/audio.js` ve 75 `sound.*` çağrısı, ölü CSS (1.197 satır), kullanılmayan dinleyiciler | Silindi | `ekranlar.mjs` taraması, `v3.mjs`, `npm test` 148/148 |
+| `js/gameState/bot.js` (taverna botu döngüsü, duraklama, açık kapatma), `botPaketi.js`, `botSilo.js` (yeni) | Yeniden yazıldı; silo yükseltme planı ayrı modüle bölündü | altın kayıt 4.000 işlem birebir; eski ve yeni ağaçla 260 tohumlu senaryo (duraklat/sürdür/yenile, fon/alım, onarım, silo, hızlı işlemler) aynı durum özetini verdi |
+| `js/gameState/pazar.js` (al/sat, hızlı al planı, depoyu doldur) | Yeniden yazıldı | altın kayıt; `tests/test_pazar_hizli_al.mjs`; hızlı al planında kömür eksiği düzeltildi (bkz. bulgu 26) |
+| `js/ui/v3/palet.js` (Ctrl+K paleti ve kısayollar) | Yeniden yazıldı; komut listesi tek kaynaktan (hub) | `tests/test_v3_palet.mjs`; tarayıcıda paletle ekran açıldı |
+| `js/app.js` (1.700 → ~430 satır) ve yeni küçük modüller `js/ui/{pencere,toast,yukleme,zindan-gecisi,hud-verisi,kapi-seridi,yol}.js`, `js/ui/v3/bildirim.js`, ekranlar `kotalar, surum, cevrimdisi, hurda`; `js/ui/limits.js` silindi | Yeniden yazıldı; Seferler kenar çubuğu ve eski modallar kalktı | `tests/test_arayuz_parcalari.mjs`, `test_v3_bildirim`, `test_kapi_seridi`, `test_yol_kutusu`, `test_ekran_cizim`; `v3.mjs` 213/213, `kabuk-parcalari.mjs` (zil, Krallık Yolu, çevrimdışı rapor, kapı şeridi, görüldü kancası) telefon + masaüstü |
 
 ### combat.js: kaldırılanlar
 - **Kat etkisi (`modifier`)**: hiçbir yerden çağrılmıyordu (zindan hiç vermiyor; `config.js`'teki `DUNGEON_MODIFIERS` "henüz bağlı değil").
@@ -119,3 +123,10 @@ Karar bekleyen / sonraya bırakılan:
 25. **Hızlı kapı yavaş altın kaydı içermiyor** (`test_oyun_kurallari_altin.mjs` ~50 sn): `server/actions.js` değişiminde bir normal işlemi
     yanlışlıkla test işlemleri listesine yazmıştım; yalnız `npm test`/elle koşu yakaladı. **Kural:** `js/gameState/*` ya da
     `server/actions.js` değişen her işte commit'ten önce `node tests/test_oyun_kurallari_altin.mjs` koşulur.
+
+### Kabuk yeniden yazımı (app.js): bulgular
+26. **Hızlı al planı "teçhizat dövme" için kömürü hesaba katmıyordu** (eski kod yalnız demir, odun, parça): kömür eksikken plan "tamam" diyordu ve dövme başarısız oluyordu. Yeni plan kömürü de listeler.
+27. **Krallık Yolu "gördü" görevleri pencere başlığına bakıyordu** (`OGRETICI_BASLIK_ESLEMESI`): ekranlar yeniden adlandırılınca `treasury_gor` ("Kasaları gez") görevi ulaşılamaz olmuştu (başlık "Konsey ve hazine" diye aranıyor, ekran "Hazine ve gelir" açıyordu). Artık her ekran kendi `goruldu` anahtarını bildirir; görev metni ve hedefi Hazine ekranına çevrildi.
+28. **Bildirim kutusu başka oyuncuların adlarını HTML olarak yazıyordu** (`innerHTML`): bildirim merkezi yeni modülde her metni kaçırıyor (`tests/test_v3_bildirim.mjs`).
+29. **Sürüm geçmişi her maddeyi ham HTML olarak yazıyordu**; yeni ekran kaçırıyor. Sürüm notundaki "Infinity" sözcüğü ekran testinde bozuk değer sayıldığı için metin "yanlış sayı yazısı" diye düzeltildi.
+30. **Kullanılmayan ama beyaz listede duran `sweepCompletedExpeditions` işlemi** (Seferler paneli kalkınca arayüzde çağıran yok). Altın kayıt işlem sırası listeye bağlı olduğu için şimdilik kaldı; bir sonraki altın kayıt yenilemesinde silinecek. Aynı yenilemede ölü durum alanları da (`botSettings`, `lastBotSiloAction`, `colosseumLeaderboard`) kayıttan çıkarılabilir.

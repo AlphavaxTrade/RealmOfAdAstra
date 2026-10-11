@@ -193,7 +193,6 @@ html, body {
 
 /* MODAL AÇIKKEN ARKA PLANDAKİ TÜM TIKLAMALARI VE ETKİLEŞİMLERİ DEVRE DIŞI BIRAK */
 body.modal-open #phaser-game-container,
-body.modal-open .realm-sidebar,
 body.modal-open .dungeon-floor-nav,
 body.modal-open .realm-tooltip {
   pointer-events: none !important;
@@ -292,23 +291,6 @@ body.modal-open .realm-tooltip {
   color: #f8fafc;
 }
 
-.card-badge {
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 3px 8px;
-  border-radius: 6px;
-  color: #cbd5e1;
-}
-
-.clean-desc {
-  font-size: 0.82rem;
-  color: #94a3b8;
-  line-height: 1.4;
-}
-
 /* Butonlar (Modern & Göz Yormayan) */
 .btn-clean {
   width: 100%;
@@ -339,13 +321,6 @@ body.modal-open .realm-tooltip {
   filter: grayscale(0.6);
   color: #cbd5e1 !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-}
-
-.btn-clean-outline {
-  background: #2b1406;
-  border: 2px solid #ca8a04;
-  border-bottom: 4px solid #78350f;
-  color: #fde047;
 }
 
 /* Toast */
@@ -931,263 +906,23 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 
 /* Sağ Menü Açma/Kapama Altın Butonu */
 
-.realm-sidebar {
-  position: fixed;
-  top: 92px;
-  right: 0;
-  width: 380px;
-  height: calc(100vh - 92px);
-  max-height: calc(100vh - 92px);
-  z-index: 1100;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
-  box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: linear-gradient(180deg, rgba(26, 15, 8, 0.98) 0%, rgba(18, 10, 5, 0.99) 100%);
-  border-left: 2px solid rgba(234, 179, 8, 0.4);
-  box-shadow: -8px 0 35px rgba(0, 0, 0, 0.92);
-  backdrop-filter: blur(12px);
-  transform: translateX(100%); /* Varsayılan kapalı */
-  transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
-}
-
-.realm-sidebar.open {
-  transform: translateX(0);
-}
-
-.realm-sidebar::-webkit-scrollbar { width: 5px; }
-.realm-sidebar::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-.realm-sidebar::-webkit-scrollbar-thumb { background: #ca8a04; border-radius: 4px; }
-
 /* 1. ÜST KOMPAKT DURUM ŞERİDİ */
 
 /* KART & BÖLÜM ÇERÇEVELERİ */
-.sidebar-section {
-  position: relative;
-  flex-shrink: 0;
-  background: rgba(26, 16, 10, 0.75);
-  border: 1px solid rgba(202, 138, 4, 0.35);
-  border-radius: 12px;
-  padding: 10px 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.sidebar-section-title {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.75rem;
-  color: #fde047;
-  letter-spacing: 0.5px;
-  margin-bottom: 6px;
-}
-
-.sidebar-completed-badge {
-  background: #15803d;
-  color: #bbf7d0;
-  border: 1px solid #4ade80;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 10px;
-  animation: pulseGreen 1.5s infinite;
-}
 
 /* 2. AKTİF SEFER KARTLARI */
-.sidebar-exp-card {
-  background: rgba(15, 10, 6, 0.6);
-  border: 1px solid rgba(69, 26, 3, 0.6);
-  border-radius: 8px;
-  padding: 6px 8px;
-  margin-bottom: 5px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.sidebar-exp-card:hover {
-  border-color: #ca8a04;
-  background: rgba(35, 20, 10, 0.8);
-}
-
-.sidebar-exp-card.is-ready {
-  border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-}
-
-.sidebar-exp-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sidebar-exp-header .exp-title {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.72rem;
-  color: #fde047;
-}
-
-.sidebar-exp-header .sidebar-exp-time {
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.68rem;
-  color: #cbd5e1;
-}
-
-.sidebar-exp-header .sidebar-exp-time.ready-text {
-  color: #4ade80;
-  font-weight: 900;
-}
-
-.sidebar-exp-track {
-  width: 100%;
-  height: 6px;
-  background: #0c0a08;
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-
-.sidebar-exp-fill {
-  height: 100%;
-  width: 0%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.sidebar-exp-fill.iron { background: linear-gradient(90deg, #38bdf8, #0284c7); }
-.sidebar-exp-fill.wood { background: linear-gradient(90deg, #4ade80, #16a34a); }
-.sidebar-exp-fill.wheat { background: linear-gradient(90deg, #facc15, #d97706); }
-.sidebar-exp-fill.done { background: linear-gradient(90deg, #4ade80, #22c55e); box-shadow: 0 0 8px rgba(74, 222, 128, 0.6); }
-.sidebar-exp-fill.idle { background: #261b14; width: 0%; }
 
 /* HIZLI HASAT BUTONU */
-.sidebar-sweep-btn {
-  width: 100%;
-  margin-top: 6px;
-  padding: 7px 10px;
-  font-family: var(--font-game);
-  font-size: 0.74rem;
-  font-weight: 900;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid rgba(74, 222, 128, 0.4);
-  background: linear-gradient(135deg, #15803d, #166534);
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  transition: all 0.15s ease;
-}
-
-.sidebar-sweep-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #16a34a, #15803d);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.35);
-}
-
-.sidebar-sweep-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  background: #2b1f16;
-  border-color: #451a03;
-  color: #78716c;
-}
 
 /* 3. KOMPAKT HAFTALIK KOTA */
-.sidebar-mini-quota-row {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-top: 2px;
-}
-
-.mini-quota-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.mini-quota-label {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-game);
-  font-size: 0.66rem;
-  font-weight: 700;
-  color: #94a3b8;
-}
-
-.mini-quota-track {
-  width: 100%;
-  height: 5px;
-  background: #0c0a08;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.mini-quota-fill {
-  height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-}
-
-.mini-quota-fill.iron { background: #38bdf8; }
-.mini-quota-fill.wood { background: #4ade80; }
-.mini-quota-fill.wheat { background: #facc15; }
 
 /* 4. KRALLIK KONTROL MERKEZİ (2x4 MODERN GRID) */
-.sidebar-control-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-}
 
 /* Renk kodlu buton bordür ve hafif arkaplan tonları */
 
 /* Grid Buton Rozetleri */
 
 /* TÜM ALETLERİ ONAR BUTONU */
-.sidebar-repair-all-btn {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  background: rgba(43, 24, 13, 0.9);
-  border: 1.5px solid #ca8a04;
-  border-radius: 8px;
-  font-family: var(--font-game);
-  font-size: 0.76rem;
-  font-weight: 800;
-  color: #fde047;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-.sidebar-repair-all-btn:hover:not(:disabled) {
-  background: #ca8a04;
-  color: #000;
-  transform: translateY(-1px);
-}
-
-.sidebar-repair-all-btn:disabled {
-  opacity: 0.6;
-  border-color: #57320c;
-  color: #a8a29e;
-  cursor: default;
-}
-
-.repair-all-cost-sub {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #cbd5e1;
-}
-
-.sidebar-repair-all-btn:hover:not(:disabled) .repair-all-cost-sub {
-  color: #000;
-}
 
 /* Parça (Fragment) Kaynak Rozeti */
 
@@ -1202,11 +937,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    7.1 DEMİRCİ (BLACKSMITH) - SİLAH & ZIRH DÖVME KARTLARI
    ========================================================================= */
 
-@keyframes craftPulse {
-  0%, 100% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 0 rgba(192,132,252,0.3); }
-  50% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 18px rgba(192,132,252,0.55); }
-}
-
 /* =========================================================================
    7.2 18 KİŞİLİK ORDU - ASKER TEÇHİZAT & SEVİYE KARTLARI
    ========================================================================= */
@@ -1219,24 +949,9 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    7.4 18 PARÇALIK NFT KOLEKSİYON ALBÜMÜ & GENESIS MÜHÜR BANNERI
    ========================================================================= */
 
-@keyframes genesisGlow {
-  0%, 100% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(253, 224, 71, 0.3); }
-  50% { box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 0 26px rgba(253, 224, 71, 0.65); }
-}
-
-@keyframes legendaryPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(253,224,71,0.5); }
-  50% { box-shadow: 0 0 22px rgba(253,224,71,0.85); }
-}
-
 /* =========================================================================
    7.5 KİLİTLİ KUTULAR & UNBOXING (MYSTERY BOX)
    ========================================================================= */
-
-@keyframes boxFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
-}
 
 /* =========================================================================
    7.6 AMM PAZAR - PARÇA (FRAGMENT) TİCARET SEKMESİ
@@ -1247,11 +962,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    ========================================================================= */
 
 /* 🍦 Vanilla Hesap Sıfırlama Kutusu (En Belirgin Uyarı Butonu) */
-
-@keyframes ada-vanilla-pulse {
-  0%, 100% { box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25), 0 0 0 rgba(220, 38, 38, 0); }
-  50% { box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.25), 0 0 16px rgba(220, 38, 38, 0.8); }
-}
 
 /* Custom Debug Live Editor & Table */
 
@@ -1377,25 +1087,7 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 
 /* ---------- 9.7 İLERLEME ÇUBUKLARI (GÖREVLER & SEFERLER) ---------- */
 
-@keyframes progress-shine {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
-}
-
 /* Mevcut ilerleme çubuklarına da aynı içten ışıyan parıltıyı ekle */
-.sidebar-limit-fill,
-.sidebar-exp-fill {
-  position: relative;
-  overflow: hidden;
-}
-.sidebar-limit-fill::after,
-.sidebar-exp-fill::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: progress-shine 2.2s infinite;
-}
 
 /* ---------- 9.8 PREMIUM 3D BUTONLAR ---------- */
 .btn-clean {
@@ -1417,24 +1109,9 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   filter: brightness(0.95);
 }
 
-.btn-clean-gold {
-  background: linear-gradient(180deg, #fde047 0%, #f59e0b 55%, #b45309 100%);
-  border: 2px solid #fef9c3;
-  border-bottom: 4px solid #78350f;
-  color: #451a03;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.55), 0 4px 14px rgba(245, 158, 11, 0.5);
-}
-.btn-clean-gold:hover:not(:disabled) {
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.65), 0 6px 20px rgba(253, 224, 71, 0.6);
-}
-
 /* ---------- 9.9 SEFER GERİ SAYIM HALKASI (opsiyonel kullanım) ---------- */
 
 /* ---------- 9.10 KENAR ÇUBUĞU (SIDEBAR) CAM PANELLERİ ---------- */
-.sidebar-section {
-  backdrop-filter: blur(10px) saturate(1.3);
-  -webkit-backdrop-filter: blur(10px) saturate(1.3);
-}
 
 /* =========================================================================
    10. KRALIK DASHBOARD (MASTER COMMAND CENTER)
@@ -1467,45 +1144,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* =========================================================================
    12. NOTIFICATION CENTER (BİLDİRİM MERKEZİ)
    ========================================================================= */
-.notif-panel {
-  position: fixed;
-  top: 48px;
-  right: 12px;
-  width: 340px;
-  max-height: 420px;
-  background: rgba(10, 6, 4, 0.96);
-  border: 1px solid rgba(245, 158, 11, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-  overflow-y: auto;
-  z-index: 9500;
-  animation: cmdFadeIn 0.15s ease;
-}
-.notif-panel-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(245,158,11,0.15);
-  font-family: var(--font-game);
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--gold-light);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.notif-item {
-  padding: 10px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
-  font-size: 0.8rem;
-  color: #d4c8b8;
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.notif-item:last-child { border-bottom: none; }
-.notif-item-icon { font-size: 1rem; flex-shrink: 0; }
-.notif-item-text { flex: 1; }
-.notif-item-time { font-size: 0.68rem; color: rgba(255,255,255,0.3); white-space: nowrap; }
-.notif-item.unread { background: rgba(245,158,11,0.05); }
 
 /* =========================================================================
    13. PRE-BATTLE FORMATION HUB (SAVAŞ ÖNCESİ TAKTİK PANELİ)
@@ -1542,12 +1180,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 /* 📜 Özel Efsanevi Parşömen Bannerı */
 
 /* v2: yeni hammadde çubukları */
-.sidebar-exp-fill.stone { background: linear-gradient(90deg, #d6d3d1, #78716c); }
-.sidebar-exp-fill.coal { background: linear-gradient(90deg, #94a3b8, #334155); }
-.sidebar-exp-fill.herb { background: linear-gradient(90deg, #86efac, #15803d); }
-.mini-quota-fill.stone { background: #a8a29e; }
-.mini-quota-fill.coal { background: #64748b; }
-.mini-quota-fill.herb { background: #86efac; }
 
 /* ── Kapı kuralı: bekleme sırası / askı şeridi (sunucu modunda, vatandaşa görünmez) ── */
 .gate-banner { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 950; width: min(960px, calc(100% - 32px)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(245,158,11,.18), rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.55); color: #fde68a; font-size: .86rem; line-height: 1.4; }

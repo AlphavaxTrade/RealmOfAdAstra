@@ -19,7 +19,7 @@ console.log('✅ sekmeler');
 
 // 2) Her liste öğesinin bir eylemi var; anahtarlar bütün listelerde benzersiz; ölü eylem yok
 const sahteApi = new Proxy({}, { get: (_, ad) => (ad === 'duyurular' ? () => [] : () => {}) });
-const git = gitHaritasi(sahteApi, { yanAc() {}, sekmeSec() {}, uyariMetni: () => [], turBaslat() {} });
+const git = gitHaritasi(sahteApi, { sekmeSec() {}, uyariMetni: () => [], turBaslat() {} });
 const anahtarlar = Object.values(HUB).flatMap((h) => h.ogeler.map((o) => o.k));
 assert.equal(new Set(anahtarlar).size, anahtarlar.length, 'öğe anahtarları benzersiz olmalı');
 for (const k of anahtarlar) assert.equal(typeof git[k], 'function', `${k} öğesinin eylemi yok`);

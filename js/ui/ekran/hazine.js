@@ -165,6 +165,7 @@ function sponsorKarti(b, s) {
 
 const ekran = {
   id: 'hazine',
+  goruldu: 'hazine',
   canliYenile: false,
   baslik: () => ['🏛️', 'Hazine ve gelir'],
 

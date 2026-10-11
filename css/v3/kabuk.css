@@ -194,10 +194,6 @@ html.v3 .v3-simdi .v3-birincil { flex: none; padding: 0 12px; }
 html.v3 #v3-dock .guide-widget { position: static !important; left: auto !important; right: auto !important; bottom: auto !important; width: auto !important; max-width: none !important; }
 
 /* 8. YAN PANEL (seferler ve üretim hakkı) -------------------------------- */
-html.v3 #realm-sidebar { top: var(--v3-hud-h) !important; height: calc(100dvh - var(--v3-hud-h) - var(--v3-tab-h) - var(--safe-b, 0px)) !important; max-height: none !important; z-index: 1250 !important; }
-@media (min-width: 900px) { html.v3 #realm-sidebar { height: calc(100dvh - var(--v3-hud-h) - 84px) !important; } }
-html.v3 .v3-yan-kapat { all: unset; box-sizing: border-box; cursor: pointer; align-self: flex-end; min-height: var(--v3-tap); padding: 0 14px; border-radius: 12px; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 700 13px/1 var(--font-ui); color: var(--v3-yazi); display: inline-flex; align-items: center; flex: none; }
-
 /* 9. ERİŞİLEBİLİRLİK ----------------------------------------------------- */
 html.v3 :is(#v3-hud button, #v3-tabbar button, .v3-kart, .v3-kaynak, .v3-birincil, .v3-yan-kapat):focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: 2px; }
 @media (pointer: coarse) {
@@ -436,3 +432,22 @@ html.v3 .v3-palet-metin small { font: 500 12px/1.3 var(--font-ui); color: var(--
 html.v3 .v3-palet-kategori { flex: none; font: 700 10.5px var(--font-ui); letter-spacing: .04em; text-transform: uppercase; color: var(--v3-vurgu); opacity: .8; }
 html.v3 .v3-palet-bos { padding: 18px 12px; text-align: center; font: 500 13px var(--font-ui); color: var(--v3-yazi-3); }
 @media (max-width: 480px) { html.v3 .v3-palet-kategori { display: none; } }
+
+/* 11. BİLDİRİM MERKEZİ (zil) ----------------------------------------------- */
+html.v3 .v3-bildirim { position: fixed; top: calc(var(--hud-h, 56px) + 8px); right: 12px; z-index: 100005; width: min(360px, calc(100vw - 24px)); max-height: min(60dvh, 460px); display: flex; flex-direction: column; border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi-guclu); box-shadow: 0 18px 48px rgba(0,0,0,.55); overflow: hidden; }
+html.v3 .v3-bildirim-baslik { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--v3-cizgi); font: 800 13.5px var(--font-ui); color: var(--v3-vurgu-acik); }
+html.v3 .v3-bildirim-temizle { all: unset; box-sizing: border-box; cursor: pointer; min-height: var(--v3-tap, 44px); padding: 0 12px; display: inline-flex; align-items: center; border-radius: 10px; font: 700 12.5px var(--font-ui); color: var(--v3-yazi-2); -webkit-tap-highlight-color: transparent; }
+html.v3 .v3-bildirim-temizle:hover { background: var(--v3-yuzey-3); color: var(--v3-yazi); }
+html.v3 .v3-bildirim-temizle:focus-visible { outline: 2px solid var(--v3-vurgu); outline-offset: -2px; }
+html.v3 .v3-bildirim-liste { overflow-y: auto; display: flex; flex-direction: column; }
+html.v3 .v3-bildirim-oge { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-bottom: 1px solid var(--v3-cizgi); }
+html.v3 .v3-bildirim-oge:last-child { border-bottom: 0; }
+html.v3 .v3-bildirim-oge > span { flex: none; font-size: 18px; line-height: 1.3; }
+html.v3 .v3-bildirim-oge > div { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+html.v3 .v3-bildirim-oge b { font: 600 13.5px/1.4 var(--font-ui); color: var(--v3-yazi); overflow-wrap: anywhere; }
+html.v3 .v3-bildirim-oge small { font: 500 12.5px/1.4 var(--font-ui); color: var(--v3-yazi-2); overflow-wrap: anywhere; }
+html.v3 .v3-bildirim-oge i { font: 600 11.5px var(--font-ui); font-style: normal; color: var(--v3-yazi-3); }
+html.v3 .v3-bildirim-oge.is-yeni { background: rgba(231,185,76,.07); }
+html.v3 .v3-bildirim-oge.is-uyari { background: rgba(240,104,104,.12); box-shadow: inset 3px 0 0 var(--v3-kotu); }
+html.v3 .v3-bildirim-oge.is-uyari b { color: #ffb3b3; }
+html.v3 .v3-bildirim-oge.is-uyari i { color: var(--v3-kotu); }

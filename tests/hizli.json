@@ -38,5 +38,9 @@
   "test_pazar_hizli_al.mjs",
   "test_zindan_plan.mjs",
   "test_harita_ortak.mjs",
-  "test_demirhane_onarim_hedefi.mjs"
+  "test_demirhane_onarim_hedefi.mjs",
+  "test_arayuz_parcalari.mjs",
+  "test_v3_bildirim.mjs",
+  "test_kapi_seridi.mjs",
+  "test_yol_kutusu.mjs"
 ]

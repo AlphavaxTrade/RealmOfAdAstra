@@ -54,10 +54,11 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await tikla('[data-v3-sekme="kralik"]');
   kontrol(`${ad}: ana listedeyken tekrar dokunmak paneli kapatır`, !(await panelAcik()));
 
-  await tikla('[data-v3-sekme="kralik"]'); await tikla('[data-v3-git="seferler"]'); await foto('04_seferler');
-  kontrol(`${ad}: seferler paneli açılır`, await s.evaluate(() => document.getElementById('realm-sidebar').classList.contains('open')));
-  await tikla('.v3-yan-kapat');
-  kontrol(`${ad}: seferler paneli kapanır`, await s.evaluate(() => !document.getElementById('realm-sidebar').classList.contains('open')));
+  // Krallık merkezi: seferler ve bu haftaki üretim hakkı aynı ekranda (eski kenar çubuğu kaldırıldı)
+  await tikla('[data-v3-sekme="kralik"]'); await tikla('[data-v3-git="merkez"]'); await foto('04_merkez_uretim_hakki');
+  kontrol(`${ad}: Krallık merkezi altı kaynağın üretim hakkını gösterir`, await s.evaluate(() => { const d = [...document.querySelectorAll('#modal-body details.ek-katli')].find((x) => x.innerText.includes('Üretim hakkın')); const t = document.getElementById('modal-body').innerText; return !!d && d.querySelectorAll('.ek-cubuk-satiri').length === 6 && t.includes('Seferler'); }));
+  kontrol(`${ad}: eski kenar çubuğu sayfada yok`, await s.evaluate(() => !document.getElementById('realm-sidebar')));
+  await s.keyboard.press('Escape'); await bekle(300);
 
   // Aşama 2: eski ekranların v3 görünümü (düzey 30 hesapla; ekranlar kilitli olmasın)
   await s.evaluate(() => { window.gameState.setDevLevel(30); window.gameState.addDevAdAstra(2000000); });
@@ -85,8 +86,8 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: katlı bölüm açılır`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli[open]').length >= 1));
   await ust('ben', 'surum'); await foto('08_surum');
   kontrol(`${ad}: sürüm geçmişi kısa (≤ 1500 px; eskiden ~17000)`, (await govdeYuk()) <= 1500, String(await govdeYuk()));
-  await s.evaluate(() => document.querySelector('.v3-eski-dugme').click()); await bekle(300);
-  kontrol(`${ad}: "Eski sürümleri göster" hepsini açar`, (await govdeYuk()) > 5000);
+  await s.evaluate(() => document.querySelector('#modal-body details[data-k="eski-surumler"] > summary').click()); await bekle(300);
+  kontrol(`${ad}: "Eski sürümler" bölümü hepsini açar`, (await govdeYuk()) > 5000);
   await ust('ben', 'hazine');
   kontrol(`${ad}: hazine sade başlıklı`, (await baslik()) === '🏛️ Hazine ve gelir', await baslik());
   await s.keyboard.press('Escape'); await bekle(300);
@@ -133,7 +134,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: kasa açıklamaları katlı ("Bu kasa ne işe yarar?")`, await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli:not([open])').length >= 3));
   kontrol(`${ad}: Hazine yatay taşma yok`, await s.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2));
   await ust('ben', 'kotalar'); await foto('15_kotalar');
-  kontrol(`${ad}: Kotalar katlı kartlarla kısa (≤ 1300 px; eskiden ~2300)`, (await govdeYuk()) <= 1300 && await s.evaluate(() => document.querySelectorAll('#modal-body details.v3-katli').length >= 3), String(await govdeYuk()));
+  kontrol(`${ad}: Kotalar katlı kartlarla kısa (≤ 1300 px; eskiden ~2300)`, (await govdeYuk()) <= 1300 && await s.evaluate(() => document.querySelectorAll('#modal-body details.ek-katli').length >= 3), String(await govdeYuk()));
   await ust('pazar', 'karnaval'); await foto('16_karnaval');
   kontrol(`${ad}: Karnaval 3 kısa sekme`, await s.evaluate(() => { const t = [...document.querySelectorAll('#modal-body .ek-sekme')].map((b) => b.innerText.trim()); return t.length === 3 && t.every((x) => x.length <= 14); }));
   kontrol(`${ad}: Karnaval düğmeleri ≥ 44 px`, await s.evaluate(() => [...document.querySelectorAll('#modal-body .ek-sekme, #modal-body [data-e="cevir"]')].filter((b) => b.offsetParent !== null).every((b) => b.getBoundingClientRect().height >= 43.5)));
@@ -171,7 +172,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   // Eski üst çubuk, alt çubuk, duyuru şeridi ve danışman bandı sayfadan kaldırıldı; v3 üst çubuğu doğrudan oyun durumundan okur
   await s.keyboard.press('Escape'); await bekle(300);
   await s.evaluate(() => window.__v3.guncelle());
-  kontrol(`${ad}: eski çubuk, alt çubuk, duyuru şeridi ve danışman bandı sayfada yok`, await s.evaluate(() => ['player-level', 'stamina-text', 'adastra-balance', 'res-pill-wood', 'top-bot-status-text', 'mobile-tabbar', 'top-announcement-ticker', 'royal-advisor-banner', 'btn-sidebar-toggle', 'btn-dev-panel-toggle'].every((id) => !document.getElementById(id))));
+  kontrol(`${ad}: eski çubuk, alt çubuk, duyuru şeridi ve danışman bandı sayfada yok`, await s.evaluate(() => ['player-level', 'stamina-text', 'adastra-balance', 'res-pill-wood', 'top-bot-status-text', 'mobile-tabbar', 'top-announcement-ticker', 'royal-advisor-banner', 'btn-sidebar-toggle', 'btn-dev-panel-toggle', 'realm-sidebar'].every((id) => !document.getElementById(id))));
   kontrol(`${ad}: v3 seviye ve bakiye oyun durumundan okunur`, await s.evaluate(() => document.getElementById('v3-lv').textContent === `Lv.${window.gameState.state.level}` && document.getElementById('v3-bakiye-deger').textContent.length > 0));
   kontrol(`${ad}: "Şimdi" kartının düğmesi eylemi doğrudan çalıştırır (konsol hatası yok)`, await s.evaluate(() => { const k = document.getElementById('v3-simdi'); if (k.hidden) return true; document.getElementById('v3-simdi-dugme').click(); return true; }));
   await bekle(400); await s.keyboard.press('Escape'); await bekle(300);

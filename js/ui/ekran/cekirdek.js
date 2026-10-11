@@ -13,6 +13,7 @@
 //     sonra: (b, secenek, kok) => …                          // her çizimden sonra (eşzamansız veri yüklemek için)
 //     canliYenile: true,                                     // panel açıkken saniyede bir gövde hesaplanır, değiştiyse yeniden çizilir
 //     canli: (kok, b, secenek) => …                          // ya da: panel açıkken saniyede bir elle hafif güncelleme
+//     goruldu: 'merkez' | (b, secenek) => 'ilan' | ['a', 'b'] | null   // Krallık Yolu: ekranın açıldığını öğreticiye bildirir (b.goruldu)
 //   }
 // Eylem sonrası ekran yeniden çizilir (kaydırma ve açık <details> bölümleri korunur); eylem false döndürürse çizilmez,
 // { git: 'ekranId', secenek } döndürürse o ekrana geçilir, { kapat: true } paneli kapatır.
@@ -112,10 +113,22 @@ function ciz(yeniEkran, html = null) {
     }
   }
   baglaKok(kok);
+  gorulduBildir(ekran, b, secenek);
   if (ekran.sonra) {
     const bu = aktif;
     Promise.resolve().then(() => { if (aktif === bu) return ekran.sonra(b, secenek, kok); return undefined; })
       .catch((e) => console.warn('Ekran sonra kancası hata verdi:', e));
+  }
+}
+
+// Öğretici "gördü" anahtarları: ekran her çizildiğinde (sekme değişince de) bildirilir; tekrarı bağlam eler
+function gorulduBildir(ekran, b, secenek) {
+  if (!ekran.goruldu || !b.goruldu) return;
+  try {
+    const anahtar = typeof ekran.goruldu === 'function' ? ekran.goruldu(b, secenek) : ekran.goruldu;
+    for (const a of [].concat(anahtar || [])) b.goruldu(a);
+  } catch (e) {
+    console.warn('Öğretici kancası çalışmadı:', e);
   }
 }
 

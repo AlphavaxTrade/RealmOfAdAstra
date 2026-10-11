@@ -181,75 +181,6 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 /* =========================================================================
    YAN PANEL
    ========================================================================= */
-.realm-sidebar {
-  top: var(--hud-h) !important;
-  height: calc(100dvh - var(--hud-h) - var(--tabbar-h) - var(--safe-b)) !important;
-  max-height: none !important;
-  width: 380px !important;
-  padding: 14px !important;
-  gap: 12px !important;
-  background: rgba(12, 15, 23, 0.97) !important;
-  border-left: 1px solid var(--c-line-strong) !important;
-  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.5) !important;
-  transition: transform .28s cubic-bezier(.2, .8, .2, 1) !important;
-  z-index: 1150 !important;
-}
-.realm-sidebar .sidebar-section,
-.realm-sidebar .sidebar-control-panel {
-  background: var(--c-surface-2) !important;
-  border: 1px solid var(--c-line) !important;
-  border-radius: var(--radius-l) !important;
-  padding: 12px !important;
-  box-shadow: none !important;
-}
-.realm-sidebar .sidebar-section-title {
-  font-family: var(--font-display) !important;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
-  letter-spacing: .06em !important;
-  color: var(--c-gold-2) !important;
-  text-shadow: none !important;
-  margin-bottom: 10px !important;
-}
-.realm-sidebar .sidebar-exp-card {
-  background: var(--c-surface-1) !important;
-  border: 1px solid var(--c-line) !important;
-  border-radius: 10px !important;
-  padding: 9px 10px !important;
-  margin-bottom: 6px !important;
-}
-.realm-sidebar .sidebar-exp-card:hover { border-color: var(--c-line-strong) !important; background: var(--c-surface-3) !important; }
-.realm-sidebar .sidebar-exp-card.is-ready { border-color: rgba(67, 209, 154, 0.5) !important; background: rgba(67, 209, 154, 0.07) !important; }
-.realm-sidebar .sidebar-exp-header .exp-title { font-family: var(--font-ui) !important; font-size: 12.5px !important; font-weight: 700 !important; color: var(--c-text) !important; }
-.realm-sidebar .sidebar-exp-header .sidebar-exp-time { font-family: var(--font-ui) !important; font-size: 11.5px !important; font-variant-numeric: tabular-nums; color: var(--c-text-2) !important; }
-.realm-sidebar .sidebar-exp-header .sidebar-exp-time.ready-text { color: var(--c-green) !important; }
-.realm-sidebar .sidebar-exp-track { height: 5px !important; background: rgba(255,255,255,0.06) !important; margin-top: 7px !important; }
-.realm-sidebar .sidebar-exp-fill.idle { background: transparent !important; }
-.realm-sidebar .sidebar-sweep-btn,
-.realm-sidebar .sidebar-repair-all-btn {
-  font-family: var(--font-ui) !important;
-  font-size: 12.5px !important;
-  font-weight: 800 !important;
-  letter-spacing: .01em !important;
-  border-radius: 10px !important;
-  min-height: 40px;
-  background: var(--c-surface-3) !important;
-  border: 1px solid var(--c-line-strong) !important;
-  color: var(--c-text) !important;
-  box-shadow: none !important;
-  text-shadow: none !important;
-}
-.realm-sidebar .sidebar-sweep-btn:not(:disabled) {
-  background: linear-gradient(180deg, rgba(67, 209, 154, 0.25), rgba(67, 209, 154, 0.12)) !important;
-  border-color: rgba(67, 209, 154, 0.5) !important;
-  color: #b8f5da !important;
-}
-.realm-sidebar .sidebar-sweep-btn:disabled { opacity: .5; }
-.realm-sidebar .mini-quota-label { font-size: 11.5px !important; color: var(--c-text-2) !important; font-family: var(--font-ui) !important; }
-.realm-sidebar .mini-quota-track { height: 5px !important; background: rgba(255,255,255,0.06) !important; border-radius: 4px !important; }
-
-.realm-sidebar .sidebar-repair-all-btn { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; padding: 0 12px !important; }
-.realm-sidebar .repair-all-cost-sub { font-size: 11.5px !important; color: var(--c-text-2) !important; font-weight: 700 !important; }
 
 /* =========================================================================
    PENCERELER (MODAL)
@@ -335,16 +266,6 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   color: var(--c-text) !important;
   letter-spacing: 0 !important;
 }
-.rpg-modal-body .card-badge {
-  font-family: var(--font-ui) !important;
-  font-size: 11.5px !important;
-  font-weight: 700 !important;
-  border-radius: 999px !important;
-  padding: 4px 10px !important;
-  background: var(--c-surface-4) !important;
-  border: 1px solid var(--c-line) !important;
-}
-.rpg-modal-body .clean-desc { font-size: 13px !important; color: var(--c-text-2) !important; line-height: 1.55 !important; }
 .rpg-modal-body strong { color: var(--c-text); }
 .rpg-modal-body code {
   font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -371,12 +292,6 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 .btn-clean:hover:not(:disabled) { filter: brightness(1.1); transform: none !important; }
 .btn-clean:active:not(:disabled) { transform: translateY(1px) !important; }
 .btn-clean:disabled { opacity: .45 !important; cursor: not-allowed !important; filter: grayscale(.3); }
-.btn-clean.btn-gold {
-  background: linear-gradient(180deg, var(--c-gold-2), var(--c-gold)) !important;
-  border: 1px solid rgba(255, 230, 160, 0.6) !important;
-  color: #1b1405 !important;
-  box-shadow: 0 6px 18px rgba(231, 185, 76, 0.22), inset 0 1px 0 rgba(255,255,255,0.45) !important;
-}
 
 /* Form alanları */
 .rpg-modal-body input[type="number"],
@@ -400,45 +315,12 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 /* =========================================================================
    YENİ BİLEŞENLER
    ========================================================================= */
-.stat-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--c-text-3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
-.text-win { color: var(--c-green) !important; }
-
-.notice-card {
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(99, 176, 255, 0.08);
-  border: 1px solid rgba(99, 176, 255, 0.25);
-  color: #cfe6ff;
-  font-size: 13px;
-  line-height: 1.5;
-}
-.notice-card.notice-warn { background: rgba(242, 178, 58, 0.09); border-color: rgba(242, 178, 58, 0.35); color: #ffe1a6; }
 
 /* Bot paketleri */
 
 /* Piyango çekiliş kartı */
-.report-hero > div {
-  background: var(--c-surface-1);
-  border: 1px solid var(--c-line);
-  border-radius: 12px;
-  padding: 10px 12px;
-}
-.report-hero strong { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* "Sen yokken olanlar" raporu */
-.report-card { gap: 14px !important; }
-.report-hero { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
-.report-table { display: flex; flex-direction: column; border: 1px solid var(--c-line); border-radius: 12px; overflow: hidden; }
-.report-row {
-  display: grid; grid-template-columns: 1.1fr 1.6fr .9fr; gap: 10px; align-items: center;
-  padding: 11px 14px; font-size: 13.5px; color: var(--c-text-2);
-  font-variant-numeric: tabular-nums;
-}
-.report-row + .report-row { border-top: 1px solid var(--c-line); }
-.report-row strong { color: var(--c-text); }
-.report-row .delta { text-align: right; font-weight: 800; color: var(--c-text-3); }
-.report-row .delta.up { color: var(--c-green); }
-.report-row .delta.down { color: var(--c-red); }
 
 /* Krallık rehberi */
 .guide-widget {
@@ -524,16 +406,6 @@ body.modal-open .guide-widget { display: none; }
 .toast-container .toast.warning { border-left-color: var(--c-amber) !important; }
 @keyframes toastIn { from { opacity: 0; } to { opacity: 1; } }
 
-.notif-panel {
-  top: calc(var(--hud-h) + 8px) !important;
-  right: 16px !important;
-  background: rgba(13, 17, 26, 0.98) !important;
-  border: 1px solid var(--c-line-strong) !important;
-  border-radius: var(--radius-l) !important;
-  box-shadow: var(--shadow-2) !important;
-  z-index: 1300 !important;
-}
-
 /* Geliştirici test düğmesi (yalnızca geliştirme sürümünde) */
 
 /* Yükleme ekranı yazıları */
@@ -577,8 +449,6 @@ body.modal-open .guide-widget { display: none; }
   }
   body.in-dungeon .hud .dungeon-drop-hud { display: none; }
 
-  .realm-sidebar { width: min(420px, 100vw) !important; }
-
   .toast-container {
     top: auto !important;
     bottom: calc(var(--tabbar-h) + var(--safe-b) + 10px) !important;
@@ -587,7 +457,6 @@ body.modal-open .guide-widget { display: none; }
     max-width: none;
   }
   .guide-widget { left: 10px; right: 10px; width: auto; max-width: none; bottom: calc(10px + var(--tabbar-h) + var(--safe-b)); }
-  .notif-panel { left: 10px !important; right: 10px !important; width: auto !important; }
 }
 
 @media (max-width: 820px) {
@@ -644,7 +513,6 @@ body.modal-open .guide-widget { display: none; }
   text-transform: uppercase;
   color: var(--c-gold-2) !important;
 }
-.btn-clean.btn-clean-outline { background: transparent !important; border: 1px solid rgba(240, 104, 104, 0.55) !important; color: #ffc0c0 !important; }
 
 /* Zindan: eve dönüş düğmesi her zaman görünür */
 body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
@@ -826,116 +694,13 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
 .map-card.is-locked .mc-hint { color: #94a3b8; }
 
 /* ── v1.27: Kota, sınır ve giriş bileşenleri (js/ui/limits.js) ───────── */
-.quota-timers {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 10px;
-}
-.stat-tile {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 12px 14px;
-  border-radius: var(--radius-m);
-  background: var(--c-surface-2);
-  border: 1px solid var(--c-line);
-  min-width: 0;
-}
-.stat-tile-label { font-size: 12px; font-weight: 700; color: var(--c-text-3); text-transform: none; }
-.stat-tile > strong { font-size: 18px; font-weight: 800; color: var(--c-text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.stat-tile-sub { font-size: 12px; color: var(--c-text-2); }
-
-.limit-list { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
-.limit-meter { --lm-color: var(--c-blue); display: flex; flex-direction: column; gap: 6px; }
-.limit-meter.is-high { --lm-color: var(--c-amber); }
-.limit-meter.is-full { --lm-color: var(--c-red); }
-.limit-meter-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13.5px; }
-.limit-meter-label { color: var(--c-text); font-weight: 700; display: inline-flex; gap: 6px; align-items: baseline; min-width: 0; }
-.limit-meter-value { color: var(--c-text-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.limit-meter-value strong { color: var(--c-text); font-weight: 800; }
-.limit-meter-track { height: 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
-.limit-meter-fill { height: 100%; border-radius: inherit; background: var(--lm-color); transition: width 0.3s ease; }
-.limit-meter-foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--c-text-3); }
-.limit-meter.is-full .limit-meter-foot > span:first-child { color: var(--c-red); font-weight: 700; }
-.limit-meter-note { color: var(--c-text-2); }
-
-.day-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin: 10px 0 12px; }
-.day-strip-cell {
-  text-align: center; padding: 6px 0; border-radius: var(--radius-s);
-  font-size: 12px; font-weight: 700;
-  background: var(--c-surface-3); color: var(--c-text-3);
-  border: 1px solid transparent;
-}
-.day-strip-cell.is-open { background: rgba(99, 176, 255, 0.14); color: #cfe6ff; }
-.day-strip-cell.is-today { background: rgba(231, 185, 76, 0.18); color: var(--c-gold-2); border-color: rgba(231, 185, 76, 0.55); }
-.day-strip-cell.is-locked { opacity: 0.7; }
-
-.quota-tracker { display: flex; flex-direction: column; gap: 14px; }
-.quota-section .card-title-row { margin-bottom: 4px; }
-.quota-res-list { display: flex; flex-direction: column; gap: 14px; }
-.quota-res-card { display: flex; flex-direction: column; gap: 7px; }
-.quota-res-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; font-size: 13.5px; }
-.quota-res-name { font-weight: 800; color: var(--res-color); }
-.quota-res-avail { color: var(--c-text-2); }
-.quota-res-avail strong { color: var(--c-text); font-variant-numeric: tabular-nums; }
-.quota-stack { position: relative; height: 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); overflow: hidden; }
-.quota-stack > div { position: absolute; left: 0; top: 0; bottom: 0; border-radius: inherit; transition: width 0.3s ease; }
-.quota-stack-released { background: color-mix(in srgb, var(--res-color) 30%, transparent); }
-.quota-stack-harvested { background: var(--res-color); }
-.quota-res-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--c-text-2); font-variant-numeric: tabular-nums; }
-.quota-res-legend .lg { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
-.lg-harvested { background: var(--res-color); }
-.lg-released { background: color-mix(in srgb, var(--res-color) 30%, transparent); }
-.lg-locked { background: rgba(255, 255, 255, 0.08); }
-.quota-ubi {
-  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-  margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-s);
-  background: var(--c-surface-3); font-size: 13px; color: var(--c-text-2);
-}
-.quota-ubi strong { color: var(--c-gold-2); }
-.quota-ubi.is-done strong { color: var(--c-green); }
 
 /* Zindan giriş basamakları */
-.entry-ladder { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin: 10px 0 0; padding: 0; }
-.entry-step {
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
-  padding: 7px 4px; border-radius: var(--radius-s);
-  background: var(--c-surface-3); border: 1px solid var(--c-line);
-  text-align: center; min-width: 0;
-}
-.entry-step-n { font-size: 15px; font-weight: 800; color: var(--c-text); line-height: 1.1; }
-.entry-step-label { font-size: 11.5px; font-weight: 700; color: var(--c-text-2); }
-.entry-step-sub { font-size: 10.5px; color: var(--c-text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.entry-step.is-free .entry-step-label { color: var(--c-green); }
-.entry-step.is-fee .entry-step-label { color: var(--c-amber); }
-.entry-step.is-done { opacity: 0.45; }
-.entry-step.is-done .entry-step-n::after { content: " ✓"; font-size: 12px; color: var(--c-green); }
-.entry-step.is-current { border-color: rgba(231, 185, 76, 0.7); background: rgba(231, 185, 76, 0.1); box-shadow: var(--ring); opacity: 1; }
-@media (max-width: 520px) {
-  .entry-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
 /* Savaş öncesi giriş kartı */
 
 /* Piyango sekmesi */
 
 /* Yan panel kota özeti */
-.sidebar-quota-head {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
-  background: none; border: 0; padding: 0; cursor: pointer; text-align: left; font: inherit; color: inherit;
-}
-.sidebar-quota-head:hover .sidebar-quota-timer,
-.sidebar-quota-head:focus-visible .sidebar-quota-timer { color: var(--c-gold-2); }
-.sidebar-quota-head:focus-visible { outline: none; box-shadow: var(--ring); border-radius: 6px; }
-.sidebar-quota-timer { font-size: 11px; color: var(--c-text-3); font-weight: 700; white-space: nowrap; }
-.mini-quota-track { position: relative; }
-.mini-quota-released { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.12); border-radius: 3px; transition: width 0.3s ease; }
-.mini-quota-track .mini-quota-fill { position: absolute; top: 0; bottom: 0; }
-.sidebar-personal-limits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.spl-chip {
-  font-size: 11.5px; font-weight: 700; color: var(--c-text-2);
-  padding: 3px 8px; border-radius: 999px; background: var(--c-surface-3); border: 1px solid var(--c-line);
-  font-variant-numeric: tabular-nums;
-}
-.spl-chip.is-good { color: #b8f5da; border-color: rgba(67, 209, 154, 0.35); }
 
 /* Kolezyum maç bedeli satırı */
 

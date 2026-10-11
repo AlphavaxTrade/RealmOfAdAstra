@@ -14,7 +14,6 @@ export const SEKMELER = [
 export const HUB = {
   kralik: { baslik: ['🏰', 'Krallık'], ogeler: [
     { k: 'merkez', s: '🏰', ad: 'Krallık merkezi', ac: 'Topla, onar, doldur: tek dokunuşla toplu işlemler' },
-    { k: 'seferler', s: '⏳', ad: 'Seferler ve üretim hakkı', ac: 'Çalışan işçilerin ve bugünkü üretim payın' },
     { k: 'silo', s: '📦', ad: 'Silo ve depo', ac: 'Ambar doluluğu ve yükseltme' },
     { k: 'taverna', s: '🍺', ad: 'Taverna ve bot', ac: '24 saat kendiliğinden çalışan yardımcı', kilit: 'tavern' },
     { k: 'demirhane', s: '⚒️', ad: 'Demirhane', ac: 'Dövme, onarım, geri dönüşüm', kilit: 'blacksmith' },

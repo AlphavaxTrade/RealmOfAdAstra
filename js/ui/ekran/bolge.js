@@ -57,6 +57,7 @@ function seferKutusu(b, bolge) {
 
 const ekran = {
   id: 'bolge',
+  goruldu: 'bolge',
   ornekSecenekler: (b) => b.GAME_CONFIG.RESOURCE_KEYS.map((kaynak) => ({ kaynak })),
   baslik: (b, secenek) => {
     const bolge = bolgeBilgisi(b, secenek.kaynak);

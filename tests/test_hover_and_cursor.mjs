@@ -34,7 +34,7 @@ test('🖱️ Harita & Zindan imleci ve v1.25 ekran yerleşimi', async (t) => {
 
   await t.test('5. Harita boyutu gerçek kutudan okunmalı (telefonda üst bar daha yüksek)', () => {
     const app = read('js/app.js');
-    assert.ok(app.includes('function getStageSize()'), 'getStageSize tanımlı olmalıdır');
+    assert.ok(app.includes('function sahneBoyutu()') && app.includes('window.getStageSize = sahneBoyutu'), 'getStageSize (sahneBoyutu) tanımlı olmalıdır');
     assert.ok(!/innerHeight - 92\)\);/.test(app), 'Sabit 92px yükseklik varsayımı kalmamalıdır');
   });
 });

@@ -90,13 +90,12 @@ for (const [hesap, seviye] of [['sv1', 1], ['sv30', 30]]) {
       await s.evaluate((lv) => { const g = window.gameState; g.setDevLevel(lv); g.setDevAdAstra(5e6); for (let i = 0; i < 4; i++) g.buySoldierUnit(); }, seviye);
       await bekle(500);
     }
-    // seferler paneli (kenar menü): 6 sefer kartı ve 6 üretim hakkı satırı
+    // Krallık merkezi: 6 kaynağın üretim hakkı satırı (eski kenar çubuğunun yerini aldı)
     await s.locator('[data-v3-sekme="kralik"]').first().click(); await bekle(500);
-    await s.locator('[data-v3-git="seferler"]').first().click(); await bekle(700);
-    const yan = await s.evaluate(() => ({ acik: document.getElementById('realm-sidebar').classList.contains('open'), kart: document.querySelectorAll('#realm-sidebar .sidebar-exp-card').length, kota: document.querySelectorAll('#realm-sidebar .mini-quota-item').length }));
-    if (!yan.acik || yan.kart !== 6 || yan.kota !== 6) ekleme({ hesap, ekran: ad, id: 'kralik/seferler', sorun: `yan panel: ${JSON.stringify(yan)}` });
-    await s.screenshot({ path: path.join(EKRAN, `${hesap}_${ad}_seferler.png`) });
-    await s.locator('.v3-yan-kapat').first().click().catch(() => {}); await bekle(300);
+    await s.locator('[data-v3-git="merkez"]').first().click(); await bekle(700);
+    const hak = await s.evaluate(() => { const kart = [...document.querySelectorAll('#modal-body details.ek-katli')].find((k) => k.innerText.includes('Üretim hakkın')); return { var: !!kart, satir: kart ? kart.querySelectorAll('.ek-cubuk-satiri').length : 0, yanPanel: !!document.getElementById('realm-sidebar') }; });
+    if (!hak.var || hak.satir !== 6 || hak.yanPanel) ekleme({ hesap, ekran: ad, id: 'kralik/merkez', sorun: `üretim hakkı kartı: ${JSON.stringify(hak)}` });
+    await s.screenshot({ path: path.join(EKRAN, `${hesap}_${ad}_merkez_hak.png`) });
 
     // kaynak tepsisi: altı kaynağın altısı da listelenir ve her biri kendi bölgesini açar
     await s.keyboard.press('Escape'); await bekle(250);

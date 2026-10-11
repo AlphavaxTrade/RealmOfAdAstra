@@ -4,6 +4,7 @@ import { kaynakAdi } from './bilesik.js';
 
 const ekran = {
   id: 'koy',
+  goruldu: 'koy',
   canliYenile: true,
   baslik: () => ['🏘️', 'Köy evleri'],
 

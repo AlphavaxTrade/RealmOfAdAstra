@@ -216,14 +216,14 @@ export const GAME_CONFIG = {
   // show: v3 hub anahtarı ("Bana göster" düğmesi o ekrana götürür). Eski 10 görevin kimlikleri korunur.
   ONBOARDING_QUESTS: [
     // ── Başlangıç: krallığını tanı ──
-    { id: 'first_expedition', section: 'baslangic', icon: '🚀', title: 'İlk seferini başlat', desc: 'Ormana, madene ya da tarlaya bir işçi gönder.', rewardAda: 5, show: 'seferler' },
-    { id: 'first_harvest', section: 'baslangic', icon: '🌾', title: 'İlk hasadını topla', desc: 'Biten bir seferin ürününü ambarına al.', rewardAda: 7.5, show: 'seferler' },
+    { id: 'first_expedition', section: 'baslangic', icon: '🚀', title: 'İlk seferini başlat', desc: 'Ormana, madene ya da tarlaya bir işçi gönder.', rewardAda: 5, show: 'merkez' },
+    { id: 'first_harvest', section: 'baslangic', icon: '🌾', title: 'İlk hasadını topla', desc: 'Biten bir seferin ürününü ambarına al.', rewardAda: 7.5, show: 'merkez' },
     { id: 'first_level_up', section: 'baslangic', icon: '⭐', title: 'Seviye 2 yap', desc: 'Deneyim barını doldur ve ilk seviyeni atla.', rewardAda: 5, show: 'profil' },
     { id: 'panel_merkez', section: 'baslangic', icon: '🏰', title: 'Krallık merkezini aç', desc: 'Krallık sekmesinden Krallık merkezine gir; toplu işlemler ve genel durum orada.', rewardAda: 2, show: 'merkez' },
     { id: 'bolge_ac', section: 'baslangic', icon: '🌲', title: 'Bir kaynak bölgesini aç', desc: 'Üst çubuktaki kaynak düğmesinden bir bölgeye gir; orada sefer ve alet onarımı var.', rewardAda: 2, show: 'bolge' },
     // ── Üretim: altı hammadde ──
-    { id: 'three_expeditions', section: 'uretim', icon: '⚙️', title: 'Üç alanı birden çalıştır', desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.', rewardAda: 10, show: 'seferler' },
-    { id: 'alti_hammadde', section: 'uretim', icon: '🧺', title: 'Altı hammaddeyi de topla', desc: 'Buğday, taş, odun, kömür, demir ve şifalı otun her birinden en az bir sefer topla.', rewardAda: 25, show: 'seferler' },
+    { id: 'three_expeditions', section: 'uretim', icon: '⚙️', title: 'Üç alanı birden çalıştır', desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.', rewardAda: 10, show: 'merkez' },
+    { id: 'alti_hammadde', section: 'uretim', icon: '🧺', title: 'Altı hammaddeyi de topla', desc: 'Buğday, taş, odun, kömür, demir ve şifalı otun her birinden en az bir sefer topla.', rewardAda: 25, show: 'merkez' },
     { id: 'tool_repair', section: 'uretim', icon: '🔨', title: 'Bir aleti onar', desc: 'Bölge panelinden aşınmış bir aleti tamir et; alet bozulursa sefer durur.', rewardAda: 10, show: 'bolge' },
     { id: 'kota_gor', section: 'uretim', icon: '📊', title: 'Üretim hakkını gör', desc: 'Ben sekmesinden Kotalarım\'ı aç: günlük ve haftalık çıkarma payın orada.', rewardAda: 2, show: 'kotalar' },
     { id: 'bot_trial', section: 'uretim', icon: '🤖', title: 'Otomasyon botunu dene', desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.', rewardAda: 10, show: 'taverna' },
@@ -264,7 +264,7 @@ export const GAME_CONFIG = {
     { id: 'pools_gor', section: 'kolezyum', icon: '🏛️', title: 'Havuzlar bölümüne bak', desc: 'Karnaval → Havuzlar: oyun kasalarının paylarını ve ücretsiz oyuncu payını göster.', rewardAda: 2, show: 'karnaval' },
     // ── Konsey ve hazine: ekonominin kalbi ──
     { id: 'first_konsey', section: 'konsey', icon: '🏛️', title: 'Konsey\'e katkı ver', desc: 'Sirius Konseyi\'nde Otorite inşaatına ya da projeye hammadde ver.', rewardAda: 15, show: 'konsey' },
-    { id: 'treasury_gor', section: 'konsey', icon: '👑', title: 'Kasaları gez', desc: 'Konsey ve hazine: ödüllerin hangi kasadan ödendiğini gör.', rewardAda: 2, show: 'konsey' },
+    { id: 'treasury_gor', section: 'konsey', icon: '👑', title: 'Kasaları gez', desc: 'Ben → Hazine ve gelir panosu: ödüllerin hangi kasadan ödendiğini gör.', rewardAda: 2, show: 'hazine' },
     { id: 'economy_gor', section: 'konsey', icon: '📈', title: 'Ekonomi panosunu aç', desc: 'Oyun parasının nereye gittiğini ve ne kadar yakıldığını gösterir.', rewardAda: 2, show: 'ekonomi' },
     { id: 'boss_join', section: 'konsey', icon: '🌋', title: 'Dünya bossuna katıl', desc: 'Savaş alanında ordunu bu haftaki ortak boss savaşına yaz.', rewardAda: 15, show: 'savasalani' },
     { id: 'level_5', section: 'konsey', icon: '⭐', title: 'Hesap seviyen 5 olsun', desc: 'Sefer, zindan ve görevlerden deneyim kazan; her seviye üretim bonusu verir.', rewardAda: 20, show: 'profil' },
@@ -1137,7 +1137,7 @@ export const GAME_CONFIG = {
         'Zindan: her girişte stamina harcanır. Günün 1. girişinde silahlar aşınmaz. 2.–5. giriş harçsız ödüllüdür ve savaşa giren her askerin silahı 1 aşınır. 6. girişten itibaren kapı harcı ödenir, ödenmezse antrenman girişi olur.',
         'Yeni "Kota ve Sınırlar" paneli (üst bar 📊, yan panel veya K tuşu): dünya kotasının gün gün açılışı, şu an çıkarılabilecek miktar, zindan / kolezyum / piyango sınırların ve geri sayımlar.',
         'Kolezyum: günlük maç hakkı, anahtar ve stamina bedeli maçtan önce gösterilir; eksik olan kırmızıyla işaretlenir.',
-        'Arayüz: bildirimler sağ alta alındı, mobilde bakiye kısaltıldı (1,97 Mn), dar ekranda üst menü taşmıyor, İngilizce etiketler Türkçeleştirildi, kışlada "Infinity" yazısı düzeltildi.',
+        'Arayüz: bildirimler sağ alta alındı, mobilde bakiye kısaltıldı (1,97 Mn), dar ekranda üst menü taşmıyor, İngilizce etiketler Türkçeleştirildi, kışlada yanlış sayı yazısı düzeltildi.',
         'Windows: OYUNU-BASLAT.bat oyunu arka planda sürekli açık tutar; pencere kapansa ve bilgisayar yeniden açılsa da http://localhost:5180 çalışır. OYUNU-DURDUR.bat kapatır.'
       ]
     },

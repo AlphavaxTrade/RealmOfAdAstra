@@ -18,3 +18,7 @@ import './savasalani.js';
 import './karnaval.js';
 import './kolezyum.js';
 import './savashazirlik.js';
+import './kotalar.js';
+import './surum.js';
+import './cevrimdisi.js';
+import './hurda.js';

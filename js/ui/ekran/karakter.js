@@ -144,6 +144,7 @@ function aletKarti(b) {
 
 const ekran = {
   id: 'karakter',
+  goruldu: 'profil',
   canliYenile: true,
   baslik: () => ['🧙', 'Karakterim'],
   govde: (b) => kap([seviyeKarti(b), ubiKarti(b), staminaKarti(b), hammaddeKarti(b), esyaKarti(b), aletKarti(b)].join('')),

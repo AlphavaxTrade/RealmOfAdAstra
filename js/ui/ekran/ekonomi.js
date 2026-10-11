@@ -95,6 +95,7 @@ function fiyatlar(b) {
 
 const ekran = {
   id: 'ekonomi',
+  goruldu: 'ekonomi',
   canliYenile: true,
   ornekSecenekler: () => [{ sekme: 'genel' }, { sekme: 'kaynak' }, { sekme: 'fiyat' }],
   baslik: () => ['📈', 'Ekonomi panosu'],

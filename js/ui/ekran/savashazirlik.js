@@ -155,6 +155,7 @@ function ordu(b, secenek, secili) {
 
 const ekran = {
   id: 'savashazirlik',
+  goruldu: 'zindanOnizleme',
   baslik: () => ['⚔️', 'Savaşa hazırlık'],
   ornekSecenekler: () => [{ canavar: { ...getDungeonEntry(1) } }, { canavar: { ...getDungeonEntry(9), isBoss: true } }],
 
