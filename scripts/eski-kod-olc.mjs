@@ -23,7 +23,8 @@ const sonuc = [];
 for (const f of dosyalar) {
   if (!METIN.test(f) || HARIC.some(r => r.test(f))) continue;
   let cikti;
-  try { cikti = git('blame', '-w', '--line-porcelain', '--', f); } catch { continue; }
+  // -M/-C: başka dosyadan taşınan satırın asıl yazım tarihi sayılır (ör. 8 Ekim'de bölünen gameState)
+  try { cikti = git('blame', '-w', '-M', '-C', '-C', '-C', '--line-porcelain', '--', f); } catch { continue; }
   let eski = 0, yeni = 0;
   for (const m of cikti.matchAll(/^author-time (\d+)$/gm)) { if (Number(m[1]) < SINIR) eski++; else yeni++; }
   sonuc.push({ dosya: f, eski, yeni });
