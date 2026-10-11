@@ -44,6 +44,8 @@ export const TIP_ACIKLAMALARI = {
   row: 'Savaş sırası: front ya da back',
   wheelPay: 'Çark ödeme türü: ada, ticket ya da bir hammadde',
   quest: 'Rehber görevi kimliği',
+  section: 'Krallık Yolu bölüm kimliği (10 bölümden biri ya da final)',
+  gorulen: 'Krallık Yolu için "ekranı gördü" anahtarı (sabit liste)',
   fightOpts: 'Seçenekler { payGateFee?: boolean }',
   amounts: 'Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)'
 };

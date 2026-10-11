@@ -17,6 +17,8 @@ import { createBarracksUI } from './ui/barracks.js';
 import { terim } from './ui/v3/sozluk.js';
 import { cevirSecenekleriHtml as karnavalCevirV3, havuzlarHtml as karnavalHavuzlarV3 } from './ui/v3/karnaval.js';
 import { hazineOzetHtml as hazineOzetV3, hazineKasalarHtml as hazineKasalarV3 } from './ui/v3/hazine.js';
+import { yolHtml, yolOzeti } from './ui/v3/ogretici.js';
+import { sadeBaslik } from './ui/v3/panel.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 
@@ -123,6 +125,35 @@ function displayModal() {
     dom.rpgModal.classList.add('active');
     document.body.classList.add('modal-open');
     if (yeniEkran && dom.modalBody) dom.modalBody.scrollTop = 0;
+    ogreticiPanelGordu(baslik);
+  }
+}
+
+// Krallık Yolu: açılan panelin/sekmenin adı bir öğretici görevine denk geliyorsa oyuncunun "gördüğü" bildirilir
+// (yalnız izinli anahtarlar; aynı oturumda bir kez). Gerçek eylem görevleri bu kancaya bağlı değildir.
+const ogreticiGorulenOturum = new Set();
+function ogreticiGor(anahtar) {
+  if (ogreticiGorulenOturum.has(anahtar)) return;
+  ogreticiGorulenOturum.add(anahtar);
+  if (typeof gameState.ogreticiGordu === 'function') gameState.ogreticiGordu(anahtar);
+}
+const OGRETICI_BASLIK_ESLEMESI = [
+  ['krallık merkezi', 'merkez'], ['zümrüt ormanı', 'bolge'], ['güneş tarlası', 'bolge'], ['taş ocağı', 'bolge'],
+  ['kömür ocağı', 'bolge'], ['demir madeni', 'bolge'], ['şifalı ot bahçesi', 'bolge'], ['kotalarım', 'kota'],
+  ['köy evleri', 'koy'], ['konsey ve hazine', 'hazine'], ['ekonomi panosu', 'ekonomi'], ['karakterim', 'profil'],
+  ['savaşa hazırlık', 'zindanOnizleme']
+];
+const OGRETICI_SEKME_ESLEMESI = [
+  ['.market-tab-btn.active[data-tab="ilan"]', 'ilan'], ['.market-tab-btn.active[data-tab="buyback_vault"]', 'yakim'],
+  ['.colosseum-tab-btn.active[data-tab="leaderboard"]', 'lig'], ['.carnival-tab-btn.active[data-carnival-tab="pools"]', 'havuzlar']
+];
+function ogreticiPanelGordu(baslik) {
+  try {
+    const t = sadeBaslik(baslik).toLocaleLowerCase('tr');
+    for (const [parca, anahtar] of OGRETICI_BASLIK_ESLEMESI) if (t.includes(parca)) { ogreticiGor(anahtar); break; }
+    if (dom.modalBody) for (const [sec, anahtar] of OGRETICI_SEKME_ESLEMESI) if (dom.modalBody.querySelector(sec)) ogreticiGor(anahtar);
+  } catch (err) {
+    console.warn('Öğretici kancası çalışmadı:', err);
   }
 }
 
@@ -8035,29 +8066,59 @@ function fmtDuration(sec) {
   return `${m} dakika`;
 }
 
+// "Bana göster" düğmesi: hub anahtarına göre ilgili ekranı açar (kilitliyse nedeni zaten görev satırında yazılıdır)
+const OGRETICI_KILIT_ESLEMESI = { pazar: 'market', demirhane: 'blacksmith', kisla: 'barracks', zindan: 'dungeon', kolezyum: 'colosseum', karnaval: 'carnival', savasalani: 'battlefield' };
+function ogreticiKilit(q) {
+  const zone = OGRETICI_KILIT_ESLEMESI[q.show];
+  const kilit = zone && gameState.getFeatureLock ? gameState.getFeatureLock(zone) : null;
+  return kilit ? kilit.reason : null;
+}
+function ogreticiGoster(anahtar) {
+  closeModal();
+  if (anahtar === 'bolge') { openTownZoneModal(ZONE_OF_NODE('wood'), ZONE_TITLE('wood')); return; }
+  if (window.__v3 && typeof window.__v3.git === 'function') window.__v3.git(anahtar);
+}
+
+function openKrallikYoluModal() {
+  gameState.checkOnboardingProgress();
+  dom.modalTitle.innerHTML = '<span>🧭</span> <span>Krallık Yolu</span>';
+  dom.modalBody.innerHTML = yolHtml(gameState.getOnboardingSections(), ogreticiKilit);
+  displayModal();
+}
+
 function initPlayerGuide() {
   const el = document.getElementById('guide-widget');
-  if (!el) return;
-  el.addEventListener('click', (e) => {
-    const claimBtn = e.target.closest('[data-claim-quest]');
-    if (claimBtn) {
-      const res = gameState.claimOnboardingReward(claimBtn.dataset.claimQuest);
+  // Panel içindeki düğmeler (görev ödülü, bölüm ödülü, "Bana göster"); eski panel kodu tıklamaları durdurduğu için yakalama aşaması
+  dom.modalBody.addEventListener('click', (e) => {
+    if (!e.target.closest('.v3-yol')) return;
+    const gorevBtn = e.target.closest('[data-claim-quest]');
+    const bolumBtn = e.target.closest('[data-claim-section]');
+    const gosterBtn = e.target.closest('[data-ogretici-goster]');
+    if (gorevBtn) {
+      const res = gameState.claimOnboardingReward(gorevBtn.dataset.claimQuest);
       showToast(res.message, res.success ? 'success' : 'error');
-      renderGuideWidget();
-      renderTopBar();
+    } else if (bolumBtn) {
+      const res = gameState.claimOnboardingSection(bolumBtn.dataset.claimSection);
+      showToast(res.message, res.success ? 'success' : 'error');
+    } else if (gosterBtn) {
+      ogreticiGoster(gosterBtn.dataset.ogreticiGoster);
       return;
-    }
-    if (e.target.closest('[data-guide-toggle]')) {
-      guideExpanded = !guideExpanded;
-      renderGuideWidget();
-      return;
-    }
-    if (e.target.closest('[data-guide-dismiss]')) {
-      gameState.state.guideDismissed = true;
-      gameState.saveState();
-      renderGuideWidget();
-    }
-  });
+    } else return;
+    openKrallikYoluModal();
+    renderGuideWidget();
+    renderTopBar();
+  }, true);
+  if (el) {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('[data-guide-dismiss]')) {
+        gameState.state.guideDismissed = true;
+        gameState.saveState();
+        renderGuideWidget();
+        return;
+      }
+      openKrallikYoluModal();
+    });
+  }
   gameState.checkOnboardingProgress();
   renderGuideWidget();
 }
@@ -8065,41 +8126,30 @@ function initPlayerGuide() {
 function renderGuideWidget() {
   const el = document.getElementById('guide-widget');
   if (!el) return;
-  const st = gameState.getOnboardingStatus();
-  if (!st.total || (gameState.state.guideDismissed && st.claimableCount === 0)) {
+  const ozet = yolOzeti(gameState.getOnboardingSections());
+  const bitti = ozet.toplam > 0 && !ozet.siradaki && ozet.hazir === 0;
+  if (!ozet.toplam || (gameState.state.guideDismissed && ozet.hazir === 0) || bitti) {
     el.hidden = true;
     return;
   }
   el.hidden = false;
-  const pct = Math.round((st.doneCount / st.total) * 100);
-  const head = `
-    <button class="guide-head" data-guide-toggle aria-expanded="${guideExpanded}">
+  const pct = Math.round((ozet.biten / ozet.toplam) * 100);
+  const alt = ozet.hazir > 0 ? `${ozet.hazir} ödül hazır` : (ozet.siradaki ? ozet.siradaki.title : 'Tüm görevler tamam');
+  const html = `
+    <button class="guide-head" data-guide-open aria-label="Krallık Yolu'nu aç">
       <span class="guide-icon">🧭</span>
       <span class="guide-head-text">
-        <span class="guide-title">Krallık Rehberi</span>
-        <span class="guide-sub">${st.claimableCount > 0 ? `${st.claimableCount} ödül hazır · +${fmtNum(st.claimableAda)} ASTRA` : (st.next ? st.next.title : 'Tüm görevler tamam')}</span>
+        <span class="guide-title">Krallık Yolu</span>
+        <span class="guide-sub">${alt}</span>
       </span>
-      <span class="guide-count">${st.doneCount}/${st.total}</span>
+      <span class="guide-count">${ozet.biten}/${ozet.toplam}</span>
     </button>
     <div class="guide-progress"><span style="width:${pct}%"></span></div>`;
-  const list = !guideExpanded ? '' : `
-    <ul class="guide-list">
-      ${st.quests.map(q => `
-        <li class="guide-quest ${q.claimed ? 'is-claimed' : (q.done ? 'is-done' : '')}">
-          <span class="q-icon">${q.claimed ? '✅' : q.icon}</span>
-          <span class="q-text"><strong>${q.title}</strong><small>${q.desc}</small></span>
-          ${q.done && !q.claimed
-            ? `<button class="q-claim" data-claim-quest="${q.id}">+${fmtNum(q.rewardAda)} ASTRA al</button>`
-            : `<span class="q-reward">${q.claimed ? 'Alındı' : '+' + fmtNum(q.rewardAda)}</span>`}
-        </li>`).join('')}
-    </ul>
-    ${st.allClaimed ? '<button class="guide-dismiss" data-guide-dismiss>Rehberi gizle</button>' : ''}`;
-  const html = head + list;
   if (el.dataset.lastHtml !== html) {
     el.innerHTML = html;
     el.dataset.lastHtml = html;
   }
-  el.classList.toggle('has-reward', st.claimableCount > 0);
+  el.classList.toggle('has-reward', ozet.hazir > 0);
 }
 
 function openOfflineReportModal() {
@@ -8359,6 +8409,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     hudYenile: () => renderTopBar(),
     hudVeri: hudVerisi,
     openKaynak: (k) => openTownZoneModal(ZONE_OF_NODE(k), ZONE_TITLE(k)),
+    openOgretici: openKrallikYoluModal,
+    turBitti: () => ogreticiGor('tur'),
     danismanEylemi,
     kaynakSimge: (k) => resImg(k, k === 'fragments' ? '🧩' : ((RES_META()[k] || {}).icon || '')),
     // Test laboratuvarının "ilk güne döndür" düğmesi (onayı laboratuvar kendi penceresinde alır)

@@ -42,6 +42,8 @@ const GECERLI = {
   row: ['front', 'back'],
   wheelPay: ['ada', 'ticket', ...NODES],
   quest: (GAME_CONFIG.ONBOARDING_QUESTS || []).map(q => q.id),
+  section: [...(GAME_CONFIG.ONBOARDING_SECTIONS || []).map(b => b.id), (GAME_CONFIG.ONBOARDING_FINAL || {}).id],
+  gorulen: ['merkez', 'bolge', 'kota', 'koy', 'hazine', 'ekonomi', 'profil', 'zindanOnizleme', 'ilan', 'yakim', 'lig', 'havuzlar', 'tur'],
   fightOpts: [{}, { payGateFee: true }, { payGateFee: false }],
   amounts: [{}, { wood: 1 }, { wood: 1e12 }, { stone: 0 }, Object.fromEntries(NODES.map(k => [k, 5]))]
 };

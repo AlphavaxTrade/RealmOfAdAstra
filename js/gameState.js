@@ -28,6 +28,7 @@ import { askerGelisimYontemleri } from './gameState/askerGelisim.js';
 import { rehberYontemleri } from './gameState/rehber.js';
 import { pazarYontemleri } from './gameState/pazar.js';
 import { katilimYontemleri } from './gameState/katilim.js';
+import { ogreticiYontemleri, ogreticiIsaretleriKur } from './gameState/ogretici.js';
 
 // Oyuncunun yazdığı isimler için temizleyici dışarı da açıktır (sunucu ve testler kullanır)
 export { cleanName } from './gameState/ortak.js';
@@ -362,6 +363,9 @@ Object.assign(GameStateManager.prototype, katilimYontemleri);
 // v2 (R5/R6/R2): Köy Evleri, Şifahane, Demirhane geri dönüşümü, roket görevi, Konsey katkıları, Genesis hakkı (js/v2/koyVeKonsey.js)
 Object.assign(GameStateManager.prototype, gameStateV2);
 Object.assign(GameStateManager.prototype, gameStateV2Depot);   // Yük İskelesi: Hazırlık Deposu + Universe hazırlık yüzdesi
+// Krallık Yolu (öğretici): bölüm ödülleri + işlemlerin başarıyla bitince "ilk kez yapıldı" işareti düşmesi (tüm karışımlardan SONRA)
+Object.assign(GameStateManager.prototype, ogreticiYontemleri);
+ogreticiIsaretleriKur(GameStateManager.prototype);
 if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
 export const gameState = new GameStateManager();
 

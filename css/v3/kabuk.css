@@ -449,3 +449,41 @@ html.v3 .rpg-modal-body label:has(> input[type="checkbox"], > input[type="radio"
   html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab > span:last-child { display: none; }
   html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab::after { content: attr(data-floor); font: 800 13px var(--font-ui); }
 }
+
+/* 19. KRALLIK YOLU (öğretici paneli, js/ui/v3/ogretici.js) --------------------------------------- */
+html.v3 .v3-yol { display: flex; flex-direction: column; gap: var(--v3-gap-3); padding-top: 4px; }
+html.v3 .v3-yol-ust { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); }
+html.v3 .v3-yol-baslik { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+html.v3 .v3-yol-baslik b { font: 800 16px/1.2 var(--font-ui); color: var(--v3-yazi); }
+html.v3 .v3-yol-baslik span { font: 600 12.5px var(--font-ui); color: var(--v3-yazi-2); }
+html.v3 .v3-yol-bar { display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+html.v3 .v3-yol-bar i { display: block; height: 100%; background: var(--v3-vurgu); border-radius: 3px; }
+html.v3 .v3-yol-hazir { font: 700 13px var(--font-ui); color: var(--v3-vurgu-acik); }
+html.v3 .v3-yol-sirada { padding: 10px 14px; border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid rgba(231,185,76,.45); }
+html.v3 .v3-yol-sirada > small { display: block; font: 800 10.5px var(--font-ui); letter-spacing: .08em; color: var(--v3-vurgu-acik); margin-bottom: 2px; }
+html.v3 .v3-yol-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+html.v3 .v3-yol-gorev { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--v3-cizgi); }
+html.v3 .v3-yol-gorev:last-child { border-bottom: 0; }
+html.v3 .v3-yol-simge { width: 36px; height: 36px; flex: none; display: grid; place-items: center; font-size: 20px; background: var(--v3-yuzey-3); border-radius: 10px; }
+html.v3 .v3-yol-metin { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+html.v3 .v3-yol-metin b { font: 800 14px/1.25 var(--font-ui); color: var(--v3-yazi); }
+html.v3 .v3-yol-metin small { font: 500 12.5px/1.4 var(--font-ui); color: var(--v3-yazi-2); }
+html.v3 .v3-yol-metin .v3-yol-odul { font-weight: 700; color: var(--v3-vurgu-acik); }
+html.v3 .v3-yol-gorev.is-claimed .v3-yol-metin b { opacity: .6; text-decoration: line-through; }
+html.v3 .v3-yol-gorev.is-claimed .v3-yol-metin small { display: none; }
+html.v3 .v3-yol-sag { flex: none; display: flex; align-items: center; }
+html.v3 .v3-yol-goster { all: unset; box-sizing: border-box; cursor: pointer; min-height: var(--v3-tap); padding: 0 12px; display: inline-flex; align-items: center; border-radius: 12px; background: var(--v3-yuzey-3); border: 1px solid var(--v3-cizgi-guclu); font: 700 13px var(--font-ui); color: var(--v3-yazi); -webkit-tap-highlight-color: transparent; }
+html.v3 .v3-yol-goster:hover { border-color: rgba(231,185,76,.5); }
+html.v3 .v3-yol-kilit { max-width: 130px; text-align: right; font: 600 11.5px/1.3 var(--font-ui); color: var(--v3-uyari); }
+html.v3 .v3-yol-tik { font-size: 18px; }
+html.v3 details.v3-yol-bolum { border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid var(--v3-cizgi); overflow: hidden; }
+html.v3 details.v3-yol-bolum > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; min-height: var(--v3-tap); padding: 10px 12px; }
+html.v3 details.v3-yol-bolum > summary::-webkit-details-marker { display: none; }
+html.v3 details.v3-yol-bolum[open] > summary { border-bottom: 1px solid var(--v3-cizgi); }
+html.v3 details.v3-yol-bolum > .v3-yol-bar { margin: 10px 12px 0; }
+html.v3 details.v3-yol-bolum > .v3-yol-liste { padding: 0 12px; }
+html.v3 details.v3-yol-bolum > .v3-yol-bolum-al { margin: 0 12px 12px; width: calc(100% - 24px); }
+html.v3 details.v3-yol-bolum.is-claimed { opacity: .8; }
+html.v3 .v3-yol-rozet { font-size: 20px; flex: none; }
+html.v3 .v3-yol-final { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: var(--v3-r); background: rgba(231,185,76,.1); border: 1px solid rgba(231,185,76,.45); }
+html.v3 .v3-yol-final.is-claimed { opacity: .8; }

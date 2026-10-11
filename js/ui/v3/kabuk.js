@@ -41,7 +41,7 @@ export function gitHaritasi(api, { yanAc, sekmeSec, uyariMetni, turBaslat, labAc
     kotalar: () => api.openLimits(),
     hazine: () => api.openTreasury(),
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
-    rehber: () => { api.closeModal(); sekmeSec('harita'); document.querySelector('#guide-widget [data-guide-toggle]')?.click(); },
+    rehber: () => api.openOgretici(),
     komut: () => { api.closeModal(); api.openPalette(); },
     ayarlar: () => ayarlarAc(),
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
@@ -329,7 +329,7 @@ export function kurV3Kabuk(api) {
     } else kart.hidden = true;
   }
 
-  window.__v3 = { guncelle: () => guncelle(false), hubAc, panelAc: (id) => hubAc(id), tur };
+  window.__v3 = { guncelle: () => guncelle(false), hubAc, panelAc: (id) => hubAc(id), tur, git: (anahtar) => { if (GIT[anahtar]) GIT[anahtar](); } };
   guncelle(true);
   setTimeout(() => tur.baslat(false), 3500);   // yükleme ekranı bitince; yalnız yeni oyuncuda ve tur bitmemişse başlar
 }

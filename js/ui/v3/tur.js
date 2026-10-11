@@ -115,6 +115,7 @@ export function kurTur(api) {
     kat.hidden = true;
     adim = -1;
     yaz(tamamlandi ? { bitti: true } : { atlandi: true });
+    if (tamamlandi && typeof api.turBitti === 'function') api.turBitti();   // Krallık Yolu: "Oyun turunu bitir" görevi
   };
 
   $('v3-tur-devam').addEventListener('click', () => ilerle(adim + 1));

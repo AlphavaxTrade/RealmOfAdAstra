@@ -215,20 +215,82 @@ export const GAME_CONFIG = {
   // (Lv.10: +%13,5 · Lv.30: +%43,5 · Lv.81: +%120). Seviye atlama maliyetleri taban üretimden hesaplanır.
   LEVEL_PRODUCTION_BONUS_PER_LEVEL: 0.01,   // 5 Ekim 2026: %1,5 → %1 (81. seviyede +%120 yerine +%80; hammadde enflasyonu)
 
-  // 🧭 v1.25: Yeni oyuncu rehberi — ödüller Zindan Ganimet Kasası'ndan (hazine) çekilir, basılmaz.
+  // 🧭 Krallık Yolu (11 Ekim 2026): yeni oyuncu öğreticisi. 46 görev, 10 bölüm; her görev oyunun durumundan otomatik algılanır
+  // (js/gameState/ogretici.js OGRETICI_KOSULLARI). Ödüller Görev & Ücretsiz Oyuncu Kasası'ndan çekilir, basılmaz.
+  // Üst sınır: görevler + bölüm ödülleri + final ödülü toplamı hesap başına en çok 1.000 ASTRA (tests/test_ogretici.mjs).
+  // show: v3 hub anahtarı ("Bana göster" düğmesi o ekrana götürür). Eski 10 görevin kimlikleri korunur.
   ONBOARDING_QUESTS: [
-    { id: 'first_expedition',   icon: '🚀', title: 'İlk seferini başlat',        desc: 'Ormana, madene ya da tarlaya bir işçi gönder.',              rewardAda: 1 },
-    { id: 'first_harvest',      icon: '🌾', title: 'İlk hasadını topla',         desc: 'Biten bir seferin ürününü ambarına al.',                     rewardAda: 1.5 },
-    { id: 'three_expeditions',  icon: '⚙️', title: 'Üç alanı birden çalıştır',   desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.',           rewardAda: 2 },
-    { id: 'bot_trial',          icon: '🤖', title: 'Otomasyon botunu dene',      desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.',        rewardAda: 1 },
-    { id: 'first_level_up',     icon: '⭐', title: 'Seviye 2\'ye ulaş',          desc: 'Deneyim barını doldur ve ilk seviyeni atla.',                 rewardAda: 3 },
-    { id: 'first_silo_upgrade', icon: '🏰', title: 'Siloyu büyüt',               desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.',            rewardAda: 4 },
-    // v2 (7 Ekim 2026): yeni binalar — Köy Evleri, Şifahane, Demirhane geri dönüşümü, Sirius Konseyi
-    { id: 'first_house',        icon: '🏘️', title: 'İkinci evi yap',             desc: 'Köy Evleri\'nde yeni bir ev kur; köylü sayın artar.',          rewardAda: 2 },
-    { id: 'first_herb_heal',    icon: '🌿', title: 'Şifahane\'de otla iyileştir', desc: 'Yaralı bir askeri şifalı otla iyileştir (buğday harcamadan).', rewardAda: 1.5 },
-    { id: 'first_recycle',      icon: '♻️', title: 'Bir eşyayı geri dönüştür',   desc: 'Demirhane\'de kullanmadığın bir eşyayı hammaddeye çevir.',    rewardAda: 1 },
-    { id: 'first_konsey',       icon: '🏛️', title: 'Konsey\'e katkı ver',        desc: 'Sirius Konseyi\'nde Otorite inşaatına ya da projeye hammadde ver.', rewardAda: 2 }
+    // ── Başlangıç: krallığını tanı ──
+    { id: 'first_expedition', section: 'baslangic', icon: '🚀', title: 'İlk seferini başlat', desc: 'Ormana, madene ya da tarlaya bir işçi gönder.', rewardAda: 5, show: 'seferler' },
+    { id: 'first_harvest', section: 'baslangic', icon: '🌾', title: 'İlk hasadını topla', desc: 'Biten bir seferin ürününü ambarına al.', rewardAda: 7.5, show: 'seferler' },
+    { id: 'first_level_up', section: 'baslangic', icon: '⭐', title: 'Seviye 2 yap', desc: 'Deneyim barını doldur ve ilk seviyeni atla.', rewardAda: 5, show: 'profil' },
+    { id: 'panel_merkez', section: 'baslangic', icon: '🏰', title: 'Krallık merkezini aç', desc: 'Krallık sekmesinden Krallık merkezine gir; toplu işlemler ve genel durum orada.', rewardAda: 2, show: 'merkez' },
+    { id: 'bolge_ac', section: 'baslangic', icon: '🌲', title: 'Bir kaynak bölgesini aç', desc: 'Üst çubuktaki kaynak düğmesinden bir bölgeye gir; orada sefer ve alet onarımı var.', rewardAda: 2, show: 'bolge' },
+    // ── Üretim: altı hammadde ──
+    { id: 'three_expeditions', section: 'uretim', icon: '⚙️', title: 'Üç alanı birden çalıştır', desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.', rewardAda: 10, show: 'seferler' },
+    { id: 'alti_hammadde', section: 'uretim', icon: '🧺', title: 'Altı hammaddeyi de topla', desc: 'Buğday, taş, odun, kömür, demir ve şifalı otun her birinden en az bir sefer topla.', rewardAda: 25, show: 'seferler' },
+    { id: 'tool_repair', section: 'uretim', icon: '🔨', title: 'Bir aleti onar', desc: 'Bölge panelinden aşınmış bir aleti tamir et; alet bozulursa sefer durur.', rewardAda: 10, show: 'bolge' },
+    { id: 'kota_gor', section: 'uretim', icon: '📊', title: 'Üretim hakkını gör', desc: 'Ben sekmesinden Kotalarım\'ı aç: günlük ve haftalık çıkarma payın orada.', rewardAda: 2, show: 'kotalar' },
+    { id: 'bot_trial', section: 'uretim', icon: '🤖', title: 'Otomasyon botunu dene', desc: 'Tavernadan 1 saatlik ücretsiz bot denemesini başlat.', rewardAda: 10, show: 'taverna' },
+    { id: 'first_silo_upgrade', section: 'uretim', icon: '🏰', title: 'Siloyu büyüt', desc: 'Ambarını ilk kez yükselt; daha fazla ürün sakla.', rewardAda: 20, show: 'silo' },
+    // ── Köy: nüfus ve emek ──
+    { id: 'first_house', section: 'koy', icon: '🏘️', title: 'İkinci evi yap', desc: 'Köy Evleri\'nde yeni bir ev kur; köylü sayın artar.', rewardAda: 15, show: 'koy' },
+    { id: 'kasaba_20', section: 'koy', icon: '👨‍🌾', title: '20 köylüye ulaş', desc: 'Köylüler buğdayla beslenir ve zamanla çoğalır; evlerin kapasitesini doldur.', rewardAda: 15, show: 'koy' },
+    { id: 'first_herb_heal', section: 'koy', icon: '🌿', title: 'Şifahane\'de otla iyileştir', desc: 'Yaralı bir askeri şifalı otla iyileştir (buğday harcamadan).', rewardAda: 10.5, show: 'sifahane' },
+    { id: 'koy_gor', section: 'koy', icon: '🏡', title: 'Köy evleri panelini incele', desc: 'Kapasite, emek puanı ve üretim bonusunu orada görürsün.', rewardAda: 2, show: 'koy' },
+    // ── Pazar: alım, satım ve yakım ──
+    { id: 'market_buy', section: 'pazar', icon: '🛒', title: 'Pazardan bir şey al', desc: 'Pazar → Al / Sat bölümünden bir hammadde satın al; fiyatı havuzdaki arz belirler.', rewardAda: 8, show: 'pazar' },
+    { id: 'market_sell', section: 'pazar', icon: '💱', title: 'Bir hammadde sat', desc: 'Fazla hammaddeni sat; çok satılan ucuzlar, fiyatın nasıl oynadığını gör.', rewardAda: 8, show: 'pazar' },
+    { id: 'ilan_gor', section: 'pazar', icon: '🏷️', title: 'İlanlar bölümüne bak', desc: 'Pazar → İlanlar: oyuncular arası teçhizat alım-satımı.', rewardAda: 2, show: 'pazar' },
+    { id: 'yakim_gor', section: 'pazar', icon: '🔥', title: 'Yakım bölümünü incele', desc: 'Pazar → Yakım: her işlemde ne kadarının yakıldığını öğren.', rewardAda: 2, show: 'pazar' },
+    // ── Ordu: Kışla ve taktik ──
+    { id: 'first_soldier', section: 'ordu', icon: '🛡️', title: 'İlk askerini al', desc: 'Kışladan bir şampiyon askeri satın al.', rewardAda: 15, show: 'kisla' },
+    { id: 'soldier_rename', section: 'ordu', icon: '✏️', title: 'Askerini adlandır', desc: 'Askerinin yanındaki kalem düğmesiyle ona bir isim ver.', rewardAda: 3, show: 'kisla' },
+    { id: 'equip', section: 'ordu', icon: '🗡️', title: 'Askerine teçhizat tak', desc: 'Kışla → Cephanelik: dövdüğün bir eşyayı askerinin yuvasına tak.', rewardAda: 10, show: 'kisla' },
+    { id: 'four_soldiers', section: 'ordu', icon: '👥', title: 'Dört askere ulaş', desc: 'Ordunu büyüt; zindan ve kolezyum için daha çok asker gerekir.', rewardAda: 25, show: 'kisla' },
+    { id: 'row_change', section: 'ordu', icon: '🔄', title: 'Ön ve arka saf düzenini değiştir', desc: 'Bir askerin saf yerini değiştir: ön saf darbeyi alır, arka saf korunur.', rewardAda: 5, show: 'kisla' },
+    { id: 'preset_save', section: 'ordu', icon: '💾', title: 'Bir taktik kaydet', desc: 'Dizilişini Taktik 1-3\'ten birine kaydet; savaşlarda tek dokunuşla yüklersin.', rewardAda: 8, show: 'kisla' },
+    // ── Demirhane: dövme ve geri dönüşüm ──
+    { id: 'craft', section: 'demirhane', icon: '⚒️', title: 'İlk eşyanı dök', desc: 'Demirhane → Yeni eşya dök: bir silah ya da zırh parçası üret.', rewardAda: 15, show: 'demirhane' },
+    { id: 'upgrade_gear', section: 'demirhane', icon: '⬆️', title: 'Bir eşyayı yükselt', desc: 'Eşyalarım\'dan bir eşyayı bir seviye geliştir.', rewardAda: 15, show: 'demirhane' },
+    { id: 'gear_repair', section: 'demirhane', icon: '🛠️', title: 'Bir eşyayı onar', desc: 'Savaşta aşınan eşyanın dayanıklılığını tamir et.', rewardAda: 8, show: 'demirhane' },
+    { id: 'first_recycle', section: 'demirhane', icon: '♻️', title: 'Bir eşyayı geri dönüştür', desc: 'Demirhane\'de kullanmadığın bir eşyayı hammaddeye çevir.', rewardAda: 8, show: 'demirhane' },
+    // ── Zindan: ilk zaferler ──
+    { id: 'dungeon_preview', section: 'zindan', icon: '🔎', title: 'Savaş öncesi ekranı oku', desc: 'Zindanda bir canavara dokun: kazanma şansı, giriş kuralları ve taktik burada.', rewardAda: 2, show: 'zindan' },
+    { id: 'dungeon_win', section: 'zindan', icon: '🏆', title: 'Zindanda ilk zaferin', desc: 'Birinci katın ilk canavarını yen.', rewardAda: 20, show: 'zindan' },
+    { id: 'fragment_drop', section: 'zindan', icon: '🧩', title: 'Teçhizat parçası düşür', desc: 'Zindan zaferlerinden teçhizat parçası ve Pandora kutusu şansı vardır.', rewardAda: 15, show: 'zindan' },
+    { id: 'heal_soldier', section: 'zindan', icon: '🩹', title: 'Yaralı askeri iyileştir', desc: 'Savaştan sonra askerlerini buğdayla ya da otla iyileştir ve yeniden gir.', rewardAda: 5, show: 'kisla' },
+    { id: 'dungeon_boss3', section: 'zindan', icon: '🗿', title: 'Ara boss\'u yen', desc: 'Üçüncü katın sonundaki Kadim Taş Golyat\'ı devir.', rewardAda: 40, show: 'zindan' },
+    // ── Kolezyum ve Karnaval ──
+    { id: 'colosseum_first', section: 'kolezyum', icon: '🏟️', title: 'İlk kolezyum düellon', desc: 'Şampiyonunu seçip Kolezyuma çık; sonuç ELO puanını değiştirir.', rewardAda: 15, show: 'kolezyum' },
+    { id: 'league_gor', section: 'kolezyum', icon: '🏆', title: 'Haftalık ligi gör', desc: 'Kolezyum → Lig: ilk 10\'a ödül veriliyor.', rewardAda: 2, show: 'kolezyum' },
+    { id: 'wheel_spin', section: 'kolezyum', icon: '🎡', title: 'Şans çarkını çevir', desc: 'Karnaval → Çark: 15 ödülden biri düşer.', rewardAda: 8, show: 'karnaval' },
+    { id: 'lottery_buy', section: 'kolezyum', icon: '🎟️', title: 'Piyango bileti al', desc: 'Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır.', rewardAda: 8, show: 'karnaval' },
+    { id: 'pools_gor', section: 'kolezyum', icon: '🏛️', title: 'Havuzlar bölümüne bak', desc: 'Karnaval → Havuzlar: oyun kasalarının paylarını ve ücretsiz oyuncu payını göster.', rewardAda: 2, show: 'karnaval' },
+    // ── Konsey ve hazine: ekonominin kalbi ──
+    { id: 'first_konsey', section: 'konsey', icon: '🏛️', title: 'Konsey\'e katkı ver', desc: 'Sirius Konseyi\'nde Otorite inşaatına ya da projeye hammadde ver.', rewardAda: 15, show: 'konsey' },
+    { id: 'treasury_gor', section: 'konsey', icon: '👑', title: 'Kasaları gez', desc: 'Konsey ve hazine: ödüllerin hangi kasadan ödendiğini gör.', rewardAda: 2, show: 'konsey' },
+    { id: 'economy_gor', section: 'konsey', icon: '📈', title: 'Ekonomi panosunu aç', desc: 'Oyun parasının nereye gittiğini ve ne kadar yakıldığını gösterir.', rewardAda: 2, show: 'ekonomi' },
+    { id: 'boss_join', section: 'konsey', icon: '🌋', title: 'Dünya bossuna katıl', desc: 'Savaş alanında ordunu bu haftaki ortak boss savaşına yaz.', rewardAda: 15, show: 'savasalani' },
+    { id: 'level_5', section: 'konsey', icon: '⭐', title: 'Hesap seviyen 5 olsun', desc: 'Sefer, zindan ve görevlerden deneyim kazan; her seviye üretim bonusu verir.', rewardAda: 20, show: 'profil' },
+    // ── Hesap: ASTRA'n ve ilerlemen ──
+    { id: 'profil_gor', section: 'hesap', icon: '🧙', title: 'Karakterini incele', desc: 'Ben → Karakterim: seviye atlayınca ne kazanacağını gösterir.', rewardAda: 2, show: 'profil' },
+    { id: 'level_10', section: 'hesap', icon: '🌟', title: 'Hesap seviyen 10 olsun', desc: 'Daha yüksek seviye daha çok asker hakkı, bonus ve zindan şansı demek.', rewardAda: 40, show: 'profil' },
+    { id: 'tur_bitir', section: 'hesap', icon: '🎓', title: 'Oyun turunu bitir', desc: 'Ben → Oyun turu: ana ekranların kısa tanıtımı.', rewardAda: 8, show: 'tur' }
   ],
+  ONBOARDING_SECTIONS: [
+    { id: 'baslangic', icon: '🗺️', title: 'Başlangıç: krallığını tanı', bonusAda: 20 },
+    { id: 'uretim', icon: '⚙️', title: 'Üretim: altı hammadde', bonusAda: 30 },
+    { id: 'koy', icon: '🏘️', title: 'Köy: nüfus ve emek', bonusAda: 30 },
+    { id: 'pazar', icon: '🏪', title: 'Pazar: alım, satım ve yakım', bonusAda: 35 },
+    { id: 'ordu', icon: '⚔️', title: 'Ordu: Kışla ve taktik', bonusAda: 35 },
+    { id: 'demirhane', icon: '⚒️', title: 'Demirhane: dövme ve geri dönüşüm', bonusAda: 40 },
+    { id: 'zindan', icon: '💀', title: 'Zindan: ilk zaferler', bonusAda: 50 },
+    { id: 'kolezyum', icon: '🏟️', title: 'Kolezyum ve Karnaval', bonusAda: 50 },
+    { id: 'konsey', icon: '🏛️', title: 'Konsey ve hazine: ekonominin kalbi', bonusAda: 55 },
+    { id: 'hesap', icon: '🔐', title: 'Hesap ve ilerleme: ASTRA ve seviyen', bonusAda: 55 }
+  ],
+  ONBOARDING_FINAL: { id: 'krallik_yolu', icon: '👑', title: 'Krallık Yolu Fatihi', bonusAda: 100 },
   // 🏰 ZİNDAN ORDU YORULMASI & STAMİNA MALİYETİ MATRİSİ
   // Her kat için asker başına harcanan stamina: Taban (5) + Canavar Seviyesi (Level)
   DUNGEON_STAMINA_COST_PER_SOLDIER: {

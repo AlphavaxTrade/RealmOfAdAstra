@@ -3,6 +3,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { sound } from '../audio.js';
 import { treasury } from '../treasury.js';
+import { OGRETICI_KOSULLARI } from './ogretici.js';
 
 export const rehberYontemleri = {
   // =========================================================================
@@ -11,31 +12,23 @@ export const rehberYontemleri = {
   checkOnboardingProgress() {
     if (!this.state.onboarding || typeof this.state.onboarding !== 'object') this.state.onboarding = {};
     const ob = this.state.onboarding;
-    const tools = this.state.tools || {};
-    const gathered = Object.values(tools).some(t => (t && t.totalGathered) > 0);
-    const active = this.state.activeExpeditions || {};
-    const conditions = {
-      first_expedition: Object.keys(active).length > 0 || gathered,
-      first_harvest: gathered,
-      three_expeditions: ['wood', 'iron', 'wheat'].every(n => !!active[n]),
-      bot_trial: !!this.state.botTrialUsed,
-      first_level_up: (this.state.level || 1) >= 2,
-      first_silo_upgrade: (this.state.warehouseLevel || 1) >= 2,
-      // v2: yeni binalar (js/v2/koyVeKonsey.js _markFirst)
-      first_house: ((this.state.village || {}).houses || 1) >= 2,
-      first_herb_heal: !!(this.state.firsts || {}).herbHeal,
-      first_recycle: !!(this.state.firsts || {}).recycle,
-      first_konsey: !!(this.state.firsts || {}).konsey
-    };
+    // Koşullar js/gameState/ogretici.js OGRETICI_KOSULLARI içindedir (görev kimliği → koşul)
     let newlyDone = [];
     for (const q of (GAME_CONFIG.ONBOARDING_QUESTS || [])) {
-      if (conditions[q.id] && !(ob[q.id] && ob[q.id].done)) {
+      const kosul = OGRETICI_KOSULLARI[q.id];
+      if (kosul && kosul(this) && !(ob[q.id] && ob[q.id].done)) {
         ob[q.id] = { done: true, claimed: false, at: this._now() };
         newlyDone.push(q);
       }
     }
     if (newlyDone.length > 0 && !this._isFastForwarding) {
-      newlyDone.forEach(q => this.pushNotice(`🧭 Görev tamamlandı: ${q.title} — ödülünü Rehber panelinden al (+${q.rewardAda} ASTRA)`, 'success'));
+      // Birden çok görev aynı anda tamamlanırsa (ör. seviye atlayınca) tek özet bildirim: bildirim kutusu dolmasın
+      if (newlyDone.length > 2) {
+        const toplam = newlyDone.reduce((s, q) => s + (q.rewardAda || 0), 0);
+        this.pushNotice(`🧭 ${newlyDone.length} görev tamamlandı — ödüllerini Krallık Yolu panelinden al (+${Math.round(toplam * 10) / 10} ASTRA)`, 'success');
+      } else {
+        newlyDone.forEach(q => this.pushNotice(`🧭 Görev tamamlandı: ${q.title} — ödülünü Krallık Yolu panelinden al (+${q.rewardAda} ASTRA)`, 'success'));
+      }
     }
     return newlyDone;
   },

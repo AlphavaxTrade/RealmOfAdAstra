@@ -49,7 +49,7 @@ const KATEGORI_ESLEME = {
   buyLotteryTickets: 'karnaval', claimWinnerLotteryPayout: 'karnaval', useLotteryTicketForWheel: 'karnaval',
   mintGenesisNft: 'karnaval',
   // rehber görevi
-  claimOnboardingReward: 'rehber'
+  claimOnboardingReward: 'rehber', claimOnboardingSection: 'rehber'
 };
 
 // Eşlemenin ACTIONS beyaz listesiyle tutarlılığını kendi kendine denetler (test_aktiflik.mjs bunu çağırır):

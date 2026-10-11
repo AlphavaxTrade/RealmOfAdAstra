@@ -148,7 +148,8 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
     const g = window.gameState;
     g.setDevLevel(30); g.setDevAdAstra(5e6);
     if (!(g.state.soldierUnits || []).length) { g.buySoldierUnit(); g.buySoldierUnit(); }
-    const { getFloorMonsters } = await import('/js/bestiary.js');
+    const modulYolu = '/js/' + 'bestiary.js';   // sayfa içi (geliştirme sunucusu) modülü: derleme aracı yolu çözmeye çalışmasın
+    const { getFloorMonsters } = await import(modulYolu);
     window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: getFloorMonsters(1)[0] } }));
   });
   await bekle(900); await foto('17_zindan_hazirlik');

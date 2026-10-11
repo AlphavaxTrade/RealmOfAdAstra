@@ -5,7 +5,9 @@ import { kategoriOf } from '../aktiflik.js';
 import { MISAFIR_ACTIONS, runMisafirAction } from '../actions.js';
 
 export default function oyunRotalari(ctx) {
-  const { E, world, promo, kapi, cfg, readBody, safePlayer, playerPayload } = ctx;
+  const { E, world, promo, kapi, cfg, accounts, readBody, safePlayer, playerPayload } = ctx;
+  // Krallık Yolu ödülleri (ASTRA) yalnız e-postası doğrulanmış hesaba verilir: yan hesapla öğretici ödülü toplanamaz
+  const ODUL_ISLEMLERI = new Set(['claimOnboardingReward', 'claimOnboardingSection']);
   return {
     'GET /api/state': (req, me) => {
       const out = safePlayer(me, () => null);
@@ -29,6 +31,9 @@ export default function oyunRotalari(ctx) {
       if (kapi && !kapi.isCitizen(me)) {
         const g = kapi.statusOf(me);
         return [403, { error: g.status === 'waiting' ? `⏳ Bekleme sırasındasın (${g.position || '?'}. sıra, ${g.citizens}/${g.limit} vatandaş). Vadiyi gezebilirsin; yerin açılınca haber veririz.` : '⏸️ Yerin askıda. Yeniden giriş yaptığında sıranın önüne alınırsın; ilk boşalan yer senin.' }];
+      }
+      if (ODUL_ISLEMLERI.has(name) && accounts && String(me).startsWith('acc:') && !accounts.isVerified(me)) {
+        return [403, { error: 'Görev ödülü için önce e-posta adresini doğrula.' }];
       }
       // Katılım puanı (E-planı Faz 1): gerçekten başarılı bir oyun aksiyonu, aynı yükle/kaydet turunda o
       // haftanın kategorisini işaretler (ayrı bir veritabanı turu açmaz).

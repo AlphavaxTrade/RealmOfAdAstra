@@ -1,7 +1,16 @@
-# Krallık Yolu: kapsamlı öğretici tasarımı (11 Ekim 2026)
+# Krallık Yolu: kapsamlı öğretici (UYGULANDI, 11 Ekim 2026)
 
-Durum: tasarım (onaylı plan: `~/.claude/plans/tender-kindling-music.md`). Kod henüz yok; bu belge yapılacak işin tek kaynağıdır.
+**Durum: uygulandı.** 47 görev, 10 bölüm, her bölümün bonusu ve bir final unvanı; hesap başına toplam **994 ASTRA** (üst sınır 1.000, `tests/test_ogretici.mjs` doğrular).
+Aşağıdaki tasarım metni ilk plandır; kesin liste ve ödüller `js/config.js` içindeki `ONBOARDING_QUESTS` / `ONBOARDING_SECTIONS` / `ONBOARDING_FINAL`, koşullar `js/gameState/ogretici.js` içindedir.
 
+## Nasıl çalışır (uygulanan)
+- **Görevler oyun durumundan algılanır** (`OGRETICI_KOSULLARI`: görev kimliği → koşul). "İlk kez yapıldı" işleri için `state.firsts` içine işaret düşer: `ogreticiIsaretleriKur` ilgili işlemleri (pazar al/sat, dövme, yükseltme, onarım, ad verme, teçhizat takma, taktik kaydı, saf değişimi, çark, piyango, boss katılımı, iyileştirme, ganimet) sarar ve yalnız işlem başarılıysa işaret koyar.
+- **"Ekranı gördü" görevleri** (13 anahtar, `OGRETICI_GORULENLER`) arayüzden `ogreticiGordu(anahtar)` ile bildirilir (panel başlığı ya da sekme açılınca); küçük ödül (2 ASTRA).
+- **Ödül yolları:** `claimOnboardingReward(görev)`, `claimOnboardingSection(bölüm | final)`; ikisi de Görev kasasından `withdrawWhole('quest', ...)` çeker, haftalık ödeme payı dolarsa mesaj verir. Sunucuda `POST /api/action` yalnız **e-postası doğrulanmış** hesaba bu iki işlemi açar.
+- **Ekran:** Ben → Rehber ve yardım → "Krallık Yolu" (`js/ui/v3/ogretici.js`: ilerleme, sıradaki görev, bölüm kartları, "Bana göster", final). Dock'taki rehber kutusu yalnız sıradaki görevi ve hazır ödül sayısını gösterir; dokununca paneli açar. Birden çok görev aynı anda tamamlanınca tek özet bildirim çıkar.
+- **"Bana göster"** hub anahtarına göre (`window.__v3.git`) ilgili ekranı açar; kilitli ekranın nedeni görev satırında yazar.
+
+## İlk plan metni (tasarım kararlarının kaydı)
 ## Amaç
 Yeni oyuncuyu, oyunun **her** özelliğini sırayla, yaparak öğrenerek tanıştırmak; her adımda küçük bir ödül vermek. Bugünkü rehber 10 görevli küçük bir kutu; yeni sistem 10 bölüm, 44 görev, bölüm ve final ödülleri.
 
