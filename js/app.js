@@ -21,6 +21,7 @@ import { yolHtml, yolOzeti } from './ui/v3/ogretici.js';
 import { sadeBaslik } from './ui/v3/panel.js';
 import { equipImg, resImg, soldierPortrait, rewardImg } from './ui/art.js';
 import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
+import { ac as ekranAc, baglamKur as ekranBaglamKur, canliTik as ekranCanliTik } from './ui/ekran/index.js';
 
 // 🧪 Test menüsü yalnızca geliştirme sunucusunda (npm run dev) açılır; yayına çıkan sürümde oyuncular göremez.
 const DEV_TOOLS = !!(import.meta.env && import.meta.env.DEV);
@@ -191,6 +192,21 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.remove(), 250);
   }, 3500);
 }
+
+// Yeni yazılan ekranlar (js/ui/ekran/*) oyunla bu bağlam üzerinden konuşur; başka bir şeye dokunmazlar
+ekranBaglamKur({
+  gameState, GAME_CONFIG, globalPool, ammMarket, treasury,
+  get online() { return online; },
+  bildir: (mesaj, tur) => showToast(mesaj, tur),
+  hudYenile: () => renderTopBar(),
+  panelKok: () => dom.modalBody,
+  panelYaz: ([simge, ad], html) => {
+    dom.modalTitle.innerHTML = `<span>${simge}</span> <span>${ad}</span>`;
+    dom.modalBody.innerHTML = html;
+    displayModal();
+  },
+  kilit: (anahtar) => gameState.getFeatureLock(anahtar)
+});
 
 // Cinematic Loading Bar - Pürüzsüz & Güvenilir Yükleme Akışı
 function runCinematicLoadingSequence() {
@@ -881,115 +897,7 @@ function openEconomyDashboardModal(tab = economyActiveTab) {
   displayModal();
 }
 
-// =========================================================================
-// 2. SİLO / DEPO & KARAKTER GELİŞİMİ MENÜLERİ
-// =========================================================================
-function openWarehouseModal() {
-  const state = gameState.state;
-  dom.modalTitle.innerHTML = `<span>📦</span> <span>KRALLIK SİLO & DEPO YÖNETİMİ</span>`;
-
-  const adAstra = state.adAstraBalance || 0;
-  const RK = RES_KEYS(), RM = RES_META();
-  const inv = k => Math.floor(Number(state.inventory[k]) || 0);
-
-  const cap = gameState.getWarehouseCapacity();
-  const cost = gameState.getWarehouseUpgradeCost();
-
-  let upgradeSection = '';
-  if (cost) {
-    const is80 = cost.is80PercentFull;
-    const canAfford = cost.canAffordCost;
-
-    let buttonHtml = '';
-    if (!is80) {
-      buttonHtml = `
-        <button id="btn-modal-upgrade-warehouse" class="btn-clean" disabled style="margin-top: 12px; width: 100%; font-size: 0.95rem; padding: 13px; font-weight: 800; background: #3b1404; color: #f59e0b; border: 1px solid #78350f; cursor: not-allowed;">
-          ⚠️ TÜM KAYNAK DEPOLARI EN AZ %80 DOLU OLMALIDIR
-        </button>
-      `;
-    } else if (!canAfford) {
-      buttonHtml = `
-        <button id="btn-modal-upgrade-warehouse" class="btn-clean" disabled style="margin-top: 12px; width: 100%; font-size: 0.95rem; padding: 13px; font-weight: 800; background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; cursor: not-allowed;">
-          ⚠️ YETERSİZ KAYNAK VEYA ASTRA BAKİYESİ
-        </button>
-      `;
-    } else {
-      buttonHtml = `
-        <button id="btn-modal-upgrade-warehouse" class="btn-clean btn-clean-green" style="margin-top: 12px; width: 100%; font-size: 1.05rem; padding: 13px; font-weight: 800;">
-          🔨 SİLOYU SEVİYE ${cost.nextLevel}'E YÜKSELT
-        </button>
-      `;
-    }
-
-    upgradeSection = `
-      <!-- %80 Doluluk Ön Koşulu -->
-      <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid ${is80 ? '#22c55e' : '#f59e0b'}; margin-top: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="color: #fde047; font-weight: 800; font-size: 0.9rem;">📋 Yükseltme Ön Koşulu: En Az %80 Doluluk</span>
-          <span style="font-size: 0.8rem; font-weight: 700; color: ${is80 ? '#4ade80' : '#f59e0b'};">${is80 ? '✅ KOŞUL SAĞLANDI' : '⚠️ DOLULUK BEKLENİYOR'}</span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 0.82rem;">
-          ${cost.keys.map(k => `<div style="color: ${cost.fillOk[k] ? '#4ade80' : '#f87171'}; font-weight: 700;">${(RM[k] || {}).icon || ''} ${inv(k)}/${cost.fills[k]} (%80) ${cost.fillOk[k] ? '✅' : '❌'}</div>`).join('')}
-        </div>
-      </div>
-
-      <!-- Yükseltme Maliyeti (Kapasitenin %50'si + Anlık DEX Pazar ASTRA Değeri) -->
-      <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007; margin-top: 8px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <span style="color: #cbd5e1; font-weight: 800; font-size: 0.9rem;">Seviye ${cost.nextLevel} Yükseltme Maliyeti:</span>
-          <span style="font-size: 0.74rem; color: #a78bfa; background: #2e1065; padding: 2px 8px; border-radius: 6px; border: 1px solid #7c3aed; font-weight: 700;">
-            🤖 AMM DEX Canlı Bot: Anlık Değer
-          </span>
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.88rem;">
-          ${cost.keys.map(k => `<div style="color: ${inv(k) >= cost.costs[k] ? '#4ade80' : '#f87171'}; font-weight: 700;">${(RM[k] || {}).icon || ''} ${inv(k)}/${cost.costs[k]} ${(RM[k] || {}).name || k}</div>`).join('')}
-          <div style="color: ${adAstra >= cost.adAstra ? '#4ade80' : '#f87171'}; font-weight: 700;" id="live-warehouse-ada-cost">
-            🟣 <span id="val-warehouse-ada-cur">${adAstra.toFixed(1)}</span> / <span id="val-warehouse-ada-req">${cost.adAstra.toLocaleString('tr-TR')}</span> ASTRA
-          </div>
-        </div>
-        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #3e2205; font-size: 0.78rem; color: #94a3b8; display: flex; justify-content: space-between; align-items: center;">
-          <span>Yeni Kapasiteler (Lv.${cost.nextLevel}): <strong style="color: #fde047;">${cost.keys.map(k => `${(RM[k] || {}).icon || ''} ${cost.nextCap[k]}`).join(' | ')}</strong></span>
-          <span style="color: #a78bfa; font-size: 0.74rem;">⚡ Saniye başı AMM güncellenir</span>
-        </div>
-      </div>
-
-      ${quickBuyHtml('warehouse')}
-      ${buttonHtml}
-    `;
-  } else {
-    upgradeSection = `<div style="text-align: center; color: #facc15; margin-top: 12px; font-weight: 800; font-size: 0.95rem;">✅ Silo bu sürümdeki en üst seviyede (Seviye ${state.warehouseLevel}; 13. seviye ve üstü Universe açılınca)</div>`;
-  }
-
-  dom.modalBody.innerHTML = `
-    <div class="clean-card" style="border-color: #ca8a04; background: #181109; padding: 16px;">
-      <div class="card-title-row">
-        <div class="card-title" style="font-size: 1.1rem; color: #fde047;">📦 Silo & Depo (Seviye ${state.warehouseLevel})</div>
-        <span style="font-size: 0.85rem; color: #fde047; font-weight: 700;">Kapasite Yönetimi</span>
-      </div>
-      
-      <div class="clean-desc" style="margin-bottom: 12px;">
-        Depo seviyeni yükselterek 6 hammaddenin stok kapasitesini artırabilirsin. Siloyu yükseltmek için <strong>tüm depolar en az %80 dolu</strong> olmalı ve kapasitenin <strong>%50'si + anlık pazar değeri kadar ASTRA</strong> harcanır.
-      </div>
-
-      <div class="inv-grid" style="gap: 10px; margin-top: 8px;">
-        ${RK.map(k => { const mm = RM[k] || {}; const c = cap[k] || 1; const v = inv(k); const pct = Math.min(100, (v / c) * 100); return `
-        <div style="background: #151a26; padding: 12px; border-radius: 8px; border: 1px solid #583007;">
-          <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; font-weight: 700;"><span style="display:inline-block;width:20px;height:20px;vertical-align:-5px;margin-right:4px;">${resImg(k, mm.icon || '', 'width:20px;height:20px;')}</span>${mm.name || k} Silosu (%${Math.round(pct)})</div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <div style="flex: 1; height: 18px; background: #0c1018; border-radius: 4px; border: 1px solid #583007; overflow: hidden;">
-              <div style="height: 100%; background: ${mm.color || '#94a3b8'}; width: ${pct}%;"></div>
-            </div>
-            <span style="font-weight: 800; color: ${mm.color || '#94a3b8'}; min-width: 80px; text-align: right;">${v}/${c}</span>
-          </div>
-        </div>`; }).join('')}
-      </div>
-
-      ${upgradeSection}
-    </div>
-  `;
-
-  displayModal();
-}
+const openWarehouseModal = () => ekranAc('silo');
 
 // ⚡ Hızlı al: seviye atlama / silo yükseltme için eksik hammaddeleri pazardan alır (ASTRA yetiyorsa)
 function quickBuyHtml(kind) {
@@ -7117,20 +7025,6 @@ function initAppEvents() {
       return;
     }
 
-    // Depo & Silo Yükseltme
-    if (e.target.closest('#btn-modal-upgrade-warehouse')) {
-      const res = gameState.upgradeWarehouse();
-      if (res.success) {
-        showToast(res.message, 'success');
-        sound.playLevelUp();
-        openWarehouseModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
     // Ekipman Onarımı (Asker Slotu & Krallık Tamirhanesi)
     const equipRepairBtn = e.target.closest('.btn-equip-repair');
     if (equipRepairBtn) {
@@ -7155,19 +7049,6 @@ function initAppEvents() {
       if (res.success) {
         showToast(res.message, 'success');
         openBarracksModal();
-      } else {
-        showToast(res.message, 'error');
-      }
-      renderTopBar();
-      return;
-    }
-
-    // Depo Yükseltme
-    if (e.target.closest('#btn-modal-upgrade-warehouse')) {
-      const res = gameState.upgradeWarehouse();
-      if (res.success) {
-        showToast(res.message, 'success');
-        openInventoryModal();
       } else {
         showToast(res.message, 'error');
       }
@@ -7806,49 +7687,6 @@ function refreshLiveUpgradeCostUI(deltaSeconds = 1) {
   const adAstra = state.adAstraBalance || 0;
   const inv = state.inventory || {};
 
-  // 1. Silo Modalı Açıksa Canlı Güncelle
-  const whBtn = document.getElementById('btn-modal-upgrade-warehouse');
-  const whAdaVal = document.getElementById('val-warehouse-ada-req');
-  const whAdaCur = document.getElementById('val-warehouse-ada-cur');
-  if (whBtn && whAdaVal) {
-    const cost = gameState.getWarehouseUpgradeCost();
-    if (cost) {
-      whAdaVal.innerText = cost.adAstra.toLocaleString('tr-TR');
-      if (whAdaCur) whAdaCur.innerText = adAstra.toFixed(1);
-      const adaBox = document.getElementById('live-warehouse-ada-cost');
-      if (adaBox) {
-        adaBox.style.color = adAstra >= cost.adAstra ? '#4ade80' : '#f87171';
-      }
-      if (!cost.is80PercentFull) {
-        whBtn.disabled = true;
-        whBtn.className = 'btn-clean';
-        whBtn.style.background = '#3b1404';
-        whBtn.style.color = '#f59e0b';
-        whBtn.style.borderColor = '#78350f';
-        whBtn.style.cursor = 'not-allowed';
-        whBtn.innerText = '⚠️ TÜM KAYNAK DEPOLARI EN AZ %80 DOLU OLMALIDIR';
-      } else if (!cost.canAffordCost) {
-        whBtn.disabled = true;
-        whBtn.className = 'btn-clean';
-        whBtn.style.background = '#450a0a';
-        whBtn.style.color = '#f87171';
-        whBtn.style.borderColor = '#7f1d1d';
-        whBtn.style.cursor = 'not-allowed';
-        whBtn.innerText = '⚠️ YETERSİZ KAYNAK VEYA ASTRA BAKİYESİ';
-      } else {
-        whBtn.disabled = false;
-        whBtn.className = 'btn-clean btn-clean-green';
-        whBtn.removeAttribute('style');
-        whBtn.style.marginTop = '12px';
-        whBtn.style.width = '100%';
-        whBtn.style.fontSize = '1.05rem';
-        whBtn.style.padding = '13px';
-        whBtn.style.fontWeight = '800';
-        whBtn.innerText = `🔨 SİLOYU SEVİYE ${cost.nextLevel}'E YÜKSELT`;
-      }
-    }
-  }
-
   // 2. Karakter Seviye Modalı Açıksa Canlı Güncelle
   const lvlBtn = document.getElementById('btn-modal-levelup');
   const lvlAdaVal = document.getElementById('val-levelup-ada-req');
@@ -8207,6 +8045,7 @@ function uiGameLoop(currentTime) {
     refreshBarracksLiveUI(slowDelta);
     refreshLiveUpgradeCostUI(slowDelta);
     refreshQuotaTrackerUI();
+    ekranCanliTik();
     reportStorageEvents();
     }
 

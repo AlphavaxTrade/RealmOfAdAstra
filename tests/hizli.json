@@ -27,5 +27,6 @@
   "test_savas_motoru_altin.mjs",
   "test_ekonomi_cekirdegi_altin.mjs",
   "test_alet_dayaniklilik_yukleme.mjs",
-  "test_dunya_bossu_odul_kaybi.mjs"
+  "test_dunya_bossu_odul_kaybi.mjs",
+  "test_ekran_cizim.mjs"
 ]

@@ -39,7 +39,7 @@ export const RES_ART = {
 export function resImg(key, emoji = '', style = '') {
   const src = RES_ART[key];
   if (!src) return attr(emoji);
-  return `<img src="${src}" alt="" class="art-ico" style="image-rendering:pixelated;object-fit:contain;${style}" draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
+  return `<img src="${src}" alt="" class="art-ico"${style ? ` style="${attr(style)}"` : ''} draggable="false" loading="lazy" data-fb="text:${attr(emoji)}">`;
 }
 
 // Çark ödülleri: ödül türüne göre resim
