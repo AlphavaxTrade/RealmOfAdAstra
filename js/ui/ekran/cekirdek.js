@@ -257,7 +257,6 @@ export function astra(v) {
   const ondalik = Math.abs(n) >= 1000 ? 0 : (Math.abs(n) >= 1 ? 2 : 3);
   return n.toLocaleString(TR, { minimumFractionDigits: 0, maximumFractionDigits: ondalik });
 }
-export const yuzde = (oran, ondalik = 0) => `%${sayi((Number(oran) || 0) * 100, ondalik)}`;
 export function sure(ms) {
   const sn = Math.max(0, Math.ceil(Number(ms) / 1000) || 0);
   const g = Math.floor(sn / 86400), s = Math.floor((sn % 86400) / 3600), d = Math.floor((sn % 3600) / 60), r = sn % 60;

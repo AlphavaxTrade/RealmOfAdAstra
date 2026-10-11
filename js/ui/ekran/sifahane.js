@@ -48,4 +48,4 @@ const ekran = {
   }
 };
 
-export default ekranKaydet(ekran);
+ekranKaydet(ekran);   // kayıt, modülün içe alınmasıyla olur (ekran/index.js)

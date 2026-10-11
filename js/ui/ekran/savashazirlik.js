@@ -397,4 +397,4 @@ async function savasiOyna(b, m, secili, odeHarc) {
   return basladi ? false : undefined;
 }
 
-export default ekranKaydet(ekran);
+ekranKaydet(ekran);   // kayıt, modülün içe alınmasıyla olur (ekran/index.js)
