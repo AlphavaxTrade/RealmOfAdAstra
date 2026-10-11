@@ -2,7 +2,7 @@
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 const EK_KALEMLER = ['fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
 
@@ -25,7 +25,7 @@ export const promoYontemleri = {
     let gerekli = ada;
     for (const [k, v] of kalemler) {
       const tahmin = ammMarket.getEstimatedCostForBuy(k, v);
-      if (!isFinite(tahmin)) return { success: false, message: `Pazarda yeterli ${this.getResourceNameTr(k)} yok; kod şu an kullanılamıyor.` };
+      if (!isFinite(tahmin)) return { success: false, message: `Pazarda yeterli ${kaynakAdi(k)} yok; kod şu an kullanılamıyor.` };
       gerekli += tahmin;
     }
     if ((havuzlar.quest || 0) < gerekli * 1.02) return { success: false, message: 'Görev kasası şu an bu ödülü karşılayamıyor; daha sonra tekrar dene.' };
@@ -40,7 +40,7 @@ export const promoYontemleri = {
       else if (k === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + v;
       else if (k === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + v;
       else this.state.inventory[k] = (Number(this.state.inventory[k]) || 0) + v;
-      verilen.push(`${v.toLocaleString('tr-TR')} ${this.getResourceNameTr(k)}`);
+      verilen.push(`${v.toLocaleString('tr-TR')} ${kaynakAdi(k)}`);
     }
 
     harcanan += ada;

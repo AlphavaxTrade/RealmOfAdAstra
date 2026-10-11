@@ -9,7 +9,7 @@ import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { decayedStreak, streakMultiplier, minContribution, FAUCET_DEFAULTS } from '../economy/faucet.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 const tr = n => Number(n).toLocaleString('tr-TR');
 const karnavalAyari = () => GAME_CONFIG.CARNIVAL || {};
@@ -171,7 +171,7 @@ export const karnavalYontemleri = {
       }
       const fiyat = ammMarket.getPrice(paymentMethod) || 1.0;
       const gereken = Math.ceil(bedel / fiyat);
-      const hamAd = this.getResourceNameTr(paymentMethod);
+      const hamAd = kaynakAdi(paymentMethod);
       if ((env[paymentMethod] || 0) < gereken) {
         return { success: false, message: `Yetersiz ${hamAd}! ${bedel} ASTRA değerinde hammadde için ${gereken} adet gereklidir.` };
       }
@@ -230,7 +230,7 @@ export const karnavalYontemleri = {
       const anahtar = odul.key;
       const eski = ammMarket.getPrice(anahtar) || 1.0;
       const adet = odul.amount || Math.max(1, Math.round((odul.adaVal || 50) / eski));
-      const hamAd = this.getResourceNameTr(anahtar);
+      const hamAd = kaynakAdi(anahtar);
       const meta = (GAME_CONFIG.RESOURCE_META || {})[anahtar] || {};
       geriAlimUygula({
         anahtar, adet, eskiFiyat: eski, basamak: 4,

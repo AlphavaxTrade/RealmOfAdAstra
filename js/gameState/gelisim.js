@@ -4,7 +4,8 @@
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
-import { RES_KEYS, round3 } from './ortak.js';
+import { levelWeight as ubiLevelWeight } from '../economy/ubi.js';
+import { RES_KEYS, round3, kaynakAdi, kaynakSimgesi } from './ortak.js';
 
 // Seviye eğrisi hedeften türetilir: "Seviye 81 yaklaşık 1.100 günde ulaşılabilir olsun"; günlük XP arzı ≈ 3 düğüm x 35 XP/saat x 24
 const GUNLUK_XP_ARZI = 2520;
@@ -181,6 +182,42 @@ export const gelisimYontemleri = {
       newLevel: this.state.level,
       newDuration: yeniSure,
       maxStamina: this.state.maxStamina
+    };
+  },
+
+  // ── Seviyenin kalıcı faydaları ──────────────────────────────────────────
+  // Üretim çarpanı: seviye başına sabit bir artış (Lv.1 = 1,00)
+  getLevelProductionMultiplier(level = this.state.level) {
+    const seviye = Math.max(1, Math.min(GAME_CONFIG.MAX_PLAYER_LEVEL || 81, Number(level) || 1));
+    const artis = GAME_CONFIG.LEVEL_PRODUCTION_BONUS_PER_LEVEL || 0;
+    return 1 + artis * (seviye - 1);
+  },
+
+  // Seviyenin somut faydaları: ekranda "şimdiki → sonraki seviye" olarak gösterilir
+  getLevelBenefits(level = this.state.level) {
+    const L = Math.max(1, Math.min(GAME_CONFIG.MAX_PLAYER_LEVEL || 81, Number(level) || 1));
+    const seferDakika = this.getExpeditionDurationMinutes(L);
+    const seferStamina = this.getExpeditionStaminaCost(L);
+    // 3 alan birden çalışırken saatte harcanan stamina ve bunun buğday karşılığı
+    const saatlikStamina = (3 * seferStamina) / Math.max(1e-9, seferDakika / 60);
+    const saatlikBugday = saatlikStamina * (GAME_CONFIG.WHEAT_PER_STAMINA || 3.15);
+    // 1.000 hammadde (odun) başına stamina için yakılan buğday: seviye başına yalnız %1 iner
+    const saatlikOdun = this.getResourceRatePerMinute('wood', L) * 60;
+    const bugdayBin = saatlikOdun > 0 ? (saatlikBugday / 3) / saatlikOdun * 1000 : 0;
+    const ubiAlt = (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3;
+    return {
+      level: L,
+      productionBonusPct: Math.round((this.getLevelProductionMultiplier(L) - 1) * 1000) / 10,
+      woodPerMinute: Math.round(this.getResourceRatePerMinute('wood', L) * 100) / 100,
+      expeditionHours: Math.round((seferDakika / 60) * 100) / 100,
+      staminaPerHour: Math.round(saatlikStamina * 10) / 10,
+      wheatPerHour: Math.round(saatlikBugday),
+      wheatPer1000: Math.round(bugdayBin * 10) / 10,
+      maxStamina: this.getMaxStamina(L),
+      fragmentRate: this.getFragmentDropRate(L),
+      boxRate: this.getBoxDropRate(L),
+      ubiEligible: L >= ubiAlt,
+      ubiWeight: Math.round(ubiLevelWeight(L, { minLevel: ubiAlt, weight: (x) => 1 + Math.sqrt(Math.max(1, x) - 1) * 0.75 }) * 100) / 100
     };
   },
 
@@ -371,11 +408,11 @@ export const gelisimYontemleri = {
     const envanter = this.state.inventory || {};
     if (!bedel.is80PercentFull) {
       const eksikler = bedel.keys.filter(k => !bedel.fillOk[k])
-        .map(k => `${this.getResourceIcon(k)} ${this.getResourceNameTr(k)} (${Math.floor(envanter[k] || 0)}/${bedel.fills[k]})`);
+        .map(k => `${kaynakSimgesi(k)} ${kaynakAdi(k)} (${Math.floor(envanter[k] || 0)}/${bedel.fills[k]})`);
       return { success: false, message: `⚠️ Silo yükseltilemez! Tüm depolar en az %80 dolu olmalıdır. Yetersiz olanlar: ${eksikler.join(', ')}` };
     }
     for (const k of bedel.keys) {
-      if ((envanter[k] || 0) < bedel.costs[k]) return { success: false, message: `Yetersiz ${this.getResourceNameTr(k)}! (${bedel.costs[k]} ${this.getResourceNameTr(k)} gerekli)` };
+      if ((envanter[k] || 0) < bedel.costs[k]) return { success: false, message: `Yetersiz ${kaynakAdi(k)}! (${bedel.costs[k]} ${kaynakAdi(k)} gerekli)` };
     }
     if ((this.state.adAstraBalance || 0) < bedel.adAstra) return { success: false, message: `Yetersiz ASTRA! (${bedel.adAstra} ASTRA gerekli)` };
 
@@ -390,7 +427,7 @@ export const gelisimYontemleri = {
     const yeni = this.getWarehouseCapacity(this.state.warehouseLevel);
     return {
       success: true,
-      message: `🏰 Silo Seviye ${this.state.warehouseLevel}'e yükseltildi! Yeni kapasiteler: ${bedel.keys.map(k => `${this.getResourceIcon(k)} ${yeni[k]}`).join(' · ')}.`
+      message: `🏰 Silo Seviye ${this.state.warehouseLevel}'e yükseltildi! Yeni kapasiteler: ${bedel.keys.map(k => `${kaynakSimgesi(k)} ${yeni[k]}`).join(' · ')}.`
     };
   }
 };

@@ -3,7 +3,7 @@
 // Paket satın alma, silo ve ücret hesabı botPaketi.js'te.
 import { GAME_CONFIG } from '../config.js';
 import { ammMarket } from '../ammMarket.js';
-import { RES_KEYS, zeroRes, round3 } from './ortak.js';
+import { RES_KEYS, zeroRes, round3, kaynakAdi } from './ortak.js';
 
 // Botun kesintisiz çalışması için her temel malzemeden depoda bulunması gereken en az miktar
 const ASGARI_STOK = 50;
@@ -138,7 +138,7 @@ export const botYontemleri = {
         if (fon && fon.funded) {
           const satilanlar = Object.entries(fon.toSell || {})
             .filter(([, adet]) => adet > 0)
-            .map(([k, adet]) => `${adet} ${this.getResourceNameTr(k)}`)
+            .map(([k, adet]) => `${adet} ${kaynakAdi(k)}`)
             .join(', ');
           actions.push(`⚖️ Bot Alet Tamir Finansmanı: Tamir için gereken ${bedel.adAstraCost} ASTRA için kaynaklardan eşit miktarda (${satilanlar}) satılarak +${fon.totalEarned?.toFixed(2)} ASTRA temin edildi.`);
         }
@@ -286,7 +286,7 @@ export const botYontemleri = {
     for (const [k, v] of Object.entries(soldBreakdown)) this._onAdaEarned(v.earned, { saleOf: k });
     this.saveState();
 
-    const satilanlar = anahtarlar.filter(n => toSell[n] > 0).map(n => `${toSell[n]} ${this.getResourceNameTr(n)}`).join(', ');
+    const satilanlar = anahtarlar.filter(n => toSell[n] > 0).map(n => `${toSell[n]} ${kaynakAdi(n)}`).join(', ');
     const message = `⚖️ Bot Oto-Finansman: Alet onarımı / tamir için gereken ASTRA açığı giderildi. Depodan eşit miktarda (${satilanlar}) satılarak pazardan +${totalEarned.toFixed(2)} ASTRA elde edildi.`;
     if (!this.state.lastBotActions) this.state.lastBotActions = [];
     this.state.lastBotActions.push(message);

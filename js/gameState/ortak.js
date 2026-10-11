@@ -15,3 +15,22 @@ export const cleanName = (s, max = 24) => String(s == null ? '' : s)
 export const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 export const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
 export const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
+
+// Oyuncuya gösterilen kaynak adı ve simgesi: önce config'teki RESOURCE_META, sonra savaş/ödül kalemleri
+const KALEM_ADLARI = {
+  ada: 'ASTRA', adastra: 'ASTRA', ticket: 'Bilet', fragments: 'Teçhizat Parçası', boxes: 'Pandora Kutusu', keys: 'Anahtar',
+  scroll_heal: 'Şifa Parşömeni', scroll_stamina: 'Stamina Parşömeni', scroll_teleport: 'Işınlanma Parşömeni'
+};
+const KALEM_SIMGELERI = { fragments: '🧩', boxes: '📦', keys: '🔑', scroll_heal: '📜', scroll_stamina: '⚡' };
+
+export function kaynakAdi(anahtar) {
+  if (!anahtar) return '';
+  const k = String(anahtar).toLowerCase();
+  const meta = (GAME_CONFIG.RESOURCE_META || {})[k];
+  return (meta && meta.name) || KALEM_ADLARI[k] || anahtar;
+}
+
+export function kaynakSimgesi(anahtar) {
+  const meta = (GAME_CONFIG.RESOURCE_META || {})[anahtar];
+  return (meta && meta.icon) || KALEM_SIMGELERI[anahtar] || '';
+}

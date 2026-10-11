@@ -211,6 +211,25 @@ export const zindanYontemleri = {
     return asinan;
   },
 
+  // ── Kalıcı canavar canı: yenilince canavar kalan canıyla bekler, ölünce kayıt silinir ───────────
+  getMonsterCurrentHp(floorLevel, baseHp) {
+    const kayitli = (this.state.dungeonMonsterCurrentHp || {})[floorLevel];
+    return (kayitli != null && kayitli > 0) ? kayitli : baseHp;
+  },
+
+  recordMonsterHp(floorLevel, hp) {
+    if (!this.state.dungeonMonsterCurrentHp) this.state.dungeonMonsterCurrentHp = {};
+    if (hp <= 0) delete this.state.dungeonMonsterCurrentHp[floorLevel];
+    else this.state.dungeonMonsterCurrentHp[floorLevel] = Math.round(hp);
+    this.saveState();
+  },
+
+  clearMonsterHp(floorLevel) {
+    if (!this.state.dungeonMonsterCurrentHp) return;
+    delete this.state.dungeonMonsterCurrentHp[floorLevel];
+    this.saveState();
+  },
+
   // ── Kolezyum gerçek rakipler (PvP): oyuncunun kendi kısmı; eşleşme ve maç sunucuda (server/arena.js) ──
   isSoldierPvpLocked(idx) {
     const kuyruk = this.state.pvpQueue;

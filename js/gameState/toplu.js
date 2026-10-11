@@ -4,7 +4,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { createUnit, predictBattle, DEFAULT_BOSS_PHASES } from '../combat.js';
 import { getDungeonEntry } from '../bestiary.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 
@@ -41,7 +41,7 @@ export const topluYontemleri = {
         sonuc.restarted++;
         continue;
       }
-      if (r.isInsufficientStamina) staminasizAlanlar.push(this.getResourceNameTr(alan) || alan);
+      if (r.isInsufficientStamina) staminasizAlanlar.push(kaynakAdi(alan) || alan);
       if (r.message) sonuc.messages.push(r.message);
     }
     if (staminasizAlanlar.length > 0) {

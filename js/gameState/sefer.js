@@ -2,7 +2,7 @@
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 // Sefer süresi doğrusal: 1. seviyede EXPEDITION_MIN_DURATION_MINUTES, son seviyede EXPEDITION_MAX_DURATION_MINUTES.
 // Nehir Köprüsü projesi bitince süreler kısalır (globalPool 'expeditionTime' bonusu).
@@ -185,7 +185,7 @@ export const seferYontemleri = {
     if (this.state.activeExpeditions[nodeId]) return { success: false, message: 'Bu alanda zaten aktif bir sefer devam ediyor!' };
 
     const staminaBedeli = this.getExpeditionStaminaCost();
-    const ad = this.getResourceNameTr(nodeId) || (alan && alan.name) || nodeId;
+    const ad = kaynakAdi(nodeId) || (alan && alan.name) || nodeId;
     if (this.state.stamina < staminaBedeli) {
       return {
         success: false,

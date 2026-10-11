@@ -22,6 +22,7 @@ import { hasatYontemleri } from './gameState/hasat.js';
 import { gelisimYontemleri } from './gameState/gelisim.js';
 import { techizatYontemleri } from './gameState/techizat.js';
 import { botPaketiYontemleri } from './gameState/botPaketi.js';
+import { botSiloYontemleri } from './gameState/botSilo.js';
 import { karnavalYontemleri } from './gameState/karnaval.js';
 import { piyangoYontemleri } from './gameState/piyango.js';
 import { promoYontemleri } from './gameState/promo.js';
@@ -332,7 +333,7 @@ export class GameStateManager {
 // Alan bazlı yöntem karışımları (js/gameState/*.js). Hiçbir yöntem adı iki yerde tanımlı olmamalı.
 for (const karisim of [
   ekonomiYontemleri, orduYontemleri, seferYontemleri, botYontemleri, hasatYontemleri, gelisimYontemleri,
-  techizatYontemleri, botPaketiYontemleri, karnavalYontemleri, piyangoYontemleri, promoYontemleri, parsomenYontemleri, kesifYontemleri, gelistiriciYontemleri,
+  techizatYontemleri, botPaketiYontemleri, botSiloYontemleri, karnavalYontemleri, piyangoYontemleri, promoYontemleri, parsomenYontemleri, kesifYontemleri, gelistiriciYontemleri,
   ozetYontemleri, topluYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri,
   askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri,
   // Köy Evleri, Şifahane, geri dönüşüm, roket, Konsey katkıları, Hazırlık Deposu (js/v2/koyVeKonsey.js)

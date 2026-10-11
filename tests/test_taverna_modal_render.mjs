@@ -18,20 +18,20 @@ const botCalc = gs.calculateTavernaBotProfitAndCost();
 console.log('Taverna Bot Finansal Çıktıları:', botCalc);
 
 // app.js tarafından okunan tüm alanlar tanımlı ve sayısal olmalı
-assert(botCalc.dailyGrossValAda > 0, 'dailyGrossValAda > 0 olmalı');
-assert(botCalc.dailyStaminaCostAda > 0, 'dailyStaminaCostAda > 0 olmalı');
+assert(botCalc.grossRevenueAda > 0, 'grossRevenueAda > 0 olmalı');
+assert(botCalc.staminaWheatCostAda > 0, 'staminaWheatCostAda > 0 olmalı');
 assert(botCalc.dailyWheatNeededForStamina > 0, 'dailyWheatNeededForStamina > 0 olmalı');
-assert(botCalc.dailyToolRepairAda > 0, 'dailyToolRepairAda > 0 olmalı');
-assert(botCalc.dailyNetProfitAda > 0, 'dailyNetProfitAda > 0 olmalı');
-assert(botCalc.dailyBotCostAda > 0, 'dailyBotCostAda > 0 olmalı');
+assert(botCalc.toolRepairCostAda > 0, 'toolRepairCostAda > 0 olmalı');
+assert(botCalc.netProfitAda > 0, 'netProfitAda > 0 olmalı');
+assert(botCalc.botCostAda > 0, 'botCostAda > 0 olmalı');
 
 // toLocaleString() çağrıları asla hata fırlatmamalı
 assert.doesNotThrow(() => {
-  botCalc.dailyGrossValAda.toLocaleString();
-  botCalc.dailyStaminaCostAda.toLocaleString();
-  botCalc.dailyToolRepairAda.toLocaleString();
-  botCalc.dailyNetProfitAda.toLocaleString();
-  botCalc.dailyBotCostAda.toLocaleString();
+  botCalc.grossRevenueAda.toLocaleString();
+  botCalc.staminaWheatCostAda.toLocaleString();
+  botCalc.toolRepairCostAda.toLocaleString();
+  botCalc.netProfitAda.toLocaleString();
+  botCalc.botCostAda.toLocaleString();
 }, 'Taverna modalı render edilirken toLocaleString() hatası alınmamalı');
 
 // AdAstra ile stamina doldurma devre dışı olmalı; sadece buğday ile doldurulabilir

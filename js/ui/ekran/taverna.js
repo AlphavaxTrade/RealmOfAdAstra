@@ -76,11 +76,11 @@ function ucretDokumu(b) {
   const h = gs.calculateTavernaBotProfitAndCost() || {};
   const n0 = (v) => tam(Math.round(Number(v) || 0));
   const icerik = [
-    satir('24 saatlik üretimin pazar değeri', `+${n0(h.dailyGrossValAda || h.grossRevenueAda)} ASTRA`, 'iyi'),
-    satir(`Stamina için buğday (${n0(h.dailyWheatNeededForStamina)} buğday)`, `−${n0(h.dailyStaminaCostAda || h.staminaWheatCostAda)} ASTRA`, 'kotu'),
-    satir('Alet onarımı', `−${n0(h.dailyToolRepairAda || h.toolRepairCostAda)} ASTRA`, 'kotu'),
-    satir('Net kâr', `+${n0(h.dailyNetProfitAda || h.netProfitAda)} ASTRA`),
-    satir('Bot ücreti (net kârın yarısı)', `${n0(h.dailyBotCostAda || h.botCostAda)} ASTRA`, 'uyari'),
+    satir('24 saatlik üretimin pazar değeri', `+${n0(h.grossRevenueAda)} ASTRA`, 'iyi'),
+    satir(`Stamina için buğday (${n0(h.dailyWheatNeededForStamina)} buğday)`, `−${n0(h.staminaWheatCostAda)} ASTRA`, 'kotu'),
+    satir('Alet onarımı', `−${n0(h.toolRepairCostAda)} ASTRA`, 'kotu'),
+    satir('Net kâr', `+${n0(h.netProfitAda)} ASTRA`),
+    satir('Bot ücreti (net kârın yarısı)', `${n0(h.botCostAda)} ASTRA`, 'uyari'),
     not(`🛡️ <b>Güvenlik payı:</b> Bot kasanda en az <b>${esc(astra(gs.getBotAdaReserve()))} ASTRA</b> bırakır${gs.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}.`)
   ].join('');
   return katli('📊 Ücret nasıl hesaplanıyor?', icerik, { k: 'ucret' });

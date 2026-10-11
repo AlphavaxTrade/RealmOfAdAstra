@@ -4,7 +4,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 // Seferin kayıtlı süresi: dakika (yoksa saatten, o da yoksa saniyeden) ve saat
 function seferSuresi(sefer) {
@@ -71,7 +71,7 @@ export const hasatYontemleri = {
     const limit = this.getWarehouseCapacity()[nodeId];
     const mevcut = Number(this.state.inventory[nodeId]) || 0;
     const bosYer = limit != null ? Math.max(0, limit - mevcut) : birikim.accruedAmount;
-    const etiket = (this.getResourceNameTr(nodeId) || alan.name).toLocaleLowerCase('tr-TR');
+    const etiket = (kaynakAdi(nodeId) || alan.name).toLocaleLowerCase('tr-TR');
 
     if (limit != null && bosYer <= 0) {
       return {
@@ -143,7 +143,7 @@ export const hasatYontemleri = {
       if (mevcut <= limit) continue;
       this.state.inventory[kaynak] = limit;
       if (!this._isFastForwarding) {
-        const ad = this.getResourceNameTr ? this.getResourceNameTr(kaynak) : kaynak;
+        const ad = kaynakAdi(kaynak);
         this.pushNotice(`⚠️ Silo dolu: ${Math.floor(mevcut - limit).toLocaleString('tr-TR')} ${ad} siloya sığmadı. Siloyu yükselterek kapasiteyi artırabilirsin.`, 'error');
       }
     }
@@ -169,7 +169,7 @@ export const hasatYontemleri = {
       }
     }
     const kaybolan = miktar - satilan;
-    const ad = this.getResourceNameTr ? this.getResourceNameTr(resourceKey) : resourceKey;
+    const ad = kaynakAdi(resourceKey);
     if (!this._isFastForwarding) {
       if (satilan > 0) this.pushNotice(`📦 ${reason}: siloya sığmayan ${satilan.toLocaleString('tr-TR')} ${ad} pazarda satıldı (+${kazanc.toFixed(1)} ASTRA).`, 'info');
       if (kaybolan > 0) this.pushNotice(`⚠️ ${reason}: ${kaybolan.toLocaleString('tr-TR')} ${ad} siloya sığmadı ve pazar taban fiyatta olduğu için satılamadı.`, 'error');
@@ -227,7 +227,7 @@ export const hasatYontemleri = {
     const limit = this.getWarehouseCapacity()[nodeId];
     let mevcut = Number(this.state.inventory[nodeId]) || 0;
     let bosYer = limit != null ? Math.max(0, limit - mevcut) : kalan;
-    const etiket = (this.getResourceNameTr(nodeId) || nodeId).toLocaleLowerCase('tr-TR');
+    const etiket = (kaynakAdi(nodeId) || nodeId).toLocaleLowerCase('tr-TR');
 
     // Otomasyon botu varsa siloda yer açar (fazlayı satar ya da siloyu büyütür). isAutoCollectorActive() önkoşul
     // alım-satımını da tetiklediği için yalnızca bot var mı diye bakılır.

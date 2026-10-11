@@ -2,7 +2,7 @@
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
 import { GAME_CONFIG } from '../config.js';
 import { ammMarket } from '../ammMarket.js';
-import { RES_KEYS } from './ortak.js';
+import { RES_KEYS, kaynakAdi } from './ortak.js';
 
 export const pazarYontemleri = {
   // =========================================================================
@@ -15,7 +15,7 @@ export const pazarYontemleri = {
       : resKey === 'keys' ? (this.state.arenaKeys || 0)
       : (Number(this.state.inventory[resKey]) || 0);
     if (owned < amount) {
-      return { success: false, message: `Yetersiz ${this.getResourceNameTr(resKey) || resKey}! Envanterinde ${Math.floor(owned).toLocaleString('tr-TR')} adet var.` };
+      return { success: false, message: `Yetersiz ${kaynakAdi(resKey) || resKey}! Envanterinde ${Math.floor(owned).toLocaleString('tr-TR')} adet var.` };
     }
     const res = ammMarket.executeSell(resKey, amount);
     if (!res.success) return res;
@@ -64,7 +64,7 @@ export const pazarYontemleri = {
       if (need <= 0) continue;
       const cost = ammMarket.getEstimatedCostForBuy(res, need);
       if (!isFinite(cost)) return { ok: false, items: [], reason: 'Pazarda yeterli hammadde yok.' };
-      items.push({ res, qty: need, cost, name: this.getResourceNameTr(res) });
+      items.push({ res, qty: need, cost, name: kaynakAdi(res) });
       total += cost;
     }
     const balance = Number(this.state.adAstraBalance) || 0;
@@ -101,7 +101,7 @@ export const pazarYontemleri = {
       const limit = this.getWarehouseCapacity()[resKey];
       const cur = Number(this.state.inventory[resKey]) || 0;
       if (limit != null && cur + amount > limit) {
-        return { success: false, message: `Silo kapasitesi aşılamaz! Alabileceğin en fazla boş alan: ${Math.max(0, Math.floor(limit - cur)).toLocaleString('tr-TR')} ${this.getResourceNameTr(resKey)}` };
+        return { success: false, message: `Silo kapasitesi aşılamaz! Alabileceğin en fazla boş alan: ${Math.max(0, Math.floor(limit - cur)).toLocaleString('tr-TR')} ${kaynakAdi(resKey)}` };
       }
     }
     const res = ammMarket.executeBuyAmount(resKey, amount);
