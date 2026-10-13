@@ -73,13 +73,39 @@ async function sombur(kasa, signer, hedef) {
   const { token: t2, kasa: k2 } = await yeniKasa();
   let toplam = 0n, gun = 0;
   while (toplam * 2n < T0 && gun < 30) {
-    await mine(24 * 3600 + 60); gun++;
+    await mine(25 * 3600 + 60); gun++;   // kayan pencere: saatlik 25 kova (en çok 25 saat)
     await sombur(k2, dagitici, hedef);
     toplam = await t2.balanceOf(hedef);
   }
   console.log(`   A — fark edilmezse: kasanın yarısı ${gun}. günde gider (toplam ${M(toplam)}); 7. günde tahmini kayıp %${(100 * (1 - (1 - 0.05 / 1.03) ** 7)).toFixed(0)}`);
   assert.ok(gun >= 7, 'Fark edilmeyen saldırıda bile kasanın yarısı en az 7 günde gider');
   ok(`Senaryo A (fark edilmezse): kasanın yarısı ${gun}. günde — fark etme ve durdurma süresi (gün cinsinden) güvenlik payıdır`);
+}
+
+// ── Senaryo A2: pencere SINIRINDA çifte çekim denemesi (denetim K1, 14 Ekim 2026) ──
+// Eski sabit pencere: 23s58dk'da sınırı doldur, 24s01dk'da yeniden doldur → fiilen ~%9,7. Kayan pencerede HERHANGİ bir 24 saatlik
+// aralıkta toplam, günlük sınırı (kasanın %5'i) aşamaz. Saldırgan her fırsatta sınırı dolduruyor; olaylardan pencere toplamı ölçülür.
+{
+  const { token, kasa } = await yeniKasa();
+  const T0 = 200_000_000n * 10n ** 18n;
+  const hedef = await addr(attacker);
+  for (const bekle of [0, 3600, 6 * 3600, 12 * 3600, 23 * 3600 + 3500, 130, 25 * 3600, 600, 24 * 3600 + 120]) {
+    if (bekle) await mine(bekle);
+    await sombur(kasa, dagitici, hedef);
+  }
+  const olaylar = await kasa.queryFilter(kasa.filters.PlayerPaid());
+  const kayit = [];
+  for (const o of olaylar) kayit.push({ t: (await provider.getBlock(o.blockNumber)).timestamp, a: o.args.amount });
+  assert.ok(kayit.length >= 6, 'saldırgan birden çok pencerede ödeme yaptı: ' + kayit.length);
+  let enKotu = 0n;
+  for (const x of kayit) {
+    const toplam = kayit.filter(y => y.t >= x.t && y.t < x.t + 24 * 3600).reduce((s, y) => s + y.a, 0n);
+    if (toplam > enKotu) enKotu = toplam;
+  }
+  const yuzde = (Number(enKotu * 10000n / T0) / 100).toFixed(2);
+  console.log('   A2 — herhangi bir 24 saatlik aralıkta en çok ' + M(enKotu) + ' (%' + yuzde + '); toplam ' + M(await token.balanceOf(hedef)) + ', ' + kayit.length + ' ödeme');
+  assert.ok(enKotu <= T0 * 5n / 100n, 'Herhangi bir 24 saatte kasanın en çok %5 i: ' + M(enKotu));
+  ok('Senaryo A2 (pencere sınırında çifte çekim): herhangi bir 24 saatlik aralıkta en çok ' + M(enKotu) + ' (%' + yuzde + ' ≤ %5)');
 }
 
 // ── Senaryo B: SAHİP anahtarı çalındı ──

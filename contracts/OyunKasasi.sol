@@ -16,9 +16,13 @@ pragma solidity 0.8.24;
 ///    Dağıtıcı anahtarı çalınsa bile saldırgan kendine para çekemez (böyle bir fonksiyon yok); yalnız izinli üç
 ///    yoldan birine, izinli HIZ sınırları içinde ödeme tetikleyebilir — bu da aşağıdaki iki sınırla kısılır:
 ///      • tek ödeme ≤ kasanın %singleDrawBps'i (sunucudaki aynı kuralın zincir kopyası)
-///      • 24 saatte toplam ≤ kasanın %dailyLimitBps'i (tek ödeme sınırını aşıp defalarca çekmeyi de kısar)
+///      • HERHANGİ bir 24 saatlik aralıkta toplam ≤ kasanın %dailyLimitBps'i (kayan pencere: saatlik 25 kova toplanır,
+///        pencere sınırında "iki gün birden" çekilemez; en kötü durumda bekleme 25 saate kadar uzayabilir)
 ///  - Sahibin TEK ayrıcalığı: durdur/devam et (acil fren). Bu düğme parayı hiçbir yere göndermez, yalnız kilitler;
 ///    bir sızma/saldırı şüphesinde sistemi dondurup sorunu çözene kadar kapalı tutmanın yoludur.
+///  - İsteğe bağlı BEKÇİ anahtarı (ayrı, soğuk bir cüzdan/çoklu imza): yalnız durdurabilir ve bekleyen ayar önerisini
+///    iptal edebilir; para gönderemez, ayar öneremez. Bir kez atandıktan sonra yalnız bekçinin kendisi değiştirebilir
+///    (sahip anahtarı çalınsa bile saldırgan bekçiyi kaldıramaz ya da değiştiremez).
 ///  - Dağıtıcı anahtarı ve güvenlik sınırları (singleDrawBps/dailyLimitBps/yapımcı cüzdanı) sahip tarafından
 ///    değiştirilebilir ama DELAY (24 saat) sonra geçerli olur — sahip anahtarı ele geçirilse bile saldırgan
 ///    dağıtıcıyı kendi anahtarına çevirip hemen boşaltamaz; gerçek sahip bu süre içinde durdurabilir.
@@ -50,8 +54,13 @@ contract OyunKasasi {
 
     bool public paused;
 
-    uint64 private _windowStart;
-    uint256 private _windowSpent;
+    address public guardian;     // 0 = bekçi atanmadı
+
+    // Kayan 24 saat: ödemeler saatlik kovalara yazılır (anahtar = zaman damgası / 1 saat). Herhangi bir 24 saatlik aralık en çok
+    // 25 ardışık kovaya değer; sınır bu 25 kovanın toplamına uygulanır, böylece aralıktaki toplam sınırı aşamaz.
+    uint256 private constant SLOT_LEN = 1 hours;
+    uint256 private constant SLOT_COUNT = 25;
+    mapping(uint256 => uint256) private _slotSpent;
     uint256 private _lock = 1;
 
     event Deposited(address indexed from, uint256 amount);
@@ -62,11 +71,13 @@ contract OyunKasasi {
     event ConfigProposed(Config cfg, uint64 effectiveAt);
     event ConfigApplied(Config cfg);
     event ConfigCancelled();
+    event GuardianSet(address indexed guardian);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     error NotOwner();
     error NotDagitici();
+    error NotGuardian();
     error IsPaused();
     error ZeroAddress();
     error ZeroAmount();
@@ -145,16 +156,20 @@ contract OyunKasasi {
 
     function _enforceCaps(uint256 amount) private {
         uint256 bal = _balance();
-        uint256 singleCap = bal * current.singleDrawBps / BPS;
+        Config memory c = current;                         // onlyDagitici _settle() çağırdı: current güncel
+        uint256 singleCap = bal * c.singleDrawBps / BPS;
         if (amount > singleCap) revert DrawTooLarge(amount, singleCap);
-        if (block.timestamp >= _windowStart + 1 days) {
-            _windowStart = uint64(block.timestamp);
-            _windowSpent = 0;
-        }
-        uint256 dailyCap = bal * current.dailyLimitBps / BPS;
-        uint256 remaining = dailyCap > _windowSpent ? dailyCap - _windowSpent : 0;
+        uint256 dailyCap = bal * c.dailyLimitBps / BPS;
+        uint256 spent = _spentWindow();
+        uint256 remaining = dailyCap > spent ? dailyCap - spent : 0;
         if (amount > remaining) revert DailyLimitExceeded(amount, remaining);
-        _windowSpent += amount;
+        _slotSpent[block.timestamp / SLOT_LEN] += amount;
+    }
+
+    /// @dev Son 25 saatlik kovanın (içinde bulunulan saat dahil) toplamı
+    function _spentWindow() private view returns (uint256 sum) {
+        uint256 h = block.timestamp / SLOT_LEN;
+        for (uint256 i = 0; i < SLOT_COUNT && i <= h; i++) sum += _slotSpent[h - i];
     }
 
     function _balance() private view returns (uint256) {
@@ -181,14 +196,19 @@ contract OyunKasasi {
 
     /// @notice Şu an bir tek ödemenin en fazla ne kadar olabileceği (kasanın güncel bakiyesine göre)
     function singleDrawCap() external view returns (uint256) {
-        return _balance() * current.singleDrawBps / BPS;
+        return _balance() * activeConfig().singleDrawBps / BPS;
     }
 
-    /// @notice Bugünkü 24 saatlik pencerede ne kadar daha ödenebilir
+    /// @notice Kayan 24 saatlik pencerede şu an ne kadar daha ödenebilir
     function dailyRemaining() external view returns (uint256) {
-        uint256 dailyCap = _balance() * current.dailyLimitBps / BPS;
-        if (block.timestamp >= _windowStart + 1 days) return dailyCap;
-        return dailyCap > _windowSpent ? dailyCap - _windowSpent : 0;
+        uint256 dailyCap = _balance() * activeConfig().dailyLimitBps / BPS;
+        uint256 spent = _spentWindow();
+        return dailyCap > spent ? dailyCap - spent : 0;
+    }
+
+    /// @notice Son 24 saatlik (25 kovalık) penceredeki toplam ödeme
+    function spentInWindow() external view returns (uint256) {
+        return _spentWindow();
     }
 
     // ── Yönetim (yalnız sahip) ──
@@ -196,6 +216,25 @@ contract OyunKasasi {
     function setPaused(bool paused_) external onlyOwner {
         paused = paused_;
         emit PausedSet(paused_);
+    }
+
+    /// @notice Bekçi acil freni: yalnız DURDURUR (devam ettirmek sahibin işi). Sahip de çağırabilir.
+    function pause() external {
+        if (msg.sender != owner && (guardian == address(0) || msg.sender != guardian)) revert NotOwner();
+        paused = true;
+        emit PausedSet(true);
+    }
+
+    /// @notice Bekçi atama. İlk atamayı yalnız sahip yapar; sonrasında yalnız bekçinin kendisi değiştirebilir (kaldırılamaz).
+    function setGuardian(address g) external {
+        if (guardian == address(0)) {
+            if (msg.sender != owner) revert NotOwner();
+        } else if (msg.sender != guardian) {
+            revert NotGuardian();
+        }
+        if (g == address(0)) revert ZeroAddress();
+        guardian = g;
+        emit GuardianSet(g);
     }
 
     /// @notice Dağıtıcı anahtarı / yapımcı cüzdanı / hız sınırlarını değiştirme önerisi — 24 saat sonra geçerli
@@ -209,7 +248,8 @@ contract OyunKasasi {
         emit ConfigProposed(cfg, effectiveAt);
     }
 
-    function cancelConfig() external onlyOwner {
+    function cancelConfig() external {
+        if (msg.sender != owner && (guardian == address(0) || msg.sender != guardian)) revert NotOwner();
         _settle();
         if (effectiveAt == 0) revert NothingPending();
         effectiveAt = 0;

@@ -143,7 +143,7 @@ const cfgOf = async (d, cr, single = 200, daily = 1000) => ({ dagitici: await ad
   const mint = async (a, v) => { await (await token.mint(a, v)).wait(); B.set(a, (B.get(a) || 0n) + v); supply += v; };
   for (const a of [A.player, A.stranger, A.extra1]) { await mint(a, ASTRA(5_000_000)); await (await token.connect(signerOf[a]).approve(kAddr, ethers.MaxUint256)).wait(); }
 
-  const M = { bal: 0n, ws: 0n, spent: 0n, paused: false, cfg: { ...initial }, pend: null, effAt: 0n, owner: A.owner, pendingOwner: ZERO };
+  const M = { bal: 0n, sp: [], paused: false, cfg: { ...initial }, pend: null, effAt: 0n, owner: A.owner, pendingOwner: ZERO };
   const stat = { ok: {}, rej: {} };
   const count = (map, k) => { map[k] = (map[k] || 0) + 1; };
 
@@ -151,13 +151,18 @@ const cfgOf = async (d, cr, single = 200, daily = 1000) => ({ dagitici: await ad
   assert.ok((await tx(() => kasa.connect(player).deposit(ASTRA(1_000_000)))).r);
   M.bal += ASTRA(1_000_000); B.set(A.player, B.get(A.player) - ASTRA(1_000_000)); B.set(kAddr, M.bal);
 
-  // Zaman sınırlarına (24 saatlik pencere sonu, ayar öneri zamanı) yakın işlem yapmamak için: sınıra 20 sn kala 45 sn atla
+  // Kayan pencere (sözleşmede 25 saatlik kova): ödemeler saat indeksine yazılır, sınır son 25 saatin (içinde bulunulan saat dahil)
+  // toplamına uygulanır. Referans model bağımsız: ham harcama listesi + saat indeksi.
+  const saatOf = ts => ts / 3600n;
+  const penceredeHarcanan = T => M.sp.filter(x => x.h > saatOf(T) - 25n).reduce((s, x) => s + x.a, 0n);
+  // Zaman sınırlarına (saat başı, ayar öneri zamanı) yakın işlem yapmamak için: sınıra 20 sn kala 45 sn atla
   async function stable() {
     for (;;) {
       await provider.send('evm_mine', []);
       const T = BigInt((await provider.getBlock('latest')).timestamp);
       const near = x => x !== 0n && T - x < 20n && x - T < 20n;
-      if (near(M.ws + 86400n) || near(M.effAt)) { await provider.send('evm_increaseTime', [45]); continue; }
+      const saatBasinda = T % 3600n < 20n || T % 3600n > 3580n;
+      if (saatBasinda || near(M.effAt)) { await provider.send('evm_increaseTime', [45]); continue; }
       return T;
     }
   }
@@ -170,8 +175,7 @@ const cfgOf = async (d, cr, single = 200, daily = 1000) => ({ dagitici: await ad
     const callerAddr = callerKey === 'aktif-dagitici' ? act.dagitici : A[callerKey];
     let to = kind === 'payPlayer' ? pick([A.player, A.extra1, A.extra2, A.stranger, A.creator, A.owner, ZERO]) : kind === 'burn' ? DEAD : act.creator;
     if (kind === 'payPlayer' && to === ZERO && R() < 0.6) to = A.player;
-    let ws = M.ws, spent = M.spent, reset = false;
-    if (T >= ws + 86400n) { ws = T; spent = 0n; reset = true; }
+    const spent = penceredeHarcanan(T);
     const singleCap = M.bal * BigInt(act.singleDrawBps) / 10000n;
     const dailyCap = M.bal * BigInt(act.dailyLimitBps) / 10000n;
     const remaining = dailyCap > spent ? dailyCap - spent : 0n;
@@ -198,7 +202,7 @@ const cfgOf = async (d, cr, single = 200, daily = 1000) => ({ dagitici: await ad
       assert.ok(res.r, `${kind} başarılı olmalıydı, hata: ${res.err} (miktar ${amount}, tavan ${singleCap}/${remaining})`);
       settle(T);
       const ts = BigInt((await provider.getBlock(res.r.blockNumber)).timestamp);
-      if (reset) { M.ws = ts; M.spent = amount; } else M.spent += amount;
+      M.sp.push({ h: saatOf(ts), a: amount });
       M.bal -= amount; B.set(kAddr, M.bal); B.set(to, (B.get(to) || 0n) + amount);
       count(stat.ok, kind);
     }

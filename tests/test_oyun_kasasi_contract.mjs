@@ -95,12 +95,12 @@ if (remaining > 0n) await expectRevert(kasa.connect(dagitici).payPlayer(await ad
 else await expectRevert(kasa.connect(dagitici).payPlayer(await addr(player), 1n, ethers.id('tasma')), 'DailyLimitExceeded');
 ok('Günlük toplam tavan (kasanın %10\'u): tek ödeme tavanının altında kalan ardışık ödemeler bile toplamda aşamıyor');
 
-// 5) 24 saat sonra pencere sıfırlanır
-await provider.send('evm_increaseTime', [24 * 3600 + 5]);
+// 5) Kayan pencere: 25 saat sonra (saatlik 25 kovanın dışına çıkınca) bütçe tamamen geri gelir
+await provider.send('evm_increaseTime', [25 * 3600 + 5]);
 await provider.send('evm_mine', []);
 assert.ok((await kasa.dailyRemaining()) > 0n, 'Yeni günde tekrar ödeme yapılabilir');
 await (await kasa.connect(dagitici).payPlayer(await addr(player), 1n, ethers.id('yeni-gun'))).wait();
-ok('24 saat sonra günlük pencere sıfırlanıyor');
+ok('25 saat sonra kayan pencere boşalıyor, bütçe geri geliyor');
 
 // 6) Acil fren: durunca üç çıkış da kilitlenir, para hiçbir yere gitmez; yalnız sahip durdurabilir
 await expectRevert(kasa.connect(attacker).setPaused(true), 'NotOwner');
@@ -147,6 +147,65 @@ ok('Bekleyen ayar değişikliği önerisi geri çekilebiliyor');
 // 10) Doğrudan AVAX gönderimi reddedilir (receive/fallback yok)
 await expectRevert(player.sendTransaction({ to: kasaAddr, value: 1n }));
 ok('Sözleşmeye doğrudan AVAX gönderilemiyor (payable fonksiyon yok)');
+
+// 10b) Bekçi (guardian): yalnız durdurur ve bekleyen öneriyi iptal eder; para göndermez, ayar öneremez, devam ettiremez
+await expectRevert(kasa.connect(stranger).pause(), 'NotOwner');                          // bekçi atanmadı: yabancı durduramaz
+await expectRevert(kasa.connect(stranger).setGuardian(await addr(stranger)), 'NotOwner'); // ilk atamayı yalnız sahip yapar
+await expectRevert(kasa.setGuardian(ethers.ZeroAddress), 'ZeroAddress');
+await (await kasa.setGuardian(await addr(stranger))).wait();
+assert.equal(await kasa.guardian(), await addr(stranger));
+await expectRevert(kasa.setGuardian(await addr(attacker)), 'NotGuardian');                // sahip bekçiyi artık değiştiremez (sahip anahtarı çalınsa da)
+await (await kasa.connect(stranger).pause()).wait();
+assert.equal(await kasa.paused(), true, 'bekçi durdurdu');
+await expectRevert(kasa.connect(attacker).payPlayer(await addr(player), 1n, ethers.id('bekci-durdurdu')), 'IsPaused');
+await expectRevert(kasa.connect(stranger).setPaused(false), 'NotOwner');                  // devam ettirmek yalnız sahibin
+await expectRevert(kasa.connect(stranger).proposeConfig({ dagitici: await addr(stranger), creator: await addr(creator), singleDrawBps: 200, dailyLimitBps: 1000 }), 'NotOwner');
+await (await kasa.setPaused(false)).wait();
+await (await kasa.proposeConfig({ dagitici: await addr(stranger), creator: await addr(creator), singleDrawBps: 200, dailyLimitBps: 1000 })).wait();
+assert.ok((await kasa.effectiveAt()) > 0n);
+await (await kasa.connect(stranger).cancelConfig()).wait();                               // bekçi bekleyen öneriyi iptal eder
+assert.equal(await kasa.effectiveAt(), 0n);
+await (await kasa.connect(stranger).setGuardian(await addr(player))).wait();              // bekçi kendini devredebilir
+await expectRevert(kasa.connect(stranger).pause(), 'NotOwner');
+await expectRevert(kasa.connect(stranger).cancelConfig(), 'NotOwner');
+ok('Bekçi: durdurabiliyor, bekleyen öneriyi iptal edebiliyor; devam ettiremiyor, ayar öneremiyor; sahip bekçiyi değiştiremiyor');
+
+// 10c) Görünümler bekleyen ayarı (süresi dolunca) yansıtır; kimse işlem yapmasa da bayat değer göstermez (denetim K4)
+{
+  const bal = await token.balanceOf(kasaAddr);
+  await (await kasa.proposeConfig({ dagitici: await addr(attacker), creator: await addr(creator), singleDrawBps: 100, dailyLimitBps: 500 })).wait();
+  assert.equal(await kasa.singleDrawCap(), bal * 200n / 10000n, 'öneri beklerken eski sınır');
+  await provider.send('evm_increaseTime', [24 * 3600 + 5]);
+  await provider.send('evm_mine', []);
+  assert.equal(await kasa.singleDrawCap(), bal * 100n / 10000n, 'süre dolunca tek ödeme sınırı yeni ayarı gösterir (işlem beklemeden)');
+  assert.equal(await kasa.dailyRemaining(), bal * 500n / 10000n - (await kasa.spentInWindow()), 'günlük kalan yeni ayarı gösterir');
+  ok('Görünüm fonksiyonları süresi dolmuş bekleyen ayarı yansıtıyor (bayat sınır göstermiyor)');
+}
+
+// 10d) Kayan pencere: sınır dolunca 24 saatin dolmasına yakın hâlâ reddedilir; saatlik 25 kova dışına çıkınca bütçe geri gelir
+{
+  await provider.send('evm_increaseTime', [26 * 3600]);
+  await provider.send('evm_mine', []);
+  for (let i = 0; i < 100; i++) {
+    const cap = await kasa.singleDrawCap(), rem = await kasa.dailyRemaining();
+    const amt = cap < rem ? cap : rem;
+    if (amt < 2n) break;
+    await (await kasa.connect(attacker).payPlayer(await addr(player), amt, ethers.id('pencere-' + i))).wait();
+  }
+  const harcanan = await kasa.spentInWindow();
+  assert.ok(harcanan > 0n);
+  await expectRevert(kasa.connect(attacker).payPlayer(await addr(player), (await kasa.dailyRemaining()) + 1n, ethers.id('pencere-asim')), 'DailyLimitExceeded');
+  await provider.send('evm_increaseTime', [23 * 3600 + 50 * 60]);
+  await provider.send('evm_mine', []);
+  const kalan = await kasa.dailyRemaining();
+  const bal = await token.balanceOf(kasaAddr);
+  assert.ok(kalan < bal * 500n / 10000n / 10n, '23 saat 50 dakika sonra bütçe hâlâ (neredeyse) dolu');
+  await provider.send('evm_increaseTime', [75 * 60]);   // toplam 25 saat 5 dakika
+  await provider.send('evm_mine', []);
+  assert.equal(await kasa.spentInWindow(), 0n, '25 saat sonra pencere boş');
+  assert.equal(await kasa.dailyRemaining(), (await token.balanceOf(kasaAddr)) * 500n / 10000n, 'bütçe tamamen geri geldi');
+  ok('Kayan pencere: 23s50dk sonra hâlâ dolu, 25 saat sonra tamamen boş');
+}
 
 // 11) Sahiplik iki adımlı
 await (await kasa.transferOwnership(await addr(player))).wait();
