@@ -1,4 +1,4 @@
-// 14 Ekim 2026 canlıya çıkış öncesi denetiminin sunucu tarafı gerileme testleri.
+// 13 Ekim 2026 canlıya çıkış öncesi denetiminin sunucu tarafı gerileme testleri.
 // (A1) Parola sıfırlandıktan sonra, e-posta geçmişinde kalmış ESKİ doğrulama bağlantısı parolasız oturum açtırmamalı.
 import assert from 'node:assert/strict';
 import { openDb } from '../server/db.js';

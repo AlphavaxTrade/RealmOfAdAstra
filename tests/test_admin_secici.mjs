@@ -1,5 +1,5 @@
 // Yönetici panelinin (server/admin.js) Ledger ile zincire gönderdiği işlem seçicileri sözleşmelerin gerçek imzalarıyla
-// aynı olmalı. 14 Ekim 2026 taramasında panel `propose(uint16[19])` seçicisini gönderiyordu, sözleşme ise 21 elemanlı
+// aynı olmalı. 13 Ekim 2026 taramasında panel `propose(uint16[19])` seçicisini gönderiyordu, sözleşme ise 21 elemanlı
 // (`propose(uint16[21])`): panelden oran önerisi zincirde geri dönerdi ve hiçbir test fark etmiyordu.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

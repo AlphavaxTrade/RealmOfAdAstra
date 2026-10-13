@@ -74,7 +74,7 @@ try {
     ok('Açılış denetimi: kasadaki dağıtıcı oyun cüzdanı değilse hiçbir ödeme çıkmıyor (satır pending kalıyor)');
   }
 
-  // 1b) Denetim K3 (14 Ekim 2026): zincirdeki kasa kararlaştırılan sınırdan (günlük %5, tek ödeme %2) gevşekse sunucu kasadan ödeme yapmaz
+  // 1b) Denetim K3 (13 Ekim 2026): zincirdeki kasa kararlaştırılan sınırdan (günlük %5, tek ödeme %2) gevşekse sunucu kasadan ödeme yapmaz
   {
     const gevsek = mkWorld(mkCfg({ vaultMaxDailyBps: undefined }));          // üretim varsayılanı: %5. Bu testin kasası %10 ile kurulu.
     const id = add('withdraw', P1, 10, 98);

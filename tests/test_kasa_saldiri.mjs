@@ -82,7 +82,7 @@ async function sombur(kasa, signer, hedef) {
   ok(`Senaryo A (fark edilmezse): kasanın yarısı ${gun}. günde — fark etme ve durdurma süresi (gün cinsinden) güvenlik payıdır`);
 }
 
-// ── Senaryo A2: pencere SINIRINDA çifte çekim denemesi (denetim K1, 14 Ekim 2026) ──
+// ── Senaryo A2: pencere SINIRINDA çifte çekim denemesi (denetim K1, 13 Ekim 2026) ──
 // Eski sabit pencere: 23s58dk'da sınırı doldur, 24s01dk'da yeniden doldur → fiilen ~%9,7. Kayan pencerede HERHANGİ bir 24 saatlik
 // aralıkta toplam, günlük sınırı (kasanın %5'i) aşamaz. Saldırgan her fırsatta sınırı dolduruyor; olaylardan pencere toplamı ölçülür.
 {

@@ -31,7 +31,7 @@ test('🧪 Kullanıcı Akışı: 50k ASTRA -> Bot Satın Alma -> Silo Şişmeme 
     const c1 = process.cpuUsage(c0);
     const duration = Math.round((c1.user + c1.system) / 1000);
 
-    // Kapsam ölçümü (c8, NODE_V8_COVERAGE) kodu yavaşlatır; tam kapı (npm run kontrol) bu yüzden 14 Ekim 2026'da 1431 ms ölçtü.
+    // Kapsam ölçümü (c8, NODE_V8_COVERAGE) kodu yavaşlatır; tam kapı (npm run kontrol) bu yüzden 13 Ekim 2026'da 1431 ms ölçtü.
     // Donma koruması kalır: kapsam altında 2 sn, normalde 400 ms işlemci süresi (tek başına ~100 ms).
     const sinir = process.env.NODE_V8_COVERAGE ? 2000 : 400;
     assert.ok(duration < sinir, `Simülasyon ${sinir}ms altında bitmeli, ölçülen: ${duration}ms`);
