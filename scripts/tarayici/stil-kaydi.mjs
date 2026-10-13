@@ -1,6 +1,6 @@
-/* global window, document, getComputedStyle */
+/* global window, document, getComputedStyle, innerWidth, innerHeight */
 // CSS yeniden yazımında GÖRSEL EŞDEĞERLİK ölçümü. ELLE çalıştırılır; geliştirme sunucusu açık olmalı (npm run dev, 5180).
-//   node scripts/tarayici/stil-kaydi.mjs <cikti.json> [--kapsam <kapsam.json>]
+//   node scripts/tarayici/stil-kaydi.mjs <cikti.json> [--kapsam <kapsam.json>] [--html <dom.json>]
 //   node scripts/tarayici/stil-fark.mjs <once.json> <sonra.json>
 // Her durumda (ekran × görünüm × hesap) sayfadaki HER öğenin hesaplanmış stilini (≈100 özellik) ve konumunu kaydeder.
 // CSS dosyaları yeniden yazılınca iki kayıt karşılaştırılır: fark yoksa aynı görünüm. --kapsam: Chrome'un CSS kapsamını (hangi
@@ -17,6 +17,7 @@ const BASE = process.env.OYUN_ADRESI || 'http://127.0.0.1:5180';
 const cikti = process.argv[2];
 if (!cikti) { console.error('Kullanım: node scripts/tarayici/stil-kaydi.mjs <cikti.json> [--kapsam <kapsam.json>]'); process.exit(2); }
 const kapsamYolu = process.argv.includes('--kapsam') ? process.argv[process.argv.indexOf('--kapsam') + 1] : null;
+const htmlYolu = process.argv.includes('--html') ? process.argv[process.argv.indexOf('--html') + 1] : null;   // her durumun DOM'u (css-sadelestir.mjs için)
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export const OZELLIKLER = [
@@ -43,6 +44,7 @@ const EKRANLAR = ['merkez', 'silo', 'taverna', 'demirhane', 'sifahane', 'koy', '
 const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const sonuc = { ozellikler: OZELLIKLER, durumlar: {} };
 const kapsamlar = new Map();   // url → Set(kullanılan aralık "a-b")
+const htmller = {};           // durum adı → { html, htmlSinif, govdeSinif, w, h }
 
 async function kaydet(s, ad) {
   const veri = await s.evaluate((OZ) => {
@@ -59,6 +61,13 @@ async function kaydet(s, ad) {
     return cikis;
   }, OZELLIKLER);
   sonuc.durumlar[ad] = veri;
+  if (htmlYolu) {
+    htmller[ad] = await s.evaluate(() => {
+      const k = document.body.cloneNode(true);
+      k.querySelectorAll('script, canvas, style').forEach((e) => e.remove());
+      return { html: k.innerHTML, htmlSinif: document.documentElement.className, govdeSinif: document.body.className, w: innerWidth, h: innerHeight };
+    });
+  }
 }
 
 async function kapsamiTopla(s) {
@@ -148,6 +157,7 @@ await tarayici.close();
 
 fs.writeFileSync(cikti, JSON.stringify(sonuc));
 console.log('Yazıldı:', cikti, `(${Object.keys(sonuc.durumlar).length} durum)`);
+if (htmlYolu) { fs.writeFileSync(htmlYolu, JSON.stringify(htmller)); console.log('DOM kaydı yazıldı:', htmlYolu); }
 if (kapsamYolu) {
   const dosyalar = {};
   for (const [url, v] of kapsamlar) dosyalar[url] = { metin: v.metin, aralik: [...v.aralik].map((a) => a.split('-').map(Number)) };

@@ -44,6 +44,7 @@ bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (u
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/seviye-tablolari-uret.mjs          # regenerates docs/v2/SEVIYE_TABLOLARI.md (level, silo, soldier, craft and dungeon tables) from the engine
 node scripts/model/hammadde_kullanim.mjs [--eski]   # weekly demand / full production per resource at levels 5-40 (target band 0.40-1.00; --eski = pre-13-Oct rules); plan: docs/v2/HAMMADDE_KULLANIM_PLANI.md
+node scripts/tarayici/stil-kaydi.mjs out.json [--html dom.json]   # MANUAL (needs npm run dev): computed style of every element in 144 screen states; stil-fark.mjs compares two records; css-sadelestir.mjs dom.json [--yaz | --dogrula] removes CSS declarations that change nothing (proof across 17 widths) - how css/style.css, theme.css and battle-arena.css were slimmed on 13 Oct 2026
 python scripts/gorsel_isle.py ikon <in.jpg> <out.webp>   # Gemini image -> transparent 256x256 webp icon (video_edit venv python)
 ```
 
