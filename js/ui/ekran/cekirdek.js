@@ -181,8 +181,19 @@ function baglaKok(kok) {
 // işlemi iki kez göndermesin.
 let eylemSuruyor = false;
 
+// Eşzamanlı (await beklemeyen) eylemlerde yukarıdaki kilit işe yaramaz: iki dokunuş ayrı olaylardır, ilk eylem ikincisinden önce
+// biter. Çift dokunuşta ikinci dokunuş çoğu zaman yeniden çizilmiş (ve yerleşimi kaymış) ekrana düşer: aynı düğme olmayabilir, tutarı
+// değişmiş olabilir. Bu yüzden anahtar düğme değil ZAMANDIR: bir eylem çalıştıktan sonra kısa bir süre başka hiçbir tıklama eylemi
+// işlenmez (13 Ekim 2026 denetimi QA-12: Konsey "Taş ver" çift dokunuşta iki kez taş harcadı). Değişim/girdi olayları etkilenmez.
+const TEKRAR_ARALIK_MS = 450;
+let sonEylemZamani = -Infinity;
+
 async function calistir(fn, el) {
   if (eylemSuruyor) return;
+  const tiklama = !!(el && el.hasAttribute && el.hasAttribute('data-e'));
+  const simdi = Date.now();
+  if (tiklama && simdi - sonEylemZamani < TEKRAR_ARALIK_MS) return;
+  if (tiklama) sonEylemZamani = simdi;
   eylemSuruyor = true;
   try {
     await calistirTek(fn, el);
@@ -195,12 +206,23 @@ async function calistirTek(fn, el) {
   const b = baglam;
   const ekran = aktif.ekran;
   let sonuc;
+  let bekletilen = null;
   try {
-    sonuc = await fn(b, el, aktif.secenek);
+    const donus = fn(b, el, aktif.secenek);
+    // Yanıt bekleyen eylemde (sunucuya giden savaş, işlem...) düğme pasifleşir: oyuncu yavaş bağlantıda "hiçbir şey olmadı" sanıp
+    // yeniden basmasın (denetim QA-11). Eşzamanlı eylemler etkilenmez.
+    if (donus && typeof donus.then === 'function' && el && el.tagName === 'BUTTON' && !el.disabled) {
+      el.disabled = true;
+      el.setAttribute('aria-busy', 'true');
+      bekletilen = el;
+    }
+    sonuc = await donus;
   } catch (e) {
     console.error('Ekran eylemi hata verdi:', e);
     b.bildir('Bu işlem tamamlanamadı. Lütfen tekrar dene.', 'error');
     return;
+  } finally {
+    if (bekletilen) { bekletilen.disabled = false; bekletilen.removeAttribute('aria-busy'); }
   }
   if (!aktif || aktif.ekran !== ekran) return;   // eylem başka ekrana geçtiyse ya da kapattıysa
   if (sonuc === false) return;

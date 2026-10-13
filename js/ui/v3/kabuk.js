@@ -57,7 +57,7 @@ export function kurV3Kabuk(api) {
     <button type="button" id="v3-bakiye" class="v3-hap v3-bakiye" aria-label="ASTRA bakiyen, hesap ve cüzdan">
       <span class="v3-para" aria-hidden="true"></span><b id="v3-bakiye-deger">0</b><small>ASTRA</small>
     </button>
-    <button type="button" id="v3-kaynak-dugme" class="v3-hap" aria-expanded="false" aria-controls="v3-kaynak-tepsi">
+    <button type="button" id="v3-kaynak-dugme" class="v3-hap" aria-label="Kaynaklar" aria-expanded="false" aria-controls="v3-kaynak-tepsi">
       <span aria-hidden="true">📦</span><span class="v3-etiket">Kaynaklar</span><i id="v3-kaynak-uyari" class="v3-nokta" hidden></i>
     </button>
     <button type="button" id="v3-bot" class="v3-hap v3-bot" data-state="off" aria-label="Otomasyon botu">
@@ -107,7 +107,8 @@ export function kurV3Kabuk(api) {
   const kapat = $('btn-close-modal');
   if (kapat) { kapat.setAttribute('aria-label', 'Paneli kapat'); kapat.title = 'Kapat (Esc)'; }
   const pencere = document.querySelector('#rpg-modal .rpg-modal-window');
-  if (pencere) { pencere.setAttribute('role', 'dialog'); pencere.setAttribute('aria-modal', 'true'); pencere.setAttribute('aria-labelledby', 'modal-title'); }
+  // aria-modal bilerek yok: arka plan (alt çubuk) etkileşimli kalıyor, "modal" demek yanlış olur
+  if (pencere) { pencere.setAttribute('role', 'dialog'); pencere.setAttribute('aria-labelledby', 'modal-title'); }
 
   // ---------------------------------------------------------------- paneller
   const tepsiAc = (ac) => {
@@ -297,6 +298,7 @@ export function kurV3Kabuk(api) {
 
     $('v3-bot').dataset.state = v.bot.durum;
     yaz($('v3-bot-metin'), v.bot.metin);
+    $('v3-bot').setAttribute('aria-label', 'Otomasyon botu: ' + String(v.bot.metin || '').trim());   // telefonda metin gizli, durum yalnız renkle verilmesin
 
     const n = String(v.bildirim || 0);
     $('v3-zil-sayi').hidden = n === '0'; yaz($('v3-zil-sayi'), n);

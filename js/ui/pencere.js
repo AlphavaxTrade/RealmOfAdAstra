@@ -10,21 +10,38 @@ const DOKUNUSLAR = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click',
  */
 export function kurPencere({ kok, baslik, govde, kapatDugme }) {
   let sonBaslik = '';
+  let oncekiOdak = null;   // panel açılmadan önce odakta olan öğe: kapanınca oraya dönülür (klavye kullanıcısı yerini kaybetmesin)
   const acikMi = () => kok.classList.contains('active');
 
   // Başlık yeni bir ekranın başlığıysa ya da panel kapalıyken açılıyorsa kaydırma en üste döner; aynı ekran yenileniyorsa konum korunur
   const ac = () => {
     const yazi = baslik.textContent;
-    const yeniEkran = !acikMi() || yazi !== sonBaslik;
+    const aciktiMi = acikMi();
+    const yeniEkran = !aciktiMi || yazi !== sonBaslik;
     sonBaslik = yazi;
     kok.classList.add('active');
     document.body.classList.add('modal-open');
-    if (yeniEkran) govde.scrollTop = 0;
+    if (yeniEkran) {
+      govde.scrollTop = 0;
+      // Panel açılınca odak panele taşınır (denetim QA-03): yoksa klavye/ekran okuyucu kullanıcısı arkadaki sayfada kalır.
+      // Aynı ekranın yenilenmesi (eylem sonrası yeniden çizim) odağı çalmaz.
+      if (!aciktiMi && typeof document !== 'undefined') oncekiOdak = document.activeElement;
+      const pencere = kok.querySelector ? kok.querySelector('.rpg-modal-window') : null;
+      if (pencere && pencere.focus) {
+        pencere.setAttribute('tabindex', '-1');
+        try { pencere.focus({ preventScroll: true }); } catch { /* odak taşınamazsa sessiz geç */ }
+      }
+    }
   };
 
   const kapat = () => {
     kok.classList.remove('active');
     document.body.classList.remove('modal-open');
+    const geri = oncekiOdak;
+    oncekiOdak = null;
+    if (geri && geri.focus && typeof document !== 'undefined' && document.contains && document.contains(geri)) {
+      try { geri.focus({ preventScroll: true }); } catch { /* öğe artık odaklanamıyor */ }
+    }
   };
 
   /** [simge, ad] başlığı ve hazır HTML gövdesini yazar, paneli açar. Başlık metni kaçırılır. */

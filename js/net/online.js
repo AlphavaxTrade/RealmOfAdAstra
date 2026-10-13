@@ -43,9 +43,14 @@ async function fetchZamanAsimli(url, secenek, ms = ZAMAN_ASIMI_MS) {
     if (err && err.name === 'AbortError') {
       const e = new Error('Sunucuya ulaşılamadı (zaman aşımı). Bağlantını kontrol edip tekrar dene.');
       e.status = 0;
+      e.ag = true;
       throw e;
     }
-    throw err;
+    // Ağ yok / sunucu kapalı: tarayıcının İngilizce "Failed to fetch" metni oyuncuya gösterilmesin (denetim QA-08)
+    const e = new Error('İnternet bağlantın yok ya da sunucuya ulaşılamıyor; işlem kaydedilmedi. Bağlantın gelince tekrar dene.');
+    e.status = 0;
+    e.ag = true;
+    throw e;
   } finally {
     clearTimeout(zamanlayici);
   }
@@ -137,7 +142,9 @@ function send(name, args, { wait = false } = {}) {
   }, err => {
     online.pending--;
     if (err.status === 401) relogin();
-    else ctx.toast('Sunucu işlemi kabul etmedi: ' + err.message, 'error');
+    // Sonucu bekleyen (rastgele) eylemlerde mesajı çağıran gösterir: iki kez bildirim çıkmasın. Ağ hatasında "sunucu kabul etmedi"
+    // demek yanlış olur (sunucuya hiç ulaşılmadı).
+    else if (!wait) ctx.toast(err.ag ? err.message : 'Sunucu işlemi kabul etmedi: ' + err.message, 'error');
     sync();
     return { success: false, message: err.message };
   });

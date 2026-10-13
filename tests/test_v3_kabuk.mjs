@@ -1,6 +1,7 @@
 // Arayüz v3: gezinme verisi ve ortak bileşenlerin saf (DOM'suz) kuralları.
 // Tarayıcı davranışı (açılma, kapanma, ekran taşması) burada denenmez; o iş scripts/tarayici/v3.mjs ile elle yapılır.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { SEKMELER, HUB, hubHtml, esc } from '../js/ui/v3/hub.js';
 import { gitHaritasi } from '../js/ui/v3/kabuk.js';
 import { istatSatiri, bosDurum, iskelet } from '../js/ui/v3/bilesenler.js';
@@ -137,6 +138,15 @@ console.log('✅ test laboratuvarı');
   assert.ok(siniflar.has('v3-azalt')); assert.equal(stil['--v3-yazi-olcek'], '1.25');
   ayarUygula({ hareketAzalt: false, yaziBoyutu: 'normal' }, kok);
   assert.ok(!siniflar.has('v3-azalt')); assert.equal(stil['--v3-yazi-olcek'], '1');
+  assert.equal(stil['--v3-yazi-olcek-bar'], '1');
+  ayarUygula({ hareketAzalt: false, yaziBoyutu: 'cokbuyuk' }, kok);
+  assert.equal(stil['--v3-yazi-olcek-bar'], '1.15', 'üst çubuk ve sekme çubuğu en çok %15 büyür (taşmasın)');
+  // Yazı boyutu ayarı gerçekten metni büyütmeli (denetim QA-01): v3 stil dosyalarında düz px yazı boyutu kalmamalı
+  for (const dosya of ['kabuk.css', 'ekran.css']) {
+    const css = readFileSync(new URL('../css/v3/' + dosya, import.meta.url), 'utf8');
+    const duz = css.split('\n').filter(s => /font(-size)?:[^;{]*[0-9]px/.test(s) && !/calc\([0-9.]+px \* var\(--v3-yazi-olcek/.test(s) && !/--v3-yazi-olcek/.test(s));
+    assert.deepEqual(duz.map(s => s.trim().slice(0, 90)), [], dosya + ': ayara bağlı olmayan px yazı boyutu');
+  }
   // bağlantı durumu eşikleri
   assert.equal(baglantiDurumu(false, 999999), 'yerel');
   assert.equal(baglantiDurumu(true, 0), 'iyi'); assert.equal(baglantiDurumu(true, 44999), 'iyi');

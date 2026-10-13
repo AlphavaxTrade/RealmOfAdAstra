@@ -80,11 +80,13 @@ console.log('✅ engellenmiş depolama');
   const eklenen = [];
   const sahteKap = { appendChild: (e) => eklenen.push(e) };
   const kayit = [];
-  globalThis.document = { createElement: () => ({ style: {}, append() {}, set className(v) { kayit.push(v); }, remove() {} }) };
+  const roller = [];
+  globalThis.document = { createElement: () => ({ style: {}, append() {}, set className(v) { kayit.push(v); }, setAttribute(a, v) { if (a === 'role') roller.push(v); }, remove() {} }) };
   const toast = kurToast(sahteKap);
   toast('x', 'success"><img src=x');
   toast('y', 'error');
   assert.deepEqual(kayit, ['toast info', 'toast error']);
+  assert.deepEqual(roller, ['status', 'alert'], 'bildirim ekran okuyucuya duyurulur: hata alert, diğerleri status (denetim QA-05)');
 }
 console.log('✅ bildirim sınıfı');
 

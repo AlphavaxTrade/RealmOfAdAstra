@@ -29,7 +29,10 @@ export const yaziOlcegi = (id) => (YAZI_BOYUTLARI.find((y) => y.id === id) || YA
 // Ayarı sayfaya uygular (kok = <html>): class ve CSS değişkeni
 export function ayarUygula(ayar, kok) {
   kok.classList.toggle('v3-azalt', !!ayar.hareketAzalt);
-  kok.style.setProperty('--v3-yazi-olcek', String(yaziOlcegi(ayar.yaziBoyutu)));
+  const olcek = yaziOlcegi(ayar.yaziBoyutu);
+  kok.style.setProperty('--v3-yazi-olcek', String(olcek));
+  // Sabit yükseklikli üst çubuk ve sekme çubuğu en çok %15 büyür (taşmasın); gövde metinleri tam ölçekle büyür (denetim QA-01)
+  kok.style.setProperty('--v3-yazi-olcek-bar', String(Math.min(olcek, 1.15)));
 }
 
 export const KISAYOLLAR = [

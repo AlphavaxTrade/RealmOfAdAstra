@@ -297,7 +297,8 @@ export class GameStateManager {
 
   mergeSoldierUnits(kayitli) {
     if (!Array.isArray(kayitli) || kayitli.length === 0) return [];
-    return kayitli.map((s, i) => {
+    // Kurcalanmış/bozuk kayıttaki nesne olmayan öğeler (null, sayı...) atlanır; yoksa oyun hiç açılmaz (denetim QA-13)
+    return kayitli.filter((s) => s && typeof s === 'object').map((s, i) => {
       const level = Math.max(1, s.level || 1);
       const maxHp = 100 + (level - 1) * (GAME_CONFIG.SOLDIER_HP_PER_LEVEL || 25);
       const baseAtk = 25 + (level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);
