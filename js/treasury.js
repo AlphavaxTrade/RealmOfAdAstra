@@ -129,7 +129,8 @@ export class TreasuryLedger {
   // Yeni haftanın bütçelerini açar (haftalık hesaplaşmanın sonunda; ilk açılışta da bir kez).
   // Giriş = kasanın kümülatif girişindeki artış. Son INFLOW_WEEKS haftanın ortalamasının INFLOW_SHARE'i
   // bütçeye eklenir; ayrıca kasa × oran × sağlık çarpanı kadar da çekilebilir.
-  // opts.aktif: o hafta aktif vatandaş sayısı (sunucu verir; kişi başı pay tavanı için). Verilmezse kişi tavanı uygulanmaz.
+  // opts.aktif: o hafta aktif vatandaş sayısı (sunucu verir; kişi başı pay tavanı için). Verilmezse ya da PERSON_CAP_MIN_ACTIVE'in
+  // altındaysa kişi tavanı taban sayıya göre hesaplanır (getPersonWeekCap).
   openWeekBudgets(opts = {}) {
     const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
     if (!B) return {};
@@ -164,14 +165,16 @@ export class TreasuryLedger {
     return { ...st.weekBudget };
   }
 
-  // Kişi başı haftalık pay tavanı: bütçe × PERSON_CAP_MULT ÷ aktif vatandaş (13 Ekim 2026 denetimi EK-05).
-  // Bütçe, aktif sayısı ya da çarpan yoksa Infinity (tarayıcı tek oyunculuk, ilk hafta, hesaplaşma anı).
+  // Kişi başı haftalık pay tavanı: bütçe × PERSON_CAP_MULT ÷ max(aktif vatandaş, PERSON_CAP_MIN_ACTIVE) (13 Ekim 2026 denetimi
+  // EK-05; taban 14 Ekim 2026 ikinci tur). Bütçe ya da çarpan yoksa Infinity (tarayıcı tek oyunculuk: bütçe hiç açılmaz, hesaplaşma
+  // anı: bypassBudget). Aktif sayısı bilinmiyorsa (sunucunun ilk açılışı, boş hafta) ya da azsa payda tabana iner: eskiden bu
+  // durumlarda tavan hiç uygulanmıyordu, ya da payda 1-3 iken çarpan yüzünden tavan bütçeyi aşıyordu.
   getPersonWeekCap(poolId) {
     const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
     const k = Number(B && B.PERSON_CAP_MULT);
     if (!(k > 0) || this.bypassBudget || !this._budgeted(poolId)) return Infinity;
-    const aktif = Number(this.state.weekActive) || 0;
-    if (!(aktif > 0)) return Infinity;
+    const taban = Math.max(1, Math.floor(Number(B.PERSON_CAP_MIN_ACTIVE) || 1));
+    const aktif = Math.max(taban, Math.floor(Number(this.state.weekActive) || 0));
     return this.state.weekBudget[poolId] * k / aktif;
   }
 

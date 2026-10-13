@@ -109,3 +109,35 @@ Sv.20+ taş, kömür ve şifalı ot 0,40 bandının altında; neden yalnız bede
 ile doğrular, taban 0,10). Universe açılınca (silo 18) bant eskisi gibidir. Üst sınır (kalıcı kıtlık) ve hak üzerinden bakış
 (talep / hak ≤ 3,5) her seviyede sıkıdır. Seçenekler (kullanıcı kararı): kabul etmek (termostat kotayı kısar), şifalı otla stamina
 ("ot çayı", §6), ya da seviye XP'sini küçültmek. Model ayrıca artık ulaşılamayan silo yükseltmesini saymaz (Universe öncesi tavan 12).
+
+## 8. Sv.10+ taş / kömür / şifalı ot: karar ve izleme (14 Ekim 2026, ikinci tur)
+
+**Karar: kabul + izleme.** Bölüm 7'deki düşük talep (Sv.20: 0,28 / 0,25 / 0,28; Sv.40: 0,17 / 0,14 / 0,17) bir hata değil, seviye
+bedelinin siloya sığdırılmasının doğal sonucudur. Üç seçenek ölçüldü (`scripts/model/denge_modeli.mjs` kopyasıyla, aynı oyuncu
+karışımı, N = 50 / 200 / 1000, 52 hafta; kişi başı kota = termostatın 12. aydaki değeri, taş / kömür / şifalı ot):
+
+| Seçenek | N=200: fiyat endeksi min · kota (taş/kömür/ot) | N=1000: fiyat endeksi min · kota | Değerlendirme |
+|---|---|---|---|
+| **(a) kabul (şimdiki kural)** | 0,95 · 0,17 / 0,15 / 0,05 | 0,87 · 0,07 / 0,08 / 0,05 | fiyat korunuyor; kota kısılıyor |
+| (b) kırpılan bedeli devret ("borç") | hesaben yok: bedel her seviyede zaten silo × 0,8; devredilen miktar sonraki bedele eklenince o da kırpılır. Üst sınır (kırpmasız bedel, oyuncu siloda tutamasa da) 0,99 · 0,57 / 0,48 / 0,39 | 0,87 · 0,25 / 0,11 / 0,05 | silo tavanı kaldırılmadan uygulanamaz; taksitle ödeme ekran ve işlem ister |
+| (c) Sv.12+ için ek talep (hammadde payının %15 / %30'u) | 0,95 · 0,25 / 0,21 / 0,05 → 0,37 / 0,38 / 0,05 | 0,87 · 0,09 / 0,10 / 0,05 → 0,13 / 0,13 / 0,05 | taşı ve kömürü kısmen kurtarır, otu kurtarmaz; yeni işlem + ekran (arayüz ve sunucu çalışanlarının alanı) |
+
+Neden (a): (1) fiyat ilkesi (EKONOMI_ILKELERI §5, bir yılda en çok %30-50 düşüş) her N'de ve her hammaddede tutuyor; kota
+"ana ayar kolu" (§4) tam bu iş için; (2) talep/hak oranı Sv.40'ta bile ≥ 0,35: termostatın dengeye oturacağı kota (başlangıç
+kotası × talep/hak = 0,14) taban kotanın (QPP_MIN 0,05) 2,8 katı, yani kısacak yer var; (3) gerçek motorlu yıllık simülasyonda
+(26 hafta, 130 hesap) oyuncu ortalaması Sv.5, en yükseği Sv.7: Sv.10 ve altında bant tam (0,45-0,97). Sv.20'ye ancak sürekli
+oynayan (bot) hesap ~70 günde ulaşır (günlük XP tavanı gerçek motorda ölçüldü: 1.500-1.900 XP/gün, kota altında).
+
+**Bilinen bedel:** kota kısılınca o alanlardan toplanan miktar ve XP de orantılı azalır (XP toplanan mahsulle orantılı). Üst
+seviye (Sv.20+) etkin oyuncunun seviye hızı, üç alanda kota 0,40 → ~0,15 inince yaklaşık %30 yavaşlar (hesap: altı alandan üçü 0,15/0,40; ölçülmedi); düşük seviyede talep
+yüksek olduğundan kota geri açılır (kendini dengeleyen). Bu "seviye hızı" kararına dokunmaz (§6 kullanıcı kararı).
+
+**İzleme:**
+- Haftalık hesaplaşma özeti (`server/world/haftalik.js`, olay `weekly`) `kotaTabani` listesini taşır: kişi başı kotası QPP_MIN'e
+  inmiş hammaddeler; liste doluysa yönetici günlüğüne uyarı yazılır. Kota tabana dayanırsa termostatın kısacak yeri kalmamıştır
+  ve fiyat çökmeye başlar.
+- `node scripts/model/hammadde_kullanim.mjs` çıktısındaki "denge kotası" satırı (başlangıç kotası × talep/hak).
+- Test (`tests/test_hammadde_kullanim_plani.mjs` bölüm 8): Sv.≤10 tam bant; bandın altı yalnız silo kırpmasından gelir, Sv.20 ≥ 0,22
+  ve Sv.40 ≥ 0,12; denge kotası ≥ 2,5 × QPP_MIN. Daha da düşüren bir kural değişikliği testi bozar.
+- **Tetik:** bir hammaddenin kotası iki ardışık haftalık özette tabanda görünürse bu bölümdeki (c) seçeneği (ot çayı ya da alet
+  onarımında taş/kömür) devreye alınır; yeni işlem olduğu için arayüz ve sunucu işi olarak açılır.

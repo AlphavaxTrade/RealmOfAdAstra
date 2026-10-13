@@ -16,7 +16,7 @@ const { GAME_CONFIG } = await import('../js/config.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 const { ammMarket } = await import('../js/ammMarket.js');
-const { weightOf, distribute, capFraction, FAUCET_DEFAULTS } = await import('../js/economy/faucet.js');
+const { weightOf, distribute, FAUCET_DEFAULTS } = await import('../js/economy/faucet.js');
 const { runDraw } = await import('../js/economy/lottery.js');
 const { runwayPoolTotal, lotteryTicketPrice, nextMultiplier } = await import('../server/economy.js');
 
@@ -250,9 +250,11 @@ const asker = (gs, n = 1, seviye = 8) => {
   const b = new GameStateManager();
   const b1 = b._kasaCekKisi('dungeon', 24.3);
   assert.equal(b1.granted, 24.3, 'geç gelen de payını alır');
-  // aktif sayı bilinmiyorsa (tarayıcı tek oyunculuk / ilk hafta) tavan yok
+  // aktif sayı bilinmiyorsa (sunucunun ilk açılışı) payda tabana (PERSON_CAP_MIN_ACTIVE = 10) iner: tavan bütçenin %30'u.
+  // 14 Ekim 2026 ikinci tur: eskiden burada tavan hiç uygulanmıyordu (Infinity) ve ilk hafta bir oyuncu bütçeyi süpürebiliyordu.
   treasury.openWeekBudgets({});
-  assert.equal(treasury.getPersonWeekCap('dungeon'), Infinity);
+  treasury.state.weekBudget.dungeon = 100;
+  assert.equal(treasury.getPersonWeekCap('dungeon'), 30, 'aktif bilinmiyor: bütçe × 3 ÷ 10');
   ok('EK-05: haftalık kişi payı tavanı (bütçe × 3 ÷ aktif vatandaş): ilk gelen süpüremiyor, geç gelen payını alıyor');
 }
 

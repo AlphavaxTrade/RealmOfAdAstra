@@ -4,6 +4,10 @@
 //     --eski : 13 Ekim 2026 öncesi kurallarla (üç alanlı seviye bedeli, onarım /3, yükseltmede kömür/taş yok, Konsey karışımı
 //              taş-demir-odun) aynı ölçümü verir: karşılaştırma için.
 //
+// 14 Ekim 2026 ikinci tur: Sv.10+ taş / kömür / şifalı ot talebi seviye bedelinin siloya sığdırılması yüzünden bandın altındadır;
+// bu KABUL edildi (docs/v2/HAMMADDE_KULLANIM_PLANI.md bölüm 8): termostat kotayı kısar, fiyat açılışta kalır. İzleme: bu çıktıdaki
+// "denge kotası" satırı ve haftalık özetteki kotaTabani listesi (server/world/haftalik.js).
+//
 // Referans oyuncu: altı alanı kesintisiz çalıştıran (bot) bir hesap. Bir haftanın talebi:
 //   seviye atlama · alet onarımı · stamina (buğday) · köylü iaşesi · teçhizat (1 dövme + 1 yükseltme + 2 onarım) ·
 //   ev yapımı (2 haftada bir) · silo yükseltmesi (3 haftada bir) · asker iyileştirme (şifalı ot) ·
@@ -154,6 +158,10 @@ if (process.argv[1] && process.argv[1].endsWith('hammadde_kullanim.mjs')) {
       console.log('talep / üretim'.padEnd(20) + K.map((k) => p(s.oranUretim[k]).padStart(8)).join(''));
       console.log('talep / hak'.padEnd(20) + K.map((k) => p(s.oranHak[k]).padStart(8)).join(''));
       console.log('denge (hafta)'.padEnd(20) + K.map((k) => s.haftaDenge[k].toFixed(0).padStart(8)).join(''));
+      // Denge kotası = başlangıç kotası × talep/hak: termostatın yerleşeceği kişi başı kota. QPP_MIN'e (0,05) yaklaşırsa kısacak
+      // yer kalmaz, fiyat çökmeye başlar (izleme eşiği: taban kotanın 2,5 katı; test_hammadde_kullanim_plani.mjs bölüm 8).
+      const qs = GAME_CONFIG.URETIM_HAKKI.QPP_START;
+      console.log('denge kotası'.padEnd(20) + K.map((k) => Math.min(GAME_CONFIG.URETIM_HAKKI.QPP_MAX, Math.max(GAME_CONFIG.URETIM_HAKKI.QPP_MIN, s.oranHak[k] * qs)).toFixed(2).padStart(8)).join(''));
       if (s.siloKirpilan.length) console.log('seviye bedeli siloya sığdırılan: ' + s.siloKirpilan.join(', '));
     }
   }

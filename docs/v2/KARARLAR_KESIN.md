@@ -101,3 +101,11 @@ Ayrıntı, ölçüm ve alternatifler: `docs/v2/TARAMA_2026-10.md` "13 Ekim 2026 
 - **Dünya bossu (EK-07):** kilitli güç savaş anında güncele indirilir (artmaz).
 - **Piyango (EK-08):** devreden biletin ödenen değeri her çekilişte %5 düşer, bilet fiyatının yarısına kadar; ücretsiz (çark parçası) bilet ödenmiş sayılmaz; sunucu bilet fiyatı 3 basamak.
 - **Kasa ömrü (EK-10):** yalnız oyuncuya ödeme yapan kasalar (dungeon, arena, worldBoss, quest, carnival) sayılır.
+
+### 14 Ekim 2026 ikinci tur (ekonomi turundan açık kalanlar)
+
+Ayrıntı, ölçüm ve alternatifler: `docs/v2/TARAMA_2026-10.md` "14 Ekim 2026 ikinci tur". Test: `tests/test_denetim_2026_10_ekonomi_2.mjs`, `tests/test_hammadde_kullanim_plani.mjs` bölüm 8.
+
+- **Sv.10+ taş / kömür / şifalı ot talebi: KABUL + İZLEME (seçilen).** Düşük talebin tek nedeni seviye bedelinin siloya sığdırılmasıdır (silo en çok 12). Termostat kotayı kısarak fiyatı savunur: denge modelinde (N=50/200/1000) fiyat endeksi hiçbir ayda 0,87'nin altına inmedi. Borç/devir modeli (b) silo tavanı yüzünden hesaben işlemez; ek talep alanı (c) tek başına yetmez ve yeni işlem + ekran ister. İzleme: haftalık özette `kotaTabani` (kotası QPP_MIN'e inen hammaddeler) + yönetici günlüğü uyarısı; testte Sv.10 ve altı tam bant (0,40-1,00), Sv.20 ≥ 0,22, Sv.40 ≥ 0,12 ve denge kotası ≥ 2,5 × QPP_MIN. Tetik: bir hammaddenin kotası iki hafta tabanda kalırsa plan §6'daki "ot çayı" ve alet onarımında taş/kömür devreye alınır.
+- **Kolezyum lig haftalık ödülü: ölü alan KALDIRILDI.** `COLOSSEUM.LEAGUES[].weeklyAda/weeklyKeys` hiçbir yerde okunmuyordu; kullanıcının 30 Eylül kararı yalnız "haftalık sıralama, ilk 10'a ödül" idi ve bu `server/arena.js settleWeek` ile dağılıyor. Lige göre ayrı haftalık maaş kimse oynamasa da hesap başına ASTRA + anahtar verir (sahte hesap geliri); lig yalnız maç ödülünü çarpar.
+- **Kişi payı tavanı tabanlı:** `TREASURY_WEEKLY_BUDGET.PERSON_CAP_MIN_ACTIVE` 10. Payda = max(aktif vatandaş, 10): aktif sayısı bilinmeyen ilk haftada ve az oyuncuyla tek kişi bütçenin en çok %30'unu alır (eskiden ilk hafta tavan hiç yoktu; aktif 1-3 iken k×bütçe÷aktif bütçeyi aşıyordu). Kimse son 7 günde görülmediyse sunucu kayıtlı oyuncu sayısını yedek verir.

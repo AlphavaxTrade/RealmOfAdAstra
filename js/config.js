@@ -688,13 +688,16 @@ export const GAME_CONFIG = {
     RATING_SPREAD: 100,
     DAILY_REWARD_CAP_ASTRA: 125,
     // Ligler (gameState.getColosseumTier), yüksekten düşüğe. rewardMult: maç ödülü çarpanı.
-    // weeklyAda / weeklyKeys: ⏳ haftalık lig ödülü — HENÜZ DAĞITILMIYOR (tasarım taslağı).
+    // Lig yalnız maç ödülünü çarpar. Eskiden her ligin `weeklyAda` / `weeklyKeys` alanı vardı ("haftalık lig ödülü") ama hiçbir
+    // kod onları okumuyordu; 14 Ekim 2026 ikinci tur denetiminde KALDIRILDI: haftalık ödül kararı (30 Eylül 2026) "haftalık
+    // sıralama, ilk 10'a ödül (arena kasası)" idi ve server/arena.js settleWeek bunu dağıtıyor; lige göre ayrıca haftalık maaş
+    // kimse yokken bile (1.000 puanla Bronz) hesap başına ASTRA + anahtar demek olurdu (sahte hesap başına bedava gelir).
     LEAGUES: [
-      { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800, weeklyAda: 250, weeklyKeys: 8 },
-      { id: 'diamond',  name: '💎 Elmas Gladyatör',   color: '#38bdf8', rewardMult: 1.6, minRating: 1500, weeklyAda: 90,  weeklyKeys: 5 },
-      { id: 'gold',     name: '🥇 Altın Gladyatör',   color: '#eab308', rewardMult: 1.3, minRating: 1300, weeklyAda: 35,  weeklyKeys: 3 },
-      { id: 'silver',   name: '🥈 Gümüş Gladyatör',   color: '#94a3b8', rewardMult: 1.1, minRating: 1150, weeklyAda: 12,  weeklyKeys: 2 },
-      { id: 'bronze',   name: '🥉 Bronz Gladyatör',   color: '#b45309', rewardMult: 1.0, minRating: 0,    weeklyAda: 4,   weeklyKeys: 1 }
+      { id: 'champion', name: '👑 Efsanevi Şampiyon', color: '#f59e0b', rewardMult: 2.0, minRating: 1800 },
+      { id: 'diamond',  name: '💎 Elmas Gladyatör',   color: '#38bdf8', rewardMult: 1.6, minRating: 1500 },
+      { id: 'gold',     name: '🥇 Altın Gladyatör',   color: '#eab308', rewardMult: 1.3, minRating: 1300 },
+      { id: 'silver',   name: '🥈 Gümüş Gladyatör',   color: '#94a3b8', rewardMult: 1.1, minRating: 1150 },
+      { id: 'bronze',   name: '🥉 Bronz Gladyatör',   color: '#b45309', rewardMult: 1.0, minRating: 0 }
     ]
   },
 
@@ -760,7 +763,11 @@ export const GAME_CONFIG = {
   // PERSON_CAP_MULT (13 Ekim 2026 denetimi EK-05): kişi başı haftalık pay tavanı = bütçe × PERSON_CAP_MULT ÷ aktif vatandaş.
   // Bütçe "ilk gelen alır" idi: hızlı oyuncu haftanın payını ilk günlerde çekip geç gelenleri 0'da bırakabiliyordu. 3 = eşit payın
   // 3 katına kadar; dürüst yoğun oyuncuyu sıkmaz, tek kişinin bütçeyi süpürmesini keser. Zindan ve kolezyum ödülleri bunu uygular.
-  TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15, PERSON_CAP_MULT: 3, FULL_MESSAGE: 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' },
+  // PERSON_CAP_MIN_ACTIVE (14 Ekim 2026 ikinci tur): paydadaki aktif sayısının tabanı. Sunucu ilk açılışta (aktif sayısı henüz
+  // yok) ve az oyuncuyla payda 0-3 çıkıyordu: tavan ya hiç uygulanmıyordu (Infinity) ya da 3 × bütçe ÷ 1 ile bütçenin kendisini
+  // aşıyordu (hiç tavan yok). Taban 10: tek kişi bütçenin en çok 3/10'unu (%30) alabilir, bütçeyi bitirmek için en az 4 kişi gerekir;
+  // artmayan kısım kasada kalır (kayıp yok). Aktif sayı 10'u geçince formül eskisi gibidir (bütçe × 3 ÷ aktif).
+  TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15, PERSON_CAP_MULT: 3, PERSON_CAP_MIN_ACTIVE: 10, FULL_MESSAGE: 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' },
   // Kasa ömrü (fiyat çarpanı kasa-ömrü düzeltmesi, server/world/haftalik.js): yalnız OYUNCUYA ödeme yapan kasalar sayılır.
   // universe (Universe açılışına kadar kilitli), konsey (proje kasası, kilitli), fatih (tek bir olaya bağlı), ammBuyback (alıp yakar,
   // vatandaşa ödenmez) sayılmaz: eskiden toplam 88 M sayılıyor, aylık ücretsiz havuza göre ~170 ay çıkıp çarpan sürekli ×0,8'e iniyordu.

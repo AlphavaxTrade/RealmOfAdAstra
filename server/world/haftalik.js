@@ -218,6 +218,18 @@ export function olusturHaftalik(w) {
       // 8) Kolezyum (gerçek rakipler) haftalık sıralama ödülleri: ilk 10, Kolezyum kasasından
       if (arena) summary.pvp = arena.settleWeek(closedEpoch);
 
+      // İzleme (14 Ekim 2026 ikinci tur, docs/v2/HAMMADDE_KULLANIM_PLANI.md bölüm 8): kişi başı kotası taban değere (QPP_MIN)
+      // inen hammaddeler. Seviye bedeli siloya sığdırıldığı için Sv.20+ taş / kömür / şifalı ot talebi düşüktür; bu kabul edilmiş
+      // bir durumdur ve termostat kotayı kısarak fiyatı savunur. Kota tabana dayanırsa kısacak yer kalmamıştır: fiyat çökmeye
+      // başlar, yönetici uyarılır (özet kotaTabani listesi + log).
+      try {
+        const qppMin = Number((E.GAME_CONFIG.URETIM_HAKKI || {}).QPP_MIN ?? 0.05);
+        const qpp = (gp.state && gp.state.uretim && gp.state.uretim.qpp) || {};
+        const tabanda = Object.keys(qpp).filter(k => Number(qpp[k]) <= qppMin + 1e-9);
+        summary.kotaTabani = tabanda;
+        if (tabanda.length) log.warn('Kota tabana indi (talep düşük, termostatın kısacak payı kalmadı): ' + tabanda.join(', '));
+      } catch (err) { log.warn('Kota izleme:', err.message); }
+
       // Kapı göstergesi: bu hafta dağıtılan kazanç (ASTRA) ve fiyat → kişi başı aylık dolar ortalamasına girer
       if (kapi) { try { kapi.recordWeek(summary, Number((econ().market || {}).priceUsd) || 0); } catch (err) { log.warn('Kapı göstergesi:', err.message); } }
       // Katılım puanı (E-planı Faz 1): bu haftanın değerlendirmesi — eşiğin altında kalanlara uyarı/izin sorusu
@@ -233,8 +245,11 @@ export function olusturHaftalik(w) {
       db.raw.prepare('DELETE FROM prices WHERE at < ?').run(now - 400 * DAY);
       const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
       if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key >= 'pvp:match:' AND key < 'pvp:match;' AND CAST(substr(key, 11) AS INTEGER) <= ?")   /* LIKE yerine aralık: anahtar indeksini kullanır */.run(seq - 5000);
-      // Aktif vatandaş sayısı: son 7 günde görülenler (kişi başı haftalık pay tavanı için, js/treasury.js getPersonWeekCap)
-      T.openWeekBudgets({ aktif: players.filter(p => p.last_seen >= now - 7 * DAY).length });
+      // Aktif vatandaş sayısı: son 7 günde görülenler (kişi başı haftalık pay tavanı için, js/treasury.js getPersonWeekCap).
+      // Kimse son 7 günde görülmediyse (uzun duraklama, yeni sıfırlama) kayıtlı oyuncu sayısı yedek olur; sayı yine de taban
+      // PERSON_CAP_MIN_ACTIVE'in altına inerse hazine defteri tabanı uygular.
+      const aktif7 = players.filter(p => p.last_seen >= now - 7 * DAY).length;
+      T.openWeekBudgets({ aktif: aktif7 > 0 ? aktif7 : players.length });
       return summary;
     }); } finally { T.bypassBudget = false; }
   }

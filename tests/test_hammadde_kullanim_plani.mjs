@@ -181,17 +181,28 @@ const yeni = () => {
 
 // 8) Model ölçümü: her hammaddenin haftalık talebi tam üretimin %40-100'ü arasında (hiçbiri atıl ya da kıtlık değil).
 //    13 Ekim 2026 denetimi EK-01: seviye bedeli artık ulaşılabilir silonun %80'ini aşamıyor. Eskiden Sv.12+ için hesaplanan
-//    talep hayalet idi (oyuncu o bedeli siloda tutamıyordu). Bedel kırpılan seviyelerde taş / kömür / şifalı ot bandın
-//    altına inebilir; bu YALNIZ kırpma yüzünden olabilir (siloKirpilan) ve 0,10'un altına inmez. Üst sınır (kıtlık yok) ve
-//    hak üzerinden bakış (EK-09) her seviyede sıkıdır.
+//    talep hayalet idi (oyuncu o bedeli siloda tutamıyordu). Bedel kırpılan seviyelerde (Sv.10+) taş / kömür / şifalı ot
+//    talebi bandın altına iner. 14 Ekim 2026 ikinci tur KARARI: bu KABUL edilmiş bir durumdur (HAMMADDE_KULLANIM_PLANI bölüm 8):
+//    kota termostatı kotayı kısar, fiyat açılışta kalır (denge modeli N=50/200/1000: fiyat endeksi ≥ 0,87). Bu yüzden bant artık
+//    "gevşek taban" değil, üç somut kuralla kilitlidir:
+//      (i)   Sv.10 ve altında (gerçek motorlu yıllık simülasyonda ortalama Sv.5, en çok Sv.7) her hammadde TAM bandın içindedir.
+//      (ii)  Bandın altına inen her kalem seviye bedelinin silo kırpmasından gelir (siloKirpilan) ve termostatın kısma payı korunur:
+//            denge kotası (başlangıç kotası × talep/hak) taban kotanın (QPP_MIN) en az 2,5 katıdır.
+//      (iii) Ölçülen değerler sabitlenir: Sv.20 ve Sv.40'ta 0,22 / 0,12'nin altına inmez; daha da düşüren bir kural değişikliği
+//            bu testi bozar ve yeniden karar ister.
 {
+  const U = GAME_CONFIG.URETIM_HAKKI;
+  const kabul = { 20: 0.22, 40: 0.12 };   // ölçülen en düşük: Sv.20 → 0,25 (kömür), Sv.40 → 0,14 (kömür); ~0,03 pay
   for (const o of olcumler) {
     for (const k of K) {
       const r = o.oranUretim[k];
       assert.ok(r <= 1.0, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} 1,00'ı aşıyor (kalıcı kıtlık)`);
+      if (o.seviye <= 10) assert.ok(r >= 0.40, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} 0,40 bandının altında (Sv.10 ve altı tam bantta olmalı)`);
       if (r < 0.40) {
         assert.ok(o.siloKirpilan.includes(k), `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} bandın altında ve nedeni seviye bedelinin silo kırpması değil`);
-        assert.ok(r >= 0.10, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} kırpmayla bile 0,10'un altında (hammadde atıl)`);
+        assert.ok(r >= (kabul[o.seviye] ?? 0.25), `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} kabul edilen düzeyin altında (${kabul[o.seviye]})`);
+        const denge = o.oranHak[k] * U.QPP_START;
+        assert.ok(denge >= 2.5 * U.QPP_MIN, `seviye ${o.seviye} ${k}: denge kotası ${denge.toFixed(3)} taban kotanın (${U.QPP_MIN}) 2,5 katından az: termostat kısacak yer bulamaz`);
       }
       // hak üzerinden: başlangıç kotası 0,40 ile talep hakkın 3,5 katını geçmez; termostat (haftada +%10) en çok 13 haftada yetişir
       assert.ok(o.oranHak[k] <= 3.5, `seviye ${o.seviye} ${k}: talep/hak ${o.oranHak[k].toFixed(2)} (>3,5)`);
@@ -199,7 +210,7 @@ const yeni = () => {
     }
   }
   const bandiciCikanlar = olcumler.filter((o) => K.some((k) => o.oranUretim[k] < 0.40)).map((o) => o.seviye);
-  ok(`model: talep / üretim her seviyede ≤ 1,00; 0,40 altı yalnız silo kırpması yüzünden (seviyeler: ${bandiciCikanlar.join(', ') || '-'}); hak bakışı ≤ 3,5`);
+  ok(`model: talep / üretim her seviyede ≤ 1,00; Sv.≤10 tam bantta; 0,40 altı (Sv. ${bandiciCikanlar.join(', ') || '-'}) yalnız silo kırpması yüzünden ve denge kotası ≥ 2,5 × taban`);
 }
 
 // 9) Çark: yeni üç hammadde sık gelen dilimlerde (pazardan alınan hammadde ödülü onlara talep yaratır)

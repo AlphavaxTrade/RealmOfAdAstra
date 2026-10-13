@@ -300,7 +300,7 @@ Bugün kabul edilebilir düzeyde. En büyük kazanç, Phaser'ı npm'den pakete a
 |---|---|
 | Altyapı | Sunucu ve hesap sistemi, cüzdan, kayıt dışa/içe aktarma, CI |
 | Oyun içi | Ses; ayarlar (hareket azaltma, ses, dil); günlük ve haftalık görevler (kaldırılmış); başarımlar; gerçek PvP |
-| Config'de tanımlı, bağlı değil | Sezon, prestij, teçhizat eklentileri (affix), kolezyum haftalık lig ödülleri |
+| Config'de tanımlı, bağlı değil | Sezon, prestij, teçhizat eklentileri (affix), kolezyum haftalık lig ödülleri (14 Ekim 2026'da ölü alan olarak kaldırıldı; haftalık ödül yalnız PvP ilk 10) |
 
 ---
 

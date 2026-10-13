@@ -120,7 +120,7 @@
  {
   "adim": "zindan",
   "oyuncu": [
-   "241d591d2bfc4555"
+   "44b9e90621d09d99"
   ],
   "dunya": "74c4af3865a6ec2c",
   "sonuc": [
@@ -132,7 +132,7 @@
  {
   "adim": "karnaval",
   "oyuncu": [
-   "4fa53d3192748f20"
+   "8f622c35024b835a"
   ],
   "dunya": "ce2dcb0c1f8fc970",
   "sonuc": [
@@ -145,7 +145,7 @@
  {
   "adim": "piyango bileti",
   "oyuncu": [
-   "b1a74a43e7672756",
+   "639a2b70e1a403df",
    "0e2622f06c7d5ba7"
   ],
   "dunya": "1d722fc789c9f3f1",
@@ -193,7 +193,7 @@
  {
   "adim": "gun 1",
   "oyuncu": [
-   "9ee41c841953eda0",
+   "71bdd754e367af7c",
    "32c3e83658939a74"
   ],
   "dunya": "401dac4c9716f1e4",
@@ -206,7 +206,7 @@
  {
   "adim": "gun 2",
   "oyuncu": [
-   "43e73c51168a316c",
+   "30394049c04d08a9",
    "dc14b080d8f4ed8b"
   ],
   "dunya": "0b16ef22bf57eb06",
@@ -219,7 +219,7 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "0a8fe36ef67a9724",
+   "a0ab6fe115afc406",
    "e4dd5a98e1ce942f"
   ],
   "dunya": "7627a4c9b303b9ff",
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "4d58eb2fc9d1555f",
+   "61a45a78aec95dc4",
    "0e366d0a19383af8",
    "0267e794f6849060"
   ],
-  "dunya": "dbd02d712c475b90",
+  "dunya": "214e54e60739517d",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,11 +245,11 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "2d8160a786ba841a",
+   "9ab96ae42296e97a",
    "73504dcb6d1d6d32",
    "0267e794f6849060"
   ],
-  "dunya": "c3c291e5acbfa711",
+  "dunya": "b19aee82029b597d",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",
