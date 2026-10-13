@@ -1,8 +1,9 @@
 /* =========================================================================
-   AdAstra: Genesis Realm - DeFi Kingdoms & Pixiland Master CSS Design System
+   Realm of AdAstra — temel stil (yükleme ekranı, harita kapsayıcıları, zindan kat çubuğu, pencere kabuğu, savaş sonucu parçaları)
+   Yükleme sırası (index.html): style.css → battle-arena.css → theme.css → v3/kabuk.css → v3/ekran.css. Sonraki dosyalar
+   öncekilerin üstüne yazar; v3 dosyaları arayüzün güncel kabuğunu kurar. 13 Ekim 2026'da sadeleştirildi: görünüm değiştirmeden
+   fazlalık bildirimler (scripts/tarayici/css-sadelestir.mjs) ve boş bölüm başlıkları kaldırıldı.
    ========================================================================= */
-
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700;800&family=Outfit:wght@400;600;700;800&display=swap');
 
 :root {
   --font-game: 'Fredoka', cursive, sans-serif;
@@ -52,18 +53,8 @@ html, body {
 }
 
 /* =========================================================================
-   0. TOP ANNOUNCEMENT & RISK WARNING TICKER (KAYAN DUYURU & UYARI PANELI)
+   HARİTA TUVALİ
    ========================================================================= */
-
-#phaser-game-container {
-  position: absolute;
-  top: 92px;
-  left: 0;
-  width: 100vw !important;
-  height: calc(100vh - 92px) !important;
-  z-index: 1;
-  overflow: hidden;
-}
 
 #phaser-game-container canvas {
   display: block;
@@ -76,44 +67,21 @@ html, body {
 }
 
 /* =========================================================================
-   0. TOP ANNOUNCEMENT & RISK WARNING TICKER (CANLI KAYAN DUYURU PANOSU)
-   ========================================================================= */
-
-/* =========================================================================
-   1. SOLID TOP MENU BAR (HARİTADAN AYRI ÜST ŞERİT MENÜ)
+   ÜST ŞERİT (zindan kat çubuğunun kabı)
    ========================================================================= */
 .top-nav-strip {
-  position: fixed;
-  top: 32px;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 60px;
-  background: linear-gradient(180deg, rgba(18, 12, 28, 0.94) 0%, rgba(9, 6, 16, 0.98) 100%);
-  backdrop-filter: blur(20px) saturate(190%);
   -webkit-backdrop-filter: blur(20px) saturate(190%);
-  border-bottom: 1px solid rgba(234, 179, 8, 0.35);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   display: flex;
-  flex-wrap: nowrap;
   justify-content: space-between;
-  align-items: center;
-  padding: 0 16px;
   gap: 12px;
-  z-index: 1000;
-  pointer-events: auto;
-  user-select: none;
-  box-sizing: border-box;
   overflow: hidden;
 }
 
 /* Phaser Game Canvas Positioning */
 #phaser-game-container, .phaser-game-container {
   position: fixed;
-  top: 92px;
   left: 0;
   width: 100vw;
-  height: calc(100vh - 92px);
   overflow: hidden;
   z-index: 1;
 }
@@ -124,37 +92,14 @@ html, body {
   height: 100% !important;
 }
 
-/* Sol Profil & Web3 Cüzdan Bölümü (Penpot Glassmorphic Profile Card) */
-
-/* Orta Hızlı Şerit Menü Butonları (Penpot Navigation Pill Capsules) */
-
-/* Sağ Hammadde Kutucukları (Penpot Thematic Resource Gems) */
-
-/* v1.25: kaynak renkleri theme.css içinde (.res-wheat / .res-wood / .res-iron) */
-
-/* Bildirim Çanı (Notification Gem) */
-
 /* =========================================================================
-   2. BOTTOM 3D DOCK BAR (DEFI KINGDOMS CHUNKY 3D DOCK)
-   ========================================================================= */
-
-/* Buton Renkleri */
-
-/* =========================================================================
-   3. RPG MODAL (DEFI KINGDOMS PARCHMENT & GOLD BORDER)
+   PENCERE KABUĞU (#rpg-modal)
    ========================================================================= */
 .rpg-modal-overlay {
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  background: rgba(4, 2, 1, 0.82) !important;
-  backdrop-filter: blur(6px) !important;
   display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 99999 !important;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -169,16 +114,7 @@ html, body {
 }
 
 .rpg-modal-window {
-  width: 92vw;
-  max-width: 1280px;
-  height: 86vh;
-  max-height: 88vh;
-  background: #0f1117;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  transform: scale(0.98);
   transition: transform 0.18s ease-out;
   z-index: 100000;
   pointer-events: auto;
@@ -187,61 +123,31 @@ html, body {
   flex-direction: column;
 }
 
-.rpg-modal-overlay.active .rpg-modal-window {
-  transform: scale(1);
-}
-
 /* MODAL AÇIKKEN ARKA PLANDAKİ TÜM TIKLAMALARI VE ETKİLEŞİMLERİ DEVRE DIŞI BIRAK */
 body.modal-open #phaser-game-container,
 body.modal-open .dungeon-floor-nav,
 body.modal-open .realm-tooltip {
   pointer-events: none !important;
-  user-select: none !important;
 }
 
 .rpg-modal-header {
-  background: #161922;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 14px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .rpg-modal-title {
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: #f8fafc;
   display: flex;
   align-items: center;
   gap: 10px;
-  letter-spacing: 0.3px;
 }
 
 .rpg-modal-close {
-  background: #dc2626;
-  border: 1.5px solid #f87171;
-  color: #ffffff;
-  padding: 8px 18px;
-  height: 42px;
-  border-radius: 10px;
-  font-family: var(--font-game);
-  font-weight: 900;
-  font-size: 0.95rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   transition: all 0.15s ease;
-  user-select: none;
-  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
-}
-
-.rpg-modal-close .modal-close-text {
-  font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  font-weight: 800;
 }
 
 .rpg-modal-close:hover {
@@ -257,16 +163,11 @@ body.modal-open .realm-tooltip {
 }
 
 .rpg-modal-body {
-  padding: 18px 24px;
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  pointer-events: auto;
 }
-
-/* Kart Tasarımları (Minimal & Modern) */
 
 /* Butonlar (Modern & Göz Yormayan) */
 .btn-clean {
@@ -303,33 +204,15 @@ body.modal-open .realm-tooltip {
 /* Toast */
 .toast-container {
   position: fixed !important;
-  top: 30px !important;
-  right: 20px !important;
   display: flex !important;
-  flex-direction: column !important;
-  gap: 8px !important;
-  z-index: 100005 !important;
   pointer-events: none !important;
 }
 
 .toast {
   pointer-events: auto;
-  background: linear-gradient(180deg, #2b1406 0%, #150903 100%);
-  border: 2.5px solid #ca8a04;
-  border-radius: 14px;
-  padding: 10px 16px;
-  font-family: var(--font-game);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #ffffff;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.85);
   display: flex;
-  align-items: center;
   gap: 8px;
 }
-
-.toast.success { border-color: #10b981; color: #6ee7b7; }
-.toast.error { border-color: #ef4444; color: #fca5a5; }
 
 /* Loading Screen — Realm of Astra Royal Scroll Edition */
 .loading-screen-overlay {
@@ -349,7 +232,6 @@ body.modal-open .realm-tooltip {
 }
 
 .loading-screen-overlay.hidden {
-  opacity: 0;
   pointer-events: none;
   display: none;
 }
@@ -404,17 +286,14 @@ body.modal-open .realm-tooltip {
 }
 
 .royal-scroll-title {
-  font-family: var(--font-game);
   font-size: 2.1rem;
   font-weight: 800;
   color: #fde047;
-  letter-spacing: 2px;
   text-transform: uppercase;
   text-shadow: 0 4px 16px rgba(250, 204, 21, 0.6), 0 2px 4px rgba(0,0,0,0.9);
 }
 
 .loading-subtext {
-  font-family: var(--font-game);
   font-size: 0.92rem;
   color: #fef08a;
   opacity: 0.85;
@@ -437,7 +316,6 @@ body.modal-open .realm-tooltip {
 
 .loading-bar-fill {
   height: 100%;
-  width: 0%;
   background: linear-gradient(90deg, #ca8a04, #f59e0b, #10b981);
   border-radius: 8px;
   transition: width 0.1s ease;
@@ -445,7 +323,6 @@ body.modal-open .realm-tooltip {
 }
 
 .royal-scroll-pct {
-  font-family: var(--font-game);
   font-size: 0.95rem;
   font-weight: 800;
   color: #fde047;
@@ -453,31 +330,24 @@ body.modal-open .realm-tooltip {
 }
 
 /* =========================================================================
-   4. FIXED DUNGEON FLOOR SELECTOR (SABİT 6 KAT MENÜSÜ)
+   ZİNDAN KAT ÇUBUĞU
    ========================================================================= */
 .dungeon-floor-nav {
   position: fixed;
   top: 8px;
   left: 50%;
-  transform: translateX(-50%);
   display: flex;
-  flex-wrap: nowrap;
   white-space: nowrap;
-  align-items: center;
   justify-content: center;
-  gap: 4px;
   max-width: 96vw;
   max-height: 38px;
-  overflow-x: auto;
   overflow-y: hidden;
-  background: linear-gradient(180deg, rgba(43,24,13,0.96) 0%, rgba(23,13,7,0.96) 100%);
   backdrop-filter: blur(6px);
   border: 2px solid #ca8a04;
   border-radius: 11px;
   padding: 3px 8px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px rgba(0,0,0,0.85);
   z-index: 500;
-  pointer-events: auto;
   scrollbar-width: none;
 }
 
@@ -490,32 +360,11 @@ body.modal-open .realm-tooltip {
 }
 
 .dungeon-nav-divider {
-  width: 1.5px;
   align-self: stretch;
-  margin: 3px 0;
-  background: linear-gradient(180deg, transparent, #ca8a04 50%, transparent);
-  flex-shrink: 0;
 }
 
 .dungeon-home-btn {
-  border: 1.5px solid #a16207;
-  border-bottom: 2px solid #713f12;
-  background: linear-gradient(180deg, #fcd34d 0%, #b45309 100%);
-  color: #1c1006;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.68rem;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  padding: 3px 8px;
-  border-radius: 7px;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  flex-shrink: 0;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.5);
   transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
 }
 
@@ -534,7 +383,6 @@ body.modal-open .realm-tooltip {
   display: flex;
   align-items: center;
   gap: 5px;
-  background: transparent;
 }
 
 body.in-dungeon #dungeon-floor-bar {
@@ -553,34 +401,8 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 
 .floor-tab {
-  position: relative;
-  border: 1.5px solid #a8712c;
-  border-top-color: #f3cb7a;
-  border-bottom: 2px solid #2c1403;
-  background: linear-gradient(180deg, #2c1810 0%, #170d06 100%);
-  color: #f3d38a;
-  font-family: var(--font-game);
-  font-weight: 800;
-  font-size: 0.66rem;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  padding: 4px 9px;
-  border-radius: 8px;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  flex-shrink: 0;
   isolation: isolate;
-  text-shadow:
-    0 0 4px rgba(250, 204, 21, 0.55),
-    0 0 9px rgba(217, 119, 6, 0.35),
-    0 1px 1px rgba(0, 0, 0, 0.85);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 232, 171, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.65),
-    0 2px 4px rgba(0, 0, 0, 0.55);
   transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.2s ease, color 0.15s ease, text-shadow 0.2s ease;
 }
 
@@ -614,18 +436,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   transform: translateY(0) scale(0.97);
 }
 
-.floor-tab.active {
-  background: linear-gradient(180deg, #10b981 0%, #047857 100%);
-  border-color: #fde68a;
-  border-top-color: #fef3c7;
-  border-bottom-color: #064e3b;
-  color: #ffffff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(16, 185, 129, 0.5);
-}
-
 .floor-tab.boss-tab.active {
   background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
   border-color: #fde68a;
@@ -655,12 +465,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
    1: Yeşil · 2: Camgöbeği · 3: Altın · 4: Kehribar · 5: Lav Turuncusu · 6: Efsanevi Kırmızı/Altın
    ========================================================================= */
 .floor-tab[data-floor="1"].active {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 0 10px rgba(34, 197, 94, 0.75),
-    0 0 22px rgba(34, 197, 94, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.5);
   animation: floorHalo-f1 2.2s ease-in-out infinite;
 }
 
@@ -772,45 +576,25 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 .dungeon-drop-hud {
   display: flex;
   align-items: center;
-  gap: 6px;
   margin-left: 6px;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(234, 179, 8, 0.45);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.6);
   padding: 3px 8px;
   border-radius: 8px;
-  font-family: var(--font-game);
-  user-select: none;
 }
 
 .dungeon-drop-badge {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  font-size: 0.68rem;
   font-weight: 800;
   line-height: 1;
   transition: all 0.2s ease;
-}
-
-.dungeon-drop-badge.frag-badge {
-  background: rgba(14, 116, 144, 0.35);
-  border: 1px solid rgba(56, 189, 248, 0.4);
-  color: #bae6fd;
 }
 
 .dungeon-drop-badge.frag-badge .badge-val {
   color: #38bdf8;
   font-weight: 900;
   text-shadow: 0 0 6px rgba(56, 189, 248, 0.7);
-}
-
-.dungeon-drop-badge.box-badge {
-  background: rgba(109, 40, 217, 0.35);
-  border: 1px solid rgba(192, 132, 252, 0.4);
-  color: #f3e8ff;
 }
 
 .dungeon-drop-badge.box-badge .badge-val {
@@ -837,16 +621,11 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 
 /* =========================================================================
-   5. ULTRA-CRISP HTML HOVER TOOLTIP (JİLET GİBİ NET VE OKUNAKLI)
+   HARİTA ÜZERİNDE BİLGİ İPUCU
    ========================================================================= */
 .realm-tooltip {
   position: fixed;
   pointer-events: none;
-  background: linear-gradient(180deg, #24140a 0%, #130a05 100%);
-  border: 2.5px solid #f59e0b;
-  border-radius: 12px;
-  padding: 8px 18px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.92), inset 0 1px 0 rgba(255,255,255,0.3);
   z-index: 600;
   transform: translate(-50%, -100%) scale(0.95);
   opacity: 0;
@@ -861,119 +640,16 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 
 .realm-tooltip-title {
-  font-family: var(--font-game);
-  font-weight: 800;
   font-size: 0.95rem;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.9);
 }
 
 .realm-tooltip-sub {
-  font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.78rem;
-  color: #facc15;
   margin-top: 2px;
 }
 
 /* =========================================================================
-   6. SAĞ MENÜ PANELİ (AÇILIR KAPANIR / SLIDE-OUT DRAWER)
-   ========================================================================= */
-
-/* Sağ Menü Açma/Kapama Altın Butonu */
-
-/* 1. ÜST KOMPAKT DURUM ŞERİDİ */
-
-/* KART & BÖLÜM ÇERÇEVELERİ */
-
-/* 2. AKTİF SEFER KARTLARI */
-
-/* HIZLI HASAT BUTONU */
-
-/* 3. KOMPAKT HAFTALIK KOTA */
-
-/* 4. KRALLIK KONTROL MERKEZİ (2x4 MODERN GRID) */
-
-/* Renk kodlu buton bordür ve hafif arkaplan tonları */
-
-/* Grid Buton Rozetleri */
-
-/* TÜM ALETLERİ ONAR BUTONU */
-
-/* Parça (Fragment) Kaynak Rozeti */
-
-/* =========================================================================
-   7. PHASE 2: GAMEFI & RPG EKONOMİSİ - DEMİRCİ, 18 KİŞİLİK ORDU,
-      18v18 KOLEZYUM ARENASI, NFT KOLEKSİYON ALBÜMÜ & KİLİTLİ KUTULAR
-   ========================================================================= */
-
-/* --- Sekme (Tab) Sistemi: Modern Segmented Control Tasarımı --- */
-
-/* =========================================================================
-   7.1 DEMİRCİ (BLACKSMITH) - SİLAH & ZIRH DÖVME KARTLARI
-   ========================================================================= */
-
-/* =========================================================================
-   7.2 18 KİŞİLİK ORDU - ASKER TEÇHİZAT & SEVİYE KARTLARI
-   ========================================================================= */
-
-/* =========================================================================
-   7.3 18v18 KOLEZYUM ARENA SAVAŞI
-   ========================================================================= */
-
-/* =========================================================================
-   7.4 18 PARÇALIK NFT KOLEKSİYON ALBÜMÜ & GENESIS MÜHÜR BANNERI
-   ========================================================================= */
-
-/* =========================================================================
-   7.5 KİLİTLİ KUTULAR & UNBOXING (MYSTERY BOX)
-   ========================================================================= */
-
-/* =========================================================================
-   7.6 AMM PAZAR - PARÇA (FRAGMENT) TİCARET SEKMESİ
-   ========================================================================= */
-
-/* =========================================================================
-   8. DEVELOPER & QUICK TEST PANEL (DEV CHEAT ENGINE)
-   ========================================================================= */
-
-/* 🍦 Vanilla Hesap Sıfırlama Kutusu (En Belirgin Uyarı Butonu) */
-
-/* Custom Debug Live Editor & Table */
-
-/* ==========================================================================
-   AMM İNTERAKTİF TİCARET VE DEMİRCİ EKİPMAN STİLLERİ
-   ========================================================================== */
-
-/* 5 Demirci Ekipman Kartları */
-
-/* =========================================================================
-   CANLI SEFER SAYACI & ERKEN TOPLAMA (ACCRUED YIELD)
-   ========================================================================= */
-
-/* =========================================================================
-   ASKER ENVANTERİ & TEÇHİZAT KUŞANMA UI (SOLDIER EQUIPMENT SHEET)
-   ========================================================================= */
-/* =========================================================================
-   ASKERİ KIŞLA & ORDU TEÇHİZAT YÖNETİMİ (PENPOT RPG MASTER DESIGN)
-   ========================================================================= */
-
-/* 1. Ordu Genel Bakış Paneli (Overview HUD) */
-
-/* 2. Toplu Hızlı Aksiyonlar Şeridi */
-
-/* 3. 18 Kişilik Ordu Roster Vitrini */
-
-/* 4. Seçili Kahraman Donatım Sayfası (Hero Sheet) */
-
-/* 5. 5 Parça Teçhizat Yuvası Grid */
-
-/* 6. Asker Canı & Pasif/Hızlı İyileşme (Soldier HP & Healing Glass Panel) */
-
-/* =========================================================================
-   9. AAA FANTASY GLASSMORPHISM UPGRADE LAYER
-   (Web3 RPG Master Redesign — UI_UX_MASTER_REDESIGN_SPEC.md entegrasyonu)
+   CAM KATMANI (renk değişkenleri, pencere ve üst şerit camı, düğmeler)
    ========================================================================= */
 :root {
   --ada-primary-gold: #FFD700;
@@ -1002,23 +678,11 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   }
 }
 
-/* ---------- 9.1 DERİN CAM MODAL & ALTIN VARAK ÇERÇEVE ---------- */
-.rpg-modal-overlay { backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important; }
+/* ---------- Pencere camı ---------- */
+.rpg-modal-overlay { -webkit-backdrop-filter: blur(10px) !important; }
 
 .rpg-modal-window {
-  background: linear-gradient(180deg, rgba(34, 19, 8, 0.86) 0%, rgba(15, 8, 4, 0.94) 100%);
-  backdrop-filter: blur(18px) saturate(1.7);
   -webkit-backdrop-filter: blur(18px) saturate(1.7);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    var(--ada-shadow-soft),
-    0 0 70px rgba(202, 138, 4, 0.28),
-    0 0 0 1px var(--ada-glass-border);
-}
-
-.rpg-modal-header {
-  background: linear-gradient(180deg, rgba(61, 31, 12, 0.85) 0%, rgba(38, 18, 5, 0.9) 100%);
-  backdrop-filter: blur(10px);
 }
 
 .rpg-modal-close {
@@ -1031,30 +695,12 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 }
 .rpg-modal-close:active { transform: translateY(0) scale(0.94); }
 
-/* ---------- 9.2 KRİSTAL CAM KARTLAR (.clean-card / .soldier-sheet-card / .stat-pill) ---------- */
-
-/* Kristal parıltı utility sınıfı — istenen herhangi bir öğeye eklenebilir */
-
-/* ---------- 9.3 ÜST MENÜ ŞERİDİ & KAYNAK ROZETLERİ ---------- */
+/* ---------- Üst şerit camı ---------- */
 .top-nav-strip {
-  background: linear-gradient(180deg, rgba(30, 17, 7, 0.88) 0%, rgba(12, 6, 3, 0.92) 100%);
-  backdrop-filter: blur(14px) saturate(1.5);
   -webkit-backdrop-filter: blur(14px) saturate(1.5);
 }
 
-/* Aktif Durum Göstergesi (bir üst menü butonuna 'active' class'ı eklendiğinde) */
-
-/* ---------- 9.4 18 ASKER ROSTERİ & RARITY (COMMON / RARE / EPIC / LEGENDARY) ---------- */
-
-/* ---------- 9.5 5 PARÇA TEÇHİZAT YUVASI (ENVANTER SOKETİ) ---------- */
-
-/* ---------- 9.6 SET BONUSU LÜKS ROZETİ ---------- */
-
-/* ---------- 9.7 İLERLEME ÇUBUKLARI (GÖREVLER & SEFERLER) ---------- */
-
-/* Mevcut ilerleme çubuklarına da aynı içten ışıyan parıltıyı ekle */
-
-/* ---------- 9.8 PREMIUM 3D BUTONLAR ---------- */
+/* ---------- Düğmeler (.btn-clean) ---------- */
 .btn-clean {
   position: relative;
   overflow: hidden;
@@ -1074,56 +720,16 @@ body:not(.in-dungeon) #dungeon-floor-bar {
   filter: brightness(0.95);
 }
 
-/* ---------- 9.9 SEFER GERİ SAYIM HALKASI (opsiyonel kullanım) ---------- */
-
-/* ---------- 9.10 KENAR ÇUBUĞU (SIDEBAR) CAM PANELLERİ ---------- */
-
 /* =========================================================================
-   10. KRALIK DASHBOARD (MASTER COMMAND CENTER)
-   ========================================================================= */
-
-/* =========================================================================
-   12. NOTIFICATION CENTER (BİLDİRİM MERKEZİ)
-   ========================================================================= */
-
-/* =========================================================================
-   13. PRE-BATTLE FORMATION HUB (SAVAŞ ÖNCESİ TAKTİK PANELİ)
-   ========================================================================= */
-
-/* =========================================================================
-   14. SMART ARMORY HUB (AKILLI SİLAH DEPOSU)
+   NADİRLİK ETİKETLERİ VE KAPI ŞERİDİ
    ========================================================================= */
 .rarity-tag.common { background: rgba(156,163,175,0.15); color: #9ca3af; }
 .rarity-tag.rare { background: rgba(59,130,246,0.15); color: #60a5fa; }
 .rarity-tag.epic { background: rgba(168,85,247,0.15); color: #c084fc; }
 .rarity-tag.legendary { background: rgba(245,158,11,0.15); color: var(--gold-light); }
 
-/* =========================================================================
-   15. INTEGRATED FULLSCREEN BLACKSMITH & ARMORY HUB (GENİŞ EKRAN DEMİRCİ & CEPHANELİK)
-   ========================================================================= */
-
-/* =========================================================================
-   12. SAVAŞ EFEKTLERİ: SHAKE, SLASH & FLOAT DAMAGE NUMBERS
-   ========================================================================= */
-
-/* =========================================================================
-   13. 🧙‍♂️ ROYAL ADVISOR GUIDANCE BAR (AKILLI KRAL DANIŞMANI)
-   ========================================================================= */
-
-/* 🎡 KRALLIK KARNAVALI - GERÇEK DÖNEN ŞANS ÇARKI */
-
-/* 📜 ENVANTER PARŞÖMENLER KARTI */
-
-/* =========================================================================
-   ZİNDAN SAVAŞI RESİMLİ GANİMET & PARŞÖMEN DROP VİTRİNİ
-   ========================================================================= */
-
-/* 📜 Özel Efsanevi Parşömen Bannerı */
-
-/* v2: yeni hammadde çubukları */
-
 /* ── Kapı kuralı: bekleme sırası / askı şeridi (sunucu modunda, vatandaşa görünmez) ── */
-.gate-banner { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); z-index: 950; width: min(960px, calc(100% - 32px)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(245,158,11,.18), rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.55); color: #fde68a; font-size: .86rem; line-height: 1.4; }
+.gate-banner { position: fixed; left: 50%; width: min(960px, calc(100% - 32px)); box-shadow: 0 8px 24px rgba(0,0,0,.45); display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(90deg, rgba(245,158,11,.18), rgba(245,158,11,.06)); border: 1px solid rgba(245,158,11,.55); color: #fde68a; font-size: .86rem; line-height: 1.4; }
 .gate-banner[hidden] { display: none; }
 .gate-banner-icon { font-size: 1.4rem; }
 /* E-planı Faz 1: hazır aday görevleri + izin sorusu bir satırda ikon/metin/düğme karışık görünebilsin */

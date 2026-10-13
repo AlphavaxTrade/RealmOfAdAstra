@@ -1,4 +1,7 @@
-/* ===================== DESIGN TOKENS ===================== */
+/* =========================================================================
+   Realm of AdAstra — savaş arenası (zindan ve kolezyum tekrar oynatması: #battle-arena-modal, .aa-arena)
+   13 Ekim 2026'da sadeleştirildi (scripts/tarayici/css-sadelestir.mjs): görünüm değişmedi.
+   ========================================================================= */
   .aa-arena{
     --void:#0c0e17;
     --dungeon-1:#1a1224; --dungeon-2:#2c1a34; --dungeon-3:#150d1c;
@@ -38,7 +41,6 @@
      gomulen bir widget'tir -- bu yuzden global * / html,body / body
      kurallarini kasitli olarak eklemedik (ana oyunun stillerini ezmesin).
      box-sizing yalnizca bilesenin kendi alt agacina uygulanir. */
-  .aa-arena, .aa-arena *{ box-sizing:border-box; }
   .aa-arena{
     color:var(--ink);
     font-family:var(--font-body);
@@ -77,8 +79,7 @@
     font-family:var(--font-display); font-weight:700; font-size:.88rem;
     padding:6px 18px; border-radius:999px;
     display:inline-flex; align-items:center; gap:8px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.4);
-    letter-spacing:.02em; user-select:none;
+    letter-spacing:.02em;
   }
   .aa-arena .mode-badge.dungeon{
     color:#1a1224; background:linear-gradient(180deg,var(--gold-bright),var(--gold));
@@ -94,8 +95,8 @@
   .aa-arena .hud-stat{
     text-align:right; line-height:1.15;
   }
-  .aa-arena .hud-stat .label{ font-size:.68rem; color:var(--ink-faint); text-transform:none; }
-  .aa-arena .hud-stat .value{ font-family:var(--font-display); font-size:1.05rem; color:var(--ink); font-weight:700; }
+  .aa-arena .hud-stat .label{ font-size:.68rem; color:var(--ink-faint); }
+  .aa-arena .hud-stat .value{ font-family:var(--font-display); font-size:1.05rem; font-weight:700; }
 
   /* ===================== CONTEXT STRIP ===================== */
   .aa-arena .context-strip{
@@ -105,10 +106,9 @@
     border-bottom:1px solid var(--panel-border);
     font-size:.85rem; color:var(--ink-dim);
   }
-  .aa-arena .context-strip strong{ color:var(--gold-bright); font-weight:700; }
+  .aa-arena .context-strip strong{ color:var(--gold-bright); }
   .aa-arena [data-mode="colosseum"] .context-strip strong{ color:var(--crimson-bright); }
-  .aa-arena .rank-pill{
-    font-family:var(--font-body); font-weight:700; font-size:.78rem;
+  .aa-arena .rank-pill{ font-weight:700; font-size:.78rem;
     color:var(--void); background:var(--gold-bright);
     padding:3px 10px; border-radius:6px;
   }
@@ -174,7 +174,7 @@
 
   .aa-arena .vs-mark{
     font-family:var(--font-display); font-size:1.6rem; color:var(--ink-faint);
-    opacity:.5; align-self:center; z-index:1; user-select:none;
+    opacity:.5; align-self:center; z-index:1;
   }
 
   /* ---- unit token ---- */
@@ -182,7 +182,7 @@
     position:relative; width:74px; display:flex; flex-direction:column; align-items:center; gap:6px;
     transition: transform .25s ease, opacity .4s ease;
   }
-  .aa-arena .unit.dead{ opacity:.28; transform:scale(.88) translateY(6px) grayscale(1); }
+  .aa-arena .unit.dead{ opacity:.28; }
   .aa-arena .unit.acting{ transform:translateY(-8px); }
   .aa-arena .unit.hit .icon-badge{ animation: shake .35s ease; }
   @keyframes shake{
@@ -193,13 +193,11 @@
     80%{ transform:translate(2px,0); }
   }
 
-  .aa-arena .icon-badge{
-    width:62px; height:62px; border-radius:50%;
+  .aa-arena .icon-badge{ height:62px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
     font-size:1.6rem; overflow:hidden; position:relative;
     background: radial-gradient(circle at 32% 28%, var(--panel-soft), var(--panel));
     border:2.5px solid var(--panel-border);
-    box-shadow: 0 6px 18px rgba(0,0,0,.5);
     transition: border-color .25s ease, box-shadow .25s ease, transform .2s ease;
   }
   .aa-arena .unit.ally .icon-badge{
@@ -218,9 +216,8 @@
   }
   .aa-arena .unit--boss{ width:104px; }
 
-  .aa-arena .unit-avatar-img{
-    width:100%; height:100%; object-fit:cover; border-radius:50%;
-    display:block; pointer-events:none; user-select:none;
+  .aa-arena .unit-avatar-img{ height:100%; object-fit:cover; border-radius:50%;
+    display:block; pointer-events:none;
     transition: transform .25s ease;
   }
   .aa-arena .unit:hover .unit-avatar-img{
@@ -254,7 +251,7 @@
   /* floating damage numbers */
   .aa-arena .fx-layer{ position:absolute; inset:0; pointer-events:none; z-index:5; }
   .aa-arena .dmg-num{
-    position:absolute; font-family:var(--font-display); font-weight:700; font-size:1rem;
+    position:absolute; font-family:var(--font-display); font-weight:700;
     color:var(--crimson-bright);
     text-shadow: 0 2px 6px rgba(0,0,0,.6);
     animation: floatUp 1s ease-out forwards;
@@ -314,25 +311,21 @@
   }
 
   /* result banner */
-  .aa-arena .result-banner{
-    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  .aa-arena .result-banner{ display:flex; align-items:center;
     flex-direction:column; gap:10px;
-    background: rgba(8,4,12,.72);
-    opacity:0; pointer-events:none; z-index:9; transition: opacity .35s ease;
+    opacity:0; pointer-events:none; transition: opacity .35s ease;
   }
   .aa-arena .result-banner.show{ opacity:1; pointer-events:auto; }
   .aa-arena .result-banner .title{ font-family:var(--font-display); font-weight:900; font-size:2.1rem; }
   .aa-arena .result-banner .title.win{ color:var(--gold-bright); }
   .aa-arena .result-banner .title.lose{ color:var(--crimson-bright); }
-  .aa-arena .result-banner .loot{ display:flex; gap:10px; font-size:1.3rem; }
+  .aa-arena .result-banner .loot{ display:flex; }
   .aa-arena .result-banner .loot span{
     background:var(--panel-soft); border:1px solid var(--panel-border);
-    border-radius:8px; padding:6px 10px; font-size:1rem;
+    border-radius:8px; padding:6px 10px;
   }
   .aa-arena .result-banner button{
-    margin-top:6px; font-family:var(--font-body); font-weight:700; font-size:.85rem;
-    color:var(--void); background:var(--gold-bright); border:none; padding:9px 20px;
-    border-radius:8px; cursor:pointer;
+    margin-top:6px; font-size:.85rem; padding:9px 20px;
   }
 
   /* ===================== INITIATIVE QUEUE ===================== */
@@ -343,20 +336,17 @@
   }
   .aa-arena .queue-label{ font-size:.68rem; color:var(--ink-faint); white-space:nowrap; }
   .aa-arena .queue-track{ display:flex; gap:6px; overflow:hidden; }
-  .aa-arena .queue-chip{
-    width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  .aa-arena .queue-chip{ height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:.85rem; background:var(--panel-soft); border:1.5px solid var(--panel-border);
     opacity:.55; transition: opacity .2s ease, transform .2s ease, border-color .2s ease;
     flex:none; overflow:hidden; position:relative;
   }
   .aa-arena .queue-chip.chip-ally{ border-color: rgba(232,185,78,.5); }
-  .aa-arena .queue-chip.chip-enemy{ border-color: rgba(225,84,80,.5); }
   .aa-arena .queue-chip.next{
     opacity:1; transform:scale(1.22); border-color:var(--gold-bright);
     box-shadow: 0 0 12px rgba(232,185,78,.7); z-index:2;
   }
-  .aa-arena .queue-avatar-img{
-    width:100%; height:100%; object-fit:cover; border-radius:50%;
+  .aa-arena .queue-avatar-img{ height:100%; object-fit:cover; border-radius:50%;
     display:block; pointer-events:none;
   }
 
@@ -418,7 +408,6 @@
   /* Modal Overlay for Fullscreen Cinematic Experience */
   .battle-arena-modal-overlay {
     position: fixed;
-    inset: 0;
     width: 100vw;
     height: 100vh;
     background: rgba(6, 8, 14, 0.94);
@@ -433,7 +422,6 @@
     pointer-events: none;
     transition: opacity 0.25s ease, visibility 0.25s ease;
     padding: 16px;
-    box-sizing: border-box;
     overflow-y: auto;
   }
   .battle-arena-modal-overlay.active {
@@ -445,8 +433,6 @@
     max-height: 96vh;
     overflow-y: auto;
   }
-
-  /* ===================== SAVAŞ SONUCU KARTI (11 Ekim 2026) ===================== */
   /* Sonuç tüm ekranı kaplar (sahne alanı telefonda 300 px: uzun liste taşıyordu), kısa kalırsa ortalanır, uzunsa kayar */
   .battle-arena-modal-overlay .aa-arena .result-banner{
     position:fixed; inset:0; padding:20px 16px; overflow-y:auto; justify-content:flex-start;
@@ -464,8 +450,8 @@
   .battle-arena-modal-overlay .aa-arena .result-banner .actions:empty{ display:none; }
   .battle-arena-modal-overlay .aa-arena .result-banner > div:last-child{ margin-bottom:auto; }
   .battle-arena-modal-overlay .aa-arena .result-banner button{ min-height:44px; }
-  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn:not(.primary){ background:rgba(255,255,255,.1); color:#f1f5f9; border:1px solid rgba(255,255,255,.28); opacity:1; }
-  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn.primary{ background:#f6c453; color:#1a1405; opacity:1; font-weight:800; }
+  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn:not(.primary){ background:rgba(255,255,255,.1); color:#f1f5f9; border:1px solid rgba(255,255,255,.28); }
+  .battle-arena-modal-overlay .aa-arena .result-banner button.ctrl-btn.primary{ background:#f6c453; color:#1a1405; font-weight:800; }
   @media (max-width: 720px){
     .aa-arena .controls{ flex-wrap:wrap; justify-content:center; }
     .aa-arena .ctrl-btn, .aa-arena .speed-btn{ min-height:44px; }

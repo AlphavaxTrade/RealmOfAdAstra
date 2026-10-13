@@ -1,6 +1,6 @@
 /* =========================================================================
-   Realm of Astra — v1.25 Tema (style.css'in üzerine yüklenir)
-   Tek renk sistemi, okunaklı yazı, sade üst bar, telefon düzeni.
+   Realm of AdAstra — tema katmanı (style.css'in üzerine yüklenir): tek renk sistemi, okunaklı yazı, pencereler, harita bina kartları,
+   duyarlı düzen. Yeni arayüz kabuğu (v3) bunun da üstüne yazar. 13 Ekim 2026'da sadeleştirildi (scripts/tarayici/css-sadelestir.mjs).
    ========================================================================= */
 
 :root {
@@ -76,8 +76,6 @@ input, textarea, select { user-select: text; }
 *::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }
 *::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); }
 
-/* ---------- Risk uyarısı şeridi ---------- */
-
 /* =========================================================================
    ÜST BAR (HUD)
    ========================================================================= */
@@ -92,10 +90,8 @@ input, textarea, select { user-select: text; }
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   grid-template-areas: "left nav res actions";
   align-items: center;
-  column-gap: 12px;
   padding: 0 16px !important;
   background: linear-gradient(180deg, rgba(14, 18, 27, 0.97), rgba(10, 13, 20, 0.95)) !important;
-  border: 0 !important;
   border-bottom: 1px solid var(--c-line) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
   backdrop-filter: blur(14px) saturate(1.2);
@@ -106,8 +102,6 @@ input, textarea, select { user-select: text; }
 .top-nav-strip.hud::after { display: none !important; }
 
 .hud button { font: inherit; }
-
-/* Orta menü */
 
 /* Zindan kat menüsü */
 .hud #dungeon-floor-bar { display: none !important; }
@@ -134,8 +128,7 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   box-sizing: border-box;
   display: inline-flex; align-items: center; gap: 6px;
   height: 36px; padding: 0 12px; border-radius: 10px;
-  font-size: 12.5px; font-weight: 700; color: var(--c-text-2);
-  white-space: nowrap; cursor: pointer;
+  font-size: 12.5px; font-weight: 700; color: var(--c-text-2); cursor: pointer;
   transition: background .15s ease, color .15s ease;
 }
 .hud .floor-tab:hover, .hud .dungeon-home-btn:hover { background: var(--c-surface-3); color: var(--c-text); }
@@ -148,12 +141,8 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   display: inline-flex; align-items: center; gap: 4px;
   height: 30px; padding: 0 8px; border-radius: 8px;
   background: var(--c-surface-2) !important; border: 1px solid var(--c-line) !important;
-  font-size: 11.5px; color: var(--c-text-2); box-shadow: none !important;
+  font-size: 11.5px; color: var(--c-text-2);
 }
-
-/* Kaynak göstergeleri */
-
-/* Sağ araçlar */
 
 /* =========================================================================
    HARİTA ALANI
@@ -176,29 +165,19 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   padding: 10px 14px !important;
 }
 .realm-tooltip-title { font-family: var(--font-display) !important; color: var(--c-gold-2) !important; font-weight: 700 !important; letter-spacing: .03em; text-shadow: none !important; }
-.realm-tooltip-sub { font-family: var(--font-ui) !important; color: var(--c-text-2) !important; font-size: 12px !important; }
-
-/* =========================================================================
-   YAN PANEL
-   ========================================================================= */
+.realm-tooltip-sub { color: var(--c-text-2) !important; font-size: 12px !important; }
 
 /* =========================================================================
    PENCERELER (MODAL)
    ========================================================================= */
 .rpg-modal-overlay {
-  background: rgba(4, 6, 10, 0.72) !important;
-  backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
 .rpg-modal-overlay .rpg-modal-window {
-  width: min(1180px, 94vw);
-  height: min(88vh, 940px);
-  max-height: 92vh;
   background: var(--c-surface-1) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border: 1px solid var(--c-line-strong) !important;
-  border-radius: 20px !important;
   box-shadow: var(--shadow-2), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   position: relative;
 }
@@ -212,39 +191,30 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   background: transparent !important;
   backdrop-filter: none !important;
   border-bottom: 1px solid var(--c-line) !important;
-  padding: 16px 22px !important;
   gap: 12px;
 }
 .rpg-modal-overlay .rpg-modal-title {
   font-family: var(--font-display) !important;
-  font-size: 18px !important;
   font-weight: 700 !important;
   letter-spacing: .04em !important;
   color: var(--c-gold-2) !important;
-  text-shadow: none !important;
   min-width: 0;
 }
 .rpg-modal-overlay .rpg-modal-title span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rpg-modal-overlay .rpg-modal-close {
-  height: 38px !important;
-  padding: 0 14px !important;
-  border-radius: 10px !important;
   background: var(--c-surface-3) !important;
   border: 1px solid var(--c-line-strong) !important;
   color: var(--c-text) !important;
   box-shadow: none !important;
   font-family: var(--font-ui) !important;
   font-weight: 700 !important;
-  font-size: 13px !important;
   flex: none;
 }
 .rpg-modal-overlay .rpg-modal-close .modal-close-text { font-size: 13px !important; font-weight: 700 !important; letter-spacing: 0 !important; }
 .rpg-modal-overlay .rpg-modal-close:hover { background: rgba(240, 104, 104, 0.14) !important; border-color: rgba(240, 104, 104, 0.5) !important; color: #ffc2c2 !important; transform: none !important; filter: none !important; }
 .rpg-modal-overlay .rpg-modal-body {
-  padding: 20px 24px 28px !important;
   gap: 14px !important;
   font-size: 14px;
-  color: var(--c-text);
 }
 
 /* Kartlar */
@@ -281,10 +251,7 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 .rpg-modal-body select,
 .rpg-modal-body textarea {
   background: #0a0e16 !important;
-  border: 1px solid var(--c-line-strong) !important;
   border-radius: 8px !important;
-  color: var(--c-text) !important;
-  font-family: var(--font-ui) !important;
   font-variant-numeric: tabular-nums;
   min-height: 38px;
 }
@@ -294,23 +261,8 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
 .rpg-modal-body input[type="radio"],
 .rpg-modal-body input[type="checkbox"] { accent-color: var(--c-gold); }
 
-/* =========================================================================
-   YENİ BİLEŞENLER
-   ========================================================================= */
-
-/* Bot paketleri */
-
-/* Piyango çekiliş kartı */
-
-/* "Sen yokken olanlar" raporu */
-
 /* Krallık rehberi */
 .guide-widget {
-  position: fixed;
-  left: 16px;
-  bottom: calc(16px + var(--tabbar-h) + var(--safe-b));
-  width: 340px;
-  max-width: calc(100vw - 32px);
   z-index: 1100;
   background: rgba(13, 17, 26, 0.96);
   border: 1px solid var(--c-line-strong);
@@ -353,32 +305,14 @@ body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
   background: var(--c-surface-2);
 }
 body.modal-open .guide-widget { display: none; }
-
-/* =========================================================================
-   BİLDİRİMLER
-   ========================================================================= */
 /* Sağ altta: pencere başlıklarını ve kapatma düğmesini örtmez */
 .toast-container {
-  top: auto !important;
   right: 16px !important;
-  left: auto !important;
-  bottom: 72px !important;
   flex-direction: column-reverse !important;
   gap: 8px !important;
   max-width: min(420px, calc(100vw - 32px));
 }
 .toast-container .toast {
-  background: rgba(16, 20, 30, 0.97) !important;
-  border: 1px solid var(--c-line-strong) !important;
-  border-left: 3px solid var(--c-blue) !important;
-  border-radius: 12px !important;
-  padding: 12px 14px !important;
-  font-family: var(--font-ui) !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  line-height: 1.45;
-  color: var(--c-text) !important;
-  box-shadow: var(--shadow-2) !important;
   backdrop-filter: blur(10px);
   align-items: flex-start !important;
   animation: toastIn .22s ease-out;
@@ -388,17 +322,8 @@ body.modal-open .guide-widget { display: none; }
 .toast-container .toast.warning { border-left-color: var(--c-amber) !important; }
 @keyframes toastIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Geliştirici test düğmesi (yalnızca geliştirme sürümünde) */
-
 /* Yükleme ekranı yazıları */
 .royal-scroll-title { font-family: var(--font-display) !important; letter-spacing: .12em !important; }
-.loading-subtext { font-family: var(--font-ui) !important; }
-
-/* Telefon alt çubuğu (masaüstünde gizli) */
-
-/* =========================================================================
-   DUYARLI DÜZEN
-   ========================================================================= */
 /* 5 menü düğmesi etiketleriyle ancak geniş ekrana sığar; daha dar ekranda yalnız simgeler */
 @media (max-width: 1400px) {
      /* Karnaval haritadan açılır */
@@ -570,9 +495,6 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: var(--c-text);
-  font-family: var(--font-ui);
-  pointer-events: none;
   opacity: 0;
   visibility: hidden;
   transition: opacity .12s ease, visibility .12s ease;
@@ -650,25 +572,10 @@ body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
 }
 .mc-hint-arrow { color: var(--zc); font-size: 13px; }
 @media (hover: none) { .map-card { display: none; } }
-
-/* ── v1.25: Seviye faydası tablosu ───────────────────────────────────── */
 /* ── v1.25: İlk oturumda kilitli bölümler ───────────────────────────── */
 .map-label.is-locked { filter: grayscale(0.85) brightness(0.8); opacity: 0.82; }
 .map-label.is-locked .ml-status { color: #cbd5e1; }
 .map-card.is-locked .mc-hint { color: #94a3b8; }
-
-/* ── v1.27: Kota, sınır ve giriş bileşenleri (js/ui/limits.js) ───────── */
-
-/* Zindan giriş basamakları */
-/* Savaş öncesi giriş kartı */
-
-/* Piyango sekmesi */
-
-/* Yan panel kota özeti */
-
-/* Kolezyum maç bedeli satırı */
-
-/* Yan panel rozetleri: gizliyken görünmez, kilitli karede kilit simgesinin üstüne binmez */
 
 /* v2 (7 Ekim 2026): yeni hammaddeler — taş, kömür, şifalı ot */
 :root { --c-stone: #b8b2a8; --c-coal: #8b95a5; --c-herb: #86efac; }
