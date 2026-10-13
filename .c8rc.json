@@ -3,7 +3,7 @@
   "src": ["server", "js"],
   "include": ["server/**/*.js", "js/**/*.js"],
   "exclude": [
-    "js/app.js", "js/vadi3d/**", "js/grandTownScene.js", "js/dungeonScene.js", "js/battleArena.js", "js/ui/**", "js/net/**", "js/audio.js", "js/admin.js",
+    "js/app.js", "js/vadi3d/**", "js/grandTownScene.js", "js/battleArena.js", "js/ui/**", "js/net/**", "js/audio.js", "js/admin.js",
     "server/admin.js", "tests/**", "node_modules/**", "dist/**"
   ],
   "reporter": ["text-summary", "json-summary"],

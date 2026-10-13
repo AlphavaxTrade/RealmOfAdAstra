@@ -7,6 +7,7 @@ import {
 import { soldierPortrait } from '../art.js';
 import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '../../combat.js';
 import { getDungeonEntry } from '../../bestiary.js';
+import { sonSavasiYaz } from '../zindan/son-savas.js';
 
 const TAKTIK_SIMGE = { 1: '🛡️', 2: '⚔️', 3: '🏹' };
 
@@ -280,6 +281,7 @@ const ekran = {
         const ucret = gs.getDungeonGateFee(m.level, asBoss(m));
         if ((gs.state.adAstraBalance || 0) < ucret) { b.bildir(`Kapı harcı için ${tam(ucret)} ASTRA gerekiyor.`, 'error'); return false; }
       }
+      sonSavasiYaz(m.level, secili);   // zindan ekranındaki "son savaşı tekrarla" için
       return savasiOyna(b, m, secili, harc);
     }
   }
@@ -379,7 +381,10 @@ async function savasiOyna(b, m, secili, odeHarc) {
           altBaslik: `${m.name} yenildi`,
           satirlar,
           not: outcome.budgetFull ? dolu : (outcome.budgetCapped ? 'Bu haftaki ödeme payı sınırı yüzünden ödül azaldı; Pazartesi yenilenir.' : ''),
-          eylemler: [{ etiket: '⚔️ Kışlaya git', tikla: () => ac('kisla') }]
+          eylemler: [
+            { etiket: '↻ Aynı savaşı tekrarla', birincil: true, tikla: () => ac('savashazirlik', { canavar: m, secili: [...secili], secimYapildi: true }) },
+            { etiket: '⚔️ Kışlaya git', tikla: () => ac('kisla') }
+          ]
         };
       }
       satirlar.push(`💀 ${m.name}: ${outcome.remainingEnemyHp}/${m.hp} can kaldı`);
@@ -391,7 +396,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         not: 'Düşmanın kalan canı kaydedildi. Askerlerini iyileştirip yeniden girince kaldığın yerden devam edersin.',
         eylemler: [
           { etiket: '🌾 Askerleri iyileştir', birincil: true, tikla: () => ac('kisla') },
-          { etiket: '↻ Tekrar dene', tikla: () => ac('savashazirlik', { canavar: m }) }
+          { etiket: '↻ Tekrar dene', tikla: () => ac('savashazirlik', { canavar: m, secili: [...secili], secimYapildi: true }) }
         ]
       };
     }

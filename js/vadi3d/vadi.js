@@ -15,15 +15,9 @@ const W = 168, H = 100;                       // dünya birimleri (harita oranı
 const toWorld = (px, py) => ({ x: px * W - W / 2, z: py * H - H / 2 });
 const isMobile = () => window.innerWidth < 720;
 
-// Zindan dokularını yükleyen sessiz Phaser sahnesi (2B haritada bunu kasaba sahnesi yapıyordu)
+// Phaser'ı başlatan sessiz sahne (yükleme çubuğunu bitirir; kasaba sahnesi 3B vadide açılmaz)
 export class VadiBootScene extends Phaser.Scene {
   constructor() { super({ key: 'VadiBootScene' }); }
-  preload() {
-    const v = Date.now();
-    this.load.image('dungeon_tex_f1', 'assets/dungeon_map.jpg?v=' + v);
-    for (let i = 2; i <= 6; i++) this.load.image('dungeon_tex_f' + i, `assets/dungeon_floor${i}.jpg?v=` + v);
-    this.load.on('loaderror', (file) => console.error('[Phaser] Yüklenemedi:', file.key, file.src));
-  }
   create() { if (window.__finishLoadingBar) window.__finishLoadingBar(); }
 }
 

@@ -125,8 +125,12 @@ for (const [gAd, w, h, mobil] of GORUNUMLER) {
     try { await s.keyboard.down('Control'); await s.keyboard.press('k'); await s.keyboard.up('Control'); await bekle(400); await kaydet(s, on + 'palet'); await s.keyboard.press('Escape'); await bekle(150); } catch { /* */ }
     // savaş hazırlığı ve arena
     try {
-      // modül yolu tarayıcıda çözülür (geliştirme sunucusu /js/ altından sunar); bu yüzden değişkenle verilir
-      await s.evaluate(async (modul) => { const { getDungeonEntry } = await import(modul); window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: getDungeonEntry(1) } })); }, '/js/bestiary.js');
+      // gerçek akış: zindan ekranı → 1. oda → "Savaşa hazırlan"
+      await s.evaluate(() => { window.dispatchEvent(new CustomEvent('enter-dungeon-view')); });
+      await bekle(500);
+      await s.evaluate(() => { const o = document.querySelector('#zindan-ekrani .zd-bolge[data-oda="0"]'); if (o) o.click(); });
+      await bekle(300);
+      await s.evaluate(() => { const b = document.querySelector('#zindan-ekrani [data-e="savas"]'); if (b) b.click(); });
       await bekle(700);
       await kaydet(s, on + 'savashazirlik');
       if (seviye > 1) {
@@ -140,6 +144,9 @@ for (const [gAd, w, h, mobil] of GORUNUMLER) {
         await bekle(300);
       }
       await s.keyboard.press('Escape'); await bekle(150);
+      // zindan ekranından çık (oda → kat → kasaba)
+      await s.evaluate(() => { for (let i = 0; i < 2; i++) { const z = document.getElementById('zindan-ekrani'); if (z && !z.hidden) z.querySelector('[data-e="geri"]').click(); } });
+      await bekle(300);
     } catch (err) { console.log('arena atlandı', on, String(err.message).split('\n')[0]); }
     // bildirim (toast) ve bildirim kutusu
     try {

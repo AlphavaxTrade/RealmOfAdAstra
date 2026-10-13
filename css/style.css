@@ -1,5 +1,5 @@
 /* =========================================================================
-   Realm of AdAstra — temel stil (yükleme ekranı, harita kapsayıcıları, zindan kat çubuğu, pencere kabuğu, savaş sonucu parçaları)
+   Realm of AdAstra — temel stil (yükleme ekranı, harita kapsayıcıları, pencere kabuğu, savaş sonucu parçaları)
    Yükleme sırası (index.html): style.css → battle-arena.css → theme.css → v3/kabuk.css → v3/ekran.css. Sonraki dosyalar
    öncekilerin üstüne yazar; v3 dosyaları arayüzün güncel kabuğunu kurar. 13 Ekim 2026'da sadeleştirildi: görünüm değiştirmeden
    fazlalık bildirimler (scripts/tarayici/css-sadelestir.mjs) ve boş bölüm başlıkları kaldırıldı.
@@ -67,15 +67,8 @@ html, body {
 }
 
 /* =========================================================================
-   ÜST ŞERİT (zindan kat çubuğunun kabı)
+   HARİTA TUVALİ (Phaser ve 3B vadi kapsayıcıları)
    ========================================================================= */
-.top-nav-strip {
-  -webkit-backdrop-filter: blur(20px) saturate(190%);
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  overflow: hidden;
-}
 
 /* Phaser Game Canvas Positioning */
 #phaser-game-container, .phaser-game-container {
@@ -125,7 +118,6 @@ html, body {
 
 /* MODAL AÇIKKEN ARKA PLANDAKİ TÜM TIKLAMALARI VE ETKİLEŞİMLERİ DEVRE DIŞI BIRAK */
 body.modal-open #phaser-game-container,
-body.modal-open .dungeon-floor-nav,
 body.modal-open .realm-tooltip {
   pointer-events: none !important;
 }
@@ -330,297 +322,6 @@ body.modal-open .realm-tooltip {
 }
 
 /* =========================================================================
-   ZİNDAN KAT ÇUBUĞU
-   ========================================================================= */
-.dungeon-floor-nav {
-  position: fixed;
-  top: 8px;
-  left: 50%;
-  display: flex;
-  white-space: nowrap;
-  justify-content: center;
-  max-width: 96vw;
-  max-height: 38px;
-  overflow-y: hidden;
-  backdrop-filter: blur(6px);
-  border: 2px solid #ca8a04;
-  border-radius: 11px;
-  padding: 3px 8px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 16px rgba(0,0,0,0.85);
-  z-index: 500;
-  scrollbar-width: none;
-}
-
-.dungeon-floor-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.dungeon-floor-nav.hidden {
-  display: none !important;
-}
-
-.dungeon-nav-divider {
-  align-self: stretch;
-}
-
-.dungeon-home-btn {
-  display: flex;
-  transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
-}
-
-.dungeon-home-btn:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 3px 8px rgba(0,0,0,0.55);
-}
-
-.dungeon-home-btn:active {
-  transform: translateY(0);
-  filter: brightness(0.95);
-}
-
-.dungeon-floor-nav {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-body.in-dungeon #dungeon-floor-bar {
-  display: flex !important;
-  position: static;
-  transform: none;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
-  gap: 4px;
-}
-
-body:not(.in-dungeon) #dungeon-floor-bar {
-  display: none !important;
-}
-
-.floor-tab {
-  display: flex;
-  isolation: isolate;
-  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, box-shadow 0.2s ease, color 0.15s ease, text-shadow 0.2s ease;
-}
-
-/* İnce iç altın yaldız çizgisi (3D bezel efekti) */
-.floor-tab::before {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 6px;
-  border: 1px solid rgba(253, 230, 138, 0.35);
-  pointer-events: none;
-  z-index: -1;
-}
-
-.floor-tab:hover {
-  transform: translateY(-2px) scale(1.03);
-  border-color: #fde68a;
-  color: #fff8e1;
-  text-shadow:
-    0 0 6px rgba(253, 224, 71, 0.9),
-    0 0 14px rgba(250, 204, 21, 0.6),
-    0 1px 1px rgba(0, 0, 0, 0.85);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 244, 214, 0.6),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.6),
-    0 4px 10px rgba(0, 0, 0, 0.55),
-    0 0 12px rgba(253, 224, 71, 0.45);
-}
-
-.floor-tab:active {
-  transform: translateY(0) scale(0.97);
-}
-
-.floor-tab.boss-tab.active {
-  background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
-  border-color: #fde68a;
-  border-top-color: #fff7d6;
-  border-bottom-color: #78350f;
-  color: #000000;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(245, 158, 11, 0.5);
-}
-
-.floor-tab.mega-tab.active {
-  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
-  border-color: #fde68a;
-  border-top-color: #fff1cc;
-  border-bottom-color: #7f1d1d;
-  color: #ffffff;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 2px 8px rgba(239, 68, 68, 0.5);
-}
-
-/* =========================================================================
-   Kat başına özel neon halo renkleri (Floor 1-6)
-   1: Yeşil · 2: Camgöbeği · 3: Altın · 4: Kehribar · 5: Lav Turuncusu · 6: Efsanevi Kırmızı/Altın
-   ========================================================================= */
-.floor-tab[data-floor="1"].active {
-  animation: floorHalo-f1 2.2s ease-in-out infinite;
-}
-
-.floor-tab[data-floor="2"].active {
-  background: linear-gradient(180deg, #06b6d4 0%, #0e7490 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 0 10px rgba(34, 211, 238, 0.8),
-    0 0 22px rgba(34, 211, 238, 0.5),
-    0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: floorHalo-f2 2.2s ease-in-out infinite;
-}
-
-.floor-tab[data-floor="3"].active {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-    0 0 10px rgba(250, 204, 21, 0.85),
-    0 0 24px rgba(250, 204, 21, 0.55),
-    0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: floorHalo-f3 2s ease-in-out infinite;
-}
-
-.floor-tab[data-floor="4"].active {
-  background: linear-gradient(180deg, #d97706 0%, #92400e 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 0 10px rgba(217, 119, 6, 0.85),
-    0 0 24px rgba(180, 83, 9, 0.55),
-    0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: floorHalo-f4 2.2s ease-in-out infinite;
-}
-
-.floor-tab[data-floor="5"].active {
-  background: linear-gradient(180deg, #dc2626 0%, #7f1d1d 100%);
-  border-color: #fca5a5;
-  border-top-color: #fed7aa;
-  border-bottom-color: #450a0a;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 214, 170, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.4),
-    0 0 12px rgba(220, 38, 38, 0.9),
-    0 0 26px rgba(154, 52, 18, 0.65),
-    0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: floorHalo-f5 1.8s ease-in-out infinite;
-}
-
-.floor-tab[data-floor="6"].active {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-    0 0 12px rgba(239, 68, 68, 0.9),
-    0 0 20px rgba(250, 204, 21, 0.6),
-    0 0 30px rgba(239, 68, 68, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.5);
-  animation: floorHalo-f6 1.6s ease-in-out infinite;
-}
-
-@keyframes floorHalo-f1 {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.18); }
-}
-@keyframes floorHalo-f2 {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
-}
-@keyframes floorHalo-f3 {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  25% { filter: brightness(1.25) saturate(1.15); }
-  45% { filter: brightness(0.94) saturate(0.95); }
-  70% { filter: brightness(1.3) saturate(1.2); }
-  85% { filter: brightness(1.05); }
-}
-@keyframes floorHalo-f4 {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.18); }
-}
-@keyframes floorHalo-f5 {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  40% { filter: brightness(1.2) saturate(1.25); }
-  60% { filter: brightness(0.95) saturate(1.1); }
-}
-@keyframes floorHalo-f6 {
-  0%, 100% {
-    filter: brightness(1);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-      0 0 12px rgba(239, 68, 68, 0.9),
-      0 0 20px rgba(250, 204, 21, 0.6),
-      0 0 30px rgba(239, 68, 68, 0.45),
-      0 2px 8px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    filter: brightness(1.22);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-      0 0 14px rgba(250, 204, 21, 0.95),
-      0 0 26px rgba(239, 68, 68, 0.7),
-      0 0 38px rgba(250, 204, 21, 0.5),
-      0 2px 8px rgba(0, 0, 0, 0.5);
-  }
-}
-
-/* Zindan Menüsü Canlı Ganimet HUD'ı */
-.dungeon-drop-hud {
-  display: flex;
-  align-items: center;
-  margin-left: 6px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(234, 179, 8, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.6);
-  padding: 3px 8px;
-  border-radius: 8px;
-}
-
-.dungeon-drop-badge {
-  display: flex;
-  font-weight: 800;
-  line-height: 1;
-  transition: all 0.2s ease;
-}
-
-.dungeon-drop-badge.frag-badge .badge-val {
-  color: #38bdf8;
-  font-weight: 900;
-  text-shadow: 0 0 6px rgba(56, 189, 248, 0.7);
-}
-
-.dungeon-drop-badge.box-badge .badge-val {
-  color: #c084fc;
-  font-weight: 900;
-  text-shadow: 0 0 6px rgba(192, 132, 252, 0.7);
-}
-
-.dungeon-drop-badge.boss-active {
-  animation: badgeBossPulse 1.4s ease-in-out infinite alternate;
-}
-
-@keyframes badgeBossPulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 4px rgba(234, 179, 8, 0.4);
-    filter: brightness(1);
-  }
-  100% {
-    transform: scale(1.06);
-    box-shadow: 0 0 10px rgba(250, 204, 21, 0.85);
-    filter: brightness(1.25);
-  }
-}
-
-/* =========================================================================
    HARİTA ÜZERİNDE BİLGİ İPUCU
    ========================================================================= */
 .realm-tooltip {
@@ -696,9 +397,6 @@ body:not(.in-dungeon) #dungeon-floor-bar {
 .rpg-modal-close:active { transform: translateY(0) scale(0.94); }
 
 /* ---------- Üst şerit camı ---------- */
-.top-nav-strip {
-  -webkit-backdrop-filter: blur(14px) saturate(1.5);
-}
 
 /* ---------- Düğmeler (.btn-clean) ---------- */
 .btn-clean {

@@ -36,7 +36,7 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   const baslik = () => s.evaluate(() => document.getElementById('modal-title').innerText.replace(/\s+/g, ' ').trim());
 
   await foto('00_harita');
-  const o = await s.evaluate(() => ({ tasma: document.documentElement.scrollWidth > innerWidth + 2, hud: document.getElementById('v3-hud').offsetHeight, tab: document.getElementById('v3-tabbar').offsetHeight, eski: getComputedStyle(document.getElementById('top-nav-strip')).display }));
+  const o = await s.evaluate(() => ({ tasma: document.documentElement.scrollWidth > innerWidth + 2, hud: document.getElementById('v3-hud').offsetHeight, tab: document.getElementById('v3-tabbar').offsetHeight, eski: document.getElementById('top-nav-strip') ? 'var' : 'none' }));
   kontrol(`${ad}: yatay taşma yok`, !o.tasma);
   kontrol(`${ad}: üst çubuk tek satır (52 px) ve alt çubuk 60 px`, o.hud === 52 && o.tab === 60, JSON.stringify(o));
   kontrol(`${ad}: eski üst şerit gizli`, o.eski === 'none');
@@ -153,10 +153,12 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
     const g = window.gameState;
     g.setDevLevel(30); g.setDevAdAstra(5e6);
     if (!(g.state.soldierUnits || []).length) { g.buySoldierUnit(); g.buySoldierUnit(); }
-    const modulYolu = '/js/' + 'bestiary.js';   // sayfa içi (geliştirme sunucusu) modülü: derleme aracı yolu çözmeye çalışmasın
-    const { getFloorMonsters } = await import(modulYolu);
-    window.dispatchEvent(new CustomEvent('open-monster-battle', { detail: { monster: getFloorMonsters(1)[0] } }));
+    g.state.dungeonProgress = 1;
+    window.dispatchEvent(new CustomEvent('enter-dungeon-view'));   // zindan ekranı: kat görünümü
   });
+  await bekle(600);
+  await s.locator('#zindan-ekrani .zd-bolge[data-oda="0"]').click(); await bekle(300);   // oda görünümü
+  await s.locator('#zindan-ekrani [data-e="savas"]').click();   // savaşa hazırlık penceresi
   await bekle(900); await foto('17_zindan_hazirlik');
   kontrol(`${ad}: Savaş öncesi pencere sade başlıkla açılır`, (await baslik()) === '⚔️ Savaşa hazırlık', await baslik());
   kontrol(`${ad}: giriş kuralları ve taktik katlı`, await s.evaluate(() => { const d = [...document.querySelectorAll('#modal-body details.ek-katli')]; return d.length >= 2 && d.every((x) => !x.open); }));
@@ -166,6 +168,9 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   await s.evaluate(() => document.querySelector('#modal-body details.ek-katli > summary').click()); await bekle(250);
   kontrol(`${ad}: katlı bölüm açılınca içerik görünür`, await s.evaluate(() => { const d = document.querySelector('#modal-body details.ek-katli[open] > .ek-katli-icerik'); return !!d && d.offsetParent !== null && d.innerText.length > 10; }));
   await s.keyboard.press('Escape'); await bekle(300);
+  // Zindan ekranından çık (oda → kat → kasaba)
+  await s.evaluate(() => { for (let i = 0; i < 2; i++) { const z = document.getElementById('zindan-ekrani'); if (z && !z.hidden) z.querySelector('[data-e="geri"]').click(); } });
+  await bekle(700);
 
   // Eski üst çubuk,  await s.keyboard.press('Escape'); await bekle(300);
 
@@ -222,9 +227,9 @@ for (const [ad, w, h, mobil] of [['tel', 390, 844, true], ['masa', 1280, 800, fa
   kontrol(`${ad}: ayarlar geri alınır`, await s.evaluate(() => !document.documentElement.classList.contains('v3-azalt') && getComputedStyle(document.documentElement).fontSize === '16px'));
   await s.keyboard.press('Escape'); await bekle(300);
   await ust('savas', 'zindan'); await bekle(1200); await foto('13_zindan');
-  const zin = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, eskiSerit: getComputedStyle(document.getElementById('top-nav-strip')).display, katlar: document.querySelectorAll('#dungeon-floor-bar .floor-tab').length }));
-  kontrol(`${ad}: zindana girilir; v3 çubuğu gizlenir, zindanın kendi kat çubuğu görünür`, zin.iceride && zin.hud === 'none' && zin.eskiSerit !== 'none' && zin.katlar >= 6, JSON.stringify(zin));
-  await s.evaluate(() => document.getElementById('btn-dungeon-return-town').click()); await bekle(1200);
+  const zin = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, ekran: !document.getElementById('zindan-ekrani').hidden, katlar: document.querySelectorAll('#zindan-ekrani .zd-kat').length }));
+  kontrol(`${ad}: zindana girilir; v3 çubuğu gizlenir, zindan ekranı kendi kat sekmeleriyle açılır`, zin.iceride && zin.hud === 'none' && zin.ekran && zin.katlar >= 6, JSON.stringify(zin));
+  await s.evaluate(() => document.querySelector('#zindan-ekrani [data-e="geri"]').click()); await bekle(1200);
   const don = await s.evaluate(() => ({ iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display, tab: getComputedStyle(document.getElementById('v3-tabbar')).display }));
   kontrol(`${ad}: kasabaya dönünce v3 çubukları geri gelir`, !don.iceride && don.hud !== 'none' && don.tab !== 'none', JSON.stringify(don));
   const varsayilan = await baglam.newPage();

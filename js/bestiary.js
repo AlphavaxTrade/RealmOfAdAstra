@@ -1,6 +1,6 @@
 // Realm of AdAstra — Yaratık Kütüğü (Bestiary)
 // ============================================================================
-// Zindandaki 18 canavarın TEK tablosu. Harita sahnesi (dungeonScene.js),
+// Zindandaki 18 canavarın TEK tablosu. Zindan ekranı (js/ui/zindan/),
 // savaş kurulumu (gameState.buildDungeonBattleUnits) ve belge betikleri
 // canavar bilgisini yalnızca buradan okur.
 //

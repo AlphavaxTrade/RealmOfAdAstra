@@ -3,7 +3,6 @@
 // (oranı bozmadan doldurma, sürükle, tekerlek/iki parmak yakınlaştırma) ve etiketlerin ekrana yerleşimi vardır.
 import Phaser from 'phaser';
 import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik } from './ui/harita-ortak.js';
-import { KATLAR } from './ui/zindan-plan.js';
 
 export { TOWN_ZONES };
 
@@ -23,8 +22,6 @@ export class GrandTownScene extends Phaser.Scene {
   preload() {
     const v = Date.now();
     this.load.image('grand_town_map', 'assets/adastra_vadisi.jpg?v=' + v);
-    // Zindan katları da burada yüklenir (DungeonScene aynı anahtarları kullanır)
-    KATLAR.forEach((k) => this.load.image(k.doku, `${k.dosya}?v=${v}`));
     this.load.on('progress', (deger) => { if (window.__updateLoadingBar) window.__updateLoadingBar(30 + deger * 60); });
     this.load.on('loaderror', (dosya) => console.error('[Phaser] Yüklenemedi:', dosya.key, dosya.src));
   }
@@ -175,8 +172,7 @@ export class GrandTownScene extends Phaser.Scene {
   }
 
   _ac(z) {
-    const sonuc = bolgeyiAc(z);
-    if (sonuc === 'zindan') this.scene.start('DungeonScene');
+    bolgeyiAc(z);   // zindan: 'enter-dungeon-view' olayı zindan ekranını açar ve bu sahneyi durdurur
   }
 
   // Konuma uç, sonra aç

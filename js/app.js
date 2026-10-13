@@ -6,7 +6,6 @@ import { gameState } from './gameState.js';
 import { globalPool } from './globalPool.js';
 import { ammMarket } from './ammMarket.js';
 import { GrandTownScene } from './grandTownScene.js';
-import { DungeonScene } from './dungeonScene.js';
 // 3B vadi (three.js, yalnız ?harita=3d ile) gerektiğinde yüklenir: 2B haritada her açılışta ~155 KB (sıkıştırılmış) three indirilmez
 import { SavasArenasi, canavarResmi } from './ui/arena.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
@@ -17,7 +16,7 @@ import { ac as ekranAc, baglamKur as ekranBaglamKur, canliTik as ekranCanliTik }
 import { kurPencere } from './ui/pencere.js';
 import { kurToast } from './ui/toast.js';
 import { kurYukleme } from './ui/yukleme.js';
-import { kurZindanGecisi } from './ui/zindan-gecisi.js';
+import { kurZindan } from './ui/zindan/ekran.js';
 import { hudVerisi } from './ui/hud-verisi.js';
 import { kurBildirimler } from './ui/v3/bildirim.js';
 import { kurKapiSeridi } from './ui/kapi-seridi.js';
@@ -32,7 +31,7 @@ if (DEV_TOOLS) { window.gameState = gameState; window.globalPool = globalPool; }
 const $ = (id) => document.getElementById(id);
 
 // ---------------------------------------------------------------------------
-// Panel, bildirim kutusu, zindan geçişi
+// Panel, bildirim kutusu, zindan ekranı
 // ---------------------------------------------------------------------------
 const pencere = kurPencere({ kok: $('rpg-modal'), baslik: $('modal-title'), govde: $('modal-body'), kapatDugme: $('btn-close-modal') });
 const bildir = kurToast($('toast-container'));
@@ -41,7 +40,7 @@ const closeModal = () => pencere.kapat();
 const isAnyModalOpen = () => pencere.acikMi() || document.body.classList.contains('modal-open');
 
 let phaserGame = null;
-const zindan = kurZindanGecisi({ gs: gameState, phaser: () => phaserGame, panelKapat: closeModal, bildir });
+const zindan = kurZindan({ gs: gameState, phaser: () => phaserGame, panelKapat: closeModal, bildir, ekranAc });
 
 const bildirimler = kurBildirimler({
   botUyarisi: () => gameState.getBotResourceDeficitWarning(),
@@ -129,7 +128,6 @@ const hudVeri = () => hudVerisi({
 
 function renderTopBar() {
   danisman = gameState.getRoyalAdvisorAdvice();   // hudVeri() aynı öneriyi tekrar hesaplamadan kullanır
-  if (document.body.classList.contains('in-dungeon')) zindan.oranlariYaz();
   if (window.__v3) window.__v3.guncelle();
 }
 
@@ -187,10 +185,10 @@ function kayitOlaylariniBildir() {
 }
 
 // ---------------------------------------------------------------------------
-// Pencere olayları: harita sahneleri ve zindan sahnesi arayüzle bu olaylar üzerinden konuşur
+// Pencere olayları: harita sahneleri arayüzle bu olaylar üzerinden konuşur
 // ---------------------------------------------------------------------------
 function olaylariBagla() {
-  zindan.baglaKatCubugu();
+  zindan.bagla();
 
   window.addEventListener('open-town-modal', (e) => {
     const { zoneId } = e.detail;
@@ -199,16 +197,6 @@ function olaylariBagla() {
     else if (zoneId === 'collection') ekranAc('koleksiyon');
     else if (zoneId === 'council') ekranAc('hazine');
     else bolgeAc(zoneId);
-  });
-
-  window.addEventListener('open-monster-battle', (e) => {
-    const { monster } = e.detail;
-    const mevcut = gameState.state.dungeonProgress || 1;
-    if (monster.level > mevcut) {
-      bildir(`🔒 Şu an Seviye ${mevcut}'desiniz! [Seviye ${monster.level}] ${monster.name} bölümüne girmek için önce Seviye ${mevcut} ve önceki bölümleri tamamlamalısınız.`, 'error');
-      return;
-    }
-    ekranAc('savashazirlik', { canavar: monster });
   });
 
   window.addEventListener('toast-notify', (e) => { if (e.detail && typeof e.detail.message === 'string') bildir(e.detail.message, e.detail.type); });
@@ -308,7 +296,7 @@ async function haritayiBaslat() {
     height: h,
     backgroundColor: '#1a0f08',
     render: { antialias: true, pixelArt: false, roundPixels: false, transparent: false, clearBeforeRender: true, powerPreference: 'default' },
-    scene: [GrandTownScene, DungeonScene]
+    scene: [GrandTownScene]
   };
 
   // 2B piksel harita varsayılan (kullanıcı kararı 7 Ekim: 3B vadi rafa kalktı); 3B deneme ?harita=3d ile ya da localStorage 'harita'='3d' ile
@@ -318,7 +306,7 @@ async function haritayiBaslat() {
   if (uc3d) {
     vadi = await import('./vadi3d/vadi.js');
     document.body.classList.add('map-3d');
-    ayar.scene = [vadi.VadiBootScene, DungeonScene];   // zindan Phaser'da kalır; kasaba sahnesi hiç açılmaz
+    ayar.scene = [vadi.VadiBootScene];   // kasaba sahnesi hiç açılmaz
   }
 
   phaserGame = new Phaser.Game(ayar);
@@ -339,7 +327,7 @@ async function haritayiBaslat() {
         document.body.classList.remove('map-3d');
         try { localStorage.removeItem('harita'); } catch { /* yoksay */ }
         try { phaserGame.destroy(true); } catch { /* sahne yoktu */ }
-        phaserGame = new Phaser.Game({ ...ayar, scene: [GrandTownScene, DungeonScene] });
+        phaserGame = new Phaser.Game({ ...ayar, scene: [GrandTownScene] });
       }
     }
   }

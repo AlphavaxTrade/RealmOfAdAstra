@@ -2,7 +2,7 @@
 // DOM'a dokunmayan saf işlevler doğrudan, ekran çekirdeği ise küçük bir sahte belgeyle denenir.
 import assert from 'node:assert/strict';
 import { sozSirasi } from '../js/ui/yukleme.js';
-import { ganimetSanslari } from '../js/ui/zindan-gecisi.js';
+import { ganimetSanslari } from '../js/ui/zindan/plan.js';
 import { botDurumu, bakiyeYazisi, hudVerisi } from '../js/ui/hud-verisi.js';
 import { ac, baglamKur, ekranKaydet } from '../js/ui/ekran/cekirdek.js';
 

@@ -34,8 +34,8 @@ html.v3 {
 }
 
 /* 2. KASABA / ZİNDAN GEÇİŞİ --------------------------------------------- */
-/* zindan kendi kat çubuğunu #top-nav-strip içinde taşır: kasabada çubuk gizli (v3 çubukları açık), zindanda tersi */
-html.v3 body:not(.in-dungeon) #top-nav-strip { display: none !important; }
+/* zindanda (body.in-dungeon) v3 çubukları gizlenir; zindan ekranı (css/zindan.css) kendi üst çubuğunu taşır */
+
 html.v3 body.in-dungeon :is(#v3-hud, #v3-tabbar, #v3-dock, #v3-kaynak-tepsi, #v3-uyari) { display: none !important; }
 html.v3 body.in-dungeon { --hud-h: var(--v3-hud-h); --tabbar-h: 0px; }
 html.v3 .gate-banner { top: calc(var(--v3-hud-h) + 8px); z-index: 1100; }
@@ -316,15 +316,6 @@ html.v3 #v3-baglanti[hidden] { display: none; }
 html.v3 #v3-baglanti[data-durum="gecikmeli"] { background: #8a5a00; }
 html.v3 #v3-baglanti[data-durum="kopuk"] { background: #9b1c1c; }
 
-/* 15. ZINDAN BASLIGI: zindandayken eski seridin yalniz kat cubugu kalir (sade, kaydirilabilir) ------------ */
-html.v3 body.in-dungeon #top-nav-strip { display: flex !important; align-items: center; position: fixed; top: 0; left: 0; right: 0; height: var(--v3-hud-h); padding: 6px max(10px, env(safe-area-inset-left)); gap: var(--v3-gap-2); box-sizing: border-box; background: rgba(9,12,19,.94); border-bottom: 1px solid var(--v3-cizgi-guclu); z-index: var(--v3-z-hud); }
-html.v3 body.in-dungeon #top-nav-strip > :not(#dungeon-floor-bar) { display: none !important; }
-html.v3 body.in-dungeon #dungeon-floor-bar:not(.hidden) { display: flex !important; position: static !important; transform: none !important; justify-content: flex-start !important; flex: 1; min-width: 0; max-width: none !important; max-height: none !important; align-items: center; gap: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin: 0; padding: 0; background: transparent; border: 0; box-shadow: none; }
-html.v3 body.in-dungeon #btn-dungeon-return-town { position: static !important; }
-html.v3 body.in-dungeon #dungeon-floor-bar::-webkit-scrollbar { display: none; }
-html.v3 body.in-dungeon #dungeon-floor-bar > * { flex: none; min-height: var(--v3-tap); }
-html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-nav-divider { display: none; }
-
 /* 16. KISLA (js/ui/barracks.js compact kipi) ------------------------------- */
 html.v3 .bk [hidden] { display: none !important; }
 html.v3 .bk :is(.bk-btn, .bk-chip, .bk-tab, .bk-seg, .bk-slot-hit, .bk-icon-btn, .bk-row) { min-height: var(--v3-tap) !important; display: inline-flex; align-items: center; }
@@ -351,16 +342,6 @@ html.v3 .rpg-modal-body label:has(> input[type="checkbox"], > input[type="radio"
 @media (pointer: coarse) {
   html.v3 .rpg-modal-body :is(button, select) { min-height: var(--v3-tap) !important; }
   html.v3 .rpg-modal-body button { min-width: var(--v3-tap); }
-}
-
-/* 18. ZİNDAN KAT ÇUBUĞU TELEFONDA: altı kat ve kasaba düğmesi tek satıra sığar (11 Ekim 2026) ------------- */
-@media (max-width: 560px) {
-  html.v3 body.in-dungeon #dungeon-floor-bar { overflow-x: visible; gap: 4px; }
-  html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-home-btn > span:last-child { display: none; }
-  html.v3 body.in-dungeon #dungeon-floor-bar .dungeon-home-btn { min-width: var(--v3-tap); justify-content: center; padding: 0 10px; }
-  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab { min-width: var(--v3-tap); padding: 0 6px; justify-content: center; gap: 2px; }
-  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab > span:last-child { display: none; }
-  html.v3 body.in-dungeon #dungeon-floor-bar .floor-tab::after { content: attr(data-floor); font: 800 13px var(--font-ui); }
 }
 
 /* 19. KRALLIK YOLU (öğretici paneli, js/ui/v3/ogretici.js) --------------------------------------- */

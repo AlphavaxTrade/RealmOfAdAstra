@@ -19,10 +19,13 @@ test('🖱️ Harita & Zindan imleci ve v1.25 ekran yerleşimi', async (t) => {
     assert.ok(/cursor\s*=\s*[^;]*'grab'/.test(sceneCode), 'Boş alanda sürükleme (grab) imleci ayarlanmalıdır');
   });
 
-  await t.test('3. Zindan sahnesi imleç ve ipucu konumunu tuval üst kenarına göre hesaplamalı', () => {
-    const sceneCode = read('js/dungeonScene.js');
-    assert.ok(sceneCode.includes("_imlec('pointer')") && sceneCode.includes('setDefaultCursor(tur)'), 'Zindan oda/portal hover anında pointer imleci ayarlanmalıdır');
-    assert.ok(sceneCode.includes('_tuvalUstu()') && sceneCode.includes('getBoundingClientRect().top'), 'Zindan ipucu Y koordinatına tuval üst kenarı eklenmelidir');
+  await t.test('3. Zindan ekranı düz HTML: tuval yok, odalar gerçek düğme, imleç CSS ile', () => {
+    assert.ok(!fs.existsSync(path.join(projectRoot, 'js/dungeonScene.js')), 'eski Phaser zindan sahnesi kaldırılmış olmalıdır');
+    const ekran = read('js/ui/zindan/ekran.js');
+    assert.ok(/<button type="button" class="zd-bolge/.test(ekran) && /<button type="button" class="zd-gecit"/.test(ekran), 'oda ve geçit gerçek düğme olmalıdır');
+    const css = read('css/zindan.css');
+    assert.ok(/\.zd-bolge\s*\{[^}]*cursor:\s*pointer/.test(css), 'oda alanı üzerinde el imleci olmalıdır');
+    assert.ok(read('index.html').includes('id="zindan-ekrani"'), 'index.html zindan ekranı kabını taşımalıdır');
   });
 
   await t.test('4. Harita alanı üst bar ve telefon alt çubuğunun altından başlamalı', () => {

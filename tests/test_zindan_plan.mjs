@@ -1,37 +1,89 @@
-// Zindan planı: 6 kat x 3 oda = 18 seviye; yerleşim ekran içinde, seviye durumları ve ilerleme kuralı.
+// Zindan planı: 6 kat × 3 oda = 18 seviye; kat ve oda durumları, kilit mesajı, yetenek sözlüğü, kütük ve resim dosyaları.
 import assert from 'node:assert/strict';
-import { KATLAR, KAT_SAYISI, EN_UST_SEVIYE, katCanavarlari, yerlestir, odaDurumu, kilitMesaji, odaEtiketi, odaIpucu } from '../js/ui/zindan-plan.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  KATLAR, KAT_SAYISI, ODA_SAYISI, EN_UST_SEVIYE, katSeviyeleri, katCanavarlari, baslangicKati, odaDurumu, katDurumu,
+  kilitMesaji, sansTonu, sansYorumu, YETENEKLER, yetenekBilgisi, bossKatiMi
+} from '../js/ui/zindan/plan.js';
+import { kutukHtml, HIKAYE } from '../js/ui/zindan/kutuk.js';
+import { DUNGEON_LEVELS } from '../js/bestiary.js';
 
+const kok = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// 1) 6 kat, her katta 3 canavar, 18 seviye tam ve tekil; resimler var; geçit yalnız son kat dışında
 assert.equal(KATLAR.length, KAT_SAYISI);
-const gorulenSeviyeler = [];
+assert.equal(EN_UST_SEVIYE, 18);
+const gorulen = [];
 KATLAR.forEach((k, i) => {
   assert.equal(k.kat, i + 1);
-  assert.equal(k.odalar.length, 3, `${k.kat}. katta 3 oda`);
-  const c = katCanavarlari(k.kat);
-  assert.equal(c.length, 3, `${k.kat}. katın 3 canavarı`);
-  c.forEach((m, j) => { gorulenSeviyeler.push(m.level); assert.ok(m.name && m.hp > 0 && m.atk > 0, `${m.name} alanları`); void j; });
-  // Her levha ekranın içinde
-  for (const o of [...k.odalar, ...k.gecitler]) {
-    assert.ok(o.px - o.bw / 2 >= 0 && o.px + o.bw / 2 <= 1.01, `${k.kat}. kat levha yatayda taşmıyor (${o.px})`);
-    assert.ok(o.py - o.bh / 2 >= 0 && o.py + o.bh / 2 <= 1.001, `${k.kat}. kat levha dikeyde taşmıyor (${o.py})`);
+  const canavarlar = katCanavarlari(k.kat);
+  assert.equal(canavarlar.length, ODA_SAYISI, `${k.kat}. katın 3 canavarı`);
+  canavarlar.forEach((m) => { gorulen.push(m.level); assert.ok(m.name && m.hp > 0 && m.atk > 0, `${m.name} alanları`); });
+  assert.deepEqual(katSeviyeleri(k.kat), canavarlar.map((m) => m.level), `${k.kat}. kat seviyeleri bestiary ile aynı`);
+  assert.ok(fs.existsSync(path.join(kok, 'public', k.resim)), `${k.resim} dosyası var`);
+  assert.ok(k.rozet && k.ad && k.alt, 'ad, alt başlık ve rozet adı');
+  if (k.kat < KAT_SAYISI) {
+    const g = k.gecit;
+    assert.ok(g && g.sol >= 0 && g.ust >= 0 && g.sol + g.en <= 100.01 && g.ust + g.boy <= 100.01, `${k.kat}. kat geçidi resmin içinde`);
+  } else {
+    assert.equal(k.gecit, null, 'son katta geçit yok');
   }
-  assert.equal(k.gecitler.length > 0, k.kat < KAT_SAYISI, 'son katta geçit yok, diğerlerinde var');
 });
-assert.deepEqual([...gorulenSeviyeler].sort((a, b) => a - b), Array.from({ length: EN_UST_SEVIYE }, (_, i) => i + 1), '18 seviye tam ve tekil');
-console.log('✅ plan: 6 kat, 18 seviye, levhalar ekran içinde');
+assert.deepEqual([...gorulen].sort((a, b) => a - b), Array.from({ length: EN_UST_SEVIYE }, (_, i) => i + 1), '18 seviye tam ve tekil');
+assert.deepEqual(KATLAR.filter((k) => bossKatiMi(k.kat)).map((k) => k.kat), [3, 6]);
+console.log('✅ plan: 6 kat, 18 seviye, resimler ve geçitler');
 
-assert.deepEqual(yerlestir({ px: 0.5, py: 0.25, bw: 0.2, bh: 0.1 }, 1000, 800), { x: 500, y: 200, bw: 200, bh: 80 });
+// 2) Oyuncu hangi kattan başlar
+assert.equal(baslangicKati(1), 1);
+assert.equal(baslangicKati(3), 1);
+assert.equal(baslangicKati(4), 2);
+assert.equal(baslangicKati(10), 4);
+assert.equal(baslangicKati(18), 6);
+assert.equal(baslangicKati(19), 6, 'zindan bitince son kat');
+assert.equal(baslangicKati(undefined), 1);
+console.log('✅ başlangıç katı');
+
+// 3) Oda ve kat durumları
 assert.deepEqual(odaDurumu(3, 3), { kilitli: false, yenildi: false, siradaki: true });
 assert.deepEqual(odaDurumu(2, 5), { kilitli: false, yenildi: true, siradaki: false });
 assert.deepEqual(odaDurumu(7, 5), { kilitli: true, yenildi: false, siradaki: false });
-console.log('✅ oda durumu');
+assert.deepEqual(katDurumu(1, 1), { temizlenen: 0, tamam: false, acik: true });
+assert.deepEqual(katDurumu(1, 3), { temizlenen: 2, tamam: false, acik: true });
+assert.deepEqual(katDurumu(1, 4), { temizlenen: 3, tamam: true, acik: true });
+assert.deepEqual(katDurumu(2, 4), { temizlenen: 0, tamam: false, acik: true });
+assert.deepEqual(katDurumu(3, 4), { temizlenen: 0, tamam: false, acik: false });
+assert.deepEqual(katDurumu(6, 19), { temizlenen: 3, tamam: true, acik: true });
+console.log('✅ oda ve kat durumları');
 
-// Metinler
+// 4) Metinler Türkçe ve "Chamber" yok
 const m = { level: 9, name: 'Kadim Taş Golyat' };
-assert.match(odaEtiketi(m, odaDurumu(9, 9)), /👑 Seviye 9\nKadim Taş Golyat\n⚔️ Savaşa gir/);
-assert.match(odaEtiketi({ level: 2, name: 'Goblin' }, odaDurumu(2, 6)), /✅ Yenildi/);
-assert.match(odaEtiketi({ level: 5, name: 'x' }, odaDurumu(5, 1)), /🔒 Kilitli/);
 assert.match(kilitMesaji(3, m), /Seviye 3'desiniz.*\[Seviye 9\] Kadim Taş Golyat/);
-assert.equal(odaIpucu(m, 0, odaDurumu(9, 9), 9).baslik, 'Oda 1 — Seviye 9: Kadim Taş Golyat');
-assert.ok(!/Chamber/.test(odaIpucu(m, 1, odaDurumu(9, 3), 3).baslik), 'İngilizce "Chamber" yok');
-console.log('✅ oda metinleri Türkçe');
+assert.equal(sansTonu(null), 'yok');
+assert.equal(sansTonu(80), 'iyi');
+assert.equal(sansTonu(60), 'uyari');
+assert.equal(sansTonu(20), 'kotu');
+assert.match(sansYorumu(null), /asker yok/);
+for (const k of KATLAR) assert.ok(!/Chamber|Floor/.test(`${k.ad} ${k.alt}`), 'İngilizce başlık yok');
+console.log('✅ metinler Türkçe, şans tonları');
+
+// 5) Bestiary'deki her yeteneğin oyuncuya açıklaması var; her canavarın hikâyesi var
+const yetenekler = new Set(DUNGEON_LEVELS.flatMap((x) => x.abilities || []));
+for (const y of yetenekler) assert.ok(YETENEKLER[y] && YETENEKLER[y].metin, `${y} yeteneğinin açıklaması`);
+assert.equal(yetenekBilgisi('bilinmeyen').ad, 'bilinmeyen');
+for (const x of DUNGEON_LEVELS) assert.ok(HIKAYE[x.level], `${x.level}. seviyenin hikâyesi`);
+console.log('✅ yetenek sözlüğü ve hikâyeler eksiksiz');
+
+// 6) Kütük: karşılaşılmayan canavar "???"
+{
+  const yeni = kutukHtml(1);
+  assert.equal(yeni.gorulen, 1);
+  assert.equal(yeni.toplam, 18);
+  assert.equal((yeni.html.match(/is-kapali/g) || []).length, 17, '17 canavar kapalı');
+  assert.ok(!yeni.html.includes('Kadim Taş Golyat'), 'bilinmeyen canavarın adı sızmaz');
+  const hepsi = kutukHtml(19);
+  assert.equal(hepsi.gorulen, 18);
+  assert.ok(hepsi.html.includes('Kıyamet Ejderhası IGNIS') && !hepsi.html.includes('is-kapali'));
+}
+console.log('✅ canavar kütüğü');

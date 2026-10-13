@@ -79,70 +79,10 @@ input, textarea, select { user-select: text; }
 /* =========================================================================
    ÜST BAR (HUD)
    ========================================================================= */
-.top-nav-strip.hud {
-  position: fixed !important;
-  top: var(--ticker-h) !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: auto !important;
-  height: var(--topbar-h) !important;
-  display: grid !important;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  grid-template-areas: "left nav res actions";
-  align-items: center;
-  padding: 0 16px !important;
-  background: linear-gradient(180deg, rgba(14, 18, 27, 0.97), rgba(10, 13, 20, 0.95)) !important;
-  border-bottom: 1px solid var(--c-line) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
-  backdrop-filter: blur(14px) saturate(1.2);
-  -webkit-backdrop-filter: blur(14px) saturate(1.2);
-  z-index: 1200 !important;
-}
-.top-nav-strip.hud::before,
-.top-nav-strip.hud::after { display: none !important; }
 
 .hud button { font: inherit; }
 
 /* Zindan kat menüsü */
-.hud #dungeon-floor-bar { display: none !important; }
-body.in-dungeon .hud #dungeon-floor-bar {
-  grid-area: nav;
-  justify-self: center;
-  display: flex !important;
-  align-items: center;
-  gap: 4px !important;
-  padding: 4px !important;
-  border-radius: 14px;
-  background: var(--c-surface-1) !important;
-  border: 1px solid var(--c-line) !important;
-  box-shadow: none !important;
-  outline: none !important;
-  overflow-x: auto;
-  max-width: 100%;
-  scrollbar-width: none;
-}
-body.in-dungeon .hud #dungeon-floor-bar::-webkit-scrollbar { display: none; }
-.hud .floor-tab,
-.hud .dungeon-home-btn {
-  all: unset;
-  box-sizing: border-box;
-  display: inline-flex; align-items: center; gap: 6px;
-  height: 36px; padding: 0 12px; border-radius: 10px;
-  font-size: 12.5px; font-weight: 700; color: var(--c-text-2); cursor: pointer;
-  transition: background .15s ease, color .15s ease;
-}
-.hud .floor-tab:hover, .hud .dungeon-home-btn:hover { background: var(--c-surface-3); color: var(--c-text); }
-.hud .floor-tab.active { background: linear-gradient(180deg, rgba(246,217,140,.22), rgba(231,185,76,.12)); color: var(--c-gold-2); box-shadow: inset 0 0 0 1px rgba(231,185,76,.4); }
-.hud .floor-tab.boss-tab, .hud .floor-tab.mega-tab { color: #ffb4a8; }
-.hud .dungeon-home-btn { color: var(--c-text); background: var(--c-surface-3); }
-.hud .dungeon-nav-divider { width: 1px; height: 22px; background: var(--c-line-strong); margin: 0 2px; flex: none; }
-.hud .dungeon-drop-hud { display: flex; gap: 4px; }
-.hud .dungeon-drop-badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  height: 30px; padding: 0 8px; border-radius: 8px;
-  background: var(--c-surface-2) !important; border: 1px solid var(--c-line) !important;
-  font-size: 11.5px; color: var(--c-text-2);
-}
 
 /* =========================================================================
    HARİTA ALANI
@@ -338,23 +278,9 @@ body.modal-open .guide-widget { display: none; }
     --topbar-h: 102px;
     --tabbar-h: 62px;
   }
-  .top-nav-strip.hud {
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    grid-template-rows: 46px 40px;
-    grid-template-areas:
-      "left left actions"
-      "res res res";
-    row-gap: 6px;
-    column-gap: 8px;
-    padding: 5px 10px !important;
-    align-content: center;
-  }
-  body.in-dungeon .hud #dungeon-floor-bar {
-    grid-area: res;
-    justify-self: stretch;
-    border-radius: 12px;
-  }
-  body.in-dungeon .hud .dungeon-drop-hud { display: none; }
+  
+  
+  
 
   .toast-container {
     top: auto !important;
@@ -404,20 +330,6 @@ body.modal-open .guide-widget { display: none; }
 }
 
 /* Zindan: eve dönüş düğmesi her zaman görünür */
-body.in-dungeon .hud #dungeon-floor-bar .dungeon-home-btn {
-  display: inline-flex !important;
-  position: sticky; left: 0; z-index: 1;
-  background: var(--c-surface-4) !important;
-  border: 1px solid var(--c-line-strong) !important;
-  color: var(--c-text) !important;
-  box-shadow: 6px 0 12px rgba(0,0,0,.35) !important;
-}
-@media (max-width: 1600px) {
-  body.in-dungeon .hud .dungeon-drop-hud .badge-label { display: none; }
-}
-@media (max-width: 1360px) {
-  body.in-dungeon .hud .dungeon-drop-hud { display: none; }
-}
 
 /* Kısa içerikli pencereler (ör. "Sen yokken olanlar") içerik kadar uzar */
 @media (min-width: 821px) {

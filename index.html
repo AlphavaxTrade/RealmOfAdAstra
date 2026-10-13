@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="css/theme.css">
   <link rel="stylesheet" href="css/v3/kabuk.css">
   <link rel="stylesheet" href="css/v3/ekran.css">
+  <link rel="stylesheet" href="css/zindan.css">
 </head>
 <body>
 
@@ -42,36 +43,9 @@
   <div id="gate-banner" class="gate-banner" hidden></div>
 
   <!-- ============================================================
-       1. ZİNDAN KAT ÇUBUĞU (kasabadaki üst çubuk js/ui/v3/kabuk.js tarafından kurulur)
+       1. ZİNDAN EKRANI (içeriği js/ui/zindan/ekran.js doldurur; kasabadaki üst çubuk js/ui/v3/kabuk.js tarafından kurulur)
        ============================================================ -->
-  <header id="top-nav-strip" class="top-nav-strip hud">
-    <!-- Zindandayken görünen kat çubuğu (kasabada v3 üst çubuğu kullanılır) -->
-    <nav id="dungeon-floor-bar" class="dungeon-floor-nav hidden" aria-label="Zindan katları">
-      <button id="btn-dungeon-return-town" class="dungeon-home-btn" title="Kasabaya dön" aria-label="Kasabaya dön">
-        <span>🏰</span> <span>Kasabaya Dön</span>
-      </button>
-      <span class="dungeon-nav-divider"></span>
-      <button class="floor-tab active" data-floor="1"><span>👺</span> <span>1. Kat</span></button>
-      <button class="floor-tab" data-floor="2"><span>💀</span> <span>2. Kat</span></button>
-      <button class="floor-tab boss-tab" data-floor="3"><span>🗿</span> <span>3. Kat · Ara Boss</span></button>
-      <button class="floor-tab" data-floor="4"><span>👻</span> <span>4. Kat</span></button>
-      <button class="floor-tab" data-floor="5"><span>🌋</span> <span>5. Kat</span></button>
-      <button class="floor-tab mega-tab" data-floor="6"><span>🐉</span> <span>6. Kat · Büyük Boss</span></button>
-      <span class="dungeon-nav-divider"></span>
-      <div id="dungeon-drop-hud" class="dungeon-drop-hud" title="Hesap seviyene ve kata göre canlı düşürme şansı (boss katlarında 2 katı)">
-        <div class="dungeon-drop-badge frag-badge" id="dungeon-badge-frag">
-          <span class="badge-icon">🧩</span>
-          <span class="badge-label">Parça:</span>
-          <span class="badge-val" id="dungeon-hud-frag-val">%0.18</span>
-        </div>
-        <div class="dungeon-drop-badge box-badge" id="dungeon-badge-box">
-          <span class="badge-icon">📦</span>
-          <span class="badge-label">Kutu:</span>
-          <span class="badge-val" id="dungeon-hud-box-val">%0.0018</span>
-        </div>
-      </div>
-    </nav>
-  </header>
+  <section id="zindan-ekrani" class="zd" hidden aria-label="Zindan"></section>
 
   <!-- ============================================================
        1.5 PHASER GAME CANVAS CONTAINER

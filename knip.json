@@ -29,7 +29,8 @@
     "ganache",
     "@sentry/node",
     "solc",
-    "playwright"
+    "playwright",
+    "postcss"
   ],
   "ignoreExportsUsedInFile": true
 }
