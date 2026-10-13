@@ -43,8 +43,11 @@ export function kutukHtml(ilerleme) {
         return `<li><span aria-hidden="true">${y.simge}</span> <b>${esc(y.ad)}</b> — ${esc(y.metin)}</li>`;
       }).join('');
       const yenildi = m.level < ilerleme;
+      const resim = m.avatar
+        ? `<img class="zd-kutuk-resim" src="${esc(m.avatar)}" alt="" loading="lazy" draggable="false" data-fb="text:${esc(m.icon || '💀')}">`
+        : `<span class="zd-kutuk-simge" aria-hidden="true">${esc(m.icon || '💀')}</span>`;
       return `<li class="zd-kutuk-kart${yenildi ? ' is-yenildi' : ''}">
-        <span class="zd-kutuk-simge" aria-hidden="true">${esc(m.icon || '💀')}</span>
+        ${resim}
         <div>
           <b>${esc(m.name)}</b><small>Seviye ${m.level}${kontrolAd(m)} · ${yenildi ? '✅ Yenildi' : '⚔️ Karşında'}</small>
           <p class="zd-kutuk-hikaye">${esc(HIKAYE[m.level] || '')}</p>

@@ -271,6 +271,7 @@
 .zd-kutuk-kart.is-yenildi { border-left-color: var(--zd-iyi); }
 .zd-kutuk-kart.is-kapali { opacity: .6; border-left-color: #64748b; }
 .zd-kutuk-simge { font-size: 28px; flex: none; }
+.zd-kutuk-resim { width: 64px; height: 64px; flex: none; border-radius: 12px; object-fit: cover; background: #000; border: 1px solid var(--zd-cizgi); }
 .zd-kutuk-kart small { display: block; color: var(--zd-yazi-2); font-size: 12px; }
 .zd-kutuk-hikaye { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--zd-yazi-2); }
 .zd-kutuk-stat { margin: 6px 0 0; font-size: 12.5px; }

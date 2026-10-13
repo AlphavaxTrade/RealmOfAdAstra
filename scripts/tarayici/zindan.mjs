@@ -4,7 +4,7 @@
 // Kullanım: node scripts/tarayici/zindan.mjs      Ortam: OYUN_ADRESI, CHROME_YOLU, EKRAN_KLASORU
 // Denetler (telefon 390×844, küçük telefon 360×640, yatay telefon 844×390, masaüstü 1280×800, geniş 1887×831):
 // kat görünümü (3 oda, geçit, kat sekmeleri), oda görünümü (tek oda, savaşa hazırlan), yatay taşma, dokunma hedefi ≥ 40 px,
-// kütük, geri düğmeleri, konsol hatası yok. Ekran görüntüleri EKRAN_KLASORU içine yazılır.
+// kütük, geri düğmeleri, gerçek savaş akışı (kat kutlaması, "aynı savaşı tekrarla"), konsol hatası yok. Ekran görüntüleri EKRAN_KLASORU içine yazılır.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -127,6 +127,63 @@ for (const [ad, w, h, mobil] of BOYUTLAR) {
   await s.locator('[data-e="geri"]').click(); await bekle(900);
   const don = await s.evaluate(() => ({ gizli: document.getElementById('zindan-ekrani').hidden, iceride: document.body.classList.contains('in-dungeon'), hud: getComputedStyle(document.getElementById('v3-hud')).display }));
   kontrol(`${ad}: kasabaya dönünce zindan ekranı kapanır, v3 çubukları gelir`, don.gizli && !don.iceride && don.hud !== 'none', JSON.stringify(don));
+  await baglam.close();
+}
+
+// ── Gerçek savaş akışı: zafer → kat kutlaması + rozet; zafer ekranından "Aynı savaşı tekrarla" ──
+{
+  const baglam = await tarayici.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  await baglam.addInitScript(() => { try { localStorage.setItem('roa_v3_tur_yerel', '{"atlandi":true}'); } catch { /* */ } });
+  const s = await baglam.newPage();
+  s.on('pageerror', (e) => hatalar.push(`savas pageerror: ${e.message}`));
+  s.on('console', (m) => { if (m.type() === 'error') hatalar.push(`savas console.error: ${m.text().slice(0, 200)}`); });
+  await s.goto(BASE + '/', { waitUntil: 'load' });
+  await s.waitForFunction(() => window.gameState && window.__v3, null, { timeout: 60000 });
+  await bekle(3000);
+  await s.evaluate(() => {
+    const gs = window.gameState;
+    gs.setDevLevel(30);
+    gs.state.stamina = gs.getMaxStamina();
+    gs.state.soldierUnits = Array.from({ length: 6 }, (_, i) => ({ name: `Er ${i + 1}`, level: 10, hp: 9000, maxHp: 9000, atk: 900, row: i % 2 ? 'back' : 'front', skills: ['shieldWall'] }));
+    gs.state.dungeonProgress = 3;   // 1. katın son odası sırada
+    gs.saveState();
+    window.dispatchEvent(new CustomEvent('enter-dungeon-view'));
+  });
+  await bekle(700);
+  await s.locator('.zd-bolge[data-oda="2"]').click(); await bekle(300);
+  await s.locator('[data-e="savas"]').click(); await bekle(800);
+  await s.evaluate(() => document.querySelector('#modal-body [data-e="basla"]').click());
+  await bekle(1500);
+  await s.evaluate(() => document.getElementById('aa-skipBtn')?.click());
+  await bekle(1500);
+  const sonuc = await s.evaluate(() => {
+    const dugmeler = [...document.querySelectorAll('#aa-resultActions button')].map((b) => b.textContent.trim());
+    return { dugmeler, ilerleme: window.gameState.state.dungeonProgress };
+  });
+  kontrol('savaş: zafer sonrası ilerleme 4 (1. kat tamam)', sonuc.ilerleme === 4, JSON.stringify(sonuc));
+  kontrol('savaş: zafer ekranında "Aynı savaşı tekrarla" düğmesi var', sonuc.dugmeler.some((t) => /Aynı savaşı tekrarla/.test(t)), sonuc.dugmeler.join(' | '));
+  await s.evaluate(() => document.getElementById('aa-resultCloseBtn')?.click());
+  await bekle(600);
+  const kutlama = await s.evaluate(() => ({
+    bant: (document.querySelector('.zd-kutlama') || {}).textContent || '',
+    rozet: (document.querySelector('.zd-kat[data-kat="1"] .zd-kat-isaret') || {}).textContent || '',
+    tekrarDugmesi: !!document.querySelector('#zindan-ekrani [data-e="tekrar"]')
+  }));
+  kontrol('savaş: kat tamamlama kutlaması gösterilir', /1\. Kat tamamlandı/.test(kutlama.bant) && /Mağara Gezgini/.test(kutlama.bant), kutlama.bant.replace(/\s+/g, ' '));
+  kontrol('savaş: kat sekmesinde 🏅 rozeti görünür', /🏅/.test(kutlama.rozet) || kutlama.rozet === '', kutlama.rozet);
+  kontrol('savaş: şeritte "Son savaş" düğmesi görünür', kutlama.tekrarDugmesi);
+  await s.screenshot({ path: path.join(EKRAN, 'savas_01_kutlama.png') });
+  await s.locator('[data-e="kutlama-kapat"]').click(); await bekle(300);
+  kontrol('savaş: kutlama bandı kapanır', await s.evaluate(() => !document.querySelector('.zd-kutlama')));
+
+  // "Son savaş" düğmesi, aynı canavar ve aynı askerlerle hazırlığı açar
+  await s.locator('#zindan-ekrani [data-e="tekrar"]').click(); await bekle(800);
+  const hazirlik = await s.evaluate(() => ({
+    baslik: document.getElementById('modal-title').innerText.replace(/\s+/g, ' ').trim(),
+    secili: document.querySelectorAll('#modal-body .ek-asker.is-secili').length,
+    canavar: /Gölge Kurdu/.test(document.getElementById('modal-body').innerText)
+  }));
+  kontrol('savaş: "Son savaş" savaşa hazırlığı aynı canavar ve 6 askerle açar', /Savaşa hazırlık/.test(hazirlik.baslik) && hazirlik.canavar && hazirlik.secili === 6, JSON.stringify(hazirlik));
   await baglam.close();
 }
 
