@@ -6,6 +6,8 @@ Diğer belgeler: mimari `docs/architecture.md` · bütün ayarlar `docs/kurumsal
 
 > **Durum (8 Ekim 2026):** oyun sunucusu şu an hiçbir uzak makinede KURULU DEĞİL. Trade sitesinin AWS makinesi 7 Ekim'de değişti (50.17.123.38, `/srv/realm` ve `realm` servisi yok); eski `scripts/sunucuya-yukle.sh` hâlâ eski adresi (54.81.201.200) gösterir ve çalışmaz. Oyunun alan adı `roa.alphavaxtrade.com` olacak; yayına almak için bu belgedeki adımlar + DNS kaydı + Caddy'ye bir `roa.alphavaxtrade.com` bloğu gerekir. Bunlar sunucuya dokunan, sizin onayınızla yapılacak işlerdir.
 
+> **Durum (13 Ekim 2026, dışarıdan görülen):** `https://54-81-201-200.sslip.io/api/health` yanıt veriyor: sürüm **1.35.0**, `testMode: true`, `chain: false` (deneme modu, sahte ASTRA, gerçek para yok). `realmofadastra.vercel.app` ve `roa.alphavaxtrade.com` yanıt vermiyor. Yani canlıdaki sunucu AWS deneme sunucusudur ve güncellemesi `bash scripts/sunucuya-yukle.sh` ile yapılır (anahtar Windows kasasından açılır; `KASA_BETIGI` ile kasa betiğinin yolu verilebilir). Betik güncellemeden önce veritabanı yedeğini `/srv/realm/data/yedek-*` altına alır ve ayar dosyasındaki `PUBLIC_URL`/`CORS_ORIGINS` değerlerini oyunun kendi adresine çeker. 2.0 sürümü için ilk güncelleme bu betikle yapılır; geri alma: `/srv/realm/app.old` ve en son `yedek-*` klasörü.
+
 ## Ne gerekiyor?
 
 - Linux sunucu (en az 1 işlemci, 1 GB bellek; önerilen 2 GB+). **Docker** *ya da* Node 24 + systemd.

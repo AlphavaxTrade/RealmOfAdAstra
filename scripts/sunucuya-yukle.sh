@@ -2,8 +2,8 @@
 # Oyun sunucusunu alphavaxtrade.com'un AWS sunucusuna (54.81.201.200) kurar / günceller (kullanıcı kararı 6 Ekim 2026).
 # ----------------------------------------------------------------------------------------------------------------
 #  • Trade sitesinden AYRI: kullanıcı "realm", klasör /srv/realm, servis realm.service, kapı 127.0.0.1:8090.
-#  • Güvenli adres: https://54-81-201-200.sslip.io (Caddy kendi sertifikasını alır). Oyun dosyaları
-#    realmofadastra.vercel.app'te; aynı dosyalar yedek olarak bu adreste de açılır.
+#  • Güvenli adres: https://54-81-201-200.sslip.io (Caddy kendi sertifikasını alır). Sunucu hem oyun dosyalarını hem API'yi
+#    sunar (ADR 0007: Vercel adresi emekli).
 #  • DENEME MODU (TEST_MODE=1, zincir kapalı): sahte ADA, gerçek para yok. Gerçek moda geçiş ayrı iş.
 #  • Ayarlar sunucuda /srv/realm/realm.env (izin 600); ilk kurulumda yönetici şifresi üretilir ve
 #    data/sunucu-admin-token.txt dosyasına (GitHub'a gitmez) kaydedilir.
@@ -13,8 +13,11 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 HOST=ubuntu@54.81.201.200
 ADDR=54-81-201-200.sslip.io
-SITE=https://realmofadastra.vercel.app
-. ../megalodon-live-deck/scripts/kasa.sh
+SITE=https://$ADDR
+# Sunucu anahtarı kasa betiği: varsayılan yol trade sitesi deposundadır; başka yerdeyse KASA_BETIGI ile verilir
+KASA_BETIGI="${KASA_BETIGI:-../megalodon-live-deck/scripts/kasa.sh}"
+[ -f "$KASA_BETIGI" ] || { echo "Kasa betiği yok: $KASA_BETIGI (KASA_BETIGI ortam değişkeniyle gösterin)" >&2; exit 1; }
+. "$KASA_BETIGI"
 kasa_ac
 S() { ssh "${SSHK[@]}" -o ConnectTimeout=20 "$HOST" "$@"; }
 
@@ -49,6 +52,15 @@ ADMIN_TOKEN=$(cat "$TOKF")
 ENV
 fi
 chmod 600 /srv/realm/realm.env
+# Güncellemeden ÖNCE veritabanı yedeği (şema geçişleri yalnız ileri gider; geri dönmek gerekirse bu dosya kullanılır)
+if [ -f /srv/realm/data/realm.db ]; then
+  YEDEK_KLASORU=/srv/realm/data/yedek-\$(date +%Y%m%d%H%M%S)
+  mkdir -p "\$YEDEK_KLASORU" && cp -p /srv/realm/data/realm.db* "\$YEDEK_KLASORU"/   # -wal / -shm dosyaları da (tutarlı kopya)
+  ls -1dt /srv/realm/data/yedek-* | tail -n +6 | xargs -r rm -rf
+  echo "Veritabanı yedeği: \$YEDEK_KLASORU"
+fi
+# Vercel adresi kapandı: mevcut ayar dosyasında oyunun kendi adresi kullanılır
+sed -i -e "s#^PUBLIC_URL=.*#PUBLIC_URL=$SITE#" -e "s#^CORS_ORIGINS=.*#CORS_ORIGINS=$SITE#" /srv/realm/realm.env
 cp /tmp/realm.tgz /srv/realm/releases/realm-$SURUM.tgz
 ls -1t /srv/realm/releases/*.tgz | tail -n +11 | xargs -r rm -f
 rm -rf /srv/realm/app.new && mkdir /srv/realm/app.new && tar xzf /tmp/realm.tgz -C /srv/realm/app.new && rm -f /tmp/realm.tgz
