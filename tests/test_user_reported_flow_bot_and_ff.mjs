@@ -25,11 +25,16 @@ test('🧪 Kullanıcı Akışı: 50k ASTRA -> Bot Satın Alma -> Silo Şişmeme 
   });
 
   await t.test('2. 6 Saat İleri Sarıldığında (fastForwardTime) browser donmadan her alanda 20 sefer tamamlayıp siloyu yükseltmeli', () => {
-    const t0 = Date.now();
+    // Duvar saati yerine İŞLEMCİ süresi: makine meşgulken (başka süreçler, tarayıcı) duvar saati şişer, işlemci süresi şişmez.
+    const c0 = process.cpuUsage();
     const report = gameState.fastForwardTime(6);
-    const duration = Date.now() - t0;
+    const c1 = process.cpuUsage(c0);
+    const duration = Math.round((c1.user + c1.system) / 1000);
 
-    assert.ok(duration < 400, `Simülasyon 400ms altında bitmeli, ölçülen: ${duration}ms`);
+    // Kapsam ölçümü (c8, NODE_V8_COVERAGE) kodu yavaşlatır; tam kapı (npm run kontrol) bu yüzden 14 Ekim 2026'da 1431 ms ölçtü.
+    // Donma koruması kalır: kapsam altında 2 sn, normalde 400 ms işlemci süresi (tek başına ~100 ms).
+    const sinir = process.env.NODE_V8_COVERAGE ? 2000 : 400;
+    assert.ok(duration < sinir, `Simülasyon ${sinir}ms altında bitmeli, ölçülen: ${duration}ms`);
     assert.equal(report.botExecutionStatus, 'ran', 'Bot aktif olarak çalışmalı');
     assert.equal(report.totalExpeditionsClaimed, R.length * 20, `6 saatte ${R.length} alan × 20 sefer toplanmalı`);
     assert.ok(gameState.state.warehouseLevel >= 2, 'Silo otomatik yükseltilmeli');

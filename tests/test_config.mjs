@@ -107,9 +107,9 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   hata({ RESERVE_WALLET: 'adres-degil' }, /RESERVE_WALLET/);
   hata({ TEST_MODE: '1' }, /TEST_MODE.*üretim/i);
   hata({ YEDEK_ANAHTAR: 'kisa' }, /YEDEK_ANAHTAR.*64/);
+  hata({ TRUST_PROXY: null }, /TRUST_PROXY/);   // https ama TRUST_PROXY yok: herkes tek adres görünür, giriş kilidi küresel olur
   assert.throws(() => loadConfig({ YEDEK_ARALIK_DK: '0' }), /YEDEK_ARALIK_DK/, 'yedek aralığı 1-1440 dakika');
   // Uyarılar (başlamayı engellemez)
-  assert.ok(dene({ TRUST_PROXY: null }).uyarilar.some(u => /TRUST_PROXY/.test(u)), 'https ama TRUST_PROXY yok: uyarı');
   assert.ok(dene({ RESERVE_WALLET: null }).uyarilar.some(u => /RESERVE_WALLET/.test(u)));
   assert.ok(dene({ ADMIN_TOKEN: null }).uyarilar.some(u => /ADMIN_TOKEN/.test(u)), 'yönetici şifresi yoksa panel kapalı: uyarı');
   assert.ok(dene({ YEDEK_KLASORU: null }).uyarilar.some(u => /YEDEK_KLASORU/.test(u)), 'yedek klasörü yoksa otomatik yedek kapalı: uyarı');

@@ -95,10 +95,11 @@ $('rPropose').onclick = () => {
   try {
     if (!lastRates || !lastRates.contract) return alert('Oran sözleşmesi tanımlı değil.');
     const arr = readRateForm();
+    if (arr.length !== 21) return alert('Oran listesi 21 değer olmalı (şu an ' + arr.length + ').');
     const diff = lastRates.keys.map((k, i) => arr[i] !== lastRates.active[i] ? `${k.label}: ${pctTr(lastRates.active[i])} → ${pctTr(arr[i])}` : null).filter(Boolean);
     if (!diff.length) return alert('Değişen oran yok.');
     if (!confirm('Şu oranlar değişecek (24 saat sonra geçerli):\n\n' + diff.join('\n'))) return;
-    ledgerTx(lastRates.contract, '0xd2c287e7' + arr.map(v => pad(v.toString(16))).join(''), 'Oran önerisi', 'ratesMsg');
+    ledgerTx(lastRates.contract, '0x2522e644' + arr.map(v => pad(v.toString(16))).join(''), 'Oran önerisi', 'ratesMsg');
   } catch (e) { alert(e.message); }
 };
 $('rCancel').onclick = () => lastRates && lastRates.contract && confirm('Bekleyen oran değişikliği geri çekilsin mi?') && ledgerTx(lastRates.contract, '0xea8a1af0', 'Öneriyi geri çekme', 'ratesMsg');

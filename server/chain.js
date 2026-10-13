@@ -26,6 +26,11 @@ const VAULT_ABI = [
 const FEED_ABI = ['function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)', 'function decimals() view returns (uint8)'];
 const PAIR_ABI = ['function getReserves() view returns (uint112,uint112,uint32)', 'function token0() view returns (address)'];
 
+// Oyun Kasası güvenlik sınırları için kararlaştırılan en yüksek değerler (baz puan; 11 Ekim 2026 kararı: günlük %5, tek ödeme %2).
+// Zincirdeki kasa bunlardan gevşekse checkVault bunu sorun olarak bildirir ve ödemeler başlamaz.
+const VAULT_MAX_DAILY_BPS = 500;
+const VAULT_MAX_SINGLE_BPS = 200;
+
 const toAda = v => Number(ethers.formatUnits(v, 18));
 
 // providerFactory: testlerde sahte sağlayıcı vermek için (varsayılan: gerçek JSON-RPC)
@@ -196,6 +201,10 @@ export function createChain(cfg, { providerFactory } = {}) {
     if (v.dead !== String(cfg.deadAddress).toLowerCase()) problems.push('kasanın yakım adresi oyundakiyle aynı değil');
     if (!gameWallet || v.dagitici !== gameWallet) problems.push('kasadaki dağıtıcı anahtar oyun cüzdanı değil');
     if (creatorWallet && v.creator !== String(creatorWallet).toLowerCase()) problems.push('kasadaki yapımcı adresi oyunun yapımcı cüzdanı değil');
+    // Karar (11 Ekim 2026): günlük %5, tek ödeme %2. Yanlış kurulmuş (gevşek) bir kasa sessizce kabul edilmesin (denetim K3).
+    const maxGunluk = cfg.vaultMaxDailyBps ?? VAULT_MAX_DAILY_BPS, maxTek = cfg.vaultMaxSingleBps ?? VAULT_MAX_SINGLE_BPS;   // yalnız testler programla gevşetir; ortam değişkeni YOK
+    if (v.dailyLimitBps > maxGunluk) problems.push(`kasanın günlük çekim sınırı %${v.dailyLimitBps / 100} (kararlaştırılan en çok %${maxGunluk / 100})`);
+    if (v.singleDrawBps > maxTek) problems.push(`kasanın tek ödeme sınırı %${v.singleDrawBps / 100} (kararlaştırılan en çok %${maxTek / 100})`);
     return { ok: problems.length === 0, problems, vault: v };
   }
 

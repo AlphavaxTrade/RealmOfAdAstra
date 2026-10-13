@@ -210,8 +210,8 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
           q.opDone.run('sent', null, clock(), op.id);
           continue;
         }
-        const signer = signerOf(row);
         try {
+          const signer = signerOf(row);                    // çözülemeyen tek kayıt yalnız kendi işlemini düşürür, kuyruğun kalanı sürer (denetim W2)
           if (op.kind === 'settle' && !row.approved) {
             await chain.sendTx(signer, { to: cfg.tokenAddress, data: ERC20.encodeFunctionData('approve', [cfg.paymentsContract, ethers.MaxUint256]) });
             q.approved.run(op.player);

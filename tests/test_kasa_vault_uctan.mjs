@@ -53,7 +53,7 @@ try {
     p.broadcastTransaction = async raw => { if (failBroadcast > 0) { failBroadcast--; throw new Error('bağlantı koptu (deneme)'); } return orig(raw); };
     return p;
   };
-  const mkCfg = extra => ({ ...baseCfg, dbFile: ':memory:', rpcUrls: [`http://127.0.0.1:${PORT}`], chainId: 43114, tokenAddress: tokenAddr, gameWalletKey: gameKey, payoutMode: 'auto', weeklySendCapAda: 5e7, vaultContract: kAddr, ...extra });
+  const mkCfg = extra => ({ ...baseCfg, dbFile: ':memory:', rpcUrls: [`http://127.0.0.1:${PORT}`], chainId: 43114, tokenAddress: tokenAddr, gameWalletKey: gameKey, payoutMode: 'auto', weeklySendCapAda: 5e7, vaultContract: kAddr, vaultMaxDailyBps: 1000, ...extra })   // bu testin sayıları %10 günlük sınıra göre kurulu; üretim varsayılanı %5 (bölüm 1b);
   const mkWorld = cfg => createWorld({ db, engine: E, chain: createChain(cfg, { providerFactory }), cfg, log: { warn() {}, error() {}, log() {} } });
   const cfg = mkCfg({});
   const world = mkWorld(cfg);
@@ -72,6 +72,17 @@ try {
     assert.equal(row(id).status, 'pending'); assert.equal(await bal(P1), 0n);
     db.raw.prepare('DELETE FROM payouts WHERE id = ?').run(id);
     ok('Açılış denetimi: kasadaki dağıtıcı oyun cüzdanı değilse hiçbir ödeme çıkmıyor (satır pending kalıyor)');
+  }
+
+  // 1b) Denetim K3 (14 Ekim 2026): zincirdeki kasa kararlaştırılan sınırdan (günlük %5, tek ödeme %2) gevşekse sunucu kasadan ödeme yapmaz
+  {
+    const gevsek = mkWorld(mkCfg({ vaultMaxDailyBps: undefined }));          // üretim varsayılanı: %5. Bu testin kasası %10 ile kurulu.
+    const id = add('withdraw', P1, 10, 98);
+    const r = await gevsek.processPayouts({ force: true });
+    assert.match(String(r.skipped), /günlük çekim sınırı %10 .kararlaştırılan en çok %5./, JSON.stringify(r));
+    assert.equal(row(id).status, 'pending'); assert.equal(await bal(P1), 0n);
+    db.raw.prepare('DELETE FROM payouts WHERE id = ?').run(id);
+    ok('Kasa sınırı denetimi: günlük sınırı %10 olan kasadan (karar %5) hiçbir ödeme çıkmıyor');
   }
 
   // 2) Normal ödemeler: kasadan, ref = satır numarası; oyun cüzdanı token tutmuyor

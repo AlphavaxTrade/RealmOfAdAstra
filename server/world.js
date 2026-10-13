@@ -58,18 +58,30 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
       const done = db.kvGet('world:epochProcessed');
       if (done == null) db.kvSet('world:epochProcessed', ep);
       else if (ep > Number(done)) {
-        await runWeekly(ep - 1);
-        db.kvSet('world:epochProcessed', ep);
+        // Hesaplaşma hata verirse tur bu adımdan sonra durmasın: ödeme kuyruğu, kasa ve kapı çalışmaya devam eder. Hafta işlenmiş
+        // sayılmaz (epochProcessed ilerlemez) ve bir sonraki turda yeniden denenir; hata nabızda ve günlükte görünür (denetim W2).
+        try {
+          await runWeekly(ep - 1);
+          db.kvSet('world:epochProcessed', ep);
+        } catch (err) {
+          nabiz.hataSayisi++; nabiz.sonHata = 'Haftalık hesaplaşma: ' + String(err?.message || err).slice(0, 280); nabiz.sonHataZamani = clock();
+          log.error('Haftalık hesaplaşma başarısız (yeniden denenecek):', err?.message || err);
+        }
       }
       const now = clock();
       // Dünya bossu: bu haftanın savaş anı geçtiyse ve henüz yapılmadıysa (ilk açılışta geçmişe dönük savaş yapılmaz)
       const bossTime = E.gs.getWorldBossSchedule(now).lastBattleTime;
       const bossDone = Number(db.kvGet('world:bossLastBattle')) || 0;
       if (!bossDone) db.kvSet('world:bossLastBattle', bossTime);
-      else if (bossTime > bossDone) runWorldBoss(bossTime);
+      else if (bossTime > bossDone) {
+        try { runWorldBoss(bossTime); } catch (err) {
+          nabiz.hataSayisi++; nabiz.sonHata = 'Dünya bossu: ' + String(err?.message || err).slice(0, 280); nabiz.sonHataZamani = clock();
+          log.error('Dünya bossu başarısız:', err?.message || err);
+        }
+      }
       if (chain && now - last.market >= 3600000) { last.market = now; await snapshotMarket().catch(err => log.warn('Piyasa:', err.message)); }
       if (chain && now - last.deposits >= 120000) { last.deposits = now; await scanDeposits().catch(err => log.warn('Yatırma tarama:', err.message)); }
-      if (now - last.live >= 600000) { last.live = now; refreshLive(); }
+      if (now - last.live >= 600000) { last.live = now; try { refreshLive(); } catch (err) { log.warn('Canlı değerler:', err.message); } }
       if (now - (last.uretim || 0) >= 3600000) { last.uretim = now; try { refreshUretim(); } catch (err) { log.warn('Üretim Hakkı:', err.message); } }
       // Kapı kuralı (saatte bir): pasiflik uyarı/askı, boş yerleri sıradan doldur, sınır büyümesi
       if (kapi && now - (last.kapi || 0) >= 3600000) { last.kapi = now; try { kapi.run(); } catch (err) { log.warn('Kapı:', err.message); } }

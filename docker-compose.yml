@@ -15,7 +15,8 @@ services:
       - server/.env
     environment:
       - NODE_ENV=production
-      - DB_FILE=/data/realm.db      # kayıt dosyası kalıcı hacimde (yeniden kurulumda silinmez)
+      - TRUST_PROXY=1               # port yalnız 127.0.0.1'e açık, önünde Caddy/Nginx var: gerçek ziyaretçi adresi X-Forwarded-For'dan okunur (yoksa herkes tek adres görünür)
+      - DB_FILE=/data/realm.db     # kayıt dosyası kalıcı hacimde (yeniden kurulumda silinmez)
       - YEDEK_KLASORU=/yedek        # yalnız OKUR: /metrics'te yedek yaşı ve son deneme sonucu (yedekleri yazan 'yedek' servisidir)
     ports:
       # Yalnız aynı makinedeki HTTPS katmanına açık; dışarıdan doğrudan erişilemez.

@@ -66,6 +66,7 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   assert.ok(r.logging && r.logging.options['max-size'], 'günlük döndürme');
   assert.ok(r.volumes.some(v => String(v).endsWith(':/data')), 'kalıcı veri hacmi');
   assert.ok(r.environment.some(e => e === 'NODE_ENV=production'));
+  assert.ok(r.environment.some(e => String(e).startsWith('TRUST_PROXY=1')), 'proxy arkasında gerçek ziyaretçi adresi okunmalı (yoksa giriş kilidi küresel olur)');
   for (const [ad, s] of Object.entries(c.services)) {
     assert.ok(!s.privileged, ad + ' ayrıcalıklı olmamalı');
     assert.notEqual(s.network_mode, 'host', ad + ' host ağında olmamalı');

@@ -335,6 +335,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     q.setPass.run(await parolaOzetle(newPassword), t.account_id);
     q.setVerified.run(t.account_id);                       // e-postayı açabildiyse e-posta onun
     q.sessionsOf.run(playerIdOf(t.account_id));            // bütün cihazlardan çıkış
+    q.tokensDelKind.run(t.account_id, 'verify');           // e-posta geçmişinde kalmış eski doğrulama bağlantısı sıfırlamadan sonra oturum açtırmasın
     db.event('password-reset', playerIdOf(t.account_id));
     const acc = q.byId.get(t.account_id);
     if (acc) await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — şifren değişti', text: 'Hesabının şifresi az önce değiştirildi ve bütün cihazlardan çıkış yapıldı. 🛡️\n\nBunu sen yapmadıysan hemen "Şifremi unuttum" ile yeni şifre belirle.' }).catch(() => {});

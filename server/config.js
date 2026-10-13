@@ -110,7 +110,9 @@ export function dogrula(cfg, env = process.env) {
   const adres = a => /^0x[0-9a-fA-F]{40}$/.test(String(a || ''));
   if (cfg.testMode) hatalar.push('TEST_MODE=1 üretimde (NODE_ENV=production) kullanılamaz');
   if (!String(cfg.publicUrl).startsWith('https://')) hatalar.push(`PUBLIC_URL https:// ile başlamalı (cüzdan bağlama ve e-posta bağlantıları için; şu an: ${cfg.publicUrl})`);
-  else if (!cfg.trustProxy) uyarilar.push('TRUST_PROXY=1 değil: Caddy/Nginx arkasındaysan istemci adresleri yanlış görünür (hız sınırları herkese ortak olur)');
+  // Sunucu düz http konuşur; https adresi yalnız önündeki Caddy/Nginx'ten gelir. TRUST_PROXY yoksa bütün ziyaretçiler proxy'nin
+  // adresi görünür: 50 yanlış giriş HERKESİN girişini, 10 yanlış yönetici şifresi paneli kilitler (14 Ekim 2026 denetimi, H2).
+  else if (!cfg.trustProxy) hatalar.push('TRUST_PROXY=1 olmalı: PUBLIC_URL https:// ise sunucu bir Caddy/Nginx arkasındadır; yoksa bütün ziyaretçiler tek adres görünür ve hız sınırları/giriş kilitleri herkese ortak olur');
   if (cfg.dbFile === ':memory:') hatalar.push('DB_FILE bellek içi (:memory:) olamaz: kayıtlar kalıcı olmalı');
   if (!cfg.smtpUrl) hatalar.push('SMTP_URL tanımlı değil: doğrulama e-postaları gitmez, kimse giriş yapamaz');
   if (!cfg.adminToken) uyarilar.push('ADMIN_TOKEN yok: yönetici paneli kapalı');
