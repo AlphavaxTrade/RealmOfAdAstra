@@ -95,14 +95,15 @@ const fresh = () => {
   assert.ok(h0.canTake < gs.getWarehouseCapacity().wood - (gs.state.inventory.wood || 0), 'Hak silo boşluğundan küçük (sınırlayan hak)');
   const big = h0.canTake * 3; // hakkın 3 katı mahsul
   gs.state.activeExpeditions.wood = { nodeId: 'wood', durationMinutes: 18, durationSeconds: 1080, elapsedSeconds: 1080, isCompleted: true, claimedAmount: 0, ratePerMinute: big / 18 };
-  const konsey0 = globalPool.getKonseyStock().wood || 0;
+  const konseyToplam = () => (globalPool.getKonseyStock().wood || 0) + ((globalPool.getOtoriteStatus().progress.wood) || 0) + ((globalPool.getProjectStatus().progress.wood) || 0);
+  const konsey0 = konseyToplam();
   const inv0 = gs.state.inventory.wood || 0;
   const r1 = gs.claimExpedition('wood');
   assert.ok(r1.success && r1.isQuotaWait, 'Hak kadar toplanır, kalanı bekler');
   const used1 = gs.getUretimHakki('wood').used;
   assert.ok(used1 <= h0.canTake && used1 >= h0.canTake - 2, `Kullanılan hak ≈ bugünkü hak (${used1} / ${h0.canTake})`);
   assert.equal(r1.harvestedAmount, gs.state.inventory.wood - inv0, 'Toplanan mahsulün tamamı siloya girdi');
-  assert.equal(globalPool.getKonseyStock().wood - konsey0, r1.konseyShare, 'Ortak kasaya %5 girdi');
+  assert.equal(konseyToplam() - konsey0, r1.konseyShare, 'Ortak kasaya %5 girdi (stok + otomatik aktarılan yapı ilerlemesi)');
   assert.ok(near(r1.konseyShare, Math.floor(r1.harvestedAmount * O.COMMON_CHEST_RATE), 1), 'Ortak kasa payı çıkarılanın %5i');
   assert.ok(gs.state.activeExpeditions.wood, 'Sefer bekliyor');
   const r2 = gs.claimExpedition('wood');

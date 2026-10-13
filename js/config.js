@@ -44,21 +44,29 @@ export const GAME_CONFIG = {
     ]
   },
   // Madencilik Otoritesi (Sirius Konseyi'nde ortak inşaat; R2/R4): seviye başına kapasite ve herkesin hakkı +%5,
-  // çalışma günü 20→24 saat, hafta 6→7 gün; 1. seviye 2 M birim (×1,4), karışım taş %40 demir %20 odun %10 + çelik payı %30
-  // (Universe'e kadar Konsey kasasından 0,05 ASTRA/birim). Ortak kasa: çıkarılan her hammaddenin %5'i.
+  // çalışma günü 20→24 saat, hafta 6→7 gün; 1. seviye 2 M birim (×1,4). Karışım ALTI hammaddenin hepsini içerir (13 Ekim 2026
+  // hammadde kullanım planı): taş %30, kömür %20 (eski "çelik payı" artık kömürle ödenir: çelik demirden ve kömürden olur),
+  // demir %15, odun %15, buğday %15 (işçi iaşesi), şifalı ot %5. Toplam %100 hammadde; ASTRA ile ödenen pay yoktur.
+  // Ortak kasa: çıkarılan her hammaddenin %5'i Konsey stoğuna girer ve Otorite ile etkin projeye KENDİLİĞİNDEN aktarılır.
   OTORITE: {
     MAX_LEVEL: 20, BASE_UNITS: 2000000, LEVEL_MULT: 1.4, PER_LEVEL_BONUS: 0.05,
     HOURS_BASE: 20, HOURS_PER_LEVEL: 0.2, DAYS_BASE: 6, DAYS_PER_LEVEL: 0.05,
-    MIX: { stone: 0.40, iron: 0.20, wood: 0.10 }, STEEL_SHARE: 0.30, STEEL_ASTRA_PER_UNIT: 0.05,
+    MIX: { stone: 0.30, coal: 0.20, iron: 0.15, wood: 0.15, wheat: 0.15, herb: 0.05 },
     COMMON_CHEST_RATE: 0.05
   },
-  // Konsey projeleri (sırayla, biri açık): 6 M birim hammadde (Otorite karışımı) + 50.000 emek; bitince kalıcı bonus
+  // Konsey projeleri (sırayla, biri açık): 6 M birim hammadde + 50.000 emek; bitince kalıcı bonus. Her projenin kendi
+  // karışımı vardır (konusuna göre; toplam %100): Şifa Bahçesi şifalı otu, Büyük Ambar buğdayı, Köprü ve Duvar taşı çok ister.
   KONSEY_PROJELERI: [
-    { id: 'bridge',   name: 'Nehir Köprüsü',   icon: '🌉', units: 6000000, labor: 50000, bonus: { expeditionTime: -0.02 }, desc: 'Sefer süreleri %2 kısalır.' },
-    { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 6000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.' },
-    { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 6000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.' },
-    { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 6000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.' },
-    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossPenaltyPoints: -0.06 }, desc: "Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur." }
+    { id: 'bridge',   name: 'Nehir Köprüsü',   icon: '🌉', units: 6000000, labor: 50000, bonus: { expeditionTime: -0.02 }, desc: 'Sefer süreleri %2 kısalır.',
+      mix: { stone: 0.35, wood: 0.30, iron: 0.15, wheat: 0.15, coal: 0.05 } },
+    { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 6000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.',
+      mix: { wheat: 0.30, wood: 0.30, stone: 0.25, iron: 0.15 } },
+    { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 6000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.',
+      mix: { wheat: 0.30, stone: 0.22, wood: 0.21, coal: 0.15, herb: 0.12 } },
+    { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 6000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.',
+      mix: { iron: 0.25, coal: 0.25, wood: 0.25, stone: 0.25 } },
+    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossPenaltyPoints: -0.06 }, desc: "Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur.",
+      mix: { stone: 0.45, iron: 0.25, coal: 0.20, wood: 0.10 } }
   ],
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
   KOY: {
@@ -221,7 +229,7 @@ export const GAME_CONFIG = {
     { id: 'panel_merkez', section: 'baslangic', icon: '🏰', title: 'Krallık merkezini aç', desc: 'Krallık sekmesinden Krallık merkezine gir; toplu işlemler ve genel durum orada.', rewardAda: 2, show: 'merkez' },
     { id: 'bolge_ac', section: 'baslangic', icon: '🌲', title: 'Bir kaynak bölgesini aç', desc: 'Üst çubuktaki kaynak düğmesinden bir bölgeye gir; orada sefer ve alet onarımı var.', rewardAda: 2, show: 'bolge' },
     // ── Üretim: altı hammadde ──
-    { id: 'three_expeditions', section: 'uretim', icon: '⚙️', title: 'Üç alanı birden çalıştır', desc: 'Odun, demir ve buğday seferleri aynı anda sürsün.', rewardAda: 10, show: 'merkez' },
+    { id: 'three_expeditions', section: 'uretim', icon: '⚙️', title: 'Üç alanı birden çalıştır', desc: 'Herhangi üç alanda (orman, maden, tarla, taş ocağı…) seferler aynı anda sürsün.', rewardAda: 10, show: 'merkez' },
     { id: 'alti_hammadde', section: 'uretim', icon: '🧺', title: 'Altı hammaddeyi de topla', desc: 'Buğday, taş, odun, kömür, demir ve şifalı otun her birinden en az bir sefer topla.', rewardAda: 25, show: 'merkez' },
     { id: 'tool_repair', section: 'uretim', icon: '🔨', title: 'Bir aleti onar', desc: 'Bölge panelinden aşınmış bir aleti tamir et; alet bozulursa sefer durur.', rewardAda: 10, show: 'bolge' },
     { id: 'kota_gor', section: 'uretim', icon: '📊', title: 'Üretim hakkını gör', desc: 'Ben sekmesinden Kotalarım\'ı aç: günlük ve haftalık çıkarma payın orada.', rewardAda: 2, show: 'kotalar' },
@@ -759,12 +767,15 @@ export const GAME_CONFIG = {
     WHEEL_REWARDS: [
       { id: 'ada_5000',      name: '💎 50 ASTRA BÜYÜK İKRAMİYE',       icon: '💎', type: 'ada',      amount: 50,                     valAda: 50,   weight: 6 },
       { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 4.5,  weight: 20 },
+      // Hammadde ödülleri (pazardan alınır, yani hammaddeye talep yaratır): sık gelen "bedelin geri" dilimleri (1 ASTRA) YENİ üç
+      // hammaddenindir (taş, kömür, şifalı ot: 13 Ekim 2026 hammadde kullanım planı); nadir 10 ASTRA'lık büyük dilimler odun,
+      // demir ve buğdaydır. Dilim sayısı (15), ağırlıklar ve ASTRA değerleri aynı: dönüş oranı değişmez.
       { id: 'raw_1000_wood', name: '10 ASTRA Değerinde Odun',         icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 10,   valAda: 10,   weight: 30 },
       { id: 'raw_1000_iron', name: '10 ASTRA Değerinde Demir',        icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 10,   valAda: 10,   weight: 30 },
       { id: 'raw_1000_wheat',name: '10 ASTRA Değerinde Buğday',       icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 10,   valAda: 10,   weight: 30 },
-      { id: 'raw_100_wood',  name: 'Bedelin Geri: 1 ASTRA Değerinde Odun',   icon: '🌲', type: 'amm_raw', key: 'wood',  adaVal: 1, valAda: 1, weight: 700 },
-      { id: 'raw_100_iron',  name: 'Bedelin Geri: 1 ASTRA Değerinde Demir',  icon: '⛏️', type: 'amm_raw', key: 'iron',  adaVal: 1, valAda: 1, weight: 700 },
-      { id: 'raw_100_wheat', name: 'Bedelin Geri: 1 ASTRA Değerinde Buğday', icon: '🌾', type: 'amm_raw', key: 'wheat', adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'raw_100_stone', name: 'Bedelin Geri: 1 ASTRA Değerinde Taş',       icon: '🪨', type: 'amm_raw', key: 'stone', adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'raw_100_coal',  name: 'Bedelin Geri: 1 ASTRA Değerinde Kömür',     icon: '⚫', type: 'amm_raw', key: 'coal',  adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'raw_100_herb',  name: 'Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot', icon: '🌿', type: 'amm_raw', key: 'herb',  adaVal: 1, valAda: 1, weight: 700 },
       { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 460,  weight: 2 },
       { id: 'ada_200',       name: '2 ASTRA Nakit Ödül (2×)',         icon: '🟣', type: 'ada',      amount: 2,                      valAda: 2,    weight: 800 },
       { id: 'ada_1000',      name: '👑 10 ASTRA İKRAMİYE (10×)',       icon: '👑', type: 'ada',      amount: 10,                     valAda: 10,   weight: 50 },
@@ -1249,24 +1260,8 @@ export const GAME_CONFIG = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 📢 CANLI KAYAN DUYURU & RİSK UYARI PANOSU (TOP MARQUEE TICKER)
+  // 📢 DUYURULAR (Ben → Duyurular ve üstteki tek satır uyarı). Boşken şerit görünmez, panel "Şu an duyuru yok" der.
+  // Eski risk uyarısı ve v1.25 sürüm notu 13 Ekim 2026'da kullanıcı isteğiyle kaldırıldı. Yeni duyuru: { id, badge, text, active }.
   // ═══════════════════════════════════════════════════════════════════════
-  ANNOUNCEMENTS: [
-    {
-      id: 'audit_risk_warning',
-      badge: '🚨 KRİTİK GÜVENLİK & RİSK UYARISI',
-      badgeColor: '#ef4444',
-      text: 'bu oyun tamamen antigravity ide gemini 3.8 flash botu ile yazılmıştır. hiçbir audit yapılmamıştır ve yazılım/kodlama bilmeyen tek bir kullanıcı tarafından geliştirilmektedir, bu sebepten bir çok güvenik açığı bulunabilir. bu güvenlik açıkları tamamen tespit edilip oyun audit edilene kadar lütfen oyuna ana web3 cüzdanınızla bağlanmayın. sadece bu oyunda kullancağınız yeni bir web3 cüzdan açın, yapacağınız yatırımlarda olası bir hacklenme veya güvenlik zaafında yatırımlarınızın gidebileceğini unutmayın. şuan bu oyun tamamen deneysel bir süreçtir lütfen riskinizi gözeterek yatırım yapın. eğer sürece ve şu anki duruma güvenmiyorsanız lütfen oyunu oynamayın, yatırıp yapmayın veya tamamen free to play olarak oynayın. anlayısınız ve ilginiz için teşekkür ederim',
-      active: true,
-      priority: 1
-    },
-    {
-      id: 'v125_economy_update',
-      badge: '👑 REALM OF ASTRA v1.25',
-      badgeColor: '#f59e0b',
-      text: 'v1.25 yayında: canlı krallık haritası, yenilenen arayüz, güvenli piyango ve çark, çevrimdışıyken de çalışan bot, seviye başına %1,5 üretim bonusu ve yeni oyuncu rehberi.',
-      active: true,
-      priority: 2
-    }
-  ]
+  ANNOUNCEMENTS: []
 };

@@ -96,7 +96,7 @@ export const pazarYontemleri = {
     if (kind === 'levelup') {
       const gerek = this.getNextLevelRequirement();
       if (!gerek || gerek.isMaxLevel) return { ok: false, items: [], reason: 'Maksimum seviyedesin.' };
-      hedef = { wood: gerek.wood, iron: gerek.iron, wheat: gerek.wheat };
+      hedef = { ...(gerek.costs || { wood: gerek.wood, iron: gerek.iron, wheat: gerek.wheat }) };
       ekAstra = Number(gerek.adAstra) || 0;
       xpEksik = (Number(this.state.currentXp) || 0) < gerek.xp;
     } else if (kind === 'warehouse') {

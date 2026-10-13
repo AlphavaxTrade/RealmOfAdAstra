@@ -24,7 +24,7 @@ export const OGRETICI_KOSULLARI = {
   panel_merkez: gordu('merkez'),
   bolge_ac: gordu('bolge'),
   // 2. Üretim
-  three_expeditions: (gs) => ['wood', 'iron', 'wheat'].every(n => !!aktif(gs)[n]),
+  three_expeditions: (gs) => Object.values(aktif(gs)).filter(Boolean).length >= 3,   // herhangi üç alanda aynı anda sefer
   alti_hammadde: (gs) => {
     const araclar = Object.values(GAME_CONFIG.TOOLS || {});
     return araclar.length > 0 && araclar.every(a => ((gs.state.tools || {})[a.id] || {}).totalGathered > 0);

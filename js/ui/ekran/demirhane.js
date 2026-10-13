@@ -34,7 +34,7 @@ function dovmeKarti(b, yuva) {
   const bedel = gs.calculateEquipmentCraftCost(yuva);
   const env = gs.state.inventory;
   const kap_ = gs.getWarehouseCapacity();
-  const yeter = (env.iron || 0) >= bedel.ironCost && (env.wood || 0) >= bedel.woodCost
+  const yeter = (env.iron || 0) >= bedel.ironCost && (env.wood || 0) >= bedel.woodCost && (env.coal || 0) >= (bedel.coalCost || 0)
     && (env.fragments || 0) >= bedel.fragCost && gs.state.adAstraBalance >= bedel.adaCost;
   const siloUyari = (k, gerek) => (kap_[k] != null && gerek > kap_[k] ? ' <span class="ek-uyari-renk" title="Silon bu kadar alamıyor">⚠ silo</span>' : '');
 
@@ -57,6 +57,7 @@ function dovmeKarti(b, yuva) {
         <div class="ek-oge-govde"><b>${YUVA_ADLARI[yuva]}</b><small>${esc(ozellik)} · dayanıklılık 13/13</small></div></div>
       ${maliyetSatiri('⛏️ Demir', env.iron || 0, bedel.ironCost).replace('</b>', `${siloUyari('iron', bedel.ironCost)}</b>`)}
       ${maliyetSatiri('🌲 Odun', env.wood || 0, bedel.woodCost).replace('</b>', `${siloUyari('wood', bedel.woodCost)}</b>`)}
+      ${bedel.coalCost > 0 ? maliyetSatiri('⚫ Kömür', env.coal || 0, bedel.coalCost).replace('</b>', `${siloUyari('coal', bedel.coalCost)}</b>`) : ''}
       ${maliyetSatiri('🧩 Parça', env.fragments || 0, bedel.fragCost)}
       ${maliyetSatiri('🟣 ASTRA', gs.state.adAstraBalance || 0, bedel.adaCost, { astraMi: true })}
       ${dugme_}`
@@ -91,8 +92,8 @@ function esyaKarti(b, g, sira) {
           <small>${esc(ozellik)}</small>
           <small class="${guncel <= 4 ? 'ek-kotu' : ''}">🛡️ Dayanıklılık ${tam(guncel)}/${tam(enFazla)} · 📍 ${esc(g.locationLabel)}</small>
         </div></div>
-      ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
-      ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
+      ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
+      ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
       ${dugmeler(
         !enYuksek ? dugme({ e: 'gelistir', metin: '⬆️ Geliştir', ton: 'birincil', veri }) : etiket('🏆 en yüksek seviye', 'vurgu'),
         hasarli ? dugme({ e: 'onar', metin: '🔧 Onar', veri }) : '',

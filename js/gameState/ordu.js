@@ -48,6 +48,7 @@ export const orduYontemleri = {
     }
     this.state.adAstraBalance -= bedel;
     this._onAdaSpent(bedel);
+    this._orduHarcamasiYaz(bedel);        // Fatih Ödülü için orduya harcanan toplam
     globalPool.recordTokenSpend(bedel);   // yakım / UBI / telif / hazine olarak dağılır
 
     const yeni = this.createSoldierUnit(sira);

@@ -1,9 +1,10 @@
 // Realm of AdAstra — GameStateManager yöntemleri: teçhizat dövme, geliştirme, onarım, kuşandırma ve hurdaya ayırma
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 //
-// Kurallar: 1 ATK = EQUIPMENT_CRAFT_MINUTES.PER_ATK dakikalık taban üretim (odun + demir; kömür demirin üçte biri kadar dakika)
-// + pazar değeri kadar ASTRA + 1 parça. Yükseltmede hammadde x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13
-// (her zafer -1); sıfırlanınca onarım, kümülatif hammaddenin %10'u ve pazar değeri, kısmi hasarda oranlanır.
+// Kurallar: 1 ATK = EQUIPMENT_CRAFT_MINUTES.PER_ATK dakikalık taban üretim (odun + demir; kömür ve taş üçte biri kadar dakika)
+// + pazar değeri kadar ASTRA + 1 parça. Dövme: odun, demir, kömür. Yükseltme: odun, demir, kömür (ocak) ve taş (bileme), hepsi
+// x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13 (her zafer -1); sıfırlanınca onarım (odun, demir, kömür), kümülatif
+// hammaddenin %10'u ve pazar değeri, kısmi hasarda oranlanır. Geri dönüşüm hepsinin %70'ini verir (taş yalnız yükseltmelerde harcanır).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
@@ -80,16 +81,25 @@ export const techizatYontemleri = {
     const uretim = GAME_CONFIG.BASE_PRODUCTION;
     const taban = {
       wood: Math.max(15, Math.round(dakika * (uretim?.wood ?? 18))),
-      iron: Math.max(20, Math.round(dakika * (uretim?.iron ?? 12)))
+      iron: Math.max(20, Math.round(dakika * (uretim?.iron ?? 12))),
+      coal: uretim?.coal > 0 ? Math.max(10, Math.round(dakika * uretim.coal / 3)) : 0,
+      stone: uretim?.stone > 0 ? Math.max(10, Math.round(dakika * uretim.stone / 3)) : 0
     };
     let odun = 0;
     let demir = 0;
+    let komur = 0;
+    let tas = 0;
     for (let l = 1; l <= seviye; l++) {
       const carpan = Math.pow(YUKSELTME_ARTISI, l - 1);
       odun += taban.wood * carpan;
       demir += taban.iron * carpan;
+      komur += taban.coal * carpan;       // dövme (l = 1) ve her yükseltme kömür ister
+      if (l > 1) tas += taban.stone * carpan;   // taş yalnız yükseltmede harcanır
     }
-    return { baseWood: taban.wood, baseIron: taban.iron, totalWood: Math.round(odun), totalIron: Math.round(demir) };
+    return {
+      baseWood: taban.wood, baseIron: taban.iron, baseCoal: taban.coal, baseStone: taban.stone,
+      totalWood: Math.round(odun), totalIron: Math.round(demir), totalCoal: Math.round(komur), totalStone: Math.round(tas)
+    };
   },
 
   calculateEquipmentCraftCost(recipeOrSlot) {
@@ -129,6 +139,7 @@ export const techizatYontemleri = {
     this.burnResources({ wood: bedel.wood, iron: bedel.iron, coal: bedel.coal || 0 });
     this.state.adAstraBalance -= bedel.adAstra;
     this._onAdaSpent(bedel.adAstra);
+    this._orduHarcamasiYaz(bedel.adAstra);
     globalPool.recordTokenSpend(bedel.adAstra);
 
     const esya = {
@@ -175,14 +186,18 @@ export const techizatYontemleri = {
     const carpan = Math.pow(YUKSELTME_ARTISI, simdiki);
     const woodCost = Math.max(15, Math.round(kumulatif.baseWood * carpan));
     const ironCost = Math.max(20, Math.round(kumulatif.baseIron * carpan));
+    const coalCost = kumulatif.baseCoal > 0 ? Math.max(10, Math.round(kumulatif.baseCoal * carpan)) : 0;     // ocak
+    const stoneCost = kumulatif.baseStone > 0 ? Math.max(10, Math.round(kumulatif.baseStone * carpan)) : 0;  // bileme taşı
     const fragmentCost = Math.pow(2, simdiki);
-    const adAstraCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost }).totalAda;
+    const adAstraCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
     return {
       isMaxLevel: false,
       currentLevel: simdiki,
       nextLevel: sonraki,
       ironCost,
       woodCost,
+      coalCost,
+      stoneCost,
       fragmentCost,
       adAstraCost,
       fragCost: fragmentCost,    // cephanelik kartı bu adları okur
@@ -202,15 +217,20 @@ export const techizatYontemleri = {
     if ((envanter.fragments || 0) < bedel.fragmentCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragmentCost} Teçhizat Parçaları gerekli)` };
     if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
     if ((envanter.wood || 0) < bedel.woodCost) return { success: false, message: `Yetersiz Odun! (${bedel.woodCost} Odun gerekli)` };
+    if ((envanter.coal || 0) < bedel.coalCost) return { success: false, message: `Yetersiz Kömür! (${bedel.coalCost} Kömür gerekli)` };
+    if ((envanter.stone || 0) < bedel.stoneCost) return { success: false, message: `Yetersiz Taş! (${bedel.stoneCost} Taş gerekli)` };
     if (this.state.adAstraBalance < bedel.adAstraCost) return { success: false, message: `Yetersiz ASTRA! (${bedel.adAstraCost} ASTRA gerekli)` };
 
     envanter.fragments = (envanter.fragments || 0) - bedel.fragmentCost;
     this.burnItem('fragments', bedel.fragmentCost);
     envanter.iron -= bedel.ironCost;
     envanter.wood -= bedel.woodCost;
-    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost });
+    envanter.coal = (envanter.coal || 0) - bedel.coalCost;
+    envanter.stone = (envanter.stone || 0) - bedel.stoneCost;
+    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost, coal: bedel.coalCost, stone: bedel.stoneCost });
     this.state.adAstraBalance -= bedel.adAstraCost;
     this._onAdaSpent(bedel.adAstraCost);
+    this._orduHarcamasiYaz(bedel.adAstraCost);
     globalPool.recordTokenSpend(bedel.adAstraCost);
 
     const esya = bedel.item;
@@ -271,19 +291,20 @@ export const techizatYontemleri = {
   // ── Onarım ──────────────────────────────────────────────────────────────
   calculateEquipmentRepairCost(itemOrSlot, soldierIndex = null) {
     const esya = this._esyaBul(itemOrSlot, soldierIndex);
-    if (!esya) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true };
+    if (!esya) return { missingDurability: 0, ironCost: 0, woodCost: 0, coalCost: 0, fragCost: 0, adaCost: 0, isRepaired: true };
 
     const enFazla = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
     const simdiki = esya.durability != null ? esya.durability : enFazla;
     const eksik = Math.max(0, enFazla - simdiki);
-    if (eksik <= 0) return { missingDurability: 0, ironCost: 0, woodCost: 0, fragCost: 0, adaCost: 0, isRepaired: true, item: esya };
+    if (eksik <= 0) return { missingDurability: 0, ironCost: 0, woodCost: 0, coalCost: 0, fragCost: 0, adaCost: 0, isRepaired: true, item: esya };
 
     const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
     const hasarOrani = eksik / enFazla;
     const woodCost = Math.max(1, Math.round(kumulatif.totalWood * 0.10 * hasarOrani));
     const ironCost = Math.max(1, Math.round(kumulatif.totalIron * 0.10 * hasarOrani));
-    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost }).totalAda;
-    return { missingDurability: eksik, ironCost, woodCost, fragCost: 0, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
+    const coalCost = kumulatif.totalCoal > 0 ? Math.max(1, Math.round(kumulatif.totalCoal * 0.10 * hasarOrani)) : 0;   // ocakta tavlama
+    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost }).totalAda;
+    return { missingDurability: eksik, ironCost, woodCost, coalCost, fragCost: 0, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
   },
 
   repairEquipment(itemOrSlot, soldierIndex = null) {
@@ -298,18 +319,21 @@ export const techizatYontemleri = {
     const envanter = this.state.inventory;
     if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
     if ((envanter.wood || 0) < bedel.woodCost) return { success: false, message: `Yetersiz Odun! (${bedel.woodCost} Odun gerekli)` };
+    if ((envanter.coal || 0) < (bedel.coalCost || 0)) return { success: false, message: `Yetersiz Kömür! (${bedel.coalCost} Kömür gerekli)` };
     if ((envanter.fragments || 0) < bedel.fragCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragCost} Teçhizat Parçaları gerekli)` };
     if ((this.state.adAstraBalance || 0) < bedel.adaCost) return { success: false, message: `Yetersiz ASTRA! (${bedel.adaCost} ASTRA gerekli)` };
 
     envanter.iron -= bedel.ironCost;
     envanter.wood -= bedel.woodCost;
-    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost });
+    envanter.coal = (envanter.coal || 0) - (bedel.coalCost || 0);
+    this.burnResources({ wood: bedel.woodCost, iron: bedel.ironCost, coal: bedel.coalCost || 0 });
     if (bedel.fragCost > 0) {
       envanter.fragments = (envanter.fragments || 0) - bedel.fragCost;
       this.burnItem('fragments', bedel.fragCost);
     }
     this.state.adAstraBalance -= bedel.adaCost;
     this._onAdaSpent(bedel.adaCost);
+    this._orduHarcamasiYaz(bedel.adaCost);
     globalPool.recordTokenSpend(bedel.adaCost);
 
     const enFazla = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
@@ -325,6 +349,7 @@ export const techizatYontemleri = {
   repairAllEquipmentInKingdom() {
     let demir = 0;
     let odun = 0;
+    let komur = 0;
     let ada = 0;
     const onarilacak = [];
     for (const kayit of this.getAllArmoryEquipmentList()) {
@@ -332,6 +357,7 @@ export const techizatYontemleri = {
       if (!(bedel && bedel.missingDurability > 0)) continue;
       demir += bedel.ironCost;
       odun += bedel.woodCost;
+      komur += bedel.coalCost || 0;
       ada += bedel.adaCost;
       onarilacak.push(kayit.item);
     }
@@ -342,20 +368,23 @@ export const techizatYontemleri = {
     const envanter = this.state.inventory;
     if ((envanter.iron || 0) < demir) return { success: false, message: `Yetersiz Demir! (${demir} Demir gerekli)` };
     if ((envanter.wood || 0) < odun) return { success: false, message: `Yetersiz Odun! (${odun} Odun gerekli)` };
+    if ((envanter.coal || 0) < komur) return { success: false, message: `Yetersiz Kömür! (${komur} Kömür gerekli)` };
     if ((this.state.adAstraBalance || 0) < ada) return { success: false, message: `Yetersiz ASTRA! (${ada} ASTRA gerekli)` };
 
     envanter.iron -= demir;
     envanter.wood -= odun;
-    this.burnResources({ wood: odun, iron: demir });
+    envanter.coal = (envanter.coal || 0) - komur;
+    this.burnResources({ wood: odun, iron: demir, coal: komur });
     this.state.adAstraBalance -= ada;
     this._onAdaSpent(ada);
+    this._orduHarcamasiYaz(ada);
     globalPool.recordTokenSpend(ada);
     for (const esya of onarilacak) esya.durability = esya.maxDurability || EKIPMAN_DAYANIKLILIK;
     this.saveState();
     return {
       success: true,
       repairedCount: onarilacak.length,
-      message: `🔨 Krallıktaki ${onarilacak.length} parça teçhizat tek seferde onarıldı! (-${odun} Odun, -${demir} Demir, -${ada} ASTRA)`
+      message: `🔨 Krallıktaki ${onarilacak.length} parça teçhizat tek seferde onarıldı! (-${odun} Odun, -${demir} Demir${komur > 0 ? `, -${komur} Kömür` : ''}, -${ada} ASTRA)`
     };
   },
 

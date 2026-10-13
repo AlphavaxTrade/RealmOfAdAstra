@@ -29,7 +29,7 @@ const fresh = () => {
   return gs;
 };
 // Sıradaki açık projeyi tamamlar (hammadde + emek)
-const projeBitir = () => { const s = globalPool.getProjectStatus(); return globalPool.contributeProject({ stone: s.need.stone, iron: s.need.iron, wood: s.need.wood }, s.active.labor); };
+const projeBitir = () => { const s = globalPool.getProjectStatus(); return globalPool.contributeProject(s.need, s.active.labor); };   // her projenin kendi altı hammaddeli karışımı
 const duvarIndeks = GAME_CONFIG.KONSEY_PROJELERI.findIndex(p => p.id === 'wall');
 // Yeni hesapta asker yok (köylüyle başlar): bakiye ver, asker al, ordu kilitle, tahmini kazancı büyüt
 const orduKilitle = gs => { gs.state.adAstraBalance = 1e12; const a = gs.buySoldierUnit(); assert.ok(a.success, a.message); const k = gs.stakeArmyForWorldBoss(); assert.ok(k.success, k.message); gs.state.worldBoss.userStakedAtk = 1_000_000; };

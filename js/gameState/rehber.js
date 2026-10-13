@@ -45,8 +45,8 @@ export const rehberYontemleri = {
     const veteran = lvl >= 3 || soldiers > 0 || (st.warehouseLevel || 1) >= 2 || dungeonCleared;
     const rules = {
       market:      { name: 'Meydan Pazarı', ok: veteran || done('first_harvest'),                  reason: 'İlk hasadını topladıktan sonra açılır.' },
-      blacksmith:  { name: 'Demirci',       ok: veteran || done('three_expeditions'),              reason: 'Odun, demir ve buğday seferlerini aynı anda çalıştırınca açılır.' },
-      barracks:    { name: 'Kışla',         ok: veteran || done('three_expeditions'),              reason: 'Odun, demir ve buğday seferlerini aynı anda çalıştırınca açılır.' },
+      blacksmith:  { name: 'Demirci',       ok: veteran || done('three_expeditions'),              reason: 'Herhangi üç alanda seferleri aynı anda çalıştırınca açılır.' },
+      barracks:    { name: 'Kışla',         ok: veteran || done('three_expeditions'),              reason: 'Herhangi üç alanda seferleri aynı anda çalıştırınca açılır.' },
       carnival:    { name: 'Karnaval',      ok: veteran || lvl >= 2,                               reason: 'Seviye 2\'ye ulaşınca açılır.' },
       dungeon:     { name: 'Zindan',        ok: soldiers > 0 || lvl >= 3,                          reason: 'Kışladan ilk askerini alınca açılır.' },
       colosseum:   { name: 'Kolezyum',      ok: dungeonCleared || lvl >= 3,                        reason: 'Zindanda ilk zaferinden sonra açılır.' },

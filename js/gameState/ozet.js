@@ -204,8 +204,8 @@ export const ozetYontemleri = {
 
     // v2: yeni kasalar (Fatih, Sirius Konseyi, Universe rezervi) da listede
     const EXTRA_POOL_META = {
-      fatih: { icon: '👑', color: '#f59e0b', description: '18. kat bossunu ilk kez yenen oyuncuya Fatih Ödülü bu kasadan ödenir (ordu harcamalarının bir payıyla dolar).', howToEarn: 'Zindanın 18. katındaki bossu yen.', actionType: 'dungeon', actionText: '💀 Zindana Git' },
-      konsey: { icon: '🏛️', color: '#a78bfa', description: 'Sirius Konseyi kasası: Madencilik Otoritesi\'nin çelik payı, Konsey projeleri ve Universe açılış günü ödülleri buradan.', howToEarn: 'Otorite ve Konsey projelerine katkı yap.', actionType: 'council', actionText: '🏛️ Konsey' },
+      fatih: { icon: '👑', color: '#f59e0b', description: '18. kat bossunu ilk kez yenen oyuncuya Fatih Ödülü bu kasadan ödenir: orduna harcadığın ASTRA\'dan zindanda geri kazandıkların düşülür, kalan (en çok 18 askerin bedeli kadar) verilir. Kasa, ordu harcamalarının bir payıyla dolar.', howToEarn: 'Zindanın 18. katındaki bossu ilk kez yen.', actionType: 'dungeon', actionText: '💀 Zindana Git' },
+      konsey: { icon: '🏛️', color: '#a78bfa', description: 'Sirius Konseyi kasası: Universe açılış günü ödülleri için ayrılmıştır, o güne kadar kilitli bekler. Otorite ve Konsey projeleri hammaddeyle yapılır.', howToEarn: 'Bu kasadan ödeme yalnız Universe açılış gününde yapılır.', actionType: 'council', actionText: '🏛️ Konsey' },
       universe: { icon: '🚀', color: '#38bdf8', description: 'Universe Tohum Rezervi: Realm bu kasaya dokunamaz; Universe açılınca Galaksi Pazarı ve Hazırlık Deposu için kullanılır.', howToEarn: 'Kilitli — Universe açılışına kadar.', actionType: 'spaceport', actionText: '🚀 Uzay Limanı' }
     };
     const listed = new Set(pools.map(p => p.id));

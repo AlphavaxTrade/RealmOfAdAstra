@@ -170,6 +170,8 @@ export const zindanYontemleri = {
       this.clearMonsterHp(monster.level);
       const ganimet = this.addDungeonXpAndDrops(monster.level, boss, { rewarded: entry.rewarded });
       sonuc.adaReward = ganimet.adAstraGained || 0;
+      this._zindanKazanciYaz(sonuc.adaReward);   // Fatih Ödülü hesabında yol boyu geri kazanım
+      if (monster.level === UST_SEVIYE) sonuc.fatihOdulu = this._fatihOduluVer();   // ilk 18. kat zaferinde ödenir
       sonuc.budgetFull = !!ganimet.budgetFull;
       sonuc.budgetCapped = !!ganimet.budgetCapped;
       sonuc.scrollGained = ganimet.scrollGained || null;

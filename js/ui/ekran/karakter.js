@@ -31,7 +31,9 @@ function seviyeKarti(b) {
   ].map(([e, simdi, sonra]) => `<div class="ek-satir"><span>${esc(e)}</span><b>${esc(simdi)} → <span class="ek-iyi">${esc(sonra)}</span></b></div>`).join('');
 
   const xpYeter = s.currentXp >= req.xp;
-  const yeter = xpYeter && env.wood >= req.wood && env.iron >= req.iron && env.wheat >= req.wheat && s.adAstraBalance >= req.adAstra;
+  const kaynaklar = b.GAME_CONFIG.RESOURCE_KEYS;
+  const hammaddeTamam = kaynaklar.every((k) => (env[k] || 0) >= (req.costs[k] || 0));
+  const yeter = xpYeter && hammaddeTamam && s.adAstraBalance >= req.adAstra;
   let neden = '';
   if (!xpYeter) neden = `Yetersiz deneyim (${tam(s.currentXp)}/${tam(req.xp)} XP)`;
   else if (s.adAstraBalance < req.adAstra) neden = `Yetersiz ASTRA (${tam(s.adAstraBalance)}/${tam(req.adAstra)})`;
@@ -46,11 +48,9 @@ function seviyeKarti(b) {
       katli(`⭐ Seviye ${s.level + 1}'e çıkınca ne kazanırsın?`, fayda, { k: 'fayda' }),
       cubukSatiri('✨ Deneyim (XP)', `${tam(s.currentXp)} / ${tam(req.xp)}${xpYeter ? ' ✅' : ''}`, (s.currentXp / req.xp) * 100, { ton: xpYeter ? '' : 'dolu' }),
       xpYeter ? '' : not('💡 XP kazanmak için haritadan hammadde bölgelerinde seferlere çıkmalısın.'),
-      maliyetSatiri('🌲 Odun', env.wood || 0, req.wood),
-      maliyetSatiri('⛏️ Demir', env.iron || 0, req.iron),
-      maliyetSatiri('🌾 Buğday', env.wheat || 0, req.wheat),
+      ...kaynaklar.map((k) => maliyetSatiri(`${kaynakSimgesi(b, k)} ${kaynakAdi(b, k)}`, env[k] || 0, req.costs[k] || 0)),
       maliyetSatiri('🟣 ASTRA', s.adAstraBalance || 0, req.adAstra, { astraMi: true }),
-      not('Ekstra ASTRA bedeli, istenen odun, demir ve buğdayın pazar değeridir.'),
+      not('Hammadde bedeli, seviye için gereken deneyimi toplarken altı alanda ürettiğinin yarısıdır. Ekstra ASTRA bedeli, bu hammaddelerin pazar değeridir.'),
       hizliAlKarti(b, 'levelup'),
       dugme({ e: 'seviye', metin: yeter ? `✨ Seviye ${s.level + 1}'e yükselt` : `🔒 Seviye ${s.level + 1}'e yükselt: ${esc(neden)}`, ton: yeter ? 'iyi' : '', genis: true })
     ].join('')

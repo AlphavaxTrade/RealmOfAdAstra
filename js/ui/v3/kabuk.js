@@ -35,7 +35,7 @@ export function gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat, labAc, ayarl
     rehber: () => api.openOgretici(),
     komut: () => { api.closeModal(); paletAc(); },
     ayarlar: () => ayarlarAc(),
-    duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok.</div>'}</div>`),
+    duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok. Önemli bir bildirim olduğunda burada görünür.</div>'}</div>`),
     test: () => labAc()
   };
 }

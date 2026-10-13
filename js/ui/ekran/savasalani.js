@@ -16,15 +16,17 @@ function guc(b) {
   });
   const cesit = gs.calculateSquadSkillDiversity();
   const olasiHasar = Math.floor(Math.floor(atk + hp * 0.25) * cesit.diversityMultiplier);
-  const olasiAstra = Math.floor((olasiHasar * boss.weeklyAdaPool) / (boss.maxBossHp || 1));
+  const olasiAstra = gs.estimateWorldBossReward(olasiHasar);
+  const hasar = kilitli ? g.calculatedDamage : olasiHasar;
+  const beklenen = kilitli ? g.estimatedAda : olasiAstra;
   return {
     boss, kilitli, asker, g,
     sayi: kilitli ? (boss.userStakedSoldiersCount || 0) : asker.length,
     atkKatki: kilitli ? g.atkContribution : Math.floor(atk),
     hpKatki: kilitli ? g.hpContribution : Math.floor(hp * 0.25),
-    hasar: kilitli ? g.calculatedDamage : olasiHasar,
-    beklenen: kilitli ? g.estimatedAda : olasiAstra,
-    oran: boss.maxBossHp > 0 ? boss.weeklyAdaPool / boss.maxBossHp : 0
+    hasar,
+    beklenen,
+    oran: hasar > 0 ? beklenen / hasar : 0       // 1 hasarın tahmini ASTRA karşılığı (haftalık havuzdan)
   };
 }
 
@@ -47,9 +49,9 @@ const ekran = {
 
     const aciklama = kart({
       baslik: '🌋 Haftalık dünya bossu',
-      rozet: etiket(`Ödül havuzu: ${tam(boss.weeklyAdaPool)} ASTRA`, 'vurgu'),
+      rozet: etiket(`Bu haftanın havuzu: ${tam(boss.weeklyAdaPool)} ASTRA`, 'vurgu'),
       vurgu: 'uyari',
-      icerik: not('<b>Otomatik savaş:</b> manuel saldırmazsın. Hafta boyunca kilitlenen orduların saldırı ve can puanlarından toplam hasar hesaplanır; <b>her Pazar 18:00\'de (TSİ)</b> savaş otomatik yapılır ve ödül havuzu hasar payına göre paylaşılır.')
+      icerik: not('<b>Otomatik savaş:</b> manuel saldırmazsın. Hafta boyunca kilitlenen orduların saldırı ve can puanlarından toplam hasar hesaplanır; <b>her Pazar 18:00\'de (TSİ)</b> savaş otomatik yapılır ve haftanın havuzu hasar payına göre paylaşılır. Havuz kasanın %' + Math.round((b.GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE || 0.03) * 100) + '\'ü kadardır (kasada toplam ' + tam(boss.vaultAda || 0) + ' ASTRA).')
         + satir('Hasar formülü', 'ATK × 1,0 + HP × 0,25 (yetenek çeşitliliği bonuslu)')
     });
 

@@ -150,13 +150,17 @@ const DAY = 86400;
   ok('Uzay Limanı: roket görevi');
 }
 
-// 6) Madencilik Otoritesi: karışım, katkı, seviye atlayınca kapasite +%5 ve çalışma süresi
+// 6) Madencilik Otoritesi: altı hammaddeli karışım, katkı, seviye atlayınca kapasite +%5 ve çalışma süresi; çelik payı kömürle ödenir
 {
   const gs = fresh();
   const st0 = globalPool.getOtoriteStatus();
   assert.equal(st0.level, 0);
   assert.equal(st0.units, O.BASE_UNITS);
   assert.equal(st0.need.stone, Math.round(O.BASE_UNITS * O.MIX.stone));
+  assert.ok(near(Object.values(O.MIX).reduce((t, v) => t + v, 0), 1, 1e-9), 'karışım toplamı %100');
+  assert.deepEqual(Object.keys(O.MIX).sort(), [...GAME_CONFIG.RESOURCE_KEYS].sort(), 'karışım altı hammaddenin hepsini içerir');
+  assert.ok(O.MIX.coal >= 0.2, 'çelik payı kömürle ödenir');
+  assert.equal(O.STEEL_SHARE, undefined, 'ASTRA ile ödenen çelik payı kalktı');
   const cap0 = globalPool.state.resources.wood.baseCap;
   gs.state.inventory.stone = 1000;
   const c = gs.contributeToOtorite({ stone: 400 });
@@ -165,14 +169,13 @@ const DAY = 86400;
   assert.equal(globalPool.getOtoriteStatus().progress.stone, 400);
   assert.ok(gs.getContributionInfo().week > 0, 'Katkı puanı yazıldı');
   const kBefore = treasury.getPool('konsey');
-  const r = globalPool.contributeOtorite({ stone: st0.need.stone, iron: st0.need.iron, wood: st0.need.wood });
+  const r = globalPool.contributeOtorite(st0.need);
   assert.equal(r.completed, true, 'Karışım tamamlanınca seviye atlar');
   assert.equal(globalPool.uretimParams().otoriteLevel, 1);
   assert.ok(near(globalPool.state.resources.wood.baseCap, Math.floor(cap0 * (1 + O.PER_LEVEL_BONUS) * (globalPool.otoriteWork(1).minutes / globalPool.otoriteWork(0).minutes)), 2), 'Kapasite +%5 ve daha uzun çalışma');
-  assert.ok(near(treasury.getPool('konsey'), kBefore - r.steelPaid, 1e-6), 'Çelik payı Konsey kasasından çıktı');
-  assert.ok(r.steelPaid > 0);
+  assert.equal(treasury.getPool('konsey'), kBefore, 'Konsey kasasından kimseye ödeme çıkmadı (çelik payı kasadan değil kömürden)');
   assert.equal(globalPool.getOtoriteStatus().units, Math.round(O.BASE_UNITS * O.LEVEL_MULT), '2. seviye ×1,4');
-  ok('Madencilik Otoritesi: katkı, seviye, kapasite ve çelik payı');
+  ok('Madencilik Otoritesi: altı hammaddeli karışım, katkı, seviye ve kapasite');
 }
 
 // 7) Konsey projeleri: sırayla, hammadde + emek, bonus uygulanır
@@ -190,14 +193,14 @@ const DAY = 86400;
   assert.equal(st.progress.stone, 200);
   assert.equal(st.labor, 60);
   const dur0 = gs.getExpeditionDurationMinutes(20);
-  const r = globalPool.contributeProject({ stone: st.need.stone, iron: st.need.iron, wood: st.need.wood }, p0.active.labor);
+  const r = globalPool.contributeProject(st.need, p0.active.labor);
   assert.equal(r.completed, true);
   assert.equal(globalPool.getProjectStatus().active.id, GAME_CONFIG.KONSEY_PROJELERI[1].id, 'Sıradaki proje açıldı');
   assert.ok(near(globalPool.getProjectBonus('expeditionTime'), -0.02), 'Köprü bonusu');
   assert.ok(gs.getExpeditionDurationMinutes(20) < dur0, 'Sefer süresi kısaldı');
   const capBefore = gs.getWarehouseCapacity(1).wood;
   const g = globalPool.getProjectStatus();
-  globalPool.contributeProject({ stone: g.need.stone, iron: g.need.iron, wood: g.need.wood }, g.active.labor);
+  globalPool.contributeProject(g.need, g.active.labor);
   assert.ok(near(gs.getWarehouseCapacity(1).wood, Math.round(capBefore * 1.05)), 'Büyük Ambar: silo +%5');
   ok('Konsey projeleri: katkı, sıra, bonuslar');
 }

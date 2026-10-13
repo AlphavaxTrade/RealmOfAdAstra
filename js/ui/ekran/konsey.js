@@ -40,11 +40,19 @@ function uretimKarti(b, us, ortakKasa) {
   });
 }
 
+// "taş %30, kömür %20, …" biçiminde karışım yazısı (yapılandırmadan)
+function karisimYazisi(b, mix) {
+  return Object.entries(mix || {})
+    .sort((a, c) => c[1] - a[1])
+    .map(([k, pay]) => `${kaynakAdi(b, k).toLocaleLowerCase('tr')} %${Math.round(pay * 100)}`)
+    .join(', ');
+}
+
 function otoriteKarti(b) {
   const ot = b.globalPool.getOtoriteStatus();
   const gerekenler = Object.keys(ot.need);
   const icerik = [
-    not(`Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: taş %40, demir %20, odun %10; çelik payı %30 Konsey kasasından (${tam(ot.steelAstra)} ASTRA).`),
+    not(`Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: ${karisimYazisi(b, ot.mix)} (kömür çeliğin payıdır). Ortak kasa payı (çıkarılan her hammaddenin %5'i) buraya ve etkin projeye kendiliğinden eklenir.`),
     ot.maxed ? '' : cubuk(ot.pct, { renk: '#a78bfa' }),
     ...(ot.maxed ? [] : gerekenler.map((k) => katkiSatiri(b, k, ot.progress[k] || 0, ot.need[k]))),
     ...(ot.maxed ? [] : gerekenler.map((k) => hammaddeKatkisi(b, 'otorite', k)))
@@ -68,7 +76,7 @@ function projeKarti(b) {
   return kart({
     baslik: `${esc(pj.active.icon)} Konsey projesi: ${esc(pj.active.name)}`,
     icerik: [
-      not(`${esc(pj.active.desc)} Gereken: ${tam(pj.active.units)} birim hammadde (Otorite karışımı) + ${tam(pj.active.labor)} emek. Senin emek puanın: ${tam(emek)}.`),
+      not(`${esc(pj.active.desc)} Gereken: ${tam(pj.active.units)} birim hammadde (${karisimYazisi(b, pj.mix)}) + ${tam(pj.active.labor)} emek. Senin emek puanın: ${tam(emek)}.`),
       cubuk(pj.pct, { renk: '#63b0ff' }),
       ...gerekenler.map((k) => katkiSatiri(b, k, pj.progress[k] || 0, pj.need[k])),
       katkiSatiri(b, 'labor', pj.labor, pj.active.labor),

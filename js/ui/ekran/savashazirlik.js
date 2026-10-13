@@ -348,7 +348,8 @@ async function savasiOyna(b, m, secili, odeHarc) {
           outcome.budgetFull ? dolu : '',
           outcome.scrollGained ? `📜 ${outcome.scrollGained.name} düştü!` : '',
           `Savaşa katılan askerlerin +${m.rewardXp} asker XP kazandı.`,
-          outcome.levelUps.length ? `🎉 ${outcome.levelUps.join(', ')}` : '',
+          outcome.fatihOdulu ? `👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA (orduna harcadığının zindanda geri dönmeyen kısmı)` : '',
+        outcome.levelUps.length ? `🎉 ${outcome.levelUps.join(', ')}` : '',
           outcome.weaponsWorn.length ? `⚔️ Silah aşınması: ${outcome.weaponsWorn.join(', ')}` : ''
         ].filter(Boolean).join(' ');
         if (b.bildirimEkle) b.bildirimEkle('🏆', duyuru);
@@ -370,6 +371,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         if (outcome.fragmentsGained) satirlar.push(`🧩 +${outcome.fragmentsGained} teçhizat parçası`);
         if (outcome.boxGained) satirlar.push(`📦 +${outcome.boxGained} Pandora kutusu`);
         if (outcome.scrollGained) satirlar.push(`📜 ${outcome.scrollGained.name}`);
+        if (outcome.fatihOdulu) satirlar.push(`👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA`);
         outcome.levelUps.forEach((t) => satirlar.push(`🎉 ${t}`));
         if (outcome.weaponsWorn.length) satirlar.push(`⚔️ Silah aşındı: ${outcome.weaponsWorn.join(', ')}`);
         satirlar.push(`⚡ -${staminaBedeli} stamina`);

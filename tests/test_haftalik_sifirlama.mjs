@@ -61,7 +61,9 @@ console.log('✅ ilk güne dönüş: kota, havuzlar, kasalar, piyango');
   const wb = gs.getWorldBossInfo();
   assert.equal(wb.bossHp, 1000000);
   assert.equal(wb.maxBossHp, 1000000);
-  assert.equal(wb.weeklyAdaPool, GAME_CONFIG.TREASURY_SEED.worldBoss);
+  // Haftanın havuzu kasanın %3'üdür (eskiden ekran kasanın tamamını havuz diye gösteriyordu); kasadaki toplam ayrıca durur
+  assert.equal(wb.weeklyAdaPool, Math.round(GAME_CONFIG.TREASURY_SEED.worldBoss * GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE));
+  assert.equal(wb.vaultAda, GAME_CONFIG.TREASURY_SEED.worldBoss);
   assert.equal(wb.userStaked, false);
   assert.equal(wb.userDamage, 0);
   assert.equal(wb.claimableRewardAda, 0);

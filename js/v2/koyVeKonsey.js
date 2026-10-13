@@ -4,7 +4,6 @@
 //   Object.assign(GameStateManager.prototype, gameStateV2); Object.assign(GlobalResourceManager.prototype, globalPoolV2);
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { treasury } from '../treasury.js';
 
 const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
@@ -51,10 +50,8 @@ export const globalPoolV2 = {
     const work = this.otoriteWork(level);
     const workNext = this.otoriteWork(Math.min(max, level + 1));
     return {
-      level, max, maxed, units, need, progress,
+      level, max, maxed, units, need, progress, mix,
       pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 1000) / 10 : 100,
-      steelUnits: Math.round(units * (O.STEEL_SHARE ?? 0.3)),
-      steelAstra: round3(units * (O.STEEL_SHARE ?? 0.3) * (O.STEEL_ASTRA_PER_UNIT ?? 0.05)),
       hours: Math.round(work.hours * 10) / 10, nextHours: Math.round(workNext.hours * 10) / 10,
       days: Math.round(work.days * 100) / 100, nextDays: Math.round(workNext.days * 100) / 100,
       perLevelBonus: O.PER_LEVEL_BONUS ?? 0.05,
@@ -62,32 +59,79 @@ export const globalPoolV2 = {
     };
   },
 
+  // Sıradaki Otorite seviyesinin karışımı tamamlandıysa seviyeyi yükseltir (kapasite ve herkesin hakkı +%5); oyuncu katkısı
+  // da Konsey stoğunun otomatik aktarımı da bu tek yolu kullanır. Kaydetmez: çağıran kaydeder.
+  _otoriteTamamlandiysaYukselt() {
+    const k = this._konsey();
+    const after = this.getOtoriteStatus();
+    if (!k || after.maxed || !Object.keys(after.need).length) return false;
+    if (!Object.keys(after.need).every(r => (after.progress[r] || 0) >= after.need[r])) return false;
+    if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
+    this.state.uretim.otoriteLevel = after.level + 1;
+    k.otorite.progress = {};
+    k.otorite.builtLevels = (k.otorite.builtLevels || 0) + 1;
+    k.otorite.lastCompletedAt = this.getTrustedTime();
+    this.recomputeWeekCapacity();
+    return true;
+  },
+
+  // Etkin Konsey projesinin hammaddesi ve emeği tamamlandıysa projeyi bitirir ve sıradakine geçer. Kaydetmez.
+  _projeTamamlandiysaIlerle() {
+    const k = this._konsey();
+    const after = this.getProjectStatus();
+    if (!k || !after.active) return false;
+    if (!Object.keys(after.need).every(r => (after.progress[r] || 0) >= after.need[r]) || after.labor < after.active.labor) return false;
+    k.projects.done.push(after.active.id);
+    k.projects.activeIndex = after.index + 1;
+    k.projects.progress = {};
+    k.projects.labor = 0;
+    return true;
+  },
+
   // Dünya tarafı katkı: kabul edilen miktarlar döner; karışım tamamlanınca Otorite bir seviye yükselir
-  // (çelik payı Konsey kasasından ASTRA olarak ödenir), kapasite ve herkesin hakkı +%5 olur.
+  // (kapasite ve herkesin hakkı +%5). Çelik payı artık ASTRA değil, karışımdaki kömürdür.
   contributeOtorite(amounts) {
     const k = this._konsey();
     const st = this.getOtoriteStatus();
-    if (!k || st.maxed) return { accepted: {}, completed: false, steelPaid: 0, status: st };
+    if (!k || st.maxed) return { accepted: {}, completed: false, status: st };
     const accepted = {};
     for (const [r, needR] of Object.entries(st.need)) {
       const give = Math.max(0, Math.floor(Number((amounts || {})[r]) || 0));
       const take = Math.min(give, Math.max(0, needR - (st.progress[r] || 0)));
       if (take > 0) { k.otorite.progress[r] = (Number(k.otorite.progress[r]) || 0) + take; accepted[r] = take; }
     }
-    let completed = false, steelPaid = 0;
-    const after = this.getOtoriteStatus();
-    if (Object.keys(after.need).length && Object.keys(after.need).every(r => (after.progress[r] || 0) >= after.need[r])) {
-      if (treasury && treasury.withdraw && after.steelAstra > 0) steelPaid = (treasury.withdraw('konsey', after.steelAstra) || {}).granted || 0;
-      if (!this.state.uretim || !this.state.uretim.qpp) this.state.uretim = this.nextUretim(this.state.uretim || null);
-      this.state.uretim.otoriteLevel = after.level + 1;
-      k.otorite.progress = {};
-      k.otorite.builtLevels = (k.otorite.builtLevels || 0) + 1;
-      k.otorite.lastCompletedAt = this.getTrustedTime();
-      this.recomputeWeekCapacity();
-      completed = true;
-    }
+    const completed = this._otoriteTamamlandiysaYukselt();
     this.saveState();
-    return { accepted, completed, steelPaid, status: this.getOtoriteStatus() };
+    return { accepted, completed, status: this.getOtoriteStatus() };
+  },
+
+  // Konsey ortak stoğu (çıkarılan her hammaddenin %5'i) boşta durmaz: her hammadde için yarısı Otorite'nin sıradaki
+  // seviyesine, yarısı etkin projeye aktarılır (biri dolmuşsa ya da yoksa kalanı diğerine). Karışımda olmayan hammadde stokta
+  // kalır. Seviye ya da proje bu aktarımla da tamamlanabilir. Döner: aktarılan miktarlar.
+  konseyStokuKullan() {
+    const k = this._konsey();
+    if (!k) return {};
+    const ot = this.getOtoriteStatus();
+    const pj = this.getProjectStatus();
+    const oKalan = r => (ot.maxed ? 0 : Math.max(0, (ot.need[r] || 0) - (Number(k.otorite.progress[r]) || 0)));
+    const pKalan = r => (pj.active ? Math.max(0, (pj.need[r] || 0) - (Number(k.projects.progress[r]) || 0)) : 0);
+    const aktarilan = {};
+    for (const r of Object.keys(k.stock)) {
+      const q = Math.floor(Number(k.stock[r]) || 0);
+      if (q <= 0) continue;
+      let aO = Math.min(oKalan(r), Math.ceil(q / 2));
+      let aP = Math.min(pKalan(r), q - aO);
+      aO += Math.min(oKalan(r) - aO, q - aO - aP);
+      if (aO > 0) { k.otorite.progress[r] = (Number(k.otorite.progress[r]) || 0) + aO; k.stock[r] = (Number(k.stock[r]) || 0) - aO; }
+      if (aP > 0) { k.projects.progress[r] = (Number(k.projects.progress[r]) || 0) + aP; k.stock[r] = (Number(k.stock[r]) || 0) - aP; }
+      if (aO + aP > 0) aktarilan[r] = aO + aP;
+    }
+    if (Object.keys(aktarilan).length) {
+      this._otoriteTamamlandiysaYukselt();
+      this._projeTamamlandiysaIlerle();
+      this.saveState();
+    }
+    return aktarilan;
   },
 
   // Konsey projeleri: sırayla, biri açık; hammadde (Otorite karışımı) + emek
@@ -96,14 +140,15 @@ export const globalPoolV2 = {
     const k = this._konsey();
     const idx = k ? Math.max(0, Number(k.projects.activeIndex) || 0) : 0;
     const active = list[idx] || null;
-    const mix = (GAME_CONFIG.OTORITE || {}).MIX || { stone: 0.4, iron: 0.2, wood: 0.1 };
+    // Her projenin kendi karışımı vardır; tanımsızsa Otorite karışımı kullanılır
+    const mix = (active && active.mix) || (GAME_CONFIG.OTORITE || {}).MIX || { stone: 0.4, iron: 0.2, wood: 0.1 };
     const need = active ? Object.fromEntries(Object.entries(mix).map(([r, s]) => [r, Math.round(active.units * s)])) : {};
     const progress = Object.fromEntries(Object.keys(need).map(r => [r, Math.min(need[r], Math.floor(Number(k ? k.projects.progress[r] : 0) || 0))]));
     const labor = active ? Math.min(active.labor, Math.floor(Number(k ? k.projects.labor : 0) || 0)) : 0;
     const needTotal = Object.values(need).reduce((s, v) => s + v, 0) + (active ? active.labor : 0);
     const doneTotal = Object.values(progress).reduce((s, v) => s + v, 0) + labor;
     const done = (k ? k.projects.done : []).map(id => list.find(p => p.id === id)).filter(Boolean);
-    return { active, index: idx, need, progress, labor, pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 1000) / 10 : 100, done };
+    return { active, index: idx, need, progress, labor, mix: active ? mix : {}, pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 1000) / 10 : 100, done };
   },
 
   contributeProject(amounts, labor = 0) {
@@ -119,15 +164,7 @@ export const globalPoolV2 = {
     const giveL = Math.max(0, Math.floor(Number(labor) || 0));
     const acceptedLabor = Math.min(giveL, Math.max(0, st.active.labor - st.labor));
     if (acceptedLabor > 0) k.projects.labor = (Number(k.projects.labor) || 0) + acceptedLabor;
-    let completed = false;
-    const after = this.getProjectStatus();
-    if (after.active && Object.keys(after.need).every(r => (after.progress[r] || 0) >= after.need[r]) && after.labor >= after.active.labor) {
-      k.projects.done.push(after.active.id);
-      k.projects.activeIndex = after.index + 1;
-      k.projects.progress = {};
-      k.projects.labor = 0;
-      completed = true;
-    }
+    const completed = this._projeTamamlandiysaIlerle();
     this.saveState();
     return { accepted, acceptedLabor, completed, status: this.getProjectStatus() };
   },
@@ -293,11 +330,15 @@ export const gameStateV2 = {
   getRecycleValue(item) {
     const cum = this.getCumulativeEquipmentResourceCost(item);
     const rate = GAME_CONFIG.RECYCLE_RETURN_RATE ?? 0.7;
-    // Kömür yalnız dövmede harcanır (yükseltmeler kömür istemez): iade, yükseltme düzeyine değil dövme bedeline bağlıdır
-    // (eskiden demir toplamından türetilip Sv.9 bir eşyada ödenmemiş kömür de geri veriliyordu)
-    const coalDovme = item && GAME_CONFIG.EQUIPMENT_RECIPES && GAME_CONFIG.EQUIPMENT_RECIPES[item.slot]
-      ? (this.calculateEquipmentCraftCost(item.slot).coalCost || 0) : 0;
-    return { wood: Math.floor(cum.totalWood * rate), iron: Math.floor(cum.totalIron * rate), coal: Math.floor(coalDovme * rate) };
+    // İade, eşyaya gerçekten harcanan hammaddenin %70'idir: odun ve demir dövme + yükseltmeler, kömür dövme + yükseltmeler
+    // (ocak), taş yalnız yükseltmeler (bileme). 13 Ekim 2026 öncesi yükseltme kömür/taş istemiyordu; bu yüzden iade yalnız dövme
+    // kömürüne bağlıydı. Artık harcanan her kalem iade hesabına girer, harcanmayan (ör. taşsız dövme) geri verilmez.
+    return {
+      wood: Math.floor(cum.totalWood * rate),
+      iron: Math.floor(cum.totalIron * rate),
+      coal: Math.floor((cum.totalCoal || 0) * rate),
+      stone: Math.floor((cum.totalStone || 0) * rate)
+    };
   },
 
   recycleEquipment({ source, slotKey, armoryIndex = null, soldierIndex = null } = {}) {
@@ -388,7 +429,7 @@ export const gameStateV2 = {
     this._markFirst('konsey');
     this.saveState();
     const txt = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ');
-    return { success: true, message: r.completed ? `⛏️ Otorite ${r.status.level}. seviyeye yükseldi! (${txt}; çelik payı Konsey kasasından ${round3(r.steelPaid)} ASTRA)` : `⛏️ Otorite inşaatına ${txt} verildi (%${r.status.pct}). Katkı puanı +${round3(value)}.`, accepted: acc, completed: r.completed, contribution: round3(value) };
+    return { success: true, message: r.completed ? `⛏️ Otorite ${r.status.level}. seviyeye yükseldi! (${txt})` : `⛏️ Otorite inşaatına ${txt} verildi (%${r.status.pct}). Katkı puanı +${round3(value)}.`, accepted: acc, completed: r.completed, contribution: round3(value) };
   },
 
   contributeToProject(amounts, labor = 0) {

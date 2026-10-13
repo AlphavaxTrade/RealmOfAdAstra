@@ -8,7 +8,14 @@ import { globalPool } from '../globalPool.js';
 import { treasury } from '../treasury.js';
 
 const HAFTA_MS = 7 * 24 * 3600 * 1000;
-const KASA_YEDEK = 8000000;   // kasa okunamazsa gösterim için varsayılan haftalık havuz
+const KASA_YEDEK = 6000000;   // kasa okunamazsa gösterim için varsayılan kasa büyüklüğü (tohum)
+
+// Haftanın ödül havuzu: kasanın WEEKLY_DISTRIBUTION_RATE'i (%3). Eskiden ekran ve ödül hesabı kasanın TAMAMINI havuz sayıyordu
+// (gerçek dağıtım %3'tü); oyuncuya yüzlerce kat fazla beklenti gösteriliyordu. 13 Ekim 2026'da düzeltildi.
+function haftalikHavuz(kasa) {
+  const oran = Number(GAME_CONFIG.WORLD_BOSS && GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE);
+  return Math.round(Math.max(0, Number(kasa) || 0) * (oran > 0 ? oran : 0.03));
+}
 
 // Oyuncunun kilitlediği orduyu dünya toplamından düşer ve oyuncunun kilit alanlarını sıfırlar
 function kilidiBirak(boss) {
@@ -29,7 +36,8 @@ export const dunyaBossuYontemleri = {
       this.state.worldBoss = {
         name: 'Kadim Kıyamet Behemoth\'u (WORLD BOSS)',
         icon: '🌋',
-        weeklyAdaPool: Math.round(treasury.getPool('worldBoss')),
+        weeklyAdaPool: haftalikHavuz(treasury.getPool('worldBoss')),
+        vaultAda: Math.round(treasury.getPool('worldBoss')),
         bossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         maxBossHp: GAME_CONFIG.WORLD_BOSS.BASE_HP,
         bossAtk: 500000,
@@ -47,7 +55,9 @@ export const dunyaBossuYontemleri = {
       };
     } else {
       const boss = this.state.worldBoss;
-      boss.weeklyAdaPool = Math.round(treasury.getPool('worldBoss')) || KASA_YEDEK;
+      const kasa = treasury.getPool('worldBoss') || KASA_YEDEK;
+      boss.vaultAda = Math.round(kasa);                 // kasada duran toplam (bilgi)
+      boss.weeklyAdaPool = haftalikHavuz(kasa);         // bu hafta dağıtılacak pay
       if (!boss.userStaked) {
         boss.stakedArmyCount = 0;
         boss.totalStakedAtk = 0;
@@ -82,12 +92,22 @@ export const dunyaBossuYontemleri = {
       hpContribution: Math.floor(hp * 0.25),
       baseDamage: tabanHasar,
       calculatedDamage: hasar,
-      estimatedAda: Math.floor((hasar * boss.weeklyAdaPool) / boss.maxBossHp),
+      estimatedAda: this.estimateWorldBossReward(hasar),
       earlyUnstakePenaltyRate: this.getWorldBossEarlyUnstakeRate(),
       diversityMultiplier: cesitlilik.diversityMultiplier,
       uniqueRoles: cesitlilik.uniqueRoles,
       rolesFound: cesitlilik.rolesFound
     };
+  },
+
+  // Tahmini ödül: haftalık havuzun hasar payı. Payda, geçen haftanın toplam krallık hasarı biliniyorsa o (payın gerçekte
+  // bölüşüldüğü toplam; sunucu savaştan sonra yazar), yoksa boss canıdır; kendi hasarından küçük olamaz.
+  estimateWorldBossReward(hasar) {
+    const boss = this.getWorldBossInfo();
+    const d = Math.max(0, Number(hasar) || 0);
+    const onceki = Number(boss.realmDamage) || 0;
+    const payda = Math.max(d, onceki > 0 ? onceki : (Number(boss.maxBossHp) || 1));
+    return Math.floor((d * (Number(boss.weeklyAdaPool) || 0)) / Math.max(1, payda));
   },
 
   isArmyStakedInWorldBoss() {

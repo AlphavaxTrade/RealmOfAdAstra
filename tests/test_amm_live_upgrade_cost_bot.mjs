@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { GameStateManager } from '../js/gameState.js';
 import { ammMarket } from '../js/ammMarket.js';
+import { GAME_CONFIG } from '../js/config.js';
 import '../js/globalPool.js';
 
 console.log('--- 🧪 AMM DEX CANLI YÜKSELTME MALİYETİ & OTOMATİK BOT TESTİ BAŞLATILIYOR ---');
@@ -21,17 +22,15 @@ gs.state.inventory = { iron: 50000, wood: 50000, wheat: 50000, stone: 50000, coa
 
 // 1. Hesap Seviyesi Yükseltme Maliyeti ve AMM DEX Değeri Kontrolü
 const lvlReq = gs.getNextLevelRequirement();
-console.log(`Seviye ${lvlReq.level} için gereken kaynaklar: ${lvlReq.wood} Odun, ${lvlReq.iron} Demir, ${lvlReq.wheat} Buğday`);
+console.log(`Seviye ${lvlReq.level} için gereken kaynaklar: ${Object.entries(lvlReq.costs).map(([k, n]) => k + ' ' + n).join(', ')}`);
 console.log(`Hesaplanan AMM DEX AdAstra Bedeli: ${lvlReq.adAstra} ASTRA`);
 
-assert(lvlReq.wood > 0 && lvlReq.iron > 0 && lvlReq.wheat > 0, 'Kaynak miktarları pozitif olmalı');
+// Altı hammaddenin altısı da bedele girer (13 Ekim 2026: eskiden yalnız odun, demir, buğday)
+assert.deepEqual(Object.keys(lvlReq.costs).sort(), [...GAME_CONFIG.RESOURCE_KEYS].sort(), 'bedel altı hammaddeyi de içerir');
+for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.ok(lvlReq.costs[k] > 0, k + ' bedeli pozitif olmalı');
 assert(lvlReq.adAstra > 0, 'AdAstra yükseltme maliyeti pozitif olmalı');
 
-const expectedLevelAmm = ammMarket.calculateResourcesAdAstraValue({
-  wood: lvlReq.wood,
-  iron: lvlReq.iron,
-  wheat: lvlReq.wheat
-});
+const expectedLevelAmm = ammMarket.calculateResourcesAdAstraValue({ ...lvlReq.costs });
 assert.equal(lvlReq.adAstra, expectedLevelAmm.totalAda, 'Seviye atlama ASTRA maliyeti AMM DEX toplam pazar değerine eşit olmalı');
 console.log('✅ Seviye Atlama ASTRA maliyeti AMM DEX pazar değeriyle %100 örtüşüyor!');
 

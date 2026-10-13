@@ -100,25 +100,42 @@ console.log('✅ kısmi toplama: alet aşınır, XP şişmez');
 }
 console.log('✅ bütçe dolunca görev ödülü kaybolmaz');
 
-// 3) Geri dönüşümde kömür yalnız dövme bedelinden döner (yükseltme kömür istemez)
+// 3) Geri dönüşüm, eşyaya GERÇEKTEN harcanan kömürün ve taşın %70'ini verir (ne eksik ne fazla)
+// (13 Ekim 2026'dan önce yükseltme kömür/taş istemiyordu; iade yalnız dövme kömürüne bağlıydı. 11 Ekim'deki hata, ödenmemiş
+// kömürün iade edilmesiydi: bu test aynı hata sınıfını yakalar.)
 {
   const gs = yeni();
   const s = gs.state;
-  for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 500000;
-  s.inventory.fragments = 5000;
   s.warehouseLevel = 18;
+  const kapasite = gs.getWarehouseCapacity();   // silo sınırını aşan stok kırpılır; ölçümü bozmasın diye sınır içinde başla
+  for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = kapasite[k];
+  s.inventory.fragments = 2000;
   s.adAstraBalance = 5e6;
-  assert.equal(gs.craftEquipment('weapon').success, true);
-  const dovmeKomuru = gs.calculateEquipmentCraftCost('weapon').coalCost;
+  const harcanan = { coal: 0, stone: 0 };
+  const dene = (islem) => {
+    const once = { coal: s.inventory.coal, stone: s.inventory.stone };
+    const r = islem();
+    harcanan.coal += once.coal - s.inventory.coal;
+    harcanan.stone += once.stone - s.inventory.stone;
+    return r;
+  };
+  assert.equal(dene(() => gs.craftEquipment('weapon')).success, true);
   const kilic = s.equipment.weapon;
-  const sinir = Math.floor(dovmeKomuru * (GAME_CONFIG.RECYCLE_RETURN_RATE ?? 0.7));
-  const yeniDeger = gs.getRecycleValue(kilic);
-  assert.ok(yeniDeger.coal <= sinir, `seviye 1 iade ${yeniDeger.coal} <= ${sinir}`);
-  for (let i = 0; i < 8; i++) gs.upgradeEquipment('weapon');
+  const oran = GAME_CONFIG.RECYCLE_RETURN_RATE ?? 0.7;
+  assert.equal(harcanan.stone, 0, 'dövme taş istemez');
+  assert.equal(gs.getRecycleValue(kilic).coal, Math.floor(harcanan.coal * oran), "seviye 1: iade dövme kömürünün yüzde 70'i");
+  assert.equal(gs.getRecycleValue(kilic).stone, 0, 'seviye 1: taş harcanmadı, iade yok');
+  for (let i = 0; i < 8; i++) assert.equal(dene(() => gs.upgradeEquipment('weapon')).success, true);
   assert.ok(kilic.level > 3, 'eşya yükseltildi');
-  assert.ok(gs.getRecycleValue(kilic).coal <= sinir, 'yükseltme kömür iadesini büyütmemeli');
+  assert.ok(harcanan.coal > 0 && harcanan.stone > 0, 'yükseltmeler kömür ve taş harcadı');
+  const deger = gs.getRecycleValue(kilic);
+  // Eşya başına yuvarlama farkı birkaç birimi geçmez; asıl koşul: harcananın %70'ini aşmaz
+  assert.ok(deger.coal <= Math.floor(harcanan.coal * oran) + 1, `kömür iadesi harcananın %70'ini aşmamalı: ${deger.coal} <= ${harcanan.coal * oran}`);
+  assert.ok(deger.coal >= Math.floor(harcanan.coal * oran) - 8, `kömür iadesi harcananın %70'ine yakın olmalı: ${deger.coal}`);
+  assert.ok(deger.stone <= Math.floor(harcanan.stone * oran) + 1, `taş iadesi harcananın %70'ini aşmamalı: ${deger.stone} <= ${harcanan.stone * oran}`);
+  assert.ok(deger.stone >= Math.floor(harcanan.stone * oran) - 8, `taş iadesi harcananın %70'ine yakın olmalı: ${deger.stone}`);
 }
-console.log('✅ geri dönüşüm ödenmemiş kömür vermiyor');
+console.log("✅ geri dönüşüm harcanan kömür ve taşın %70'ini veriyor");
 
 // 4) Bölünemez varlıklar ve parça için silo sınırı
 {

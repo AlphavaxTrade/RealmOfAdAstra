@@ -21,7 +21,7 @@ export const gelistiriciYontemleri = {
     for (let i = 0; i < adet; i++) {
       const durum = globalPool.getProjectStatus();
       if (!durum.active) break;
-      const r = globalPool.contributeProject({ stone: durum.need.stone, iron: durum.need.iron, wood: durum.need.wood }, durum.active.labor);
+      const r = globalPool.contributeProject(durum.need, durum.active.labor);
       if (!r.completed) break;
       biten++;
     }
@@ -270,9 +270,10 @@ export const gelistiriciYontemleri = {
         name: "Kadim Kıyamet Behemoth'u (WORLD BOSS)",
         icon: '🌋',
         totalVaultPool: bossHavuzu,
-        weeklyDistributionRate: bossAyar.WEEKLY_DISTRIBUTION_RATE || 0.10,
-        weeklyDistributionPool: Math.round(bossHavuzu * 0.10),
-        weeklyAdaPool: bossHavuzu,
+        vaultAda: bossHavuzu,
+        weeklyDistributionRate: bossAyar.WEEKLY_DISTRIBUTION_RATE || 0.03,
+        weeklyDistributionPool: Math.round(bossHavuzu * (bossAyar.WEEKLY_DISTRIBUTION_RATE || 0.03)),
+        weeklyAdaPool: Math.round(bossHavuzu * (bossAyar.WEEKLY_DISTRIBUTION_RATE || 0.03)),
         bossHp: bossAyar.BASE_HP,
         maxBossHp: bossAyar.BASE_HP,
         bossAtk: 500000,

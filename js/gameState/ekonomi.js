@@ -265,6 +265,7 @@ export const ekonomiYontemleri = {
     const rate = Number(GAME_CONFIG.OTORITE?.COMMON_CHEST_RATE ?? 0.05);
     let share = Math.floor((Number(extracted) || 0) * rate);
     if (share > 0) share = globalPool.takeForKonsey ? globalPool.takeForKonsey(key, share) : 0;
+    if (share > 0 && globalPool.konseyStokuKullan) globalPool.konseyStokuKullan();   // ortak stok boşta kalmaz
     this._recordUretimUse(key, (Number(extracted) || 0) + share);
     return share;
   },

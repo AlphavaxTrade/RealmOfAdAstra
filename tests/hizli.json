@@ -49,5 +49,7 @@
   "test_tarama_2026_10_kurallar.mjs",
   "test_tarama_2026_10_onyuz.mjs",
   "test_istemci_sunucu_imza.mjs",
-  "test_bot_kurallari.mjs"
+  "test_bot_kurallari.mjs",
+  "test_hammadde_kullanim_plani.mjs",
+  "test_denge_kararlari_2026_10.mjs"
 ]

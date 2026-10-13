@@ -92,8 +92,9 @@ export const gelisimYontemleri = {
     return Math.round(GUNLUK_XP_ARZI * gun);
   },
 
-  // Bir sonraki seviyenin XP'si ve bedeli: bedel, XP'yi toplamaya yetecek sefer döngülerinde kazanılan odun/demir/buğdayın yarısı;
-  // ASTRA bedeli bu hammaddelerin anlık pazar değeridir
+  // Bir sonraki seviyenin XP'si ve bedeli: bedel, XP'yi toplamaya yetecek sefer döngülerinde ALTI alanda kazanılan hammaddenin
+  // yarısıdır (her hammaddenin kendi üretim hızına göre); ASTRA bedeli bu hammaddelerin anlık pazar değeridir.
+  // Eskiden yalnız odun, demir ve buğday sayılıyordu (üç alanlı dönemden kalma); artık altı hammadde de bedele girer.
   getNextLevelRequirement() {
     const enUst = GAME_CONFIG.MAX_PLAYER_LEVEL || 81;
     const simdiki = this.state.level || 1;
@@ -103,18 +104,20 @@ export const gelisimYontemleri = {
 
     const sure = this.getExpeditionDurationMinutes(simdiki);
     const seferXp = Math.max(5, Math.floor(35 * (sure / 60)));
-    const donguXp = 3 * seferXp;
+    const alanlar = RES_KEYS();
+    const donguXp = alanlar.length * seferXp;                  // bir döngü: altı alanda birer sefer
     const dongu = Math.max(1, Math.ceil(xp / Math.max(1, donguXp)));
 
     const uretim = GAME_CONFIG.BASE_PRODUCTION || {};
-    const kazanilanOdun = dongu * sure * (uretim.wood || 18);
-    const kazanilanDemir = dongu * sure * (uretim.iron || 12);
-    const kazanilanBugday = dongu * sure * (uretim.wheat || 30);
-    const wood = Math.round(kazanilanOdun / 2);
-    const iron = Math.round(kazanilanDemir / 2);
-    const wheat = Math.round(kazanilanBugday / 2);
+    const kazanilan = {};
+    const costs = {};
+    for (const k of alanlar) {
+      kazanilan[k] = dongu * sure * (uretim[k] || 0);
+      costs[k] = Math.round(kazanilan[k] / 2);
+    }
+    const { wood, iron, wheat } = costs;
 
-    const deger = ammMarket.calculateResourcesAdAstraValue({ wood, iron, wheat });
+    const deger = ammMarket.calculateResourcesAdAstraValue(costs);
 
     const bugunParca = this.getFragmentDropRate(simdiki);
     const sonrakiParca = this.getFragmentDropRate(sonraki);
@@ -126,9 +129,11 @@ export const gelisimYontemleri = {
       xp,
       cycles: dongu,
       durMin: sure,
-      totalWoodEarned: kazanilanOdun,
-      totalIronEarned: kazanilanDemir,
-      totalWheatEarned: kazanilanBugday,
+      costs,                                   // her hammaddenin bedeli (altısı da)
+      earned: kazanilan,
+      totalWoodEarned: kazanilan.wood,
+      totalIronEarned: kazanilan.iron,
+      totalWheatEarned: kazanilan.wheat,
       wood,
       iron,
       wheat,
@@ -156,15 +161,14 @@ export const gelisimYontemleri = {
     const gerek = this.getNextLevelRequirement();
     const envanter = this.state.inventory;
     if (this.state.currentXp < gerek.xp) return { success: false, message: `Yetersiz XP! (${this.state.currentXp}/${gerek.xp} XP)` };
-    if ((envanter.wood || 0) < gerek.wood) return { success: false, message: `Yetersiz Odun! (${gerek.wood} Odun gerekli)` };
-    if ((envanter.iron || 0) < gerek.iron) return { success: false, message: `Yetersiz Demir! (${gerek.iron} Demir gerekli)` };
-    if ((envanter.wheat || 0) < gerek.wheat) return { success: false, message: `Yetersiz Buğday! (${gerek.wheat} Buğday gerekli)` };
+    for (const k of RES_KEYS()) {
+      const gereken = gerek.costs[k] || 0;
+      if ((envanter[k] || 0) < gereken) return { success: false, message: `Yetersiz ${kaynakAdi(k)}! (${gereken} ${kaynakAdi(k)} gerekli)` };
+    }
     if (this.state.adAstraBalance < gerek.adAstra) return { success: false, message: `Yetersiz ASTRA! (${gerek.adAstra} ASTRA gerekli)` };
 
-    envanter.wood -= gerek.wood;
-    envanter.iron -= gerek.iron;
-    envanter.wheat -= gerek.wheat;
-    this.burnResources({ wood: gerek.wood, iron: gerek.iron, wheat: gerek.wheat });
+    for (const k of RES_KEYS()) envanter[k] -= gerek.costs[k] || 0;
+    this.burnResources(gerek.costs);
     this.state.adAstraBalance -= gerek.adAstra;
     this._onAdaSpent(gerek.adAstra);
     globalPool.recordTokenSpend(gerek.adAstra);
@@ -198,12 +202,13 @@ export const gelisimYontemleri = {
     const L = Math.max(1, Math.min(GAME_CONFIG.MAX_PLAYER_LEVEL || 81, Number(level) || 1));
     const seferDakika = this.getExpeditionDurationMinutes(L);
     const seferStamina = this.getExpeditionStaminaCost(L);
-    // 3 alan birden çalışırken saatte harcanan stamina ve bunun buğday karşılığı
-    const saatlikStamina = (3 * seferStamina) / Math.max(1e-9, seferDakika / 60);
+    // Altı alan birden çalışırken saatte harcanan stamina ve bunun buğday karşılığı
+    const alanSayisi = Math.max(1, RES_KEYS().length);
+    const saatlikStamina = (alanSayisi * seferStamina) / Math.max(1e-9, seferDakika / 60);
     const saatlikBugday = saatlikStamina * (GAME_CONFIG.WHEAT_PER_STAMINA || 3.15);
     // 1.000 hammadde (odun) başına stamina için yakılan buğday: seviye başına yalnız %1 iner
     const saatlikOdun = this.getResourceRatePerMinute('wood', L) * 60;
-    const bugdayBin = saatlikOdun > 0 ? (saatlikBugday / 3) / saatlikOdun * 1000 : 0;
+    const bugdayBin = saatlikOdun > 0 ? (saatlikBugday / alanSayisi) / saatlikOdun * 1000 : 0;
     const ubiAlt = (GAME_CONFIG.UBI_CONFIG && GAME_CONFIG.UBI_CONFIG.MIN_LEVEL) || 3;
     return {
       level: L,
@@ -252,8 +257,9 @@ export const gelisimYontemleri = {
   },
 
   // ── Alet tamiri ─────────────────────────────────────────────────────────
-  // Kural: dakika başına üretilen odun ve demirin %25'i üç alete paylaştırılır; ASTRA bedeli bu hammaddelerin pazar
-  // değerinin TOOL_REPAIR_ADA_SHARE (%30) kadarı
+  // Kural: dakika başına üretilen odun ve demirin %25'i alet sayısına (altı) paylaştırılır; ASTRA bedeli bu hammaddelerin pazar
+  // değerinin TOOL_REPAIR_ADA_SHARE (%30) kadarı. (Eskiden üçe bölünüyordu: altı alete geçince toplam onarım yükü sessizce
+  // %50'ye çıkmıştı; bot ücreti hesabı ve belgeler hep %25 diyordu. 13 Ekim 2026'da düzeltildi.)
   calculateRepairCost(toolId) {
     const cfg = GAME_CONFIG.TOOLS[toolId];
     const alet = this.state.tools ? this.state.tools[toolId] : null;
@@ -263,8 +269,9 @@ export const gelisimYontemleri = {
     const simdiki = Math.min(enFazla, Math.max(0, alet.durability != null ? alet.durability : enFazla));
     const eksik = enFazla - simdiki;   // eksilen dakika
 
-    const odunDakika = (this.getResourceRatePerMinute('wood') * 0.25) / 3;
-    const demirDakika = (this.getResourceRatePerMinute('iron') * 0.25) / 3;
+    const aletSayisi = Math.max(1, RES_KEYS().length);
+    const odunDakika = (this.getResourceRatePerMinute('wood') * 0.25) / aletSayisi;
+    const demirDakika = (this.getResourceRatePerMinute('iron') * 0.25) / aletSayisi;
     const yuvarla = (v) => parseFloat(v.toFixed(2));
 
     if (eksik <= 0) {

@@ -95,7 +95,7 @@ function yuvaKutusu(b, s, a, idx, yuva) {
       <small class="ek-ton-${d.ton}">${d.cur}/${d.max} dayanıklılık</small>
     </button>
     <div class="ek-yuva-eylem">
-      ${onarim ? dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun` }) : ''}
+      ${onarim ? dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun + ${sayi(onarim.coalCost || 0)} kömür` }) : ''}
       ${dugme({ e: 'cikar', metin: 'Çıkar', ton: 'hayalet', veri: { yuva } })}
     </div></div>`;
 }
@@ -284,7 +284,7 @@ function cephanelikSekmesi(b, s) {
         oneri ? dugme({ e: 'ver', metin: `${oneri.idx + 1}. askere tak`, ton: 'birincil', veri: { ...esyaVeri(e), hedef: oneri.idx } }) : '',
         dugme({ e: 'tasi', metin: e.source === 'soldier' ? 'Başka askere' : 'Askere tak…', veri: { anahtar } }),
         e.source === 'soldier' ? dugme({ e: 'cCikar', metin: 'Çıkar', ton: 'hayalet', veri: esyaVeri(e) }) : '',
-        yuk && !yuk.isMaxLevel ? dugme({ e: 'yukselt', metin: 'Yükselt', ton: 'hayalet', veri: esyaVeri(e), ipucu: `Sv.${yuk.nextLevel}: ${sayi(yuk.ironCost)} demir, ${sayi(yuk.woodCost)} odun, ${sayi(yuk.fragmentCost)} parça, ${sayi(yuk.adAstraCost)} ASTRA` }) : ''
+        yuk && !yuk.isMaxLevel ? dugme({ e: 'yukselt', metin: 'Yükselt', ton: 'hayalet', veri: esyaVeri(e), ipucu: `Sv.${yuk.nextLevel}: ${sayi(yuk.ironCost)} demir, ${sayi(yuk.woodCost)} odun, ${sayi(yuk.coalCost || 0)} kömür, ${sayi(yuk.stoneCost || 0)} taş, ${sayi(yuk.fragmentCost)} parça, ${sayi(yuk.adAstraCost)} ASTRA` }) : ''
       );
     return `<article class="ek-esya${e.source === 'soldier' ? ' is-takili' : ''}">
       <div class="ek-esya-ust"><span class="ek-yuva-simge">${simgeYuva(e.slotKey, it)}</span>

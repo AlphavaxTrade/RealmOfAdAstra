@@ -76,7 +76,7 @@ const fresh = () => {
     const st = globalPool.getProjectStatus();
     if (!st.active) break;
     const isPier = st.active.id === 'pier';
-    globalPool.contributeProject({ stone: st.need.stone, iron: st.need.iron, wood: st.need.wood }, st.active.labor);
+    globalPool.contributeProject(st.need, st.active.labor);
     if (isPier) break;
   }
   assert.ok(near(globalPool.getProjectBonus('prepDepotCap'), 2), 'Rıhtım bitti');
