@@ -1,0 +1,31 @@
+▶ Simülasyon: senaryo=taban, 52 hafta, 100 vatandaş + 30 aday, tohum=7
+  başlangıç: 2.0000e+8 ASTRA (kasalar 8.800e+7, pazar 1.000e+8, piyango 1.200e+7)
+  hafta  0: vatandaş 100 aktif 81 sırada 30 askıda 0 izinde 0 · kasalar 88.0 M · gösterge 0$/0.05$ · fark 0
+  hafta  4: vatandaş 100 aktif 96 sırada 24 askıda 6 izinde 1 · kasalar 87.9 M · gösterge 0$/0.04$ · fark 0
+  hafta  8: vatandaş 100 aktif 96 sırada 22 askıda 8 izinde 0 · kasalar 87.5 M · gösterge 0$/0.04$ · fark 0
+  hafta 12: vatandaş 100 aktif 89 sırada 18 askıda 12 izinde 0 · kasalar 86.9 M · gösterge 0$/0.04$ · fark 0
+  hafta 16: vatandaş 98 aktif 92 sırada 17 askıda 15 izinde 0 · kasalar 86.1 M · gösterge 0$/0.04$ · fark -0.01
+  hafta 20: vatandaş 97 aktif 92 sırada 17 askıda 16 izinde 1 · kasalar 85.5 M · gösterge 0$/0.04$ · fark 0
+  hafta 24: vatandaş 96 aktif 90 sırada 17 askıda 17 izinde 1 · kasalar 84.9 M · gösterge 0$/0.04$ · fark -0.04
+  hafta 28: vatandaş 93 aktif 90 sırada 17 askıda 20 izinde 2 · kasalar 84.4 M · gösterge 0$/0.04$ · fark -0.05
+  hafta 32: vatandaş 93 aktif 93 sırada 17 askıda 20 izinde 0 · kasalar 83.9 M · gösterge 0$/0.04$ · fark -0.02
+  hafta 36: vatandaş 93 aktif 90 sırada 17 askıda 20 izinde 0 · kasalar 83.5 M · gösterge 0$/0.04$ · fark -0.07
+  hafta 40: vatandaş 93 aktif 93 sırada 17 askıda 20 izinde 0 · kasalar 83.0 M · gösterge 0$/0.04$ · fark -0.07
+  hafta 44: vatandaş 93 aktif 92 sırada 17 askıda 20 izinde 0 · kasalar 82.6 M · gösterge 0$/0.04$ · fark -0.08
+  hafta 48: vatandaş 93 aktif 92 sırada 17 askıda 20 izinde 0 · kasalar 82.2 M · gösterge 0$/0.04$ · fark -0.08
+   ret claimAllHarvests (23082 ok / 809 ret): 809× Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# 
+   ret startExpedition (44379 ok / 98889 ret): 98641× Bu alanda zaten aktif bir sefer devam ediyor! | 44× ⚠️ Odun seferini başlatmak için yeteri kadar staminanız bulu | 36× ⚠️ Buğday seferini başlatmak için yeteri kadar staminanız bu
+   ret claimWeeklyUbi (1510 ok / 3136 ret): 3114× Haftalık temel gelir # seviyeden itibaren alınabilir# | 15× Bu haftaki Evrensel Temel Gelir (UBI) ödülünüzü zaten talep  | 4× İzindeyken haftalık temel gelir alınmaz; izin bitince yenide
+   ret upgradeWarehouse (590 ok / 22979 ret): 20251× ⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır#  | 2728× Yetersiz ASTRA! (# ASTRA gerekli)
+   ret levelUp (163 ok / 23147 ret): 17802× Yetersiz Odun! (# Odun gerekli) | 2759× Yetersiz Buğday! (# Buğday gerekli) | 1384× Yetersiz XP! (#/# XP)
+   ret repairAllTools (6505 ok / 947 ret): 783× Tamir edilecek alet yok (Tüm aletler tam sağlam)# | 99× Yetersiz Odun! (# Odun gerekli# ambarında: #) | 63× ⚠️ Hesapta yeteri kadar ASTRA yok!
+   ret claimOnboardingReward (628 ok / 40717 ret): 23143× Bu görevin ödülünü zaten aldın# | 17574× Bu görev henüz tamamlanmadı#
+   ret contributeToOtorite (2993 ok / 3431 ret): 3431× Bu hammadde için sıradaki seviyede yer kalmadı#
+   ret buySoldierUnit (603 ok / 4254 ret): 2214× 🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske | 2040× Yetersiz ASTRA! # asker için # ASTRA gerekir#
+   ret craftEquipment (14 ok / 205 ret): 204× Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli) | 1× Yetersiz Odun! (# Odun gerekli)
+   ret autoEquipBest (6 ok / 199 ret): 199× Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#
+  oyuncu durumu: {"oyuncu":99,"seviye":{"ort":2.6,"medyan":3,"max":5},"xp":{"ort":972.7,"medyan":1103,"max":2412},"astra":{"ort":23489.96,"medyan":740.2976631568592,"max":425012.939108},"kilitli":{"ort":17806.87,"medyan":569.8476609782721,"max":186878.34176839195},"asker":{"ort":6.04,"medyan":4,"max":10},"stamina":{"ort":441.14,"medyan":358,"max":1010},"odun":{"ort":597.69,"medyan":589,"max":1966},"buğday":{"ort":711.48,"medyan":709.39,"max":2184.69},"cekilen":{"ort":7037.31,"medyan":0,"max":58287.689999999995}}
+  süre dağılımı (sn): {"tick":295.2,"aday":24.3,"oturum":963.7,"cekim":11.1,"degismez":1.6}  eylem: {"claimAllHarvests":"23082/809","startExpedition":"44379/98889","claimWeeklyUbi":"1510/3136","upgradeWarehouse":"590/22979","marketSell":"23822/0","levelUp":"163/23147","repairAllTools":"6505/947","carnivalCheer":"6793/0","claimOnboardingReward":"628/40717","contributeToOtorite":"2993/3431","buySoldierUnit":"603/4254","fightDungeon":"5061/15","setSoldierRow":"4671/0","stakeArmyForWorldBoss":"2593/0","buyLotteryTickets":"411/0","craftEquipment":"14/205","autoEquipBest":"6/199","cekim":"512/0","buyTavernaAutomationBot":"582/0","cevaplaIzinSorusu":"8/0"}
+
+✔ Bitti: 52 hafta, 130 hesap, 1303.5 sn. İhlaller: {}
+  rapor: C:\Users\AlphAvax\.gemini\antigravity-ide\scratch\adastra-realm\docs\v2\sim\k47\taban_52h_k47.json

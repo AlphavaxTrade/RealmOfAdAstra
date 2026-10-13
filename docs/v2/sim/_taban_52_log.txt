@@ -1,0 +1,41 @@
+▶ Simülasyon: senaryo=taban, 52 hafta, 100 vatandaş + 30 aday, tohum=7
+  başlangıç: 2.0000e+8 ASTRA (kasalar 8.800e+7, pazar 1.000e+8, piyango 1.200e+7)
+  hafta  0: vatandaş 100 aktif 84 sırada 30 askıda 0 izinde 0 · kasalar 88.0 M · gösterge 0$/0.22$ · fark -20
+  hafta  4: vatandaş 100 aktif 95 sırada 26 askıda 4 izinde 0 · kasalar 88.0 M · gösterge 0$/0.2$ · fark -47.5
+  hafta  8: vatandaş 100 aktif 95 sırada 25 askıda 5 izinde 0 · kasalar 87.7 M · gösterge 0$/0.2$ · fark -49.2
+  hafta 12: vatandaş 99 aktif 93 sırada 21 askıda 10 izinde 0 · kasalar 86.9 M · gösterge 0$/0.2$ · fark -47.6
+  hafta 16: vatandaş 100 aktif 97 sırada 17 askıda 13 izinde 0 · kasalar 86.1 M · gösterge 0$/0.2$ · fark -38.51
+  hafta 20: vatandaş 98 aktif 93 sırada 17 askıda 15 izinde 0 · kasalar 85.4 M · gösterge 0$/0.2$ · fark -19.01
+  hafta 24: vatandaş 97 aktif 92 sırada 17 askıda 16 izinde 0 · kasalar 84.8 M · gösterge 0$/0.2$ · fark 3.64
+  hafta 28: vatandaş 94 aktif 93 sırada 17 askıda 19 izinde 0 · kasalar 84.4 M · gösterge 0$/0.2$ · fark 33.06
+  hafta 32: vatandaş 94 aktif 89 sırada 17 askıda 19 izinde 0 · kasalar 83.9 M · gösterge 0$/0.2$ · fark 72.45
+  hafta 36: vatandaş 94 aktif 94 sırada 17 askıda 19 izinde 0 · kasalar 83.5 M · gösterge 0$/0.2$ · fark 117.02
+  hafta 40: vatandaş 94 aktif 90 sırada 17 askıda 19 izinde 0 · kasalar 83.0 M · gösterge 0$/0.2$ · fark 165.02
+  hafta 43: vatandaş 94 aktif 94 sırada 17 askıda 19 izinde 0 · kasalar 82.7 M · gösterge 0$/0.2$ · fark 205.33 ⚠ K3
+  hafta 44: vatandaş 94 aktif 94 sırada 17 askıda 19 izinde 0 · kasalar 82.6 M · gösterge 0$/0.2$ · fark 215.42 ⚠ K3
+  hafta 45: vatandaş 94 aktif 92 sırada 17 askıda 19 izinde 0 · kasalar 82.5 M · gösterge 0$/0.2$ · fark 226.94 ⚠ K3
+  hafta 46: vatandaş 94 aktif 93 sırada 17 askıda 19 izinde 0 · kasalar 82.4 M · gösterge 0$/0.2$ · fark 241.61 ⚠ K3
+  hafta 47: vatandaş 94 aktif 93 sırada 17 askıda 19 izinde 0 · kasalar 82.3 M · gösterge 0$/0.2$ · fark 254.62 ⚠ K3
+  hafta 48: vatandaş 94 aktif 91 sırada 17 askıda 19 izinde 0 · kasalar 82.2 M · gösterge 0$/0.2$ · fark 268.81 ⚠ K3
+  hafta 49: vatandaş 94 aktif 91 sırada 17 askıda 19 izinde 0 · kasalar 82.1 M · gösterge 0$/0.2$ · fark 282.12 ⚠ K3
+  hafta 50: vatandaş 94 aktif 90 sırada 17 askıda 19 izinde 0 · kasalar 82.0 M · gösterge 0$/0.2$ · fark 293.2 ⚠ K3
+  hafta 51: vatandaş 94 aktif 91 sırada 17 askıda 19 izinde 0 · kasalar 81.9 M · gösterge 0$/0.2$ · fark 307.2 ⚠ K3
+   ret claimAllHarvests (23562 ok / 821 ret): 821× Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# 
+   ret startExpedition (45245 ok / 100975 ret): 100666× Bu alanda zaten aktif bir sefer devam ediyor! | 76× Gereken alet (Bronz Kazma) kırık! Önce tamir etmelisin# | 54× ⚠️ Odun seferini başlatmak için yeteri kadar staminanız bulu
+   ret claimWeeklyUbi (1686 ok / 3042 ret): 3027× Haftalık temel gelir # seviyeden itibaren alınabilir# | 8× Bu haftaki Evrensel Temel Gelir (UBI) ödülünüzü zaten talep  | 7× Bu haftanın temel gelir kasası boş# Kasa# oyunda harcanan he
+   ret claimOnboardingReward (635 ok / 41764 ret): 23705× Bu görevin ödülünü zaten aldın# | 18059× Bu görev henüz tamamlanmadı#
+   ret upgradeWarehouse (601 ok / 23466 ret): 20748× ⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır#  | 2718× Yetersiz ASTRA! (# ASTRA gerekli)
+   ret levelUp (168 ok / 23640 ret): 18204× Yetersiz Odun! (# Odun gerekli) | 2744× Yetersiz Buğday! (# Buğday gerekli) | 1439× Yetersiz XP! (#/# XP)
+   ret repairAllTools (6696 ok / 939 ret): 747× Tamir edilecek alet yok (Tüm aletler tam sağlam)# | 106× Yetersiz Odun! (# Odun gerekli# ambarında: #) | 71× ⚠️ Hesapta yeteri kadar ASTRA yok!
+   ret contributeToOtorite (3019 ok / 3524 ret): 3524× Bu hammadde için sıradaki seviyede yer kalmadı#
+   ret buySoldierUnit (636 ok / 4327 ret): 2399× 🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske | 1928× Yetersiz ASTRA! # asker için # ASTRA gerekir#
+   ret craftEquipment (22 ok / 222 ret): 215× Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli) | 7× Yetersiz Odun! (# Odun gerekli)
+   ret autoEquipBest (13 ok / 209 ret): 209× Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#
+  oyuncu durumu: {"oyuncu":101,"seviye":{"ort":2.61,"medyan":3,"max":5},"xp":{"ort":973.96,"medyan":1193,"max":2412},"astra":{"ort":23025.89,"medyan":12125.370933493312,"max":441865.1068461672},"kilitli":{"ort":17005.61,"medyan":10069.743236745417,"max":178099.91401057408},"asker":{"ort":6.28,"medyan":10,"max":10},"stamina":{"ort":451.66,"medyan":502,"max":1010},"odun":{"ort":580.28,"medyan":607,"max":1413},"buğday":{"ort":673.61,"medyan":634.16,"max":2323.46},"cekilen":{"ort":6875.15,"medyan":0,"max":119318.37000000004}}
+  süre dağılımı (sn): {"tick":249.9,"aday":19.6,"oturum":844.5,"cekim":9.3,"degismez":1.4}  eylem: {"claimAllHarvests":"23562/821","startExpedition":"45245/100975","claimWeeklyUbi":"1686/3042","claimOnboardingReward":"635/41764","carnivalCheer":"7003/0","upgradeWarehouse":"601/23466","marketSell":"24300/0","levelUp":"168/23640","repairAllTools":"6696/939","contributeToOtorite":"3019/3524","buySoldierUnit":"636/4327","stakeArmyForWorldBoss":"2544/0","setSoldierRow":"4697/0","fightDungeon":"5153/18","buyLotteryTickets":"447/0","cekim":"439/0","craftEquipment":"22/222","autoEquipBest":"13/209","buyTavernaAutomationBot":"570/0","marketBuy":"0/0","cevaplaIzinSorusu":"0/0"}
+
+✔ Bitti: 52 hafta, 130 hesap, 1130.3 sn. İhlaller: {"K3:kritik":9}
+   K3:kritik → hafta 43: ASTRA korunumu bozuk: bu hafta 12.93 (toplam fark 205.33; gürültü payı ±29.5) — sistemdeki 199419642.89, başlangıç 200000001.50, giren 0.00, çıkan 580563.94
+   K3:kritik → hafta 44: ASTRA korunumu bozuk: bu hafta 10.09 (toplam fark 215.42; gürültü payı ±27.1) — sistemdeki 199397759.06, başlangıç 200000001.50, giren 0.00, çıkan 602457.87
+   K3:kritik → hafta 45: ASTRA korunumu bozuk: bu hafta 11.52 (toplam fark 226.94; gürültü payı ±27.2) — sistemdeki 199369018.85, başlangıç 200000001.50, giren 0.00, çıkan 631209.58
+  rapor: C:\Users\AlphAvax\.gemini\antigravity-ide\scratch\adastra-realm\docs\v2\sim\taban_52h_t7.json

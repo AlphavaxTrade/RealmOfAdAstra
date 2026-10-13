@@ -1,0 +1,26 @@
+▶ Simülasyon: senaryo=balinalar, 26 hafta, 100 vatandaş + 30 aday, tohum=7
+  başlangıç: 2.0000e+8 ASTRA (kasalar 8.800e+7, pazar 1.000e+8, piyango 1.200e+7)
+  hafta  0: vatandaş 100 aktif 82 sırada 30 askıda 0 izinde 0 · kasalar 87.9 M · gösterge 0$/0.23$ · fark 0
+  hafta  4: vatandaş 100 aktif 94 sırada 25 askıda 5 izinde 0 · kasalar 87.2 M · gösterge 0$/0.2$ · fark -0.03
+  hafta  8: vatandaş 100 aktif 95 sırada 23 askıda 7 izinde 0 · kasalar 86.5 M · gösterge 0$/0.2$ · fark -0.01
+  hafta 12: vatandaş 100 aktif 89 sırada 19 askıda 11 izinde 1 · kasalar 85.9 M · gösterge 0$/0.2$ · fark -0.02
+  hafta 16: vatandaş 99 aktif 93 sırada 17 askıda 14 izinde 1 · kasalar 85.3 M · gösterge 0$/0.2$ · fark -0.05
+  hafta 20: vatandaş 98 aktif 94 sırada 17 askıda 15 izinde 1 · kasalar 84.8 M · gösterge 0$/0.2$ · fark -0.09
+  hafta 24: vatandaş 97 aktif 89 sırada 17 askıda 16 izinde 1 · kasalar 84.3 M · gösterge 0$/0.2$ · fark -0.06
+   ret claimAllHarvests (11746 ok / 515 ret): 515× Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# 
+   ret startExpedition (27903 ok / 45585 ret): 45064× Bu alanda zaten aktif bir sefer devam ediyor! | 105× ⚠️ Demir seferini başlatmak için yeteri kadar staminanız bul | 100× ⚠️ Taş seferini başlatmak için yeteri kadar staminanız bulun
+   ret claimOnboardingReward (631 ok / 19469 ret): 11079× Bu görevin ödülünü zaten aldın# | 8390× Bu görev henüz tamamlanmadı#
+   ret buySoldierUnit (635 ok / 2292 ret): 1202× Yetersiz ASTRA! # asker için # ASTRA gerekir# | 1090× 🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske
+   ret claimWeeklyUbi (1015 ok / 1342 ret): 1324× Haftalık temel gelir # seviyeden itibaren alınabilir# | 9× Bu haftaki Evrensel Temel Gelir (UBI) ödülünüzü zaten talep  | 7× Bu haftanın temel gelir kasası boş# Kasa# oyunda harcanan he
+   ret repairAllTools (3342 ok / 477 ret): 368× Tamir edilecek alet yok (Tüm aletler tam sağlam)# | 52× Yetersiz Odun! (# Odun gerekli# ambarında: #) | 51× ⚠️ Hesapta yeteri kadar ASTRA yok!
+   ret levelUp (215 ok / 11508 ret): 8679× Yetersiz Odun! (# Odun gerekli) | 1409× Yetersiz Buğday! (# Buğday gerekli) | 1065× Yetersiz XP! (#/# XP)
+   ret upgradeWarehouse (547 ok / 11400 ret): 9993× ⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır#  | 837× Yetersiz ASTRA! (# ASTRA gerekli) | 570× 🚀 Silonun # seviyesi ve üstü Universe alüminyumu ister; Uni
+   ret fightDungeon (2964 ok / 26 ret): 26× ⚠️ Yetersiz Stamina! Bu savaşa # askerle girmek için # ⚡ Sta
+   ret contributeToOtorite (1660 ok / 1654 ret): 1654× Bu hammadde için sıradaki seviyede yer kalmadı#
+   ret craftEquipment (5 ok / 100 ret): 97× Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli) | 3× Yetersiz Odun! (# Odun gerekli)
+   ret autoEquipBest (1 ok / 99 ret): 99× Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#
+  oyuncu durumu: {"oyuncu":102,"seviye":{"ort":3.04,"medyan":3,"max":7},"xp":{"ort":1228.87,"medyan":1193,"max":3750},"astra":{"ort":165087.07,"medyan":7483.8193056829505,"max":5053648.01082},"kilitli":{"ort":14362.5,"medyan":1779.0522087008928,"max":173190.13996688183},"asker":{"ort":6,"medyan":10,"max":10},"stamina":{"ort":549.91,"medyan":550,"max":1480},"odun":{"ort":688.62,"medyan":673,"max":2005},"buğday":{"ort":818.53,"medyan":700.4,"max":3896.76},"cekilen":{"ort":300051.43,"medyan":0,"max":5247172.589999999}}
+  süre dağılımı (sn): {"tick":172.6,"aday":11.6,"oturum":508.5,"cekim":6.3,"degismez":1.1}  eylem: {"claimAllHarvests":"11746/515","startExpedition":"27903/45585","claimOnboardingReward":"631/19469","buySoldierUnit":"635/2292","claimWeeklyUbi":"1015/1342","marketSell":"12051/0","repairAllTools":"3342/477","stakeArmyForWorldBoss":"1474/0","cekim":"279/0","levelUp":"215/11508","carnivalCheer":"3494/0","upgradeWarehouse":"547/11400","buyTavernaAutomationBot":"429/0","fightDungeon":"2964/26","contributeToOtorite":"1660/1654","buyLotteryTickets":"251/0","setSoldierRow":"2549/0","craftEquipment":"5/100","autoEquipBest":"1/99","spinCarnivalWheel":"0/0","marketBuy":"30/0","cevaplaIzinSorusu":"6/0"}
+
+✔ Bitti: 26 hafta, 130 hesap, 705 sn. İhlaller: {}
+  rapor: C:\Users\AlphAvax\.gemini\antigravity-ide\scratch\adastra-realm\docs\v2\sim\balinalar_26h_t7.json

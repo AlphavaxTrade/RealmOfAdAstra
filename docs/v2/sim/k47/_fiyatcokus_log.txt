@@ -1,0 +1,26 @@
+▶ Simülasyon: senaryo=fiyatcokus, 30 hafta, 100 vatandaş + 30 aday, tohum=7
+  başlangıç: 2.0000e+8 ASTRA (kasalar 8.800e+7, pazar 1.000e+8, piyango 1.200e+7)
+  hafta  0: vatandaş 100 aktif 81 sırada 30 askıda 0 izinde 0 · kasalar 88.0 M · gösterge 0$/0.05$ · fark 0
+  hafta  4: vatandaş 100 aktif 96 sırada 24 askıda 6 izinde 1 · kasalar 87.9 M · gösterge 0$/0.04$ · fark 0
+  hafta  8: vatandaş 100 aktif 94 sırada 22 askıda 8 izinde 0 · kasalar 84.1 M · gösterge 0$/0.03$ · fark 0
+  hafta 12: vatandaş 100 aktif 90 sırada 19 askıda 11 izinde 0 · kasalar 82.7 M · gösterge 0$/0.03$ · fark -0.02
+  hafta 16: vatandaş 99 aktif 91 sırada 17 askıda 14 izinde 0 · kasalar 82.0 M · gösterge 0$/0.02$ · fark -0.03
+  hafta 20: vatandaş 98 aktif 93 sırada 17 askıda 15 izinde 1 · kasalar 81.5 M · gösterge 0$/0.02$ · fark -0.01
+  hafta 24: vatandaş 97 aktif 92 sırada 17 askıda 16 izinde 1 · kasalar 80.9 M · gösterge 0$/0.02$ · fark -0.03
+  hafta 28: vatandaş 94 aktif 89 sırada 17 askıda 19 izinde 2 · kasalar 80.5 M · gösterge 0$/0.02$ · fark -0.03
+   ret claimAllHarvests (13854 ok / 265 ret): 265× Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# 
+   ret startExpedition (29556 ok / 55080 ret): 54855× Bu alanda zaten aktif bir sefer devam ediyor! | 44× ⚠️ Odun seferini başlatmak için yeteri kadar staminanız bulu | 38× ⚠️ Taş seferini başlatmak için yeteri kadar staminanız bulun
+   ret claimWeeklyUbi (413 ok / 2305 ret): 2300× Haftalık temel gelir # seviyeden itibaren alınabilir# | 5× İzindeyken haftalık temel gelir alınmaz; izin bitince yenide
+   ret upgradeWarehouse (523 ok / 13269 ret): 10494× ⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır#  | 2775× Yetersiz ASTRA! (# ASTRA gerekli)
+   ret levelUp (152 ok / 13378 ret): 8250× Yetersiz Odun! (# Odun gerekli) | 2565× Yetersiz Buğday! (# Buğday gerekli) | 1375× Yetersiz XP! (#/# XP)
+   ret repairAllTools (4029 ok / 339 ret): 262× Tamir edilecek alet yok (Tüm aletler tam sağlam)# | 60× ⚠️ Hesapta yeteri kadar ASTRA yok! | 16× Yetersiz Odun! (# Odun gerekli# ambarında: #)
+   ret claimOnboardingReward (630 ok / 22728 ret): 12310× Bu görevin ödülünü zaten aldın# | 10418× Bu görev henüz tamamlanmadı#
+   ret contributeToOtorite (1820 ok / 1547 ret): 1547× Bu hammadde için sıradaki seviyede yer kalmadı#
+   ret buySoldierUnit (286 ok / 1658 ret): 1411× Yetersiz ASTRA! # asker için # ASTRA gerekir# | 247× 🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske
+   ret craftEquipment (2 ok / 37 ret): 37× Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli)
+   ret autoEquipBest (1 ok / 36 ret): 36× Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#
+  oyuncu durumu: {"oyuncu":100,"seviye":{"ort":2.46,"medyan":2,"max":5},"xp":{"ort":887.8,"medyan":648,"max":2412},"astra":{"ort":10835.55,"medyan":329.0212998623568,"max":241098.689881},"kilitli":{"ort":9393.47,"medyan":159.52262816675415,"max":162401.55768337657},"asker":{"ort":2.83,"medyan":2,"max":10},"stamina":{"ort":400.81,"medyan":320,"max":780},"odun":{"ort":687,"medyan":590,"max":1853},"buğday":{"ort":655.24,"medyan":552,"max":3169.31},"cekilen":{"ort":1928.09,"medyan":0,"max":52759.530000000006}}
+  süre dağılımı (sn): {"tick":128.4,"aday":11.1,"oturum":441.8,"cekim":5.3,"degismez":0.7}  eylem: {"claimAllHarvests":"13854/265","startExpedition":"29556/55080","claimWeeklyUbi":"413/2305","upgradeWarehouse":"523/13269","marketSell":"13928/0","levelUp":"152/13378","repairAllTools":"4029/339","carnivalCheer":"4077/0","claimOnboardingReward":"630/22728","contributeToOtorite":"1820/1547","buySoldierUnit":"286/1658","stakeArmyForWorldBoss":"1009/0","fightDungeon":"1817/5","setSoldierRow":"1745/0","buyLotteryTickets":"141/0","buyTavernaAutomationBot":"170/0","craftEquipment":"2/37","autoEquipBest":"1/36","cevaplaIzinSorusu":"9/0","cekim":"96/0","spinCarnivalWheel":"0/0","marketBuy":"0/0"}
+
+✔ Bitti: 30 hafta, 130 hesap, 591.4 sn. İhlaller: {}
+  rapor: C:\Users\AlphAvax\.gemini\antigravity-ide\scratch\adastra-realm\docs\v2\sim\k47\fiyatcokus_30h_k47.json

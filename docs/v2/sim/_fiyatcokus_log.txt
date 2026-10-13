@@ -1,0 +1,26 @@
+▶ Simülasyon: senaryo=fiyatcokus, 30 hafta, 100 vatandaş + 30 aday, tohum=7
+  başlangıç: 2.0000e+8 ASTRA (kasalar 8.800e+7, pazar 1.000e+8, piyango 1.200e+7)
+  hafta  0: vatandaş 100 aktif 81 sırada 30 askıda 0 izinde 0 · kasalar 88.0 M · gösterge 0$/0.23$ · fark 0
+  hafta  4: vatandaş 100 aktif 96 sırada 24 askıda 6 izinde 1 · kasalar 87.9 M · gösterge 0$/0.19$ · fark 0
+  hafta  8: vatandaş 100 aktif 94 sırada 22 askıda 8 izinde 0 · kasalar 84.1 M · gösterge 0$/0.15$ · fark 0
+  hafta 12: vatandaş 100 aktif 91 sırada 19 askıda 11 izinde 0 · kasalar 82.8 M · gösterge 0$/0.14$ · fark -0.03
+  hafta 16: vatandaş 99 aktif 93 sırada 17 askıda 14 izinde 0 · kasalar 82.1 M · gösterge 0$/0.11$ · fark -0.01
+  hafta 20: vatandaş 98 aktif 96 sırada 17 askıda 15 izinde 1 · kasalar 81.5 M · gösterge 0$/0.1$ · fark -0.01
+  hafta 24: vatandaş 97 aktif 90 sırada 17 askıda 16 izinde 1 · kasalar 81.0 M · gösterge 0$/0.1$ · fark -0.04
+  hafta 28: vatandaş 94 aktif 93 sırada 17 askıda 19 izinde 0 · kasalar 80.6 M · gösterge 0$/0.1$ · fark -0.04
+   ret claimAllHarvests (13785 ok / 257 ret): 257× Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# 
+   ret startExpedition (29415 ok / 54759 ret): 54568× Bu alanda zaten aktif bir sefer devam ediyor! | 39× ⚠️ Odun seferini başlatmak için yeteri kadar staminanız bulu | 39× ⚠️ Taş seferini başlatmak için yeteri kadar staminanız bulun
+   ret claimWeeklyUbi (447 ok / 2256 ret): 2243× Haftalık temel gelir # seviyeden itibaren alınabilir# | 6× Bu haftanın temel gelir kasası boş# Kasa# oyunda harcanan he | 4× İzindeyken haftalık temel gelir alınmaz; izin bitince yenide
+   ret upgradeWarehouse (536 ok / 13181 ret): 10455× ⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır#  | 2726× Yetersiz ASTRA! (# ASTRA gerekli)
+   ret levelUp (153 ok / 13308 ret): 8209× Yetersiz Odun! (# Odun gerekli) | 2534× Yetersiz Buğday! (# Buğday gerekli) | 1366× Yetersiz XP! (#/# XP)
+   ret repairAllTools (4017 ok / 350 ret): 271× Tamir edilecek alet yok (Tüm aletler tam sağlam)# | 58× ⚠️ Hesapta yeteri kadar ASTRA yok! | 20× Yetersiz Odun! (# Odun gerekli# ambarında: #)
+   ret claimOnboardingReward (631 ok / 23161 ret): 12555× Bu görevin ödülünü zaten aldın# | 10606× Bu görev henüz tamamlanmadı#
+   ret contributeToOtorite (1858 ok / 1488 ret): 1488× Bu hammadde için sıradaki seviyede yer kalmadı#
+   ret buySoldierUnit (285 ok / 1590 ret): 1379× Yetersiz ASTRA! # asker için # ASTRA gerekir# | 211× 🏘️ Yeni asker için köylü gerekir: # köylü ile en çok # aske
+   ret craftEquipment (3 ok / 54 ret): 54× Yetersiz Teçhizat Parçası! (# Teçhizat Parçaları gerekli)
+   ret autoEquipBest (2 ok / 52 ret): 52× Dağıtılacak boşta teçhizat veya boş asker yuvası bulunamadı#
+  oyuncu durumu: {"oyuncu":100,"seviye":{"ort":2.47,"medyan":2,"max":5},"xp":{"ort":905.83,"medyan":648,"max":2412},"astra":{"ort":9954.26,"medyan":328.01123667788477,"max":213848.6018908563},"kilitli":{"ort":8767.78,"medyan":215.57943487536306,"max":176515.28838359797},"asker":{"ort":2.82,"medyan":2,"max":10},"stamina":{"ort":415.6,"medyan":320,"max":1004},"odun":{"ort":709.31,"medyan":682,"max":1979},"buğday":{"ort":710.65,"medyan":622.66,"max":2154.19},"cekilen":{"ort":1828.21,"medyan":0,"max":79416.26000000001}}
+  süre dağılımı (sn): {"tick":175.1,"aday":14.7,"oturum":595.7,"cekim":6.9,"degismez":1}  eylem: {"claimAllHarvests":"13785/257","startExpedition":"29415/54759","claimWeeklyUbi":"447/2256","upgradeWarehouse":"536/13181","marketSell":"13881/0","levelUp":"153/13308","repairAllTools":"4017/350","carnivalCheer":"4011/0","claimOnboardingReward":"631/23161","contributeToOtorite":"1858/1488","buySoldierUnit":"285/1590","fightDungeon":"1839/8","stakeArmyForWorldBoss":"942/0","setSoldierRow":"1647/0","buyLotteryTickets":"148/0","buyTavernaAutomationBot":"175/0","craftEquipment":"3/54","autoEquipBest":"2/52","cekim":"80/0","cevaplaIzinSorusu":"8/0","marketBuy":"0/0","spinCarnivalWheel":"0/0"}
+
+✔ Bitti: 30 hafta, 130 hesap, 798.1 sn. İhlaller: {}
+  rapor: C:\Users\AlphAvax\.gemini\antigravity-ide\scratch\adastra-realm\docs\v2\sim\fiyatcokus_30h_t7.json

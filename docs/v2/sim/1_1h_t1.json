@@ -1,0 +1,222 @@
+{
+ "durumOzeti": {
+  "oyuncu": 100,
+  "seviye": {
+   "ort": 1,
+   "medyan": 1,
+   "max": 1
+  },
+  "xp": {
+   "ort": 129,
+   "medyan": 180,
+   "max": 180
+  },
+  "astra": {
+   "ort": 2.61,
+   "medyan": 1.2533615065971677,
+   "max": 16.53677118610869
+  },
+  "kilitli": {
+   "ort": 1.73,
+   "medyan": 0.7975407282800931,
+   "max": 11.914954169359435
+  },
+  "asker": {
+   "ort": 0,
+   "medyan": 0,
+   "max": 0
+  },
+  "stamina": {
+   "ort": 95.06,
+   "medyan": 100,
+   "max": 100
+  },
+  "odun": {
+   "ort": 182,
+   "medyan": 195,
+   "max": 324
+  },
+  "buğday": {
+   "ort": 235.37,
+   "medyan": 289.11,
+   "max": 525
+  },
+  "cekilen": {
+   "ort": 0,
+   "medyan": 0,
+   "max": 0
+  }
+ },
+ "faz": {
+  "tick": 1.8,
+  "aday": 0,
+  "oturum": 7.3,
+  "cekim": 0.1,
+  "degismez": 0
+ },
+ "senaryo": "1",
+ "hafta": 1,
+ "vatandas": 100,
+ "aday": 1,
+ "tohum": 1,
+ "sureSn": 10.4,
+ "ihlalSayac": {},
+ "ihlalOrnek": {},
+ "sunucuHata": [],
+ "hataOrnekleri": [],
+ "haftalar": [
+  {
+   "hafta": 0,
+   "epoch": 2,
+   "vatandas": 100,
+   "aktif": 76,
+   "ekranAktif": 0,
+   "bekleyen": 1,
+   "askida": 0,
+   "sinir": 100,
+   "gosterge": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.24,
+    "weeks": 1
+   },
+   "izinde": 0,
+   "kasalar": 88000015,
+   "cekim": {
+    "cap": 21432705,
+    "talep": 0,
+    "gonderilen": 0
+   },
+   "ucretsizHavuz": {
+    "oyuncu": 0,
+    "toplam": 0
+   },
+   "yakilan": 8,
+   "kasaOmruAy": 999,
+   "seviye": {
+    "ucretsiz": 1,
+    "orta": 1,
+    "balina": 1
+   },
+   "korunumFarki": 0,
+   "ihlal": []
+  }
+ ],
+ "eylemToplam": {
+  "claimAllHarvests": {
+   "ok": 370,
+   "red": 86,
+   "http": 0,
+   "neden": {
+    "Toplanacak hazır bir mahsul veya biriken kaynak bulunamadı# ": 86
+   }
+  },
+  "startExpedition": {
+   "ok": 2027,
+   "red": 709,
+   "http": 0,
+   "neden": {
+    "Bu alanda zaten aktif bir sefer devam ediyor!": 709
+   }
+  },
+  "claimOnboardingReward": {
+   "ok": 117,
+   "red": 60,
+   "http": 0,
+   "neden": {
+    "Bu görev henüz tamamlanmadı#": 42,
+    "Bu görevin ödülünü zaten aldın#": 18
+   }
+  },
+  "claimWeeklyUbi": {
+   "ok": 0,
+   "red": 84,
+   "http": 0,
+   "neden": {
+    "Haftalık temel gelir # seviyeden itibaren alınabilir#": 84
+   }
+  },
+  "upgradeWarehouse": {
+   "ok": 0,
+   "red": 270,
+   "http": 0,
+   "neden": {
+    "⚠️ Silo yükseltilemez! Tüm depolar en az %# dolu olmalıdır# ": 140,
+    "Yetersiz ASTRA! (# ASTRA gerekli)": 130
+   }
+  },
+  "carnivalCheer": {
+   "ok": 121,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "marketSell": {
+   "ok": 265,
+   "red": 0,
+   "http": 0,
+   "neden": {}
+  },
+  "levelUp": {
+   "ok": 0,
+   "red": 218,
+   "http": 0,
+   "neden": {
+    "Yetersiz Buğday! (# Buğday gerekli)": 119,
+    "Yetersiz Demir! (# Demir gerekli)": 6,
+    "Yetersiz Odun! (# Odun gerekli)": 37,
+    "Yetersiz AdAstra! (# ASTRA gerekli)": 56
+   }
+  },
+  "repairAllTools": {
+   "ok": 72,
+   "red": 69,
+   "http": 0,
+   "neden": {
+    "⚠️ Hesapta yeteri kadar ASTRA yok!": 46,
+    "Tamir edilecek alet yok (Tüm aletler tam sağlam)#": 23
+   }
+  },
+  "contributeToOtorite": {
+   "ok": 0,
+   "red": 10,
+   "http": 0,
+   "neden": {
+    "Bu hammadde için sıradaki seviyede yer kalmadı#": 10
+   }
+  }
+ },
+ "son": {
+  "vatandas": {
+   "limit": 100,
+   "citizens": 100,
+   "active": 27,
+   "izinde": 0,
+   "waiting": 1,
+   "suspended": 0,
+   "tier": 0,
+   "threshold": 50,
+   "indicator": {
+    "usdPerPlayerMonth": 0,
+    "withdrawableUsdPerPlayerMonth": 0.24,
+    "weeks": 1
+   },
+   "lastGrowthAt": 0,
+   "growthLocked": true,
+   "inviteHours": 72,
+   "izinYillikGun": 30
+  },
+  "foto": {
+   "oyuncuBakiye": 263.17048170981104,
+   "bekleyenCekim": 0,
+   "piyangoBekleyen": 0,
+   "bossBekleyen": 0,
+   "kasalar": 88000019.72480565,
+   "amm": 99999693.09267187,
+   "piyango": 12000000,
+   "ubi": 10.934288793754067,
+   "bozuk": [],
+   "toplam": 199999986.92224804
+  },
+  "gonderilen": 2
+ }
+}
