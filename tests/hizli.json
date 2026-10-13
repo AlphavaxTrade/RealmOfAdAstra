@@ -37,6 +37,7 @@
   "test_v3_palet.mjs",
   "test_pazar_hizli_al.mjs",
   "test_zindan_plan.mjs",
+  "test_zindan_ozet.mjs",
   "test_harita_ortak.mjs",
   "test_demirhane_onarim_hedefi.mjs",
   "test_arayuz_parcalari.mjs",

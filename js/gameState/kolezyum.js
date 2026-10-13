@@ -4,6 +4,9 @@
 import { GAME_CONFIG } from '../config.js';
 import { treasury } from '../treasury.js';
 import { createUnit, simulateBattle } from '../combat.js';
+import { getDungeonEntry } from '../bestiary.js';
+import { PVP_RULES } from '../economy/pvp.js';
+import { cleanName } from './ortak.js';
 
 // Lig kademesine göre kalibre edilmiş hazır rakip: [saldırı, can, simge]
 const RAKIP_TABLOSU = {
@@ -177,5 +180,46 @@ export const kolezyumYontemleri = {
       colosseumStats: this.state.colosseumStats,
       tier: kademe
     };
+  },
+
+  // ── Gerçek rakipler (PvP): oyuncunun kendi kısmı; eşleşme ve maç sunucuda (server/arena.js) ──
+  isSoldierPvpLocked(idx) {
+    const kuyruk = this.state.pvpQueue;
+    return !!(kuyruk && Array.isArray(kuyruk.indices) && kuyruk.indices.includes(Number(idx)));
+  },
+
+  // Maça çıkacak takımın görüntüsü (tam canla; maç askerin canını azaltmaz)
+  buildPvpTeam(mode, selectedIndices) {
+    const kural = PVP_RULES.modes[mode];
+    if (!kural) return { success: false, message: 'Geçersiz maç türü.' };
+    if (this.state.pvpQueue) return { success: false, message: 'Zaten maç arıyorsun.' };
+    if (this.isArmyStakedInWorldBoss()) return { success: false, message: '🔒 Ordun World Boss savaşına kilitli. Önce kilidi aç.' };
+    const askerler = this.state.soldierUnits || [];
+    const sira = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))].filter((i) => Number.isInteger(i) && askerler[i]);
+    if (sira.length !== kural.size) return { success: false, message: `${mode} maçı için ${kural.size} asker seçmelisin.` };
+    const birimler = this.buildDungeonBattleUnits(getDungeonEntry(1), sira).allies.map((u) => ({ ...u, hp: u.maxHp, name: cleanName(u.name) || 'Asker' }));
+    return { success: true, mode, indices: sira, units: JSON.parse(JSON.stringify(birimler)), name: cleanName(askerler[sira[0]].name) || 'Asker' };
+  },
+
+  // Giriş bedeli: hazır rakip maçıyla aynı (anahtar + stamina + günlük hak)
+  payPvpEntry() {
+    const durum = this.getColosseumEntryStatus();
+    if (durum.blockReason) return { success: false, message: '⛔ ' + durum.blockReason };
+    const cfg = GAME_CONFIG.COLOSSEUM;
+    this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
+    this.burnItem('keys', cfg.ENTRY_KEY_COST);
+    this.state.stamina -= cfg.ENTRY_STAMINA_COST;
+    this.getDailyCounters().arenaMatches += 1;
+    return { success: true };
+  },
+
+  // Sıradan çıkınca bedel iade edilir
+  refundPvpEntry() {
+    const cfg = GAME_CONFIG.COLOSSEUM;
+    this.state.arenaKeys = (this.state.arenaKeys || 0) + cfg.ENTRY_KEY_COST;
+    this.burnItem('keys', -cfg.ENTRY_KEY_COST);
+    this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + cfg.ENTRY_STAMINA_COST);
+    const sayac = this.getDailyCounters();
+    sayac.arenaMatches = Math.max(0, (sayac.arenaMatches || 0) - 1);
   }
 };

@@ -1,8 +1,8 @@
-// Realm of AdAstra — GameStateManager yöntemleri: zindan ganimeti, koleksiyon eserleri, Pandora kutusu, Genesis NFT, Arena anahtarı
+// Realm of AdAstra — GameStateManager yöntemleri: koleksiyon eserleri, Pandora kutusu, Genesis NFT, Arena anahtarı
+// (zindan ganimetinin dağıtımı js/gameState/zindan.js içindedir)
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
-import { treasury } from '../treasury.js';
 
 // Pandora kutusunun nadirlik zarı: [üst sınır, nadirlik]; zar 0-1 arası tek sayıdır
 const NADIRLIK_ESIKLERI = [[0.05, 'legendary'], [0.20, 'epic'], [0.50, 'rare']];
@@ -11,76 +11,6 @@ const NADIRLIK_ROZETI = { legendary: '💎 EFSANEVİ', epic: '🟣 EPİK', rare:
 const rastgeleSec = (liste) => liste[Math.floor(Math.random() * liste.length)];
 
 export const kesifYontemleri = {
-  // Zindan canavarı yenildiğinde deneyim, ASTRA (zindan kasasından) ve şansa bağlı ganimet dağıtır.
-  // rewarded=false: antrenman girişi, yalnızca deneyim.
-  addDungeonXpAndDrops(level, isBoss = false, { rewarded = true } = {}) {
-    const seviye = Math.max(1, Math.min(18, level));
-    const taban = this.getDungeonBaseReward(seviye, isBoss);
-    const buyukBoss = taban.isMajorBoss;
-    // Yalnız kat 3 (Sv.9) ve kat 6 (Sv.18) bosslarında düşme şansları çarpılır
-    const bossCarpani = buyukBoss ? (GAME_CONFIG.BOSS_DROP_MULTIPLIER || 2.0) : 1.0;
-
-    this.addXp(taban.xp);
-    if (!rewarded) {
-      this.saveState();
-      return { success: true, trainingOnly: true, xpGained: taban.xp, adAstraGained: 0, fragmentsGained: 0, boxGained: 0, artifactDiscovered: null, scrollGained: null };
-    }
-
-    // Kasa bir günde en fazla bakiyesinin %1'ini öder; çekilen tam miktar oyuncuya gider (yuvarlama yok)
-    const gun = this.getDungeonDayStatus();
-    const hedef = Math.min(taban.ada, gun.budgetLeft);
-    let kazanilanAstra = 0;
-    let butceDoldu = false;
-    if (hedef > 0) {
-      const cekim = treasury && treasury.withdraw ? treasury.withdraw('dungeon', hedef) : { granted: hedef };
-      kazanilanAstra = Math.max(0, cekim.granted != null ? cekim.granted : hedef);
-      butceDoldu = !!cekim.budgetFull;
-      this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + kazanilanAstra;
-    }
-    const butceKisti = kazanilanAstra < taban.ada;
-    this.state.adAstraBalance += kazanilanAstra;
-    this._onAdaEarned(kazanilanAstra);
-
-    const hesapSeviyesi = this.state.level || 1;
-
-    let parca = 0;
-    if (Math.random() < Math.min(0.95, this.getFragmentDropRate(hesapSeviyesi) * bossCarpani)) {
-      parca = buyukBoss ? 3 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2);
-      this.state.inventory.fragments = (this.state.inventory.fragments || 0) + parca;
-    }
-
-    let kutu = 0;
-    if (Math.random() < Math.min(0.5, this.getBoxDropRate(hesapSeviyesi) * bossCarpani)) {
-      kutu = 1;
-      this.state.lockedBoxes = (this.state.lockedBoxes || 0) + 1;
-    }
-
-    let eser = null;
-    if (buyukBoss && Math.random() < Math.min(1, GAME_CONFIG.ARTIFACT_BASE_RATE * seviye * 6)) {
-      eser = this.discoverArtifact(seviye);
-    }
-
-    // Parşömen: boss %40, normal canavar %7; %60 iyileştirme, %40 stamina
-    let parsomen = null;
-    if (Math.random() < (buyukBoss ? 0.40 : 0.07)) {
-      const iyilestirme = Math.random() < 0.60;
-      const tur = iyilestirme ? 'scroll_heal' : 'scroll_stamina';
-      this.state.inventory[tur] = (this.state.inventory[tur] || 0) + 1;
-      parsomen = {
-        type: tur,
-        name: iyilestirme ? 'Ordu İyileştirme Parşömeni (+10 HP)' : '100 Stamina Doldurma Parşömeni',
-        icon: iyilestirme ? '📜' : '⚡',
-        image: iyilestirme ? 'assets/scroll_heal.jpg' : 'assets/scroll_stamina.jpg'
-      };
-    }
-
-    this.saveState();
-    return {
-      xpGained: taban.xp, adAstraGained: kazanilanAstra, fragmentsGained: parca, boxGained: kutu, artifactDiscovered: eser,
-      scrollGained: parsomen, isBoss: buyukBoss, budgetCapped: butceKisti, budgetFull: butceDoldu, baseAda: taban.ada
-    };
-  },
-
   // Henüz keşfedilmemiş bir eseri açar; varsa bu zindan seviyesine ait olanı öncelikler
   discoverArtifact(preferredLevel = null) {
     const bulunmamis = this.state.collectionArtifacts.filter(a => !a.discovered);
