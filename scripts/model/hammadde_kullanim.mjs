@@ -99,9 +99,12 @@ export function haftalikOlcum(seviye) {
     topla(t, gs.getHouseCost(n), 0.5);
   });
 
-  // 7) Silo yükseltmesi: üç haftada bir; bedel = mevcut kapasitenin yarısı (altı hammadde). Silo seviyesi ≈ 1 + seviye/3
+  // 7) Silo yükseltmesi: üç haftada bir; bedel = mevcut kapasitenin yarısı (altı hammadde). Silo seviyesi ≈ 1 + seviye/3.
+  //    En üst (ulaşılabilir) silodan sonra yükseltme yoktur: Universe öncesi tavan 12 (13 Ekim 2026 denetimi EK-09: model
+  //    eskiden Sv.33'ten sonra 13-17. silo yükseltmesi sayıyordu, oysa kapalıydı).
   kalem('silo yükseltme', (t) => {
     const siloSeviyesi = Math.min(17, 1 + Math.floor(seviye / 3));
+    if (siloSeviyesi >= gs.getWarehouseMaxLevel()) return;
     const kap = gs.getWarehouseCapacity(siloSeviyesi);
     for (const k of K) t[k] += Math.floor((kap[k] || 0) / 2) / 3;
   });
@@ -123,7 +126,13 @@ export function haftalikOlcum(seviye) {
   for (const t of Object.values(kalemler)) topla(toplam, t);
   const oranUretim = Object.fromEntries(K.map((k) => [k, toplam[k] / Math.max(1, uretim[k])]));
   const oranHak = Object.fromEntries(K.map((k) => [k, toplam[k] / Math.max(1, hak[k])]));
-  return { seviye, uretim, hak, fiyat, kalemler, toplam, oranUretim, oranHak };
+  // Hak üzerinden bakış (denetim EK-09): talep / hak > 1 ise başlangıç kotası yetmez, termostat kotayı haftada en çok %10
+  // artırarak talebe yetişir. Denge için gereken hafta sayısı = ln(talep/hak) / ln(1,10); talep / tam üretim > 1 ise denge hiç kurulmaz.
+  const haftaDenge = Object.fromEntries(K.map((k) => [k, oranHak[k] <= 1 ? 0 : Math.log(oranHak[k]) / Math.log(1.10)]));
+  // Her kalemin ham (silo tavanına kırpılmamış) seviye bedeli: bandın altında kalan hammaddenin nedeni burada aranır
+  const r = gs.getNextLevelRequirement();
+  const siloKirpilan = Object.keys(r.uncappedCosts || {});
+  return { seviye, uretim, hak, fiyat, kalemler, toplam, oranUretim, oranHak, haftaDenge, siloKirpilan };
 }
 
 export const SEVIYELER = [5, 10, 20, 40];
@@ -144,6 +153,8 @@ if (process.argv[1] && process.argv[1].endsWith('hammadde_kullanim.mjs')) {
       console.log('üretim hakkı'.padEnd(20) + K.map((k) => f(s.hak[k])).join(''));
       console.log('talep / üretim'.padEnd(20) + K.map((k) => p(s.oranUretim[k]).padStart(8)).join(''));
       console.log('talep / hak'.padEnd(20) + K.map((k) => p(s.oranHak[k]).padStart(8)).join(''));
+      console.log('denge (hafta)'.padEnd(20) + K.map((k) => s.haftaDenge[k].toFixed(0).padStart(8)).join(''));
+      if (s.siloKirpilan.length) console.log('seviye bedeli siloya sığdırılan: ' + s.siloKirpilan.join(', '));
     }
   }
 }

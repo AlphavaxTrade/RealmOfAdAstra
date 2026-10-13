@@ -3,6 +3,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
+import { treasury } from '../treasury.js';
 import { RES_KEYS, zeroRes, round3 } from './ortak.js';
 
 export const ekonomiYontemleri = {
@@ -84,19 +85,72 @@ export const ekonomiYontemleri = {
     const v = Number(amount) || 0;
     if (!(v > 0)) return;
     const L = GAME_CONFIG.LOCKED_BALANCE || {};
-    this.state.lockedAda = (Number(this.state.lockedAda) || 0) + v * (1 - (L.FREE_SHARE ?? 0.2));
+    const serbestPay = L.FREE_SHARE ?? 0.2;
+    let kilitli = v * (1 - serbestPay);
     if (saleOf) {
       // Aynı hammaddeyi pazardan alıp geri satmak puan getirmez: önce alım tutarı düşülür
-      const credit = this._contribution().buyCredit;
+      const c = this._contribution();
+      const credit = c.buyCredit;
       const fromCredit = Math.min(credit[saleOf] || 0, v);
       credit[saleOf] = (credit[saleOf] || 0) - fromCredit;
+      // Kilitli ASTRA ile alınmış hammaddenin geri satışı: o kısım yine tamamen kilitli döner (kilit al-sat ile aklanamaz;
+      // 13 Ekim 2026 denetimi EK-04). Serbest ASTRA ile alınmışsa lockCredit yoktur, olağan %80 kilitli kuralı işler.
+      const kc = c.lockCredit;
+      if (kc && kc[saleOf] > 0 && fromCredit > 0) {
+        const geri = Math.min(kc[saleOf], fromCredit);
+        kc[saleOf] -= geri;
+        kilitli += geri * serbestPay;
+      }
       this._addContribution((v - fromCredit) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5));
     }
+    this.state.lockedAda = (Number(this.state.lockedAda) || 0) + kilitli;
+  },
+
+  // Kasadan oyuncuya ödül çekimi, haftalık KİŞİ payı tavanıyla (treasury.getPersonWeekCap). Tavan yoksa doğrudan treasury.withdraw.
+  // Oyuncunun bu haftaki çektiği state.kasaHaftasi içinde tutulur; hafta kimliği (treasury weekSeq) değişince sıfırlanır.
+  _kasaCekKisi(poolId, istenen) {
+    const T = treasury;
+    const cap = (T && T.getPersonWeekCap) ? T.getPersonWeekCap(poolId) : Infinity;
+    if (!(cap < Infinity)) return T.withdraw(poolId, istenen);
+    let h = this.state.kasaHaftasi;
+    const seq = T.state.weekSeq || 0;
+    if (!h || typeof h !== 'object' || h.seq !== seq) h = this.state.kasaHaftasi = { seq };
+    const kalan = Math.max(0, cap - (Number(h[poolId]) || 0));
+    if (kalan <= 0) return { granted: 0, requested: istenen, scaleFactor: 0, depleted: true, budgetFull: true, personCapped: true };
+    const r = T.withdraw(poolId, Math.min(istenen, kalan));
+    if (r.granted > 0) h[poolId] = (Number(h[poolId]) || 0) + r.granted;
+    return { ...r, requested: istenen, personCapped: istenen > kalan };
+  },
+
+  // Tam sayı ödül için aynısı (treasury.withdrawWhole gibi): kesirli artık kasaya iade edilir, kişi sayacından da düşülür.
+  _kasaCekKisiTam(poolId, istenen) {
+    const r = this._kasaCekKisi(poolId, istenen);
+    if (!(r.granted > 0)) return r;
+    const tam = Math.floor(r.granted + 1e-9);
+    const artik = r.granted - tam;
+    if (artik > 1e-12) {
+      treasury.refund(poolId, artik);
+      const h = this.state.kasaHaftasi;
+      if (h && h[poolId]) h[poolId] = Math.max(0, h[poolId] - artik);
+    }
+    return { ...r, granted: tam, scaleFactor: r.requested > 0 ? tam / r.requested : 0 };
+  },
+
+  // Pazardan hammadde alımında sistemin gerçekten aldığı kısım (ASTRA cinsinden): komisyon + yakılan malın değeri.
+  // Kilit açma payı yalnız bu tutar üzerinden işler (al-sat döngüsü kilidi açamasın).
+  pazarSistemPayi(sonuc) {
+    if (!sonuc) return 0;
+    const komisyon = Number(sonuc.fee) || 0;
+    const yakilanMal = Number(sonuc.resourceBurnFee) || 0;
+    const aldigi = Number(sonuc.resourceReceived) || 0;
+    const birim = (aldigi + yakilanMal) > 0 ? (Number(sonuc.netCost) || 0) / (aldigi + yakilanMal) : 0;
+    return Math.max(0, komisyon + yakilanMal * birim);
   },
 
   // Oyunda harcanan ASTRA: önce kilitli kısım kullanılır, üstüne harcananın UNLOCK_ON_SPEND'i kadar kilit açılır.
-  // boughtResource: pazardan hammadde alımı — puan vermez, aynı hammaddenin sonraki satışından düşülür.
-  _onAdaSpent(amount, { boughtResource = null } = {}) {
+  // boughtResource: pazardan hammadde alımı — puan vermez, aynı hammaddenin sonraki satışından düşülür; kilit açma payı
+  // yalnız sinkPart (komisyon + yakılan mal, bkz. pazarSistemPayi) üzerinden işler. Verilmezse config oranlarından türetilir.
+  _onAdaSpent(amount, { boughtResource = null, sinkPart = null } = {}) {
     let v = Number(amount) || 0;
     if (!(v > 0)) return;
     const L = GAME_CONFIG.LOCKED_BALANCE || {};
@@ -104,16 +158,31 @@ export const ekonomiYontemleri = {
     const spon = Math.min(Math.max(0, Number(this.state.sponsorAda) || 0), v);
     if (spon > 0) { this.state.sponsorAda = Math.max(0, (Number(this.state.sponsorAda) || 0) - spon); v -= spon; }
     let locked = Math.max(0, Number(this.state.lockedAda) || 0);
+    let kilitliOdenen = 0;
     if (v > 0) {
-      locked -= Math.min(locked, v);
-      locked -= Math.min(locked, v * (L.UNLOCK_ON_SPEND ?? 0.2));
+      kilitliOdenen = Math.min(locked, v);
+      locked -= kilitliOdenen;
+      // Kilit açma payı: sıradan harcamada harcananın tamamı; pazardan hammadde alımında yalnız sistemin aldığı kısım.
+      // Eskiden alımın tamamı üzerinden açılıyordu: al-sat döngüsü %20 maliyetle kilidi açıyordu (12 turda 481 ASTRA
+      // kayıpla 2.401 serbest). İlan pazarındaki S2b düzeltmesiyle aynı mantık (docs/v2/TARAMA_2026-10.md).
+      let acmaTabani = v;
+      if (boughtResource) {
+        const oran = (GAME_CONFIG.AMM_FEE_RATE ?? 0.02) / (1 + (GAME_CONFIG.AMM_FEE_RATE ?? 0.02)) + (GAME_CONFIG.AMM_RESOURCE_FEE_RATE ?? 0.02);
+        acmaTabani = Math.min(v, sinkPart != null ? Math.max(0, Number(sinkPart) || 0) : v * oran);
+      }
+      locked -= Math.min(locked, acmaTabani * (L.UNLOCK_ON_SPEND ?? 0.2));
     }
     const bal = Math.max(0, Number(this.state.adAstraBalance) || 0);
     this.state.sponsorAda = Math.min(Math.max(0, Number(this.state.sponsorAda) || 0), bal);
     this.state.lockedAda = Math.min(locked, Math.max(0, bal - this.state.sponsorAda));
     if (boughtResource) {
-      const credit = this._contribution().buyCredit;
+      const c = this._contribution();
+      const credit = c.buyCredit;
       credit[boughtResource] = (credit[boughtResource] || 0) + v;
+      if (kilitliOdenen > 0) {                       // kilitli ödenen kısım geri satışta yine kilitli döner (_onAdaEarned)
+        if (!c.lockCredit) c.lockCredit = {};
+        c.lockCredit[boughtResource] = (c.lockCredit[boughtResource] || 0) + kilitliOdenen;
+      }
     } else {
       this._addContribution(v * (GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
     }

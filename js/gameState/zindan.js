@@ -34,6 +34,18 @@ export const zindanYontemleri = {
     return Math.max(0.01, round3(this.getDungeonBaseReward(level, isBoss).ada * oran));
   },
 
+  // Günlük kişi ASTRA tavanı (13 Ekim 2026 denetimi EK-05, ayrıntı config DUNGEON.RETURN_SHARE): orduya harcananın
+  // RETURN_SHARE'inin PAYBACK_DAYS güne yayılmış hâli; en az, ulaşılmış en değerli katta DAILY_RUNS ödüllü girişin değeri.
+  getDungeonDailyCap() {
+    const cfg = GAME_CONFIG.DUNGEON || {};
+    const harcanan = Number(this.state.fatih && this.state.fatih.harcanan) || 0;
+    const yol = harcanan * (cfg.RETURN_SHARE ?? 0.7) / Math.max(1, cfg.PAYBACK_DAYS ?? 93);
+    const acik = Math.min(UST_SEVIYE, Math.max(1, Math.floor(Number(this.state.dungeonProgress) || 1)));
+    let enIyi = 0;
+    for (let k = 1; k <= acik; k++) enIyi = Math.max(enIyi, this.getDungeonBaseReward(k, buyukBossMu(getDungeonEntry(k), k)).ada);
+    return round3(Math.max((cfg.DAILY_RUNS || 5) * enIyi, yol));
+  },
+
   // ── 2. Günlük haklar ve kasa bütçesi ─────────────────────────────────────
   // Bugünkü haklar: ödüllü giriş sayısı, toplam giriş, silah aşınması, kasanın günlük ödeme bütçesi
   getDungeonDayStatus() {
@@ -49,7 +61,11 @@ export const zindanYontemleri = {
     // Eski kayıtlarda toplam giriş sayacı yoktu: ödüllü + harçlı girişlerden türetilir
     const bugunGiris = sayac.dungeonEntries != null ? sayac.dungeonEntries : odulluKullanilan + (sayac.dungeonPaidEntries || 0);
     const ilkGiris = bugunGiris === 0;
+    // Günlük ödeme bütçesi: kasanın günlük payı ile kişi tavanından küçüğü
+    const kisiTavani = this.getDungeonDailyCap();
+    const butce = Math.min(sayac.dungeonBudget, kisiTavani);
     return {
+      personalCap: kisiTavani,
       freeTotal: odulluToplam,
       freeUsed: odulluKullanilan,
       freeLeft: Math.max(0, odulluToplam - odulluKullanilan),
@@ -59,8 +75,8 @@ export const zindanYontemleri = {
       nextIsFirstEntry: ilkGiris,
       nextWeaponWear: !(cfg.FIRST_ENTRY_NO_WEAR !== false && ilkGiris),
       nextNeedsFee: odulluKullanilan >= odulluToplam,
-      budget: sayac.dungeonBudget,
-      budgetLeft: Math.max(0, sayac.dungeonBudget - (sayac.dungeonPaid || 0))
+      budget: butce,
+      budgetLeft: Math.max(0, butce - (sayac.dungeonPaid || 0))
     };
   },
 
@@ -74,7 +90,8 @@ export const zindanYontemleri = {
       staminaCost: staminaBedeli,
       staminaOk: simdiki >= staminaBedeli,
       staminaShortfall: Math.max(0, staminaBedeli - simdiki),
-      fee: gun.nextNeedsFee ? this.getDungeonGateFee(level, isBoss) : 0
+      // Günlük ödeme tavanı dolmuşsa harç alınmaz: ödül yok, giriş antrenmandır
+      fee: gun.nextNeedsFee && gun.budgetLeft > 0 ? this.getDungeonGateFee(level, isBoss) : 0
     };
   },
 
@@ -82,7 +99,7 @@ export const zindanYontemleri = {
   beginDungeonEntry(level, isBoss = false, { payGateFee = false, soldierCount = 1 } = {}) {
     const kosul = this.getDungeonEntryTerms(level, isBoss, soldierCount);
     const sayac = this.state.dailyCounters;
-    const harcOdenecek = kosul.nextNeedsFee && payGateFee;
+    const harcOdenecek = kosul.nextNeedsFee && payGateFee && kosul.fee > 0;
     if (harcOdenecek && (this.state.adAstraBalance || 0) < kosul.fee) {
       return { success: false, rewarded: false, fee: kosul.fee, message: `Kapı harcı için ${kosul.fee} ASTRA gerekli.` };
     }
@@ -226,7 +243,7 @@ export const zindanYontemleri = {
     let kazanilanAstra = 0;
     let butceDoldu = false;
     if (hedef > 0) {
-      const cekim = treasury && treasury.withdraw ? treasury.withdraw('dungeon', hedef) : { granted: hedef };
+      const cekim = treasury && treasury.withdraw ? this._kasaCekKisi('dungeon', hedef) : { granted: hedef };
       kazanilanAstra = Math.max(0, cekim.granted != null ? cekim.granted : hedef);
       butceDoldu = !!cekim.budgetFull;
       this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + kazanilanAstra;

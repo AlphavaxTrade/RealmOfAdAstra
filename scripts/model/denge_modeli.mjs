@@ -6,14 +6,36 @@
 // Kullanım: node scripts/model/denge_modeli.mjs N=200 [weeks=52 fiyat=sabit|x3|yarim qpp=0.4 pazar=100e6 ...] [grid=1] [out=dosya.json]
 // Bu bir öneri aracıdır; oyuna bağlı değildir. Kesin oyun sayıları R8'de bu modelden türetilir.
 // ============================================================================
+// 13 Ekim 2026 denetimi EK-09: sabitler artık js/config.js GAME_CONFIG'ten okunur (eskiden v1 değerleri elle yazılıydı: üretim
+// hızı 3,3 kat, fiyat listesi 100 kat büyüktü; Otorite "çelik payı" ASTRA ile ödeniyordu; seviye bedeli ve süresi uydurmaydı).
+// Seviye bedeli ve XP, gerçek oyun motorundan (getNextLevelRequirement) çekilir; kural değişince model kendiliğinden güncellenir.
 import fs from 'fs';
+import { GAME_CONFIG as C } from '../../js/config.js';
+const depo = new Map();
+globalThis.localStorage = globalThis.localStorage || { getItem: (k) => (depo.has(k) ? depo.get(k) : null), setItem: (k, v) => { depo.set(k, String(v)); }, removeItem: (k) => { depo.delete(k); } };
+const { GameStateManager } = await import('../../js/gameState.js');
 const A = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 
 const RES = ['bugday', 'tas', 'odun', 'komur', 'demir', 'ot'];
-const TABAN = { bugday: 1800, tas: 1200, odun: 1080, komur: 900, demir: 720, ot: 240 };   // birim/saat (R2)
-const P0BASE = { bugday: 0.90, tas: 1.20, odun: 2.50, komur: 1.80, demir: 4.00, ot: 8.00 };   // ASTRA/birim bugünkü liste (R2); fiyatOlcek ile ölçeklenir
+const ANAHTAR = { bugday: 'wheat', tas: 'stone', odun: 'wood', komur: 'coal', demir: 'iron', ot: 'herb' };   // model adı -> oyun adı
+const TABAN = Object.fromEntries(RES.map(r => [r, C.BASE_PRODUCTION[ANAHTAR[r]] * 60]));                  // birim/saat (BASE_PRODUCTION dakika başına)
+const P0BASE = Object.fromEntries(RES.map(r => [r, C.AMM_CORRIDORS[ANAHTAR[r]].defaultPriceAda]));       // ASTRA/birim açılış fiyatı (config)
 const TYPES = ['f2p', 'mid', 'whale'];
+const KORIDOR = C.AMM_CORRIDORS.wheat;                                                                     // koridor oranı tüm hammaddelerde aynı (0,5-2,5)
+const OT = C.OTORITE;
+const WB = C.TREASURY_WEEKLY_BUDGET.RATES;
+const SEED = C.TREASURY_SEED;
+const ALLOC = C.TREASURY_ALLOCATION;
+
+// Seviye tablosu gerçek motordan: [seviye] -> { adAstra, xp, costs } (fiyat çarpanı 1, silo tavanı kuralı dahil)
+const LEVEL = (() => {
+  const gs = new GameStateManager();
+  const t = [null];
+  for (let L = 1; L <= 80; L++) { gs.state.level = L; const r = gs.getNextLevelRequirement(); t.push({ adAstra: r.adAstra, xp: r.xp, costs: Object.fromEntries(RES.map(k => [k, r.costs[ANAHTAR[k]] || 0])) }); }
+  return t;
+})();
+const XP_GUNLUK = 6 * 35 * 24;   // altı alan kesintisiz: saatte alan başına 35 XP (gelisim.js GUNLUK_XP_ARZI'nın altı alanlı hâli)
 
 export function defaults() {
   return {
@@ -25,21 +47,22 @@ export function defaults() {
     kota: num('kota', 1),            // yönetici çarpanı (ana ayar kolu)
     kotaModu: A.kotaModu || 'termostat',   // sabit | termostat (fiyat açılışın üstündeyse kota %10 artar, altındaysa azalır; kişi başı en az qppMin)
     termoAdim: num('termoAdim', 0.10), termoHedef: num('termoHedef', 1.0), qppMin: num('qppMin', 0.05), qppMax: num('qppMax', 1.0),   // kişi başı kota: en az tam alanın %5'i, en çok tamamı
-    otoriteTaban: num('otoriteTaban', 2e6), otoriteKat: 1.4, otoriteAstraBirim: 0.05,   // Otorite 1. sv 2 M birim, her sv ×1,4; çelik payı %30 × 0,05 ASTRA/birim Konsey kasasından
+    otoriteTaban: num('otoriteTaban', OT.BASE_UNITS), otoriteKat: OT.LEVEL_MULT,   // Otorite 1. sv 2 M birim, her sv ×1,4; karışımın tamamı hammadde (çelik payı kömürdür, ASTRA değil)
     hazirlikToplam: num('hazirlikToplam', 10e6),   // Hazırlık Deposu toplam vaadi (ASTRA değeri, P0 ile) — Universe rezervinin yarısı
     hakTavan: num('hakTavan', 3),    // en yüksek Üretim Hakkı / en düşük (adalet tavanı)
-    pazar: num('pazar', 100e6),      // pazar havuzlarına ayrılan ASTRA (6 hammadde, değer ağırlıklı)
-    taban: num('taban', 0.5), tavan: num('tavan', 2.5),           // fiyat koridoru (açılış fiyatının katı)
-    fee: 0.02, resFee: 0.02,
-    geriAlimEsik: num('geriAlimEsik', 0.8), geriAlimHiz: num('geriAlimHiz', 0.03),  // fiyat < eşik×P0 ise kasanın %x'i ile al-yak
-    ortak: 0.05, otoriteShare: num('otorite', 0.10), hazirlik: num('hazirlik', 0.20), hazirlikCapWeeks: num('hazirlikCap', 4),
+    pazar: num('pazar', C.AMM_SEED_ASTRA.raw),      // pazar havuzlarına ayrılan ASTRA (6 hammadde, değer ağırlıklı; config AMM_SEED_ASTRA.raw)
+    taban: num('taban', KORIDOR.minPriceAda / KORIDOR.defaultPriceAda), tavan: num('tavan', KORIDOR.maxPriceAda / KORIDOR.defaultPriceAda),           // fiyat koridoru (açılış fiyatının katı)
+    fee: C.AMM_FEE_RATE, resFee: C.AMM_RESOURCE_FEE_RATE,
+    geriAlimEsik: num('geriAlimEsik', 1 - C.AMM_BUYBACK.TRIGGER_DROP), geriAlimHiz: num('geriAlimHiz', C.AMM_BUYBACK.WEEKLY_RATE),  // fiyat < eşik×P0 ise kasanın %x'i ile al-yak
+    ortak: OT.COMMON_CHEST_RATE, otoriteShare: num('otorite', 0.10), hazirlik: num('hazirlik', 0.20), hazirlikCapWeeks: num('hazirlikCap', 4),
     toolRes: 0.25, toolAda: 0.3, staminaWheat: 0.15,
-    split: { burn: 0.05, creator: 0.03, ubi: 0.06 },
-    alloc: { dungeon: 0.27, arena: 0.14, boss: 0.12, buyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 },
-    seed: { dungeon: 10e6, arena: 4e6, boss: 6e6, buyback: 7e6, quest: 8e6, carnival: 3e6, fatih: 20e6, konsey: 10e6, lottery: 12e6, universe: 20e6 },
-    pay: { dungeon: num('pDungeon', 0.025), arena: num('pArena', 0.02), boss: num('pBoss', 0.03), quest: num('pQuest', 0.025) },   // haftalık ödeme oranları (12 ay ömür için ~%2-3)
-    faucetSupplyShareMonth: 0.01, faucetPoolCapWeek: num('faucetCap', 0.015),
-    fiyatOlcek: num('fiyatOlcek', 1),   // ASTRA fiyat listesinin ölçeği (1 = bugünkü liste; 0,01 = yüzde 1'i) — seviye/ordu bedelleri de aynı ölçekle
+    split: { burn: C.TOKEN_BURN_RATE, creator: C.CREATOR_ROYALTY_RATE, ubi: C.UBI_POOL_RATE },
+    alloc: { dungeon: ALLOC.dungeon, arena: ALLOC.arena, boss: ALLOC.worldBoss, buyback: ALLOC.ammBuyback, quest: ALLOC.quest, carnival: ALLOC.carnival, fatih: ALLOC.fatih, konsey: ALLOC.konsey },
+    seed: { dungeon: SEED.dungeon, arena: SEED.arena, boss: SEED.worldBoss, buyback: SEED.ammBuyback, quest: SEED.quest, carnival: SEED.carnival, fatih: SEED.fatih, konsey: SEED.konsey, lottery: C.CARNIVAL.LOTTERY.SEED_POOL_ADA, universe: SEED.universe },
+    pay: { dungeon: num('pDungeon', WB.dungeon), arena: num('pArena', WB.arena), boss: num('pBoss', WB.worldBoss), quest: num('pQuest', WB.quest) },   // haftalık ödeme oranları (12 ay ömür için ~%2-3)
+    faucetSupplyShareMonth: 0.01, faucetPoolCapWeek: num('faucetCap', C.FREE_PLAYER_POOL.WEEKLY_POOL_CAP),
+    fiyatOlcek: num('fiyatOlcek', 1),   // ASTRA fiyat listesinin ölçeği (1 = config'teki liste, zaten v2 ölçekli); yalnız "ya olsaydı" denemeleri için
+    askerBirim: num('askerBirim', C.SOLDIER_COST_BASE),   // ordu gücü birimi = 1. askerin bedeli (ASTRA)
     supply: 2.13e9, p0usd: 2e-7, fiyat: A.fiyat || 'sabit',
     yatir: { f2p: 0, mid: num('yatirMid', 0), whale: num('yatirWhale', 0) },   // yıllık dış para (ASTRA), haftalara yayılır; varsayılan 0 = hiç para girmeyen dünya
     armyShare: { f2p: 0.3, mid: 0.5, whale: 0.6 },   // ASTRA gelirinin orduya (asker + teçhizat) giden payı
@@ -75,7 +98,7 @@ export function run(P) {
     const p = priceAt(w); const target = p < P.p0usd ? P.p0usd / p : Math.pow(P.p0usd / p, 0.6);
     m = Math.max(m * 0.95, Math.min(m * 1.05, target));
     // Otorite etkisi
-    const oMult = 1 + 0.05 * otorite, oHours = ((20 + 0.2 * otorite) * (6 + 0.05 * otorite)) / 168;
+    const oMult = 1 + OT.PER_LEVEL_BONUS * otorite, oHours = ((OT.HOURS_BASE + OT.HOURS_PER_LEVEL * otorite) * (OT.DAYS_BASE + OT.DAYS_PER_LEVEL * otorite)) / 168;
     // ── 1) kota ve Üretim Hakkı dağılımı ──
     if (P.kotaModu === 'termostat' && w > 1) for (const r of RES) {   // arz fiyatı izler: fiyat hedefin üstündeyse kota artar, altındaysa azalır
       const rel = price(r) / (P0[r] * m) / P.termoHedef; const step = Math.max(-P.termoAdim, Math.min(P.termoAdim, (rel - 1)));
@@ -113,8 +136,9 @@ export function run(P) {
       need.ot += c.army * 0.5;
       pay(c, (pr.odun * P.toolRes * price('odun') + pr.demir * P.toolRes * price('demir')) * P.toolAda);   // onarımın ASTRA kısmı
       // seviye
-      c.xp += 7 * P.act[c.type]; const needDays = 3 + 1.5 * c.level;
-      if (c.xp >= needDays) { const cost = 500 * Math.pow(c.level, 1.5) * m * P.fiyatOlcek; if (c.bal >= cost) { pay(c, cost); for (const r of RES) need[r] += pr[r] * 0.10; c.level++; c.xp -= needDays; } }
+      // seviye: XP altı alan sürekli çalışmaya göre (gerçek tablo); bedel gerçek motordan (silo tavanına kırpılmış hammadde + ASTRA)
+      c.xp += 7 * P.act[c.type]; const lv = LEVEL[Math.min(80, c.level)]; const needDays = Math.max(0.1, lv.xp / XP_GUNLUK);
+      if (c.xp >= needDays) { const cost = lv.adAstra * m * P.fiyatOlcek; if (c.bal >= cost) { pay(c, cost); for (const r of RES) need[r] += lv.costs[r]; c.level++; c.xp -= needDays; } }
       // bot ücreti
       if (c.type !== 'f2p') pay(c, RES.reduce((s, r) => s + pr[r] * price(r), 0) * P.botFee);
       // yatırım (dış para)
@@ -165,12 +189,12 @@ export function run(P) {
       const x = pay(c, a * 0.5);                                   // asker/teçhizat ASTRA kısmı
       let budget = Math.min(a * 0.5, Math.max(0, c.bal)) * c.count; // hammadde kısmı: demir %50, kömür %30, taş %20
       for (const [r, s] of [['demir', 0.5], ['komur', 0.3], ['tas', 0.2]]) { const b = budget * s; const ceil = P.tavan * P0[r] * m; const xMax = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / ceil)); const q = Math.min(pool[r].R * b / (pool[r].A + b), xMax); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; c.bal -= cost / c.count; c.out += cost / c.count; outgo[c.type] += cost; spend(cost * P.fee); T.resBurned += q; } }
-      c.army += (x + budget / c.count) / (2000 * P.fiyatOlcek);    // 2.000 ASTRA (ölçekli) ≈ 1 asker gücü
+      c.army += (x + budget / c.count) / (P.askerBirim * P.fiyatOlcek);    // askerBirim ASTRA ≈ 1 asker gücü
     });
     // ── 6) geri alım: fiyat eşiğin altındaysa kasanın %x'i ile al-yak ──
     for (const r of RES) { const thr = P.geriAlimEsik * P0[r] * m; if (price(r) < thr && K.buyback > 0) { const B = K.buyback * P.geriAlimHiz / RES.length; const xThr = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / thr)); const xB = pool[r].R * B / (pool[r].A + B); const q = Math.min(xThr, xB); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; K.buyback -= cost; T.buybackSpent += cost; T.resBurned += q; } } }
-    // ── 7) Otorite ilerlemesi (çelik payı %30: Konsey kasasından ASTRA, 1 birim = 1 ASTRA) ──
-    while (otorite < 20 && otoritePool >= otoriteCost(otorite) * 0.7 && K.konsey >= otoriteCost(otorite) * 0.3 * P.otoriteAstraBirim) { otoritePool -= otoriteCost(otorite) * 0.7; K.konsey -= otoriteCost(otorite) * 0.3 * P.otoriteAstraBirim; otorite++; }
+    // ── 7) Otorite ilerlemesi (karışımın TAMAMI hammadde: çelik payı kömürdür, Konsey kasasından ASTRA çıkmaz; 13 Ekim 2026) ──
+    while (otorite < OT.MAX_LEVEL && otoritePool >= otoriteCost(otorite)) { otoritePool -= otoriteCost(otorite); otorite++; }
     cohorts.forEach(c => { c.incHist.push(c.inc); c.outHist.push(c.out); });
     // ── aylık kayıt ──
     if (w % 4 === 0) {

@@ -70,7 +70,7 @@ export const pazarYontemleri = {
     if (!sonuc.success) return sonuc;
 
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) - sonuc.cost;
-    this._onAdaSpent(sonuc.cost, { boughtResource: resKey });
+    this._onAdaSpent(sonuc.cost, { boughtResource: resKey, sinkPart: this.pazarSistemPayi(sonuc) });
     if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + sonuc.resourceReceived;
     else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + sonuc.resourceReceived;
     else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + sonuc.resourceReceived;

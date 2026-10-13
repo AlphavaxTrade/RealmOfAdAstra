@@ -96,6 +96,7 @@ export const GAME_CONFIG = {
     // otomatik büyüme açılmaz (yalnız yönetici elle sınır değiştirebilir). growth() bu bayrağa bakar.
     GROWTH_LOCKED: true,
     REGISTRATION_FEE_ADA: 1,
+    IP_DAILY_ADMIT: 3,   // aynı internet adresinden 24 saatte en çok bu kadar yeni vatandaş (fazlası bekleme sırasına düşer); 0 = sınırsız. server/kapi.js
     READY_TASK_IDS: ['rehber', 'kurallar', 'hazirim'],   // sırada bekleyen adayın onaylayacağı 3 basit adım (misafir modu, oyun aksiyonu değil)
     INVITE_HOURS: 72, INVITE_PENALTY_POSITIONS: 3   // yer açılınca davet süresi; cevapsızlıkta kaç sıra geri
   },
@@ -395,6 +396,14 @@ export const GAME_CONFIG = {
   // Karakter seviyesi tavanı (seviye atlama bedeli: gameState.getNextLevelRequirement)
   MAX_PLAYER_LEVEL: 81,
 
+  // Seviye atlama bedelinin siloya sığma kuralı (13 Ekim 2026 denetimi EK-01, "başlangıç silosuna sığmayan maliyet olmaz"
+  // ilkesinin genişletilmesi): bedel, her hammaddede ULAŞILABİLİR en büyük silonun (Universe öncesi 12. seviye)
+  // kapasitesinin bu oranını aşamaz. Eskiden bedel "XP'yi toplarken kazanılanın yarısı" idi ve seviye uzadıkça
+  // büyüyordu; Sv.11→12'de silo-12'yi aştı (taş 6.672 > 6.298), Sv.12-81 hiç açılamıyordu.
+  // 0,8 = silo yükseltmenin "%80 dolu olmalı" şartıyla aynı oran: bedeli tutan oyuncu siloyu da doldurmuş olur ve
+  // geri kalan %20'ye sefer toplayabilir. Alternatif (seçilmedi): %100 — silo tam dolu beklemek toplama kaybettirir.
+  LEVEL_UP_SILO_SHARE: 0.8,
+
   // =========================================================================
   // SOLDIER & MILITARY SYSTEM (TEK TİP ADASTRA ŞAMPİYONU)
   // =========================================================================
@@ -646,7 +655,17 @@ export const GAME_CONFIG = {
     // Canavar bilgileri (can, saldırı, asker XP'si) js/bestiary.js'te. (v2 ölçekli)
     REWARD_ADA_PER_LEVEL: 0.9,
     REWARD_XP_PER_LEVEL: 200,
-    MAJOR_BOSS_REWARD_MULT: 3
+    MAJOR_BOSS_REWARD_MULT: 3,
+    // 13 Ekim 2026 denetimi EK-05: günlük KİŞİ tavanı. Eskiden temiz kat tekrarı tam ödüllüydü ve günde 40 giriş yapılabiliyordu
+    // (10 askerlik cerrahi sömürücü 7 günde +3.314 ASTRA zindandan, +5.700 toplam; ordusunu 3-4 haftada geri alıyordu). Tavan,
+    // orduya harcananla orantılıdır: günlük en çok  harcanan × RETURN_SHARE ÷ PAYBACK_DAYS  ASTRA.
+    //   RETURN_SHARE 0,70 = 30 Eylül kararı ("normal ödüller harcamanın %70'i, kalan %30 Fatih Ödülü");
+    //   PAYBACK_DAYS 93  = 30 Eylül kararı (ordu bedelinin yol boyu geri dönüşü ~90-100 gün).
+    // Taban: DAILY_RUNS ödüllü girişin, ulaşılmış en değerli katta değeri (acemi oyuncunun harçsız girişleri hep tam ödenir).
+    // Alternatif (seçilmedi): her tekrarda sabit azalan ödül (REPEAT_MULTIPLIER) — 18. kata gelmiş tam orduyu da aynı oranda
+    // cezalandırıyordu; harca bağlı tavan yatırımı ödüllendirip yalnız ucuz-ordu sömürüsünü kesiyor.
+    RETURN_SHARE: 0.70,
+    PAYBACK_DAYS: 93
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -663,6 +682,11 @@ export const GAME_CONFIG = {
     // günde 10 maçla haftalık ödeme bütçesinin büyük kısmını tek başına çekebiliyordu); diğer ödüller 10-50 ASTRA düzeyinde.
     WIN_REWARD_ASTRA: 25,
     WIN_REWARD_POOL_SHARE: 0.0002,
+    // 13 Ekim 2026 denetimi EK-06: günlük kişi tavanı = 5 galibiyet × taban ödül (125 ASTRA; haftada 875 ≈ 100 vatandaşta arena
+    // bütçesinin kişi başı eşit payı 800). Eskiden rakip puanı 0-150 çıkıyordu: oyuncu 1000'de kaldığı için puan hiç yükselmiyor,
+    // lig çarpanları (1,1-2,0) hiç devreye girmiyordu. Rakip puanı artık oyuncunun puanı ±100.
+    RATING_SPREAD: 100,
+    DAILY_REWARD_CAP_ASTRA: 125,
     // Ligler (gameState.getColosseumTier), yüksekten düşüğe. rewardMult: maç ödülü çarpanı.
     // weeklyAda / weeklyKeys: ⏳ haftalık lig ödülü — HENÜZ DAĞITILMIYOR (tasarım taslağı).
     LEAGUES: [
@@ -733,7 +757,14 @@ export const GAME_CONFIG = {
   // en çok şu kadar olabilir: kasa × oran × sağlık çarpanı (bakiye/hedef rezerv, en az HEALTH_MIN, en çok 1) + son INFLOW_WEEKS
   // haftanın ortalama haftalık girişinin INFLOW_SHARE'i. Hesaplaşma anındaki ödemeler (ücretsiz havuz, PvP sıralaması) kendi
   // kurallarıyla sınırlıdır ve bu bütçeye girmez. Bütçe yalnız sunucuda açılır (treasury.openWeekBudgets); tarayıcı tek oyunculuda yok.
-  TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15, FULL_MESSAGE: 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' },
+  // PERSON_CAP_MULT (13 Ekim 2026 denetimi EK-05): kişi başı haftalık pay tavanı = bütçe × PERSON_CAP_MULT ÷ aktif vatandaş.
+  // Bütçe "ilk gelen alır" idi: hızlı oyuncu haftanın payını ilk günlerde çekip geç gelenleri 0'da bırakabiliyordu. 3 = eşit payın
+  // 3 katına kadar; dürüst yoğun oyuncuyu sıkmaz, tek kişinin bütçeyi süpürmesini keser. Zindan ve kolezyum ödülleri bunu uygular.
+  TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15, PERSON_CAP_MULT: 3, FULL_MESSAGE: 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' },
+  // Kasa ömrü (fiyat çarpanı kasa-ömrü düzeltmesi, server/world/haftalik.js): yalnız OYUNCUYA ödeme yapan kasalar sayılır.
+  // universe (Universe açılışına kadar kilitli), konsey (proje kasası, kilitli), fatih (tek bir olaya bağlı), ammBuyback (alıp yakar,
+  // vatandaşa ödenmez) sayılmaz: eskiden toplam 88 M sayılıyor, aylık ücretsiz havuza göre ~170 ay çıkıp çarpan sürekli ×0,8'e iniyordu.
+  TREASURY_RUNWAY_POOLS: ['dungeon', 'arena', 'worldBoss', 'quest', 'carnival'],
   // Sponsorluk (docs/v2/SPONSORLUK_TASARIMI.md): B, A'ya ASTRA bağışlar; A bunu çekemez, yalnız oyunda harcar; A her haftalık net çekiminin
   // SHARE oranını (tüm sponsorlara toplam, anapara oranında bölünür) sponsorlara öder; sözleşme DAYS gün ya da toplam getiri anaparanın RETURN_CAP katına ulaşana dek.
   SPONSORLUK: { MIN_AMOUNT: 1000, SHARE: 0.30, DAYS: 365, RETURN_CAP: 2, MAX_PER_TARGET: 5, MAX_PER_SPONSOR: 20 },
@@ -744,7 +775,12 @@ export const GAME_CONFIG = {
   // en çok STREAK_MAX; kaçırılan hafta seriyi yarıya indirir); kişi başı tavan da ağırlıkla ölçeklenir (tam tavan için
   // FULL_CONTRIBUTION katkı + en yüksek seri); pay tamamen kilitli gelir.
   // v2: katkı eşikleri ölçekli (×0,01); haftada kasanın en çok %1,5'i (R3)
-  FREE_PLAYER_POOL: { MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 1, FULL_CONTRIBUTION: 10, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true, WEEKLY_POOL_CAP: 0.015 },
+  // 13 Ekim 2026 denetimi EK-03: WEIGHT_CAP_CONTRIBUTION = ağırlığa girecek katkının tavanı (FULL_CONTRIBUTION'ın 10 katı).
+  // Gerekçe: katkı^1,5 sınırsızdı; tek hesap c=500 ile havuzun %28,8'ini alıyordu (dürüst kişi başı 1.975 → 1.423). Tavan 100
+  // ile aynı senaryoda %3,5 (dürüst kişi başı 1.930); üs 1,5 KORUNDU çünkü düşürmek yan hesabı kolaylaştırıyordu (40 hesap × c10:
+  // üs 1,5 → %4,4, üs 1,25 → %6,4, üs 1 → %9,3). Alternatif (seçilmedi): tavan = FULL_CONTRIBUTION (10) — herkes eşit ağırlık
+  // alır, yan hesap için katkı eşiği 10'a iner (40 hesap × c10 → %33,9). Ölçüm: tests/test_denetim_2026_10_ekonomi.mjs.
+  FREE_PLAYER_POOL: { MAX_USD_PER_PLAYER: 100, MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 1, FULL_CONTRIBUTION: 10, WEIGHT_CAP_CONTRIBUTION: 100, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true, WEEKLY_POOL_CAP: 0.015 },
   TREASURY_MIN_PAYOUT_RATIO: 0.15,   // havuz boşalsa bile ödül tamamen sıfırlanmaz
   TREASURY_SINGLE_DRAW_CAP: 0.02,    // tek ödül havuzun en fazla %2'sini çekebilir
 
@@ -794,7 +830,12 @@ export const GAME_CONFIG = {
       // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder.
       MAX_TICKETS_PER_ACCOUNT: 100,  // haftalık alım sınırı (10.000 ASTRA)
       WINNER_MULTIPLIER: 2.0,        // Kazanan, biletlerine ödediğinin 2 katını alır
-      AMORTI_SHARE: 0.02             // Bilet bedelinin %2'si amorti kasasına
+      AMORTI_SHARE: 0.02,            // Bilet bedelinin %2'si amorti kasasına
+      // Devreden bilet yaşlanması (EK-08, ayrıntı js/economy/lottery.js): kazanamayan her çekilişte ödenen değerin %5'i düşer,
+      // en çok bilet fiyatının yarısına kadar (1× geri ödeme tabanı). Alternatif (seçilmedi): elde tutulabilecek bilet tavanı
+      // — alımı durdurup piyangoyu öldürüyordu.
+      CARRY_AGING_RATE: 0.05,
+      CARRY_VALUE_FLOOR: 0.5
     }
   },
 

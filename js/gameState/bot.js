@@ -335,7 +335,7 @@ export const botYontemleri = {
       if (!sonuc || !sonuc.success) continue;
       kasa -= sonuc.cost;
       this.state.adAstraBalance = kasa;
-      this._onAdaSpent(sonuc.cost, { boughtResource: node });
+      this._onAdaSpent(sonuc.cost, { boughtResource: node, sinkPart: this.pazarSistemPayi(sonuc) });
       depo[node] = (Number(depo[node]) || 0) + sonuc.resourceReceived;
       toplamHarcama += sonuc.cost;
       boughtBreakdown[node] = { units: sonuc.resourceReceived, cost: sonuc.cost };

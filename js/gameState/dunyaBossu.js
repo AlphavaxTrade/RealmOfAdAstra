@@ -83,7 +83,9 @@ export const dunyaBossuYontemleri = {
     const hp = boss.userStakedHp || 0;
     const tabanHasar = Math.floor((atk * 1.0) + (hp * 0.25));
 
-    const cesitlilik = this.calculateSquadSkillDiversity();
+    // Kilitliyken çeşitlilik de yalnız kilitlenen askerlerden hesaplanır: sonradan alınan farklı yetenekli asker çarpanı şişirmesin
+    const kilitli = boss.userStaked ? Math.min(boss.userStakedSoldiersCount || 0, (this.state.soldierUnits || []).length) : 0;
+    const cesitlilik = this.calculateSquadSkillDiversity(kilitli > 0 ? Array.from({ length: kilitli }, (_, i) => i) : null);
     const hasar = Math.floor(tabanHasar * cesitlilik.diversityMultiplier);
     return {
       atk,
@@ -108,6 +110,26 @@ export const dunyaBossuYontemleri = {
     const onceki = Number(boss.realmDamage) || 0;
     const payda = Math.max(d, onceki > 0 ? onceki : (Number(boss.maxBossHp) || 1));
     return Math.floor((d * (Number(boss.weeklyAdaPool) || 0)) / Math.max(1, payda));
+  },
+
+  // Kilitli ilk userStakedSoldiersCount askerin (kilit anında ordunun tamamıydı; yeni askerler sona eklenir) güncel ATK/CAN toplamı;
+  // kilitli güç bundan büyükse buna indirilir ve dünya toplamı aynı farkla düşer.
+  _kilitliGucuGuncelle(boss) {
+    const sayi = Math.min(boss.userStakedSoldiersCount || 0, (this.state.soldierUnits || []).length);
+    let atk = 0;
+    let hp = 0;
+    for (let i = 0; i < sayi; i++) {
+      const s = this.getSoldierFullStats(i);
+      atk += s.totalAtk;
+      hp += s.totalMaxHp;
+    }
+    const yeniAtk = Math.min(boss.userStakedAtk || 0, atk);
+    const yeniHp = Math.min(boss.userStakedHp || 0, hp);
+    boss.totalStakedAtk = Math.max(0, (boss.totalStakedAtk || 0) - ((boss.userStakedAtk || 0) - yeniAtk));
+    boss.totalStakedHp = Math.max(0, (boss.totalStakedHp || 0) - ((boss.userStakedHp || 0) - yeniHp));
+    boss.userStakedAtk = yeniAtk;
+    boss.userStakedHp = yeniHp;
+    return { atk: yeniAtk, hp: yeniHp };
   },
 
   isArmyStakedInWorldBoss() {
@@ -185,6 +207,10 @@ export const dunyaBossuYontemleri = {
       };
     }
 
+    // Kilit anında donan güç savaş anında GÜNCELE indirilir (13 Ekim 2026 denetimi EK-07): eskiden kilitledikten sonra eşya
+    // ilan pazarıyla başka hesaba geçirilebiliyor, aynı takım iki hesapta birden sayılıyordu. Yalnız AZALIR (sonradan alınan
+    // asker/eşya kilitli güce eklenmez: kilit "o anki ordu"dur).
+    this._kilitliGucuGuncelle(boss);
     const hasar = this.calculateUserWorldBossPower().calculatedDamage;
     boss.userDamage = hasar;   // haftalık, birikmez
     boss.bossHp = Math.max(0, boss.bossHp - hasar);

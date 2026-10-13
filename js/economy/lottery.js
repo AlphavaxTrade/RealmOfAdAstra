@@ -15,8 +15,27 @@
 export const DEFAULT_LOTTERY_RULES = {
   ticketPrice: 100,
   winnerMultiplier: 2,
-  amortiShare: 0.02
+  amortiShare: 0.02,
+  // Devreden bileti yaşlandırma (13 Ekim 2026 denetimi EK-08): kazanamayan her çekilişte biletlerin "ödenen" değeri bu oran
+  // kadar düşer, ama en çok bilet fiyatının carryValueFloor'una kadar. Eskiden devreden her bilet bekledikçe değerini
+  // koruyordu ve kazanınca 2 katı ödeniyordu: biletler satıldığından 2 kat çıktığı için kasa bilet gelirinin ~1,75 katını
+  // ödüyor, 520 haftada 12 M tohumdan 4 M eriyordu. Taban 0,5 = en yaşlı bilet kazanırsa yatırdığının 1 katını alır (kayıpsız).
+  carryAgingRate: 0.05,
+  carryValueFloor: 0.5
 };
+
+// Kazanamayanların devreden biletlerinin ödenen değerini yaşlandırır (biletin sayısına dokunmaz; ücretsiz biletin değeri 0 kalır)
+function ageHolders(holders, winnerId, rules) {
+  const rate = Number(rules.carryAgingRate ?? DEFAULT_LOTTERY_RULES.carryAgingRate) || 0;
+  if (!(rate > 0)) return;
+  const floor = Number(rules.carryValueFloor ?? DEFAULT_LOTTERY_RULES.carryValueFloor);
+  for (const h of holders) {
+    if (h.id === winnerId || !(h.tickets > 0)) continue;
+    const paid = h.paid != null ? h.paid : h.tickets * rules.ticketPrice;
+    const taban = h.tickets * rules.ticketPrice * floor;
+    h.paid = Math.max(Math.min(paid, taban), paid * (1 - rate));
+  }
+}
 
 // Bilet satın alımının kasalara bölünüşü
 export function splitTicketPayment(count, rules = DEFAULT_LOTTERY_RULES) {
@@ -63,6 +82,7 @@ export function runDraw(state, rng = Math.random, rules = DEFAULT_LOTTERY_RULES)
     payouts.push({ id: winnerId, amount: prize, kind: 'prize', ticketsLocked: winner.tickets });
     winner.tickets = 0;
     winner.paid = 0;
+    ageHolders(holders, winnerId, rules);   // kazanamayanların devreden biletleri bir hafta yaşlanır
     return { pool, amortiPool, holders, drawn: true, winnerId, prize, poolDepleted: false, payouts, totalTickets };
   }
 

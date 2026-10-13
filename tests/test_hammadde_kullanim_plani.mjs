@@ -34,10 +34,12 @@ const yeni = () => {
   return gs;
 };
 
-// 1) Seviye atlama: altı hammadde, hepsi kendi üretim hızıyla orantılı (hiçbiri ayrıcalıklı değil)
+// 1) Seviye atlama: altı hammadde, hepsi kendi üretim hızıyla orantılı (hiçbiri ayrıcalıklı değil).
+//    Silo tavanına kırpılan seviyelerde (Sv.9 sonrası; 13 Ekim 2026 denetimi EK-01) orantı bozulur: o durum
+//    tests/test_denetim_2026_10_ekonomi.mjs'te "bedel = min(ham, silo tavanı)" olarak denetlenir.
 {
   const gs = yeni();
-  for (const seviye of [1, 10, 30]) {
+  for (const seviye of [1, 5, 8]) {
     gs.state.level = seviye;
     const r = gs.getNextLevelRequirement();
     assert.deepEqual(Object.keys(r.costs).sort(), [...K].sort(), 'bedel altı hammaddeyi kapsar');
@@ -177,15 +179,27 @@ const yeni = () => {
   ok('stok aktarımı seviye tamamlanmasını tetikler, kasadan ödeme çıkmaz');
 }
 
-// 8) Model ölçümü: her hammaddenin haftalık talebi tam üretimin %40-100'ü arasında (hiçbiri atıl ya da kıtlık değil)
+// 8) Model ölçümü: her hammaddenin haftalık talebi tam üretimin %40-100'ü arasında (hiçbiri atıl ya da kıtlık değil).
+//    13 Ekim 2026 denetimi EK-01: seviye bedeli artık ulaşılabilir silonun %80'ini aşamıyor. Eskiden Sv.12+ için hesaplanan
+//    talep hayalet idi (oyuncu o bedeli siloda tutamıyordu). Bedel kırpılan seviyelerde taş / kömür / şifalı ot bandın
+//    altına inebilir; bu YALNIZ kırpma yüzünden olabilir (siloKirpilan) ve 0,10'un altına inmez. Üst sınır (kıtlık yok) ve
+//    hak üzerinden bakış (EK-09) her seviyede sıkıdır.
 {
   for (const o of olcumler) {
     for (const k of K) {
       const r = o.oranUretim[k];
-      assert.ok(r >= 0.40 && r <= 1.0, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} bantta değil (0,40–1,00)`);
+      assert.ok(r <= 1.0, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} 1,00'ı aşıyor (kalıcı kıtlık)`);
+      if (r < 0.40) {
+        assert.ok(o.siloKirpilan.includes(k), `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} bandın altında ve nedeni seviye bedelinin silo kırpması değil`);
+        assert.ok(r >= 0.10, `seviye ${o.seviye} ${k}: talep/üretim ${r.toFixed(2)} kırpmayla bile 0,10'un altında (hammadde atıl)`);
+      }
+      // hak üzerinden: başlangıç kotası 0,40 ile talep hakkın 3,5 katını geçmez; termostat (haftada +%10) en çok 13 haftada yetişir
+      assert.ok(o.oranHak[k] <= 3.5, `seviye ${o.seviye} ${k}: talep/hak ${o.oranHak[k].toFixed(2)} (>3,5)`);
+      assert.ok(o.haftaDenge[k] <= 13, `seviye ${o.seviye} ${k}: kota dengesi ${o.haftaDenge[k].toFixed(0)} hafta`);
     }
   }
-  ok('model: altı hammaddenin talebi her seviyede hedef bantta (talep / üretim 0,40–1,00)');
+  const bandiciCikanlar = olcumler.filter((o) => K.some((k) => o.oranUretim[k] < 0.40)).map((o) => o.seviye);
+  ok(`model: talep / üretim her seviyede ≤ 1,00; 0,40 altı yalnız silo kırpması yüzünden (seviyeler: ${bandiciCikanlar.join(', ') || '-'}); hak bakışı ≤ 3,5`);
 }
 
 // 9) Çark: yeni üç hammadde sık gelen dilimlerde (pazardan alınan hammadde ödülü onlara talep yaratır)

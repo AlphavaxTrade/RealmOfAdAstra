@@ -3,8 +3,11 @@
 // Amaç: emeğini tek hesapta toplamak her zaman yan hesaplara bölmekten daha kârlı olsun.
 //  • Şartlar: e-posta doğrulanmış, hiç para yatırmamış, en az MIN_LEVEL seviye, o hafta en az
 //    MIN_WEEKLY_CONTRIBUTION katkı puanı (fiyat çarpanıyla ölçeklenir).
-//  • Pay eşit bölünmez: ağırlık = (katkı)^WEIGHT_EXP × sadakat çarpanı. Üs 1'den büyük olduğu için aynı emeği
-//    N hesaba bölen kişi toplamda daha az alır (1,5 üssüyle 3 hesap ≈ %58, yeni hesaplar seri çarpanı da olmadan ≈ %29).
+//  • Pay eşit bölünmez: ağırlık = min(katkı, WEIGHT_CAP_CONTRIBUTION)^WEIGHT_EXP × sadakat çarpanı. Üs 1'den büyük olduğu için
+//    aynı emeği N hesaba bölen kişi toplamda daha az alır (1,5 üssüyle 3 hesap ≈ %58, yeni hesaplar seri çarpanı da olmadan ≈ %29).
+//    Katkı tavanı (13 Ekim 2026 denetimi EK-03): üs tek başına sınırsız bir üsttü, tek hesap c=500 ile havuzun %28,8'ini
+//    alıyor, dürüst kişi başı payı 1.975 → 1.423'e düşüyordu. Tavanın üstündeki katkı ağırlığı artırmaz; yan hesaba karşı
+//    korumayı (üs) bozmaz: tavanın altındaki hesaplar eskisi gibi orantısız cezalanır.
 //  • Sadakat serisi: şartları üst üste sağlayan hesabın çarpanı her hafta STREAK_STEP artar (en çok STREAK_MAX).
 //    Kaçırılan her hafta seri yarıya iner. Yeni açılan yan hesap seriye en baştan başlar.
 //  • Kişi başı üst sınır kişinin kendi ağırlığıyla ölçeklenir: tam sınır (aylık MAX_USD_PER_PLAYER) ancak FULL_CONTRIBUTION
@@ -14,7 +17,7 @@
 // Hem tarayıcı (panel) hem sunucu (haftalık hesaplaşma) bu dosyayı kullanır.
 // ============================================================================
 
-export const FAUCET_DEFAULTS = { MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 100, FULL_CONTRIBUTION: 1000, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true };
+export const FAUCET_DEFAULTS = { MIN_LEVEL: 3, MIN_WEEKLY_CONTRIBUTION: 100, FULL_CONTRIBUTION: 1000, WEIGHT_CAP_CONTRIBUTION: 10000, WEIGHT_EXP: 1.5, STREAK_STEP: 0.1, STREAK_MAX: 2.0, LOCKED: true };
 const R = rules => ({ ...FAUCET_DEFAULTS, ...(rules || {}) });
 
 // Kaçırılan haftalar sonrası seri (bu hafta hesaba katılmadan)
@@ -45,9 +48,15 @@ export function qualifies({ level, contribution, priceMultiplier = 1 }, rules) {
   return (Number(level) || 1) >= r.MIN_LEVEL && (Number(contribution) || 0) >= minContribution(priceMultiplier, r);
 }
 
+// Ağırlığa girecek katkı tavanı (fiyat çarpanından arındırılmış katkı cinsinden); 0 ya da eksi = tavansız (eski kural)
+const weightCap = (rules) => {
+  const t = Number(R(rules).WEIGHT_CAP_CONTRIBUTION);
+  return t > 0 ? t : Infinity;
+};
+
 export function weightOf({ contribution, priceMultiplier = 1, streakWeeks = 1 }, rules) {
   const r = R(rules);
-  const c = Math.max(0, Number(contribution) || 0) / (Number(priceMultiplier) || 1);
+  const c = Math.min(Math.max(0, Number(contribution) || 0) / (Number(priceMultiplier) || 1), weightCap(r));
   return Math.pow(c, r.WEIGHT_EXP) * streakMultiplier(streakWeeks, r);
 }
 

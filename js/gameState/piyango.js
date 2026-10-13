@@ -12,7 +12,10 @@ const donemKimligi = () => (globalPool && globalPool.state && globalPool.state.e
 export const piyangoYontemleri = {
   getLotteryRules() {
     const L = piyangoAyari();
-    return { ticketPrice: this.adaPrice(L.TICKET_COST_ADA || 100), winnerMultiplier: L.WINNER_MULTIPLIER || 2, amortiShare: L.AMORTI_SHARE ?? 0.02 };
+    return {
+      ticketPrice: this.adaPrice(L.TICKET_COST_ADA || 100), winnerMultiplier: L.WINNER_MULTIPLIER || 2, amortiShare: L.AMORTI_SHARE ?? 0.02,
+      carryAgingRate: L.CARRY_AGING_RATE ?? 0.05, carryValueFloor: L.CARRY_VALUE_FLOOR ?? 0.5
+    };
   },
 
   // Tarayıcı sürümünde diğer oyuncular temsili bilet sahipleriyle canlandırılır (sunucuda gerçek oyuncular)

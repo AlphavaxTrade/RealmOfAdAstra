@@ -111,11 +111,16 @@ export const gelisimYontemleri = {
     const uretim = GAME_CONFIG.BASE_PRODUCTION || {};
     const kazanilan = {};
     const costs = {};
+    const tavan = this.getLevelUpCostCeiling();
+    const siloyaSigdirilan = {};                       // bedeli silo tavanına kırpılan hammaddeler (ham bedel burada)
     for (const k of alanlar) {
       kazanilan[k] = dongu * sure * (uretim[k] || 0);
-      costs[k] = Math.round(kazanilan[k] / 2);
+      const ham = Math.round(kazanilan[k] / 2);
+      costs[k] = tavan[k] != null ? Math.min(ham, tavan[k]) : ham;
+      if (costs[k] < ham) siloyaSigdirilan[k] = ham;
     }
     const { wood, iron, wheat } = costs;
+    const siloGerek = this.getSiloLevelToHold(costs);
 
     const deger = ammMarket.calculateResourcesAdAstraValue(costs);
 
@@ -129,7 +134,9 @@ export const gelisimYontemleri = {
       xp,
       cycles: dongu,
       durMin: sure,
-      costs,                                   // her hammaddenin bedeli (altısı da)
+      costs,                                   // her hammaddenin bedeli (altısı da; silo tavanını aşmaz)
+      uncappedCosts: siloyaSigdirilan,         // silo tavanına kırpılanların ham bedeli (boşsa kırpma yok)
+      siloLevelNeeded: siloGerek,              // bu bedeli TUTABİLECEK en küçük silo seviyesi (arayüz ipucu verisi)
       earned: kazanilan,
       totalWoodEarned: kazanilan.wood,
       totalIronEarned: kazanilan.iron,
@@ -152,6 +159,26 @@ export const gelisimYontemleri = {
     };
   },
 
+  // Seviye bedelinin hammadde başına tavanı: ulaşılabilir en büyük silonun kapasitesi × LEVEL_UP_SILO_SHARE.
+  // Silo kapasitesi Büyük Ambar projesiyle de büyür; tavan da onunla kayar. Kapasitesiz kalem (null) tavansızdır.
+  getLevelUpCostCeiling() {
+    const pay = GAME_CONFIG.LEVEL_UP_SILO_SHARE != null ? GAME_CONFIG.LEVEL_UP_SILO_SHARE : 0.8;
+    const kap = this.getWarehouseCapacity(this.getWarehouseMaxLevel());
+    const tavan = {};
+    for (const k of RES_KEYS()) tavan[k] = kap[k] != null ? Math.floor(kap[k] * pay) : null;
+    return tavan;
+  },
+
+  // Verilen bedelin her kaleminin sığdığı en küçük silo seviyesi (en üst silo bile yetmezse null).
+  getSiloLevelToHold(costs) {
+    const enUst = this.getWarehouseMaxLevel();
+    for (let s = 1; s <= enUst; s++) {
+      const kap = this.getWarehouseCapacity(s);
+      if (RES_KEYS().every(k => kap[k] == null || (costs[k] || 0) <= kap[k])) return s;
+    }
+    return null;
+  },
+
   levelUp() {
     const enUst = GAME_CONFIG.MAX_PLAYER_LEVEL || 81;
     if ((this.state.level || 1) >= enUst) {
@@ -161,9 +188,18 @@ export const gelisimYontemleri = {
     const gerek = this.getNextLevelRequirement();
     const envanter = this.state.inventory;
     if (this.state.currentXp < gerek.xp) return { success: false, message: `Yetersiz XP! (${this.state.currentXp}/${gerek.xp} XP)` };
+    const siloKap = this.getWarehouseCapacity();
     for (const k of RES_KEYS()) {
       const gereken = gerek.costs[k] || 0;
-      if ((envanter[k] || 0) < gereken) return { success: false, message: `Yetersiz ${kaynakAdi(k)}! (${gereken} ${kaynakAdi(k)} gerekli)` };
+      if ((envanter[k] || 0) < gereken) {
+        // Bedel silodan büyükse "yetersiz" demek yanıltır: oyuncu ne kadar toplasa silo tutmaz. Önce siloyu büyütmesi söylenir.
+        if (siloKap[k] != null && gereken > siloKap[k]) {
+          const hedef = gerek.siloLevelNeeded;
+          return { success: false, siloTooSmall: true, siloLevelNeeded: hedef,
+            message: `Silon ${kaynakAdi(k)} bedelini (${gereken}) tutamıyor (kapasite ${siloKap[k]}). Önce siloyu${hedef ? ` en az ${hedef}. seviyeye` : ''} yükselt.` };
+        }
+        return { success: false, message: `Yetersiz ${kaynakAdi(k)}! (${gereken} ${kaynakAdi(k)} gerekli)` };
+      }
     }
     if (this.state.adAstraBalance < gerek.adAstra) return { success: false, message: `Yetersiz ASTRA! (${gerek.adAstra} ASTRA gerekli)` };
 

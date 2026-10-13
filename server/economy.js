@@ -138,6 +138,20 @@ export function faucetWeekly({ mcapUsd, priceUsd, freePlayers, questPool }, rule
   return { perPlayer, totalAda: perPlayer * freePlayers, usdPerPlayerMonth: perPlayer * priceUsd * rules.weeksPerMonth };
 }
 
+// Kasa ömrü hesabına giren toplam: yalnız verilen (oyuncuya ödeme yapan) kasalar sayılır; liste yoksa hepsi (13 Ekim 2026 denetimi EK-10)
+export function runwayPoolTotal(pools, ids) {
+  const p = pools || {};
+  return (Array.isArray(ids) && ids.length ? ids : Object.keys(p)).reduce((s, id) => s + (Number(p[id]) || 0), 0);
+}
+
+// Piyango bilet fiyatı: taban fiyat × fiyat çarpanı, 3 basamağa yuvarlanır (oyuncu tarafındaki adaPrice gibi). Eskiden tam sayıya
+// yuvarlanıyordu: 1 ASTRA × 0,4 çarpan = 0 olup ödenen tutarı sıfırlıyordu (denetim EK-08).
+export function lotteryTicketPrice(base, multiplier) {
+  const b = Number(base) > 0 ? Number(base) : 100;
+  const m = Number(multiplier) > 0 ? Number(multiplier) : 1;
+  return Math.max(0.001, Math.round(b * m * 1000) / 1000);
+}
+
 // Fiyat çarpanının bu haftaki yeni değeri
 export function nextMultiplier({ current = 1, priceUsd, launchPriceUsd, runwayMonths = 0 }, rules = WEEKLY_RULES) {
   if (!(priceUsd > 0) || !(launchPriceUsd > 0)) return current;

@@ -82,7 +82,10 @@ export const kolezyumYontemleri = {
     const taslak = RAKIP_TABLOSU[kademe.id] || RAKIP_TABLOSU.bronze;
     const rakipAtk = Math.max(15, Math.floor(taslak.atk * (0.85 + Math.random() * 0.3)));
     const rakipHp = Math.max(80, Math.floor(taslak.hp * (0.85 + Math.random() * 0.3)));
-    const rakipPuani = Math.round(kademe.minRating + Math.random() * 150);
+    // Rakip puanı oyuncunun puanının ±RATING_SPREAD'i kadar (13 Ekim 2026 EK-06): eskiden kademenin tabanı + 0-150 idi, oyuncu
+    // 1000'deyken rakip 0-150 çıkıyor, beklenen sonuç %99 olduğu için zaferle puan hiç artmıyordu.
+    const yayilim = cfg.RATING_SPREAD ?? 100;
+    const rakipPuani = Math.max(0, Math.round(puan + (Math.random() * 2 - 1) * yayilim));
     const rakip = { name: `${kademe.name} Rakibi`, icon: taslak.icon, atk: rakipAtk, hp: rakipHp, rating: rakipPuani };
 
     const muttefik = createUnit({
@@ -134,10 +137,15 @@ export const kolezyumYontemleri = {
       stats.score += 3;
 
       // Ödül arena kasasından gerçekten çekilir (basılmaz); kademenin çarpanıyla
+      // Ödül ASTRA olarak SABİTTİR (KARARLAR_KESIN B: fiyat çarpanı yalnız bedellere uygulanır; eskiden adaPrice ile çarpılıyordu),
+      // lig çarpanıyla artar, günlük kişi tavanını (DAILY_REWARD_CAP_ASTRA) ve haftalık kişi payını aşamaz.
       const kasa = treasury.getPool('arena');
-      const taban = Math.min(this.adaPrice(cfg.WIN_REWARD_ASTRA), Math.round(kasa * cfg.WIN_REWARD_POOL_SHARE));
-      const cekim = treasury.withdrawWhole('arena', Math.round(taban * kademe.rewardMult));
+      const taban = Math.min(cfg.WIN_REWARD_ASTRA, Math.round(kasa * cfg.WIN_REWARD_POOL_SHARE));
+      const gunlukKalan = Math.max(0, (cfg.DAILY_REWARD_CAP_ASTRA ?? Infinity) - (Number(sayaclar.arenaAda) || 0));
+      const istenen = Math.min(Math.round(taban * kademe.rewardMult), Math.floor(gunlukKalan));
+      const cekim = istenen > 0 ? this._kasaCekKisiTam('arena', istenen) : { granted: 0, budgetFull: false };
       odul = cekim.granted || 0;
+      if (odul > 0) sayaclar.arenaAda = (Number(sayaclar.arenaAda) || 0) + odul;
       butceDoldu = !!cekim.budgetFull;
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + odul;
       this._onAdaEarned(odul);

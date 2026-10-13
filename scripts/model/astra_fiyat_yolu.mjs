@@ -6,7 +6,12 @@
 // Kullanım: node scripts/model/astra_fiyat_yolu.mjs senaryo=orta [yakim=1 kilit=1 sat=0.25 weeks=156 out=dosya.json]
 // Öneri aracıdır; oyuna bağlı değildir.
 // ============================================================================
+// 13 Ekim 2026 denetimi EK-09: oyun tarafı sabitleri (harcama bölüşümü, kilit, kasa tohumları, haftalık ödeme oranı, çekim ücreti ve
+// UBI payı) artık js/config.js ve server/economy.js'ten okunur. Eskiden elle yazılıydı ve kodla uyumsuzdu (çekim ücretinin UBI payı
+// 0,70 idi, kodda 0,50; kasa tohumu 48 M elle yazılmıştı).
 import fs from 'fs';
+import { GAME_CONFIG as C } from '../../js/config.js';
+import { WEEKLY_RULES as WR } from '../../server/economy.js';
 const A = Object.fromEntries(process.argv.slice(2).map(x => x.split('=')));
 const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 const SENARYO = {
@@ -18,13 +23,16 @@ const S = SENARYO[A.senaryo || 'orta'];
 const P = {
   weeks: num('weeks', 156), avaxUsd: num('avax', 11.43),
   N0: num('N0', 50), Nmax: num('Nmax', 1000), kapiHedefUsd: num('hedef', 100), kapiArtis: 0.10,
-  havuz0: num('havuz', 48e6), odemeHafta: num('odeme', 0.025), pazarNet0: num('pazarNet', 0.55e6), pazarNetAzalma: 0.97,
+  // havuz: oyuncuya ödeme yapan + proje kasaları (TREASURY_SEED'den); ödeme oranı: kasaların haftalık bütçe oranlarının ortalaması
+  havuz0: num('havuz', ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'konsey'].reduce((s, k) => s + C.TREASURY_SEED[k], 0)),
+  odemeHafta: num('odeme', (() => { const R = C.TREASURY_WEEKLY_BUDGET.RATES; const v = Object.values(R); return v.reduce((s, x) => s + x, 0) / v.length; })()),
+  pazarNet0: num('pazarNet', 0.55e6), pazarNetAzalma: 0.97,
   harcamaPayi: num('harcama', 0.6),           // dağıtılan gelirin oyun içinde yeniden harcanan payı
   yakim: num('yakim', 1), kilit: num('kilit', 1),
-  burnSpend: 0.05, creator: 0.03, ubi: 0.06,  // harcama bölüşümü (kalan %86 kasalara)
-  freeShare: 0.20, unlockWeek: 0.024, unlockSpend: 0.20,
+  burnSpend: C.TOKEN_BURN_RATE, creator: C.CREATOR_ROYALTY_RATE, ubi: C.UBI_POOL_RATE,  // harcama bölüşümü (kalan %86 kasalara)
+  freeShare: C.LOCKED_BALANCE.FREE_SHARE, unlockWeek: C.LOCKED_BALANCE.WEEKLY_UNLOCK_BASE + C.LOCKED_BALANCE.WEEKLY_UNLOCK_ACTIVE, unlockSpend: C.LOCKED_BALANCE.UNLOCK_ON_SPEND,
   sat: num('sat', 0.25),                      // serbest bakiyenin haftada satılmak istenen payı
-  wdPriceDrop: 0.02, wdFee: 0.03, wdFeeUbi: 0.70,
+  wdPriceDrop: WR.maxPriceDrop, wdFee: WR.fee, wdFeeUbi: WR.feeUbiShare,   // çekim ücretinin %50'si UBI'ye, %50'si yakılır (KARAR 4, 8 Ekim 2026)
   tradeBurn: 0.2, tradeGame: 0.4, tradeHold: 0.3, tradeReward: 0.1,   // trade gelirinin bolusumu (kullanici 7 Ekim)
   ...S
 };

@@ -88,3 +88,16 @@ K0 dal + config (6 kaynak, ölçek, kasalar, oranlar) + testler güncel · K1 ç
 - Universe'de **gezegen satın alma hakkı yalnız Genesis NFT sahiplerindedir.** Genesis olmayan Universe oyuncusu başkasının gezegeninde (ya da Sirius'ta) oynar, gezegen alamaz. Hak NFT ile taşınır: ilan pazarında satılırsa hak alıcıya geçer; bir Genesis = gezegen alma hakkı (gezegen sayısı Universe hesap kurallarıyla sınırlanır).
 - Sonuç: zindan ve Pandora kutuları Universe'e hazırlığın merkezinde; kutu/anahtar/eser pazar değeri bu hakla büyür. Genesis sahipliği "Universe'e hazırlık" ilerlemesinin %20'si (roket, depo, köylü, asker, Genesis).
 - Universe belgelerine (00_IKI_OYUN_BAGI, 02_GEZEGENLER) aynı kural işlendi.
+
+## N. 13 Ekim 2026 denetim kararları (ekonomi sayıları)
+
+Ayrıntı, ölçüm ve alternatifler: `docs/v2/TARAMA_2026-10.md` "13 Ekim 2026 denetim kararları (ekonomi)". Test: `tests/test_denetim_2026_10_ekonomi.mjs`.
+
+- **Seviye bedeli siloya sığar (EK-01):** her hammaddede bedel ≤ ulaşılabilir en büyük silonun kapasitesi × 0,8 (`LEVEL_UP_SILO_SHARE`). "Başlangıç silosuna sığmayan maliyet olmaz" ilkesinin devamı: bedel, oyuncunun erişebileceği silodan büyük olamaz (Universe öncesi silo 12, sonrası 18).
+- **Kilit al-sat ile açılmaz (EK-04):** pazardan hammadde alımında kilit açma payı yalnız komisyon + yakılan mal üzerinden; kilitli ASTRA ile alınanın geri satışı tamamen kilitli döner.
+- **Ücretsiz havuz ağırlığı katkı tavanlı (EK-03):** `WEIGHT_CAP_CONTRIBUTION` 100 (FULL_CONTRIBUTION × 10), üs 1,5 korunur.
+- **Zindan günlük kişi tavanı (EK-05):** max(5 ödüllü girişin değeri, orduya harcanan × 0,70 ÷ 93 gün); haftalık kişi payı = bütçe × 3 ÷ aktif vatandaş (zindan, kolezyum).
+- **Kolezyum (EK-06):** rakip puanı oyuncu ±100; ödül ASTRA olarak sabit (çarpansız) × lig çarpanı; günlük kişi tavanı 125 ASTRA.
+- **Dünya bossu (EK-07):** kilitli güç savaş anında güncele indirilir (artmaz).
+- **Piyango (EK-08):** devreden biletin ödenen değeri her çekilişte %5 düşer, bilet fiyatının yarısına kadar; ücretsiz (çark parçası) bilet ödenmiş sayılmaz; sunucu bilet fiyatı 3 basamak.
+- **Kasa ömrü (EK-10):** yalnız oyuncuya ödeme yapan kasalar (dungeon, arena, worldBoss, quest, carnival) sayılır.

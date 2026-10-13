@@ -92,3 +92,20 @@ kendisi kurar. Sıfır değil, anlamlı bir talep yeterlidir.
 - **Seviye hızı:** XP tablosu üç alana göre yazılmıştı (günlük 2.520 XP); altı alan birden çalışınca seviyeler yaklaşık iki kat
   hızlı geliyor. Bu turda dokunulmadı (kullanıcı kararı gerekir); bedel gerçek hıza göre hesaplandığı için ekonomiyi bozmaz.
 - **R14, R15, R19:** Konsey katkı puanı mesajı, çark/promo kasa defteri, asker hakkı kuralları (karar bekliyor).
+
+## 7. 13 Ekim 2026 denetimi sonrası (EK-01, EK-09)
+
+**Seviye bedeli artık ulaşılabilir silonun %80'ini aşamaz** (`LEVEL_UP_SILO_SHARE`). Önceki tablodaki Sv.12+ talebi hayaletti:
+bedel silo-12'yi aşıyordu, oyuncu o seviyelere hiç gelemiyordu. Yeni ölçüm (talep / tam üretim; sıra buğday, taş, odun, kömür, demir, şifalı ot):
+
+| Seviye | buğday | taş | odun | kömür | demir | şifalı ot |
+|---|---|---|---|---|---|---|
+| 5 | 0,97 | 0,55 | 0,82 | 0,55 | 0,81 | 0,58 |
+| 10 | 0,94 | 0,46 | 0,73 | 0,45 | 0,74 | 0,48 |
+| 20 | 0,70 | **0,28** | 0,59 | **0,25** | 0,54 | **0,28** |
+| 40 | 0,48 | **0,17** | 0,47 | **0,14** | 0,42 | **0,17** |
+
+Sv.20+ taş, kömür ve şifalı ot 0,40 bandının altında; neden yalnız bedelin siloya sığdırılması (model ve test bunu `siloKirpilan`
+ile doğrular, taban 0,10). Universe açılınca (silo 18) bant eskisi gibidir. Üst sınır (kalıcı kıtlık) ve hak üzerinden bakış
+(talep / hak ≤ 3,5) her seviyede sıkıdır. Seçenekler (kullanıcı kararı): kabul etmek (termostat kotayı kısar), şifalı otla stamina
+("ot çayı", §6), ya da seviye XP'sini küçültmek. Model ayrıca artık ulaşılamayan silo yükseltmesini saymaz (Universe öncesi tavan 12).

@@ -260,6 +260,9 @@ export const karnavalYontemleri = {
       this.state.wheelTicketShards = (this.state.wheelTicketShards || 0) + 1;
       if (this.state.wheelTicketShards >= 3) {
         this.state.wheelTicketShards -= 3;
+        // Ücretsiz bilet: ödenen tutar 0 sayılır. lotteryTicketsPaid henüz yoksa mevcut biletlerin bedeliyle başlatılır;
+        // aksi hâlde piyango "bilet × bilet fiyatı" ile hesaplar ve ücretsiz bilet de ödenmiş sayılıp 2 katı alırdı.
+        if (this.state.lotteryTicketsPaid == null) this.state.lotteryTicketsPaid = (this.state.lotteryTickets || 0) * this.getLotteryRules().ticketPrice;
         this.state.lotteryTickets = (this.state.lotteryTickets || 0) + 1;
         ozetMetni += ' (🎉 3 Parça Birikti: +1 Çark Çevirme / Piyango Bileti Kazanıldı!)';
         kazanc.parcaBirikti = true;

@@ -103,6 +103,7 @@ console.log('✅ savaş simülasyonu ve boss fazları');
     g2.state.soldierUnits = [{ ...guclu }];
     g2.state.arenaKeys = 5;
     g2.state.colosseumStats = { wins: 0, losses: 0, score: 0, rank: 11, rating: lig.minRating };
+    g2.getDailyCounters().arenaAda = 0;   // günlük ödül tavanı (13 Ekim 2026 EK-06) ligleri birbirinin sayacına bağlamasın
     const m = g2.executeColosseum1v1Match(0);
     assert.equal(m.isVictory, true, `${lig.id}: çok güçlü asker kazanır`);
     assert.equal(m.rewardAda, Math.round(taban * lig.rewardMult), `${lig.id}: ödül ${taban} × ${lig.rewardMult}`);

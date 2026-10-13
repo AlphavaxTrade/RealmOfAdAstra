@@ -1,6 +1,6 @@
 // Realm of AdAstra sunucusu — dünya: haftalık hesaplaşma (Pazartesi 00:01 TSİ)
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
-import { allocateWithdrawals, faucetWeekly, nextMultiplier, WEEKLY_RULES } from '../economy.js';
+import { allocateWithdrawals, faucetWeekly, nextMultiplier, runwayPoolTotal, lotteryTicketPrice, WEEKLY_RULES } from '../economy.js';
 import { runDraw } from '../../js/economy/lottery.js';
 import { rastgele } from '../rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../../js/economy/faucet.js';
@@ -143,7 +143,9 @@ export function olusturHaftalik(w) {
       summary.faucet = { players: free.length, perPlayer: paidCount ? Math.floor(paidTotal / paidCount * 100) / 100 : 0, maxShare: Math.max(0, ...shares), totalAda: paidTotal, usdPerPlayerMonth: f.usdPerPlayerMonth };
 
       // 4) Fiyat çarpanı (kasa ömrü = hazine / aylık ücretsiz havuz)
-      const pools = Object.values(T.state.pools).reduce((s, v) => s + (Number(v) || 0), 0);
+      // Kasa ömrü yalnız oyuncuya ödeme yapan kasalarla hesaplanır (kilitli universe/konsey, tek olaylık fatih ve alıp yakan geri alım
+      // kasası sayılmaz): eskiden 88 M'nin hepsi sayılıp ömür ~170 ay çıkıyor, fiyat çarpanı kalıcı ×0,8'e iniyordu (EK-10)
+      const pools = runwayPoolTotal(T.state.pools, E.GAME_CONFIG.TREASURY_RUNWAY_POOLS);
       const monthlyFaucet = paidTotal * WEEKLY_RULES.weeksPerMonth;
       const runwayMonths = monthlyFaucet > 0 ? pools / monthlyFaucet : 999;
       const priceMultiplier = nextMultiplier({ current: Number(e.priceMultiplier) || 1, priceUsd: market?.priceUsd, launchPriceUsd: e.launchPriceUsd, runwayMonths });
@@ -173,7 +175,10 @@ export function olusturHaftalik(w) {
       // 7) Ortak piyango çekilişi: bütün oyuncuların biletleri arasından TEK kazanan (şans = bilet / toplam).
       // Kazanan biletlerine ödediğinin 2 katını alır; kasa yetmezse kalan biletlere amorti dağıtılır (js/economy/lottery.js).
       const LC = E.GAME_CONFIG.CARNIVAL?.LOTTERY || {};
-      const rules = { ticketPrice: Math.round((LC.TICKET_COST_ADA || 100) * (Number(e.priceMultiplier) || 1)), winnerMultiplier: LC.WINNER_MULTIPLIER || 2, amortiShare: LC.AMORTI_SHARE ?? 0.02 };
+      // Bilet fiyatı 3 basamağa yuvarlanır (oyuncu tarafındaki adaPrice ile aynı); tam sayıya yuvarlama 1 × 0,4 çarpanında 0'a düşüyordu
+      // ve ödenen tutarı sıfırlıyordu (13 Ekim 2026 denetimi EK-08)
+      const ticketPrice = lotteryTicketPrice(LC.TICKET_COST_ADA || 100, e.priceMultiplier);
+      const rules = { ticketPrice, winnerMultiplier: LC.WINNER_MULTIPLIER || 2, amortiShare: LC.AMORTI_SHARE ?? 0.02, carryAgingRate: LC.CARRY_AGING_RATE ?? 0.05, carryValueFloor: LC.CARRY_VALUE_FLOOR ?? 0.5 };
       const holders = [];
       for (const p of players) {
         const st = states.get(p.address);
@@ -228,7 +233,8 @@ export function olusturHaftalik(w) {
       db.raw.prepare('DELETE FROM prices WHERE at < ?').run(now - 400 * DAY);
       const seq = Number((db.kvJson('world:arena', {}) || {}).seq) || 0;
       if (seq > 5000) db.raw.prepare("DELETE FROM kv WHERE key >= 'pvp:match:' AND key < 'pvp:match;' AND CAST(substr(key, 11) AS INTEGER) <= ?")   /* LIKE yerine aralık: anahtar indeksini kullanır */.run(seq - 5000);
-      T.openWeekBudgets();
+      // Aktif vatandaş sayısı: son 7 günde görülenler (kişi başı haftalık pay tavanı için, js/treasury.js getPersonWeekCap)
+      T.openWeekBudgets({ aktif: players.filter(p => p.last_seen >= now - 7 * DAY).length });
       return summary;
     }); } finally { T.bypassBudget = false; }
   }

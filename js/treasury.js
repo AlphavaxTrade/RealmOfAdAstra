@@ -129,10 +129,13 @@ export class TreasuryLedger {
   // Yeni haftanın bütçelerini açar (haftalık hesaplaşmanın sonunda; ilk açılışta da bir kez).
   // Giriş = kasanın kümülatif girişindeki artış. Son INFLOW_WEEKS haftanın ortalamasının INFLOW_SHARE'i
   // bütçeye eklenir; ayrıca kasa × oran × sağlık çarpanı kadar da çekilebilir.
-  openWeekBudgets() {
+  // opts.aktif: o hafta aktif vatandaş sayısı (sunucu verir; kişi başı pay tavanı için). Verilmezse kişi tavanı uygulanmaz.
+  openWeekBudgets(opts = {}) {
     const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
     if (!B) return {};
     const st = this.state;
+    st.weekSeq = (Number(st.weekSeq) || 0) + 1;                           // oyuncuların hafta sayacı bununla sıfırlanır
+    st.weekActive = Math.max(0, Math.floor(Number(opts && opts.aktif) || 0));
     const isaret = st.inflowMark || {};
     const kimlikler = Object.keys(B.RATES);
     const ilkAcilis = !Object.keys(isaret).length;   // o ana dek biriken giriş bir haftanın girişi sayılmaz
@@ -159,6 +162,17 @@ export class TreasuryLedger {
     }
     this.save();
     return { ...st.weekBudget };
+  }
+
+  // Kişi başı haftalık pay tavanı: bütçe × PERSON_CAP_MULT ÷ aktif vatandaş (13 Ekim 2026 denetimi EK-05).
+  // Bütçe, aktif sayısı ya da çarpan yoksa Infinity (tarayıcı tek oyunculuk, ilk hafta, hesaplaşma anı).
+  getPersonWeekCap(poolId) {
+    const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
+    const k = Number(B && B.PERSON_CAP_MULT);
+    if (!(k > 0) || this.bypassBudget || !this._budgeted(poolId)) return Infinity;
+    const aktif = Number(this.state.weekActive) || 0;
+    if (!(aktif > 0)) return Infinity;
+    return this.state.weekBudget[poolId] * k / aktif;
   }
 
   // Bu haftanın vatandaşa dağıtılan toplamını okur ve sıfırlar (haftalık hesaplaşmada bir kez)
