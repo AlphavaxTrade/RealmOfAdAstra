@@ -8,6 +8,7 @@ import { soldierPortrait } from '../art.js';
 import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '../../combat.js';
 import { getDungeonEntry } from '../../bestiary.js';
 import { sonSavasiYaz } from '../zindan/son-savas.js';
+import { kazancYazisi } from '../kazanc-yazisi.js';
 
 const TAKTIK_SIMGE = { 1: '🛡️', 2: '⚔️', 3: '🏹' };
 
@@ -322,11 +323,12 @@ async function savasiOyna(b, m, secili, odeHarc) {
       : []
   };
 
+  const serbestOran = (b.GAME_CONFIG.LOCKED_BALANCE || {}).FREE_SHARE;   // kazancın serbest kısmı; kalanı kilitli (QA-14)
   const taban = gs.getDungeonBaseReward(m.level, boss);
-  const onizlemeAstra = Math.min(taban.ada, gs.getDungeonDayStatus().budgetLeft);
+  const onizlemeAstra =Math.min(taban.ada, gs.getDungeonDayStatus().budgetLeft);
   const ganimet = entry.rewarded
     ? [
-      `🟣 +${tam(onizlemeAstra)} ASTRA`,
+      `🟣 ${kazancYazisi(onizlemeAstra, serbestOran)}`,
       `✨ +${m.rewardXp || (m.level * 15)} Asker XP`,
       `🧩 Teçhizat Parçası (${gs.getFragmentDropRate(gs.state.level)}% şans)`,
       `📦 Pandora Kutusu (${gs.getBoxDropRate(gs.state.level)}% şans)`
@@ -346,7 +348,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
       // Durum savaş başında işlendi; burada yalnızca bildirimler ve sonuç kartı gösterilir
       if (outcome.victory) {
         const duyuru = [
-          `${m.name} yenildi! +${outcome.adaReward} ASTRA kazandın (⚡ -${staminaBedeli} stamina).`,
+          `${m.name} yenildi! ${kazancYazisi(outcome.adaReward, serbestOran)} kazandın (⚡ -${staminaBedeli} stamina).`,
           outcome.budgetFull ? dolu : '',
           outcome.scrollGained ? `📜 ${outcome.scrollGained.name} düştü!` : '',
           `Savaşa katılan askerlerin +${m.rewardXp} asker XP kazandı.`,
@@ -357,7 +359,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         if (b.bildirimEkle) b.bildirimEkle('🏆', duyuru);
         if (outcome.weaponsWorn.length) b.bildir(`⚔️ Silahların dayanıklılığı -1 azaldı: ${outcome.weaponsWorn.join(', ')}`, 'info');
         b.bildir(entry.rewarded
-          ? `🏆 Zafer! ${m.name} mağlup edildi! (+${tam(outcome.adaReward)} ASTRA)`
+          ? `🏆 Zafer! ${m.name} mağlup edildi! (${kazancYazisi(outcome.adaReward, serbestOran)})`
           : `🏋️ Antrenman zaferi: ${m.name} yenildi (yalnızca deneyim)`, 'success');
         window.dispatchEvent(new CustomEvent('monster-defeated', { detail: { level: m.level } }));   // zindan haritası levhaları tazeler
       } else {
@@ -367,7 +369,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
 
       const satirlar = [];
       if (outcome.victory) {
-        satirlar.push(entry.rewarded ? `🟣 +${tam(outcome.adaReward || 0)} ASTRA` : '🏋️ Antrenman girişi: ASTRA yok');
+        satirlar.push(entry.rewarded ? `🟣 ${kazancYazisi(outcome.adaReward || 0, serbestOran)}` : '🏋️ Antrenman girişi: ASTRA yok');
         satirlar.push(`✨ +${m.rewardXp} asker XP`);
         if (outcome.xpGained) satirlar.push(`🧙 +${tam(outcome.xpGained)} hesap XP`);
         if (outcome.fragmentsGained) satirlar.push(`🧩 +${outcome.fragmentsGained} teçhizat parçası`);

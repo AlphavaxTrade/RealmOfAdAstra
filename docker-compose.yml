@@ -6,7 +6,14 @@
 # Ayarlar server/.env dosyasından okunur (örnek: docs/kurumsal/env.ornek.txt, ayrıntı: docs/kurumsal/ORTAM.md)
 services:
   realm:
-    build: .
+    build:
+      context: .
+      # Gerçek ağ derlemesi (denetim H1): REALM_GERCEK_AG=1 ise iki adres de zorunlu, yoksa derleme hata verir; ikisi de boşsa deneme imajı.
+      # Değerler kabuktan ya da bu klasördeki .env dosyasından okunur (server/.env DEĞİL: o yalnız çalışma zamanı içindir).
+      args:
+        REALM_GERCEK_AG: ${REALM_GERCEK_AG:-0}
+        VITE_PAYMENTS_CONTRACT: ${VITE_PAYMENTS_CONTRACT:-}
+        VITE_TOKEN_ADDRESS: ${VITE_TOKEN_ADDRESS:-}
     image: realm-of-adastra:${SURUM:-yerel}
     init: true                      # PID 1 sorunu: sinyaller doğru iletilir, zombi süreç kalmaz
     restart: unless-stopped

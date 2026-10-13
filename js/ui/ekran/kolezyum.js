@@ -4,6 +4,7 @@ import {
   ekranKaydet, kap, kart, katli, satir, sekmeler, dugme, uyari, not, bos, izgara, hucre, etiket,
   tam, astra, sayi, esc, ac, yenile
 } from './cekirdek.js';
+import { kazancYazisi } from '../kazanc-yazisi.js';
 
 const SEKMELER = [
   { id: 'duel', ad: 'Düello', simge: '⚔️' },
@@ -317,6 +318,7 @@ const ekran = {
 
       const istat = gs.getSoldierFullStats(idx) || { totalAtk: 65, totalMaxHp: 500 };
       const dolu = b.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE;
+      const serbestOran = (b.GAME_CONFIG.LOCKED_BALANCE || {}).FREE_SHARE;   // kazancın serbest kısmı; kalanı kilitli (QA-14)
       const eloSatiri = `⭐ ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO (yeni puan ${r.newRating})`;
       const odulSatiri = r.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık lig puanı +3';
       const basladi = b.arenaBaslat({
@@ -335,15 +337,15 @@ const ekran = {
           uid: r.enemyUid, name: esc(r.opponentName), icon: esc(r.opponentIcon || '🥷'), avatar: 'assets/gladiator_rival.jpg',
           hp: r.opponentHp || 350, maxHp: r.opponentHp || 350, atk: r.opponentAtk || 50, skills: ['armorBreaker', 'cleave'], row: 'front'
         }],
-        loot: [`🪙 +${r.rewardAda} ASTRA${r.budgetFull ? ' · ' + dolu : ''}`, eloSatiri, odulSatiri],
+        loot: [`🪙 ${kazancYazisi(r.rewardAda, serbestOran)}${r.budgetFull ? ' · ' + dolu : ''}`, eloSatiri, odulSatiri],
         replay: r.replay,
         onComplete: () => {
           b.hudYenile();
           if (r.isVictory) {
-            b.bildir(`🏆 Zafer! +${r.rewardAda} ASTRA ve ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO kazanıldı!${r.budgetFull ? ' ⏳ ' + dolu : ''}`, 'success');
+            b.bildir(`🏆 Zafer! ${kazancYazisi(r.rewardAda, serbestOran)} ve ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO kazanıldı!${r.budgetFull ? ' ⏳ ' + dolu : ''}`, 'success');
             return {
               altBaslik: `${r.opponentName} yenildi`,
-              satirlar: [`🪙 +${r.rewardAda} ASTRA`, eloSatiri, odulSatiri],
+              satirlar: [`🪙 ${kazancYazisi(r.rewardAda, serbestOran)}`, eloSatiri, odulSatiri],
               not: r.budgetFull ? dolu : '',
               eylemler: [{ etiket: '🏟️ Kolezyuma dön', tikla: () => ac('kolezyum') }]
             };

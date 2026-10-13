@@ -16,6 +16,15 @@ COPY public ./public
 # tarayıcı kodu (js/net/online.js) sunucuyla AYNI işlem beyaz listesini içe alır: yalnız bu tek dosya gerekir
 COPY server/actions.js ./server/actions.js
 COPY scripts/sikistir.mjs ./scripts/sikistir.mjs
+# Gerçek ağ derlemesi (denetim raporu H1): oyun tarayıcıda cüzdana "bu sözleşmeye ASTRA izni ver" dedirtir. Sözleşme ve token adresi
+# derlemeye SABİTLENMEZSE sunucu ele geçirildiğinde oyuncunun cüzdanı yabancı bir adrese açılabilir. Bu yüzden gerçek ağ imajında
+# REALM_GERCEK_AG=1 verilir ve iki adres de zorunludur (yoksa derleme HATA verir: vite.config.js). Hiçbiri verilmezse imaj deneme
+# (TEST_MODE) imajıdır ve eskisi gibi derlenir; CI'daki `docker build .` bu yüzden değişmez.
+#   docker build --build-arg REALM_GERCEK_AG=1 --build-arg VITE_PAYMENTS_CONTRACT=0x... --build-arg VITE_TOKEN_ADDRESS=0x... .
+# ARG değerleri RUN adımında ortam değişkeni olarak görünür (ayrıca ENV yazılmaz: derleme aşaması imaja girmez, adresler zaten herkese açıktır).
+ARG REALM_GERCEK_AG=0
+ARG VITE_PAYMENTS_CONTRACT=
+ARG VITE_TOKEN_ADDRESS=
 RUN npm run build
 
 # ── 2) Üretim bağımlılıkları (ethers, nodemailer, qrcode) ────────────────────

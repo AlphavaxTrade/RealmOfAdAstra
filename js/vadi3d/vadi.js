@@ -188,12 +188,14 @@ export function startVadi3D(container) {
   const fly = { from: null, to: null, t: 0 };
 
   // ── Döngü ──
-  const clock = new THREE.Clock(); let statusTimer = 0, running = true, visible = true;
+  // THREE.Clock three 0.186'da kaldırıldı (uyarı veriyordu, denetim QA-17): THREE.Timer her karede bir kez update() ister;
+  // connect() sekme gizliyken büyük zaman sıçramasını önler (eski kodun 0,05 sn dt sınırı ayrıca duruyor).
+  const timer = new THREE.Timer(); timer.connect(document); let statusTimer = 0, running = true, visible = true;
   function frame() {
     if (!running) return;
     requestAnimationFrame(frame);
     if (!visible) return;
-    const dt = Math.min(0.05, clock.getDelta()); const t = clock.elapsedTime;
+    timer.update(); const dt = Math.min(0.05, timer.getDelta()); const t = timer.getElapsed();
     for (const a of animated) a.obj.rotation[a.axis] += dt * a.speed;
     if (water) water.position.y = Math.sin(t * 1.2) * 0.04;
     for (const c of clouds) { c.position.x += dt * 1.2; if (c.position.x > W / 2 + 30) c.position.x = -W / 2 - 30; }
@@ -213,6 +215,6 @@ export function startVadi3D(container) {
     show() { visible = true; container.style.display = ''; },
     hide() { visible = false; setHover(null); container.style.display = 'none'; },
     flyTo,
-    destroy() { running = false; ro.disconnect(); renderer.dispose(); container.innerHTML = ''; }
+    destroy() { running = false; timer.dispose(); ro.disconnect(); renderer.dispose(); container.innerHTML = ''; }
   };
 }

@@ -16,9 +16,9 @@ export function botDurumu(gs) {
   return { durum: 'off', metin: 'Bot: Kapalı', ipucu: 'Otomasyon botu kapalı — Tavernadan başlat' };
 }
 
-/** Bakiyenin yazılışı: dar ekranda 100 bin ve üstü kısaltılır (1,2 Mn). */
+/** Bakiyenin yazılışı: dar ekranda 10 bin ve üstü kısaltılır (12,35 B / 1,2 Mn): 360 px'te en uzun metin "9.999,99" (denetim QA-07). */
 export function bakiyeYazisi(bakiye, darEkran) {
-  if (darEkran && bakiye >= 100000) return bakiye.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 });
+  if (darEkran && bakiye >= 10000) return bakiye.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 });
   return bakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 

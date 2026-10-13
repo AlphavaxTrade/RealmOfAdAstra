@@ -33,8 +33,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: İmajı derle ve gönder
+        # Gerçek ağ imajı (denetim H1): depo değişkenleri (Settings > Variables) REALM_GERCEK_AG=1, VITE_PAYMENTS_CONTRACT ve
+        # VITE_TOKEN_ADDRESS verilirse adresler derlemeye sabitlenir; REALM_GERCEK_AG=1 iken adres eksikse derleme hata verir.
+        # Hiçbiri tanımlı değilse imaj deneme (TEST_MODE) imajıdır; gizli bilgi değil, herkese açık adreslerdir.
+        env:
+          REALM_GERCEK_AG: ${{ vars.REALM_GERCEK_AG }}
+          VITE_PAYMENTS_CONTRACT: ${{ vars.VITE_PAYMENTS_CONTRACT }}
+          VITE_TOKEN_ADDRESS: ${{ vars.VITE_TOKEN_ADDRESS }}
         run: |
           DEPO="ghcr.io/${GITHUB_REPOSITORY,,}"
-          docker build -t "$DEPO:$SURUM" -t "$DEPO:son" .
+          docker build \
+            --build-arg REALM_GERCEK_AG="${REALM_GERCEK_AG:-0}" \
+            --build-arg VITE_PAYMENTS_CONTRACT="${VITE_PAYMENTS_CONTRACT:-}" \
+            --build-arg VITE_TOKEN_ADDRESS="${VITE_TOKEN_ADDRESS:-}" \
+            -t "$DEPO:$SURUM" -t "$DEPO:son" .
           docker push "$DEPO:$SURUM"
           docker push "$DEPO:son"

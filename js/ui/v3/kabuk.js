@@ -57,15 +57,20 @@ export function kurV3Kabuk(api) {
     <button type="button" id="v3-bakiye" class="v3-hap v3-bakiye" aria-label="ASTRA bakiyen, hesap ve cüzdan">
       <span class="v3-para" aria-hidden="true"></span><b id="v3-bakiye-deger">0</b><small>ASTRA</small>
     </button>
-    <button type="button" id="v3-kaynak-dugme" class="v3-hap" aria-label="Kaynaklar" aria-expanded="false" aria-controls="v3-kaynak-tepsi">
-      <span aria-hidden="true">📦</span><span class="v3-etiket">Kaynaklar</span><i id="v3-kaynak-uyari" class="v3-nokta" hidden></i>
+    <button type="button" id="v3-daha" class="v3-hap v3-ikon" aria-label="Daha fazla: kaynaklar, bot, bildirimler" aria-expanded="false" aria-controls="v3-hud-grup">
+      <span aria-hidden="true">⋯</span><i id="v3-daha-nokta" class="v3-nokta" hidden></i>
     </button>
-    <button type="button" id="v3-bot" class="v3-hap v3-bot" data-state="off" aria-label="Otomasyon botu">
-      <i class="v3-durum"></i><span id="v3-bot-metin" class="v3-etiket">Bot</span>
-    </button>
-    <button type="button" id="v3-zil" class="v3-hap v3-ikon" aria-label="Bildirimler">
-      <span aria-hidden="true">🔔</span><b id="v3-zil-sayi" class="v3-sayi" hidden>0</b>
-    </button>`;
+    <div id="v3-hud-grup" class="v3-hud-grup">
+      <button type="button" id="v3-kaynak-dugme" class="v3-hap" aria-label="Kaynaklar" aria-expanded="false" aria-controls="v3-kaynak-tepsi">
+        <span aria-hidden="true">📦</span><span class="v3-etiket">Kaynaklar</span><i id="v3-kaynak-uyari" class="v3-nokta" hidden></i>
+      </button>
+      <button type="button" id="v3-bot" class="v3-hap v3-bot" data-state="off" aria-label="Otomasyon botu">
+        <i class="v3-durum"></i><span id="v3-bot-metin" class="v3-etiket">Bot</span>
+      </button>
+      <button type="button" id="v3-zil" class="v3-hap v3-ikon" aria-label="Bildirimler">
+        <span aria-hidden="true">🔔</span><span class="v3-etiket-menu" aria-hidden="true">Bildirimler</span><b id="v3-zil-sayi" class="v3-sayi" hidden>0</b>
+      </button>
+    </div>`;
 
   const tepsi = document.createElement('div');
   tepsi.id = 'v3-kaynak-tepsi';
@@ -114,6 +119,14 @@ export function kurV3Kabuk(api) {
   const tepsiAc = (ac) => {
     tepsi.hidden = !ac;
     $('v3-kaynak-dugme').setAttribute('aria-expanded', String(ac));
+  };
+
+  // Dar ekranda (CSS: ≤ 359 px) Kaynaklar / Bot / Zil "Daha fazla" (⋯) menüsüne taşınır; geniş ekranda ⋯ gizli, grup yalnız bir sarmalayıcı
+  const grup = $('v3-hud-grup');
+  const grupAc = (ac, odakGeri = false) => {
+    grup.classList.toggle('acik', ac);
+    $('v3-daha').setAttribute('aria-expanded', String(ac));
+    if (!ac && odakGeri) $('v3-daha').focus();
   };
 
   const sekmeSec = (id) => {
@@ -235,6 +248,9 @@ export function kurV3Kabuk(api) {
     balonKapat();
   }, true);
 
+  $('v3-daha').addEventListener('click', () => { tepsiAc(false); grupAc(!grup.classList.contains('acik')); });
+  grup.addEventListener('click', () => grupAc(false));   // menüdeki bir öğeye dokunulunca menü kapanır (öğenin kendi işlevi önce çalışır)
+  document.addEventListener('click', (e) => { if (grup.classList.contains('acik') && !e.target.closest('#v3-hud-grup, #v3-daha')) grupAc(false); });
   $('v3-profil').addEventListener('click', () => { tepsiAc(false); api.ekranAc('karakter'); });
   $('v3-bakiye').addEventListener('click', () => { tepsiAc(false); api.openWallet(); });
   $('v3-bot').addEventListener('click', () => { tepsiAc(false); api.ekranAc('taverna'); });
@@ -250,6 +266,7 @@ export function kurV3Kabuk(api) {
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!tepsi.hidden) tepsiAc(false);
+    if (grup.classList.contains('acik')) grupAc(false, true);
   });
   $('v3-simdi-dugme').addEventListener('click', () => api.danismanEylemi($('v3-simdi').dataset.eylem || ''));
 
@@ -302,6 +319,9 @@ export function kurV3Kabuk(api) {
 
     const n = String(v.bildirim || 0);
     $('v3-zil-sayi').hidden = n === '0'; yaz($('v3-zil-sayi'), n);
+    // ⋯ menüsü kapalıyken içindeki uyarılar kaybolmasın: okunmamış bildirim ya da dolu silo varsa ⋯ üstünde nokta
+    $('v3-daha-nokta').hidden = n === '0' && !doluVar;
+    $('v3-zil').setAttribute('aria-label', n === '0' ? 'Bildirimler' : `Bildirimler, ${n} okunmamış`);
 
     // Şimdi ne yapmalı: kralın danışmanının önerisi
     const kart = $('v3-simdi');

@@ -126,6 +126,39 @@ html.v3 #v3-tabbar button.active::before { content: ''; position: absolute; top:
 }
 @media (max-width: 520px) { html.v3 .v3-etiket { display: none; } html.v3 .v3-hap { padding: 0 10px; } html.v3 .v3-bakiye small { display: none; } }
 
+/* 3b. DAR EKRAN: Kaynaklar / Bot / Zil "Daha fazla" (⋯) menüsüne taşınır (denetim QA-07).
+   Eskiden 320 px'te zil ekran dışında kalıyor, %200 yakınlaştırmada (195 px) üç düğme de erişilemiyordu.
+   Geniş ekranda ⋯ gizli ve #v3-hud-grup yalnız bir sarmalayıcıdır (display: contents), yerleşim eskisi gibi. */
+html.v3 .v3-hud-grup { display: contents; }
+html.v3 #v3-daha { display: none !important; }
+html.v3 .v3-etiket-menu { display: none; }
+@media (max-width: 359px) {
+  html.v3 #v3-hud { gap: 6px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
+  html.v3 #v3-daha { display: inline-flex !important; flex: none; margin-left: 0; }
+  html.v3 #v3-hud .v3-bakiye { margin-left: auto; min-width: 0; }
+  html.v3 #v3-hud .v3-para { display: none; }
+  html.v3 .v3-hud-grup { display: none; }
+  html.v3 .v3-hud-grup.acik {
+    display: flex; flex-direction: column; gap: var(--v3-gap-2);
+    position: absolute; top: calc(100% + 6px); right: max(8px, env(safe-area-inset-right));
+    width: min(260px, calc(100vw - 16px)); padding: 10px; box-sizing: border-box;
+    background: var(--v3-yuzey); border: 1px solid var(--v3-cizgi-guclu); border-radius: var(--v3-r);
+    box-shadow: var(--v3-golge); z-index: var(--v3-z-tepsi);
+  }
+  html.v3 .v3-hud-grup.acik .v3-hap { width: 100%; justify-content: flex-start; padding: 0 14px; border-radius: 12px; }
+  html.v3 .v3-hud-grup.acik .v3-etiket { display: inline; }
+  html.v3 .v3-hud-grup.acik .v3-etiket-menu { display: inline; }
+  html.v3 .v3-hud-grup.acik .v3-sayi { position: static; margin-left: auto; }
+  html.v3 .v3-hud-grup.acik .v3-nokta { top: 10px; right: 12px; }
+}
+/* %200 yakınlaştırma / çok dar pencere (≈ 195-260 px): profil yalnız seviye + stamina, bakiye en sade */
+@media (max-width: 260px) {
+  html.v3 #v3-hud { gap: 4px; padding-left: max(6px, env(safe-area-inset-left)); padding-right: max(6px, env(safe-area-inset-right)); }
+  html.v3 .v3-av { display: none; }
+  html.v3 .v3-profil { padding: 0 4px; }
+  html.v3 #v3-hud .v3-bakiye { padding: 0 8px; }
+}
+
 /* 5. PANEL (eski #rpg-modal'ın v3 görünümü) ------------------------------ */
 html.v3 .rpg-modal-overlay {
   align-items: flex-end !important; justify-content: center !important; box-sizing: border-box !important;
@@ -152,7 +185,10 @@ html.v3 .rpg-modal-overlay .rpg-modal-body { padding: 8px 16px calc(24px + var(-
   html.v3 .rpg-modal-overlay .rpg-modal-window { height: min(100%, 860px) !important; border-radius: 22px !important; }
   html.v3 .rpg-modal-overlay .rpg-modal-window:has(.v3-hub, .v3-liste) { height: auto !important; }
 }
-html.v3 .toast-container { bottom: calc(var(--v3-tab-h) + var(--safe-b, 0px) + 10px) !important; z-index: 100005; }
+/* Bildirimler (toast): sabit alt çubuğun üstünde durur; altta yapışık bir eylem çubuğu ("Savaşa başla") varsa onun da üstüne çıkar
+   (js/ui/toast.js --toast-ek ölçer) ve hiçbir dokunuşu engellemez (denetim QA-15). */
+html.v3 .toast-container { bottom: calc(var(--v3-tab-h) + var(--safe-b, 0px) + 10px + var(--toast-ek, 0px)) !important; z-index: 100005; pointer-events: none !important; }
+html.v3 .toast-container .toast { pointer-events: none !important; }
 
 /* 6. BİLEŞENLER ---------------------------------------------------------- */
 html.v3 .v3-hub { display: grid; gap: var(--v3-gap-2); grid-template-columns: 1fr; padding-top: 4px; }
@@ -419,3 +455,16 @@ html.v3 .v3-bildirim-oge.is-yeni { background: rgba(231,185,76,.07); }
 html.v3 .v3-bildirim-oge.is-uyari { background: rgba(240,104,104,.12); box-shadow: inset 3px 0 0 var(--v3-kotu); }
 html.v3 .v3-bildirim-oge.is-uyari b { color: #ffb3b3; }
 html.v3 .v3-bildirim-oge.is-uyari i { color: var(--v3-kotu); }
+
+/* 12. ÇEVRİMİÇİ PENCERELER: giriş, e-posta doğrulama, ödeme, hesap (js/net/online.js; denetim QA-04) ---------- */
+/* Etiketler: yalnız placeholder yetmez. .ol-gizli ekranda görünmez ama ekran okuyucuya okunur (sıkışık satırlar için). */
+#online-overlay .ol-etiket { display: block; margin: 10px 0 0; text-align: left; font: 700 calc(12.5px * var(--v3-yazi-olcek, 1))/1.3 var(--font-ui, system-ui, sans-serif); color: #cbd5e1; }
+#online-overlay .ol-etiket + input { margin-top: 4px !important; }
+#online-overlay .ol-gizli { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+/* Dokunma alanı en az 44 px: düğmeler, alanlar ve metin bağlantıları */
+#online-overlay :is(button, select, input:not([type="checkbox"]):not([type="radio"])) { min-height: var(--v3-tap, 44px); }
+#online-overlay button#wp-close { min-width: var(--v3-tap, 44px); }
+#online-overlay .ol-baglanti { display: inline-flex; align-items: center; min-height: var(--v3-tap, 44px); padding: 0 6px; }
+/* Odak halkası: koyu zeminde de görünür */
+#online-overlay :is(button, a, input, select):focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }
+#online-overlay #online-pencere:focus { outline: none; }

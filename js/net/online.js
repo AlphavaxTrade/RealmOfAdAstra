@@ -11,6 +11,7 @@
 import { ACTIONS, DEV_ACTIONS, MISAFIR_ACTIONS } from '../../server/actions.js';
 import { GAME_CONFIG } from '../config.js';
 import { applyRates } from '../economy/rates.js';
+import { etiketHtml, odemeOzeti, adresDenetle, sabitAdresler, izinIstenecek, yuklemeHatasiMetni } from './online-yardim.js';
 
 const SESSION_KEY = 'adastra_session_v1';
 // Zamanla ilerleyen işler: tarayıcıda yalnız görüntü için çalışır, sunucuya gönderilmez (sunucu kendisi işler)
@@ -20,7 +21,10 @@ const LOCAL_ONLY = ['runTavernaAutomationCycle', 'updateExpeditions', 'regenerat
 // Yalnız tarayıcıya ait arayüz tercihleri: sunucu kaydı bunları ezmez
 const CLIENT_KEYS = ['guideDismissed'];
 
-export const online = { active: false, address: null, pending: 0, lastSync: 0 };
+// yuklemeHatasi: oturum açık ama hesabın durumu sunucudan alınamadı (denetim QA-09). Bu sürede işlemler engellenir,
+// oturum DÜŞÜRÜLMEZ ve oyuncuya "yeniden dene" kartı gösterilir; boş misafir oyuna sessizce düşülmez.
+// agKopuk: son istek ağ hatasıyla bitti (sunucuya hiç gitmedi); başarılı ilk yanıtla kalkar.
+export const online = { active: false, address: null, pending: 0, lastSync: 0, yuklemeHatasi: null, agKopuk: false };
 let ctx = null;            // { gameState, ammMarket, treasury, globalPool, toast, onApplied }
 let token = null;
 
@@ -34,12 +38,16 @@ const API_BASE = String((import.meta.env && import.meta.env.VITE_API_URL) || '')
 // Hiçbir ağ isteği sonsuza dek asılı kalmaz: yanıt gelmezse istek iptal edilir (asılı bir istek işlem kuyruğunu tıkar,
 // eşitlemeyi durdurur, açılışta oyunu hiç başlatmazdı)
 const ZAMAN_ASIMI_MS = 20000;
+const AG_YOK_MESAJI = 'İnternet bağlantın yok ya da sunucuya ulaşılamıyor; işlem kaydedilmedi. Bağlantın gelince tekrar dene.';
 async function fetchZamanAsimli(url, secenek, ms = ZAMAN_ASIMI_MS) {
   const kontrol = new AbortController();
   const zamanlayici = setTimeout(() => kontrol.abort(), ms);
   try {
-    return await fetch(url, { ...secenek, signal: kontrol.signal });
+    const yanit = await fetch(url, { ...secenek, signal: kontrol.signal });
+    online.agKopuk = false;
+    return yanit;
   } catch (err) {
+    online.agKopuk = true;
     if (err && err.name === 'AbortError') {
       const e = new Error('Sunucuya ulaşılamadı (zaman aşımı). Bağlantını kontrol edip tekrar dene.');
       e.status = 0;
@@ -47,7 +55,7 @@ async function fetchZamanAsimli(url, secenek, ms = ZAMAN_ASIMI_MS) {
       throw e;
     }
     // Ağ yok / sunucu kapalı: tarayıcının İngilizce "Failed to fetch" metni oyuncuya gösterilmesin (denetim QA-08)
-    const e = new Error('İnternet bağlantın yok ya da sunucuya ulaşılamıyor; işlem kaydedilmedi. Bağlantın gelince tekrar dene.');
+    const e = new Error(AG_YOK_MESAJI);
     e.status = 0;
     e.ag = true;
     throw e;
@@ -85,12 +93,40 @@ export async function detectServer() {
   }
 }
 
+// ── Yerel bildirim yankısı (denetim QA-15) ───────────────────────────────
+// Normal bir işlem önce yerelde uygulanır (örn. ogreticiGordu → "Görev tamamlandı" bildirimi) ve oyun döngüsü bildirimi hemen
+// gösterir; sunucu aynı işlemi çalıştırıp AYNI bildirimi yanıtında geri yollar (sunucu bildirimi bir kez teslim eder). Yanıt gecikince
+// ikinci bir bildirim çıkıyordu. Yerelde üretilen bildirimlerin metni kısa süre hatırlanır; sunucu yanıtındaki aynı metin atılır.
+// Yalnız sunucuda doğan bildirimler (kabul, çevrimdışı olaylar) etkilenmez.
+const yerelBildirimler = new Map();   // metin → üretildiği an
+const YANKI_OMRU_MS = 60000;
+const yerelBildirimOnce = (gs) => new Set((gs.state && Array.isArray(gs.state.pendingNotices) && gs.state.pendingNotices) || []);
+function yerelBildirimKaydet(gs, onceki) {
+  const liste = gs.state && gs.state.pendingNotices;
+  if (!Array.isArray(liste)) return;
+  const simdi = Date.now();
+  for (const n of liste) if (n && n.message && !onceki.has(n)) yerelBildirimler.set(n.message, simdi);
+}
+function yankiBildirimleriniAt(oyuncu) {
+  if (!oyuncu || !Array.isArray(oyuncu.pendingNotices) || !yerelBildirimler.size) return;
+  const simdi = Date.now();
+  for (const [metin, an] of yerelBildirimler) if (simdi - an > YANKI_OMRU_MS) yerelBildirimler.delete(metin);
+  // Yerel kopya henüz gösterilmediyse (yanıt oyun döngüsünden önce geldi) sunucunun kopyası kalır ve yereli ezer: tek bildirim
+  const gosterilmeyen = new Set(((ctx.gameState.state && ctx.gameState.state.pendingNotices) || []).map((n) => n && n.message));
+  oyuncu.pendingNotices = oyuncu.pendingNotices.filter((n) => {
+    if (!n || !yerelBildirimler.has(n.message)) return true;
+    yerelBildirimler.delete(n.message);   // bir yerel bildirim bir yankıyı siler
+    return gosterilmeyen.has(n.message);
+  });
+}
+
 // ── Sunucu görüntüsünü oyuna uygula ─────────────────────────────────────
 function apply(payload) {
   if (!payload || !payload.player) return;
   const { gameState, ammMarket, treasury, globalPool } = ctx;
   const keep = {};
   for (const k of CLIENT_KEYS) if (gameState.state && gameState.state[k] !== undefined) keep[k] = gameState.state[k];
+  yankiBildirimleriniAt(payload.player);
   gameState.state = { ...payload.player, ...keep };
   gameState._lastFrameAt = Date.now();          // tarayıcı kendi "çevrimdışı telafi"sini yapmasın (sunucu yaptı)
   const w = payload.world;
@@ -120,7 +156,48 @@ async function sync() {
     // Yanıt beklenirken oyuncu işlem yaptıysa bu görüntü eskidir: yerel durumu ezmesin (işlem geri alınmış görünür, oyuncu tekrar basardı)
     if (online.pending > 0 || (online.gonderilenIslem || 0) !== gonderilen) return;
     apply(yanit);
+    if (online.yuklemeHatasi) hesapYuklendi();
   } catch (err) { if (err.status === 401) return relogin(); }
+}
+
+// ── Hesap yüklenemedi kartı (denetim QA-09) ──────────────────────────────
+// Oturum açıkken /api/state alınamazsa oyun boş bir misafir hesabı gibi açılıp "hesabım kayboldu" izlenimi vermesin:
+// oturum korunur, işlemler engellenir, oyuncu "Yeniden dene" ile ya da 20 saniyelik otomatik eşitlemeyle toparlanır.
+const HESAP_YUKLENMEDI = { success: false, message: '⚠️ Hesabın henüz yüklenemedi; işlem yapılmadı. "Yeniden dene" ile hesabını yükle.' };
+
+// sayfayiYenile: sunucuya hiç ulaşılamadıysa (health yok) durum kartın içinden yüklenemez; "Yeniden dene" sayfayı yeniler.
+function hesapYuklenemediKarti(hata, { sayfayiYenile = false } = {}) {
+  online.yuklemeHatasi = hata || online.yuklemeHatasi || {};
+  const metin = yuklemeHatasiMetni(online.yuklemeHatasi);
+  const el = overlay(`
+    <div style="font-size:2rem;" aria-hidden="true">🏰</div>
+    <div id="hy-baslik" data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.15rem;margin:4px 0;">Hesabın yüklenemedi</div>
+    <div style="font-size:0.88rem;color:#cbd5e1;line-height:1.55;">${esc(metin)}</div>
+    <div style="font-size:0.82rem;color:#94a3b8;line-height:1.5;margin-top:8px;">Oturumun açık kaldı ve hesabında hiçbir şey kaybolmadı; yalnızca bilgilerini şu an getiremedik.</div>
+    <div id="hy-durum" role="status" style="min-height:1.2em;margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>
+    <button id="hy-tekrar" style="${btnCss('#7c3aed', '#c084fc')}">🔄 Yeniden dene</button>
+    <button id="hy-gez" style="${linkCss}">Şimdilik gezmeye devam et</button>`, { vazgec: () => closeOverlay() });
+  el.querySelector('#hy-gez').onclick = () => closeOverlay();
+  el.querySelector('#hy-tekrar').onclick = async () => {
+    const dugme = el.querySelector('#hy-tekrar');
+    if (sayfayiYenile) { location.reload(); return; }
+    dugme.disabled = true;
+    try {
+      apply(await api('GET', '/api/state'));
+      hesapYuklendi();
+    } catch (err) {
+      if (err.status === 401) { closeOverlay(); online.yuklemeHatasi = null; return relogin(); }
+      online.yuklemeHatasi = err;
+      dugme.disabled = false;
+      el.querySelector('#hy-durum').textContent = yuklemeHatasiMetni(err);
+    }
+  };
+}
+
+function hesapYuklendi() {
+  online.yuklemeHatasi = null;
+  if (document.getElementById('hy-tekrar')) closeOverlay();
+  try { ctx.toast('✅ Hesabın yüklendi.', 'success'); } catch { /* arayüz yok */ }
 }
 
 // ── İşlemleri sunucuya gönder ───────────────────────────────────────────
@@ -154,6 +231,20 @@ function send(name, args, { wait = false } = {}) {
 
 const GUEST_FAIL = { success: false, message: '🔐 Bu işlem için önce giriş yap ya da hesap aç.' };
 
+// Bir işlem yerelde uygulanıp sunucuya gönderilmeden önce: hesap yüklenmediyse ya da bağlantı yoksa işlem HİÇ uygulanmaz.
+// Eskiden işlem önce yerelde uygulanıyordu; sunucuya gitmeyince oyuncu "Görev tamamlandı +5 ASTRA" gibi yerel (sahte) bir
+// ödül bildirimi görüyor, durum sonraki eşitlemeye dek yanlış kalıyordu (denetim QA-08 kalanı).
+// null = devam et; aksi halde işlemin sonucu olarak dönecek hata.
+function islemEngeli() {
+  if (online.yuklemeHatasi) { hesapYuklenemediKarti(); return HESAP_YUKLENMEDI; }
+  const kopuk = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (kopuk || online.agKopuk) {
+    if (!kopuk) sync();   // sunucu geri geldiyse bir sonraki dokunuş çalışsın: bağlantıyı hemen yokla
+    return { success: false, message: AG_YOK_MESAJI };
+  }
+  return null;
+}
+
 function installProxies() {
   const gs = ctx.gameState;
   let depth = 0;
@@ -170,6 +261,8 @@ function installProxies() {
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
         if (!token) { requireLogin(); return Promise.resolve(GUEST_FAIL); }
+        const engel = islemEngeli();
+        if (engel) return Promise.resolve(engel);
         const args = cleanArgs(a, spec);
         return send(name, args, { wait: true }).then(r => {
           if (r && r.success === false && INSUFFICIENT_RE.test(r.message || '') && online.health?.payments?.enabled) { startPayment(name, args); return PAY_STARTED; }
@@ -180,9 +273,13 @@ function installProxies() {
       gs[name] = function (...a) {
         if (depth > 0) return orig.apply(gs, a);
         if (!token) { requireLogin(); return GUEST_FAIL; }
+        const engel = islemEngeli();
+        if (engel) return engel;
+        const onceki = yerelBildirimOnce(gs);
         depth++;
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
+        yerelBildirimKaydet(gs, onceki);
         if (!(r && r.success === false)) send(name, cleanArgs(a, spec));
         else if (INSUFFICIENT_RE.test(r.message || '') && online.health?.payments?.enabled) { startPayment(name, cleanArgs(a, spec)); return PAY_STARTED; }
         return r;
@@ -224,10 +321,23 @@ function installProxies() {
 }
 
 // ── Giriş ───────────────────────────────────────────────────────────────
-// dismissable: pencerenin dışına tıklayınca ya da Esc ile kapanır (yalnız bilgi panelleri; giriş/ödeme akışlarında kapalı)
-function overlay(html, { dismissable = false } = {}) {
+// Erişilebilir pencere (denetim QA-04): role="dialog" + aria-modal + aria-labelledby (başlıkta data-ol-baslik), açılışta odak
+// pencerenin ilk uygun öğesine, Tab pencere içinde döner, Esc "vazgeç" gibi çalışır, kapanınca odak açan öğeye döner.
+//   dismissable: pencerenin dışına tıklayınca da kapanır (yalnız bilgi panelleri; giriş/ödeme akışlarında kapalı: yazılanlar kaybolmasın)
+//   vazgec: Esc'e basılınca çalışacak işlev (akışın "Vazgeç" düğmesiyle aynı; sözünü bekleyen akışlar böylece çözülür)
+//   odak: açılışta odaklanacak öğenin seçicisi (varsayılan: ilk alan/düğme)
+const ODAK_SECICI = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const gorunurMu = n => !!(n.offsetWidth || n.offsetHeight || (n.getClientRects && n.getClientRects().length));
+const odaklanabilirler = kok => Array.from(kok.querySelectorAll(ODAK_SECICI)).filter(gorunurMu);
+let acanOge = null;   // pencere açılmadan önce odakta olan öğe: kapanınca odak ona döner
+
+function overlay(html, { dismissable = false, vazgec = null, odak = null } = {}) {
   let el = document.getElementById('online-overlay');
-  if (!el) {
+  const yeni = !el;
+  const onceki = el && el.contains(document.activeElement) ? document.activeElement.id : '';
+  if (yeni) {
+    const o = document.activeElement;
+    if (o && o !== document.body && o !== document.documentElement) acanOge = o;
     el = document.createElement('div');
     el.id = 'online-overlay';
     el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(5,8,16,0.92);padding:16px;';
@@ -235,17 +345,62 @@ function overlay(html, { dismissable = false } = {}) {
   }
   el.onclick = dismissable ? (e => { if (e.target === el) closeOverlay(); }) : null;
   el.dataset.dismissable = dismissable ? '1' : '';
-  el.innerHTML = `<div style="max-width:420px;width:100%;max-height:92vh;overflow-y:auto;box-sizing:border-box;background:#111827;border:1px solid #a855f7;border-radius:14px;padding:22px;color:#e2e8f0;font-family:inherit;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">${html}</div>`;
+  el._vazgec = typeof vazgec === 'function' ? vazgec : null;
+  el.innerHTML = `<div id="online-pencere" role="dialog" aria-modal="true" tabindex="-1" style="max-width:420px;width:100%;max-height:92vh;overflow-y:auto;box-sizing:border-box;background:#111827;border:1px solid #a855f7;border-radius:14px;padding:22px;color:#e2e8f0;font-family:inherit;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">${html}</div>`;
+  const kutu = el.firstElementChild;
+  const baslik = kutu.querySelector('[data-ol-baslik]');
+  if (baslik) { baslik.id = baslik.id || 'online-baslik'; kutu.setAttribute('aria-labelledby', baslik.id); }
+  else kutu.setAttribute('aria-label', 'Hesap penceresi');
+  // Odak: aynı pencere yeniden çizildiyse (yazarken, kip değişirken) odaktaki alana geri dön; değilse ilk uygun öğeye
+  let hedef = onceki ? kutu.querySelector('#' + onceki) : null;
+  if (!hedef && odak) hedef = kutu.querySelector(odak);
+  if (!hedef) hedef = odaklanabilirler(kutu)[0] || kutu;
+  if (hedef && gorunurMu(hedef) && !hedef.disabled) { try { hedef.focus({ preventScroll: true }); } catch { /* odak verilemedi */ } }
   return el;
 }
-const closeOverlay = () => document.getElementById('online-overlay')?.remove();
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('online-overlay')?.dataset.dismissable === '1') closeOverlay(); });
+function closeOverlay() {
+  const el = document.getElementById('online-overlay');
+  if (!el) return;
+  el.remove();
+  const geri = acanOge;
+  acanOge = null;
+  if (geri && geri.isConnected && typeof geri.focus === 'function') { try { geri.focus({ preventScroll: true }); } catch { /* odak verilemedi */ } }
+}
+// Pencere açıkken klavye yalnız pencereye aittir: Esc vazgeçer, Tab pencerede döner, diğer tuşlar oyunun kısayollarına (T, Ctrl+K, Tab →
+// Krallık merkezi...) ulaşmaz. Yakalama aşamasında ve oyunun kendi dinleyicilerinden ÖNCE çalışır; yazı alanındaki tuşlara dokunulmaz.
+if (typeof document !== 'undefined') {
+  window.addEventListener('keydown', e => {
+    const el = document.getElementById('online-overlay');
+    if (!el) return;
+    const t = e.target;
+    const yaziAlani = !!t && (['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || t.isContentEditable);
+    if (e.key === 'Escape') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (el.dataset.dismissable === '1') closeOverlay();
+      else if (el._vazgec) el._vazgec();
+      return;
+    }
+    if (e.key === 'Tab') {
+      e.stopImmediatePropagation();
+      const liste = odaklanabilirler(el);
+      if (!liste.length) { e.preventDefault(); return; }
+      const ilk = liste[0], son = liste[liste.length - 1];
+      const icerde = el.contains(document.activeElement);
+      if (!icerde) { e.preventDefault(); (e.shiftKey ? son : ilk).focus(); }
+      else if (e.shiftKey && document.activeElement === ilk) { e.preventDefault(); son.focus(); }
+      else if (!e.shiftKey && document.activeElement === son) { e.preventDefault(); ilk.focus(); }
+      return;
+    }
+    if (!yaziAlani || e.ctrlKey || e.metaKey) e.stopImmediatePropagation();
+  }, true);
+}
 
 const toHex = s => '0x' + Array.from(new TextEncoder().encode(s)).map(b => b.toString(16).padStart(2, '0')).join('');
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const inputCss = 'width:100%;padding:10px;border-radius:8px;border:1px solid #475569;background:#0b1220;color:#fff;margin-top:8px;font-size:0.95rem;box-sizing:border-box;';
 const btnCss = (bg, border) => `width:100%;padding:11px;border-radius:10px;border:1px solid ${border};background:${bg};color:#fff;font-weight:900;font-size:1rem;cursor:pointer;margin-top:10px;`;
-const linkCss = 'background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin:10px 6px 0;';
+// Metin bağlantısı görünümlü düğme: dokunma alanı en az 44 px (denetim QA-04; eskiden 15 px yüksekti)
+const linkCss = 'background:none;border:none;color:#94a3b8;cursor:pointer;font-size:0.85rem;text-decoration:underline;margin:6px 4px 0;min-height:44px;padding:0 10px;';
 const boxCss = 'text-align:left;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;';
 
 function saveSession(t, playerId) {
@@ -260,17 +415,20 @@ const tokenFromLink = (url, kind) => { const m = new RegExp('[?&]' + kind + '=([
 // Döner: sunucunun doğrulama yanıtı; oyuncu vazgeçerse null.
 function dogrulamaSifresiSor(verifyToken) {
   return new Promise(resolve => {
+    const iptal = () => { closeOverlay(); resolve(null); };
     const el = overlay(`
-      <div style="font-size:2rem;">🔐</div>
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Hesabını Koru</div>
+      <div style="font-size:2rem;" aria-hidden="true">🔐</div>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">Hesabını Koru</div>
       <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;margin-top:6px;">E-postanı doğruluyorsun. Hesabının şifresini şimdi yaz: kayıtta yazdığınla aynısı olabilir, yenisi de olabilir. Bu şifre geçerli olur; bu e-postayla önceden başka biri hesap açtıysa onun şifresi iptal edilir.</div>
+      ${etiketHtml('vf-pass', 'Şifre (en az 8 karakter)')}
       <input id="vf-pass" type="password" autocomplete="new-password" placeholder="Şifre (en az 8 karakter)" style="${inputCss}">
+      ${etiketHtml('vf-pass2', 'Şifre (tekrar)')}
       <input id="vf-pass2" type="password" autocomplete="new-password" placeholder="Şifre (tekrar)" style="${inputCss}">
       <button id="vf-go" style="${btnCss('#7c3aed', '#c084fc')}">✅ Doğrula ve gir</button>
-      <div id="vf-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>
-      <button id="vf-iptal" style="${linkCss}">Vazgeç</button>`);
+      <div id="vf-msg" role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>
+      <button id="vf-iptal" style="${linkCss}">Vazgeç</button>`, { vazgec: iptal });
     const msg = t => { el.querySelector('#vf-msg').textContent = t; };
-    el.querySelector('#vf-iptal').onclick = () => { closeOverlay(); resolve(null); };
+    el.querySelector('#vf-iptal').onclick = iptal;
     const go = async () => {
       const p1 = el.querySelector('#vf-pass').value, p2 = el.querySelector('#vf-pass2').value;
       if (p1.length < 8) return msg('⚠️ Şifre en az 8 karakter olmalı.');
@@ -300,17 +458,17 @@ export const MUHAFIZ_MUHRU = `🛡️ <strong>Muhafız Mührü.</strong> Şifren
 // İki adımlı doğrulama kodu sor (iptal → null)
 function askCode(title = 'Muhafız Mührü', errMsg = '') {
   return new Promise(resolve => {
+    const done = v => { closeOverlay(); resolve(v); };
     const el = overlay(`
-      <div style="font-size:2rem;">🛡️</div>
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${esc(title)}</div>
+      <div style="font-size:2rem;" aria-hidden="true">🛡️</div>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${esc(title)}</div>
       <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">Telefonundaki doğrulama uygulamasındaki <strong>6 haneli kodu</strong> yaz. Telefonun yanında değilse yedek kodlarından birini de yazabilirsin.</div>
+      ${etiketHtml('ac-code', '6 haneli kod ya da yedek kod')}
       <input id="ac-code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="123456" style="${inputCss};text-align:center;font-size:1.3rem;letter-spacing:4px;">
       <button id="ac-go" style="${btnCss('#7c3aed', '#c084fc')}">Onayla</button>
-      ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
-      <button id="ac-cancel" style="${linkCss}">Vazgeç</button>`);
+      ${errMsg ? `<div role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+      <button id="ac-cancel" style="${linkCss}">Vazgeç</button>`, { vazgec: () => done(null) });
     const inp = el.querySelector('#ac-code');
-    setTimeout(() => inp.focus(), 30);
-    const done = v => { closeOverlay(); resolve(v); };
     el.querySelector('#ac-go').onclick = () => done(inp.value.trim());
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') done(inp.value.trim()); });
     el.querySelector('#ac-cancel').onclick = () => done(null);
@@ -376,31 +534,35 @@ async function enable2faFlow() {
   try { s = await api('POST', '/api/account/2fa/setup'); } catch (err) { ctx.toast(err.message, 'error'); return; }
   const draw = (errMsg = '') => {
     const el = overlay(`
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">🛡️ Muhafız Mührü'nü tak</div>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">🛡️ Muhafız Mührü'nü tak</div>
       <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">
         <strong>1.</strong> Telefonuna bir doğrulama uygulaması kur (Google Authenticator, Microsoft Authenticator ya da Authy; hepsi ücretsiz).<br>
         <strong>2.</strong> Uygulamada "+" → "QR kodu tara" ile aşağıdaki kareyi tara. (Telefondaysan "Uygulamada aç"a dokun.)<br>
         <strong>3.</strong> Uygulamanın gösterdiği 6 haneli kodu aşağıya yaz.
       </div>
-      <img src="${s.qr}" alt="QR" style="width:190px;height:190px;background:#fff;border-radius:10px;padding:6px;margin:10px auto 4px;display:block;">
-      <a href="${esc(s.uri)}" style="color:#93c5fd;font-size:0.82rem;">📱 Uygulamada aç</a>
+      <img src="${s.qr}" alt="Doğrulama uygulaması için QR kodu" style="width:190px;height:190px;background:#fff;border-radius:10px;padding:6px;margin:10px auto 4px;display:block;">
+      <a href="${esc(s.uri)}" class="ol-baglanti" style="color:#93c5fd;font-size:0.82rem;">📱 Uygulamada aç</a>
       <div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">Elle girmek için gizli anahtar:<br><span style="font-family:monospace;color:#fde68a;word-break:break-all;">${esc(s.secret)}</span></div>
+      ${etiketHtml('tf-pass', 'Hesap parolan (doğrulama için)')}
       <input id="tf-pass" type="password" autocomplete="current-password" placeholder="Hesap parolan (doğrulama için)" style="${inputCss}">
+      ${etiketHtml('tf-code', '6 haneli kod')}
       <input id="tf-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 haneli kod" style="${inputCss};text-align:center;font-size:1.2rem;letter-spacing:4px;">
       <button id="tf-go" style="${btnCss('#15803d', '#4ade80')}">Mührü tak</button>
-      ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
-      <button id="tf-cancel" style="${linkCss}">Vazgeç</button>`);
+      ${errMsg ? `<div role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+      <button id="tf-cancel" style="${linkCss}">Vazgeç</button>`, { vazgec: () => openWalletPanel(), odak: '#tf-pass' });
     el.querySelector('#tf-cancel').onclick = () => openWalletPanel();
     el.querySelector('#tf-go').onclick = async () => {
       try {
         const r = await api('POST', '/api/account/2fa/enable', { code: el.querySelector('#tf-code').value.trim(), password: el.querySelector('#tf-pass').value });
+        // Esc bu ekranda pencereyi KAPATMAZ: yedek kodlar bir daha gösterilmez, yanlışlıkla kapanırsa kaybolur
         const el2 = overlay(`
-          <div style="font-size:2rem;">📜</div>
-          <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Mühür takıldı! Yedek kodların</div>
+          <div style="font-size:2rem;" aria-hidden="true">📜</div>
+          <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">Mühür takıldı! Yedek kodların</div>
           <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">Telefonunu kaybedersen bu kodlarla girersin. Her kod <strong>bir kez</strong> kullanılır. Bir kâğıda yaz ya da güvenli bir yere kaydet: <strong>bu kodları bir daha gösteremeyiz.</strong></div>
           <div style="font-family:monospace;font-size:1rem;color:#fde68a;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">${r.backupCodes.map(c => `<span>${esc(c)}</span>`).join('')}</div>
           <button id="tf-copy" style="${btnCss('#334155', '#64748b')}">📋 Kodları kopyala</button>
-          <button id="tf-done" style="${btnCss('#7c3aed', '#c084fc')}">Yazdım, tamam</button>`);
+          <button id="tf-done" style="${btnCss('#7c3aed', '#c084fc')}">Yazdım, tamam</button>`,
+        { vazgec: () => ctx.toast('Yedek kodlarını kaydettikten sonra "Yazdım, tamam" düğmesine bas; bu kodlar bir daha gösterilmez.', 'info') });
         el2.querySelector('#tf-copy').onclick = () => { navigator.clipboard?.writeText(r.backupCodes.join('\n')); ctx.toast('Yedek kodlar kopyalandı', 'success'); };
         el2.querySelector('#tf-done').onclick = () => { ctx.toast('🛡️ Muhafız Mührü takıldı!', 'success'); openWalletPanel(); };
       } catch (err) { draw(err.message); }
@@ -435,6 +597,7 @@ function kasaSection(k) {
     <div style="font-size:0.8rem;color:#cbd5e1;margin-top:4px;">📅 ${left}</div>
     ${k.cap ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:4px;">🛡️ Kasa üst sınırı: <strong>${fmt(k.cap)} ASTRA</strong> (yaklaşık ${k.capDays} günlük harcaman). Fazlası güvenliğin için kendiliğinden bağlı cüzdanına geri gönderilir.${k.overCap && !k.hasWallet ? ' <span style="color:#fbbf24;">Kasan sınırın üstünde ama bağlı cüzdanın yok: geri gönderim için cüzdan bağla.</span>' : ''}</div>` : ''}
     <div style="font-size:0.78rem;color:#94a3b8;margin-top:4px;">Kazandığın bakiye ve kasan bitince: pasif iyileşme durur · bot ücreti yenilenemez, bot durur · botun pazar alımları durur · aletler onarılamaz.</div>
+    ${etiketHtml('ks-amount', 'Kasadan çekilecek miktar', { gizli: true })}${etiketHtml('ks-asset', 'Çekilecek varlık', { gizli: true })}
     <div style="display:flex;gap:6px;margin-top:8px;">
       <input id="ks-amount" type="number" min="0" placeholder="Miktar" style="flex:1;padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
       <select id="ks-asset" style="padding:7px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;"><option value="ADA">ASTRA</option><option>AVAX</option></select>
@@ -460,15 +623,19 @@ function loginFlow(startMode = 'login') {
     const go_ = { login: '🗝️ Giriş Yap', register: '🏰 Hesap Aç', forgot: '📧 Bağlantı Gönder', resend: '📧 Yeniden Gönder' };
     const draw = (busy = false) => {
       const el = overlay(`
-        <div style="font-size:2.2rem;">👑</div>
-        <div style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 2px;">${titles[mode]}</div>
+        <div style="font-size:2.2rem;" aria-hidden="true">👑</div>
+        <div data-ol-baslik style="font-size:1.25rem;font-weight:900;color:#fde047;margin:6px 0 2px;">${titles[mode]}</div>
         <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.5;">${intro[mode]}</div>
+        ${etiketHtml('ol-email', 'E-posta')}
         <input id="ol-email" type="email" autocomplete="email" placeholder="E-posta" value="${esc(email)}" style="${inputCss}">
-        ${mode !== 'forgot' && mode !== 'resend' ? `<input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
-        ${mode === 'register' ? `<input id="ol-pass2" type="password" autocomplete="new-password" placeholder="Şifre (tekrar)" style="${inputCss}">
+        ${mode !== 'forgot' && mode !== 'resend' ? `${etiketHtml('ol-pass', 'Şifre' + (mode === 'register' ? ' (en az 8 karakter)' : ''))}
+        <input id="ol-pass" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" placeholder="Şifre${mode === 'register' ? ' (en az 8 karakter)' : ''}" style="${inputCss}">` : ''}
+        ${mode === 'register' ? `${etiketHtml('ol-pass2', 'Şifre (tekrar)')}
+        <input id="ol-pass2" type="password" autocomplete="new-password" placeholder="Şifre (tekrar)" style="${inputCss}">
+        ${etiketHtml('ol-promo', 'Promo kodu (isteğe bağlı)')}
         <input id="ol-promo" type="text" autocomplete="off" maxlength="32" placeholder="Promo kodu (isteğe bağlı)" value="${esc(promoVal)}" style="${inputCss};text-transform:uppercase;">` : ''}
         <button id="ol-go" ${busy ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${busy ? '⏳ Bekle…' : go_[mode]}</button>
-        ${msg ? `<div style="margin-top:10px;font-size:0.85rem;color:${isErr ? '#fca5a5' : '#86efac'};">${esc(msg)}</div>` : ''}
+        ${msg ? `<div role="${isErr ? 'alert' : 'status'}" style="margin-top:10px;font-size:0.85rem;color:${isErr ? '#fca5a5' : '#86efac'};">${esc(msg)}</div>` : ''}
         ${extra}
         <div>
           ${mode !== 'login' ? `<button class="ol-mode" data-m="login" style="${linkCss}">Giriş yap</button>` : ''}
@@ -476,7 +643,8 @@ function loginFlow(startMode = 'login') {
           ${mode !== 'forgot' ? `<button class="ol-mode" data-m="forgot" style="${linkCss}">Şifremi unuttum</button>` : ''}
           ${mode === 'login' || mode === 'register' ? `<button class="ol-mode" data-m="resend" style="${linkCss}">Onay e-postası gelmedi</button>` : ''}
         </div>
-        <button id="ol-later" style="${linkCss}">Şimdilik gezmeye devam et</button>`);
+        <button id="ol-later" style="${linkCss}">Şimdilik gezmeye devam et</button>`,
+      { vazgec: () => { closeOverlay(); resolve(false); }, odak: msg && isErr && mode === 'login' ? '#ol-pass' : null });
       el.querySelectorAll('.ol-mode').forEach(b => b.addEventListener('click', () => { email = el.querySelector('#ol-email').value; mode = b.dataset.m; msg = ''; extra = ''; draw(); }));
       el.querySelector('#ol-later').addEventListener('click', () => { closeOverlay(); resolve(false); });
       el.querySelector('#ol-go').addEventListener('click', go);
@@ -493,11 +661,11 @@ function loginFlow(startMode = 'login') {
     async function go() {
       const el = document.getElementById('online-overlay');
       email = el.querySelector('#ol-email').value.trim();
-      const password = el.querySelector('#ol-pass') ? el.querySelector('#ol-pass').value : '';
+      const sifre = el.querySelector('#ol-pass') ? el.querySelector('#ol-pass').value : '';
       if (mode === 'register') {
         promoVal = (el.querySelector('#ol-promo')?.value || '').trim();
         // Şifre iki kez: yanlış yazılan şifreyle hesap açılmasın
-        if (password !== (el.querySelector('#ol-pass2')?.value || '')) { msg = '⚠️ Şifreler aynı değil. İkisini de yeniden yaz.'; isErr = true; extra = ''; return draw(); }
+        if (sifre !== (el.querySelector('#ol-pass2')?.value || '')) { msg = '⚠️ Şifreler aynı değil. İkisini de yeniden yaz.'; isErr = true; extra = ''; return draw(); }
       }
       draw(true);
       try {
@@ -514,11 +682,11 @@ function loginFlow(startMode = 'login') {
         }
         if (mode === 'register') {
           // Kayıtta oturum açılmaz: oyuncu e-postasındaki bağlantıyla girer (e-postanın kayıtlı olup olmadığı belli olmaz)
-          const r = await api('POST', '/api/account/register', { email, password, ...(promoVal ? { promo: promoVal } : {}) });
+          const r = await api('POST', '/api/account/register', { email, password: sifre, ...(promoVal ? { promo: promoVal } : {}) });
           msg = r.message; isErr = false; extra = devBtns(r);
           return draw();
         }
-        let r = await api('POST', '/api/account/login', { email, password });
+        let r = await api('POST', '/api/account/login', { email, password: sifre });
         if (r.need2fa) {
           let errMsg = '';
           for (;;) {
@@ -581,14 +749,14 @@ async function linkWalletFlow() {
     const r = await withCode(code => api('POST', '/api/account/wallet/link', { signature, code }), 'Muhafız Mührü — cüzdan bağlama');
     const t = tokenFromLink(r.devLink, 'wallet');
     overlay(`
-      <div style="font-size:2rem;">${r.change ? '🛡️' : '📧'}</div>
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${r.change ? 'Haberci yola çıktı!' : 'Son bir adım!'}</div>
+      <div style="font-size:2rem;" aria-hidden="true">${r.change ? '🛡️' : '📧'}</div>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${r.change ? 'Haberci yola çıktı!' : 'Son bir adım!'}</div>
       <div style="font-size:0.85rem;color:#cbd5e1;line-height:1.55;text-align:left;">
         E-postana bir onay bağlantısı gönderdik. ${r.change ? 'Onayladıktan sonra yeni cüzdanın <strong>48 saat</strong> içinde etkinleşecek; o zamana kadar ödemelerin eski cüzdanına gider.' : 'Onayladığın anda cüzdanın bağlanacak.'}
         ${r.change ? `<div style="${boxCss}">${KALE_KAPISI}</div>` : ''}
       </div>
       ${t ? `<button id="lw-dev" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: e-postadaki onayı şimdi ver</button>` : ''}
-      <button id="lw-ok" style="${btnCss('#7c3aed', '#c084fc')}">Tamam</button>`);
+      <button id="lw-ok" style="${btnCss('#7c3aed', '#c084fc')}">Tamam</button>`, { vazgec: () => openWalletPanel() });
     document.getElementById('lw-ok').onclick = () => openWalletPanel();
     if (t) document.getElementById('lw-dev').onclick = async () => { await confirmWalletLink(t); openWalletPanel(); };
   } catch (err) {
@@ -617,7 +785,7 @@ function astraAlPanelHtml(tokenAddress) {
     <div style="font-family:monospace;font-size:0.76rem;word-break:break-all;color:#86efac;margin-top:6px;">${esc(tokenAddress)}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
       <button id="aa-copy" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#fff;cursor:pointer;font-size:0.78rem;">📋 Sözleşme adresini kopyala</button>
-      <a href="https://snowtrace.io/token/${esc(tokenAddress)}" target="_blank" rel="noopener" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#93c5fd;text-decoration:none;font-size:0.78rem;">🔍 Snowtrace'de gör</a>
+      <a href="https://snowtrace.io/token/${esc(tokenAddress)}" target="_blank" rel="noopener" class="ol-baglanti" style="padding:5px 10px;border-radius:6px;border:1px solid #475569;background:#1e293b;color:#93c5fd;text-decoration:none;font-size:0.78rem;">🔍 Snowtrace'de gör</a>
     </div>
     <div style="margin-top:6px;color:#94a3b8;">Aldığın ASTRA'yı Oyun Kasası adresine ya da hesabına bağlı cüzdanına gönder; oyun otomatik işler.</div>
   </div>`;
@@ -627,7 +795,7 @@ let lockOpen = false, astraAlOpen = false;
 export async function openWalletPanel() {
   if (!online.active) return;
   if (!token && !(await requireLogin())) return;
-  const el = overlay('<div style="padding:20px;">⏳ Yükleniyor…</div>');
+  const el = overlay('<div data-ol-baslik style="padding:20px;">⏳ Yükleniyor…</div>', { dismissable: true });
   let w, k;
   try { [w, k] = await Promise.all([api('GET', '/api/wallet'), api('GET', '/api/kasa').catch(() => null)]); } catch (err) { el.innerHTML = ''; ctx.toast(err.message, 'error'); closeOverlay(); return; }
   const acc = w.account || {};
@@ -643,12 +811,14 @@ export async function openWalletPanel() {
     : '';
   overlay(`
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">🏦 Hesabım</div>
-      <button id="wp-close" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">🏦 Hesabım</div>
+      <button id="wp-close" aria-label="Pencereyi kapat" style="background:none;border:none;color:#94a3b8;font-size:1.3rem;cursor:pointer;">✕</button>
     </div>
-    <div style="font-size:0.8rem;color:#94a3b8;text-align:left;">📧 <strong style="color:#e2e8f0;">${esc(acc.email)}</strong>
-      ${acc.verified ? '<span style="color:#4ade80;">✓ doğrulandı</span>' : '<span style="color:#fbbf24;">doğrulanmadı</span> · <a href="#" id="wp-resend" style="color:#93c5fd;">bağlantıyı yeniden gönder</a>'}
-      · <a href="#" id="wp-logout" style="color:#f87171;">çıkış</a></div>
+    <div style="font-size:0.8rem;color:#94a3b8;text-align:left;display:flex;flex-wrap:wrap;align-items:center;column-gap:10px;">
+      <span>📧 <strong style="color:#e2e8f0;">${esc(acc.email)}</strong>
+      ${acc.verified ? '<span style="color:#4ade80;">✓ doğrulandı</span>' : '<span style="color:#fbbf24;">doğrulanmadı</span>'}</span>
+      ${acc.verified ? '' : '<a href="#" id="wp-resend" class="ol-baglanti" style="color:#93c5fd;">bağlantıyı yeniden gönder</a>'}
+      <a href="#" id="wp-logout" class="ol-baglanti" style="color:#f87171;">çıkış</a></div>
     <div style="display:flex;gap:8px;justify-content:space-between;margin:12px 0 4px;font-size:0.85rem;font-weight:800;">
       <span style="color:#4ade80;">🔓 Serbest<br>${fmt(wd.free)}</span>
       <button type="button" id="wp-lock-toggle" title="Kilitli ASTRA nasıl açılır? Tıkla" style="background:none;border:0;color:#fbbf24;font:inherit;font-weight:800;cursor:pointer;padding:0;text-decoration:underline dotted;text-underline-offset:3px;">🔒 Kilitli ⓘ<br>${fmt(wd.locked)}</button>
@@ -670,6 +840,7 @@ export async function openWalletPanel() {
       <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
       <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ASTRA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ASTRA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
       ${wd.paused ? '<div style="margin-top:6px;color:#fca5a5;font-size:0.82rem;">Çekimler şu an bakımda.</div>' : `
+      ${etiketHtml('wp-amount', 'Çekmek istediğin miktar (ASTRA)', { gizli: true })}
       <div style="display:flex;gap:6px;margin-top:8px;">
         <input id="wp-amount" type="number" min="${wd.minWithdraw}" placeholder="En az ${fmt(wd.minWithdraw)} ASTRA" style="flex:1;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;">
         <button id="wp-withdraw" style="padding:8px 12px;border-radius:6px;border:1px solid #60a5fa;background:#1d4ed8;color:#fff;font-weight:800;cursor:pointer;">Talep ver</button>
@@ -678,13 +849,14 @@ export async function openWalletPanel() {
     </div>
     <div style="text-align:left;margin-top:10px;padding:10px;border:1px solid #334155;border-radius:10px;background:#0f172a;">
       <div style="font-weight:800;color:#fde047;margin-bottom:6px;">🎟️ Promo kodu</div>
+      ${etiketHtml('wp-promo', 'Promo kodu', { gizli: true })}
       <div style="display:flex;gap:6px;"><input id="wp-promo" type="text" autocomplete="off" maxlength="32" placeholder="Kodu yaz" style="flex:1;min-width:0;padding:8px;border-radius:6px;border:1px solid #475569;background:#111827;color:#fff;text-transform:uppercase;">
         <button id="wp-promo-go" style="padding:8px 12px;border-radius:6px;border:1px solid #fbbf24;background:#92400e;color:#fff;font-weight:800;cursor:pointer;">Kullan</button></div>
       <div style="font-size:0.72rem;color:#94a3b8;margin-top:4px;">Her kod bir hesapta bir kez kullanılır. ASTRA ödülü kilitli gelir, oyunda harcadıkça açılır.</div>
     </div>
     ${wd.payouts && wd.payouts.length ? `<div style="text-align:left;margin-top:10px;font-size:0.78rem;color:#cbd5e1;max-height:140px;overflow:auto;">
       <div style="font-weight:800;margin-bottom:4px;">Son gönderimler</div>
-      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ASTRA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
+      ${wd.payouts.map(p => `<div>${fmt(p.amount)} ASTRA · ${statusTr[p.status] || esc(p.status)}${p.tx_hash ? ` · <a href="${snow(esc(p.tx_hash))}" target="_blank" rel="noopener" class="ol-baglanti" style="color:#93c5fd;">işlem</a>` : ''}</div>`).join('')}
     </div>` : ''}`, { dismissable: true });
   const $ = id => document.getElementById(id);
   $('wp-close').onclick = closeOverlay;
@@ -779,12 +951,16 @@ async function handleEmailLinks() {
     clean();
     const t = p.get('reset');
     const el = overlay(`
-      <div style="font-size:2rem;">🗝️</div>
-      <div style="font-weight:900;color:#fde047;font-size:1.1rem;">Yeni Şifre</div>
+      <div style="font-size:2rem;" aria-hidden="true">🗝️</div>
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">Yeni Şifre</div>
+      ${etiketHtml('rs-pass', 'Yeni şifre (en az 8 karakter)')}
       <input id="rs-pass" type="password" autocomplete="new-password" placeholder="Yeni şifre (en az 8 karakter)" style="${inputCss}">
+      ${etiketHtml('rs-pass2', 'Yeni şifre (tekrar)')}
       <input id="rs-pass2" type="password" autocomplete="new-password" placeholder="Yeni şifre (tekrar)" style="${inputCss}">
       <button id="rs-go" style="${btnCss('#7c3aed', '#c084fc')}">Şifreyi Kaydet</button>
-      <div id="rs-msg" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>`);
+      <div id="rs-msg" role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;"></div>
+      <button id="rs-iptal" style="${linkCss}">Vazgeç</button>`, { vazgec: () => closeOverlay() });
+    el.querySelector('#rs-iptal').onclick = () => closeOverlay();
     el.querySelector('#rs-go').onclick = async () => {
       if (el.querySelector('#rs-pass').value !== el.querySelector('#rs-pass2').value) { el.querySelector('#rs-msg').textContent = '⚠️ Şifreler aynı değil. İkisini de yeniden yaz.'; return; }
       try {
@@ -801,6 +977,8 @@ async function handleEmailLinks() {
 const INSUFFICIENT_RE = /Yetersiz\s*(\$?ADASTRA|AdAstra|ASTRA|ADA)\b/i;
 const PAY_STARTED = { success: false, message: '💳 Bakiyen bu işleme yetmedi — cüzdandan ödeme penceresi açıldı.' };
 const pad32 = h => String(h).toLowerCase().replace(/^0x/, '').padStart(64, '0');
+// Derlemede sabitlenmiş ödeme sözleşmesi / token adresi (VITE_PAYMENTS_CONTRACT, VITE_TOKEN_ADDRESS); gerçek ağ derlemesinde zorunlu (vite.config.js)
+const ODEME_SABIT = sabitAdresler(import.meta.env);
 const toHexQ = n => '0x' + BigInt(n).toString(16);
 const sleepMs = ms => new Promise(r => setTimeout(r, ms));
 let paying = false;
@@ -830,22 +1008,24 @@ async function ensureChain(chainId) {
 
 async function payOnChain(q, setStep) {
   if (!window.ethereum) throw new Error('Bu tarayıcıda cüzdan bulunamadı. Core ya da MetaMask eklentisini kur.');
+  // H1: cüzdana HİÇBİR şey sorulmadan önce, sunucunun verdiği adresler derlemeye sabitlenmiş adreslerle karşılaştırılır.
+  // Uyuşmazlıkta ödeme ve izin istenmez (sunucu ele geçirilse bile cüzdan sahte bir sözleşmeye izin vermez).
+  const adresSorunu = adresDenetle(q, ODEME_SABIT);
+  if (adresSorunu) throw new Error(adresSorunu);
   const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
   const from = String(accs && accs[0] || '').toLowerCase();
   if (from !== String(q.wallet).toLowerCase()) throw new Error(`Cüzdanında hesabına bağlı adresi seç: ${short(q.wallet)}`);
-  // Derlemede ödeme sözleşmesi/token adresi verilmişse sunucudan gelen teklif bununla birebir aynı olmalı (sınırsız izin verilen adres sunucuya bırakılmaz)
-  const SABIT_SOZLESME = String((import.meta.env && import.meta.env.VITE_PAYMENTS_CONTRACT) || '').toLowerCase();
-  const SABIT_TOKEN = String((import.meta.env && import.meta.env.VITE_TOKEN_ADDRESS) || '').toLowerCase();
-  if ((SABIT_SOZLESME && String(q.contract).toLowerCase() !== SABIT_SOZLESME) || (SABIT_TOKEN && String(q.token).toLowerCase() !== SABIT_TOKEN)) {
-    throw new Error('Ödeme adresleri bu oyun sürümünün tanıdığıyla uyuşmuyor; işlem durduruldu.');
-  }
   setStep('Avalanche ağına geçiliyor…');
   await ensureChain(q.chainId);
   const amountWei = BigInt(q.amountAda) * 10n ** 18n;
   const allowanceHex = await window.ethereum.request({ method: 'eth_call', params: [{ to: q.token, data: '0xdd62ed3e' + pad32(from) + pad32(q.contract) }, 'latest'] });
-  if (BigInt(allowanceHex || '0x0') < amountWei) {
-    setStep('İlk seferlik izin: cüzdanında "izin ver" onayını ver…');
-    const ah = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from, to: q.token, data: '0x095ea7b3' + pad32(q.contract) + 'f'.repeat(64) }] });
+  // Karar (H1): izin yalnız BU ödemenin tutarı kadar istenir, sınırsız (2^256-1) değil. Alternatif: bir kez sınırsız izin
+  // (sonraki ödemelerde onay sormaz, daha kolay) ama sözleşme/sunucu ele geçirilirse cüzdandaki bütün ASTRA çekilebilirdi;
+  // tutar kadar izin her ödemede bir onay daha demek, kayıp tavanı ise o ödemenin tutarıdır. Mevcut izin yetiyorsa yeniden sorulmaz.
+  const izin = izinIstenecek(allowanceHex || '0x0', amountWei);
+  if (izin !== null) {
+    setStep('Cüzdanında bu ödeme tutarı kadar "izin ver" onayını ver…');
+    const ah = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from, to: q.token, data: '0x095ea7b3' + pad32(q.contract) + pad32(izin.toString(16)) }] });
     setStep('İzin onaylanıyor…');
     await waitReceipt(ah);
   }
@@ -874,28 +1054,38 @@ async function startPayment(name, args) {
     let q;
     try { q = await api('POST', '/api/pay/quote', { name, args }); } catch (err) { ctx.toast(err.message, 'error'); return; }
     if (!q.needPayment) { if (q.message) ctx.toast(q.message, 'info'); return; }
+    // H1: sunucunun verdiği adresler derlemeye sabitlenmişle uyuşmuyorsa ödeme hiç sunulmaz, açık uyarı gösterilir
+    const adresSorunu = q.simulated ? null : adresDenetle(q, ODEME_SABIT);
     await new Promise(resolve => {
+      let kapandi = false;   // oyuncu pencereyi kapattıysa süren zincir adımları pencereyi yeniden açmasın
+      const vazgec = () => { kapandi = true; closeOverlay(); resolve(); };
       const draw = (step = '', errMsg = '') => {
+        if (kapandi) return;
         const noWallet = !q.wallet && !q.simulated;
+        const ozet = odemeOzeti(q, ctx.gameState && ctx.gameState.state ? ctx.gameState.state.adAstraBalance : undefined);
         const el = overlay(`
-          <div style="font-size:2rem;">💳</div>
-          <div style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">Cüzdandan Öde</div>
+          <div style="font-size:2rem;" aria-hidden="true">💳</div>
+          <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">Cüzdandan Öde</div>
           <div style="font-size:0.86rem;color:#cbd5e1;line-height:1.55;text-align:left;">
-            Bu işlem <strong>${fmt(q.cost)} ASTRA</strong> tutuyor; oyunda kazandığın bakiye <strong>${fmt(q.balance)} ASTRA</strong>.
-            Kalan <strong style="color:#fde047;">${fmt(q.amountAda)} ASTRA</strong> cüzdanından ödenecek.
+            Bu işlem <strong>${ozet.maliyet} ASTRA</strong> tutuyor; oyunda kazandığın bakiye <strong>${ozet.bakiye} ASTRA</strong>
+            (eksik: <strong>${ozet.eksik} ASTRA</strong>).
+            Cüzdanından <strong style="color:#fde047;">${ozet.odenecek} ASTRA</strong> ödenecek: eksik kısım ve fiyat oynarsa işlem yarıda kalmasın diye küçük bir pay.
             <div style="margin-top:6px;color:#94a3b8;font-size:0.8rem;">Avalanche ağ ücreti ve aynı tutarda küçük bir oyun komisyonu (AVAX) alınır. Ödediğin ASTRA'dan işlemden artan kısım oyun bakiyende kalır.</div>
           </div>
-          ${noWallet ? `<div style="${boxCss};color:#fbbf24;">Cüzdandan ödeme için önce hesabına bir cüzdan bağla.</div><button id="py-acc" style="${btnCss('#4c1d95', '#a78bfa')}">🔗 Hesabım → Cüzdan bağla</button>` : ''}
-          ${q.simulated ? `<button id="py-sim" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: ödemeyi taklit et</button>` : ''}
-          ${!noWallet && !q.simulated ? `<button id="py-go" ${step ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${step ? '⏳ ' + esc(step) : '🦊 Cüzdanla Öde'}</button>` : ''}
-          ${errMsg ? `<div style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
-          <button id="py-cancel" style="${linkCss}">Vazgeç</button>`);
-        el.querySelector('#py-cancel').onclick = () => { closeOverlay(); resolve(); };
-        el.querySelector('#py-acc')?.addEventListener('click', () => { resolve(); openWalletPanel(); });
+          ${adresSorunu ? `<div role="alert" style="${boxCss};color:#fecaca;border-color:#b91c1c;background:#3f1d1d;">${esc(adresSorunu)}</div>` : ''}
+          ${!adresSorunu && noWallet ? `<div style="${boxCss};color:#fbbf24;">Cüzdandan ödeme için önce hesabına bir cüzdan bağla.</div><button id="py-acc" style="${btnCss('#4c1d95', '#a78bfa')}">🔗 Hesabım → Cüzdan bağla</button>` : ''}
+          ${!adresSorunu && q.simulated ? `<button id="py-sim" style="${btnCss('#334155', '#64748b')}">🧪 Deneme modu: ödemeyi taklit et</button>` : ''}
+          ${!adresSorunu && !noWallet && !q.simulated ? `<button id="py-go" ${step ? 'disabled' : ''} style="${btnCss('#7c3aed', '#c084fc')}">${step ? '⏳ İşlem sürüyor…' : '🦊 Cüzdanla Öde'}</button>` : ''}
+          ${step ? `<div role="status" style="margin-top:8px;font-size:0.82rem;color:#cbd5e1;">${esc(step)}</div>` : ''}
+          ${errMsg ? `<div role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+          <button id="py-cancel" style="${linkCss}">Vazgeç</button>`, { vazgec });
+        el.querySelector('#py-cancel').onclick = vazgec;
+        el.querySelector('#py-acc')?.addEventListener('click', () => { kapandi = true; resolve(); openWalletPanel(); });
         const finish = async txHash => {
           const r = await confirmPayment(q.ref, txHash);
           apply(r);
-          closeOverlay();
+          if (!kapandi) closeOverlay();
+          kapandi = true;
           const res = r.result || {};
           ctx.toast(res.success === false ? `Ödemen alındı (${fmt(r.paid)} ASTRA bakiyende) ama işlem yapılamadı: ${res.message}` : `✅ Ödeme alındı. ${res.message || ''}`, res.success === false ? 'info' : 'success');
           resolve();
@@ -955,29 +1145,48 @@ export const pazar = {
 
 // ── Başlat ──────────────────────────────────────────────────────────────
 // Sunucu varsa girişi yapar, kaydı yükler ve true döner; yoksa false (deneme modu).
+function kayitliOturum() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    return saved && saved.token ? saved : null;
+  } catch { return null; /* özel pencere */ }
+}
+
 export async function startOnline(context) {
+  const saved = kayitliOturum();
   const health = await detectServer();
   if (!health) {
-    // Sunucu adresi derlemede verilmişse (üretim) yanıt vermemesi bir arızadır: oyun sessizce yerel moda düşmesin, uyarılsın
-    online.sunucuBeklendi = !!API_BASE;
+    // Sunucu adresi derlemede verilmişse (üretim) ya da bu tarayıcıda açık bir oturum varsa yanıt vermemesi bir arızadır:
+    // oyun sessizce boş yerel moda düşmesin (oyuncu "hesabım kayboldu" sanmasın), kart gösterilsin (denetim QA-09)
+    online.sunucuBeklendi = !!API_BASE || !!saved;
+    if (saved) hesapYuklenemediKarti({ ag: true, status: 0 }, { sayfayiYenile: true });
     return false;
   }
   ctx = context;
   online.active = true;
   online.health = health;
-  try {
-    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if (saved && saved.token) { token = saved.token; online.playerId = saved.playerId; }
-  } catch { /* özel pencere */ }
+  if (saved) { token = saved.token; online.playerId = saved.playerId; }
   let payload = null;
+  let yuklemeHatasi = null;
   if (token) {
-    try { payload = await api('GET', '/api/state'); } catch { token = null; }
+    try { payload = await api('GET', '/api/state'); }
+    catch (err) {
+      if (err && err.status === 401) {
+        // Oturum gerçekten geçersiz (süresi doldu / başka yerden çıkış yapıldı): sessizce misafir olmak yerine bilgi ver
+        token = null;
+        try { localStorage.removeItem(SESSION_KEY); } catch { /* yok */ }
+        online.oturumSonaErdi = true;
+      } else yuklemeHatasi = err || {};   // 500, ağ, zaman aşımı: oturum KORUNUR
+    }
   }
   // Giriş yapılmamışsa giriş istenmez: herkes gezebilir, işlem yapmak isteyince sorulur
   if (token && payload) apply(payload);
   installProxies();
+  if (yuklemeHatasi) hesapYuklenemediKarti(yuklemeHatasi);
+  else if (online.oturumSonaErdi) setTimeout(() => { try { ctx.toast('🔐 Oturumunun süresi dolmuş; hesabına yeniden giriş yap.', 'info'); } catch { /* arayüz yok */ } }, 1500);
   handleEmailLinks();
   setInterval(sync, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
+  window.addEventListener('online', () => sync());   // bağlantı geri gelince hemen eşitle
   return true;
 }

@@ -55,5 +55,9 @@
   "test_denge_kararlari_2026_10.mjs",
   "test_admin_secici.mjs",
   "test_denetim_2026_10_sunucu.mjs",
-  "test_denetim_2026_10_kurallar.mjs"
+  "test_denetim_2026_10_kurallar.mjs",
+  "test_denetim_2026_10_arayuz.mjs",
+  "test_denetim_2026_10_ekonomi.mjs",
+  "test_denetim_2026_10_guvenlik.mjs",
+  "test_denetim_2026_10_zincir.mjs"
 ]
