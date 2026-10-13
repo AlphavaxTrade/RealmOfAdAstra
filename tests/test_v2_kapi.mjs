@@ -121,7 +121,11 @@ try {
   assert.ok(d2.uyari.includes(C.pid), `${KP.UYARI_HAFTA}. düşük hafta: ilk uyarı`);
   nextWeek(); const d3 = kapi.haftalikKatilimDegerlendir();
   assert.ok(d3.izinSorusu.includes(C.pid), `${KP.IZIN_SORUSU_HAFTA}. düşük hafta: izin sorusu soruldu`);
-  const cCevap = await call('POST', '/api/action', { name: 'cevaplaIzinSorusu', args: [true] }, C.token);
+  // Oyuncunun oyun durumu gerçek saati (Date.now) okur; test saati gerçekten geride kaldığı için cevap süresi "geçmiş" görünmesin
+  const gercekSimdi = Date.now;
+  Date.now = () => now;
+  let cCevap;
+  try { cCevap = await call('POST', '/api/action', { name: 'cevaplaIzinSorusu', args: [true] }, C.token); } finally { Date.now = gercekSimdi; }
   assert.equal(cCevap.status, 200, JSON.stringify(cCevap.body));
   assert.ok(cCevap.body.result.izinAlindi, 'İzin alındı');
   const cOzet1 = (await call('GET', '/api/state', null, C.token)).body.player.katilim;
