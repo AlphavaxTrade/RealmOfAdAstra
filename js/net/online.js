@@ -12,6 +12,7 @@ import { ACTIONS, DEV_ACTIONS, MISAFIR_ACTIONS } from '../../server/actions.js';
 import { GAME_CONFIG } from '../config.js';
 import { applyRates } from '../economy/rates.js';
 import { etiketHtml, odemeOzeti, adresDenetle, sabitAdresler, izinIstenecek, yuklemeHatasiMetni } from './online-yardim.js';
+import { basariBildirimiGeriAl } from '../ui/toast.js';
 
 const SESSION_KEY = 'adastra_session_v1';
 // Zamanla ilerleyen işler: tarayıcıda yalnız görüntü için çalışır, sunucuya gönderilmez (sunucu kendisi işler)
@@ -24,7 +25,7 @@ const CLIENT_KEYS = ['guideDismissed'];
 // yuklemeHatasi: oturum açık ama hesabın durumu sunucudan alınamadı (denetim QA-09). Bu sürede işlemler engellenir,
 // oturum DÜŞÜRÜLMEZ ve oyuncuya "yeniden dene" kartı gösterilir; boş misafir oyuna sessizce düşülmez.
 // agKopuk: son istek ağ hatasıyla bitti (sunucuya hiç gitmedi); başarılı ilk yanıtla kalkar.
-export const online = { active: false, address: null, pending: 0, lastSync: 0, yuklemeHatasi: null, agKopuk: false };
+export const online = { active: false, address: null, pending: 0, lastSync: 0, yuklemeHatasi: null, agKopuk: false, hizBeklemeMs: [700, 1500, 3000] };
 let ctx = null;            // { gameState, ammMarket, treasury, globalPool, toast, onApplied }
 let token = null;
 
@@ -61,6 +62,19 @@ async function fetchZamanAsimli(url, secenek, ms = ZAMAN_ASIMI_MS) {
     throw e;
   } finally {
     clearTimeout(zamanlayici);
+  }
+}
+
+// 429 (hız sınırı) isteği sunucu işlemeden ÖNCE reddeder: güvenle yeniden denenebilir. Hızlı üst üste basışlar (ya da bir ekranın
+// art arda eylemleri) kaybolmasın diye kısa beklemelerle 3 kez denenir; yine olmazsa oyuncuya anlaşılır mesaj gider (denetim 2. tur).
+const HIZ_MESAJI = 'Çok hızlı işlem yaptın; bu işlem kaydedilmedi. Biraz yavaşlayıp tekrar dene.';
+async function apiYavasla(method, path, body) {
+  for (let i = 0; ; i++) {
+    try { return await api(method, path, body); } catch (err) {
+      const bekleme = online.hizBeklemeMs;
+      if (err.status !== 429 || i >= bekleme.length) throw err;
+      await new Promise((coz) => setTimeout(coz, bekleme[i]));
+    }
   }
 }
 
@@ -103,9 +117,48 @@ const YANKI_OMRU_MS = 60000;
 const yerelBildirimOnce = (gs) => new Set((gs.state && Array.isArray(gs.state.pendingNotices) && gs.state.pendingNotices) || []);
 function yerelBildirimKaydet(gs, onceki) {
   const liste = gs.state && gs.state.pendingNotices;
-  if (!Array.isArray(liste)) return;
+  const yeni = [];
+  if (!Array.isArray(liste)) return yeni;
   const simdi = Date.now();
-  for (const n of liste) if (n && n.message && !onceki.has(n)) yerelBildirimler.set(n.message, simdi);
+  for (const n of liste) if (n && n.message && !onceki.has(n)) { yerelBildirimler.set(n.message, simdi); yeni.push(n.message); }
+  return yeni;
+}
+// Sunucu işlemi kabul etmediyse (ağ koptu, sunucu çöktü, kural reddi) yerelde üretilen "Görev tamamlandı +5 ASTRA" gibi başarı
+// bildirimi yanlıştır: henüz gösterilmediyse kuyruktan düşülür, gösterildiyse ekrandan kaldırılır (denetim QA-08 kalanı).
+// Yalnız o işlemin ürettiği metinler gider; başka işlemlerin gerçek bildirimlerine dokunulmaz. Hata bildirimi ayrıca gösterilir.
+function yerelBasariyiGeriAl(mesajlar) {
+  if (!mesajlar || !mesajlar.length) return;
+  const gs = ctx && ctx.gameState;
+  if (gs && gs.state && Array.isArray(gs.state.pendingNotices)) {
+    gs.state.pendingNotices = gs.state.pendingNotices.filter((n) => !(n && mesajlar.includes(n.message)));
+  }
+  for (const m of mesajlar) yerelBildirimler.delete(m);
+  try { basariBildirimiGeriAl(mesajlar); } catch { /* arayüz yok */ }
+}
+// Yerel motor da bildirir: görev tespiti (checkOnboardingProgress), bot yenileme, ekonomi tiki... tarayıcıda her 2 sn çalışır, sunucuda
+// bir sonraki istekte AYNI olayı yeniden bulur. Yerel kopya gösterildikten sonra sunucunun kopyası (ya da tersi) ikinci bildirim
+// çıkarıyordu (denetim 2. tur: çark/Taverna sonrası "Görev tamamlandı" iki kez). Gösterim anında yakalanır: aynı metin, kaynak
+// değişince 60 sn içinde bir kez sayılır. Kaynak: sunucu yanıtındaki nesneler WeakSet'te işaretlidir, yerel motorunkiler değildir.
+const sunucuBildirimleri = new WeakSet();   // /api/state ve /api/action yanıtındaki bildirim nesneleri
+const sunucuGosterilen = new Map();         // metin → an (sunucudan gelip gösterilen)
+function bildirimleriSuz(liste) {
+  if (!Array.isArray(liste) || !liste.length) return liste;
+  const simdi = Date.now();
+  for (const [m, an] of sunucuGosterilen) if (simdi - an > YANKI_OMRU_MS) sunucuGosterilen.delete(m);
+  for (const [m, an] of yerelBildirimler) if (simdi - an > YANKI_OMRU_MS) yerelBildirimler.delete(m);
+  return liste.filter((n) => {
+    if (!n || !n.message) return true;
+    if (sunucuBildirimleri.has(n)) {
+      // sunucu kopyası: aynı metin yerelde az önce gösterildiyse bu bir yankıdır (apply zaten yerel kopyaları eler; bu geç gelenler içindir)
+      if (yerelBildirimler.has(n.message)) { yerelBildirimler.delete(n.message); return false; }
+      sunucuGosterilen.set(n.message, simdi);
+      return true;
+    }
+    // yerel kopya: sunucu aynı metni az önce gösterdiyse tekrar gösterme; yoksa sunucu yankısını eleyebilmek için hatırla
+    if (sunucuGosterilen.delete(n.message)) return false;
+    yerelBildirimler.set(n.message, simdi);
+    return true;
+  });
 }
 function yankiBildirimleriniAt(oyuncu) {
   if (!oyuncu || !Array.isArray(oyuncu.pendingNotices) || !yerelBildirimler.size) return;
@@ -127,6 +180,7 @@ function apply(payload) {
   const keep = {};
   for (const k of CLIENT_KEYS) if (gameState.state && gameState.state[k] !== undefined) keep[k] = gameState.state[k];
   yankiBildirimleriniAt(payload.player);
+  if (Array.isArray(payload.player.pendingNotices)) for (const n of payload.player.pendingNotices) if (n && typeof n === 'object') sunucuBildirimleri.add(n);
   gameState.state = { ...payload.player, ...keep };
   gameState._lastFrameAt = Date.now();          // tarayıcı kendi "çevrimdışı telafi"sini yapmasın (sunucu yaptı)
   const w = payload.world;
@@ -208,20 +262,22 @@ function cleanArgs(args, spec) {
   return out;
 }
 
-function send(name, args, { wait = false } = {}) {
+function send(name, args, { wait = false, geriAl = null } = {}) {
   online.pending++;
   online.gonderilenIslem = (online.gonderilenIslem || 0) + 1;
-  const job = queue.then(() => api('POST', '/api/action', { name, args })).then(res => {
+  const job = queue.then(() => apiYavasla('POST', '/api/action', { name, args })).then(res => {
     online.pending--;
     if (wait || online.pending === 0) apply(res);
+    if (!wait && res.result && res.result.success === false) yerelBasariyiGeriAl(geriAl);
     if (!wait && res.result && res.result.success === false && res.result.message) ctx.toast('Sunucu: ' + res.result.message, 'error');
     return res.result;
   }, err => {
     online.pending--;
+    if (!wait) yerelBasariyiGeriAl(geriAl);
     if (err.status === 401) relogin();
     // Sonucu bekleyen (rastgele) eylemlerde mesajı çağıran gösterir: iki kez bildirim çıkmasın. Ağ hatasında "sunucu kabul etmedi"
     // demek yanlış olur (sunucuya hiç ulaşılmadı).
-    else if (!wait) ctx.toast(err.ag ? err.message : 'Sunucu işlemi kabul etmedi: ' + err.message, 'error');
+    else if (!wait) ctx.toast(err.ag ? err.message : (err.status === 429 ? HIZ_MESAJI : 'Sunucu işlemi kabul etmedi: ' + err.message), 'error');
     sync();
     return { success: false, message: err.message };
   });
@@ -248,6 +304,11 @@ function islemEngeli() {
 function installProxies() {
   const gs = ctx.gameState;
   let depth = 0;
+  if (typeof gs.consumeNotices === 'function' && !gs.consumeNotices.__suzulu) {
+    const asil = gs.consumeNotices;
+    gs.consumeNotices = function (...a) { return bildirimleriSuz(asil.apply(gs, a)); };
+    gs.consumeNotices.__suzulu = true;
+  }
   for (const name of LOCAL_ONLY) {
     const orig = gs[name];
     if (typeof orig !== 'function') continue;
@@ -279,8 +340,10 @@ function installProxies() {
         depth++;
         let r;
         try { r = orig.apply(gs, a); } finally { depth--; }
-        yerelBildirimKaydet(gs, onceki);
-        if (!(r && r.success === false)) send(name, cleanArgs(a, spec));
+        const yerelMesajlar = yerelBildirimKaydet(gs, onceki);
+        // Ekranın kendi başarı bildirimi de (r.message) sunucu reddederse geri alınır: "kaydedildi" deyip sonra "kabul etmedi" dememeli
+        if (r && r.success !== false && typeof r.message === 'string' && r.message) yerelMesajlar.push(r.message);
+        if (!(r && r.success === false)) send(name, cleanArgs(a, spec), { geriAl: yerelMesajlar });
         else if (INSUFFICIENT_RE.test(r.message || '') && online.health?.payments?.enabled) { startPayment(name, cleanArgs(a, spec)); return PAY_STARTED; }
         return r;
       };
@@ -456,9 +519,22 @@ export const SANDIK_TAVSIYESI = `💰 <strong>Sandık Tavsiyesi.</strong> Oyun K
 export const MUHAFIZ_MUHRU = `🛡️ <strong>Muhafız Mührü.</strong> Şifren kale kapısının anahtarı; ama anahtarlar kopyalanabilir. Muhafız Mührü'nü takarsan kapıda bir muhafız daha durur: içeri girmek, cüzdan değiştirmek ya da hazineden altın çıkarmak için telefonundaki doğrulama uygulamasının o anki <strong>6 haneli kodu</strong> da gerekir. Kod her 30 saniyede değişir; şifreni çalan biri bile telefonun olmadan kapıdan geçemez. 📱`;
 
 // İki adımlı doğrulama kodu sor (iptal → null)
+// Kod gönderilince pencere KAPANMAZ: sonuç gelene dek "Doğrulanıyor…" durumunda açık kalır (yedek kod özeti yavaş: saniyeler sürebilir,
+// eskiden pencere kaybolup ekranda hiçbir şey kalmıyordu). Çağıran sonucu alınca pencereyi kapatır ya da kodu yeniden sorar
+// (denetim 2. tur B). Vazgeç / Esc hemen kapatır ve null döner.
 function askCode(title = 'Muhafız Mührü', errMsg = '') {
   return new Promise(resolve => {
-    const done = v => { closeOverlay(); resolve(v); };
+    let gonderildi = false;
+    const done = v => {
+      if (gonderildi) return;
+      if (v == null) { closeOverlay(); resolve(null); return; }
+      gonderildi = true;
+      inp.disabled = true;
+      goBtn.disabled = true;
+      goBtn.textContent = '⏳ Doğrulanıyor…';
+      goBtn.setAttribute('aria-busy', 'true');
+      resolve(v);
+    };
     const el = overlay(`
       <div style="font-size:2rem;" aria-hidden="true">🛡️</div>
       <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;margin:4px 0;">${esc(title)}</div>
@@ -469,7 +545,8 @@ function askCode(title = 'Muhafız Mührü', errMsg = '') {
       ${errMsg ? `<div role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
       <button id="ac-cancel" style="${linkCss}">Vazgeç</button>`, { vazgec: () => done(null) });
     const inp = el.querySelector('#ac-code');
-    el.querySelector('#ac-go').onclick = () => done(inp.value.trim());
+    const goBtn = el.querySelector('#ac-go');
+    goBtn.onclick = () => done(inp.value.trim());
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') done(inp.value.trim()); });
     el.querySelector('#ac-cancel').onclick = () => done(null);
   });
@@ -478,16 +555,21 @@ function askCode(title = 'Muhafız Mührü', errMsg = '') {
 // Mühür açıksa sunucu kod ister (403 + need2fa): kodu sorup aynı isteği tekrarlar. İptal → hata
 async function withCode(call, title) {
   let code, errMsg = '';
-  for (let i = 0; i < 6; i++) {
-    try { return await call(code); }
-    catch (err) {
-      if (!err.need2fa) throw err;
-      if (code !== undefined) errMsg = err.message;
-      code = await askCode(title, errMsg);
-      if (code == null) throw new Error('İşlem iptal edildi.');
+  try {
+    for (let i = 0; i < 6; i++) {
+      try { return await call(code); }
+      catch (err) {
+        if (!err.need2fa) throw err;
+        if (code !== undefined) errMsg = err.message;
+        code = await askCode(title, errMsg);
+        if (code == null) throw new Error('İşlem iptal edildi.');
+      }
     }
+    throw new Error('Çok fazla deneme.');
+  } finally {
+    // Kod gönderildiyse pencere "Doğrulanıyor…" durumunda açık kalmıştır: sonuç ne olursa olsun kapanır
+    if (document.getElementById('ac-go')) closeOverlay();
   }
-  throw new Error('Çok fazla deneme.');
 }
 
 // 🔒 Kilitli ASTRA paneli: nasıl açılır, yarın ve bu hafta ne kadarı açılacak

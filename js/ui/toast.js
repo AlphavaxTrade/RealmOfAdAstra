@@ -18,10 +18,34 @@ export function toastEkBosluk({ cubukUst, pencereYuksekligi, mevcutAlt = 0, aral
   return Math.max(0, Math.round(gerekenAlt - mevcutAlt));
 }
 
+// Ekranda görünen bildirimler (metin → öğe): sunucunun kabul etmediği işlemin yerel "başarı" bildirimi geri alınabilsin (denetim QA-08 kalanı)
+const gorunenler = new Set();   // { oge, mesaj, tur }
+
+/**
+ * Verilen metne sahip, hâlâ ekranda olan BAŞARI bildirimlerini kaldırır; kaç tane kaldırıldığını döndürür.
+ * Yalnız metni tam eşleşenler gider: başka işlemlerin gerçek başarı bildirimlerine dokunulmaz.
+ */
+export function basariBildirimiGeriAl(metinler) {
+  const hedef = new Set((metinler || []).map(String));
+  let say = 0;
+  for (const k of [...gorunenler]) {
+    if (k.tur !== 'success' || !hedef.has(k.mesaj)) continue;
+    gorunenler.delete(k);
+    try { k.oge.remove(); } catch { /* öğe zaten yok */ }
+    say++;
+  }
+  return say;
+}
+
 /** @param {Element|null} kap  #toast-container */
 export function kurToast(kap) {
   return function toast(mesaj, tur = 'info') {
     if (!kap) return;
+    // Aynı metin ve türde bildirim zaten ekrandaysa ikincisi eklenmez (hız sınırında 30 aynı uyarı yığılmasın); varsa süresi tazelenir
+    const metinDuz = String(mesaj ?? '');
+    for (const k of gorunenler) {
+      if (k.mesaj === metinDuz && k.tur === tur && k.oge.isConnected !== false) { k.yenile && k.yenile(); return; }
+    }
     try {
       const cubuk = document.querySelector('#rpg-modal.active .ek-eylem-cubugu');
       const olcu = cubuk ? cubuk.getBoundingClientRect() : null;
@@ -38,13 +62,22 @@ export function kurToast(kap) {
     metin.textContent = String(mesaj ?? '');
     oge.append(simge, ' ', metin);
     kap.appendChild(oge);
+    const kayit = { oge, mesaj: metin.textContent, tur, yenile: null };
+    gorunenler.add(kayit);
     while (kap.children && kap.children.length > EN_COK_GORUNEN && kap.firstElementChild) kap.firstElementChild.remove();
 
-    setTimeout(() => {
-      oge.style.opacity = '0';
-      oge.style.transform = 'translateY(10px)';
-      oge.style.transition = `all ${SOLMA_MS}ms ease`;
-      setTimeout(() => oge.remove(), SOLMA_MS);
-    }, tur === 'error' ? HATA_SURE_MS : SURE_MS);
+    const omur = tur === 'error' ? HATA_SURE_MS : SURE_MS;
+    let sayac = null;
+    const kur = () => {
+      clearTimeout(sayac);
+      sayac = setTimeout(() => {
+        oge.style.opacity = '0';
+        oge.style.transform = 'translateY(10px)';
+        oge.style.transition = `all ${SOLMA_MS}ms ease`;
+        setTimeout(() => { oge.remove(); gorunenler.delete(kayit); }, SOLMA_MS);
+      }, omur);
+    };
+    kayit.yenile = () => { oge.style.opacity = ''; oge.style.transform = ''; kur(); };
+    kur();
   };
 }

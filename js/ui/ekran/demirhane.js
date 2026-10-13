@@ -144,7 +144,7 @@ function esyalarSekmesi(b, secenek) {
   const ozelGrup = `<div class="ek-alan-satiri">
       <select class="ek-girdi" data-e-degis="grupYuva">${YUVALAR.map((y) => `<option value="${y}"${y === secenek.grupYuva ? ' selected' : ''}>${YUVA_KISA[y]}</option>`).join('')}</select>
       <select class="ek-girdi" data-e-degis="grupSeviye">${Array.from({ length: EN_FAZLA_SEVIYE }, (_, i) => i + 1).map((s) => `<option value="${s}"${s === secenek.grupSeviye ? ' selected' : ''}>Seviye ${s}</option>`).join('')}</select>
-      ${dugme({ e: 'ozelGrup', metin: '⚡ Bu grubu geliştir', ton: 'birincil' })}
+      ${dugme({ e: 'ozelGrup', metin: '⚡ Bu grubu geliştir', ton: 'birincil', devreDisi: tumu.length === 0 })}
     </div>`;
 
   const kartlar = liste.length === 0
@@ -157,11 +157,11 @@ function esyalarSekmesi(b, secenek) {
     kart({
       icerik: siralama + dugmeler(
         dugme({ e: 'onarHepsi', metin: `🔨 Kırılan her şeyi onar (${hasarlilar.length})`, devreDisi: hasarlilar.length === 0 }),
-        dugme({ e: 'giydir', metin: '⚡ En iyileri askerlerime giydir', ton: 'iyi' })
+        dugme({ e: 'giydir', metin: '⚡ En iyileri askerlerime giydir', ton: 'iyi', devreDisi: tumu.length === 0 })
       )
     }),
     katli('Toplu işlemler', dugmeler(
-      dugme({ e: 'hepsiniGelistir', metin: '⚡ Hepsini toplu geliştir' }),
+      dugme({ e: 'hepsiniGelistir', metin: '⚡ Hepsini toplu geliştir', devreDisi: tumu.length === 0 }),
       dugme({ e: 'cantayaTopla', metin: '🔄 Tümünü çantaya topla' })
     ), { k: 'toplu' }),
     katli('Tür ve seviyeye göre geliştir', `${hizliGruplar ? `<div class="ek-dugmeler">${hizliGruplar}</div>` : ''}${ozelGrup}`, { k: 'grup' }),

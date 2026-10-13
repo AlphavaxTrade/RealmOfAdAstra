@@ -57,7 +57,12 @@
   "test_denetim_2026_10_sunucu.mjs",
   "test_denetim_2026_10_kurallar.mjs",
   "test_denetim_2026_10_arayuz.mjs",
+  "test_denetim_2026_10_arayuz2.mjs",
   "test_denetim_2026_10_ekonomi.mjs",
+  "test_denetim_2026_10_ekonomi_2.mjs",
   "test_denetim_2026_10_guvenlik.mjs",
-  "test_denetim_2026_10_zincir.mjs"
+  "test_denetim_2026_10_zincir.mjs",
+  "test_server_kasa_hatalar.mjs",
+  "test_yedek_kod.mjs",
+  "test_denetim_2026_10_yonetim.mjs"
 ]

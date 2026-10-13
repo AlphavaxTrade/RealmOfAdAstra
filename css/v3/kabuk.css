@@ -6,7 +6,9 @@
 
 /* 1. JETONLAR ------------------------------------------------------------ */
 html.v3 {
-  --v3-hud-h: 52px;
+  /* Üst çubuk yüksekliği çentik / durum çubuğu payını da içerir (viewport-fit=cover: sayfa çentiğin altına uzanır; denetim 2. tur C) */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --v3-hud-h: calc(52px + var(--safe-t));
   --v3-tab-h: 60px;
   --v3-tap: 44px;
   --v3-gap-1: 4px; --v3-gap-2: 8px; --v3-gap-3: 12px; --v3-gap-4: 16px;
@@ -45,7 +47,7 @@ html.v3 .gate-banner { top: calc(var(--v3-hud-h) + 8px); z-index: 1100; }
 html.v3 #v3-hud {
   display: flex; align-items: center; gap: var(--v3-gap-2);
   position: fixed; top: 0; left: 0; right: 0; height: var(--v3-hud-h);
-  padding: 6px max(10px, env(safe-area-inset-left)) 6px max(10px, env(safe-area-inset-right));
+  padding: calc(6px + var(--safe-t)) max(10px, env(safe-area-inset-right)) 6px max(10px, env(safe-area-inset-left));
   background: rgba(9,12,19,.94); border-bottom: 1px solid var(--v3-cizgi-guclu);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   z-index: var(--v3-z-hud); box-sizing: border-box;
@@ -111,6 +113,7 @@ html.v3 #v3-tabbar {
   display: grid; grid-template-columns: repeat(5, 1fr);
   position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--v3-z-tab);
   height: calc(var(--v3-tab-h) + var(--safe-b, 0px)); padding-bottom: var(--safe-b, 0px);
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
   background: rgba(11,14,22,.97); border-top: 1px solid var(--v3-cizgi-guclu);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-sizing: border-box;
 }
@@ -121,7 +124,7 @@ html.v3 #v3-tabbar button.active { color: var(--v3-vurgu-acik); }
 html.v3 #v3-tabbar button.active span { filter: none; }
 html.v3 #v3-tabbar button.active::before { content: ''; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--v3-vurgu); }
 @media (min-width: 900px) {
-  html.v3 #v3-tabbar { left: 50%; right: auto; bottom: 12px; transform: translateX(-50%); width: min(520px, calc(100vw - 32px)); border: 1px solid var(--v3-cizgi-guclu); border-radius: 22px; height: 60px; padding-bottom: 0; box-shadow: var(--v3-golge); }
+  html.v3 #v3-tabbar { left: 50%; right: auto; bottom: 12px; transform: translateX(-50%); width: min(520px, calc(100vw - 32px)); border: 1px solid var(--v3-cizgi-guclu); border-radius: 22px; height: 60px; padding: 0; box-shadow: var(--v3-golge); }
   html.v3 { --tabbar-h: 0px; }   /* masaüstünde harita tam boy, alt çubuk haritanın üstünde yüzer */
 }
 @media (max-width: 520px) { html.v3 .v3-etiket { display: none; } html.v3 .v3-hap { padding: 0 10px; } html.v3 .v3-bakiye small { display: none; } }

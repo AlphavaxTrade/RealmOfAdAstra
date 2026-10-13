@@ -410,6 +410,7 @@
     position: fixed;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     background: rgba(6, 8, 14, 0.94);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);

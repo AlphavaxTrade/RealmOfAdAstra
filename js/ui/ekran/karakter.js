@@ -3,6 +3,7 @@ import {
   ekranKaydet, kap, kart, katli, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, izgara, hucre, etiket, simge, tam, astra, sayi, esc
 } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi, maliyetSatiri, hizliAlKarti, hizliAl } from './bilesik.js';
+import { seviyeSiloIpucu } from '../seviye-ipucu.js';
 
 const yuzde = (x) => `%${(x * 100).toFixed(x < 0.01 ? 3 : 2).replace('.', ',')}`;
 
@@ -38,6 +39,7 @@ function seviyeKarti(b) {
   if (!xpYeter) neden = `Yetersiz deneyim (${tam(s.currentXp)}/${tam(req.xp)} XP)`;
   else if (s.adAstraBalance < req.adAstra) neden = `Yetersiz ASTRA (${tam(s.adAstraBalance)}/${tam(req.adAstra)})`;
   else if (!yeter) neden = 'Eksik hammadde var';
+  const silo = siloIpucuKarti(b, req);
 
   return kart({
     baslik: `👑 Seviye ${s.level}: AlphAvax Gezgini`,
@@ -48,6 +50,7 @@ function seviyeKarti(b) {
       katli(`⭐ Seviye ${s.level + 1}'e çıkınca ne kazanırsın?`, fayda, { k: 'fayda' }),
       cubukSatiri('✨ Deneyim (XP)', `${tam(s.currentXp)} / ${tam(req.xp)}${xpYeter ? ' ✅' : ''}`, (s.currentXp / req.xp) * 100, { ton: xpYeter ? '' : 'dolu' }),
       xpYeter ? '' : not('💡 XP kazanmak için haritadan hammadde bölgelerinde seferlere çıkmalısın.'),
+      silo,
       ...kaynaklar.map((k) => maliyetSatiri(`${kaynakSimgesi(b, k)} ${kaynakAdi(b, k)}`, env[k] || 0, req.costs[k] || 0)),
       maliyetSatiri('🟣 ASTRA', s.adAstraBalance || 0, req.adAstra, { astraMi: true }),
       not('Hammadde bedeli, seviye için gereken deneyimi toplarken altı alanda ürettiğinin yarısıdır. Ekstra ASTRA bedeli, bu hammaddelerin pazar değeridir.'),
@@ -55,6 +58,29 @@ function seviyeKarti(b) {
       dugme({ e: 'seviye', metin: yeter ? `✨ Seviye ${s.level + 1}'e yükselt` : `🔒 Seviye ${s.level + 1}'e yükselt: ${esc(neden)}`, ton: yeter ? 'iyi' : '', genis: true })
     ].join('')
   });
+}
+
+// Seviye bedeli silodan büyükse: oyuncu ne kadar toplasa tutmaz. Önce siloyu büyütmesi söylenir; bedel en büyük siloya göre
+// kırpıldıysa nedeni açıklanır (kural oyunda: getNextLevelRequirement().siloLevelNeeded / uncappedCosts).
+function siloIpucuKarti(b, req) {
+  const gs = b.gameState;
+  const ip = seviyeSiloIpucu(req, gs.state.warehouseLevel || 1, gs.getWarehouseCapacity());
+  const parcalar = [];
+  if (ip.siloYetmiyor) {
+    const adlar = ip.sigmayan.map((k) => kaynakAdi(b, k)).join(', ');
+    const hedef = ip.hedefSeviye;
+    parcalar.push(uyari(
+      `Silon bu bedeli tutamıyor${adlar ? ` (${adlar})` : ''}; ne kadar toplasan da sığmaz. ${hedef
+        ? `Önce siloyu <b>${esc(hedef)}. seviyeye</b> yükselt (şimdi ${esc(b.gameState.state.warehouseLevel || 1)}).`
+        : 'En büyük silo bile bu bedeli tutamıyor; Büyük Ambar projesi silo kapasitesini büyütür.'}`,
+      'uyari', '🏰'
+    ) + dugme({ e: 'git', veri: { hedef: 'silo' }, metin: '🏰 Siloya git', genis: true }));
+  }
+  if (ip.kirpilan.length) {
+    const liste = ip.kirpilan.map((x) => `${kaynakAdi(b, x.k)}: ${esc(tam(x.ham))} yerine ${esc(tam(x.bedel))}`).join(' · ');
+    parcalar.push(not(`ℹ️ Bu seviyenin hesaplanan bedeli en büyük silodan fazlaydı; ulaşılabilir kalsın diye silo kapasitesine göre kırpıldı. ${liste}.`));
+  }
+  return parcalar.join('');
 }
 
 function ubiKarti(b) {
@@ -150,6 +176,9 @@ const ekran = {
   govde: (b) => kap([seviyeKarti(b), ubiKarti(b), staminaKarti(b), hammaddeKarti(b), esyaKarti(b), aletKarti(b)].join('')),
 
   eylemler: {
+    git(b, el) {
+      return { git: el.dataset.hedef };
+    },
     seviye(b) {
       const r = b.gameState.levelUp();
       b.bildir(r.message, r.success ? 'success' : 'error');

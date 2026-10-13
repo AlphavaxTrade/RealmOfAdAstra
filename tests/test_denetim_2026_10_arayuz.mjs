@@ -214,8 +214,8 @@ tamam('QA-17: THREE.Timer, webp harita resmi');
       setAttribute(k, v) { this.attrs[k] = v; }, getAttribute(k) { return this.attrs[k] ?? null; },
       querySelector(s) { const kutu = this.firstElementChild || this; return (kutu._q[s] ||= Object.assign(yeniEl('alt'), { id: s.replace('#', '') })); },
       querySelectorAll() { return []; },
-      contains() { return false; }, focus() {}, addEventListener() {}, remove() { if (belge.ov === this) belge.ov = null; },
-      appendChild(c) { return c; }, isConnected: true,
+      contains() { return false; }, focus() {}, addEventListener(t, f) { (this._ev ||= {})[t] = f; }, remove() { if (belge.ov === this) belge.ov = null; },
+      appendChild(c) { return c; }, append(...a) { this.parcalar = a; }, isConnected: true,
       offsetWidth: 1, offsetHeight: 1, getClientRects() { return [1]; }
     };
     return e;
@@ -243,30 +243,40 @@ tamam('QA-17: THREE.Timer, webp harita resmi');
   const cagrilar = [];
   let durum500 = true;
   let healthCokus = false;
+  let eylemCokus = false;
+  let hiz429 = 0;   // bu kadar istek 429 (hız sınırı) döner
+  let action401 = false;
+  const bekleyen2fa = [];
   const bekleyenAction = [];
   const player = (notices = []) => ({ level: 7, adAstraBalance: 12.5, pendingNotices: notices });
   globalThis.fetch = async (url, opts = {}) => {
     const yol = String(url).replace(/^https?:\/\/[^/]+/, '');
     cagrilar.push(`${opts.method || 'GET'} ${yol}`);
     if (yol === '/api/health') { if (healthCokus) throw new TypeError('Failed to fetch'); return { ok: true, status: 200, json: async () => ({ ok: true, testMode: true, payments: { enabled: true, simulated: true } }) }; }
+    if (yol === '/api/account/login') return { ok: true, status: 200, json: async () => ({ need2fa: true, ticket: 'T1' }) };
+    if (yol === '/api/account/login2fa') return new Promise((coz) => { bekleyen2fa.push((govde, durum = 200) => coz({ ok: durum < 400, status: durum, json: async () => govde })); });
     if (yol === '/api/state') {
       if (durum500) return { ok: false, status: 500, json: async () => ({ error: 'Sunucu hatası (istek abc)' }) };
       return { ok: true, status: 200, json: async () => ({ player: player(), world: null, gate: { status: 'citizen' } }) };
     }
     if (yol === '/api/action') {
+      if (action401) { action401 = false; return { ok: false, status: 401, json: async () => ({ error: 'Oturum geçersiz' }) }; }
+      if (eylemCokus) throw new TypeError('Failed to fetch');
+      if (hiz429 > 0) { hiz429--; cagrilar.push('429'); return { ok: false, status: 429, json: async () => ({ error: 'Çok hızlı istek; biraz yavaşla' }) }; }
       return new Promise((coz) => { bekleyenAction.push((govde) => coz({ ok: true, status: 200, json: async () => govde })); });
     }
     return { ok: false, status: 404, json: async () => ({ error: 'yok' }) };
   };
-  const { startOnline, online } = await import('../js/net/online.js');
+  const { startOnline, online, requireLogin } = await import('../js/net/online.js');
   const gs = {
     state: { level: 1, adAstraBalance: 0, pendingNotices: [] },
     cagri: 0,
     notifyListeners() {},
+    consumeNotices() { const l = this.state.pendingNotices; this.state.pendingNotices = []; return l; },
     ogreticiGordu(k) {
       this.cagri++;
       this.state.pendingNotices.push({ message: '🧭 Görev tamamlandı: ' + k, type: 'success', at: 1 });
-      return { success: true };
+      return { success: true, message: '✅ Kaydedildi: ' + k };
     }
   };
   const toastlar = [];
@@ -338,8 +348,144 @@ tamam('QA-17: THREE.Timer, webp harita resmi');
   bekleyenAction.shift()({ player: player([{ message: yerel, type: 'success', at: 4 }]), world: null, result: { success: true } });
   await new Promise((r) => setTimeout(r, 20));
   assert.equal(gs.state.pendingNotices.filter((n) => n.message === yerel).length, 1, 'yanıt erken gelirse de bildirim bir kez gösterilir');
+
+  // g) QA-08 kalanı: sunucu ÇÖKMÜŞ (ağ ayakta, istek hata veriyor): yerelde üretilen "Görev tamamlandı" başarı bildirimi geri alınır,
+  //    ekranda görünüyorsa kaldırılır; başka işlemin gerçek bildirimi yerinde kalır; hata bildirimi gösterilir.
+  {
+    const { kurToast } = await import('../js/ui/toast.js');
+    const kaldirilan = [];
+    const kap = {
+      style: { setProperty() {} }, children: [], firstElementChild: null,
+      appendChild(c) { c.remove = () => { kaldirilan.push(c); this.children = this.children.filter((x) => x !== c); }; this.children.push(c); this.firstElementChild = this.children[0]; return c; },
+      getBoundingClientRect() { return { bottom: 0 }; }
+    };
+    const gercekToast = kurToast(kap);
+    ctx.toast = gercekToast;
+    const metinler = () => kap.children.map((c) => (c.parcalar && c.parcalar[2] ? c.parcalar[2].textContent : ''));
+    gercekToast('✅ Başka bir işlemin gerçek başarısı', 'success');   // dokunulmamalı
+
+    eylemCokus = true;
+    gs.state.pendingNotices = [];
+    const r = gs.ogreticiGordu('konsey');   // yerelde uygulanır, sunucuya gönderilir
+    assert.equal(r.success, true);
+    const yerel = gs.state.pendingNotices.map((n) => n.message);
+    assert.equal(yerel.length, 1);
+    gercekToast(yerel[0], 'success');   // oyun döngüsü bildirimi tüketip gösterdi
+    gercekToast('✅ Kaydedildi: konsey', 'success');   // ekranın işlem sonucundan çıkardığı başarı bildirimi
+    assert.ok(metinler().includes(yerel[0]), 'yerel başarı bildirimi ekranda');
+    await new Promise((r2) => setTimeout(r2, 30));
+    assert.ok(!metinler().includes(yerel[0]), 'sunucu işlemi kabul etmeyince yerel başarı bildirimi ekrandan kalktı');
+    assert.ok(!metinler().includes('✅ Kaydedildi: konsey'), 'ekranın "Kaydedildi" bildirimi de kalktı');
+    assert.ok(metinler().includes('✅ Başka bir işlemin gerçek başarısı'), 'başka işlemin bildirimi yerinde');
+    assert.ok(metinler().some((m) => /ulaşılamadı|bağlantı|kabul etmedi|Failed/i.test(m)), 'hata bildirimi gösterildi: ' + JSON.stringify(metinler()));
+
+    // Aynı metin art arda gelirse (hız sınırında 30 aynı uyarı) tek bildirim görünür
+    kap.children.length = 0; kap.firstElementChild = null;
+    gercekToast('⚠️ tekrar eden uyarı', 'error'); gercekToast('⚠️ tekrar eden uyarı', 'error'); gercekToast('⚠️ tekrar eden uyarı', 'error');
+    assert.equal(metinler().filter((m) => m === '⚠️ tekrar eden uyarı').length, 1, 'aynı metin tek bildirim olarak görünür');
+
+    // Henüz gösterilmemiş yerel bildirim kuyruktan düşer
+    gs.state.pendingNotices = [];
+    gs.ogreticiGordu('hazine2');
+    assert.equal(gs.state.pendingNotices.length, 1);
+    await new Promise((r2) => setTimeout(r2, 30));
+    assert.equal(gs.state.pendingNotices.filter((n) => /hazine2/.test(n.message)).length, 0, 'gösterilmemiş yerel başarı bildirimi kuyruktan düşürüldü');
+    eylemCokus = false;
+  }
+
+  // i) Hız sınırı (429): işlem sunucu işlemeden önce reddedilir; kısa beklemeyle yeniden denenir, kaybolmaz, hata bildirimi çıkmaz
+  {
+    ctx.toast = (m, t) => toastlar.push([m, t]);   // (g) gerçek toast'a çevirmişti
+    const once = toastlar.length;
+    online.hizBeklemeMs = [20, 20, 20];   // üretimde 700/1500/3000 ms
+    hiz429 = 2;
+    cagrilar.length = 0;
+    gs.state.pendingNotices = [];
+    gs.ogreticiGordu('i1');
+    await new Promise((r2) => setTimeout(r2, 150));
+    assert.equal(cagrilar.filter((c) => c === '429').length, 2, 'iki kez 429 alındı');
+    assert.equal(bekleyenAction.length, 1, 'üçüncü denemede istek sunucuya ulaştı (kaybolmadı)');
+    bekleyenAction.shift()({ player: player([]), world: null, result: { success: true } });
+    await new Promise((r2) => setTimeout(r2, 20));
+    assert.ok(!toastlar.slice(once).some(([m, tur]) => tur === 'error'), 'yeniden deneme başarılıysa hata bildirimi yok');
+    // Sınır sürerse (4 ret): anlaşılır mesaj, "kabul etmedi" değil
+    hiz429 = 99;
+    const onceHata = toastlar.length;
+    gs.ogreticiGordu('i2');
+    await new Promise((r2) => setTimeout(r2, 250));
+    const hata = toastlar.slice(onceHata).find(([, tur]) => tur === 'error');
+    assert.ok(hata, '429 sürerse hata bildirimi çıkar');
+    assert.match(hata[0], /Çok hızlı işlem yaptın/);
+    assert.ok(!/kabul etmedi/.test(hata[0]));
+    hiz429 = 0;
+  }
+
+  // j) Muhafız Mührü kod penceresi (denetim 2. tur B): gönderince kapanmaz, "Doğrulanıyor…" gösterir; yanlış kodda aynı pencere
+  //    hata ile yeniden sorar; doğru kodda kapanır; Esc / Vazgeç hemen kapatır
+  {
+    action401 = true;
+    gs.ogreticiGordu('j0');   // sunucu 401 döner: oturum düşer, giriş penceresi açılır
+    await new Promise((r2) => setTimeout(r2, 40));
+    const giris = requireLogin();   // açık giriş akışının sözü
+    const ov = () => belge.ov;
+    assert.ok(ov() && /Krallığa Dön/.test(ov()._html), 'giriş penceresi açıldı');
+    ov().querySelector('#ol-email').value = 'a@ornek.com';
+    ov().querySelector('#ol-pass').value = 'parola-12345';
+    ov().querySelector('#ol-go')._ev.click();
+    await new Promise((r2) => setTimeout(r2, 25));
+    assert.ok(/ac-code/.test(ov()._html), 'kod penceresi açıldı');
+    assert.match(ov()._html, /for="ac-code"/, 'alanın etiketi var');
+    // yanlış kod: pencere "doğrulanıyor" gösterir, sonuç gelene dek AÇIK kalır
+    ov().querySelector('#ac-code').value = '000000';
+    ov().querySelector('#ac-go').onclick();
+    await new Promise((r2) => setTimeout(r2, 25));
+    assert.ok(ov(), 'kod gönderilince pencere kapanmaz (eskiden ekran boş kalıyordu)');
+    assert.equal(ov().querySelector('#ac-go').disabled, true, 'gönder düğmesi pasif');
+    assert.equal(ov().querySelector('#ac-code').disabled, true, 'alan pasif');
+    assert.match(ov().querySelector('#ac-go').textContent, /Doğrulanıyor/);
+    assert.equal(bekleyen2fa.length, 1);
+    bekleyen2fa.shift()({ error: 'Kod hatalı ya da süresi geçmiş.' }, 401);
+    await new Promise((r2) => setTimeout(r2, 25));
+    assert.ok(ov() && /ac-code/.test(ov()._html) && /Kod hatalı/.test(ov()._html), 'yanlış kodda aynı pencere hata mesajıyla yeniden sorar');
+    // doğru kod → pencere kapanır, giriş tamamlanır
+    ov().querySelector('#ac-code').value = '123456';
+    ov().querySelector('#ac-go').onclick();
+    await new Promise((r2) => setTimeout(r2, 25));
+    assert.ok(ov(), 'ikinci gönderimde de pencere sonuç gelene dek açık');
+    bekleyen2fa.shift()({ token: 'tok-2fa', playerId: 'acc:9' }, 200);
+    const sonuc = await giris;
+    assert.equal(sonuc, true, 'giriş tamamlandı');
+    assert.equal(ov(), null, 'doğrulama bitince pencere kapandı');
+    assert.ok(depo.get('adastra_session_v1') && /tok-2fa/.test(depo.get('adastra_session_v1')), 'oturum kaydedildi');
+  }
+
+  // h) Aynı olayı yerel motor da sunucu da bildirir (görev tespiti, bot yenileme...): gösterimde bir kez sayılır
+  {
+    const sun = (liste) => { bekleyenAction.shift()({ player: player(liste), world: null, result: { success: true } }); };
+    const bekle = () => new Promise((r2) => setTimeout(r2, 25));
+    // h1) yerel kopya ÖNCE gösterildi, sunucu yankısı sonra gelir → ikinci bildirim yok
+    gs.state.pendingNotices = [];
+    gs.ogreticiGordu('h1');
+    gs.state.pendingNotices = [{ message: '🧭 Görev tamamlandı: Çarkı çevir (h1)', type: 'success', at: 1 }];   // oyun döngüsünün kendi tespiti (proxy dışı)
+    assert.equal(gs.consumeNotices().length, 1, 'yerel bildirim bir kez gösterilir');
+    await bekle();
+    sun([{ message: '🧭 Görev tamamlandı: Çarkı çevir (h1)', type: 'success', at: 2 }, { message: '🏛️ Yalnız sunucuda (h1)', type: 'info', at: 3 }]);
+    await bekle();
+    assert.deepEqual(gs.consumeNotices().map((n) => n.message), ['🏛️ Yalnız sunucuda (h1)'], 'sunucunun aynı görev bildirimi tekrar gösterilmez');
+    // h2) sunucu kopyası ÖNCE gösterildi, yerel tespit sonra gelir → ikinci bildirim yok
+    gs.ogreticiGordu('h2');
+    await bekle();
+    sun([{ message: '🧭 Görev tamamlandı: Piyango (h2)', type: 'success', at: 4 }]);
+    await bekle();
+    assert.deepEqual(gs.consumeNotices().map((n) => n.message).filter((m) => /h2/.test(m)), ['🧭 Görev tamamlandı: Piyango (h2)'], 'sunucu bildirimi bir kez gösterilir');
+    gs.state.pendingNotices = [{ message: '🧭 Görev tamamlandı: Piyango (h2)', type: 'success', at: 5 }];
+    assert.equal(gs.consumeNotices().length, 0, 'yerel motorun geç gelen aynı tespiti gösterilmez');
+    // h3) farklı metinler etkilenmez
+    gs.state.pendingNotices = [{ message: 'Başka bir olay (h3)', type: 'info', at: 6 }];
+    assert.equal(gs.consumeNotices().length, 1);
+  }
 }
-tamam('QA-09 / QA-08 / QA-15: hesap yüklenemedi kartı, çevrimdışı engel ve bildirim yankısı');
+tamam('QA-09 / QA-08 / QA-15: hesap yüklenemedi kartı, çevrimdışı engel, bildirim yankısı; 2. tur: çöken sunucuda yerel başarı geri alınır, 429 yeniden denenir, aynı uyarı tek görünür, 2FA kod penceresi sonuç gelene dek açık, yerel + sunucu çift bildirim tekillenir');
 
 console.log(`\n${say}/9 ön yüz denetim testi geçti`);
 process.exit(0);   // online.js eşitleme zamanlayıcısı (setInterval) sürece bağlı kalmasın

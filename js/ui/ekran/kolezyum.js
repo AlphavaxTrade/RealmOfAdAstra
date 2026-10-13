@@ -4,7 +4,7 @@ import {
   ekranKaydet, kap, kart, katli, satir, sekmeler, dugme, uyari, not, bos, izgara, hucre, etiket,
   tam, astra, sayi, esc, ac, yenile
 } from './cekirdek.js';
-import { kazancYazisi } from '../kazanc-yazisi.js';
+import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazisi.js';
 
 const SEKMELER = [
   { id: 'duel', ad: 'Düello', simge: '⚔️' },
@@ -20,7 +20,27 @@ let pvpMod = '1v1';
 let pvpSecili = null;
 
 const asker = (b) => b.gameState.state.soldierUnits || [];
+
+// Bugünkü ASTRA ödül tavanı (düello zaferleri). Kural oyunda: gameState.getColosseumEntryStatus() rewardCap / rewardUsed varsa
+// onlar, yoksa yapılandırmadaki günlük kişi tavanı ve günlük sayaç okunur; ekranda hiçbir ödül hesabı yapılmaz.
+function gunlukOdul(b, giris) {
+  const tavan = Number(giris && giris.rewardCap != null ? giris.rewardCap : (b.GAME_CONFIG.COLOSSEUM || {}).DAILY_REWARD_CAP_ASTRA);
+  if (!(tavan > 0) || !Number.isFinite(tavan)) return null;
+  const kullanilan = Number(giris && giris.rewardUsed != null ? giris.rewardUsed : (b.gameState.getDailyCounters().arenaAda || 0)) || 0;
+  return { tavan, kullanilan, kalan: Math.max(0, tavan - kullanilan) };
+}
 const cevrimici = (b) => !!(b.online && b.online.active);
+
+// "Bugünkü ödül tavanı" satırı ve doldu / azaldı uyarısı
+function odulTavaniSatirlari(b, giris, tier) {
+  const g = gunlukOdul(b, giris);
+  if (!g) return '';
+  const C = b.GAME_CONFIG.COLOSSEUM || {};
+  const tabanOdul = (Number(C.WIN_REWARD_ASTRA) || 0) * (Number(tier && tier.rewardMult) || 1);
+  const n = odemeOnizlemeNotu(g.kalan, tabanOdul, g.tavan);
+  return satir('Bugünkü ASTRA ödül tavanı', `${astra(g.kullanilan)} / ${astra(g.tavan)}`, g.kalan <= 0 ? 'kotu' : '')
+    + (n ? uyari(esc(n.metin), n.ton) : '');
+}
 
 // ── Düello ───────────────────────────────────────────────────────────────
 function duelloSekmesi(b, secenek) {
@@ -89,6 +109,7 @@ function duelloSekmesi(b, secenek) {
       icerik: satir('Bugünkü maç', `${giris.used} / ${giris.cap}`, giris.used >= giris.cap ? 'kotu' : '')
         + satir('Anahtar bedeli', `${giris.keyCost} (sende ${giris.keys})`, giris.keys < giris.keyCost ? 'kotu' : '')
         + satir('Stamina bedeli', `${giris.staminaCost} ⚡ (sende ${giris.stamina})`, giris.stamina < giris.staminaCost ? 'kotu' : '')
+        + odulTavaniSatirlari(b, giris, tier)
         + dugme({ e: 'dovus', ton: 'iyi', genis: true, devreDisi: !!engel, metin: engel ? `🔒 ${esc(engel)}` : '⚔️ Kolezyuma çık (1v1)' })
     }),
     katli(`🎯 Taktik: ${esc(taktikAd)}`,
@@ -321,6 +342,14 @@ const ekran = {
       const serbestOran = (b.GAME_CONFIG.LOCKED_BALANCE || {}).FREE_SHARE;   // kazancın serbest kısmı; kalanı kilitli (QA-14)
       const eloSatiri = `⭐ ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO (yeni puan ${r.newRating})`;
       const odulSatiri = r.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık lig puanı +3';
+      // Ödeme sınırı notu: haftalık kişi payı doldu (budgetFull / personCapped) ya da bugünkü ödül tavanı doldu (kalan oyundan okunur)
+      const gun = gunlukOdul(b, gs.getColosseumEntryStatus());
+      const odemeNotu = r.isVictory ? odemeSinirNotu({
+        haftalikDoldu: !!(r.budgetFull || r.personCapped),
+        azaldi: !(r.rewardAda > 0) && !!gun && gun.kalan <= 0,
+        gunlukKalan: gun ? gun.kalan : Infinity,
+        haftalikMesaj: dolu
+      }) : '';
       const basladi = b.arenaBaslat({
         mode: 'colosseum',
         context: `Haftalık Kolezyum · <strong>${esc(r.opponentName)}</strong> ile 1v1 Düello`,
@@ -337,16 +366,16 @@ const ekran = {
           uid: r.enemyUid, name: esc(r.opponentName), icon: esc(r.opponentIcon || '🥷'), avatar: 'assets/gladiator_rival.jpg',
           hp: r.opponentHp || 350, maxHp: r.opponentHp || 350, atk: r.opponentAtk || 50, skills: ['armorBreaker', 'cleave'], row: 'front'
         }],
-        loot: [`🪙 ${kazancYazisi(r.rewardAda, serbestOran)}${r.budgetFull ? ' · ' + dolu : ''}`, eloSatiri, odulSatiri],
+        loot: [`🪙 ${kazancYazisi(r.rewardAda, serbestOran)}${odemeNotu ? ' · ' + odemeNotu : ''}`, eloSatiri, odulSatiri],
         replay: r.replay,
         onComplete: () => {
           b.hudYenile();
           if (r.isVictory) {
-            b.bildir(`🏆 Zafer! ${kazancYazisi(r.rewardAda, serbestOran)} ve ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO kazanıldı!${r.budgetFull ? ' ⏳ ' + dolu : ''}`, 'success');
+            b.bildir(`🏆 Zafer! ${kazancYazisi(r.rewardAda, serbestOran)} ve ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO kazanıldı!${odemeNotu ? ' ⏳ ' + odemeNotu : ''}`, 'success');
             return {
               altBaslik: `${r.opponentName} yenildi`,
               satirlar: [`🪙 ${kazancYazisi(r.rewardAda, serbestOran)}`, eloSatiri, odulSatiri],
-              not: r.budgetFull ? dolu : '',
+              not: odemeNotu,
               eylemler: [{ etiket: '🏟️ Kolezyuma dön', tikla: () => ac('kolezyum') }]
             };
           }

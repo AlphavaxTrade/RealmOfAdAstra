@@ -225,6 +225,12 @@
 .zd-yet small { display: block; color: var(--zd-yazi-2); font-size: 12.5px; line-height: 1.4; }
 .zd-yet i { font-style: normal; color: var(--zd-vurgu); }
 .zd-ganimet { padding: 10px 12px; background: var(--zd-yuzey-3); border-radius: 12px; font-size: 13.5px; }
+/* Bugünkü ödeme tavanı doldu / azaldı (kolezyum ve zindan ortak cümlesi: js/ui/kazanc-yazisi.js) */
+.zd-odeme-notu {
+  margin: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--zd-uyari);
+  background: var(--zd-yuzey-3); color: var(--zd-yazi); font-size: calc(13px * var(--v3-yazi-olcek, 1)); line-height: 1.45;
+}
+.zd-odeme-notu.is-kotu { border-color: var(--zd-kotu); }
 
 .zd-eylem {
   display: flex; gap: 8px; align-items: stretch; position: sticky; bottom: 0; z-index: 1;

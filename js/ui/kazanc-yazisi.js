@@ -28,3 +28,39 @@ export function kazancYazisi(toplam, serbestOran = 0.2) {
   if (kilitli <= 0) return `+${astraSayi(t)} ASTRA`;
   return `+${astraSayi(t)} ASTRA (${astraSayi(serbest)} serbest · ${astraSayi(kilitli)} kilitli)`;
 }
+
+// ── Günlük ödeme tavanı (denetim 2. tur, E-2) ─────────────────────────────────────────────────────────────────
+// Kural oyunda (gameState.getDungeonDayStatus().budgetLeft / personalCap, kolezyumda günlük kişi tavanı, kasa haftalık payı);
+// buradaki işlevler yalnız oyunun söylediği "kalan" ve "tavan" değerlerinden kullanıcıya görünen cümleyi kurar, hiçbir hesap tekrarlamaz.
+const ESIK = 1e-9;
+
+/**
+ * Savaştan ÖNCE: bu zaferin ödülü bugünkü kalan ödeme payına takılıyor mu?
+ * @param {number} kalan     oyunun bildirdiği bugünkü kalan ödeme (ASTRA)
+ * @param {number} tabanOdul bu zaferin taban ASTRA ödülü
+ * @param {number} [tavan]   günlük kişi tavanı (biliniyorsa cümleye eklenir)
+ * @returns {{ton: 'kotu'|'uyari', metin: string}|null} tavan sorunu yoksa null
+ */
+export function odemeOnizlemeNotu(kalan, tabanOdul, tavan) {
+  const k = Math.max(0, Number(kalan) || 0);
+  const t = Math.max(0, Number(tabanOdul) || 0);
+  if (!(t > 0)) return null;
+  const tavanYazi = Number(tavan) > 0 ? ` (günlük tavanın ${astraSayi(tavan)} ASTRA)` : '';
+  if (k <= ESIK) return { ton: 'kotu', metin: `Bugünkü ödeme tavanın doldu${tavanYazi}: bu zaferden ASTRA gelmez; deneyim ve ganimet sürer. Yarın 00:00'da (TSİ) yenilenir.` };
+  if (k + ESIK < t) return { ton: 'uyari', metin: `Bugünkü kalan ödeme payın ${astraSayi(k)} ASTRA${tavanYazi}: bu zaferin ödülü en fazla o kadar olur.` };
+  return null;
+}
+
+/**
+ * Savaştan SONRA sonuç kartındaki not. Önce haftalık pay (daha uzun sürer), sonra günlük tavan.
+ * @param {{haftalikDoldu?: boolean, azaldi?: boolean, gunlukKalan?: number, haftalikMesaj?: string}} g
+ *   haftalikDoldu: sonuçtaki budgetFull / personCapped; azaldi: ödül taban ödülden küçük (budgetCapped / ödül azalmış)
+ */
+export function odemeSinirNotu({ haftalikDoldu = false, azaldi = false, gunlukKalan = Infinity, haftalikMesaj = 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' } = {}) {
+  if (haftalikDoldu) return haftalikMesaj;
+  const gunlukBitti = Number(gunlukKalan) <= ESIK;
+  if (gunlukBitti && azaldi) return "Bugünkü ödeme tavanın doldu; ödül azaldı. Yarın 00:00'da (TSİ) yenilenir.";
+  if (gunlukBitti) return "Bugünkü ödeme tavanına ulaştın; bundan sonraki zaferler ASTRA vermez. Yarın 00:00'da (TSİ) yenilenir.";
+  if (azaldi) return 'Bu haftaki ödeme payı sınırı yüzünden ödül azaldı; Pazartesi yenilenir.';
+  return '';
+}

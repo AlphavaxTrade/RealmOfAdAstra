@@ -4,6 +4,7 @@
 // Kurallar ve sayılar js/gameState/zindan.js'ten gelir; bu dosya yalnız gösterir ve tıklamayı yönlendirir.
 // Dış olaylar: 'enter-dungeon-view' (haritadan giriş), 'feature-locked', 'monster-defeated' {level} (zafer sonrası tazeler).
 import { esc, tam, astra } from '../ekran/cekirdek.js';
+import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, katCanavarlari, katDurumu, baslangicKati, kilitMesaji,
   sansTonu, sansYorumu, yetenekBilgisi, ganimetSanslari, bossKatiMi
@@ -158,7 +159,9 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     const kilitli = oz.durum === 'kilitli';
     const il = ilerleme();
     const taban = gs.getDungeonBaseReward(m.level, boss);
-    const butce = gs.getDungeonDayStatus().budgetLeft;
+    const gun = gs.getDungeonDayStatus();   // kural oyunda: bugünkü kalan ödeme (budgetLeft) ve kişi tavanı (personalCap)
+    const butce = gun.budgetLeft;
+    const odemeNotu = kilitli ? null : odemeOnizlemeNotu(butce, taban.ada, gun.personalCap);
     const sanslar = ganimetSanslari(gs, gs.state.level || 1, durum.kat);
     const canYuzde = Math.max(0, Math.min(100, Math.round((oz.kalanCan / m.hp) * 100)));
 
@@ -204,6 +207,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
         </div>`}
         ${sansBlok}
         ${kilitli || !yet ? '' : `<ul class="zd-yet" aria-label="Yetenekler">${yet}</ul>`}
+        ${odemeNotu ? `<p class="zd-odeme-notu is-${odemeNotu.ton}" role="status">${odemeNotu.ton === 'kotu' ? '⛔' : '⚠️'} ${esc(odemeNotu.metin)}</p>` : ''}
         ${kilitli ? '' : `<ul class="zd-ganimet" aria-label="Ganimet">
           <li>🟣 <b>+${astra(Math.min(taban.ada, butce))} ASTRA</b></li>
           <li>✨ +${tam(taban.xp)} hesap XP · +${tam(m.rewardXp || 0)} asker XP</li>

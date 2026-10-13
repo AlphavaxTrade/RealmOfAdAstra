@@ -8,7 +8,7 @@ import { soldierPortrait } from '../art.js';
 import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '../../combat.js';
 import { getDungeonEntry } from '../../bestiary.js';
 import { sonSavasiYaz } from '../zindan/son-savas.js';
-import { kazancYazisi } from '../kazanc-yazisi.js';
+import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazisi.js';
 
 const TAKTIK_SIMGE = { 1: '🛡️', 2: '⚔️', 3: '🏹' };
 
@@ -68,7 +68,6 @@ function girisKarti(b, m, terms) {
     ? 'Harcın tamamı zindan kasasına gider.'
     : `Harçtan %${sayi(paySayi * 100, 1)} doğrudan zindan kasasına gider, kalanı her harcama gibi dağıtılır.`;
   const taban = gs.getDungeonBaseReward(m.level, asBoss(m));
-  const beklenen = Math.min(taban.ada, terms.budgetLeft);
 
   const kurallar = terms.nextNeedsFee
     ? not('Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.')
@@ -82,15 +81,15 @@ function girisKarti(b, m, terms) {
         ? `<button type="button" class="ek-secenek${kapiHarciOde ? ' is-secili' : ''}" data-e="harc" aria-pressed="${kapiHarciOde}">
             <b>${kapiHarciOde ? '✅' : '⬜'} Kapı harcı öde: ${esc(astra(ucret))} ASTRA</b><small>Ödülüyle gir. ${esc(kasayaNot)}</small></button>`
         : '')
-      + (expectedAdaUyari(beklenen, taban.ada))
+      + gunlukOdemeNotu(terms, taban.ada)
       + katli('Giriş kuralları', kurallar, { k: 'zindan-giris' })
   });
 }
 
-function expectedAdaUyari(beklenen, taban) {
-  return beklenen < taban
-    ? uyari(`Bugünkü zindan kasası bütçesi azaldı: bu zaferin ASTRA ödülü en fazla ${esc(astra(beklenen))} olur.`, 'uyari')
-    : '';
+// Bugünkü ödeme payı (kasanın günlük bütçesi ve kişi tavanı; kural gameState.getDungeonDayStatus) bu zaferin ödülüne yetmiyorsa söyler
+function gunlukOdemeNotu(terms, tabanAda) {
+  const n = odemeOnizlemeNotu(terms.budgetLeft, tabanAda, terms.personalCap);
+  return n ? uyari(esc(n.metin), n.ton) : '';
 }
 
 function ordu(b, secenek, secili) {
@@ -335,7 +334,13 @@ async function savasiOyna(b, m, secili, odeHarc) {
     ]
     : ['🏋️ Antrenman girişi: ASTRA ve ganimet yok', `✨ +${m.rewardXp || (m.level * 15)} Asker XP · +${tam(taban.xp)} hesap XP`];
 
-  const dolu = b.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE;
+  // Savaş başında işlendi: günlük kalan ödeme payı şimdi, sonuçtan sonraki değeridir (kural gameState.getDungeonDayStatus)
+  const odemeNotu = outcome.victory && entry.rewarded ? odemeSinirNotu({
+    haftalikDoldu: !!(outcome.budgetFull || outcome.personCapped),
+    azaldi: !!outcome.budgetCapped,
+    gunlukKalan: gs.getDungeonDayStatus().budgetLeft,
+    haftalikMesaj: b.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE
+  }) : '';
   const basladi = b.arenaBaslat({
     mode: 'dungeon',
     context: `Kat ${m.level} · Seviye ${m.level} — <strong>${esc(m.name)}</strong> ${boss ? '(Zindan Bossu)' : ''}`,
@@ -349,7 +354,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
       if (outcome.victory) {
         const duyuru = [
           `${m.name} yenildi! ${kazancYazisi(outcome.adaReward, serbestOran)} kazandın (⚡ -${staminaBedeli} stamina).`,
-          outcome.budgetFull ? dolu : '',
+          odemeNotu,
           outcome.scrollGained ? `📜 ${outcome.scrollGained.name} düştü!` : '',
           `Savaşa katılan askerlerin +${m.rewardXp} asker XP kazandı.`,
           outcome.fatihOdulu ? `👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA (orduna harcadığının zindanda geri dönmeyen kısmı)` : '',
@@ -382,7 +387,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         return {
           altBaslik: `${m.name} yenildi`,
           satirlar,
-          not: outcome.budgetFull ? dolu : (outcome.budgetCapped ? 'Bu haftaki ödeme payı sınırı yüzünden ödül azaldı; Pazartesi yenilenir.' : ''),
+          not: odemeNotu,
           eylemler: [
             { etiket: '↻ Aynı savaşı tekrarla', birincil: true, tikla: () => ac('savashazirlik', { canavar: m, secili: [...secili], secimYapildi: true }) },
             { etiket: '⚔️ Kışlaya git', tikla: () => ac('kisla') }

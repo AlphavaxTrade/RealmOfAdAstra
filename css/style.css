@@ -46,6 +46,7 @@
 html, body {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;   /* iOS Safari: 100vh adres çubuğunun arkasına taşar; dvh görünen alanı verir (eskisi destek yoksa yedek) */
   overflow: hidden;
   background-color: var(--bg-dark);
   font-family: var(--font-body);
@@ -92,6 +93,7 @@ html, body {
   position: fixed !important;
   width: 100vw !important;
   height: 100vh !important;
+  height: 100dvh !important;
   display: flex !important;
   opacity: 0;
   visibility: hidden;
@@ -213,6 +215,7 @@ body.modal-open .realm-tooltip {
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: radial-gradient(circle at center, #1e130c 0%, #0d0703 100%);
   display: flex;
   flex-direction: column;
