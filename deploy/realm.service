@@ -22,10 +22,14 @@ LoadCredential=admin_token:/etc/realm/admin_token
 LoadCredential=smtp_url:/etc/realm/smtp_url
 LoadCredential=game_wallet_private_key:/etc/realm/game_wallet_private_key
 LoadCredential=kasa_master_key:/etc/realm/kasa_master_key
+LoadCredential=hesap_anahtari:/etc/realm/hesap_anahtari
+LoadCredential=yedek_anahtar:/etc/realm/yedek_anahtar
 Environment=ADMIN_TOKEN_FILE=/run/credentials/realm.service/admin_token
 Environment=SMTP_URL_FILE=/run/credentials/realm.service/smtp_url
 Environment=GAME_WALLET_PRIVATE_KEY_FILE=/run/credentials/realm.service/game_wallet_private_key
 Environment=KASA_MASTER_KEY_FILE=/run/credentials/realm.service/kasa_master_key
+Environment=HESAP_ANAHTARI_FILE=/run/credentials/realm.service/hesap_anahtari
+Environment=YEDEK_ANAHTAR_FILE=/run/credentials/realm.service/yedek_anahtar
 ExecStart=/usr/bin/node server/index.js
 Restart=on-failure
 RestartSec=3

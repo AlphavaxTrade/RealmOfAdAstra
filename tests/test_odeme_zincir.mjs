@@ -97,6 +97,11 @@ try {
   assert.equal(row(p4).status, 'sending');
   const burnedNonce = row(p4).tx_nonce;
   await chain.sendAda(P3, 1);                        // aynı nonce'u başka bir işlem tüketir (4. işlem asla mine olamaz)
+  // 13 Ekim 2026 denetimi (W1): "nonce kullanılmış + makbuz yok" tek başına "işlenmedi" demek için yetmez (yük dengeli RPC'de
+  // geride kalan düğüm yanlış "yok" diyebilir → çift ödeme). Yeni imzalanmış satır bekler; 10 dakika geçince yeniden sıraya girer.
+  const rcErken = await world.reconcilePayouts();
+  assert.equal(rcErken.retry, 0, 'henüz taze imza: yeniden gönderilmez ' + JSON.stringify(rcErken)); assert.equal(row(p4).status, 'sending');
+  db.raw.prepare('UPDATE payouts SET sent_at = ? WHERE id = ?').run(Date.now() - 11 * 60000, p4);
   const rc3 = await world.reconcilePayouts();
   assert.equal(rc3.retry, 1, JSON.stringify(rc3)); assert.equal(row(p4).status, 'pending');
   assert.equal(await bal(P2), p2Before, 'İlk imzalı işlem hiç işlenmedi');

@@ -38,6 +38,7 @@ try {
   const yonetici = crypto.randomBytes(24).toString('hex');
   const env = { ...process.env, NODE_ENV: 'production', PORT: String(port), HOST: '127.0.0.1', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', ADMIN_TOKEN: yonetici,
     SMTP_URL: 'smtp://k:s@127.0.0.1:2525', DB_FILE: path.join(tmp, 'veri', 'realm.db'), YEDEK_KLASORU: path.join(tmp, 'yedek'), CHAIN_ENABLED: '0',
+    HESAP_ANAHTARI: crypto.randomBytes(32).toString('hex'), YEDEK_ANAHTAR: crypto.randomBytes(32).toString('hex'),   // üretim doğrulaması ikisini de ister
     TEST_MODE: '', PAROLA_HAFIF: '', GAME_WALLET_PRIVATE_KEY: '', KASA_MASTER_KEY: '', PAYMENTS_CONTRACT: '', RESERVE_WALLET: '', ADMIN_EMAIL: '' };
   sunucu = spawn(process.execPath, ['server/index.js'], { cwd: tmp, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let cikti = ''; sunucu.stdout.on('data', d => { cikti += d; }); sunucu.stderr.on('data', d => { cikti += d; });

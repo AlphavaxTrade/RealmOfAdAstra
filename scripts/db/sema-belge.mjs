@@ -18,11 +18,11 @@ const ACIKLAMA = {
   nonces: 'Cüzdan imzası için tek kullanımlık mesajlar (eski düzen)', sessions: 'Oturumlar (anahtarın SHA-256 özeti saklanır; düz anahtar asla)',
   deposits: 'Zincirden gelen yatırmalar (tx + log sırası = tekil)', payouts: 'Zincire gönderilecek/gönderilmiş ödemeler (pending → sending → sent)',
   withdraw_log: 'Haftalık çekim hesaplaşması kaydı (oyuncu başına)', prices: 'ADASTRA fiyat örnekleri', events: 'Olay günlüğü (giriş, yönetici işlemleri, kapı...)',
-  accounts: 'Hesaplar: e-posta, parola özeti, doğrulama, bağlı/bekleyen cüzdan, iki adımlı doğrulama', email_tokens: 'E-posta bağlantıları (doğrulama, şifre sıfırlama, cüzdan onayı)',
+  accounts: 'Hesaplar: e-posta (+ benzersiz email_key), parola özeti, doğrulama, bağlı/bekleyen cüzdan, iki adımlı doğrulama (sır şifreli)', email_tokens: 'E-posta bağlantıları (doğrulama, şifre sıfırlama, cüzdan onayı); belirteç yalnız SHA-256 özeti',
   wallet_nonces: 'Cüzdan bağlama imza mesajları', kasa: 'Oyun Kasası: oyuncu başına sunucu yönetimli cüzdan (anahtar şifreli)', kasa_ops: 'Kasa zincir işlemleri',
   kasa_usage: 'Kasa günlük harcama toplamı (üst sınır hesabı için)', pay_quotes: 'Cüzdandan ödeme teklifleri', listings: 'İlan pazarı (teçhizat)',
   promo_codes: 'Promo kodları', promo_uses: 'Promo kodu kullanımları', promo_pending: 'Kayıtta girilen, doğrulamada kullanılacak promo kodu',
-  partner_income: 'Trade sitesinden gelen ADASTRA transferleri (her biri bir kez sayılır)', schema_migrations: 'Uygulanmış şema geçişleri (sürüm, ad, zaman)'
+  partner_income: 'Trade sitesinden gelen ADASTRA transferleri (her biri bir kez sayılır)', kapi_ip_kabul: 'Kapı: hangi (tuzlu özetli) istemci adresinden kim ne zaman vatandaş oldu (24 saatlik adres kotası; ham adres yok)', schema_migrations: 'Uygulanmış şema geçişleri (sürüm, ad, zaman)'
 };
 
 export function belgeUret() {

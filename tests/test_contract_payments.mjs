@@ -83,11 +83,60 @@ ok('Sözleşmeye doğrudan AVAX gönderilemiyor');
 
 // 6) Yönetim: yalnız sahip; durdurma; iki adımlı sahiplik
 await expectRevert(pay.connect(attacker).setPaused(true), 'NotOwner');
-await expectRevert(pay.connect(attacker).setConfig(await addr(attacker), await addr(attacker), 0), 'NotOwner');
+await expectRevert(pay.connect(attacker).proposeConfig(await addr(attacker), await addr(attacker)), 'NotOwner');
+await expectRevert(pay.connect(attacker).setFeeGas(0), 'NotOwner');
+await expectRevert(pay.connect(attacker).cancelConfig(), 'NotOwner');
 await (await pay.setPaused(true)).wait();
 await expectRevert(pp.pay(ASTRA(1), ethers.id('teklif-5'), { value: gasPrice * FEE_GAS, gasPrice }), 'PaymentsPaused');
 await (await pay.setPaused(false)).wait();
-await expectRevert(pay.setConfig(await addr(treasury), await addr(feeRx), 2_000_000), 'FeeGasTooHigh');
+await expectRevert(pay.setFeeGas(2_000_000), 'FeeGasTooHigh');
+await expectRevert(pay.proposeConfig(ethers.ZeroAddress, await addr(feeRx)), 'ZeroAddress');
+await expectRevert(pay.proposeConfig(await addr(treasury), ethers.ZeroAddress), 'ZeroAddress');
+await (await pay.setFeeGas(FEE_GAS + 1n)).wait();            // komisyon gazı ve durdurma ANINDA değişir
+assert.equal(await pay.feeGas(), FEE_GAS + 1n);
+await (await pay.setFeeGas(FEE_GAS)).wait();
+
+// 6b) Hazine / komisyon adresi: 24 saat gecikmeli iki adım (13 Ekim 2026 denetimi, K5). Eski sözleşmede setConfig adresi ANINDA değiştirirdi.
+const zamanAtla = async sn => { await provider.send('evm_increaseTime', [sn]); await provider.send('evm_mine', []); };
+const yeniHazine = await addr(attacker), yeniKomisyon = await addr(player2);
+assert.equal(await pay.configEffectiveAt(), 0n, 'başlangıçta bekleyen öneri yok');
+await expectRevert(pay.applyConfig(), 'NothingPending');
+await expectRevert(pay.cancelConfig(), 'NothingPending');
+await (await pay.proposeConfig(yeniHazine, yeniKomisyon)).wait();
+assert.equal(await pay.treasury(), await addr(treasury), 'öneri adresi hemen değiştirmez');
+assert.equal(await pay.feeReceiver(), await addr(feeRx));
+assert.equal(await pay.pendingTreasury(), yeniHazine);
+assert.ok(await pay.configEffectiveAt() > 0n);
+const tBefore = await token.balanceOf(await addr(treasury));
+await (await pp.pay(ASTRA(7), ethers.id('teklif-6b'), { value: gasPrice * FEE_GAS, gasPrice })).wait();
+assert.equal((await token.balanceOf(await addr(treasury))) - tBefore, ASTRA(7), 'bekleme süresince ödeme ESKİ hazineye gider');
+await expectRevert(pay.applyConfig(), 'NotYet');
+await zamanAtla(24 * 3600 - 120);
+await expectRevert(pay.applyConfig(), 'NotYet');          // 24 saatten az
+await (await pay.cancelConfig()).wait();                     // iptal: öneri silinir
+assert.equal(await pay.configEffectiveAt(), 0n);
+assert.equal(await pay.pendingTreasury(), ethers.ZeroAddress);
+await zamanAtla(7200);
+await expectRevert(pay.applyConfig(), 'NothingPending');   // iptal edilen öneri süre dolsa da uygulanamaz
+await (await pay.proposeConfig(yeniHazine, yeniKomisyon)).wait();   // yeni öneri → süre baştan
+await zamanAtla(23 * 3600);
+await expectRevert(pay.applyConfig(), 'NotYet');
+await zamanAtla(2 * 3600);
+await (await pay.connect(attacker).applyConfig()).wait();     // süre dolunca HERKES uygulayabilir
+assert.equal(await pay.treasury(), yeniHazine);
+assert.equal(await pay.feeReceiver(), yeniKomisyon);
+assert.equal(await pay.configEffectiveAt(), 0n, 'uygulanan öneri temizlenir');
+await expectRevert(pay.applyConfig(), 'NothingPending');
+const t2 = await token.balanceOf(yeniHazine);
+await (await pp.pay(ASTRA(9), ethers.id('teklif-6c'), { value: gasPrice * FEE_GAS, gasPrice })).wait();
+assert.equal((await token.balanceOf(yeniHazine)) - t2, ASTRA(9), 'uygulandıktan sonra ödeme yeni hazineye gider');
+// eski haline döndür (sonraki adımlar için)
+await (await pay.proposeConfig(await addr(treasury), await addr(feeRx))).wait();
+await zamanAtla(24 * 3600 + 5);
+await (await pay.applyConfig()).wait();
+assert.equal(await pay.treasury(), await addr(treasury));
+ok('Hazine/komisyon adresi: öneri anında geçmez, 24 saat dolmadan uygulanmaz, iptal edilebilir, sonra herkes uygulayabilir; komisyon gazı ve durdurma anında');
+
 await (await pay.transferOwnership(await addr(player2))).wait();
 assert.equal(await pay.owner(), await addr(owner), 'Kabul edilmeden sahiplik geçmez');
 await expectRevert(pay.connect(attacker).acceptOwnership(), 'NotOwner');

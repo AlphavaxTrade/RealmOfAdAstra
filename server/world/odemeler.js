@@ -6,9 +6,22 @@ import { DAY } from './yardimci.js';
 export function olusturOdemeler(w) {
   const { db, E, chain, cfg, clock, econ, creatorWallet } = w;
   // ── Haftalık hesaplaşma ─────────────────────────────────────────────────
+  // 1 ASTRA'nın altındaki tutarlar ve 2 ondalığın altındaki kırıntılar ESKİDEN sessizce düşüyordu (oyuncunun çekimi bakiyesinden
+  // düşülmüş, yapımcı/yakım sayacı ilerlemiş, ama zincire hiçbir şey gitmemişti): 13 Ekim 2026 denetimi. Artık (tür, adres)
+  // başına DEVREDİLİR: toplam 1 ASTRA'ya ulaşınca tek ödeme olarak kuyruğa girer, kırıntı bir sonrakine eklenir.
+  const DEVIR = 'world:payout:devir';
   function queuePayout(epoch, kind, address, amount) {
-    if (!(amount >= 1)) return;
-    db.q.payoutAdd.run(epoch, kind, address, Math.floor(amount * 100) / 100, clock());
+    const a = Number(amount);
+    if (!(a > 0) || !Number.isFinite(a)) return;
+    const k = `${kind}|${String(address).toLowerCase()}`;
+    const devir = db.kvJson(DEVIR, {});
+    const toplam = Math.round(((Number(devir[k]) || 0) + a) * 1e6) / 1e6;
+    const odenecek = Math.floor(toplam * 100 + 1e-7) / 100;
+    if (!(odenecek >= 1)) { devir[k] = toplam; db.kvSetJson(DEVIR, devir); return; }
+    const kalan = Math.round((toplam - odenecek) * 1e6) / 1e6;
+    if (kalan > 0) devir[k] = kalan; else delete devir[k];
+    db.kvSetJson(DEVIR, devir);
+    db.q.payoutAdd.run(epoch, kind, address, odenecek, clock());
   }
 
   // ── Zincir ödemeleri ────────────────────────────────────────────────────
@@ -133,7 +146,11 @@ export function olusturOdemeler(w) {
     const out = { sent: 0, retry: 0, waiting: 0, unknown: 0 };
     for (const r of db.q.payoutsSending.all()) {
       if (!r.tx_hash) { out.unknown++; continue; }        // imza kaydı yok: yönetici kontrol eder
-      const st = await chain.checkPayout({ hash: r.tx_hash, raw: r.raw_tx, nonce: r.tx_nonce }).catch(() => 'waiting');
+      // 'failed' kararı için zincirde ödeme olayı da aranır (W1): kasa modunda payPlayer/burn/payCreator olayı satır
+      // numarasıyla (ref), düz modda gönderen → alıcı → miktar Transfer'i. Belirsizse satır "sending"de kalır.
+      const expect = chain.vaultEnabled ? { vaultRef: { kind: r.kind, ref: r.id } }
+        : chain.gameWallet ? { transfer: { from: chain.gameWallet, to: r.address, amount: r.amount } } : null;
+      const st = await chain.checkPayout({ hash: r.tx_hash, raw: r.raw_tx, nonce: r.tx_nonce, since: r.sent_at || 0, expect }).catch(() => 'waiting');
       if (st === 'sent') { db.q.payoutMark.run('sent', r.tx_hash, null, clock(), r.id); out.sent++; }
       else if (st === 'failed') { db.q.payoutMark.run('pending', null, 'Önceki gönderim zincirde işlenmedi; yeniden denenecek', null, r.id); out.retry++; }
       else out.waiting++;

@@ -47,6 +47,14 @@ try {
   await assert.rejects(rates.propose(toArray(bad2)), /BadPoolSplit|revert/);
   const bad3 = toNamed(initial); bad3.marketFee = 1500;                // en fazla %10
   await assert.rejects(rates.propose(toArray(bad3)), /RateTooHigh|revert/);
+  // Yapımcı payı (sıra 1) en çok %10 (13 Ekim 2026 denetimi, K5): sözleşme ve JS aynı kuralı uygular
+  const yap = v => { const n = toNamed(initial); n.creator = v; n.pools = 10000 - n.burn - v - n.ubi; return toArray(n); };
+  await assert.rejects(rates.propose.staticCall(yap(1001)), /RateTooHigh|revert/, 'sözleşme: yapımcı payı %10 üstü reddedilir');
+  await assert.rejects(rates.propose.staticCall(yap(10000 - 500 - 600)), /RateTooHigh|revert/, 'sözleşme: %90 yapımcı payı reddedilir');
+  await rates.propose.staticCall(yap(1000));                        // tam %10 kabul
+  assert.match(validateRates(yap(1001)), /Yapımcı payı en fazla %10/, 'JS tarafı aynı sınırı uygular');
+  assert.equal(validateRates(yap(1000)), null, 'JS: tam %10 geçerli');
+  await assert.rejects(new ethers.ContractFactory(c.RealmRates.abi, c.RealmRates.bytecode, owner).deploy(yap(1500)), /RateTooHigh|revert|execution/, 'kurulurken de aynı sınır');
   await assert.rejects(rates.connect(stranger).propose(initial), /NotOwner|revert/);
   ok('Sözleşme: toplamı %100 olmayan, sınırı aşan ve sahibi olmayanın önerisi reddediliyor');
 

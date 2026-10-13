@@ -91,7 +91,8 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
 // 5) Üretimde başlatma doğrulaması (kurumsal A6.2): eksik/yanlış ayar sessizce çalışmaz, başlamadan açık hata verir
 {
   const iyi = { NODE_ENV: 'production', PUBLIC_URL: 'https://oyun.ornek.com', TRUST_PROXY: '1', ADMIN_TOKEN: 'a'.repeat(48), SMTP_URL: 'smtp://k:s@posta.ornek.com:587', DB_FILE: '/data/realm.db',   // gizli-tara: izin
-    GAME_WALLET_PRIVATE_KEY: '0x' + 'ab'.repeat(32), KASA_MASTER_KEY: 'cd'.repeat(32), PAYMENTS_CONTRACT: '0x' + '12'.repeat(20), RESERVE_WALLET: '0x' + '34'.repeat(20), YEDEK_KLASORU: '/yedek' };   // gizli-tara: izin
+    GAME_WALLET_PRIVATE_KEY: '0x' + 'ab'.repeat(32), KASA_MASTER_KEY: 'cd'.repeat(32), PAYMENTS_CONTRACT: '0x' + '12'.repeat(20), RESERVE_WALLET: '0x' + '34'.repeat(20), YEDEK_KLASORU: '/yedek',
+    HESAP_ANAHTARI: 'ef'.repeat(32), YEDEK_ANAHTAR: '12'.repeat(32) };   // gizli-tara: izin
   const d0 = dogrula(loadConfig(iyi), iyi);
   assert.deepEqual(d0.hatalar, [], 'tam ayarlı üretim yapılandırması hatasız: ' + d0.hatalar.join('; '));
   assert.deepEqual(d0.uyarilar, []);
@@ -107,6 +108,9 @@ const ok = n => { passed++; console.log(`✅ ${n}`); };
   hata({ RESERVE_WALLET: 'adres-degil' }, /RESERVE_WALLET/);
   hata({ TEST_MODE: '1' }, /TEST_MODE.*üretim/i);
   hata({ YEDEK_ANAHTAR: 'kisa' }, /YEDEK_ANAHTAR.*64/);
+  hata({ YEDEK_ANAHTAR: null }, /YEDEK_ANAHTAR gerekli.*YEDEK_KLASORU/);   // klasör tanımlıyken yedekler şifresiz yazılamaz (13 Ekim 2026, A2)
+  hata({ HESAP_ANAHTARI: null }, /HESAP_ANAHTARI gerekli/);                 // 2FA sırları üretimde şifreli saklanmalı
+  hata({ HESAP_ANAHTARI: 'kisa' }, /HESAP_ANAHTARI.*64/);
   hata({ TRUST_PROXY: null }, /TRUST_PROXY/);   // https ama TRUST_PROXY yok: herkes tek adres görünür, giriş kilidi küresel olur
   assert.throws(() => loadConfig({ YEDEK_ARALIK_DK: '0' }), /YEDEK_ARALIK_DK/, 'yedek aralığı 1-1440 dakika');
   // Uyarılar (başlamayı engellemez)

@@ -14,10 +14,17 @@
 //  • İki adımlı doğrulama (isteğe bağlı): telefondaki doğrulama uygulamasının 6 haneli kodu (TOTP, RFC 6238).
 //    Açıksa kod; girişte, cüzdan bağlarken/değiştirirken, çekimde, kasadan çekimde ve kapatırken istenir.
 //    Telefon kaybına karşı 10 tek kullanımlık yedek kod verilir. Şifre/iki adımlı doğrulama değişince e-posta gider.
+// Gizli veri (13 Ekim 2026 denetimi): e-posta bağlantı belirteçleri veritabanında yalnız SHA-256 özeti olarak durur; TOTP sırrı
+//    HESAP_ANAHTARI varsa AES-256-GCM ile şifreli ("enc1:"); yedek kodlar kod başına rastgele tuzla özetlenir (eskiler de geçer).
+// Tek kişi, tek hesap (13 Ekim 2026 denetimi, EK-02a): kayıtta e-posta "email_key" anahtarına çevrilip benzersizlik oradan denetlenir
+//    (+etiket ve gmail noktaları aynı kutu sayılır); adres posta için kullanıcının yazdığı gibi kalır.
 // ============================================================================
 import crypto from 'node:crypto';
 import QRCode from 'qrcode';
 import { parolaOzetle, parolaDogrula } from './parola.js';
+import { epostaAnahtari } from './eposta.js';
+import { tokenOzeti } from './oturum.js';
+import { hesapAnahtariCoz, sifrele, coz, sifreliMi } from './gizli-veri.js';
 
 // ── TOTP (doğrulama uygulaması kodları) ─────────────────────────────────────
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -46,6 +53,20 @@ export function totpCode(secretB32, step) {
 }
 const sha = s => crypto.createHash('sha256').update(s).digest('hex');
 const normCode = c => String(c || '').toLowerCase().replace(/[\s-]/g, '');
+// Yedek kod kaydı: "s1$<rastgele tuz>$<sha256(tuz:kod)>". Tuzsuz eski kayıt 64 haneli düz özetti; doğrulama ikisini de tanır.
+const YEDEK_ONEK = 's1$';
+const yedekKodKaydi = kod => { const tuz = crypto.randomBytes(16).toString('hex'); return `${YEDEK_ONEK}${tuz}$${sha(tuz + ':' + normCode(kod))}`; };
+function yedekKodTutuyor(kayit, kod) {
+  const c = normCode(kod);
+  let beklenen = kayit, aday;
+  if (typeof kayit === 'string' && kayit.startsWith(YEDEK_ONEK)) {
+    const [, tuz, ozet] = kayit.split('$');
+    if (!tuz || !ozet) return false;
+    beklenen = ozet; aday = sha(tuz + ':' + c);
+  } else aday = sha(c);
+  const a = Buffer.from(String(beklenen)), b = Buffer.from(aday);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 export const WALLET_CHANGE_DELAY_MS = 48 * 3600 * 1000;
 export const playerIdOf = accountId => 'acc:' + accountId;
@@ -58,11 +79,13 @@ let sahteOzet = null;
 const sahteParolaOzeti = () => (sahteOzet ||= parolaOzetle('zamanlama-esitleme-icin'));
 
 export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), verifyMessage }) {
+  const hesapAnahtari = hesapAnahtariCoz(cfg.hesapAnahtari);      // yoksa TOTP sırrı düz yazılır (yalnız geliştirme/deneme)
   const q = {
     byEmail: db.raw.prepare('SELECT * FROM accounts WHERE email = ?'),
+    byEmailKey: db.raw.prepare('SELECT * FROM accounts WHERE email_key = ?'),
     byId: db.raw.prepare('SELECT * FROM accounts WHERE id = ?'),
     byWallet: db.raw.prepare('SELECT * FROM accounts WHERE wallet = ? OR (pending_wallet = ? AND pending_confirmed = 1)'),
-    insert: db.raw.prepare('INSERT INTO accounts (email, pass_hash, created_at) VALUES (?, ?, ?)'),
+    insert: db.raw.prepare('INSERT INTO accounts (email, email_key, pass_hash, created_at) VALUES (?, ?, ?, ?)'),
     setVerified: db.raw.prepare('UPDATE accounts SET email_verified = 1 WHERE id = ?'),
     setPass: db.raw.prepare('UPDATE accounts SET pass_hash = ? WHERE id = ?'),
     setPending: db.raw.prepare('UPDATE accounts SET pending_wallet = ?, pending_confirmed = ?, pending_active_at = ? WHERE id = ?'),
@@ -77,25 +100,49 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     nonceDel: db.raw.prepare('DELETE FROM wallet_nonces WHERE account_id = ?'),
     sessionsOf: db.raw.prepare('DELETE FROM sessions WHERE address = ?'),
     totpPending: db.raw.prepare('UPDATE accounts SET totp_pending = ? WHERE id = ?'),
-    totpOn: db.raw.prepare('UPDATE accounts SET totp_secret = totp_pending, totp_pending = NULL, totp_enabled = 1, totp_step = ?, backup_codes = ? WHERE id = ?'),
+    totpOn: db.raw.prepare('UPDATE accounts SET totp_secret = ?, totp_pending = NULL, totp_enabled = 1, totp_step = ?, backup_codes = ? WHERE id = ?'),
+    totpDuzOlanlar: db.raw.prepare("SELECT id, totp_secret, totp_pending FROM accounts WHERE (totp_secret IS NOT NULL AND totp_secret NOT LIKE 'enc1:%') OR (totp_pending IS NOT NULL AND totp_pending NOT LIKE 'enc1:%')"),
+    totpSifreliYaz: db.raw.prepare('UPDATE accounts SET totp_secret = ?, totp_pending = ? WHERE id = ?'),
     totpOff: db.raw.prepare('UPDATE accounts SET totp_secret = NULL, totp_pending = NULL, totp_enabled = 0, totp_step = 0, backup_codes = NULL WHERE id = ?'),
     totpStep: db.raw.prepare('UPDATE accounts SET totp_step = ? WHERE id = ?'),
     backupSet: db.raw.prepare('UPDATE accounts SET backup_codes = ? WHERE id = ?')
   };
   const link = (param, token) => `${cfg.publicUrl.replace(/\/$/, '')}/?${param}=${token}`;
+  // Belirteç e-postadaki bağlantıda DÜZ gider, veritabanında yalnız SHA-256 özeti durur (kayıt dosyası sızsa bağlantı üretilemez)
   const newToken = (accountId, kind, ttlMs, data = null) => {
     q.tokensPurge.run(clock());
     const t = crypto.randomBytes(24).toString('hex');
-    q.tokenAdd.run(t, accountId, kind, data == null ? null : JSON.stringify(data), clock() + ttlMs);
+    q.tokenAdd.run(tokenOzeti(t), accountId, kind, data == null ? null : JSON.stringify(data), clock() + ttlMs);
     return t;
   };
   const takeToken = (token, kind) => {
     if (typeof token !== 'string' || token.length > 100) return null;
-    const r = q.tokenGet.get(token);
+    const ozet = tokenOzeti(token);
+    const r = q.tokenGet.get(ozet);
     if (!r || r.kind !== kind || r.expires < clock()) return null;
-    q.tokenDel.run(token);
+    q.tokenDel.run(ozet);
     return r;
   };
+
+  // TOTP sırrı: anahtar varsa "enc1:" şifreli, yoksa düz (geliştirme). Bağlam hesaba özel: satır kopyalanırsa çözülmez.
+  const totpBaglam = id => `totp:acc:${id}`;
+  const sirYaz = (duz, id) => (duz == null ? null : hesapAnahtari ? sifrele(duz, hesapAnahtari, totpBaglam(id)) : duz);
+  function sirOku(kayit, id) {
+    if (!kayit) return null;
+    if (!sifreliMi(kayit)) return kayit;                           // eski düz kayıt (anahtar eklenmeden önce yazılmış)
+    try { return coz(kayit, hesapAnahtari, totpBaglam(id)); } catch (e) {
+      db.event('totp-cozulemedi', playerIdOf(id), { neden: String(e.message).slice(0, 80) });   // kapalı başarısızlık: yedek kodlar çalışır
+      return null;
+    }
+  }
+  // Açılışta: anahtar tanımlıysa daha önce düz yazılmış TOTP sırları şifrelenir (eski hesaplar da korunur)
+  if (hesapAnahtari) {
+    for (const r of q.totpDuzOlanlar.all()) {
+      q.totpSifreliYaz.run(
+        r.totp_secret && !sifreliMi(r.totp_secret) ? sirYaz(r.totp_secret, r.id) : r.totp_secret,
+        r.totp_pending && !sifreliMi(r.totp_pending) ? sirYaz(r.totp_pending, r.id) : r.totp_pending, r.id);
+    }
+  }
   // Deneme düzeninde (gerçek e-posta yokken) bağlantı oyuncuya ekranda gösterilir
   const devLink = url => (mailer.isDev && cfg.testMode ? { devLink: url } : {});
 
@@ -132,7 +179,8 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!EMAIL_RE.test(e) || e.length > 254) return { ok: false, error: 'Geçerli bir e-posta adresi yaz.' };
     if (typeof password !== 'string' || password.length < 8 || password.length > 128) return { ok: false, error: 'Şifre en az 8 karakter olmalı.' };
     const pass = await parolaOzetle(password);             // var olan hesapta da aynı süre geçsin
-    const old = q.byEmail.get(e);
+    const anahtar = epostaAnahtari(e);                     // +etiket / gmail noktaları aynı posta kutusu: tek hesap
+    const old = q.byEmailKey.get(anahtar) || q.byEmail.get(e);
     if (old) {
       let extra = {};
       if (mayMail('reg:' + old.id)) {
@@ -143,14 +191,21 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
           q.tokensDelKind.run(old.id, 'verify');
           verifyPart = `\n\nHesabını henüz doğrulamadıysan bu bağlantıyla doğrulayabilirsin:\n${link('verify', newToken(old.id, 'verify', 7 * 86400000))}`;
         }
-        await mailer.send({ to: e, subject: 'Realm of AdAstra — bu e-postayla zaten bir hesabın var',
+        // Posta HESABIN KAYITLI adresine gider (yazılan +etiketli varyanta değil): bağlantıyı yalnız asıl kutu sahibi alır
+        await mailer.send({ to: old.email, subject: 'Realm of AdAstra — bu e-postayla zaten bir hesabın var',
           text: `Biri (büyük ihtimalle sen) bu e-postayla yeniden kayıt olmayı denedi. Bu e-postayla zaten bir hesabın var. 👑\n\nŞifreni hatırlıyorsan oyuna giriş yapman yeterli. Unuttuysan bu bağlantıyla yeni şifre belirle (1 saat geçerli):\n${url}${verifyPart}\n\nBunu sen yapmadıysan bu e-postayı yok say; hesabında hiçbir şey değişmedi.` });
         extra = devLink(url);
       }
       db.event('register-existing', playerIdOf(old.id));
       return { ok: true, sent: true, message: SENT_MSG, ...extra };
     }
-    const r = q.insert.run(e, pass, clock());
+    let r;
+    try { r = q.insert.run(e, anahtar, pass, clock()); } catch (err) {
+      // Eşzamanlı iki kayıt: benzersiz anahtarı kaybeden de aynı nötr yanıtı alır (numaralandırma yok, ikinci hesap açılmaz)
+      if (!/UNIQUE/i.test(String(err.message))) throw err;
+      db.event('register-existing', null);
+      return { ok: true, sent: true, message: SENT_MSG };
+    }
     const id = Number(r.lastInsertRowid);
     db.q.playerAdd.run(playerIdOf(id), clock(), clock());
     const t = newToken(id, 'verify', 7 * 86400000);
@@ -182,12 +237,11 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!acc || !acc.totp_enabled) return { ok: true };
     if (code == null || code === '') return { ok: false, need2fa: true, error: '🛡️ İki adımlı doğrulama kodunu yaz.' };
     if (tfaLocked(acc.id)) return { ok: false, need2fa: true, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
-    const s = matchTotp(acc.totp_secret, code, acc.totp_step);
+    const s = matchTotp(sirOku(acc.totp_secret, acc.id), code, acc.totp_step);
     if (s) { q.totpStep.run(s, acc.id); tfaFails.delete(acc.id); return { ok: true }; }
     const list = JSON.parse(acc.backup_codes || '[]');
-    const h = sha(normCode(code));
-    const i = list.indexOf(h);
-    if (i >= 0 && normCode(code).length >= 8) {
+    const i = normCode(code).length >= 8 ? list.findIndex(k => yedekKodTutuyor(k, code)) : -1;
+    if (i >= 0) {
       list.splice(i, 1);
       q.backupSet.run(JSON.stringify(list), acc.id);
       tfaFails.delete(acc.id);
@@ -203,7 +257,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!acc) return { ok: false, error: 'Hesap yok' };
     if (acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama zaten açık.' };
     const secret = base32(crypto.randomBytes(20));
-    q.totpPending.run(secret, acc.id);
+    q.totpPending.run(sirYaz(secret, acc.id), acc.id);
     const uri = `otpauth://totp/${encodeURIComponent('Realm of AdAstra:' + acc.email)}?secret=${secret}&issuer=${encodeURIComponent('Realm of AdAstra')}&digits=6&period=30`;
     const svg = await QRCode.toString(uri, { type: 'svg', margin: 1, errorCorrectionLevel: 'M' });
     return { ok: true, secret, uri, qr: 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64') };
@@ -216,10 +270,11 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const parola = await parolaDogrula(String(password || ''), acc.pass_hash);
     if (!parola.ok) return { ok: false, error: 'Parola hatalı.' };
     if (tfaLocked(acc.id)) return { ok: false, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
-    const s = matchTotp(acc.totp_pending, code, 0);
+    const bekleyenSir = sirOku(acc.totp_pending, acc.id);
+    const s = matchTotp(bekleyenSir, code, 0);
     if (!s) { tfaFail(acc.id); return { ok: false, error: 'Kod tutmadı. Uygulamadaki güncel 6 haneli kodu yaz.' }; }
     const codes = Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
-    q.totpOn.run(s, JSON.stringify(codes.map(c => sha(normCode(c)))), acc.id);
+    q.totpOn.run(sirYaz(bekleyenSir, acc.id), s, JSON.stringify(codes.map(yedekKodKaydi)), acc.id);
     db.event('2fa-on', playerId);
     await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — iki adımlı doğrulama AÇILDI', text: 'Hesabında iki adımlı doğrulama açıldı. 🛡️ Artık girişte telefonundaki koda da ihtiyaç olacak.\n\nBunu sen yapmadıysan hemen şifreni sıfırla ve bize yaz.' }).catch(() => {});
     return { ok: true, backupCodes: codes };
@@ -277,7 +332,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   // Şifre yoksa bağlantı HARCANMAZ (ön yüz şifre sorup aynı bağlantıyla tekrar dener). Doğrulanmış hesapta şifre istenmez.
   async function verifyEmail(token, password) {
     if (typeof token !== 'string' || token.length > 100) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
-    const r = q.tokenGet.get(token);
+    const r = q.tokenGet.get(tokenOzeti(token));
     if (!r || r.kind !== 'verify' || r.expires < clock()) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
     const onceki = q.byId.get(r.account_id);
     let yeniOzet = null;

@@ -19,6 +19,37 @@ export function olusturSicakCuzdan(w) {
     const weekly = Math.max(histMax, requests, Number(cfg.hotWalletMinAda) || 0);
     return { weekly, queued, need: weekly * (Number(cfg.hotWalletWeeks) || 1) + queued };
   }
+  // Ödeme sözleşmesinin sahibi donanım cüzdanında mı + bekleyen hazine/komisyon adresi değişikliği var mı (13 Ekim 2026, K5).
+  // Adres değişikliği sözleşmede 24 saat gecikmeli: yönetici panelde ve e-postayla (bir öneri için bir kez) haber alır,
+  // sahip anahtarı çalınmışsa süre dolmadan "iptal" edilebilir.
+  async function denetleOdemeSozlesmesi(st, prev) {
+    if (!chain.readPaymentsAdmin) return;
+    try {
+      const pa = await chain.readPaymentsAdmin();
+      if (!pa) return;
+      const hot = [chain.gameWallet].filter(Boolean).map(a => a.toLowerCase());
+      st.contract = { ...pa, expectedOwner: okAddr(cfg.contractOwner) ? cfg.contractOwner.toLowerCase() : null,
+        ownerIsHot: hot.includes(pa.owner),
+        ownerOk: okAddr(cfg.contractOwner) ? pa.owner === cfg.contractOwner.toLowerCase() : !hot.includes(pa.owner) };
+      if (pa.configPending) {
+        const imza = `${pa.configPending.treasury}:${pa.configPending.feeReceiver}:${pa.configPending.at}`;
+        st.configAlert = imza;
+        if (prev.configAlert !== imza) {
+          db.event('payments-config-pending', null, { treasury: pa.configPending.treasury, feeReceiver: pa.configPending.feeReceiver, at: pa.configPending.at });
+          if (mailer && cfg.adminEmail) {
+            await mailer.send({ to: cfg.adminEmail, subject: 'Realm of AdAstra — ödeme sözleşmesinde adres değişikliği önerildi',
+              text: `Ödeme sözleşmesinde hazine / komisyon cüzdanı adresleri için değişiklik önerildi; ${new Date(pa.configPending.at).toISOString()} tarihinde uygulanabilir olacak.
+
+Yeni hazine adresi: ${pa.configPending.treasury}
+Yeni komisyon adresi: ${pa.configPending.feeReceiver}
+
+Bunu SEN önermediysen sahip anahtarın ele geçirilmiş olabilir: süre dolmadan yönetici panelinden "bekleyen adres değişikliğini iptal et"i kullan ve ödemeleri durdur.` })
+              .catch(err => log.warn('Uyarı e-postası:', err.message));
+          }
+        }
+      }
+    } catch (err) { log.warn('Sözleşme bilgisi:', err.message); }
+  }
   // Kasa modunda (VAULT_CONTRACT) oyun cüzdanı para tutmaz: yedek cüzdana aktarım YOK (kasanın böyle bir çıkışı bilerek yok).
   // Günlük denetim: kasa bu sunucuya uygun mu, durmuş mu, dağıtıcı anahtarın işlem ücreti için AVAX'ı yetiyor mu.
   async function checkVaultWallet() {
@@ -38,6 +69,7 @@ export function olusturSicakCuzdan(w) {
     st.problems = sorunlar;
     const prev = econ().hotWallet || {};
     st.alertAt = prev.alertAt || 0;
+    await denetleOdemeSozlesmesi(st, prev);
     if (sorunlar.length && clock() - st.alertAt > DAY) {
       st.alertAt = clock();
       db.event('vault-problem', null, { sorunlar });
@@ -84,17 +116,7 @@ ${chain.gameWallet}
 Yönetici panelindeki "Yedek cüzdandan oyun cüzdanına gönder" düğmesini de kullanabilirsin.` }).catch(err => log.warn('Uyarı e-postası:', err.message));
       }
     }
-    if (chain.readPaymentsAdmin) {
-      try {
-        const pa = await chain.readPaymentsAdmin();
-        if (pa) {
-          const hot = [chain.gameWallet].filter(Boolean).map(a => a.toLowerCase());
-          st.contract = { ...pa, expectedOwner: okAddr(cfg.contractOwner) ? cfg.contractOwner.toLowerCase() : null,
-            ownerIsHot: hot.includes(pa.owner),
-            ownerOk: okAddr(cfg.contractOwner) ? pa.owner === cfg.contractOwner.toLowerCase() : !hot.includes(pa.owner) };
-        }
-      } catch (err) { log.warn('Sözleşme bilgisi:', err.message); }
-    }
+    await denetleOdemeSozlesmesi(st, prev);
     setEcon({ hotWallet: st });
     return st;
   }

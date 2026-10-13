@@ -13,7 +13,7 @@ import { anahtarCoz, sifreleyici } from './sifre.js';
 
 export const DURUM_DOSYASI = 'son-durum.json';
 // Kancaya gizli değerler geçmez: dışarı kopyalayan komut (rclone/scp) yalnız yedek dosyasının yolunu bilir
-const KANCADAN_CIKARILAN = ['YEDEK_ANAHTAR', 'YEDEK_ANAHTAR_FILE', 'KASA_MASTER_KEY', 'KASA_MASTER_KEY_FILE', 'GAME_WALLET_PRIVATE_KEY', 'GAME_WALLET_PRIVATE_KEY_FILE', 'ADMIN_TOKEN', 'ADMIN_TOKEN_FILE', 'SMTP_URL', 'SMTP_URL_FILE'];
+const KANCADAN_CIKARILAN = ['YEDEK_ANAHTAR', 'YEDEK_ANAHTAR_FILE', 'KASA_MASTER_KEY', 'KASA_MASTER_KEY_FILE', 'HESAP_ANAHTARI', 'HESAP_ANAHTARI_FILE', 'GAME_WALLET_PRIVATE_KEY', 'GAME_WALLET_PRIVATE_KEY_FILE', 'ADMIN_TOKEN', 'ADMIN_TOKEN_FILE', 'SMTP_URL', 'SMTP_URL_FILE'];
 
 const damga = ms => { const iso = new Date(ms).toISOString(); return iso.slice(0, 10).split('-').join('') + '-' + iso.slice(11, 19).split(':').join(''); };
 const sayisal = s => s.length > 0 && [...s].every(c => c >= '0' && c <= '9');

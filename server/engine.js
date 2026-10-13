@@ -119,6 +119,9 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     gs._simNow = null;
     gs._isFastForwarding = false;
     gs.state = gs.loadState();
+    // Sistem hesabı (haftalık otonom geri alım) 0 ASTRA ile açılır (13 Ekim 2026 denetimi): oyunun varsayılan başlangıç
+    // bakiyesi (2,5 ASTRA) hiçbir yerden gelmiyordu; korunum hesabında yoktan para olarak görünüyordu.
+    if (current === SYSTEM && !db.kvGet('ls:' + gs.storageKey)) { gs.state.adAstraBalance = 0; gs.state.lockedAda = 0; }
     if (!db.kvGet('ls:' + gs.storageKey) && current !== SYSTEM) {
       // Yeni oyuncu: başlangıç profili; piyango ve kasa bilgileri dünyadan gelir
       gs.state.lastSeenAt = clock();

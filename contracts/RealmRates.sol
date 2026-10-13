@@ -5,6 +5,7 @@ pragma solidity 0.8.24;
 /// @notice Oyundaki bütün ADA oranları (yakım, yapımcı payı, temel gelir, ödül kasaları, çark, zindan harcı, piyango,
 /// pazar komisyonu, çekim ücreti ve kirası) burada herkesin görebileceği şekilde durur. Oyun sunucusu oranları buradan okur.
 /// Oranları yalnız sahip değiştirebilir; yeni oranlar önerildikten 24 saat sonra geçerli olur (oyuncular önceden görür).
+/// Yapımcı payı (sıra 1) sözleşmede en çok %10'a sabitlenmiştir: sahip anahtarı çalınsa bile pay %10'u aşamaz.
 /// Sözleşme para tutmaz ve paraya dokunmaz; yalnız kuralı tutar.
 /// Oranlar baz puandır: 10000 = %100. Sıra (js/economy/rates.js ile aynı):
 ///  0 yakım, 1 yapımcı, 2 temel gelir, 3 ödül kasaları                       → toplam 10000
@@ -14,6 +15,7 @@ pragma solidity 0.8.24;
 ///  18 çekim ücreti fiyat düşerken (≤3000), 19 çekim ücretinin temel gelire giden kısmı (≤10000), 20 çekim hakkı kirası (≤1000)
 contract RealmRates {
     uint256 public constant COUNT = 21;
+    uint16 public constant MAX_CREATOR_BPS = 1000;   // yapımcı payı (sıra 1) en çok %10 (13 Ekim 2026 denetimi, K5)
     uint256 public constant DELAY = 24 hours;
 
     address public owner;
@@ -96,6 +98,7 @@ contract RealmRates {
     function _check(uint16[21] memory r) private pure {
         if (uint256(r[0]) + r[1] + r[2] + r[3] != 10000) revert BadSpendSplit();
         if (uint256(r[4]) + r[5] + r[6] + r[7] + r[8] + r[9] + r[10] + r[11] != 10000) revert BadPoolSplit();
+        if (r[1] > MAX_CREATOR_BPS) revert RateTooHigh(1);
         uint16[9] memory maxes = [10000, 10000, 5000, 1000, 1000, 2000, 3000, 10000, 1000];
         for (uint256 i = 0; i < 9; i++) {
             if (r[12 + i] > maxes[i]) revert RateTooHigh(12 + i);

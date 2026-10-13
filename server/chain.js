@@ -223,18 +223,108 @@ export function createChain(cfg, { providerFactory } = {}) {
   }
 
   // "Gönderiliyor" kalmış bir ödemenin zincirdeki durumu: 'sent' | 'failed' (tekrar gönderilebilir) | 'waiting'
-  async function checkPayout({ hash, raw, nonce, from = null }) {
-    const rc = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
-    if (rc) return rc.status === 1 ? 'sent' : 'failed';
-    const used = await withProvider(p => p.getTransactionCount(from || wallet.address, 'latest'));
-    if (Number.isInteger(nonce) && used > nonce) {
-      // Sıra numarası kullanılmış: son bir kez daha bak (yarış durumunda yeni işlenmiş olabilir)
-      const rc2 = await withProvider(p => p.getTransactionReceipt(hash)).catch(() => null);
-      if (rc2) return rc2.status === 1 ? 'sent' : 'failed';
-      return 'failed';
+  //
+  // 13 Ekim 2026 denetimi (W1): eskiden "sıra numarası kullanılmış + makbuz yok → failed → yeniden gönder" idi. Yük dengeli
+  // (arkasında birkaç düğüm olan) bir RPC adresinde makbuz sorusu geride kalmış bir düğüme, sıra numarası sorusu ilerideki
+  // düğüme gidebilir: işlem aslında işlenmiştir ama "işlenmedi" sanılır ve ÇİFT ÖDEME doğardı. Para kaybolmasın diye karar
+  // artık "failed" için ŞUNLARIN HEPSİNİ ister; biri bile belirsizse 'waiting' (satır "sending"de kalır, yönetici panelinde
+  // mutabakat yapılır — YANLIŞ "failed"in bedeli çift ödeme, YANLIŞ "waiting"in bedeli yalnız gecikme):
+  //   1. TÜM RPC adreslerinden makbuz sorusu yanıt verdi ve hiçbirinde işlemin makbuzu ya da kaydı yok (biri bile hata verirse belirsiz)
+  //   2. TÜM RPC adreslerinde bu cüzdanın sıra numarası (latest) bu işlemin numarasını GEÇMİŞ (başka işlem bu sırayı almış)
+  //   3. imzalamanın üzerinden en az PAYOUT_FAIL_MIN_AGE_MS geçmiş (geride kalan düğümler yetişsin)
+  //   4. beklenen ödeme olayı (Transfer / PlayerPaid / Burned / CreatorPaid / Paid) zincirde taranmış ve bulunmamış;
+  //      bulunduysa başka bir işlemde de olsa 'failed' denmez: aynı işlem sayılır ('sent') ya da belirsiz kalır ('waiting')
+  // `expect` verilmezse (yerel AVAX gönderimi gibi olay bırakmayan işlemler) 4. koşul atlanır, 1-3 yine geçerli olmalıdır.
+  //   expect: { transfer: { from, to, amount } } | { vaultRef: { kind, ref } } | { paidRef }
+  const PAYOUT_FAIL_MIN_AGE_MS = 10 * 60 * 1000;
+  const MAX_SCAN_BLOCKS = 100000;          // en çok bu kadar blok geriye taranır (2000'lik parçalarla ~50 istek / RPC)
+  const scanMemo = new Map();              // imzalı işlem özeti → son tarama sonucu (aynı satır her turda yeniden taranmasın)
+  const evIface = new ethers.Interface([...ERC20_ABI.filter(x => x.startsWith('event')),
+    'event PlayerPaid(address indexed to, uint256 amount, bytes32 indexed ref)', 'event Burned(uint256 amount, bytes32 indexed ref)',
+    'event CreatorPaid(uint256 amount, bytes32 indexed ref)', 'event Paid(address indexed payer, bytes32 indexed ref, uint256 amount, uint256 fee)']);
+  const refTopic = ref => ethers.zeroPadValue(typeof ref === 'string' && ref.startsWith('0x') ? ref : ethers.toBeHex(Number(ref) || 0), 32);
+  const hepsi = fn => Promise.all(providers.map(p => Promise.resolve().then(() => fn(p)).then(v => ({ ok: true, v }), e => ({ ok: false, e }))));
+
+  // Beklenen ödeme olayı bu penceredeki bloklarda var mı: 'ours' (bizim işlemimiz) | 'other' (aynı olay başka işlemde) | 'none' | 'error'
+  async function scanExpectation(expect, hash, sinceMs) {
+    const spec = [];
+    const tokenA = String(cfg.tokenAddress || '');
+    if (expect.transfer) {
+      const t = expect.transfer;
+      const value = ethers.parseUnits(Number(t.amount).toFixed(6), 18);
+      spec.push({ address: tokenA, topics: [evIface.getEvent('Transfer').topicHash, ethers.zeroPadValue(t.from, 32), ethers.zeroPadValue(t.to, 32)], match: l => evIface.parseLog(l).args.value === value });
+    } else if (expect.vaultRef && vaultAddr) {
+      const { kind, ref } = expect.vaultRef;
+      const ev = kind === 'withdraw' ? 'PlayerPaid' : kind === 'burn' ? 'Burned' : kind === 'creator' ? 'CreatorPaid' : null;
+      if (!ev) return 'none';
+      const topics = [evIface.getEvent(ev).topicHash];
+      if (ev === 'PlayerPaid') topics.push(null);
+      topics.push(refTopic(ref));
+      spec.push({ address: vaultAddr, topics, match: () => true });
+    } else if (expect.paidRef && cfg.paymentsContract) {
+      spec.push({ address: String(cfg.paymentsContract), topics: [evIface.getEvent('Paid').topicHash, null, refTopic(expect.paidRef)], match: () => true });
+    } else return 'none';
+    const age = Math.max(0, Date.now() - (Number(sinceMs) || 0));
+    const sonuc = await hepsi(async p => {
+      const latest = await p.getBlockNumber();
+      const geri = sinceMs ? Math.min(MAX_SCAN_BLOCKS, Math.ceil(age / 1000) + 2000) : MAX_SCAN_BLOCKS;   // blok süresi >= 1 sn varsayımıyla üst sınır
+      const from = Math.max(0, latest - geri);
+      let other = false;
+      for (const sp of spec) {
+        for (let b = from; b <= latest; b += 2000) {
+          const logs = await p.getLogs({ address: sp.address, topics: sp.topics, fromBlock: b, toBlock: Math.min(latest, b + 1999) });
+          for (const l of logs) {
+            if (!sp.match(l)) continue;
+            if (String(l.transactionHash).toLowerCase() === String(hash).toLowerCase()) return 'ours';
+            // pencerenin dışındaki (imzalamadan önceki) eski eşdeğer olaylar sayılmaz
+            const blk = sinceMs ? await p.getBlock(l.blockNumber).catch(() => null) : null;
+            if (!sinceMs || (blk && blk.timestamp * 1000 >= sinceMs - 120000)) other = true;
+          }
+        }
+      }
+      return other ? 'other' : 'none';
+    });
+    if (sonuc.some(r => r.ok && r.v === 'ours')) return 'ours';
+    if (sonuc.some(r => !r.ok)) return 'error';
+    if (sonuc.some(r => r.v === 'other')) return 'other';
+    return 'none';
+  }
+
+  async function checkPayout({ hash, raw, nonce, from = null, since = 0, expect = null, minAgeMs = PAYOUT_FAIL_MIN_AGE_MS, now = Date.now() }) {
+    const sender = from || (wallet && wallet.address);
+    // 1) Herhangi bir RPC'de makbuz varsa kesin
+    const rcs = await hepsi(p => p.getTransactionReceipt(hash));
+    const var_ = rcs.find(r => r.ok && r.v);
+    if (var_) return var_.v.status === 1 ? 'sent' : 'failed';   // zincirde başarısız (geri alınmış) işlemde para hareket etmemiştir
+    // 2) İşlem ağda biliniyor mu (bekleyen ya da yeni işlenmiş, makbuz henüz yayılmamış)
+    const txs = await hepsi(p => p.getTransaction(hash));
+    if (txs.some(r => r.ok && r.v)) return 'waiting';
+    // 3) Bütün RPC adresleri yanıt vermeli: biri çökmüşse "yok" demek için yeterli kanıt yok
+    if (rcs.some(r => !r.ok) || txs.some(r => !r.ok)) return 'waiting';
+    // 4) Sıra numarası: hiçbir RPC'de kullanılmamışsa işlem henüz işlenmemiştir → aynı imzalı işlemi yeniden yay
+    const sayilar = await hepsi(p => p.getTransactionCount(sender, 'latest'));
+    if (sayilar.some(r => !r.ok)) return 'waiting';
+    const enAz = Math.min(...sayilar.map(r => Number(r.v)));
+    if (!Number.isInteger(nonce) || !(enAz > nonce)) {
+      if (raw) await broadcast(raw).catch(() => {});                // düşmüş olabilir: aynı işlemi yeniden yay
+      return 'waiting';
     }
-    if (raw) await broadcast(raw).catch(() => {});                    // düşmüş olabilir: aynı işlemi yeniden yay
-    return 'waiting';
+    // 5) Yaş eşiği: geride kalan düğümlere yetişme süresi
+    if (since && now - since < minAgeMs) return 'waiting';
+    // 6) Ödeme olayı taraması: para gerçekten gitmişse "işlenmedi" denmez
+    if (expect) {
+      const anahtar = String(hash).toLowerCase();
+      const memo = scanMemo.get(anahtar);
+      let r = memo && now - memo.at < 5 * 60000 ? memo.r : null;
+      if (!r) {
+        r = await scanExpectation(expect, hash, since).catch(() => 'error');
+        if (scanMemo.size > 500) scanMemo.clear();
+        scanMemo.set(anahtar, { at: now, r });
+      }
+      if (r === 'ours') return 'sent';
+      if (r !== 'none') return 'waiting';                           // 'other' ya da 'error': belirsiz, yönetici bakar
+    }
+    return 'failed';
   }
 
   function verifyLogin(message, signature) {
@@ -243,32 +333,50 @@ export function createChain(cfg, { providerFactory } = {}) {
 
   // Ödeme sözleşmesi (RealmPayments) işlemini doğrular: başarılı mı, kim ödedi, referans, miktar
   const payIface = new ethers.Interface(['event Paid(address indexed payer, bytes32 indexed ref, uint256 amount, uint256 fee)']);
-  async function verifyPayment(txHash) {
+  // wantRef verilirse işlemdeki o referanslı Paid olayı seçilir (aynı işlemde birden çok ödeme olabilir: hepsi ayrı ayrı kredilenir).
+  // Dönen `amount`, oyun cüzdanına GERÇEKTEN ulaşan miktarla sınırlıdır: ücret kesen / yakan bir token'da sözleşmenin
+  // bildirdiği miktardan az gelir; eksik gelen kredilenmez (fazla kredi = bedava ASTRA), gelen kısım kaybolmaz.
+  // Reddedilen ödemeler `rejected: true` ile işaretlenir (geçici RPC hatasından ayırt edilsin diye).
+  async function verifyPayment(txHash, wantRef = null) {
     const rc = await withProvider(p => p.getTransactionReceipt(txHash));
     if (!rc) return null;
-    if (rc.status !== 1) throw new Error('İşlem zincirde başarısız');
+    const reddet = msg => Object.assign(new Error(msg), { rejected: true });
+    if (rc.status !== 1) throw reddet('İşlem zincirde başarısız');
     const contract = String(cfg.paymentsContract || '').toLowerCase();
+    const tokenA = String(cfg.tokenAddress || '').toLowerCase();
+    const treasury = String(cfg.treasuryAddress || gameWallet || '').toLowerCase();
+    const erc = new ethers.Interface(ERC20_ABI);
+    const paid = [];                          // sözleşmenin Paid olayları (sırayla)
+    const received = new Map();               // ödeyen → hazineye giden toplam (wei); Sözleşme sahibinin anahtarı çalınıp hazine adresi değiştirilirse buraya hiçbir şey düşmez
     for (const l of rc.logs) {
-      if (l.address.toLowerCase() !== contract) continue;
-      let ev = null;
-      try { ev = payIface.parseLog(l); } catch { ev = null; }
-      if (ev && ev.name === 'Paid') {
-        const payer = ev.args.payer.toLowerCase();
-        // Ek güvence: aynı işlemde ADASTRA gerçekten BİZİM oyun cüzdanımıza, ödenen miktarda aktarılmış mı?
-        // (Sözleşme sahibinin anahtarı çalınıp hazine adresi değiştirilirse sunucu boşuna bakiye yazmasın.)
-        const treasury = String(cfg.treasuryAddress || gameWallet || '').toLowerCase();
-        const erc = new ethers.Interface(ERC20_ABI);
-        const moved = rc.logs.some(t => {
-          if (t.address.toLowerCase() !== String(cfg.tokenAddress).toLowerCase()) return false;
-          let tr = null;
-          try { tr = erc.parseLog(t); } catch { tr = null; }
-          return tr && tr.name === 'Transfer' && tr.args.from.toLowerCase() === payer && (!treasury || tr.args.to.toLowerCase() === treasury) && tr.args.value >= ev.args.amount;
-        });
-        if (!moved) throw new Error('Ödeme oyun cüzdanına gitmemiş');
-        return { contract, payer, ref: ev.args.ref, amount: toAda(ev.args.amount), fee: Number(ethers.formatEther(ev.args.fee)), block: rc.blockNumber };
+      const addr = l.address.toLowerCase();
+      if (addr === contract) {
+        let ev = null;
+        try { ev = payIface.parseLog(l); } catch { ev = null; }
+        if (ev && ev.name === 'Paid') paid.push({ payer: ev.args.payer.toLowerCase(), ref: ev.args.ref, amount: ev.args.amount, fee: ev.args.fee });
+      } else if (addr === tokenA) {
+        let tr = null;
+        try { tr = erc.parseLog(l); } catch { tr = null; }
+        if (tr && tr.name === 'Transfer' && (!treasury || tr.args.to.toLowerCase() === treasury)) {
+          const k = tr.args.from.toLowerCase();
+          received.set(k, (received.get(k) || 0n) + tr.args.value);
+        }
       }
     }
-    throw new Error('Bu işlemde ödeme bulunamadı');
+    if (!paid.length) throw reddet('Bu işlemde ödeme bulunamadı');
+    // Ödeyen başına ulaşan toplam, o ödeyenin Paid olaylarına sırayla dağıtılır (bir aktarım iki ödemede sayılmaz)
+    const havuz = new Map(received);
+    const sonuc = paid.map(pd => {
+      const kalan = havuz.get(pd.payer) || 0n;
+      const kredi = kalan < pd.amount ? kalan : pd.amount;
+      havuz.set(pd.payer, kalan - kredi);
+      return { ...pd, kredi };
+    });
+    const secilen = wantRef ? sonuc.find(x => String(x.ref).toLowerCase() === String(wantRef).toLowerCase()) : sonuc[0];
+    if (!secilen) throw reddet('Bu işlemde istenen referansla ödeme yok');
+    if (secilen.kredi <= 0n) throw reddet('Ödeme oyun cüzdanına gitmemiş');
+    return { contract, payer: secilen.payer, ref: secilen.ref, amount: toAda(secilen.kredi), declared: toAda(secilen.amount),
+      fee: Number(ethers.formatEther(secilen.fee)), block: rc.blockNumber, multi: paid.length > 1 };
   }
 
   // Bir adresin ADASTRA ve AVAX bakiyesi
@@ -305,9 +413,14 @@ export function createChain(cfg, { providerFactory } = {}) {
     if (!cfg.paymentsContract) return null;
     return withProvider(async p => {
       const c = new ethers.Contract(cfg.paymentsContract, ['function owner() view returns (address)', 'function pendingOwner() view returns (address)',
-        'function paused() view returns (bool)', 'function treasury() view returns (address)', 'function feeReceiver() view returns (address)'], p);
-      const [owner, pendingOwner, paused, treasury, feeReceiver] = await Promise.all([c.owner(), c.pendingOwner(), c.paused(), c.treasury(), c.feeReceiver()]);
-      return { owner: owner.toLowerCase(), pendingOwner: pendingOwner.toLowerCase(), paused, treasury: treasury.toLowerCase(), feeReceiver: feeReceiver.toLowerCase(), at: Date.now() };
+        'function paused() view returns (bool)', 'function treasury() view returns (address)', 'function feeReceiver() view returns (address)',
+        'function pendingTreasury() view returns (address)', 'function pendingFeeReceiver() view returns (address)', 'function configEffectiveAt() view returns (uint64)'], p);
+      const [owner, pendingOwner, paused, treasury, feeReceiver, pendingTreasury, pendingFeeReceiver, configEffectiveAt] =
+        await Promise.all([c.owner(), c.pendingOwner(), c.paused(), c.treasury(), c.feeReceiver(), c.pendingTreasury(), c.pendingFeeReceiver(), c.configEffectiveAt()]);
+      // Bekleyen adres değişikliği (24 saat gecikmeli, K5): yoksa configPending null
+      const at = Number(configEffectiveAt) * 1000;
+      return { owner: owner.toLowerCase(), pendingOwner: pendingOwner.toLowerCase(), paused, treasury: treasury.toLowerCase(), feeReceiver: feeReceiver.toLowerCase(),
+        configPending: at ? { treasury: pendingTreasury.toLowerCase(), feeReceiver: pendingFeeReceiver.toLowerCase(), at } : null, at: Date.now() };
     });
   }
 

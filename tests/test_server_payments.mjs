@@ -116,7 +116,11 @@ try {
 
   // 5c) Sözleşme sahibinin anahtarı çalınıp hazine adresi değiştirilirse: ödeme oyun cüzdanına gitmez → sunucu kabul etmez
   const attackerAddr = '0x' + '66'.repeat(20);
-  await (await pay.connect(owner).setConfig(attackerAddr, await feeRx.getAddress(), FEE_GAS)).wait();
+  // Sözleşme artık adres değişikliğini 24 saat geciktiriyor (K5): önce öner, zamanı ileri sar, sonra uygula
+  const zamanAtla = async sn => { await provider.send('evm_increaseTime', [sn]); await provider.send('evm_mine', []); };
+  await (await pay.connect(owner).proposeConfig(attackerAddr, await feeRx.getAddress())).wait();
+  await zamanAtla(24 * 3600 + 5);
+  await (await pay.connect(owner).applyConfig()).wait();
   E.mutatePlayer(pid, gs => { gs.state.adAstraBalance = 0; gs.state.lockedAda = 0; });
   const qtA = payments.quote(pid, 'buySoldierUnit', []);
   assert.ok(qtA.needPayment, 'Ödeme gerekiyor');
@@ -128,7 +132,9 @@ try {
   db.kvSet('chain:payBlock', 1);
   await payments.scanPaid();
   assert.equal(E.readPlayer(pid).adAstraBalance, balA, 'Kurtarma taraması da bu ödemeyi bakiyeye yazmaz');
-  await (await pay.connect(owner).setConfig(await treasury.getAddress(), await feeRx.getAddress(), FEE_GAS)).wait();
+  await (await pay.connect(owner).proposeConfig(await treasury.getAddress(), await feeRx.getAddress())).wait();
+  await zamanAtla(24 * 3600 + 5);
+  await (await pay.connect(owner).applyConfig()).wait();
   ok('Hazine adresi değiştirilirse ödeme kabul edilmiyor (sözleşme sahibi anahtarı çalınsa bile)');
 
   // 5d) Çift yazma koruması: eski "oyun cüzdanına yatırma" taraması açılsa bile sözleşme ödemeleri yatırma sayılmaz

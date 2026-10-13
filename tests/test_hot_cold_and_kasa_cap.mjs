@@ -109,6 +109,18 @@ async function newPlayer(email, withWallet) {
   const s2 = await w2.checkHotWallet();
   assert.equal(s2.contract.ownerOk, true, 'Sahip beklenen donanım cüzdanı');
   ok('Ödeme sözleşmesinin sahibi denetleniyor (sıcak cüzdan uyarısı)');
+
+  // ── 4) Bekleyen hazine/komisyon adresi değişikliği (24 saat gecikmeli, K5): panelde görünür, yöneticiye bir kez e-posta
+  const yeni = '0x' + '66'.repeat(20);
+  const atAnl = Date.now() + 20 * 3600000;
+  const chain2 = { ...chain, async readPaymentsAdmin() { return { owner, pendingOwner: '0x' + '0'.repeat(40), paused: false, treasury: GAME, feeReceiver: RESERVE, configPending: { treasury: yeni, feeReceiver: RESERVE, at: atAnl } }; } };
+  const w3 = createWorld({ db, engine: E, chain: chain2, accounts, mailer, cfg: { ...cfg, testMode: false, contractOwner: owner }, log: { warn() {}, error() {} } });
+  const s3 = await w3.checkHotWallet();
+  assert.equal(s3.contract.configPending.treasury, yeni, 'bekleyen öneri durum bilgisinde');
+  assert.ok(db.kvJson('dev:outbox', []).some(m => m.to === 'yonetici@ornek.com' && /adres değişikliği önerildi/.test(m.subject) && m.text.includes(yeni)), 'yöneticiye "adres değişikliği önerildi" e-postası');
+  await w3.checkHotWallet();
+  assert.equal(db.kvJson('dev:outbox', []).filter(m => /adres değişikliği önerildi/.test(m.subject)).length, 1, 'aynı öneri için e-posta tek kez');
+  ok('Bekleyen hazine/komisyon adresi değişikliği panele yansır ve yöneticiye tek kez e-postalanır');
 }
 
 console.log(`\n${passed} sıcak/soğuk cüzdan ve kasa sınırı kontrolü geçti.`);

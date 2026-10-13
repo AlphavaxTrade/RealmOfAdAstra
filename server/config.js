@@ -69,6 +69,7 @@ export function loadConfig(env = process.env) {
     // Boşsa oyunun kendi ayarları (js/config.js) kullanılır.
     ratesContract: (env.RATES_CONTRACT || '').trim(),                         // sözleşmedeki feeGas ile aynı olmalı (komisyon = gaz fiyatı × bu)
     kasaMasterKey: gizli('KASA_MASTER_KEY'),             // 64 hex: Oyun Kasası anahtarlarını şifreler (KAYBEDİLMEMELİ, paylaşılmamalı)
+    hesapAnahtari: gizli('HESAP_ANAHTARI'),              // 64 hex: hesap sırlarını (iki adımlı doğrulama sırrı) veritabanında şifreler; boşsa düz (yalnız deneme)
     kasaMinAvax: num('KASA_MIN_AVAX', 0.003),                      // kasada en az bu kadar AVAX yoksa kasa kullanılmaz (aktarım ücreti)
     kasaMinSettle: num('KASA_MIN_SETTLE', 50),                     // bu kadar birikince (ya da 24 saatte bir) kasadan oyuna aktarım
     // Kasa üst sınırı: kasada "günlük ortalama harcama × bu kadar gün"den fazlası birikirse fazlası oyuncunun bağlı
@@ -119,12 +120,17 @@ export function dogrula(cfg, env = process.env) {
   else if (cfg.adminToken.length < 24) hatalar.push('ADMIN_TOKEN en az 24 karakter olmalı (kısaysa yönetici paneli kapalı kalır; openssl rand -hex 32)');
   if (cfg.gameWalletKey && !/^(0x)?[0-9a-fA-F]{64}$/.test(cfg.gameWalletKey)) hatalar.push('GAME_WALLET_PRIVATE_KEY biçimi geçersiz (64 onaltılık hane, başında 0x olabilir)');
   if (cfg.kasaMasterKey && !/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey)) hatalar.push('KASA_MASTER_KEY 64 haneli onaltılık olmalı (openssl rand -hex 32)');
+  // Hesap sırları (13 Ekim 2026 denetimi, A2): iki adımlı doğrulama sırrı üretimde şifreli saklanmalı
+  if (!cfg.hesapAnahtari) hatalar.push('HESAP_ANAHTARI gerekli: iki adımlı doğrulama sırları veritabanında şifrelenemez (openssl rand -hex 32; KAYBEDİLMEMELİ, veritabanıyla aynı yerde yedeklenmemeli)');
+  else if (!/^[0-9a-fA-F]{64}$/.test(cfg.hesapAnahtari)) hatalar.push('HESAP_ANAHTARI 64 haneli onaltılık olmalı (openssl rand -hex 32)');
   if (cfg.paymentsContract && !cfg.kasaMasterKey) hatalar.push('KASA_MASTER_KEY gerekli: PAYMENTS_CONTRACT tanımlı (Oyun Kasası anahtarları şifrelenemez)');
   if (cfg.vaultContract && !adres(cfg.vaultContract)) hatalar.push('VAULT_CONTRACT geçerli bir adres değil');
   if (cfg.vaultContract && !cfg.gameWalletKey) hatalar.push('GAME_WALLET_PRIVATE_KEY gerekli: VAULT_CONTRACT tanımlı (kasadan ödemeyi tetikleyen dağıtıcı anahtar budur)');
   if (cfg.reserveWallet && !adres(cfg.reserveWallet)) hatalar.push('RESERVE_WALLET geçerli bir adres değil');
   if (!cfg.yedek.klasor) uyarilar.push('YEDEK_KLASORU yok: otomatik yedek ve yedek ölçüleri KAPALI (felaket durumunda veri kaybı riski)');
   if (cfg.yedek.anahtar && !/^[0-9a-fA-F]{64}$/.test(cfg.yedek.anahtar)) hatalar.push('YEDEK_ANAHTAR 64 haneli onaltılık olmalı (openssl rand -hex 32)');
+  // Yedek dosyası içinde hesap bilgileri, parola özetleri, şifreli Kasa anahtarları durur: klasör tanımlıysa yedekler şifreli olmalı
+  if (cfg.yedek.klasor && !cfg.yedek.anahtar) hatalar.push('YEDEK_ANAHTAR gerekli: YEDEK_KLASORU tanımlı (yedekler şifresiz yazılırdı; openssl rand -hex 32; KAYBEDİLMEMELİ, veritabanından AYRI yerde de saklanmalı)');
   if (!cfg.reserveWallet && cfg.chainEnabled && cfg.gameWalletKey) uyarilar.push('RESERVE_WALLET yok: oyun cüzdanındaki fazla ASTRA yedek (donanım) cüzdana aktarılmaz');
   return { hatalar, uyarilar };
 }

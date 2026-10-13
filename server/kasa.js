@@ -254,7 +254,15 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     for (const op of q.opsSending.all()) {
       if (!op.tx_hash) continue;
       const row = q.get.get(op.player);
-      const st = await chain.checkPayout({ hash: op.tx_hash, raw: op.raw_tx, nonce: op.tx_nonce, from: row.address }).catch(() => 'waiting');
+      // 'failed' kararı için zincirde ödeme olayı da aranır (W1): çekim/iade ADASTRA Transfer'i, aktarım sözleşmenin Paid olayı
+      // (ref = işlem numarası). AVAX gönderimi olay bırakmaz: yalnız makbuz + sıra numarası + yaş koşulları uygulanır.
+      let expect = null;
+      if (op.kind === 'settle') expect = { paidRef: ethers.zeroPadValue(ethers.toBeHex(op.id), 32) };
+      else if (op.kind === 'withdraw_ada' || op.kind === 'return_ada') {
+        const to = accounts ? accounts.activeWallet(op.player) : null;
+        if (to) expect = { transfer: { from: row.address, to, amount: op.amount } };
+      }
+      const st = await chain.checkPayout({ hash: op.tx_hash, raw: op.raw_tx, nonce: op.tx_nonce, from: row.address, since: op.created || 0, expect }).catch(() => 'waiting');
       if (st === 'sent') {
         q.opDone.run('sent', null, clock(), op.id);
         if (op.kind === 'settle') { q.settled.run(op.amount, clock(), op.player); db.q.playerAddDeposit.run(op.amount, op.player); }

@@ -14,6 +14,7 @@ Amaç: sunucu, disk ya da veritabanı gitse bile **oyuncu verisini ve ödeme kay
 | `GAME_WALLET_PRIVATE_KEY` (oyun cüzdanı) | HAYIR | Ayrı saklayın; kaybı = otomatik ödeme yok (donanım cüzdanı + elle onay moduna dönülür) |
 | `ADMIN_TOKEN`, `SMTP_URL`, `server/.env` | HAYIR | Yeniden üretilebilir/kayıtlıdır; yine de bir kopyasını ayrı saklayın |
 | **`YEDEK_ANAHTAR`** (yedek şifresi) | HAYIR | **Kaybedilirse şifreli yedekler açılamaz.** `KASA_MASTER_KEY` gibi ayrı saklayın |
+| **`HESAP_ANAHTARI`** (iki adımlı doğrulama sırlarının şifresi) | HAYIR | Kaybedilirse doğrulama uygulaması kodları çözülemez; hesap sahipleri **yedek kodlarla** girer ve iki adımlı doğrulamayı yeniden kurar. Ayrı saklayın |
 | Oyun dosyaları (`dist/`), kod | — | Git deposundan ve imajdan yeniden kurulur |
 
 Kısa kural: **veritabanı yedeği + 3 anahtar (kasa, yedek, oyun cüzdanı) ayrı yerlerde** durmalı. Biri olmadan diğeri işe yaramaz.
@@ -91,6 +92,7 @@ Veri kaybı yok. Sunucu 3 ayrı RPC adresini dener (`RPC_URLS`). Hepsi düşerse
 | Kaybolan | Sonuç | Çare |
 |---|---|---|
 | `YEDEK_ANAHTAR` | Şifreli yedekler **açılamaz** | Yedek yoktur gibi davranın; hemen yeni anahtarla yeni yedek zinciri başlatın. Önlem: anahtarı ayrı yerde sakla |
+| `HESAP_ANAHTARI` | İki adımlı doğrulama uygulaması kodları çözülemez (yedek kodlar çalışır) | Hesap sahipleri yedek kodla girer, iki adımlı doğrulamayı kapatıp yeniden kurar. Önlem: ayrı yerde iki kopya |
 | `KASA_MASTER_KEY` | Kasa cüzdanları açılamaz; içindeki para erişilemez | Kurtarma yok. Önlem: çevrimdışı iki kopya. Kasa üst sınırı (`KASA_CAP_DAYS`) en kötü kaybı sınırlar |
 | `GAME_WALLET_PRIVATE_KEY` | Otomatik ödeme durur | Yeni cüzdan, `PAYOUT_MODE=manual`; ödemeler yönetici onayıyla |
 | `ADMIN_TOKEN` | Yönetici paneli kapanır | Yenisini üretin (`openssl rand -hex 32`), sunucuyu yeniden başlatın |

@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { id } from 'ethers';
-import { RATE_COUNT } from '../js/economy/rates.js';
+import { RATE_COUNT, RATE_KEYS } from '../js/economy/rates.js';
 
 const admin = readFileSync(new URL('../server/admin.js', import.meta.url), 'utf8');
 const rates = readFileSync(new URL('../contracts/RealmRates.sol', import.meta.url), 'utf8');
@@ -21,9 +21,21 @@ const beklenen = {
   'cancel()': 'öneriyi geri çekme',
   'acceptOwnership()': 'sahipliği kabul',
   'setPaused(bool)': 'ödemeleri durdur/aç',
+  'cancelConfig()': 'bekleyen hazine/komisyon adresi değişikliğini iptal (24 saat gecikmeli, K5)',
   'transfer(address,uint256)': 'oyun cüzdanına ASTRA',
 };
 const izinli = new Set(Object.keys(beklenen).map(sel));
+
+// Ödeme sözleşmesinde adres değişikliği 24 saat gecikmeli iki adımlı olmalı (K5): anında değiştiren setConfig kalmamalı,
+// panelin iptal düğmesinin kullandığı cancelConfig() gerçekten var olmalı.
+const odeme = readFileSync(new URL('../contracts/RealmPayments.sol', import.meta.url), 'utf8');
+assert.ok(!/function setConfig\(/.test(odeme), 'RealmPayments.setConfig anında adres değiştirirdi: kaldırılmış olmalı');
+for (const f of ['proposeConfig(address treasury_, address feeReceiver_)', 'applyConfig()', 'cancelConfig()', 'setFeeGas(uint256 feeGas_)']) assert.ok(odeme.includes('function ' + f), 'RealmPayments.' + f + ' yok');
+assert.match(odeme, /CONFIG_DELAY = 24 hours/);
+// Yapımcı payı (sıra 1) sözleşmede ve JS'te aynı üst sınır (%10 = 1000 bps)
+assert.match(rates, /MAX_CREATOR_BPS = 1000/);
+assert.equal(RATE_KEYS[1].key, 'creator');
+assert.equal(RATE_KEYS[1].max, 1000, 'js/economy/rates.js yapımcı payı üst sınırı sözleşmeyle aynı olmalı');
 
 // Panelin kullandığı her seçici bu listede olmalı ve listedeki her seçici panelde kullanılmalı.
 const kullanilan = new Set([...admin.matchAll(/'(0x[0-9a-f]{8})'/g)].map(x => x[1]));

@@ -39,8 +39,9 @@ export default function hesapRotalari(ctx) {
       const r = await accounts.verifyEmail(token, password);
       if (!r.ok) return [400, { error: r.error, needPassword: !!r.needPassword }];
       if (r.playerId) promo.redeemPending(r.playerId);
-      // Kapı: doğrulanmış yeni hesap yer varsa vatandaş olur, yoksa bekleme sırasına girer (misafir gibi gezer)
-      if (r.playerId && kapi) { kapi.admit(r.playerId); if (r.canLogin) kapi.onLogin(r.playerId); }
+      // Kapı: doğrulanmış yeni hesap yer varsa vatandaş olur, yoksa bekleme sırasına girer (misafir gibi gezer).
+      // Aynı internet adresinden 24 saatte en çok KAPI.IP_DAILY_ADMIT hesap vatandaş olur; fazlası sıraya düşer (reddedilmez).
+      if (r.playerId && kapi) { kapi.admit(r.playerId, { ip: clientIp(req) }); if (r.canLogin) kapi.onLogin(r.playerId); }
       return r.canLogin ? { ok: true, token: newSession(r.playerId), playerId: r.playerId } : { ok: true };
     },
     'POST /api/account/resend': async (req) => {

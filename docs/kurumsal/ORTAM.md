@@ -31,7 +31,7 @@
 |---|---|---|
 | `YEDEK_KLASORU` | Yedeklerin yazıldığı klasör (Docker içinde /yedek). Boşsa otomatik yedek ve yedek ölçüleri kapalı; üretimde uyarı verilir | (boş: kapalı) |
 | `YEDEK_ARALIK_DK` | Yedekler arası dakika (1-1440). Hedef: en çok 1 saatlik veri kaybı (RPO) | 60 |
-| 🔒 `YEDEK_ANAHTAR` | 64 hex: doluysa yedekler AES-256-GCM ile şifrelenir. KAYBEDERSENİZ şifreli yedekler açılamaz: veritabanından AYRI bir yerde saklayın | (boş: şifresiz) |
+| 🔒 `YEDEK_ANAHTAR` | 64 hex: yedekler AES-256-GCM ile şifrelenir. Üretimde YEDEK_KLASORU tanımlıysa ZORUNLU. KAYBEDERSENİZ şifreli yedekler açılamaz: veritabanından AYRI bir yerde saklayın | (boş: şifresiz; üretimde klasör varsa hata) |
 | `YEDEK_SONRASI_KOMUT` | Her başarılı yedekten sonra çalışan kabuk komutu (dışarı kopyalama: rclone/scp). YEDEK_DOSYA ve YEDEK_MANIFEST ortamda verilir; gizli anahtarlar verilmez | (boş) |
 
 ## Hız sınırı
@@ -50,6 +50,7 @@
 | `ADMIN_EMAIL` | Uyarı e-postaları (oyun cüzdanı azaldı, zamanlayıcı hatası...) | (boş) |
 | 🔒 ⚠️ `SMTP_URL` | E-posta sunucusu: smtp://kullanici:sifre@sunucu:587. Boşsa e-postalar günlüğe yazılır (yalnız deneme). Üretimde zorunlu | (boş) |
 | `MAIL_FROM` | Gönderen adı ve adresi | Realm of AdAstra <no-reply@localhost> |
+| 🔒 ⚠️ `HESAP_ANAHTARI` | Hesap sırlarını (iki adımlı doğrulama sırrı) veritabanında AES-256-GCM ile şifreleyen anahtar (64 onaltılık hane; `openssl rand -hex 32`). Üretimde ZORUNLU. KAYBEDİLİRSE iki adımlı doğrulama uygulaması kodları çözülemez (yedek kodlar çalışır); veritabanıyla AYNI YERDE yedeklenmez, KASA_MASTER_KEY anahtarından farklı olmalı. Boşsa (yalnız deneme) sırlar düz yazılır; sonradan eklenirse mevcut sırlar açılışta şifrelenir | (boş: düz; üretimde hata) |
 
 ## Zincir (Avalanche)
 

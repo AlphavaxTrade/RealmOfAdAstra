@@ -77,8 +77,10 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
       if (!/^0x[0-9a-fA-F]{64}$/.test(String(txHash || ''))) return { ok: false, error: 'Geçersiz işlem numarası.' };
       if (q.used.get(txHash)) return { ok: false, error: 'Bu ödeme işlemi zaten kullanıldı.' };
       let p;
-      try { p = await chain.verifyPayment(txHash); } catch (e) { return { ok: false, error: 'Ödeme zincirde henüz görünmüyor, birazdan tekrar dene.', retry: true }; }
+      try { p = await chain.verifyPayment(txHash, row.ref); } catch (e) { return { ok: false, error: e.rejected ? 'Ödeme doğrulanamadı: ' + e.message : 'Ödeme zincirde henüz görünmüyor, birazdan tekrar dene.', retry: !e.rejected }; }
       if (!p) return { ok: false, error: 'Ödeme zincirde henüz görünmüyor, birazdan tekrar dene.', retry: true };
+      // Aynı işlemde birden çok ödeme varsa her biri kendi anahtarıyla (işlem#ref) kaydedilir: hiçbiri kaybolmaz, hiçbiri iki kez sayılmaz
+      if (p.multi) { txHash = txHash + '#' + p.ref; if (q.used.get(txHash)) return { ok: false, error: 'Bu ödeme işlemi zaten kullanıldı.' }; }
       const wallet = accounts ? accounts.activeWallet(playerId) : null;
       if (p.contract !== String(cfg.paymentsContract).toLowerCase()) return { ok: false, error: 'Ödeme bizim sözleşmemize yapılmamış.' };
       if (!wallet || p.payer !== wallet) return { ok: false, error: 'Ödeme, hesabına bağlı cüzdandan yapılmamış.' };
@@ -129,21 +131,29 @@ export function createPayments({ db, engine, accounts, chain, kasa = null, cfg, 
       if (!row) { db.event('payment-unmatched', null, l); continue; }
       if (row.status !== 'open') continue;
       if (q.used.get(l.txHash)) continue;
-      // Ödeme gerçekten oyun cüzdanına gitmiş mi (aynı denetim)
-      try { await chain.verifyPayment(l.txHash); } catch (e) { db.event('payment-rejected', row.player, { ref: l.ref, tx: l.txHash, reason: e.message }); continue; }
+      // Ödeme gerçekten oyun cüzdanına gitmiş mi (aynı denetim); kredilenecek miktar GERÇEKTEN ulaşan miktardır (ücretli token)
+      let p;
+      try { p = await chain.verifyPayment(l.txHash, l.ref); } catch (e) {
+        if (!e.rejected) { log.error('Ödeme kurtarma (geçici hata, aynı blok aralığı yeniden taranacak)', e); return n; }   // RPC hatası ödemeyi sonsuza dek atlamasın
+        db.event('payment-rejected', row.player, { ref: l.ref, tx: l.txHash, reason: e.message }); continue;
+      }
+      if (!p) { log.error('Ödeme kurtarma: işlem makbuzu henüz okunamadı', l.txHash); return n; }
+      const anahtar = p.multi ? l.txHash + '#' + p.ref : l.txHash;           // aynı işlemde birden çok ödeme: her biri ayrı anahtar
+      if (anahtar !== l.txHash && q.used.get(anahtar)) continue;
+      const tutar = p.amount;
       try {
         db.tx(() => {
-          if (Number(q.credit.run(l.txHash, l.amount, row.ref).changes) !== 1) return;
-          db.q.playerAddDeposit.run(l.amount, row.player);
+          if (Number(q.credit.run(anahtar, tutar, row.ref).changes) !== 1) return;
+          db.q.playerAddDeposit.run(tutar, row.player);
           engine.mutatePlayer(row.player, gs => {
-            gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + l.amount;
-            gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + l.amount;
-            gs.state.walletPaidAda = (Number(gs.state.walletPaidAda) || 0) + l.amount;
-            gs.pushNotice(`💳 Cüzdan ödemen (${Math.floor(l.amount).toLocaleString('tr-TR')} ASTRA) bakiyene eklendi. Yarım kalan işlemi şimdi tekrar yapabilirsin.`, 'success');
+            gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + tutar;
+            gs.state.depositedAda = (Number(gs.state.depositedAda) || 0) + tutar;
+            gs.state.walletPaidAda = (Number(gs.state.walletPaidAda) || 0) + tutar;
+            gs.pushNotice(`💳 Cüzdan ödemen (${Math.floor(tutar).toLocaleString('tr-TR')} ASTRA) bakiyene eklendi. Yarım kalan işlemi şimdi tekrar yapabilirsin.`, 'success');
           });
           n++;
         });
-        db.event('payment-recovered', row.player, { ref: row.ref, tx: l.txHash, amount: l.amount });
+        db.event('payment-recovered', row.player, { ref: row.ref, tx: l.txHash, amount: tutar, declared: p.declared });
       } catch (e) { engine.reloadWorld(); log.error('Ödeme kurtarma', e); }
     }
     db.kvSet('chain:payBlock', to + 1);

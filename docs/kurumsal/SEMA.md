@@ -3,11 +3,11 @@
 > Bu dosya **otomatik üretilir**: `node scripts/db/sema-belge.mjs` (güncelliği `tests/test_sema_belge.mjs` korur).
 > Şema değişikliği yalnız `server/gecis/` altına yeni numaralı geçiş eklenerek yapılır; uygulanmış geçişler değişmez (mühür).
 
-Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler
+Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti
 
 ## accounts
 
-Hesaplar: e-posta, parola özeti, doğrulama, bağlı/bekleyen cüzdan, iki adımlı doğrulama
+Hesaplar: e-posta (+ benzersiz email_key), parola özeti, doğrulama, bağlı/bekleyen cüzdan, iki adımlı doğrulama (sır şifreli)
 
 | Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
 |---|---|---|---|---|
@@ -26,8 +26,9 @@ Hesaplar: e-posta, parola özeti, doğrulama, bağlı/bekleyen cüzdan, iki adı
 | totp_enabled | INTEGER | evet | 0 |  |
 | totp_step | INTEGER | evet | 0 |  |
 | backup_codes | TEXT |  |  |  |
+| email_key | TEXT |  |  |  |
 
-İndeksler: `accounts_bekleyen_cuzdan`
+İndeksler: `accounts_bekleyen_cuzdan`, `accounts_email_key`
 
 ## deposits
 
@@ -46,7 +47,7 @@ Zincirden gelen yatırmalar (tx + log sırası = tekil)
 
 ## email_tokens
 
-E-posta bağlantıları (doğrulama, şifre sıfırlama, cüzdan onayı)
+E-posta bağlantıları (doğrulama, şifre sıfırlama, cüzdan onayı); belirteç yalnız SHA-256 özeti
 
 | Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
 |---|---|---|---|---|
@@ -69,6 +70,19 @@ Olay günlüğü (giriş, yönetici işlemleri, kapı...)
 | address | TEXT |  |  |  |
 | type | TEXT | evet |  |  |
 | data | TEXT |  |  |  |
+
+## kapi_ip_kabul
+
+Kapı: hangi (tuzlu özetli) istemci adresinden kim ne zaman vatandaş oldu (24 saatlik adres kotası; ham adres yok)
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| id | INTEGER |  |  | PK |
+| ip | TEXT | evet |  |  |
+| player | TEXT | evet |  |  |
+| at | INTEGER | evet |  |  |
+
+İndeksler: `kapi_ip_kabul_at`, `kapi_ip_kabul_ip_at`
 
 ## kasa
 
@@ -227,8 +241,9 @@ Oyuncu satırı: son görülme, yatırma/çekim toplamı, yasak, kapı durumu (v
 | gate_at | INTEGER |  |  |  |
 | gate_prio | INTEGER | evet | 0 |  |
 | warned_at | INTEGER |  |  |  |
+| kayit_ip | TEXT |  |  |  |
 
-İndeksler: `players_banned_gate`
+İndeksler: `players_banned_gate`, `players_kayit_ip`
 
 ## prices
 

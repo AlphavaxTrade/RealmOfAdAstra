@@ -45,12 +45,13 @@ En önemlileri:
 | `GAME_WALLET_PRIVATE_KEY`, `PAYOUT_MODE` | Oyun cüzdanı anahtarı; `auto` sunucu kendisi gönderir, `manual` panelden onayla gider |
 | `WEEKLY_SEND_CAP_ADA` | Bir haftada oyunculara gidebilecek en fazla ADA (güvenlik sınırı) |
 | `PAYMENTS_CONTRACT`, `KASA_MASTER_KEY` | Ödeme sözleşmesi adresi (6. bölüm) ve Kasa anahtarlarını şifreleyen ana anahtar (`openssl rand -hex 32`) |
-| `YEDEK_KLASORU`, `YEDEK_ANAHTAR`, `YEDEK_SONRASI_KOMUT` | Yedekleme (`FELAKET_KURTARMA.md`) |
+| `YEDEK_KLASORU`, `YEDEK_ANAHTAR`, `YEDEK_SONRASI_KOMUT` | Yedekleme (`FELAKET_KURTARMA.md`). **`YEDEK_KLASORU` tanımlıysa `YEDEK_ANAHTAR` üretimde zorunludur** (yedek dosyası hesap bilgisi ve şifreli Kasa anahtarları taşır) |
+| `HESAP_ANAHTARI` | **Üretimde zorunlu.** İki adımlı doğrulama sırlarını veritabanında AES-256-GCM ile şifreler (`openssl rand -hex 32`). Sonradan eklenirse mevcut düz sırlar açılışta şifrelenir |
 | `TEST_MODE` | Gerçek sunucuda **boş/0**. Üretimde `1` ise sunucu açılmaz |
 
-🔑 **`KASA_MASTER_KEY` ve `YEDEK_ANAHTAR` çok önemli:** kaybedilirse Kasa cüzdanlarına / şifreli yedeklere bir daha erişilemez; çalınırsa risk doğar. Veritabanından **ayrı** güvenli bir yere (parola yöneticisi + kâğıt kopya) yedekle.
+🔑 **`KASA_MASTER_KEY`, `YEDEK_ANAHTAR` ve `HESAP_ANAHTARI` çok önemli:** kaybedilirse Kasa cüzdanlarına / şifreli yedeklere / iki adımlı doğrulama uygulaması kodlarına bir daha erişilemez (iki adımlı doğrulama sahibi yedek kodlarla girer); çalınırsa risk doğar. Veritabanından **ayrı** güvenli bir yere (parola yöneticisi + kâğıt kopya) yedekle.
 
-**Gizli değerleri dosyadan ver (önerilir):** `ADMIN_TOKEN_FILE`, `SMTP_URL_FILE`, `GAME_WALLET_PRIVATE_KEY_FILE`, `KASA_MASTER_KEY_FILE`, `YEDEK_ANAHTAR_FILE`. Docker'da `docker-compose.gizli.yml` (başındaki komutlar), systemd'de `LoadCredential` (`deploy/realm.service`) bunu hazırlar; değerler ortamda ve `docker inspect` çıktısında görünmez.
+**Gizli değerleri dosyadan ver (önerilir):** `ADMIN_TOKEN_FILE`, `SMTP_URL_FILE`, `GAME_WALLET_PRIVATE_KEY_FILE`, `KASA_MASTER_KEY_FILE`, `YEDEK_ANAHTAR_FILE`, `HESAP_ANAHTARI_FILE`. Docker'da `docker-compose.gizli.yml` (başındaki komutlar), systemd'de `LoadCredential` (`deploy/realm.service`) bunu hazırlar; değerler ortamda ve `docker inspect` çıktısında görünmez.
 
 ## 3. Çalıştır
 
@@ -63,6 +64,13 @@ docker compose logs -f realm          # "Realm of AdAstra sunucusu çalışıyor
 curl http://127.0.0.1:8080/api/health ; curl http://127.0.0.1:8080/api/ready
 ```
 Kapsayıcı sertleştirilmiştir: salt okunur kök dosya sistemi, tüm Linux yetkileri kapalı, 12 GB bellek sınırı, yalnız `127.0.0.1:8080` yayında. Kayıtlar `./data/realm.db`, yedekler `./yedek/` içindedir.
+
+**Gerçek ağ imajı (ödeme adresleri derlemeye sabitlenir).** Oyun tarayıcıda cüzdana "bu sözleşmeye ASTRA izni ver" dedirtir; adresler yalnızca sunucudan gelirse sunucu ele geçirildiğinde cüzdan boşaltılabilir. Bu yüzden gerçek ASTRA ile çalışacak imaj şöyle derlenir (üçü birlikte; `REALM_GERCEK_AG=1` iken adreslerden biri eksikse derleme hata verir):
+```bash
+REALM_GERCEK_AG=1 VITE_PAYMENTS_CONTRACT=0x… VITE_TOKEN_ADDRESS=0x… docker compose build realm
+# ya da: docker build --build-arg REALM_GERCEK_AG=1 --build-arg VITE_PAYMENTS_CONTRACT=0x… --build-arg VITE_TOKEN_ADDRESS=0x… .
+```
+Üçü de verilmezse imaj deneme (`TEST_MODE`) imajıdır ve eskisi gibi derlenir. Oyun, sunucunun teklifteki adreslerini bu sabit adreslerle karşılaştırır; uyuşmazsa ödemeyi durdurur. `approve` yalnız ödemenin tutarı kadar istenir. GitHub'daki "Yayin" iş akışı aynı değerleri depo değişkenlerinden (`REALM_GERCEK_AG`, `VITE_PAYMENTS_CONTRACT`, `VITE_TOKEN_ADDRESS`) alır.
 
 ### B) systemd (Docker'sız)
 ```bash
@@ -114,7 +122,17 @@ OWNER_ADDRESS=0x<Ledger adresi> TOKEN_ADDRESS=0xCA29d740502F4bA1Fa8e9DcAfBD85137
 ```
 Çıktıdaki `PAYMENTS_CONTRACT` ve `CONTRACT_OWNER` ayarlarını `server/.env`'e yaz, yeniden başlat. Bu komutlar **zincire gerçek işlem** gönderir: yalnız sen, bilerek çalıştır.
 
+**Adres değişikliği 24 saat gecikmeli:** hazine / komisyon cüzdanı sözleşmede anında değişmez (`proposeConfig` → 24 saat → `applyConfig`); bekleyen öneri panelde görünür, e-postayla bildirilir ve **"↩️ Bekleyen hazine/komisyon adresi değişikliğini iptal et"** düğmesiyle (Ledger) iptal edilir. Komisyon gazı (`setFeeGas`) ve durdurma anında kalır.
+
 **Sahip donanım cüzdanında:** `DEPLOYER_PRIVATE_KEY` yalnız yükleme için açılmış *geçici* cüzdandır. Yükleme biter bitmez sahiplik Ledger adresine devredilir; tamamlamak için Ledger'ı MetaMask/Core'a bağla → `/admin` → **"👑 Sözleşme sahipliğini kabul et"** → Ledger'da onayla. Panelde "Sözleşme sahibi: ✅ donanım cüzdanı" görünmeli. Acil durumda **"⛔ Cüzdan ödemelerini durdur"** (yine Ledger onayıyla).
+
+### 6b. Oyun Kasası sözleşmesini yükle (`contracts/deploy-kasa.mjs`)
+
+Önce hiçbir işlem göndermeyen kuru çalıştırma (`DRY_RUN=1`), sonra Fuji, sonra gerçek ağ:
+```bash
+DEPLOY_RPC=https://api.avax-test.network/ext/bc/C/rpc DRY_RUN=1 TOKEN_ADDRESS=0x<ADASTRA> DISPATCHER_ADDRESS=0x<oyun cüzdanı> CREATOR_ADDRESS=0x<yapımcı cüzdanı> OWNER_ADDRESS=0x<Ledger> GUARDIAN_ADDRESS=0x<ayrı soğuk bekçi> node contracts/deploy-kasa.mjs
+```
+Sınırlar: günlük `DAILY_LIMIT_BPS` en çok 500 (%5), tek ödeme `SINGLE_DRAW_BPS` en çok 200 (%2); daha gevşek değer **reddedilir**. Gerçek gönderim için `DRY_RUN` kaldırılır, `DEPLOYER_PRIVATE_KEY` (geçici cüzdan) ve gerçek ağda `CONFIRM_MAINNET=1` verilir. Betik kasayı yükler, zincirdeki ayarları doğrular, bekçiyi atar (verildiyse; sonradan yalnız bekçi değiştirebilir), sahipliği iki adımlı devreder ve sonraki adımları (sahibin `acceptOwnership`i, bekçi ataması, sunucuda `VAULT_CONTRACT`) yazdırır. Sunucu açılışta `checkVault` ile sınırları denetler; gevşek bir kasada ödemeler başlamaz.
 
 ## 7. Sıcak / soğuk cüzdan
 

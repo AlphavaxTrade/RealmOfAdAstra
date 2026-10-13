@@ -57,7 +57,7 @@ function sahteZincir(ayar = {}) {
   ok('atlama koşulları: cüzdan yok, gönderemez, duraklatılmış, elle mod (force ile gider)');
 }
 
-// 2) Kuyruk: 1 ADA altı yazılmaz, tutar 2 ondalığa kırpılır; mutlu yol sent + hash
+// 2) Kuyruk: 1 ASTRA altı satır olmaz AMA KAYBOLMAZ (devredilir); tutar 2 ondalığa kırpılır; mutlu yol sent + hash
 {
   const z = sahteZincir();
   const s = await kur({ chain: z });
@@ -65,19 +65,21 @@ function sahteZincir(ayar = {}) {
   s.world.queuePayout(1, 'burn', ADRES(1), 0);
   s.world.queuePayout(1, 'burn', ADRES(1), NaN);
   assert.equal(s.satirlar().length, 0, '1 altı / geçersiz tutar kuyruğa girmez');
+  // 0,99 devredildi (eskiden sessizce kayboluyordu): sonraki ödemeye eklenir
   s.world.queuePayout(1, 'burn', ADRES(1), 12.3456);
   s.world.queuePayout(1, 'creator', ADRES(2), 500);
-  assert.equal(s.satirlar()[0].amount, 12.34, 'tutar 2 ondalığa KIRPILIR (yukarı yuvarlanmaz)');
+  assert.equal(s.satirlar()[0].amount, 13.33, '0,99 devri + 12,3456 = 13,3356 → 2 ondalığa KIRPILIR (yukarı yuvarlanmaz)');
+  assert.ok(Math.abs(s.db.kvJson('world:payout:devir', {})['burn|' + ADRES(1)] - 0.0056) < 1e-9, 'kırpılan kırıntı da devredildi (0,0056)');
   const r = await s.world.processPayouts();
   assert.deepEqual(r, { sent: 2, failed: 0 });
   const k = s.satirlar();
   assert.deepEqual(k.map(x => x.status), ['sent', 'sent']);
   assert.deepEqual(k.map(x => x.tx_hash), ['0xhash1', '0xhash2']);
   assert.ok(k.every(x => x.sent_at > 0));
-  assert.deepEqual(z.gonderilen.map(g => g.tutar), [12.34, 500]);
+  assert.deepEqual(z.gonderilen.map(g => g.tutar), [13.33, 500]);
   assert.deepEqual(await s.world.processPayouts(), { sent: 0, failed: 0 }, 'gönderilenler bir daha gönderilmez');
   assert.equal(z.gonderilen.length, 2);
-  ok('kuyruk: 1 altı yazılmaz, tutar kırpılır, gönderilen bir daha gönderilmez');
+  ok('kuyruk: 1 altı yazılmaz ama devredilir, tutar kırpılır, gönderilen bir daha gönderilmez');
 }
 
 // 3) İmzadan ÖNCE hata: pending'e döner, hata yazılır, sonraki turda tekrar denenir

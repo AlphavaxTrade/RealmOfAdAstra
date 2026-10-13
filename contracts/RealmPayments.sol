@@ -9,6 +9,9 @@ pragma solidity 0.8.24;
 /// Aynı oyuncu aynı referansı ikinci kez kullanamaz. Referans oyuncuya özel olduğu için başkası
 /// bir oyuncunun bekleyen ödemesini önden aynı referansla bozamaz.
 /// Sözleşme sahibi yalnız ayarları değiştirebilir ve ödemeleri durdurabilir; oyuncu parasına erişemez.
+/// Hazine ve komisyon cüzdanı adresleri ANINDA değiştirilemez (13 Ekim 2026 denetimi, K5): sahip yeni adresleri
+/// önerir, 24 saat sonra uygulanır; o sürede bekleyen öneri görünür ve iptal edilebilir. Sahip anahtarı çalınsa bile
+/// ödemelerin yönleneceği adres bir gün boyunca herkesin gözü önünde bekler. Komisyon gazı ve durdurma anında kalır.
 contract RealmPayments {
     address public immutable token;
     address public owner;
@@ -19,11 +22,19 @@ contract RealmPayments {
     bool public paused;
 
     uint256 public constant MAX_FEE_GAS = 1_000_000;
+    uint256 public constant CONFIG_DELAY = 24 hours;   // adres değişikliği önerisinden uygulanmasına en az bu kadar
+
+    // Bekleyen adres değişikliği (configEffectiveAt 0 ise öneri yok)
+    address public pendingTreasury;
+    address public pendingFeeReceiver;
+    uint64 public configEffectiveAt;
 
     mapping(bytes32 => bool) public usedRef;   // keccak256(oyuncu, ref) → kullanıldı mı
 
     event Paid(address indexed payer, bytes32 indexed ref, uint256 amount, uint256 fee);
     event ConfigChanged(address treasury, address feeReceiver, uint256 feeGas, bool paused);
+    event ConfigProposed(address treasury, address feeReceiver, uint64 effectiveAt);
+    event ConfigCancelled();
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -37,6 +48,8 @@ contract RealmPayments {
     error ZeroAddress();
     error FeeGasTooHigh();
     error Reentrancy();
+    error NothingPending();
+    error NotYet(uint64 effectiveAt);
 
     uint256 private _lock = 1;
 
@@ -101,13 +114,42 @@ contract RealmPayments {
     }
 
     // ── Yönetim (yalnız sahip) ──────────────────────────────────────────
-    function setConfig(address treasury_, address feeReceiver_, uint256 feeGas_) external onlyOwner {
-        if (treasury_ == address(0) || feeReceiver_ == address(0)) revert ZeroAddress();
+    /// @notice Komisyon gazı (en çok MAX_FEE_GAS) anında değişir: oyuncunun ödeyeceği komisyonu sınırlı biçimde ayarlar
+    function setFeeGas(uint256 feeGas_) external onlyOwner {
         if (feeGas_ > MAX_FEE_GAS) revert FeeGasTooHigh();
-        treasury = treasury_;
-        feeReceiver = feeReceiver_;
         feeGas = feeGas_;
-        emit ConfigChanged(treasury_, feeReceiver_, feeGas_, paused);
+        emit ConfigChanged(treasury, feeReceiver, feeGas_, paused);
+    }
+
+    /// @notice Hazine ve komisyon cüzdanı için yeni adres öner: CONFIG_DELAY sonra uygulanabilir. Önceki öneri varsa
+    /// yerine geçer ve bekleme süresi baştan başlar.
+    function proposeConfig(address treasury_, address feeReceiver_) external onlyOwner {
+        if (treasury_ == address(0) || feeReceiver_ == address(0)) revert ZeroAddress();
+        pendingTreasury = treasury_;
+        pendingFeeReceiver = feeReceiver_;
+        configEffectiveAt = uint64(block.timestamp + CONFIG_DELAY);
+        emit ConfigProposed(treasury_, feeReceiver_, configEffectiveAt);
+    }
+
+    /// @notice Süresi dolan öneriyi uygular (herkes çağırabilir: öneri sahipçe zaten verilmiş ve herkese açık beklemiştir)
+    function applyConfig() external {
+        if (configEffectiveAt == 0) revert NothingPending();
+        if (block.timestamp < configEffectiveAt) revert NotYet(configEffectiveAt);
+        treasury = pendingTreasury;
+        feeReceiver = pendingFeeReceiver;
+        pendingTreasury = address(0);
+        pendingFeeReceiver = address(0);
+        configEffectiveAt = 0;
+        emit ConfigChanged(treasury, feeReceiver, feeGas, paused);
+    }
+
+    /// @notice Bekleyen adres önerisini iptal et (süresi dolmadan ya da uygulanmadan önce)
+    function cancelConfig() external onlyOwner {
+        if (configEffectiveAt == 0) revert NothingPending();
+        pendingTreasury = address(0);
+        pendingFeeReceiver = address(0);
+        configEffectiveAt = 0;
+        emit ConfigCancelled();
     }
 
     function setPaused(bool paused_) external onlyOwner {

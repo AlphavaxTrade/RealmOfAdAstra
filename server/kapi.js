@@ -10,9 +10,16 @@
 // KAPI.GROWTH_LOCKED ile kilitli. Yer açılınca sıradaki (önce HAZIR olan) adaya INVITE_HOURS'luk bir davet gider;
 // süresi geçerse davet bir sonrakine geçer, cevapsız aday INVITE_PENALTY_POSITIONS kadar sıra geri düşer (elenmez).
 //
+// İstemci adresi kotası (13 Ekim 2026 denetimi, EK-02b): aynı internet adresinden 24 saatte en çok KAPI.IP_DAILY_ADMIT yeni
+// vatandaşlığa kabul (0 = sınırsız). Adres HAM saklanmaz: gizli bir tuzla HMAC-SHA256 özeti tutulur (IPv6 için /64 ağı).
+// Kotayı aşan hesap REDDEDİLMEZ, bekleme sırasına düşer; davet sırası gelince de kota doluysa atlanır, kota boşalınca davet gider.
+// Yerel (127.x, ::1) ve bilinmeyen adresler kotadan muaftır (geliştirme, testler, vekil ayarı bozuksa herkes tek kişi sayılmasın).
+//
 // Kayıt yeri: players tablosuna gate / gate_at / gate_prio / warned_at sütunları; dünya ayarı kv 'world:kapi';
 // bekleyen davetler kv 'world:kapi:davet'. Oyunun kendi kurallarına (gameState) dokunmaz: yalnız sunucu katmanı.
 // ============================================================================
+import crypto from 'node:crypto';
+import net from 'node:net';
 import { playerIdOf } from './accounts.js';
 import { haftaSonucu, hazirMiState, izindeMiState, haftaTouched } from './aktiflik.js';
 
@@ -32,8 +39,45 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     citizens: db.raw.prepare("SELECT address, last_seen, warned_at FROM players WHERE banned = 0 AND gate = 'citizen'"),
     waiting: db.raw.prepare("SELECT address, gate_at, gate_prio FROM players WHERE banned = 0 AND gate = 'waiting' ORDER BY gate_prio DESC, gate_at ASC, address ASC"),
     suspended: db.raw.prepare("SELECT address, gate_at, last_seen FROM players WHERE banned = 0 AND gate = 'suspended' ORDER BY gate_at ASC"),
-    migrate: db.raw.prepare("UPDATE players SET gate = 'citizen', gate_at = created_at WHERE gate = 'new'")
+    migrate: db.raw.prepare("UPDATE players SET gate = 'citizen', gate_at = created_at WHERE gate = 'new'"),
+    ipSet: db.raw.prepare('UPDATE players SET kayit_ip = ? WHERE address = ?'),
+    ipOf: db.raw.prepare('SELECT kayit_ip FROM players WHERE address = ?'),
+    ipSay: db.raw.prepare('SELECT COUNT(*) AS n FROM kapi_ip_kabul WHERE ip = ? AND at >= ?'),
+    ipEkle: db.raw.prepare('INSERT INTO kapi_ip_kabul (ip, player, at) VALUES (?, ?, ?)'),
+    ipTemizle: db.raw.prepare('DELETE FROM kapi_ip_kabul WHERE at < ?'),
+    ipAdresleri: db.raw.prepare('SELECT address FROM players WHERE kayit_ip = ?')
   };
+
+  // ── İstemci adresi kotası ──
+  // Tuz: ilk kullanımda üretilir, veritabanında ('world:kapi:ip-tuz') durur. Ham adres hiçbir yere yazılmaz.
+  const ipTuzu = () => {
+    let t = db.kvGet('world:kapi:ip-tuz');
+    if (!t) { t = crypto.randomBytes(24).toString('hex'); db.kvSet('world:kapi:ip-tuz', t); }
+    return String(t);
+  };
+  // Adres → kota anahtarı (null = muaf). IPv4-eşlemeli IPv6 sadeleşir; IPv6 /64 ağına indirgenir.
+  function ipAnahtari(ham) {
+    let a = String(ham || '').trim().toLowerCase().split('%')[0];
+    if (!a) return null;
+    if (a.startsWith('::ffff:') && net.isIPv4(a.slice(7))) a = a.slice(7);
+    if (net.isIPv4(a)) { if (a.startsWith('127.') || a === '0.0.0.0') return null; }
+    else if (net.isIPv6(a)) {
+      if (a === '::1' || a === '::') return null;
+      const [bas, son] = a.split('::');
+      const b = bas ? bas.split(':') : [], c = son != null && son ? son.split(':') : [];
+      const grup = son == null ? b : [...b, ...Array(Math.max(0, 8 - b.length - c.length)).fill('0'), ...c];
+      a = 'v6:' + grup.slice(0, 4).map(g => g.padStart(4, '0')).join(':');
+    } else return null;
+    return crypto.createHmac('sha256', ipTuzu()).update(a).digest('hex');
+  }
+  const ipLimit = () => Math.max(0, Math.floor(Number(K().IP_DAILY_ADMIT) || 0));
+  // Bu adres özetinden son 24 saatte kabul edilenler + elinde bekleyen (henüz kabul edilmemiş) davetler
+  function ipKullanim(ipk, davet = davetler()) {
+    const kabul = q.ipSay.get(ipk, clock() - DAY).n;
+    const bekleyen = q.ipAdresleri.all(ipk).filter(r => davet[r.address]).length;
+    return kabul + bekleyen;
+  }
+  const ipDoldu = (ipk, davet) => { const L = ipLimit(); return !!ipk && L > 0 && ipKullanim(ipk, davet) >= L; };
 
   // ── Dünya ayarı ──
   const state = () => {
@@ -85,6 +129,12 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   function makeCitizen(address, why) {
     q.set.run('citizen', clock(), 0, null, address);
     db.event('gate-citizen', address, { why });
+    // Adres kotası sayımı: kimin hangi adres özetinden vatandaş olduğu (ham adres yok)
+    const kayit = q.ipOf.get(address);
+    if (kayit && kayit.kayit_ip) {
+      q.ipTemizle.run(clock() - 2 * DAY);
+      q.ipEkle.run(kayit.kayit_ip, address, clock());
+    }
     // Kayıt harcı: 1 ASTRA (fiyat çarpanıyla ölçekli), ilk ASTRA'dan düşer (motor: engine.withPlayer)
     const fee = Number(K().REGISTRATION_FEE_ADA) || 0;
     try {
@@ -99,13 +149,21 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
 
   // Yeni doğrulanmış hesap: yer varsa vatandaş, yoksa sıra. Bekleyen davetler (henüz vatandaş değil ama bir yere
   // "aday gösterilmiş") de yer sayımına girer — yoksa yeni bir kayıt, davetli birinin yerini sırayı atlayıp kapabilir.
-  function admit(address) {
+  // opts.ip: doğrulama isteğinin istemci adresi (rota verir; yoksa / yerelse kota uygulanmaz)
+  function admit(address, opts = {}) {
     const p = q.get.get(address);
     if (!p || p.gate !== 'new') return statusOf(address);
     const s = state();
+    const ipk = ipAnahtari(opts && opts.ip);
+    if (ipk) q.ipSet.run(ipk, address);
     const rezerve = Object.keys(davetler()).length;
-    if (counts().citizen + rezerve < s.limit) makeCitizen(address, 'admit');
-    else { q.set.run('waiting', clock(), 0, null, address); db.event('gate-wait', address); }
+    if (counts().citizen + rezerve >= s.limit) { q.set.run('waiting', clock(), 0, null, address); db.event('gate-wait', address); }
+    else if (ipDoldu(ipk)) {
+      q.set.run('waiting', clock(), 0, null, address); db.event('gate-wait', address, { why: 'ip-kota' });
+      try { E.mutatePlayer(address, gs => gs.pushNotice('🏛️ Bu internet adresinden son 24 saatte çok sayıda yeni vatandaşlık verildi; hesabın bekleme sırasına alındı. Yer ve kota açılınca davet edilirsin.', 'info')); }
+      catch (err) { log.warn && log.warn('Kapı bildirimi:', err.message); }
+    }
+    else makeCitizen(address, 'admit');
     return statusOf(address);
   }
 
@@ -151,6 +209,8 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     const now = clock(), invMs = (Number(K().INVITE_HOURS) || 72) * HOUR;
     for (const w of siraliListe) {
       if (free <= 0) break;
+      const ipk = (q.ipOf.get(w.address) || {}).kayit_ip;
+      if (ipk && ipDoldu(ipk, d)) continue;   // aynı adresten kota doldu: sıra korunur, davet kota boşalınca gider
       d[w.address] = { since: now, deadline: now + invMs };
       notify(w.address, `🏛️ Sıran geldi: AdAstra Vadisi'nde yerin açıldı! ${Number(K().INVITE_HOURS) || 72} saat içinde ilk hareketini yap, yoksa davet bir sonrakine geçer (sıran silinmez, biraz geri düşer).`, 'yerin açıldı');
       free--; n++;

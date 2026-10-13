@@ -50,5 +50,9 @@
   {
     "sql": "SELECT 1 AS x",
     "neden": "/api/ready veritabanı yanıt denetimi: hiçbir tabloyu okumaz (sabit satır), yalnız bağlantının canlı olduğunu sınar"
+  },
+  {
+    "sql": "SELECT id, totp_secret, totp_pending FROM accounts WHERE (totp_secret IS NOT NULL AND totp_secret NOT LIKE 'enc1:%') OR (totp_pending IS NOT NULL AND totp_pending NOT LIKE 'enc1:%')",
+    "neden": "açılışta BİR kez (HESAP_ANAHTARI tanımlıysa): eski düz TOTP sırlarını şifreler; hesap sayısı kadar satır, sıcak yol değil"
   }
 ]

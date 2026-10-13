@@ -10,7 +10,7 @@
 export const RATE_KEYS = [
   // 0-3 Her harcamanın bölüşümü (toplam %100)
   { key: 'burn', label: 'Yakım', group: 'spend' },
-  { key: 'creator', label: 'Yapımcı payı', group: 'spend' },
+  { key: 'creator', label: 'Yapımcı payı', group: 'spend', max: 1000 },   // sözleşmede de en çok %10 (RealmRates.MAX_CREATOR_BPS)
   { key: 'ubi', label: 'Haftalık temel gelir', group: 'spend' },
   { key: 'pools', label: 'Ödül kasaları', group: 'spend' },
   // 4-11 Ödül kasaları payının kasalara bölünüşü (toplam %100) — v2: 8 kasa

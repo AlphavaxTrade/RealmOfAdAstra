@@ -122,7 +122,9 @@ function contractCard(s) {
   if (!s.paymentsContract) return card('Ödeme sözleşmesi', 'yok');
   if (!c) return card('Sözleşme sahibi', 'henüz okunmadı (denetle)');
   const pend = c.pendingOwner && !/^0x0{40}$/.test(c.pendingOwner) ? '<br><span class="warn">Devir bekliyor: ' + esc(c.pendingOwner.slice(0, 8)) + '… → "sahipliği kabul et"</span>' : '';
-  return `<div class="card"><div class="k">Sözleşme sahibi</div><div class="v ${c.ownerOk ? 'ok' : 'bad'}">${c.ownerOk ? '✅ donanım cüzdanı' : (c.ownerIsHot ? '⛔ SICAK CÜZDAN' : '⚠️ beklenen değil')}</div><div class="k">${esc(c.owner.slice(0, 10))}… ${c.paused ? '· <span class="bad">ödemeler durdurulmuş</span>' : ''}${pend}</div></div>`;
+  // Hazine / komisyon adresi değişikliği sözleşmede 24 saat gecikmeli: bekleyen öneri burada görünür ve iptal edilebilir
+  const cfgPend = c.configPending ? '<br><span class="bad">⚠️ Adres değişikliği bekliyor: hazine ' + esc(String(c.configPending.treasury).slice(0, 10)) + '… · komisyon ' + esc(String(c.configPending.feeReceiver).slice(0, 10)) + '… · ' + new Date(c.configPending.at).toLocaleString('tr-TR') + ' sonrası uygulanır. Sen önermediysen "bekleyen adres değişikliğini iptal et".</span>' : '';
+  return `<div class="card"><div class="k">Sözleşme sahibi</div><div class="v ${c.ownerOk ? 'ok' : 'bad'}">${c.ownerOk ? '✅ donanım cüzdanı' : (c.ownerIsHot ? '⛔ SICAK CÜZDAN' : '⚠️ beklenen değil')}</div><div class="k">${esc(c.owner.slice(0, 10))}… ${c.paused ? '· <span class="bad">ödemeler durdurulmuş</span>' : ''}${pend}${cfgPend}</div></div>`;
 }
 // ── Tarayıcı cüzdanıyla (Ledger) sözleşme işlemleri: sunucu imza atmaz ──
 async function ledgerTx(to, data, label, msgId = 'ledgerMsg') {
@@ -143,6 +145,7 @@ async function ledgerTx(to, data, label, msgId = 'ledgerMsg') {
 const pad = hex => String(hex).replace(/^0x/, '').toLowerCase().padStart(64, '0');
 $('ownAccept').onclick = async () => { const s = await api('GET', '/api/admin/status'); if (confirm('Ödeme sözleşmesinin sahipliğini bu cüzdanla kabul et?')) ledgerTx(s.paymentsContract, '0x79ba5097', 'Sahiplik kabulü'); };
 $('cPause').onclick = async () => { const s = await api('GET', '/api/admin/status'); if (confirm('Sözleşmedeki bütün cüzdan ödemeleri DURDURULSUN mu? (acil durum)')) ledgerTx(s.paymentsContract, '0x16c38b3c' + pad('1'), 'Ödemeleri durdurma'); };
+$('cCancelCfg').onclick = async () => { const s = await api('GET', '/api/admin/status'); if (confirm('Ödeme sözleşmesindeki BEKLEYEN hazine/komisyon adresi değişikliği iptal edilsin mi?')) ledgerTx(s.paymentsContract, '0xaeddb7d8', 'Adres değişikliğini iptal'); };
 $('cResume').onclick = async () => { const s = await api('GET', '/api/admin/status'); if (confirm('Sözleşmedeki cüzdan ödemeleri açılsın mı?')) ledgerTx(s.paymentsContract, '0x16c38b3c' + pad('0'), 'Ödemeleri açma'); };
 $('topUp').onclick = async () => {
   const s = await api('GET', '/api/admin/status');

@@ -1,7 +1,7 @@
 // Yapılandırılmış (JSON) günlük (kurumsal A7.1).
 // Her kayıt TEK satır JSON: { t, sev, ileti, ...alanlar }. Seviyeler: debug < info < warn < error (LOG_LEVEL, varsayılan info).
 // console ile uyumludur: log.warn('Metin:', err.message), log.error('Metin', err), log.log('...') çalışır (modüller `log = console` varsayılanıyla yazılmış).
-// GİZLİ BİLGİ yazılmaz: anahtar adı gizli sayılırsa değer [GİZLİ] olur; metin içindeki Bearer, bağlantı adresindeki şifre ve e-posta maskelenir.
+// GİZLİ BİLGİ yazılmaz: anahtar adı gizli sayılırsa değer [GİZLİ] olur; metin içindeki Bearer, bağlantı adresindeki şifre / ?apikey= / yol içi uzun anahtar ve e-posta maskelenir.
 // İşlem özeti (tx hash) bilerek MASKELENMEZ: ödeme sorunlarını ayıklamak için gerekir ve zaten zincirde herkese açıktır.
 import { AsyncLocalStorage } from 'node:async_hooks';
 
@@ -14,9 +14,19 @@ const GIZLI_ANAHTAR = /(token|sifre|şifre|password|passwd|secret|anahtar|privat
 const EN_FAZLA_METIN = 4000;
 const EN_FAZLA_DERINLIK = 6;
 
+// Bağlantı adreslerindeki gizlileri maskele (RPC sağlayıcı anahtarları): sorgu parametresi (?apikey= &key= &token= ...) ve yol içinde
+// gömülü uzun anahtar (…/v2/<32 hane>, …/v3/<hex>, …/<40 hane>/ext/bc/C/rpc). İşlem özeti (tx hash) bağlantı içinde değilse dokunulmaz.
+const SORGU_GIZLI = /([?&;](?:api[_-]?key|apikey|key|token|access[_-]?token|auth|authorization|secret|password|passwd|sig|signature|jwt|verify|reset|wallet)=)[^&\s"'<>#]+/gi;
+const BAGLANTI = /(?<![A-Za-z0-9])[a-z][a-z0-9+.-]*:\/\/[^\s"'<>]+/gi;
+function baglantiMaskele(url) {
+  return url
+    .replace(SORGU_GIZLI, '$1[GİZLİ]')
+    .replace(/\/([A-Za-z0-9_-]{24,})(?=[/?#]|$)/g, (m, parca) => (/\d/.test(parca) && !parca.startsWith('0x') ? '/[GİZLİ]' : m));   // yol parçası: ≥24 karakter ve rakam içeriyorsa anahtar sayılır
+}
 // Metin içindeki gizlileri maskele (anahtar adı olmayan serbest metin için)
 export function maskele(metin) {
   return String(metin)
+    .replace(BAGLANTI, baglantiMaskele)
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, '$1[GİZLİ]')
     .replace(/\b([a-z][a-z0-9+.-]*:\/\/[^\s:/@]+):([^\s@/]+)@/gi, '$1:[GİZLİ]@')
     .replace(/\b([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, '$1***@$2');
