@@ -37,3 +37,16 @@ Geçiş kararını siz verirsiniz; karar verdiğinizde Claude bu listeyi önün�
 - [x] **Genel tarama kararları 1-4 (12 Ekim 2026'da uygulandı):** ilan pazarı kilit aklama, Kolezyum ödül ölçeği (25 ASTRA taban), bot ücreti kişisel hakka göre, ön-hesap ele geçirme (doğrulamada şifre yeniden belirlenir). Ayrıntı `docs/v2/TARAMA_2026-10.md`.
 - [x] **Denge kararları R7, R10, R11, R16, R17 (13 Ekim 2026'da uygulandı):** Konsey stoğu kendiliğinden yapıya aktarılır, çelik payı kömürdür, Dünya Bossu havuzu gerçeği gösterir, Fatih Ödülü kodlandı, eski üç alan kalıntıları temizlendi.
 - [ ] **Genel tarama, kalan kararlar:** canlıya çıkmadan ödeme sözleşmesi/token adresinin derlemeye sabitlenmesi ve Vercel güvenlik başlıkları; R14 (katkı puanı mesajı), R15 (çark/promo kasa defteri), R19 (asker hakkı kuralları) kararları; seviye hızı (XP tablosu üç alana göre yazılmış, altı alanda iki kat hızlı).
+
+## E) 13 Ekim 2026 canlıya çıkış denetiminden kalanlar
+Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RAPORU_2026-10-13; git'e girmez, sömürü açıklamaları içerir). Düzeltilenler dal `denetim-2026-10`'da.
+- [ ] **EK-01 (P1) Hesap seviyesi 11→12 imkânsız:** seviye bedeli silo kapasitesini aşıyor (taş 6.672 > 6.298). Karar bekliyor; öneri: bedel `min(bedel, kapasite × 0,8)` + "bedel ≤ kapasite" değişmezi testi.
+- [ ] **EK-02 (P1) Sahte hesap:** e-posta normalleştirme (+etiket, nokta), peşin kayıt harcı, doğrulanmış cüzdan bağlama. Karar bekliyor.
+- [ ] **EK-03…EK-06, EK-12 (P2):** ücretsiz havuz ağırlığı, AMM al-sat kilit açma, zindan tekrar ödülü/haftalık bütçe, kolezyum puanı, ilk seviye siloları. Kararlar bekliyor.
+- [ ] **OyunKasasi dağıtım betiği + bekçi (guardian) ataması:** `contracts/deploy.mjs` yalnız Payments + Rates dağıtıyor; kasa sınırları (`dailyLimitBps ≤ 500`, `singleDrawBps ≤ 200`) betikte sabitlensin, bekçi ayrı soğuk cüzdan olsun (sunucu `checkVault` sınırları artık denetliyor).
+- [ ] **Üretim derlemesinde `VITE_PAYMENTS_CONTRACT` / `VITE_TOKEN_ADDRESS` zorunlu + `approve` tutarı** (H1; mevcut F8 kararıyla birlikte).
+- [ ] **`RealmPayments.setConfig` zaman kilidi, `RealmRates` yapımcı payı üst sınırı** (K5) — bağımsız denetimden önce karar.
+- [ ] **Hassas veri şifreleme:** e-posta belirteçleri özetlenmeli, TOTP sırrı şifrelenmeli, `YEDEK_ANAHTAR` üretimde zorunlu (A2).
+- [ ] **Arayüz:** giriş/doğrulama/ödeme pencereleri erişilebilirliği (QA-04), dar ekranda HUD (QA-07), açılışta sunucu hatası/yavaşlık göstergesi (QA-09, QA-10), zafer kartı "+0 ASTRA" (QA-14), çift görev bildirimi/toast yığını (QA-15), ödeme penceresi tutarları (QA-16).
+- [ ] **`checkPayout` yük dengeli RPC'de yanlış "failed" (W1), kasa kaynaklı harcama kilit açması (1,2×):** gerçek RPC/test ile doğrulanacak.
+- [ ] **Bağımsız profesyonel kontrat denetimi** ve Fuji (test ağı) provası: gerçek ağdan önce.

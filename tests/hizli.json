@@ -54,5 +54,6 @@
   "test_hammadde_kullanim_plani.mjs",
   "test_denge_kararlari_2026_10.mjs",
   "test_admin_secici.mjs",
-  "test_denetim_2026_10_sunucu.mjs"
+  "test_denetim_2026_10_sunucu.mjs",
+  "test_denetim_2026_10_kurallar.mjs"
 ]
