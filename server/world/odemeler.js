@@ -140,16 +140,19 @@ export function olusturOdemeler(w) {
     }
   }
 
+  // Bir ödeme satırı için zincirde aranacak olay: kasa modunda payPlayer/burn/payCreator olayı satır numarasıyla (ref),
+  // düz modda gönderen → alıcı → miktar Transfer'i (reconcilePayouts ve yönetici çözümü aynı beklentiyi kullanır)
+  const beklenenOlay = r => (chain.vaultEnabled ? { vaultRef: { kind: r.kind, ref: r.id } }
+    : chain.gameWallet ? { transfer: { from: chain.gameWallet, to: r.address, amount: r.amount } } : null);
+
   // "Gönderiliyor" kalmış ödemeleri zincirden sonuçlandır: işlendiyse 'sent', hiç işlenmeyecekse yeniden sıraya
   async function reconcilePayouts() {
     if (!chain || !chain.canSend) return { skipped: true };
     const out = { sent: 0, retry: 0, waiting: 0, unknown: 0 };
     for (const r of db.q.payoutsSending.all()) {
       if (!r.tx_hash) { out.unknown++; continue; }        // imza kaydı yok: yönetici kontrol eder
-      // 'failed' kararı için zincirde ödeme olayı da aranır (W1): kasa modunda payPlayer/burn/payCreator olayı satır
-      // numarasıyla (ref), düz modda gönderen → alıcı → miktar Transfer'i. Belirsizse satır "sending"de kalır.
-      const expect = chain.vaultEnabled ? { vaultRef: { kind: r.kind, ref: r.id } }
-        : chain.gameWallet ? { transfer: { from: chain.gameWallet, to: r.address, amount: r.amount } } : null;
+      // 'failed' kararı için zincirde ödeme olayı da aranır (W1). Belirsizse satır "sending"de kalır (yönetici çözer: resolvePayout).
+      const expect = beklenenOlay(r);
       const st = await chain.checkPayout({ hash: r.tx_hash, raw: r.raw_tx, nonce: r.tx_nonce, since: r.sent_at || 0, expect }).catch(() => 'waiting');
       if (st === 'sent') { db.q.payoutMark.run('sent', r.tx_hash, null, clock(), r.id); out.sent++; }
       else if (st === 'failed') { db.q.payoutMark.run('pending', null, 'Önceki gönderim zincirde işlenmedi; yeniden denenecek', null, r.id); out.retry++; }
@@ -159,5 +162,50 @@ export function olusturOdemeler(w) {
   }
 
 
-  return { queuePayout, processPayouts, reconcilePayouts };
+  // ── Yönetici çözümü (denetim 2026-10 ikinci tur) ───────────────────────────────────────────────────────────────
+  // Zincir tarafı 'waiting' kalan ("onay bekleniyor") ya da imza kaydı hiç olmayan 'sending' satırı sonsuza dek açık kalır:
+  // otomatik kod bunu bilerek çözmez (yanlış karar = çift ödeme ya da oyuncunun parası kaybolması). Yönetici zincire
+  // (gezgin) bakıp kararını verir:
+  //   'sent'    → gönderilmiş (işlem numarası şart; satırda kayıtlıysa o kullanılır)
+  //   'pending' → hiç gitmemiş, yeniden sıraya (YENİDEN GÖNDERİLİR: orijinal işlem hâlâ bekliyor olabilirse çift ödeme riski)
+  // Güvenlik: yalnız 'sending' satır; gerekçe zorunlu; durum değişimi tek adımda (UPDATE ... WHERE status='sending'), yani aynı
+  // çözüm iki kez uygulanamaz; zincirin kesin kanıtı yönetici kararıyla çelişirse reddedilir; her çözüm olay günlüğüne yazılır.
+  const HASH_RE = /^0x[0-9a-fA-F]{64}$/;
+  const cozumHatasi = (kod, mesaj) => Object.assign(new Error(mesaj), { kod });   // 400 geçersiz girdi · 404 yok · 409 durum çelişkisi
+  async function resolvePayout({ id, durum, txHash = null, gerekce = '' } = {}) {
+    const no = Number(id);
+    if (!Number.isInteger(no) || no < 1) throw cozumHatasi(400, 'Geçerli bir ödeme numarası yaz.');
+    if (durum !== 'sent' && durum !== 'pending') throw cozumHatasi(400, "Durum 'sent' (gönderildi) ya da 'pending' (yeniden sıraya) olmalı.");
+    const neden = String(gerekce == null ? '' : gerekce).trim();
+    if (neden.length < 10 || neden.length > 500) throw cozumHatasi(400, 'Gerekçe zorunlu (10-500 karakter): zincirde ne gördün, neden bu karar?');
+    const verilen = txHash == null || txHash === '' ? null : String(txHash);
+    if (verilen && !HASH_RE.test(verilen)) throw cozumHatasi(400, 'İşlem numarası 0x ile başlayan 64 onaltılık hane olmalı.');
+    if (durum === 'pending' && verilen) throw cozumHatasi(400, "'pending' kararında işlem numarası verilmez.");
+    const satir = db.q.payoutGet.get(no);
+    if (!satir) throw cozumHatasi(404, 'Ödeme satırı yok.');
+    if (satir.status !== 'sending') throw cozumHatasi(409, `Yalnız "sending" (belirsiz) satır çözülebilir; bu satır "${satir.status}".`);
+    const hash = durum === 'sent' ? (verilen || satir.tx_hash) : null;
+    if (durum === 'sent') {
+      if (!hash) throw cozumHatasi(400, 'Bu satırın işlem kaydı yok: gönderildi diyorsan işlem numarasını yaz.');
+      const baska = db.raw.prepare('SELECT id FROM payouts WHERE tx_hash = ? AND id != ?').get(hash, no);
+      if (baska) throw cozumHatasi(409, `Bu işlem numarası başka bir ödeme satırına (#${baska.id}) ait.`);
+    }
+    // Zincirin kesin kanıtı yönetici kararıyla çelişiyorsa reddedilir (belirsiz kalırsa karar yöneticinindir)
+    let zincir = null;
+    if (chain && chain.canSend && satir.tx_hash) {
+      zincir = await chain.checkPayout({ hash: satir.tx_hash, raw: satir.raw_tx, nonce: satir.tx_nonce, since: satir.sent_at || 0, expect: beklenenOlay(satir) }).catch(() => null);
+      if (durum === 'pending' && zincir === 'sent') throw cozumHatasi(409, "Zincir bu ödemenin işlendiğini gösteriyor; yeniden sıraya alınırsa ÇİFT ÖDEME olur. 'sent' olarak çöz.");
+      if (durum === 'sent' && zincir === 'failed' && !verilen) throw cozumHatasi(409, "Zincir bu işlemin işlenmediğini gösteriyor. Başka bir işlemle ödediysen onun numarasını yaz; yoksa 'pending' olarak çöz.");
+    }
+    return db.tx(() => {
+      const r = durum === 'sent'
+        ? db.raw.prepare("UPDATE payouts SET status = 'sent', tx_hash = ?, error = NULL, sent_at = ? WHERE id = ? AND status = 'sending'").run(hash, clock(), no)
+        : db.raw.prepare("UPDATE payouts SET status = 'pending', tx_hash = NULL, error = ?, sent_at = NULL WHERE id = ? AND status = 'sending'").run('Yönetici yeniden sıraya aldı: ' + neden.slice(0, 200), no);
+      if (Number(r.changes) !== 1) throw cozumHatasi(409, 'Satır bu arada başka biri tarafından çözüldü.');
+      db.event('payout-resolve', satir.address, { id: no, kind: satir.kind, amount: satir.amount, durum, txHash: hash, oncekiHash: satir.tx_hash || null, oncekiHata: satir.error || null, zincir, gerekce: neden });
+      return { id: no, durum, txHash: hash, zincir };
+    });
+  }
+
+  return { queuePayout, processPayouts, reconcilePayouts, resolvePayout };
 }

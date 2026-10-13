@@ -26,6 +26,10 @@ pragma solidity 0.8.24;
 ///  - Dağıtıcı anahtarı ve güvenlik sınırları (singleDrawBps/dailyLimitBps/yapımcı cüzdanı) sahip tarafından
 ///    değiştirilebilir ama DELAY (24 saat) sonra geçerli olur — sahip anahtarı ele geçirilse bile saldırgan
 ///    dağıtıcıyı kendi anahtarına çevirip hemen boşaltamaz; gerçek sahip bu süre içinde durdurabilir.
+/// Token varsayımı (denetim 2026-10, ikinci tur): ASTRA standart bir ERC20'dir; transferde ücret kesmez / yakmaz / bakiye değiştirmez.
+/// Bunu sözleşme KONTROL eder: giriş ve her çıkışta kasanın (ve alıcının) bakiye farkı tam `amount` olmalı, yoksa AmountMismatch ile
+/// geri alınır. Böylece ücretli bir token'la sessiz eksik teslim ya da sunucu defteri ile zincirin ayrışması olmaz; sonuç olarak
+/// böyle bir token'la kasa ÇALIŞMAZ (kapalı başarısızlık) — dağıtımdan önce Fuji'de küçük bir yatırma/ödeme ile doğrulanmalıdır.
 /// Not: oyundaki zindan/kolezyum/dünya bossu/karnaval/görev/Fatih/Konsey gibi "kasa" yüzdeleri burada YOK — onlar
 /// sunucunun kendi defterinde tutulan sayılardır (bugün de öyle); bu sözleşme yalnız "sunucu kime öde diyorsa
 /// zincirde gerçekten gönderen taraf"tır. Bir kasanın yüzdesini değiştirmek bu sözleşmeye hiç dokunmaz.
@@ -85,6 +89,8 @@ contract OyunKasasi {
     error DrawTooLarge(uint256 requested, uint256 cap);
     error DailyLimitExceeded(uint256 requested, uint256 remaining);
     error TokenTransferFailed();
+    /// Token'ın bildirdiği aktarım ile bakiye farkı uyuşmuyor (ücret kesen / yakan / bakiyeyi değiştiren token): işlem geri alınır
+    error AmountMismatch(uint256 expected, uint256 actual);
     error NothingPending();
     error NotYet(uint64 effectiveAt);
     error Reentrancy();
@@ -172,20 +178,37 @@ contract OyunKasasi {
         for (uint256 i = 0; i < SLOT_COUNT && i <= h; i++) sum += _slotSpent[h - i];
     }
 
-    function _balance() private view returns (uint256) {
-        (bool ok, bytes memory data) = token.staticcall(abi.encodeWithSelector(0x70a08231, address(this)));
+    function _balanceOf(address who) private view returns (uint256) {
+        (bool ok, bytes memory data) = token.staticcall(abi.encodeWithSelector(0x70a08231, who));
         if (!ok || data.length < 32) revert TokenTransferFailed();
         return abi.decode(data, (uint256));
     }
 
-    function _safeTransfer(address to, uint256 amount) private {
-        (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, amount));
-        if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+    function _balance() private view returns (uint256) {
+        return _balanceOf(address(this));
     }
 
+    /// @dev Aktarım, "transfer true döndürdü" ile yetinmez: kasanın bakiyesi TAM `amount` kadar düşmeli ve alıcıya TAM `amount`
+    /// ulaşmalıdır. Ücret kesen / yakan bir token'da (alıcıya 90 ulaşır) işlem geri alınır: oyuncu sessizce eksik ödenmez,
+    /// sunucunun defteri ile zincir ayrışmaz. Normal ERC20'de ek maliyet dört bakiye okumasıdır.
+    function _safeTransfer(address to, uint256 amount) private {
+        uint256 vaultBefore = _balance();
+        uint256 toBefore = _balanceOf(to);
+        (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, amount));
+        if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+        uint256 vaultAfter = _balance();
+        if (vaultAfter > vaultBefore || vaultBefore - vaultAfter != amount) revert AmountMismatch(amount, vaultAfter > vaultBefore ? 0 : vaultBefore - vaultAfter);
+        uint256 toAfter = _balanceOf(to);
+        if (toAfter < toBefore || toAfter - toBefore != amount) revert AmountMismatch(amount, toAfter < toBefore ? 0 : toAfter - toBefore);
+    }
+
+    /// @dev Girişte de aynı kural: kasaya TAM `amount` girmeli (ücretli token'da yatırma reddedilir; Deposited olayı gerçeği söyler).
     function _safeTransferFrom(address from, address to, uint256 amount) private {
+        uint256 before = _balanceOf(to);
         (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, amount));
         if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) revert TokenTransferFailed();
+        uint256 after_ = _balanceOf(to);
+        if (after_ < before || after_ - before != amount) revert AmountMismatch(amount, after_ < before ? 0 : after_ - before);
     }
 
     // ── Görünüm ──

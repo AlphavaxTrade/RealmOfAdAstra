@@ -24,6 +24,8 @@ export default function yonetimRotalari(ctx) {
         partnerIncome: world.partnerIncomeStatus ? world.partnerIncomeStatus() : null,
         rates: world.ratesStatus ? world.ratesStatus() : null,
         payouts: db.q.payoutsRecent.all(50),
+        // Belirsiz ('sending') satırların TAMAMI: son 50'nin dışına düşse de yönetici görsün ve çözebilsin
+        payoutsBelirsiz: db.q.payoutsSending.all().map(p => ({ id: p.id, epoch: p.epoch, kind: p.kind, address: p.address, amount: p.amount, status: p.status, tx_hash: p.tx_hash, error: p.error, created_at: p.created_at, sent_at: p.sent_at })),
         events: db.q.eventsRecent.all(50)
       };
     },
@@ -32,6 +34,12 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/promo/active': async (req) => { const { code, active } = await readBody(req); return promo.setActive(code, !!active); },
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
+    // Belirsiz ('sending') ödeme satırını yönetici çözer: gönderildi (işlem no) ya da yeniden sıraya; gerekçe zorunlu, olay günlüğüne yazılır
+    'POST /api/admin/payouts/resolve': async (req) => {
+      const { id, durum, txHash, gerekce } = await readBody(req);
+      try { return { ok: true, ...(await world.resolvePayout({ id, durum, txHash, gerekce })) }; }
+      catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
+    },
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),
     'POST /api/admin/rates/sync': async () => (world.syncRates ? (await world.syncRates()) || { skipped: 'oran sözleşmesi tanımlı değil' } : { skipped: true }),
     'POST /api/admin/hotwallet/check': async () => (world.checkHotWallet ? (await world.checkHotWallet()) || { skipped: 'zincir yok' } : { skipped: true }),
@@ -39,6 +47,8 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/kapi': async (req) => { if (!kapi) return [404, { error: 'Kapı kapalı' }]; const { limit, tier, growthLocked } = await readBody(req); try { return kapi.adminSet({ limit, tier, growthLocked }); } catch (err) { return [400, { error: err.message }]; } },
     'POST /api/admin/universe-stage': async (req) => { const { stage } = await readBody(req); try { return world.setUniverseStage(stage); } catch (err) { return [400, { error: err.message }]; } },
     'POST /api/admin/kapi/run': async () => (kapi ? { ...kapi.run(), ...kapi.publicSummary() } : [404, { error: 'Kapı kapalı' }]),
+    // İstemci adresi kotası (yönetici kolu): günlük kabul sayısı ve belirli bir adres / oyuncunun kayıt adresi için muafiyet
+    'POST /api/admin/kapi/ip': async (req) => { if (!kapi) return [404, { error: 'Kapı kapalı' }]; const b = await readBody(req); try { return kapi.adminIp({ dailyAdmit: b.dailyAdmit, ip: b.ip, playerId: b.playerId, muaf: b.muaf }); } catch (err) { return [400, { error: err.message }]; } },
     'POST /api/admin/kapi/player': async (req) => { if (!kapi) return [404, { error: 'Kapı kapalı' }]; const { playerId, status } = await readBody(req); try { return kapi.adminSetPlayer(String(playerId || ''), String(status || '')); } catch (err) { return [400, { error: err.message }]; } }
   };
 }

@@ -15,7 +15,7 @@ export default function cuzdanRotalari(ctx) {
     'POST /api/withdraw': async (req, me) => {
       const { amount, code } = await readBody(req);
       if (!accounts.isVerified(me)) return { success: false, message: 'Çekim için önce e-posta adresini doğrula.' };
-      const g = accounts.check2fa(me, code);
+      const g = await accounts.check2fa(me, code);
       if (!g.ok) return [403, { error: g.error, need2fa: true }];
       if (!accounts.activeWallet(me)) return { success: false, message: 'Çekim için önce hesabına bir cüzdan bağla.' };
       try { return db.tx(() => world.requestWithdraw(me, amount)); }
@@ -37,7 +37,7 @@ export default function cuzdanRotalari(ctx) {
     'POST /api/kasa/withdraw': async (req, me) => {
       if (!kasa) return [404, { error: 'Kapalı' }];
       const { asset, amount, code } = await readBody(req);
-      const g = accounts.check2fa(me, code);
+      const g = await accounts.check2fa(me, code);
       if (!g.ok) return [403, { error: g.error, need2fa: true }];
       const r = kasa.withdraw(me, asset, amount);
       return r.ok ? r : [400, { error: r.error }];

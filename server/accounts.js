@@ -24,6 +24,7 @@ import QRCode from 'qrcode';
 import { parolaOzetle, parolaDogrula } from './parola.js';
 import { epostaAnahtari } from './eposta.js';
 import { tokenOzeti } from './oturum.js';
+import { yedekKodOzetle, yedekKodDogrula, yedekKodBicimi, yedekKodNormal } from './yedek-kod.js';
 import { hesapAnahtariCoz, sifrele, coz, sifreliMi } from './gizli-veri.js';
 
 // ── TOTP (doğrulama uygulaması kodları) ─────────────────────────────────────
@@ -51,22 +52,9 @@ export function totpCode(secretB32, step) {
   const n = ((h[o] & 127) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
   return String(n % 1e6).padStart(6, '0');
 }
-const sha = s => crypto.createHash('sha256').update(s).digest('hex');
-const normCode = c => String(c || '').toLowerCase().replace(/[\s-]/g, '');
-// Yedek kod kaydı: "s1$<rastgele tuz>$<sha256(tuz:kod)>". Tuzsuz eski kayıt 64 haneli düz özetti; doğrulama ikisini de tanır.
-const YEDEK_ONEK = 's1$';
-const yedekKodKaydi = kod => { const tuz = crypto.randomBytes(16).toString('hex'); return `${YEDEK_ONEK}${tuz}$${sha(tuz + ':' + normCode(kod))}`; };
-function yedekKodTutuyor(kayit, kod) {
-  const c = normCode(kod);
-  let beklenen = kayit, aday;
-  if (typeof kayit === 'string' && kayit.startsWith(YEDEK_ONEK)) {
-    const [, tuz, ozet] = kayit.split('$');
-    if (!tuz || !ozet) return false;
-    beklenen = ozet; aday = sha(tuz + ':' + c);
-  } else aday = sha(c);
-  const a = Buffer.from(String(beklenen)), b = Buffer.from(aday);
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
-}
+const normCode = yedekKodNormal;
+// Yedek kod kayıtları server/yedek-kod.js'te: yeni kayıt "s2$N$r$p$tuz$özet" (scrypt); "s1$" ve düz SHA-256 eski kayıtlar da doğrulanır.
+const yedekKodlariUret = () => Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
 
 export const WALLET_CHANGE_DELAY_MS = 48 * 3600 * 1000;
 export const playerIdOf = accountId => 'acc:' + accountId;
@@ -232,24 +220,51 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   }
 
   // İki adımlı doğrulama açıksa kod (ya da yedek kod) şart; kapalıysa her zaman geçer
-  function check2fa(playerId, code) {
+  // Asenkron: yedek kod kayıtları scrypt ile özetlendiği için doğrulama iş parçacığı havuzunda yapılır (sunucuyu bloklamaz).
+  // Deneme hakkı beklemeden ÖNCE düşülür: aynı anda yüzlerce istek gönderilse bile 5 hatalı deneme sınırı aşılamaz.
+  async function check2fa(playerId, code) {
     const acc = q.byId.get(accountIdOf(playerId));
     if (!acc || !acc.totp_enabled) return { ok: true };
     if (code == null || code === '') return { ok: false, need2fa: true, error: '🛡️ İki adımlı doğrulama kodunu yaz.' };
     if (tfaLocked(acc.id)) return { ok: false, need2fa: true, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
     const s = matchTotp(sirOku(acc.totp_secret, acc.id), code, acc.totp_step);
     if (s) { q.totpStep.run(s, acc.id); tfaFails.delete(acc.id); return { ok: true }; }
-    const list = JSON.parse(acc.backup_codes || '[]');
-    const i = normCode(code).length >= 8 ? list.findIndex(k => yedekKodTutuyor(k, code)) : -1;
-    if (i >= 0) {
-      list.splice(i, 1);
-      q.backupSet.run(JSON.stringify(list), acc.id);
-      tfaFails.delete(acc.id);
-      db.event('2fa-backup-used', playerId, { left: list.length });
-      return { ok: true, usedBackup: true, backupLeft: list.length };
-    }
     tfaFail(acc.id);
+    const list = JSON.parse(acc.backup_codes || '[]');
+    if (normCode(code).length >= 8 && list.length) {
+      const sonuc = await Promise.all(list.map(k => yedekKodDogrula(k, code)));
+      const i = sonuc.findIndex(r => r.ok);
+      if (i >= 0) {
+        // Beklerken aynı kod başka bir istekte tüketilmiş olabilir: güncel listeden, tek adımda silinir (iki kez geçmez)
+        const taze = q.byId.get(acc.id);
+        const kalan = JSON.parse((taze && taze.backup_codes) || '[]');
+        const j = kalan.indexOf(list[i]);
+        if (j >= 0) {
+          kalan.splice(j, 1);
+          q.backupSet.run(JSON.stringify(kalan), acc.id);
+          tfaFails.delete(acc.id);
+          const eskiKalan = kalan.filter(k => yedekKodBicimi(k) !== 's2').length;
+          db.event('2fa-backup-used', playerId, { left: kalan.length, legacy: eskiKalan });
+          return { ok: true, usedBackup: true, backupLeft: kalan.length, backupLegacy: eskiKalan };
+        }
+      }
+    }
     return { ok: false, need2fa: true, error: 'Kod hatalı ya da süresi geçmiş.' };
+  }
+
+  // Yedek kodları yenile (eski kayıtların gerçek yükseltme yolu): parola + geçerli kod şart; eski 10 kod geçersiz olur
+  async function yedekKodlariYenile(playerId, code, password) {
+    const acc = q.byId.get(accountIdOf(playerId));
+    if (!acc || !acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama kapalı.' };
+    const parola = await parolaDogrula(String(password || ''), acc.pass_hash);
+    if (!parola.ok) return { ok: false, error: 'Parola hatalı.' };
+    const g = await check2fa(playerId, code);
+    if (!g.ok) return g;
+    const codes = yedekKodlariUret();
+    q.backupSet.run(JSON.stringify(await Promise.all(codes.map(k => yedekKodOzetle(k)))), acc.id);
+    db.event('2fa-backup-renewed', playerId);
+    await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — yedek kodların yenilendi', text: 'Hesabının 10 yedek kodu yenilendi; eski kodlar artık geçmez.\n\nBunu sen yapmadıysan hemen şifreni sıfırla.' }).catch(() => {});
+    return { ok: true, backupCodes: codes };
   }
 
   async function totpSetup(playerId) {
@@ -273,8 +288,8 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     const bekleyenSir = sirOku(acc.totp_pending, acc.id);
     const s = matchTotp(bekleyenSir, code, 0);
     if (!s) { tfaFail(acc.id); return { ok: false, error: 'Kod tutmadı. Uygulamadaki güncel 6 haneli kodu yaz.' }; }
-    const codes = Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
-    q.totpOn.run(sirYaz(bekleyenSir, acc.id), s, JSON.stringify(codes.map(yedekKodKaydi)), acc.id);
+    const codes = yedekKodlariUret();
+    q.totpOn.run(sirYaz(bekleyenSir, acc.id), s, JSON.stringify(await Promise.all(codes.map(k => yedekKodOzetle(k)))), acc.id);
     db.event('2fa-on', playerId);
     await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — iki adımlı doğrulama AÇILDI', text: 'Hesabında iki adımlı doğrulama açıldı. 🛡️ Artık girişte telefonundaki koda da ihtiyaç olacak.\n\nBunu sen yapmadıysan hemen şifreni sıfırla ve bize yaz.' }).catch(() => {});
     return { ok: true, backupCodes: codes };
@@ -283,7 +298,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   async function totpDisable(playerId, code) {
     const acc = q.byId.get(accountIdOf(playerId));
     if (!acc || !acc.totp_enabled) return { ok: false, error: 'İki adımlı doğrulama zaten kapalı.' };
-    const g = check2fa(playerId, code);
+    const g = await check2fa(playerId, code);
     if (!g.ok) return g;
     q.totpOff.run(acc.id);
     db.event('2fa-off', playerId);
@@ -293,16 +308,18 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
 
   // Şifre doğru + iki adımlı doğrulama açık: kısa ömürlü giriş bileti (5 dakika, en çok 5 deneme)
   const tickets = new Map();
-  function login2fa(ticket, code) {
+  async function login2fa(ticket, code) {
     const t = typeof ticket === 'string' ? tickets.get(ticket) : null;
     if (!t || t.exp < clock()) { if (t) tickets.delete(ticket); return { ok: false, error: 'Giriş süresi doldu, baştan giriş yap.' }; }
-    const g = check2fa(t.playerId, code);
+    // Deneme hakkı beklemeden önce düşülür (eşzamanlı istekle sınır aşılamasın)
+    if (++t.tries > 5) { tickets.delete(ticket); return { ok: false, error: 'Giriş süresi doldu, baştan giriş yap.' }; }
+    const g = await check2fa(t.playerId, code);
     if (!g.ok) {
-      if (++t.tries >= 5) tickets.delete(ticket);
+      if (t.tries >= 5) tickets.delete(ticket);
       return { ok: false, error: g.error };
     }
     tickets.delete(ticket);
-    return { ok: true, playerId: t.playerId, backupLeft: g.backupLeft };
+    return { ok: true, playerId: t.playerId, backupLeft: g.backupLeft, backupLegacy: g.backupLegacy };
   }
 
   async function login(email, password, ip = '') {
@@ -404,7 +421,8 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
       email: acc.email, verified: !!acc.email_verified, wallet: acc.wallet || null,
       pendingWallet: acc.pending_wallet || null, pendingConfirmed: !!acc.pending_confirmed,
       pendingActiveAt: acc.pending_active_at || null, walletChangeDelayHours: WALLET_CHANGE_DELAY_MS / 3600000,
-      twoFactor: !!acc.totp_enabled, backupLeft: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').length : 0
+      twoFactor: !!acc.totp_enabled, backupLeft: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').length : 0,
+      backupLegacy: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').filter(k => yedekKodBicimi(k) !== 's2').length : 0
     };
   }
 
@@ -491,5 +509,5 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return r ? playerIdOf(r.id) : null;
   }
 
-  return { check2fa, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
+  return { check2fa, yedekKodlariYenile, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
 }

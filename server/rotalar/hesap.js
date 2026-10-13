@@ -28,7 +28,7 @@ export default function hesapRotalari(ctx) {
     },
     'POST /api/account/login2fa': async (req) => {
       const { ticket, code } = await readBody(req);
-      const r = accounts.login2fa(ticket, code);
+      const r = await accounts.login2fa(ticket, code);
       if (!r.ok) return [401, { error: r.error }];
       db.event('login', r.playerId, { twoFactor: true });
       if (kapi) kapi.onLogin(r.playerId);
@@ -63,6 +63,12 @@ export default function hesapRotalari(ctx) {
       const r = await accounts.totpDisable(me, code);
       return r.ok ? r : [r.need2fa ? 403 : 400, { error: r.error, need2fa: !!r.need2fa }];
     },
+    // Yedek kodları yenile: parola + geçerli kod; eski 10 kod (eski özet biçimindekiler dahil) geçersiz olur, yenileri bir kez gösterilir
+    'POST /api/account/2fa/backup-codes': async (req, me) => {
+      const { code, password } = await readBody(req);
+      const r = await accounts.yedekKodlariYenile(me, code, password);
+      return r.ok ? r : [r.need2fa ? 403 : 400, { error: r.error, need2fa: !!r.need2fa }];
+    },
     'POST /api/account/forgot': async (req) => {
       const { email } = await readBody(req);
       return accounts.forgot(email);
@@ -81,7 +87,7 @@ export default function hesapRotalari(ctx) {
     'POST /api/account/wallet/link': async (req, me) => {
       const { signature, code } = await readBody(req);
       if (typeof signature !== 'string' || signature.length > 200) return [400, { error: 'Eksik imza' }];
-      const g = accounts.check2fa(me, code);
+      const g = await accounts.check2fa(me, code);
       if (!g.ok) return [403, { error: g.error, need2fa: true }];
       const r = await accounts.walletLink(me, signature);
       return r.ok ? r : [400, { error: r.error }];

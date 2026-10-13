@@ -70,14 +70,18 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     } else return null;
     return crypto.createHmac('sha256', ipTuzu()).update(a).digest('hex');
   }
-  const ipLimit = () => Math.max(0, Math.floor(Number(K().IP_DAILY_ADMIT) || 0));
+  // Günlük kabul sınırı: yönetici panelinden verilen değer (kv 'world:kapi' ipDailyAdmit) varsa o, yoksa KAPI.IP_DAILY_ADMIT.
+  const ipLimit = () => { const o = state().ipDailyAdmit; return Math.max(0, Math.floor(Number(o != null ? o : K().IP_DAILY_ADMIT) || 0)); };
+  // Muaf adres özetleri (aynı NAT/ofis arkasında çok test kullanıcısı için): yalnız yönetici ekler; ham adres saklanmaz
+  const IP_MUAF = 'world:kapi:ip-muaf', IP_MUAF_EN_COK = 200;
+  const ipMuaf = () => { const l = db.kvJson(IP_MUAF, []); return Array.isArray(l) ? l : []; };
   // Bu adres özetinden son 24 saatte kabul edilenler + elinde bekleyen (henüz kabul edilmemiş) davetler
   function ipKullanim(ipk, davet = davetler()) {
     const kabul = q.ipSay.get(ipk, clock() - DAY).n;
     const bekleyen = q.ipAdresleri.all(ipk).filter(r => davet[r.address]).length;
     return kabul + bekleyen;
   }
-  const ipDoldu = (ipk, davet) => { const L = ipLimit(); return !!ipk && L > 0 && ipKullanim(ipk, davet) >= L; };
+  const ipDoldu = (ipk, davet) => { const L = ipLimit(); return !!ipk && L > 0 && !ipMuaf().includes(ipk) && ipKullanim(ipk, davet) >= L; };
 
   // ── Dünya ayarı ──
   const state = () => {
@@ -417,6 +421,7 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     const emailOf = a => { try { const m = accounts ? accounts.me(a) : null; return m ? m.email : null; } catch { return null; } };
     const d = davetler();
     return { ...publicSummary(),
+      ipKota: { dailyAdmit: ipLimit(), varsayilan: Number(K().IP_DAILY_ADMIT) || 0, muafAdet: ipMuaf().length },
       queue: q.waiting.all().slice(0, 50).map((w, i) => ({ position: i + 1, playerId: w.address, email: emailOf(w.address), since: w.gate_at, returning: !!w.gate_prio, davetli: !!d[w.address] })),
       suspendedList: q.suspended.all().slice(0, 50).map(p => ({ playerId: p.address, email: emailOf(p.address), since: p.gate_at, lastSeen: p.last_seen })),
       history: (state().history || []).slice(-13) };
@@ -434,6 +439,44 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
     return { limit: next.limit, tier: next.tier, ...publicSummary() };
   }
 
+  // Yönetici: adres kotası. dailyAdmit: 0 (sınırsız) .. 1000; ip (ham adres) ya da playerId (o oyuncunun kayıt adresi) + muaf (varsayılan true)
+  // ile o adres kotadan muaf tutulur / muafiyeti kaldırılır. Ham adres hiçbir yere yazılmaz (özet + olayda ilk 8 hane).
+  function adminIp({ dailyAdmit, ip, playerId, muaf } = {}) {
+    let degisti = false;
+    if (dailyAdmit != null && dailyAdmit !== '') {
+      const n = Math.floor(Number(dailyAdmit));
+      if (!Number.isFinite(n) || n < 0 || n > 1000) throw new Error('Günlük kabul sınırı 0 (sınırsız) ile 1000 arasında olmalı');
+      setState({ ipDailyAdmit: n });
+      db.event('gate-ip-admin', null, { dailyAdmit: n });
+      degisti = true;
+    }
+    let hedef = null;
+    if (ip != null && ip !== '') {
+      hedef = ipAnahtari(ip);
+      if (!hedef) throw new Error('Geçerli bir genel IP adresi yaz (127.x / ::1 gibi yerel adresler zaten muaf)');
+    } else if (playerId != null && playerId !== '') {
+      if (!q.get.get(String(playerId))) throw new Error('Oyuncu yok');
+      hedef = (q.ipOf.get(String(playerId)) || {}).kayit_ip || null;
+      if (!hedef) throw new Error('Bu oyuncunun kayıt adresi yok (yerel ya da bilinmeyen adres: zaten kotadan muaf)');
+    }
+    if (hedef) {
+      const liste = ipMuaf(), zatenVar = liste.includes(hedef), ekle = muaf == null ? true : !!muaf;
+      if (ekle && !zatenVar) {
+        if (liste.length >= IP_MUAF_EN_COK) throw new Error('Muaf adres listesi dolu (' + IP_MUAF_EN_COK + '); önce birini kaldır');
+        db.kvSetJson(IP_MUAF, [...liste, hedef]);
+        db.event('gate-ip-admin', null, { muaf: true, ozet: hedef.slice(0, 8) });
+        degisti = true;
+      } else if (!ekle && zatenVar) {
+        db.kvSetJson(IP_MUAF, liste.filter(x => x !== hedef));
+        db.event('gate-ip-admin', null, { muaf: false, ozet: hedef.slice(0, 8) });
+        degisti = true;
+      }
+    } else if (muaf != null) throw new Error('Muafiyet için ip ya da playerId ver');
+    if (!degisti && dailyAdmit == null && !hedef) throw new Error('Değişecek bir şey yok');
+    const davetGonderilen = degisti ? fillSeats() : 0;    // kota gevşediyse sıra bekleyenlere davet gider
+    return { dailyAdmit: ipLimit(), varsayilan: Number(K().IP_DAILY_ADMIT) || 0, muafAdet: ipMuaf().length, davetGonderilen };
+  }
+
   // Yönetici: bir hesabı elle içeri al / askıya al / sıraya koy
   function adminSetPlayer(address, status) {
     const p = q.get.get(address);
@@ -448,5 +491,5 @@ export function createKapi({ db, engine, accounts = null, mailer = null, cfg = {
   const citizenAddresses = () => q.citizens.all().map(p => p.address);
 
   return { citizenAddresses, admit, onLogin, run, fillSeats, kabulEtDavet, davetSuresiGecenler, haftalikKatilimDegerlendir, katilimSuresiGecenler,
-    activeCitizens, recordWeek, indicator, growth, statusOf, isCitizen, publicSummary, adminSummary, adminSet, adminSetPlayer, state, counts, playerIdOf };
+    activeCitizens, recordWeek, indicator, growth, statusOf, isCitizen, publicSummary, adminSummary, adminSet, adminSetPlayer, adminIp, state, counts, playerIdOf };
 }

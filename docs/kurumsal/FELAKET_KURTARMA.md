@@ -86,7 +86,7 @@ Komutlar `YEDEK_KLASORU` (ve şifreliyse `YEDEK_ANAHTAR`) ortam değişkenlerini
 Veri bozulmadıysa **geri yüklemeye gerek yok**: önceki imaj sürümüne dönün (`docker compose up -d` ile eski etiket; `SURUM=<eski>`). Yeni sürüm veriyi geri döndürülemez biçimde değiştirdiyse (şema geçişi) önce A senaryosu; geçişler `server/gecis/` altında mühürlü ve yalnız ileri gider, bu yüzden riskli geçişten önce elle yedek alın (`node server/yedek/cli/yedekle.js`).
 
 ### D) RPC (zincir erişimi) kesintisi
-Veri kaybı yok. Sunucu 3 ayrı RPC adresini dener (`RPC_URLS`). Hepsi düşerse yatırma/ödeme beklemeye geçer, oyun sürer. Takip: `RealmOdemeKuyruguBirikti` alarmı. Geri gelince kuyruk kendiliğinden erir; `sending` durumunda takılanları zincirden sonuçlandırmak için yönetici panelinden "ödemeleri şimdi çalıştır".
+Veri kaybı yok. Sunucu 3 ayrı RPC adresini dener (`RPC_URLS`). Hepsi düşerse yatırma/ödeme beklemeye geçer, oyun sürer. Takip: `RealmOdemeKuyruguBirikti` alarmı. Geri gelince kuyruk kendiliğinden erir; `sending` durumunda takılanları zincirden sonuçlandırmak için yönetici panelinden "ödemeleri şimdi çalıştır"; zincir yine belirsizse "Belirsiz ödemeler" bölümünden elle çözülür (gerekçe zorunlu, olay günlüğüne yazılır).
 
 ### E) Anahtar kaybı
 | Kaybolan | Sonuç | Çare |
@@ -109,6 +109,7 @@ Geri yükleme aracı veritabanını yedek anına döndürür ve **ödemeleri/çe
 3. Her transfer için veritabanında karşılığı olup olmadığına bakın:
    - `payouts` tablosunda aynı `tx_hash` var ve `sent` ise: tamam.
    - `sending` durumunda takılı kayıtlar: panelden "ödemeleri şimdi çalıştır" zincirle sonuçlandırır (`reconcilePayouts`).
+     Zincir yine belirsiz bırakırsa ("onay bekleniyor") panelin **"Belirsiz ödemeler"** bölümünden satır tek tek çözülür: gezginde işlem görünüyorsa "Gönderildi" (işlem numarası + gerekçe), hiç görünmüyorsa "Yeniden sıraya" (yeniden gönderilir; orijinal hâlâ bekliyor olabilirse çift ödeme riski, sunucu zincir "gitti" diyorsa bunu reddeder). Aynı uç: `POST /api/admin/payouts/resolve`; her çözüm olay günlüğüne (`payout-resolve`) yazılır.
    - **Veritabanında hiç karşılığı olmayan transfer** (yedekten sonra yapılmış): o oyuncunun bakiyesi geri yüklenen kayıtta hâlâ yüksek görünür. Oyuncunun bakiyesinden bu tutar **elle düşülmeden** ödemeleri açmayın (aksi hâlde aynı parayı ikinci kez çekebilir).
 4. Yedekten sonra **yatırılan** paralar: yatırma taraması kayıtlı blok numarasından (`chain:depositBlock`) yeniden başlar ve kaçanları kendiliğinden işler (aynı işlem iki kez sayılmaz: `tx_hash + log_index` tekildir). Oyun Kasası işlemleri için de `kasa_ops` kuyruğu zincirle `reconcileOps` ile kontrol edilir.
 5. Hepsi tutunca yönetici panelinden "▶ Devam" ile ödemeleri açın ve `RealmOdemeKuyruguBirikti` alarmını izleyin.

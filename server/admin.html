@@ -59,6 +59,15 @@
       <div class="scroll"><table id="kapiQueue"></table></div>
       <div class="k" style="margin-top:6px;">Askıdakiler</div>
       <div class="scroll"><table id="kapiSusp"></table></div>
+      <div class="k" style="margin-top:10px;">Aynı internet adresinden günlük kabul sınırı (aynı ofis/ev ağındaki çok sayıda deneme kullanıcısı için)</div>
+      <div id="ipInfo" class="k"></div>
+      <div class="row">
+        <input id="ipDaily" type="number" min="0" max="1000" class="narrow" placeholder="günlük sınır (0 = sınırsız)">
+        <button id="ipDailySave" class="go">💾 Sınırı kaydet</button>
+        <input id="ipTarget" class="narrow" placeholder="IP adresi ya da oyuncu kimliği (acc:12)">
+        <button id="ipExempt" class="go">✅ Muaf tut</button>
+        <button id="ipUnexempt">↩️ Muafiyeti kaldır</button>
+      </div>
       <div id="kapiMsg" class="k"></div>
     </div>
     <h3>🚀 Universe aşaması</h3>
@@ -101,6 +110,11 @@
     </div>
     <h3>Son haftalık hesaplaşma</h3>
     <div class="card scroll"><pre id="weekly" style="margin:0;white-space:pre-wrap;font-size:0.78rem;"></pre></div>
+    <h3>⚠️ Belirsiz ödemeler (zincirde onay bekleyen)</h3>
+    <div class="card">
+      <div class="k">"Gönderiliyordu" kalan ödemeleri sunucu kendi başına çözemedi. Önce zincir gezgininde (işlem bağlantısı ya da oyun cüzdanının işlem listesi) bak: para gerçekten gittiyse "Gönderildi", hiç gitmediyse "Yeniden sıraya". Gerekçe zorunludur ve olay günlüğüne yazılır. Orijinal işlem hâlâ bekliyor olabilirse "yeniden sıraya" ÇİFT ÖDEME doğurur.</div>
+      <div class="scroll"><table id="uncertain"></table></div>
+    </div>
     <h3>Ödemeler (son 50)</h3>
     <div class="card scroll"><table id="payouts"></table></div>
     <h3>Olaylar (son 50)</h3>

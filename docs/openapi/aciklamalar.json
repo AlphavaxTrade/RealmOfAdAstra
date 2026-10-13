@@ -141,6 +141,26 @@
       403
     ]
   },
+  "POST /api/account/2fa/backup-codes": {
+    "etiket": "Hesap",
+    "ozet": "Yedek kodları yenile (eski 10 kod geçersiz olur)",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "Uygulama kodu ya da bir yedek kod"
+      },
+      "password": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok, backupCodes } — yeni 10 kod yalnız bu yanıtta bir kez gösterilir; eski kodlar (eski özet biçimindekiler dahil) hemen geçersiz olur. 403 ve need2fa: kod gerekli/yanlış.",
+    "kodlar": [
+      400,
+      403
+    ]
+  },
   "POST /api/account/forgot": {
     "etiket": "Hesap",
     "ozet": "Parola sıfırlama e-postası iste",
@@ -560,6 +580,38 @@
     "ozet": "Bekleyen ödemeleri şimdi gönder",
     "yanit": "Gönderim özeti. Duraklatılmışsa gönderilmez."
   },
+  "POST /api/admin/payouts/resolve": {
+    "etiket": "Yönetim",
+    "ozet": "Belirsiz (\"sending\") ödeme satırını çöz: gönderildi ya da yeniden sıraya",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true,
+        "aciklama": "Ödeme satırı numarası (yalnız status = sending)"
+      },
+      "durum": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "'sent' (gönderildi) ya da 'pending' (yeniden sıraya: yeniden gönderilir)"
+      },
+      "txHash": {
+        "tur": "string",
+        "zorunlu": false,
+        "aciklama": "'sent' için işlem numarası (satırda kayıtlıysa boş bırakılabilir)"
+      },
+      "gerekce": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "10-500 karakter; olay günlüğüne yazılır"
+      }
+    },
+    "yanit": "{ ok, id, durum, txHash, zincir }. Satır 'sending' değilse 409 (aynı çözüm iki kez uygulanamaz); zincirin kesin kanıtı kararla çelişirse 409; satır yoksa 404; gerekçe/numara geçersizse 400.",
+    "kodlar": [
+      400,
+      404,
+      409
+    ]
+  },
   "POST /api/admin/weekly/run": {
     "etiket": "Yönetim",
     "ozet": "Haftalık hesaplaşmayı elle çalıştır",
@@ -614,6 +666,37 @@
     },
     "yanit": "Güncel durum.",
     "kodlar": [
+      404
+    ]
+  },
+  "POST /api/admin/kapi/ip": {
+    "etiket": "Yönetim",
+    "ozet": "İstemci adresi kotası: günlük kabul sınırı ve adres muafiyeti",
+    "govde": {
+      "dailyAdmit": {
+        "tur": "integer",
+        "zorunlu": false,
+        "aciklama": "Aynı adresten 24 saatte en çok kaç vatandaşlık (0 = sınırsız, en çok 1000)"
+      },
+      "ip": {
+        "tur": "string",
+        "zorunlu": false,
+        "aciklama": "Muaf tutulacak adres (ham adres saklanmaz, özet tutulur)"
+      },
+      "playerId": {
+        "tur": "string",
+        "zorunlu": false,
+        "aciklama": "Adres yerine: bu oyuncunun kayıt adresi"
+      },
+      "muaf": {
+        "tur": "boolean",
+        "zorunlu": false,
+        "aciklama": "true (varsayılan) muaf tut, false muafiyeti kaldır"
+      }
+    },
+    "yanit": "{ dailyAdmit, varsayilan, muafAdet, davetGonderilen }",
+    "kodlar": [
+      400,
       404
     ]
   },

@@ -34,6 +34,7 @@ async function load() {
   ].join('');
   ratesView(s.rates);
   kapiView(s.kapi);
+  uncertainView(s.payoutsBelirsiz || []);
   $('uniStage').value = String(s.universeStage ?? 0);
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
@@ -49,6 +50,8 @@ function kapiView(k) {
   const ind = k.indicator || {};
   $('kapiInfo').innerHTML = `Vatandaş <b>${fmt(k.citizens)} / ${fmt(k.limit)}</b> (aktif ${fmt(k.active || 0)}) · sırada ${fmt(k.waiting)} · askıda ${fmt(k.suspended)} · dönem ${k.tier + 1} (eşik ${k.threshold} $) · gösterge: kişi başı aylık ${esc(String(ind.usdPerPlayerMonth || 0))} $ (${ind.weeks || 0} hafta)${k.lastGrowthAt ? ' · son büyüme ' + new Date(k.lastGrowthAt).toLocaleDateString('tr-TR') : ''}. Büyüme ${k.growthLocked ? '🔒 kilitli (Faz 2 bekliyor)' : '🔓 açık'}. Davet süresi ${k.inviteHours} saat, yıllık izin hakkı ${k.izinYillikGun} gün.`;
   if (!$('kapiLimit').value) $('kapiLimit').value = k.limit;
+  const ik = k.ipKota || {};
+  $('ipInfo').textContent = 'Şu an: günde ' + (ik.dailyAdmit ?? '?') + ' (ayar dosyası varsayılanı ' + (ik.varsayilan ?? '?') + ', 0 = sınırsız) · muaf adres ' + (ik.muafAdet ?? 0);
   $('kapiTier').value = String(k.tier);
   $('kapiGrowthLocked').checked = !!k.growthLocked;
   const btn = (pid, st, label) => `<button data-pid="${esc(pid)}" data-st="${st}">${label}</button>`;
@@ -57,6 +60,32 @@ function kapiView(k) {
   $('kapiSusp').innerHTML = '<tr><th>E-posta</th><th>Askıya alınma</th><th>Son giriş</th><th></th></tr>' +
     ((k.suspendedList || []).map(p => `<tr><td>${esc(p.email || p.playerId)}</td><td>${new Date(p.since).toLocaleString('tr-TR')}</td><td>${new Date(p.lastSeen).toLocaleString('tr-TR')}</td><td>${btn(p.playerId, 'citizen', '👑 İçeri al')} ${btn(p.playerId, 'waiting', '⏳ Sıraya koy')}</td></tr>`).join('') || '<tr><td colspan="4">Askıda kimse yok</td></tr>');
 }
+// ── Adres kotası ve muafiyet ──────────────────────────────────────────────
+$('ipDailySave').onclick = () => act(async () => { const v = $('ipDaily').value; if (v === '') throw new Error('Günlük sınırı yaz (0 = sınırsız)'); const r = await api('POST', '/api/admin/kapi/ip', { dailyAdmit: Number(v) }); $('ipDaily').value = ''; $('kapiMsg').textContent = 'Adres kotası: günde ' + r.dailyAdmit + ' (0 = sınırsız), muaf adres ' + r.muafAdet; });
+const ipMuaf = muaf => act(async () => {
+  const t = $('ipTarget').value.trim();
+  if (!t) throw new Error('IP adresi ya da oyuncu kimliği yaz');
+  const r = await api('POST', '/api/admin/kapi/ip', t.startsWith('acc:') ? { playerId: t, muaf } : { ip: t, muaf });
+  $('ipTarget').value = ''; $('kapiMsg').textContent = (muaf ? 'Muaf tutuluyor' : 'Muafiyet kaldırıldı') + ' — muaf adres: ' + r.muafAdet + (r.davetGonderilen ? ', davet giden: ' + r.davetGonderilen : '');
+});
+$('ipExempt').onclick = () => ipMuaf(true);
+$('ipUnexempt').onclick = () => ipMuaf(false);
+// ── Belirsiz ödemeler ─────────────────────────────────────────────────────
+function uncertainView(rows) {
+  $('uncertain').innerHTML = '<tr><th>#</th><th>Tür</th><th>Adres</th><th>ASTRA</th><th>İşlem</th><th>Not</th><th></th></tr>' +
+    (rows.map(p => `<tr><td>${p.id}</td><td>${esc(p.kind)}</td><td>${esc(String(p.address).slice(0, 12))}…</td><td>${fmt(p.amount)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">${esc(p.tx_hash.slice(0, 12))}…</a>` : '<span class="bad">kayıt yok</span>'}</td><td class="bad">${esc(p.error || '')}</td><td><button data-rid="${p.id}" data-d="sent" class="go">✅ Gönderildi</button> <button data-rid="${p.id}" data-d="pending" class="danger">↩️ Yeniden sıraya</button></td></tr>`).join('') || '<tr><td colspan="7">Belirsiz ödeme yok</td></tr>');
+}
+$('uncertain').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-rid]');
+  if (!b) return;
+  const id = Number(b.dataset.rid), durum = b.dataset.d;
+  const gerekce = prompt('#' + id + ' için gerekçe (zincirde ne gördün? en az 10 karakter):');
+  if (gerekce == null) return;
+  let txHash;
+  if (durum === 'sent') { const h = prompt('İşlem numarası (satırda kayıtlıysa boş bırakabilirsin):', ''); if (h == null) return; txHash = h.trim() || undefined; }
+  else if (!confirm('#' + id + ' yeniden gönderilecek. Orijinal işlemin zincirde hiç görünmediğinden ve beklemediğinden emin misin? (çift ödeme riski)')) return;
+  act(async () => { const r = await api('POST', '/api/admin/payouts/resolve', { id, durum, txHash, gerekce }); alert('Çözüldü: #' + r.id + ' → ' + r.durum); });
+});
 $('kapiSave').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi', { limit: Number($('kapiLimit').value) || null, tier: Number($('kapiTier').value), growthLocked: $('kapiGrowthLocked').checked }); $('kapiLimit').value = ''; $('kapiMsg').textContent = `Kaydedildi: sınır ${r.limit}, dönem ${r.tier + 1}, büyüme ${r.growthLocked ? 'kilitli' : 'açık'}`; });
 $('uniSave').onclick = () => confirm('Universe aşaması ' + $('uniStage').value + ' yapılsın mı? (oyuncuların gördüğü kilitler değişir)') && act(() => api('POST', '/api/admin/universe-stage', { stage: Number($('uniStage').value) }));
 $('kapiRun').onclick = () => act(async () => { const r = await api('POST', '/api/admin/kapi/run'); $('kapiMsg').textContent = `İşletildi: ${r.admitted} içeri alındı, davet süresi geçen ${(r.davetBitenler?.gecen || []).length}, katılım düşüklüğünden askıya alınan ${(r.katilimAskiya?.askiyaAlindi || []).length}${r.grown ? ', sınır ' + r.grown.from + ' → ' + r.grown.to : ''}`; });

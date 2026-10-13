@@ -345,6 +345,45 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/account/2fa/backup-codes:
+    post:
+      tags:
+        - Hesap
+      summary: Yedek kodları yenile (eski 10 kod geçersiz olur)
+      operationId: post_api_account_2fa_backup_codes
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Uygulama kodu ya da bir yedek kod
+                password:
+                  type: string
+              required:
+                - code
+                - password
+      responses:
+        "200":
+          description: "{ ok, backupCodes } — yeni 10 kod yalnız bu yanıtta bir kez gösterilir; eski kodlar (eski özet biçimindekiler dahil) hemen geçersiz olur. 403 ve need2fa: kod gerekli/yanlış."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/account/forgot:
     post:
       tags:
@@ -1537,6 +1576,55 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/admin/payouts/resolve:
+    post:
+      tags:
+        - Yönetim
+      summary: 'Belirsiz ("sending") ödeme satırını çöz: gönderildi ya da yeniden sıraya'
+      operationId: post_api_admin_payouts_resolve
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Ödeme satırı numarası (yalnız status = sending)
+                durum:
+                  type: string
+                  description: "'sent' (gönderildi) ya da 'pending' (yeniden sıraya: yeniden gönderilir)"
+                txHash:
+                  type: string
+                  description: "'sent' için işlem numarası (satırda kayıtlıysa boş bırakılabilir)"
+                gerekce:
+                  type: string
+                  description: 10-500 karakter; olay günlüğüne yazılır
+              required:
+                - id
+                - durum
+                - gerekce
+      responses:
+        "200":
+          description: "{ ok, id, durum, txHash, zincir }. Satır 'sending' değilse 409 (aynı çözüm iki kez uygulanamaz); zincirin kesin kanıtı kararla çelişirse 409; satır yoksa 404; gerekçe/numara geçersizse 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/admin/weekly/run:
     post:
       tags:
@@ -1679,6 +1767,49 @@ paths:
             application/json:
               schema:
                 type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/kapi/ip:
+    post:
+      tags:
+        - Yönetim
+      summary: "İstemci adresi kotası: günlük kabul sınırı ve adres muafiyeti"
+      operationId: post_api_admin_kapi_ip
+      security: *a3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dailyAdmit:
+                  type: integer
+                  description: Aynı adresten 24 saatte en çok kaç vatandaşlık (0 = sınırsız, en çok 1000)
+                ip:
+                  type: string
+                  description: Muaf tutulacak adres (ham adres saklanmaz, özet tutulur)
+                playerId:
+                  type: string
+                  description: "Adres yerine: bu oyuncunun kayıt adresi"
+                muaf:
+                  type: boolean
+                  description: true (varsayılan) muaf tut, false muafiyeti kaldır
+      responses:
+        "200":
+          description: "{ dailyAdmit, varsayilan, muafAdet, davetGonderilen }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
         "401":
           $ref: "#/components/responses/Hata401"
         "404":

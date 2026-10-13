@@ -278,35 +278,35 @@ try {
   assert.match(s1.totp_secret, /^enc1:/); assert.equal(s1.totp_pending, null);
   // Doğrulama çalışır
   simdi += 31000;
-  assert.ok(acc.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000))).ok, 'şifreli sırla TOTP girişi çalışır');
+  assert.ok((await acc.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000)))).ok, 'şifreli sırla TOTP girişi çalışır');
   // Yedek kodlar: kod başına tuz; aynı kod iki hesapta farklı kayıt üretir; düz özet değil
   const kayitlar = JSON.parse(s1.backup_codes);
   assert.equal(kayitlar.length, 10);
-  assert.ok(kayitlar.every(k => /^s1\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(k)), 'tuzlu biçim');
-  assert.equal(new Set(kayitlar.map(k => k.split('$')[1])).size, 10, 'her kodun kendi tuzu var');
+  assert.ok(kayitlar.every(k => /^s2\$\d+\$8\$1\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(k)), 'scrypt + tuzlu biçim');
+  assert.equal(new Set(kayitlar.map(k => k.split('$')[4])).size, 10, 'her kodun kendi tuzu var');
   const duzOzet = etkin.backupCodes.map(c => sha(c.replace('-', '')));
   assert.ok(!kayitlar.some(k => duzOzet.includes(k)), 'tuzsuz düz özet yok');
   simdi += 31000;
-  const g = acc.check2fa(p1, etkin.backupCodes[3]);
+  const g = (await acc.check2fa(p1, etkin.backupCodes[3]));
   assert.ok(g.ok && g.usedBackup && g.backupLeft === 9, 'yedek kod çalışır ve tükenir');
-  assert.equal(acc.check2fa(p1, etkin.backupCodes[3]).ok, false, 'aynı yedek kod ikinci kez geçmez');
+  assert.equal((await acc.check2fa(p1, etkin.backupCodes[3])).ok, false, 'aynı yedek kod ikinci kez geçmez');
   // Başka hesabın şifreli sırrı bu hesaba kopyalanırsa çözülmez (bağlam)
   const p2 = await kur('iki2@ornek.com');
   const o2 = await ac2fa(p2);
   d.raw.prepare('UPDATE accounts SET totp_secret = ? WHERE id = ?').run(satir(p1).totp_secret, Number(p2.slice(4)));
   simdi += 31000;
-  assert.equal(acc.check2fa(p2, totpCode(bekleyen.secret, Math.floor(simdi / 30000))).ok, false, 'kopyalanmış şifreli sır çözülmez');
-  assert.equal(acc.check2fa(p2, totpCode(o2.secret, Math.floor(simdi / 30000))).ok, false, 'sır değişmiş: eski sırla da geçmez');
-  assert.ok(acc.check2fa(p2, o2.backupCodes[0]).ok, 'kapalı başarısızlık: yedek kodla yine girilir');
+  assert.equal((await acc.check2fa(p2, totpCode(bekleyen.secret, Math.floor(simdi / 30000)))).ok, false, 'kopyalanmış şifreli sır çözülmez');
+  assert.equal((await acc.check2fa(p2, totpCode(o2.secret, Math.floor(simdi / 30000)))).ok, false, 'sır değişmiş: eski sırla da geçmez');
+  assert.ok((await acc.check2fa(p2, o2.backupCodes[0])).ok, 'kapalı başarısızlık: yedek kodla yine girilir');
   ok('A2: TOTP sırrı AES-256-GCM (enc1:), hesaba bağlı; yedek kodlar kod başına tuzlu; kopyalanan kayıt çözülmez');
 
   // Yanlış anahtar: kapalı başarısızlık (TOTP geçmez, düz sır sızmaz); yedek kod çalışır
   const yanlis = createAccounts({ db: d, cfg: { ...cfg2, hesapAnahtari: 'cd'.repeat(32) }, mailer: mail, clock: () => simdi, verifyMessage: () => '0x0' });
   simdi += 31000;
-  assert.equal(yanlis.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000))).ok, false, 'yanlış anahtarla TOTP geçmez');
+  assert.equal((await yanlis.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000)))).ok, false, 'yanlış anahtarla TOTP geçmez');
   const anahtarsiz = createAccounts({ db: d, cfg: { ...cfg2, hesapAnahtari: '' }, mailer: mail, clock: () => simdi, verifyMessage: () => '0x0' });
-  assert.equal(anahtarsiz.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000))).ok, false, 'anahtarsız açılışta şifreli kayıt düz sayılmaz');
-  assert.ok(anahtarsiz.check2fa(p1, etkin.backupCodes[5]).ok, 'yedek kod yine çalışır');
+  assert.equal((await anahtarsiz.check2fa(p1, totpCode(bekleyen.secret, Math.floor(simdi / 30000)))).ok, false, 'anahtarsız açılışta şifreli kayıt düz sayılmaz');
+  assert.ok((await anahtarsiz.check2fa(p1, etkin.backupCodes[5])).ok, 'yedek kod yine çalışır');
   assert.throws(() => createAccounts({ db: d, cfg: { ...cfg2, hesapAnahtari: 'kisa' }, mailer: mail, clock, verifyMessage: () => '0x0' }), /HESAP_ANAHTARI/);
   ok('A2: yanlış/eksik anahtarda şifreli sır düz sayılmaz (kapalı başarısızlık), yedek kodlar çalışır; bozuk anahtar açılışta reddedilir');
 
@@ -325,8 +325,8 @@ try {
   const acc3Yeni = createAccounts({ db: d3, cfg: cfg2, mailer: createMailer({ db: d3, cfg: cfg2, log: sessiz }), clock: () => simdi, verifyMessage: () => '0x0' });
   assert.match(d3.raw.prepare('SELECT totp_secret FROM accounts WHERE id = ?').get(id3).totp_secret, /^enc1:/, 'açılışta eski düz sır şifrelendi');
   simdi += 31000;
-  assert.ok(acc3Yeni.check2fa(r3.playerId, totpCode(s3.secret, Math.floor(simdi / 30000))).ok, 'şifrelenen eski sır çalışıyor');
-  const eskiYedek = acc3Yeni.check2fa(r3.playerId, 'abcde-12345');
+  assert.ok((await acc3Yeni.check2fa(r3.playerId, totpCode(s3.secret, Math.floor(simdi / 30000)))).ok, 'şifrelenen eski sır çalışıyor');
+  const eskiYedek = (await acc3Yeni.check2fa(r3.playerId, 'abcde-12345'));
   assert.ok(eskiYedek.ok && eskiYedek.usedBackup && eskiYedek.backupLeft === 1, 'eski tuzsuz yedek kod doğrulanmaya devam eder');
   ok('A2: eski düz TOTP sırrı açılışta şifrelenir; eski tuzsuz yedek kodlar çalışmaya devam eder');
 }
