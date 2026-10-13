@@ -43,6 +43,7 @@ node contracts/deploy.mjs    # env-driven: DEPLOY_RPC, DEPLOYER_PRIVATE_KEY, OWN
 bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (user realm, /srv/realm, 127.0.0.1:8090 behind Caddy, TEST_MODE)
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/seviye-tablolari-uret.mjs          # regenerates docs/v2/SEVIYE_TABLOLARI.md (level, silo, soldier, craft and dungeon tables) from the engine
+node scripts/model/hammadde_kullanim.mjs [--eski]   # weekly demand / full production per resource at levels 5-40 (target band 0.40-1.00; --eski = pre-13-Oct rules); plan: docs/v2/HAMMADDE_KULLANIM_PLANI.md
 python scripts/gorsel_isle.py ikon <in.jpg> <out.webp>   # Gemini image -> transparent 256x256 webp icon (video_edit venv python)
 ```
 

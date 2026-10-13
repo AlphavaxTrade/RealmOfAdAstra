@@ -30,9 +30,10 @@ Geçiş kararını siz verirsiniz; karar verdiğinizde Claude bu listeyi önün�
 
 ## D) Yeniden yazım sırasında çıkan, kullanıcı kararı bekleyenler (11 Ekim 2026)
 - [ ] **Çarkın %0,5'lik "Coin analiz kuponu" dilimi:** oyun kupon kodunu tarayıcıda üretiyor ama trade sitesi bu kodu tanımıyor (`pending_integration`). Site bağlanana kadar çarktan çıkarılsın mı, yoksa gerçek bir hakka mı bağlansın?
-- [ ] **Seviye atlama bedeli yalnız odun, demir ve buğday:** diğer üç hammadde (taş, kömür, şifalı ot) bedelde yok. Bilinçli mi, 6 hammaddeye mi genişletilsin? (Ekonomi kuralı: karar gerekir.)
-- [ ] **Risk duyurusu metni eski** (`GAME_CONFIG.ANNOUNCEMENTS`): "antigravity ide gemini botu", "hiçbir audit yapılmamıştır" yazıyor; kurumsal denetim programı ve OWASP çalışması sonrası güncel değil. Yeni metni sizin onayınızla yazarım.
+- [x] **Seviye atlama bedeli altı hammaddeye genişletildi (13 Ekim 2026)** ve yeni hammaddeler için kullanım planı yazıldı ve uygulandı: `docs/v2/HAMMADDE_KULLANIM_PLANI.md` (ölçüm: `node scripts/model/hammadde_kullanim.mjs`).
+- [x] **Risk duyurusu metni kaldırıldı (13 Ekim 2026, kullanıcı isteği):** eski v1.25 sürüm notu da kaldırıldı; duyuru listesi boş, şerit görünmez. Yeni duyuru gerekirse `GAME_CONFIG.ANNOUNCEMENTS` dizisine eklenir.
 - [x] **Altın kayıt yenilendi (11 Ekim 2026, tarama düzeltmeleriyle):** ölü alanlar `botSettings` ve `lastBotSiloAction` ile ölü işlem `sweepCompletedExpeditions` kaldırıldı.
 - [ ] **Eski stil dosyaları:** `css/style.css`, `css/theme.css`, `css/battle-arena.css` canlı kurallardır (ölü kural kalmadı) ama Gemini dönemi yazımdır; telefonda görsel karşılaştırmayla bir günde yeniden düzenlenebilir. Acil değil.
 - [x] **Genel tarama kararları 1-4 (12 Ekim 2026'da uygulandı):** ilan pazarı kilit aklama, Kolezyum ödül ölçeği (25 ASTRA taban), bot ücreti kişisel hakka göre, ön-hesap ele geçirme (doğrulamada şifre yeniden belirlenir). Ayrıntı `docs/v2/TARAMA_2026-10.md`.
-- [ ] **Genel tarama, kalan kararlar:** canlıya çıkmadan ödeme sözleşmesi/token adresinin derlemeye sabitlenmesi ve Vercel güvenlik başlıkları; R7, R10, R11, R14-R17, R19 denge kararları.
+- [x] **Denge kararları R7, R10, R11, R16, R17 (13 Ekim 2026'da uygulandı):** Konsey stoğu kendiliğinden yapıya aktarılır, çelik payı kömürdür, Dünya Bossu havuzu gerçeği gösterir, Fatih Ödülü kodlandı, eski üç alan kalıntıları temizlendi.
+- [ ] **Genel tarama, kalan kararlar:** canlıya çıkmadan ödeme sözleşmesi/token adresinin derlemeye sabitlenmesi ve Vercel güvenlik başlıkları; R14 (katkı puanı mesajı), R15 (çark/promo kasa defteri), R19 (asker hakkı kuralları) kararları; seviye hızı (XP tablosu üç alana göre yazılmış, altı alanda iki kat hızlı).
