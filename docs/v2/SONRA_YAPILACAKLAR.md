@@ -66,3 +66,21 @@ Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RA
 - [ ] **Hukuki/uyum incelemesi:** çark/piyango/loot kutusu, token ve ödeme akışları, gizlilik (kullanıcıda).
 - [ ] **CI'da Docker derlemesi** ilk çalışmada izlenmeli (yerelde derlendi; `SecretsUsedInArgOrEnv` uyarısı adres adı yüzünden yanlış pozitif).
 - [ ] **Kuru gözlem notları:** 2FA 5 hatalı kod sonrası mesaj düzeltildi; yedek kod yenileme arayüzü eklendi; mevcut (eski) veritabanında 2,5 ASTRA ile açılmış sistem hesabı düzeltilmedi (yeni kurulumlarda 0).
+
+## 14 Ekim 2026 (akşam): dağıtım turu — yapılanlar ve kalanlar
+
+**Yapıldı (canlı: https://roa.alphavaxtrade.com, deneme modu, zincir kapalı):**
+- `guncel` dalı `denetim-2026-10` ile birleşti (GitHub'a gönderilmedi); test sunucusu güncellendi, DNS `roa` → 54.81.201.200, Caddy sertifikası alındı (eski `test.` ve `www.` blokları kaldırıldı).
+- **Kasa:** kod sabit; yeni "yeni kasaya geçiş" yolu (bekçi şart, 7 gün, günde %25, hedef aynı token + yakım adresli kasa; bekçi ya da sahip iptal eder; sunucu bekleyen öneride ödemeyi durdurur). Fuji'de zincir üzerinde denendi (adresler: `docs/FUJI_ADRESLERI.md`).
+- **Muhafız Mührü sıfırlama (yönetici):** 48 saat bekler, e-postaya iptal bağlantısı gider, oyuncu Hesabım'dan da iptal eder (kod şart); kod/anahtar gönderilmez. Geçiş 008.
+- **Oyun rehberi:** `public/rehber.html` (29 bölüm, 39 oyun içi görsel); HUD düğmesi, Ben menüsü, Ctrl+K.
+- Masaüstü yerleşim: kart yığını sol alt köşeye oturur; bölge bilgi kartı üst çubuğun altında kalır.
+- Tam kapı (`npm run kontrol`): 173/173 test, satır %96,71, build ve üretim bağımlılık denetimi temiz.
+
+**Kalanlar (yapay zekâ yapamaz / karar ister):**
+- Bağımsız kontrat denetimi; Fuji'de kalıcı sahip olarak donanım cüzdanı (Ledger) ve ayrı soğuk bekçi cüzdanı; gerçek ağda küçük tutarla deneme.
+- Sunucuyu Fuji'ye bağlamak (`TEST_MODE=0`, SMTP, `HESAP_ANAHTARI`, `YEDEK_ANAHTAR`) — ayrı iş.
+- Gerçek cihaz denemesi (iOS Safari, Android, MetaMask); hukuki inceleme; gerçek telemetri.
+- Ana ağdaki 0,01 AVAX'ın (test cüzdanı) iadesi: kullanıcının geri gönderme adresi bekleniyor.
+- GitHub'a gönderim: kullanıcı isteyince.
+

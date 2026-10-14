@@ -183,3 +183,5 @@ git pull && npm ci --omit=dev && npm run build && sudo systemctl restart realm
 - **Oyun Kasası:** oyuncu başına sunucunun yönettiği adres; oyuncu yokken çalışan işler (bot, iyileşme, onarım) önce kazanılmış bakiyeden, yetmezse kasadan ödenir. Kasadaki para oyuncunundur, istediği an çekebilir.
 - **Çekim:** serbest bakiyeden talep → her **Pazartesi 00:01 (TSİ)** ortak haftalık havuzdan karşılanır (havuz, satıldığında fiyatı en fazla %2 düşürecek miktar; katkı puanına göre paylaşılır). Ücret %3 (fren açıkken %6): %70 temel gelire, %30 yakıma. Başkasının kullanmadığı hakkı kullanan %1,5 hak kirası öder.
 - **Haftalık işler:** ücretsiz oyuncu payı, ortak piyango (tek kazanan), fiyat çarpanı ve temel gelir güncellemesi; oyun içi yakım ölü adrese, yapımcı payı yapımcı cüzdanına gider.
+
+> **Durum (14 Ekim 2026, akşam):** `https://roa.alphavaxtrade.com` deneme modunda güncel `guncel` dalını sunuyor (rehber: `/rehber.html`). Güncelleme: `ADDR=roa.alphavaxtrade.com KASA_BETIGI=<kasa.sh yolu> bash scripts/sunucuya-yukle.sh`; betik önce veritabanı yedeği alır (`/srv/realm/data/yedek-*`). Fuji sözleşme adresleri: `docs/FUJI_ADRESLERI.md`.
