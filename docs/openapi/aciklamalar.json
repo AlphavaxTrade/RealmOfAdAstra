@@ -612,6 +612,33 @@
       409
     ]
   },
+  "POST /api/admin/kasa/ops/resolve": {
+    "etiket": "Yönetim",
+    "ozet": "Belirsiz (\"sending\") Oyun Kasası işlemini çöz: gitti ya da gitmedi",
+    "govde": {
+      "id": {
+        "tur": "integer",
+        "zorunlu": true,
+        "aciklama": "Kasa işlemi numarası (yalnız status = sending)"
+      },
+      "durum": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "'sent' (gitti; aktarımsa oyuna yatırılan sayılır) ya da 'failed' (gitmedi; aktarımsa borç yeniden aktarılır)"
+      },
+      "gerekce": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "10-500 karakter; olay günlüğüne yazılır"
+      }
+    },
+    "yanit": "{ ok, id, durum, kind, zincir }. İşlem 'sending' değilse 409; zincirin kesin kanıtı kararla çelişirse 409; yoksa 404; gerekçe/numara geçersizse 400.",
+    "kodlar": [
+      400,
+      404,
+      409
+    ]
+  },
   "POST /api/admin/weekly/run": {
     "etiket": "Yönetim",
     "ozet": "Haftalık hesaplaşmayı elle çalıştır",

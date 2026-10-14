@@ -26,6 +26,8 @@ export default function yonetimRotalari(ctx) {
         payouts: db.q.payoutsRecent.all(50),
         // Belirsiz ('sending') satırların TAMAMI: son 50'nin dışına düşse de yönetici görsün ve çözebilsin
         payoutsBelirsiz: db.q.payoutsSending.all().map(p => ({ id: p.id, epoch: p.epoch, kind: p.kind, address: p.address, amount: p.amount, status: p.status, tx_hash: p.tx_hash, error: p.error, created_at: p.created_at, sent_at: p.sent_at })),
+        // Oyun Kasası'nda belirsiz ('sending') işlemler: yönetici çözebilsin
+        kasaOpsBelirsiz: db.raw.prepare("SELECT id, player, kind, amount, status, tx_hash, error, created FROM kasa_ops WHERE status = 'sending' ORDER BY id").all(),
         events: db.q.eventsRecent.all(50)
       };
     },
@@ -38,6 +40,12 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/payouts/resolve': async (req) => {
       const { id, durum, txHash, gerekce } = await readBody(req);
       try { return { ok: true, ...(await world.resolvePayout({ id, durum, txHash, gerekce })) }; }
+      catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
+    },
+    // Oyun Kasası işlemi (aktarım / çekim / iade) belirsiz kaldıysa yönetici çözer; gerekçe zorunlu, olay günlüğüne yazılır
+    'POST /api/admin/kasa/ops/resolve': async (req) => {
+      const { id, durum, gerekce } = await readBody(req);
+      try { return { ok: true, ...(await world.resolveKasaOp({ id, durum, gerekce })) }; }
       catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
     },
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),

@@ -33,6 +33,9 @@ export const kolezyumYontemleri = {
       used: kullanilan, cap: cfg.DAILY_MATCH_CAP,
       keys: anahtar, keyCost: cfg.ENTRY_KEY_COST,
       stamina, staminaCost: cfg.ENTRY_STAMINA_COST,
+      // Günlük ASTRA ödül tavanı (kişi başı): arayüz "bugünkü tavan X / Y" göstersin (denetim 2. tur)
+      rewardCap: cfg.DAILY_REWARD_CAP_ASTRA ?? null,
+      rewardUsed: Number(this.getDailyCounters().arenaAda) || 0,
       blockReason: engel
     };
   },
@@ -131,6 +134,7 @@ export const kolezyumYontemleri = {
 
     let odul = 0;
     let butceDoldu = false;
+    let kisiKisti = false;
     let odulAnahtar = 0;
     if (zafer) {
       stats.wins += 1;
@@ -147,6 +151,7 @@ export const kolezyumYontemleri = {
       odul = cekim.granted || 0;
       if (odul > 0) sayaclar.arenaAda = (Number(sayaclar.arenaAda) || 0) + odul;
       butceDoldu = !!cekim.budgetFull;
+      kisiKisti = !!cekim.personCapped;
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + odul;
       this._onAdaEarned(odul);
       stats.totalAdaWon = (stats.totalAdaWon || 0) + odul;
@@ -181,6 +186,7 @@ export const kolezyumYontemleri = {
       enemyUid: 'opp_champ',
       rewardAda: odul,
       budgetFull: butceDoldu,
+      personCapped: kisiKisti,
       rewardKeys: odulAnahtar,
       ratingDelta: puanFarki,
       newRating: stats.rating,

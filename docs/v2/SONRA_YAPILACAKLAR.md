@@ -38,15 +38,31 @@ Geçiş kararını siz verirsiniz; karar verdiğinizde Claude bu listeyi önün�
 - [x] **Denge kararları R7, R10, R11, R16, R17 (13 Ekim 2026'da uygulandı):** Konsey stoğu kendiliğinden yapıya aktarılır, çelik payı kömürdür, Dünya Bossu havuzu gerçeği gösterir, Fatih Ödülü kodlandı, eski üç alan kalıntıları temizlendi.
 - [ ] **Genel tarama, kalan kararlar:** canlıya çıkmadan ödeme sözleşmesi/token adresinin derlemeye sabitlenmesi ve Vercel güvenlik başlıkları; R14 (katkı puanı mesajı), R15 (çark/promo kasa defteri), R19 (asker hakkı kuralları) kararları; seviye hızı (XP tablosu üç alana göre yazılmış, altı alanda iki kat hızlı).
 
-## E) 13 Ekim 2026 canlıya çıkış denetiminden kalanlar
-Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RAPORU_2026-10-13; git'e girmez, sömürü açıklamaları içerir). Düzeltilenler dal `denetim-2026-10`'da.
-- [ ] **EK-01 (P1) Hesap seviyesi 11→12 imkânsız:** seviye bedeli silo kapasitesini aşıyor (taş 6.672 > 6.298). Karar bekliyor; öneri: bedel `min(bedel, kapasite × 0,8)` + "bedel ≤ kapasite" değişmezi testi.
-- [ ] **EK-02 (P1) Sahte hesap:** e-posta normalleştirme (+etiket, nokta), peşin kayıt harcı, doğrulanmış cüzdan bağlama. Karar bekliyor.
-- [ ] **EK-03…EK-06, EK-12 (P2):** ücretsiz havuz ağırlığı, AMM al-sat kilit açma, zindan tekrar ödülü/haftalık bütçe, kolezyum puanı, ilk seviye siloları. Kararlar bekliyor.
-- [ ] **OyunKasasi dağıtım betiği + bekçi (guardian) ataması:** `contracts/deploy.mjs` yalnız Payments + Rates dağıtıyor; kasa sınırları (`dailyLimitBps ≤ 500`, `singleDrawBps ≤ 200`) betikte sabitlensin, bekçi ayrı soğuk cüzdan olsun (sunucu `checkVault` sınırları artık denetliyor).
-- [ ] **Üretim derlemesinde `VITE_PAYMENTS_CONTRACT` / `VITE_TOKEN_ADDRESS` zorunlu + `approve` tutarı** (H1; mevcut F8 kararıyla birlikte).
-- [ ] **`RealmPayments.setConfig` zaman kilidi, `RealmRates` yapımcı payı üst sınırı** (K5) — bağımsız denetimden önce karar.
-- [ ] **Hassas veri şifreleme:** e-posta belirteçleri özetlenmeli, TOTP sırrı şifrelenmeli, `YEDEK_ANAHTAR` üretimde zorunlu (A2).
-- [ ] **Arayüz:** giriş/doğrulama/ödeme pencereleri erişilebilirliği (QA-04), dar ekranda HUD (QA-07), açılışta sunucu hatası/yavaşlık göstergesi (QA-09, QA-10), zafer kartı "+0 ASTRA" (QA-14), çift görev bildirimi/toast yığını (QA-15), ödeme penceresi tutarları (QA-16).
-- [ ] **`checkPayout` yük dengeli RPC'de yanlış "failed" (W1), kasa kaynaklı harcama kilit açması (1,2×):** gerçek RPC/test ile doğrulanacak.
-- [ ] **Bağımsız profesyonel kontrat denetimi** ve Fuji (test ağı) provası: gerçek ağdan önce.
+## E) 13-14 Ekim 2026 canlıya çıkış denetimi: durum
+Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RAPORU_2026-10-13; git'e girmez, sömürü açıklamaları içerir). Düzeltmeler dal `denetim-2026-10`'da (`guncel`'e birleştirilmedi, sunucuya yüklenmedi).
+
+### Yapıldı (testle ve gerçek tarayıcıda doğrulandı)
+- [x] **Ekonomi:** seviye bedeli silo kapasitesini aşmıyor (EK-01); faucet ağırlık tavanı (EK-03); AMM al-sat kilit açma (EK-04); zindan günlük kişi tavanı ve haftalık kişi payı (EK-05); kolezyum puanı ve ödül tavanı (EK-06); dünya bossu kilidi (EK-07); piyango yaşlanması (EK-08); modeller koda bağlı (EK-09); kasa ömrü (EK-10); ilk seviyeler "önce silo" ipucu (EK-12); kolezyum ölü alanı kaldırıldı; kişi payı tavanı ilk haftada ve az aktifte. Karar ve ölçümler: `TARAMA_2026-10.md`, `KARARLAR_KESIN.md` ("13 Ekim" ve "14 Ekim" bölümleri).
+- [x] **Sahte hesap (EK-02):** e-posta benzersizlik anahtarı (+etiket, gmail noktası), kapı IP kotası (varsayılan 24 saatte 3, aşan sırada bekler; yönetici panelinden değiştirilir/muaf tutulur).
+- [x] **Hassas veri (A2):** e-posta belirteçleri özetli, TOTP sırrı AES-256-GCM (`HESAP_ANAHTARI`), yedek kodlar scrypt + tuz (yenileme ucu ve Hesabım düğmesi); üretimde `HESAP_ANAHTARI` ve `YEDEK_ANAHTAR` zorunlu.
+- [x] **Kontratlar:** kasa günlük sınırı kayan pencere, bekçi rolü, ücretli token koruması (AmountMismatch), `RealmPayments` zaman kilidi, yapımcı payı üst sınırı; `contracts/deploy-kasa.mjs` (DRY_RUN, 500/200'den gevşeği reddeder). Slither 0.11.6: yalnız yanlış pozitif.
+- [x] **Sunucu:** `checkPayout` çoklu RPC + yaş + olay taraması (W1); belirsiz ödeme ve belirsiz kasa işlemi yönetici çözümü; kuyruk hata yalıtımı; log maskesi; <1 ASTRA ödeme devri; sistem hesabı 0 ile açılır.
+- [x] **Arayüz:** giriş/doğrulama/ödeme/2FA pencereleri erişilebilir, dar ekranda üst çubuk menüsü, açılış perdesi ve yükleme hatası kartı, 429 yeniden deneme, güvenli alan + dvh, zil panelinde kalıcı bildirim, ödeme tavanı ve silo ipucu mesajları, yazı boyutu ayarı gerçekten çalışıyor.
+- [x] **Gerçek ağ derlemesi (H1):** `REALM_GERCEK_AG=1` ile sözleşme/token adresi derlemeye sabitlenir; approve yalnız tutar kadar.
+- [x] **Docker imajı gerçekten derlendi ve çalıştırıldı** (13 Ekim, yerelde; sağlık 200, kayıt, CSP; üretim kipi eksik ayarda açık hata veriyor).
+- [x] **Tarayıcılar:** Chrome (telefon + masaüstü), WebKit ve Firefox motorları (Playwright) çekirdek senaryo 42/42; 3B harita gerçek GPU'da ölçüldü (aşağıda).
+
+### Açık kalanlar (kod dışı ya da sizin kararınız)
+- [ ] **Bağımsız profesyonel kontrat denetimi** ve hata ödül programı: gerçek ağdan ÖNCE (yapay zekâ incelemesinin yerine geçmez).
+- [ ] **Fuji (test ağı) provası:** `deploy-kasa.mjs` ve `deploy.mjs` ile gerçek kurulum, bekçi ataması, gerçek ASTRA token'ının transfer davranışı (ücret/yakım var mı: `AmountMismatch` standart ERC-20 varsayar). AVAX ve yükleme anahtarı gerekir.
+- [ ] **Gerçek cihazlar:** iOS Safari / Android Chrome / dokunmatik Firefox, gerçek MetaMask/Core cüzdanı; güvenli alan ve `dvh` düzeltmeleri yalnız emülasyonla doğrulandı.
+- [ ] **EK-02 (c):** peşin kayıt harcı ve cüzdan zorunluluğu uygulanmadı (cüzdansız ücretsiz oyuncuyu kapıdan döndürür; dolar tabanlı harç gerekir). Kararınız.
+- [ ] **IP kotası ve test sunucusu:** aynı NAT arkasındaki 3'ten fazla test kullanıcısı sıraya düşer; yönetici panelinden kota yükseltilir ya da muaf tutulur.
+- [ ] **Sv.10+ taş/kömür/şifalı ot talebi:** "kabul + izleme" kararı (kota tabanda görünürse): `kotaTabani` uyarısı iki ardışık haftada çıkarsa yeni hammadde kullanımı (ot çayı, alet onarımında taş/kömür) gerekir (yeni işlem + ekran).
+- [ ] **Kasa ömrü sınırda:** ~59,7 ay (60 ayda fiyat çarpanı ×0,9 → ×0,8); gerçek veriyle izlenmeli.
+- [ ] **Gerçek veri / telemetri:** ücretsiz oyuncu gelir dağılımı, bütçe doluluk saati, kayıt başına IP/e-posta tekrarı; modeller sahte saat ve sahte dünyaya dayanıyor.
+- [ ] **Elle doğrulanacak akışlar:** piyango gerçek haftalık çekiliş, Konsey proje tamamlama, Taverna "bekliyor" kartı.
+- [ ] **3B harita:** sessiz makinede yeniden ölç; zayıf GPU'da otomatik kalite düşürme (dpr/gölge) eklenebilir (varsayılan harita 2B).
+- [ ] **Hukuki/uyum incelemesi:** çark/piyango/loot kutusu, token ve ödeme akışları, gizlilik (kullanıcıda).
+- [ ] **CI'da Docker derlemesi** ilk çalışmada izlenmeli (yerelde derlendi; `SecretsUsedInArgOrEnv` uyarısı adres adı yüzünden yanlış pozitif).
+- [ ] **Kuru gözlem notları:** 2FA 5 hatalı kod sonrası mesaj düzeltildi; yedek kod yenileme arayüzü eklendi; mevcut (eski) veritabanında 2,5 ASTRA ile açılmış sistem hesabı düzeltilmedi (yeni kurulumlarda 0).

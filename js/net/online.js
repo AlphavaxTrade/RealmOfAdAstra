@@ -604,7 +604,8 @@ function twoFactorSection(acc) {
     <div style="font-weight:800;color:#86efac;margin-bottom:4px;">🛡️ Muhafız Mührü (iki adımlı doğrulama) · ${acc.twoFactor ? '<span style="color:#4ade80;">AÇIK ✓</span>' : '<span style="color:#fbbf24;">kapalı</span>'}</div>
     <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">${MUHAFIZ_MUHRU}</div>
     ${acc.twoFactor
-      ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:6px;">Kalan yedek kod: <strong>${acc.backupLeft}</strong>${acc.backupLeft <= 3 ? ' <span style="color:#fbbf24;">(azaldı: mührü kapatıp yeniden açarak yeni kodlar al)</span>' : ''}</div>
+      ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:6px;">Kalan yedek kod: <strong>${acc.backupLeft}</strong>${acc.backupLeft <= 3 ? ' <span style="color:#fbbf24;">(azaldı: aşağıdan yeni kodlar al)</span>' : ''}${acc.backupLegacy ? ' <span style="color:#fbbf24;">(eski biçimde: yenilemen önerilir)</span>' : ''}</div>
+         <button id="tf-renew" style="margin-top:8px;margin-right:6px;padding:6px 12px;border-radius:8px;border:1px solid #60a5fa;background:#1e3a8a;color:#dbeafe;font-weight:800;cursor:pointer;">🔄 Yedek kodları yenile</button>
          <button id="tf-off" style="margin-top:8px;padding:6px 12px;border-radius:8px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;font-weight:800;cursor:pointer;">Mührü kaldır</button>`
       : `<button id="tf-on" style="margin-top:8px;padding:7px 12px;border-radius:8px;border:1px solid #4ade80;background:#14532d;color:#fff;font-weight:800;cursor:pointer;">🛡️ Mührü tak (önerilir)</button>`}
   </div>`;
@@ -647,6 +648,42 @@ async function enable2faFlow() {
         { vazgec: () => ctx.toast('Yedek kodlarını kaydettikten sonra "Yazdım, tamam" düğmesine bas; bu kodlar bir daha gösterilmez.', 'info') });
         el2.querySelector('#tf-copy').onclick = () => { navigator.clipboard?.writeText(r.backupCodes.join('\n')); ctx.toast('Yedek kodlar kopyalandı', 'success'); };
         el2.querySelector('#tf-done').onclick = () => { ctx.toast('🛡️ Muhafız Mührü takıldı!', 'success'); openWalletPanel(); };
+      } catch (err) { draw(err.message); }
+    };
+  };
+  draw();
+}
+
+// Yedek kodları yenileme: parola + geçerli doğrulama kodu; eski 10 kod geçersiz olur, yeniler bir kez gösterilir
+function renewBackupFlow() {
+  const draw = (errMsg = '') => {
+    const el = overlay(`
+      <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">🔄 Yedek kodları yenile</div>
+      <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">Eski yedek kodların hepsi geçersiz olur; 10 yeni kod verilir ve <strong>bir kez</strong> gösterilir.</div>
+      ${etiketHtml('rb-pass', 'Hesap parolan')}
+      <input id="rb-pass" type="password" autocomplete="current-password" placeholder="Hesap parolan" style="${inputCss}">
+      ${etiketHtml('rb-code', 'Doğrulama uygulamasındaki 6 haneli kod')}
+      <input id="rb-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 haneli kod" style="${inputCss};text-align:center;font-size:1.2rem;letter-spacing:4px;">
+      <button id="rb-go" style="${btnCss('#1d4ed8', '#60a5fa')}">Yeni kodları ver</button>
+      ${errMsg ? `<div role="alert" style="margin-top:8px;font-size:0.85rem;color:#fca5a5;">${esc(errMsg)}</div>` : ''}
+      <button id="rb-cancel" style="${linkCss}">Vazgeç</button>`, { vazgec: () => openWalletPanel(), odak: '#rb-pass' });
+    el.querySelector('#rb-cancel').onclick = () => openWalletPanel();
+    el.querySelector('#rb-go').onclick = async () => {
+      const go = el.querySelector('#rb-go');
+      go.disabled = true; go.textContent = '⏳ Hazırlanıyor…';
+      try {
+        const r = await api('POST', '/api/account/2fa/backup-codes', { code: el.querySelector('#rb-code').value.trim(), password: el.querySelector('#rb-pass').value });
+        // Esc bu ekranda pencereyi KAPATMAZ: yeni kodlar bir daha gösterilmez
+        const el2 = overlay(`
+          <div style="font-size:2rem;" aria-hidden="true">📜</div>
+          <div data-ol-baslik style="font-weight:900;color:#fde047;font-size:1.1rem;">Yeni yedek kodların</div>
+          <div style="font-size:0.82rem;color:#cbd5e1;line-height:1.5;text-align:left;margin-top:6px;">Eski kodların hepsi iptal edildi. Her kod <strong>bir kez</strong> kullanılır. Bir kâğıda yaz ya da güvenli bir yere kaydet: <strong>bu kodlar bir daha gösterilmez.</strong></div>
+          <div style="font-family:monospace;font-size:1rem;color:#fde68a;background:#0b1220;border:1px solid #334155;border-radius:10px;padding:10px;margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px;">${r.backupCodes.map(c => `<span>${esc(c)}</span>`).join('')}</div>
+          <button id="rb-copy" style="${btnCss('#334155', '#64748b')}">📋 Kodları kopyala</button>
+          <button id="rb-done" style="${btnCss('#7c3aed', '#c084fc')}">Yazdım, tamam</button>`,
+        { vazgec: () => ctx.toast('Yeni kodlarını kaydettikten sonra "Yazdım, tamam" düğmesine bas; bu kodlar bir daha gösterilmez.', 'info') });
+        el2.querySelector('#rb-copy').onclick = () => { navigator.clipboard?.writeText(r.backupCodes.join('\n')); ctx.toast('Yedek kodlar kopyalandı', 'success'); };
+        el2.querySelector('#rb-done').onclick = () => { ctx.toast('🛡️ Yedek kodların yenilendi', 'success'); openWalletPanel(); };
       } catch (err) { draw(err.message); }
     };
   };
@@ -968,6 +1005,7 @@ export async function openWalletPanel() {
     } catch (err) { ctx.toast(err.message, 'error'); $('wp-promo-go').disabled = false; }
   };
   if ($('tf-on')) $('tf-on').onclick = () => enable2faFlow();
+  if ($('tf-renew')) $('tf-renew').onclick = () => renewBackupFlow();
   if ($('tf-off')) $('tf-off').onclick = async () => {
     if (!confirm('Muhafız Mührü kaldırılsın mı? Hesabın yalnız şifreyle korunur.')) return;
     try { await withCode(code => api('POST', '/api/account/2fa/disable', { code }), 'Mührü kaldır'); ctx.toast('Muhafız Mührü kaldırıldı.', 'info'); }

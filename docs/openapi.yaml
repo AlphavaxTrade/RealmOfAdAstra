@@ -1625,6 +1625,52 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/admin/kasa/ops/resolve:
+    post:
+      tags:
+        - Yönetim
+      summary: 'Belirsiz ("sending") Oyun Kasası işlemini çöz: gitti ya da gitmedi'
+      operationId: post_api_admin_kasa_ops_resolve
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                  description: Kasa işlemi numarası (yalnız status = sending)
+                durum:
+                  type: string
+                  description: "'sent' (gitti; aktarımsa oyuna yatırılan sayılır) ya da 'failed' (gitmedi; aktarımsa borç yeniden aktarılır)"
+                gerekce:
+                  type: string
+                  description: 10-500 karakter; olay günlüğüne yazılır
+              required:
+                - id
+                - durum
+                - gerekce
+      responses:
+        "200":
+          description: "{ ok, id, durum, kind, zincir }. İşlem 'sending' değilse 409; zincirin kesin kanıtı kararla çelişirse 409; yoksa 404; gerekçe/numara geçersizse 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/admin/weekly/run:
     post:
       tags:

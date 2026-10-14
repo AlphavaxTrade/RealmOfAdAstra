@@ -311,11 +311,12 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   async function login2fa(ticket, code) {
     const t = typeof ticket === 'string' ? tickets.get(ticket) : null;
     if (!t || t.exp < clock()) { if (t) tickets.delete(ticket); return { ok: false, error: 'Giriş süresi doldu, baştan giriş yap.' }; }
-    // Deneme hakkı beklemeden önce düşülür (eşzamanlı istekle sınır aşılamasın)
-    if (++t.tries > 5) { tickets.delete(ticket); return { ok: false, error: 'Giriş süresi doldu, baştan giriş yap.' }; }
+    // Deneme hakkı beklemeden önce düşülür (eşzamanlı istekle sınır aşılamasın). Hakkı biten bilet süresi dolana dek 'kilitli' kalır:
+    // 6. denemede doğru mesaj çıksın (eskiden bilet silinip 'süre doldu' deniyordu; denetim 2. tur notu).
+    if (t.kilitli || ++t.tries > 5) { t.kilitli = true; return { ok: false, error: 'Çok fazla hatalı kod girdin; güvenlik için baştan giriş yapman gerekiyor.' }; }
     const g = await check2fa(t.playerId, code);
     if (!g.ok) {
-      if (t.tries >= 5) tickets.delete(ticket);
+      if (t.tries >= 5) t.kilitli = true;
       return { ok: false, error: g.error };
     }
     tickets.delete(ticket);

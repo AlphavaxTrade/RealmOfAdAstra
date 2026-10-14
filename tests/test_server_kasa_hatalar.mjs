@@ -205,5 +205,71 @@ let belirsizCekim, belirsizAktarim, belirsizAvax;
   ok('Aktif kasaların bakiye tazelemesi sınırlı ve hataya dayanıklı');
 }
 
+// ── 8) Yönetici çözümü (resolveOp): belirsiz 'sending' kasa işlemi gerekçeyle çözülür; güvenlik kuralları ──
+{
+  sifirla();
+  oyuncu('acc:8', { wallet: W });
+  const belirsiz = (kind, amount) => {
+    const id = islemEkle('acc:8', kind, amount);
+    db.raw.prepare("UPDATE kasa_ops SET status = 'sending', tx_hash = ?, raw_tx = '0x01', tx_nonce = ? WHERE id = ?").run(HASH(9000 + id), id, id);
+    return id;
+  };
+  const hata = async (a, kod) => { try { await kasa.resolveOp(a); } catch (e) { assert.equal(e.kod, kod, JSON.stringify(a) + ' → ' + e.message); return; } assert.fail('reddedilmeliydi: ' + JSON.stringify(a)); };
+  const olaylar = () => db.q.eventsRecent.all(50).filter(e => e.type === 'kasa-op-resolve');
+
+  // girdi denetimi
+  const a = belirsiz('settle', 60);
+  await hata({ id: 'x', durum: 'sent', gerekce: 'zincirde gordum, gitti' }, 400);
+  await hata({ id: a, durum: 'belki', gerekce: 'zincirde gordum, gitti' }, 400);
+  await hata({ id: a, durum: 'sent', gerekce: 'kisa' }, 400);
+  await hata({ id: 999999, durum: 'sent', gerekce: 'zincirde gordum, gitti' }, 404);
+  const bekleyenEvvel = kasaSatiri('acc:8').pending;
+  const yatanEvvel = db.raw.prepare('SELECT deposited_ada FROM players WHERE address = ?').get('acc:8').deposited_ada;
+
+  // zincir 'gitti' diyorsa "gitmedi" çözümü çift işleme yol açar: reddedilir
+  sonuc[HASH(9000 + a)] = 'sent';
+  await hata({ id: a, durum: 'failed', gerekce: 'gezginde gormedim sandim ama' }, 409);
+  // zincir 'işlenmedi' diyorsa "gitti" çözümü reddedilir
+  sonuc[HASH(9000 + a)] = 'failed';
+  await hata({ id: a, durum: 'sent', gerekce: 'gezginde gordum diyorum ama' }, 409);
+  assert.equal(islem(a).status, 'sending', 'reddedilen çözüm durumu değiştirmedi');
+
+  // belirsiz kalan zincirde yönetici "gitmedi" der: aktarım borcu kasanın bekleyenine geri döner
+  sonuc[HASH(9000 + a)] = 'waiting';
+  const r1 = await kasa.resolveOp({ id: a, durum: 'failed', gerekce: 'gezginde bu islem numarasi hic gorunmuyor, 2 saattir' });
+  assert.equal(r1.durum, 'failed');
+  assert.equal(islem(a).status, 'failed');
+  assert.ok(/Yönetici çözdü/.test(islem(a).error));
+  assert.equal(kasaSatiri('acc:8').pending, bekleyenEvvel + 60, 'aktarım borcu geri döndü');
+  await hata({ id: a, durum: 'failed', gerekce: 'ikinci kez cozmeye calisiyorum' }, 409);   // aynı çözüm iki kez uygulanamaz
+  assert.equal(kasaSatiri('acc:8').pending, bekleyenEvvel + 60, 'ikinci çağrı borcu ÇİFT eklemedi');
+
+  // "gitti" çözümü: aktarım oyuna yatırılan sayılır
+  const b = belirsiz('settle', 40);
+  sonuc[HASH(9000 + b)] = 'waiting';
+  const r2 = await kasa.resolveOp({ id: b, durum: 'sent', gerekce: 'gezginde islem basarili gorunuyor, Paid olayi var' });
+  assert.equal(r2.durum, 'sent');
+  assert.equal(islem(b).status, 'sent');
+  assert.equal(db.raw.prepare('SELECT deposited_ada FROM players WHERE address = ?').get('acc:8').deposited_ada, yatanEvvel + 40, 'aktarım oyuna yatırılan olarak yazıldı');
+
+  // çekim türü: yalnız durum değişir, borç/yatırma etkilenmez
+  const c = belirsiz('withdraw_ada', 15);
+  const yatan = db.raw.prepare('SELECT deposited_ada FROM players WHERE address = ?').get('acc:8').deposited_ada;
+  const bek = kasaSatiri('acc:8').pending;
+  await kasa.resolveOp({ id: c, durum: 'failed', gerekce: 'cekim hic gonderilmemis, gezginde yok' });
+  assert.equal(islem(c).status, 'failed');
+  assert.equal(db.raw.prepare('SELECT deposited_ada FROM players WHERE address = ?').get('acc:8').deposited_ada, yatan);
+  assert.equal(kasaSatiri('acc:8').pending, bek);
+
+  // yalnız 'sending' çözülür
+  const bitmis = islemEkle('acc:8', 'withdraw_ada', 5);
+  await hata({ id: bitmis, durum: 'sent', gerekce: 'bitmemis islemi cozmeye calisma' }, 409);
+  // olay günlüğü
+  const ol = olaylar();
+  assert.ok(ol.length >= 3, 'her çözüm olay günlüğüne yazıldı: ' + ol.length);
+  assert.ok(ol.some(e => e.data && /gezginde bu islem numarasi/.test(e.data)), 'gerekçe olayda duruyor');
+  ok('Yönetici çözümü: gerekçe zorunlu, zincir kanıtıyla çelişen karar reddedilir, ikinci çözüm yok, aktarım borcu doğru yönde, olay günlüğü');
+}
+
 console.log(`\n${passed} gerçek-kip kasa hata yolu kontrolü geçti.`);
 process.exit(0);

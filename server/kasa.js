@@ -248,6 +248,17 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
     }
   }
 
+  // Zincirde aranacak ödeme olayı: çekim/iade ADASTRA Transfer'i, aktarım sözleşmenin Paid olayı (ref = işlem numarası).
+  // AVAX gönderimi olay bırakmaz: yalnız makbuz + sıra numarası + yaş koşulları uygulanır.
+  function beklenenOlay(op, row) {
+    if (op.kind === 'settle') return { paidRef: ethers.zeroPadValue(ethers.toBeHex(op.id), 32) };
+    if (op.kind === 'withdraw_ada' || op.kind === 'return_ada') {
+      const to = accounts ? accounts.activeWallet(op.player) : null;
+      if (to && row) return { transfer: { from: row.address, to, amount: op.amount } };
+    }
+    return null;
+  }
+
   // "Gönderiliyor" kalmış kasa işlemlerini zincirden sonuçlandır
   async function reconcileOps() {
     if (simulated || !chain) return;
@@ -256,12 +267,7 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
       const row = q.get.get(op.player);
       // 'failed' kararı için zincirde ödeme olayı da aranır (W1): çekim/iade ADASTRA Transfer'i, aktarım sözleşmenin Paid olayı
       // (ref = işlem numarası). AVAX gönderimi olay bırakmaz: yalnız makbuz + sıra numarası + yaş koşulları uygulanır.
-      let expect = null;
-      if (op.kind === 'settle') expect = { paidRef: ethers.zeroPadValue(ethers.toBeHex(op.id), 32) };
-      else if (op.kind === 'withdraw_ada' || op.kind === 'return_ada') {
-        const to = accounts ? accounts.activeWallet(op.player) : null;
-        if (to) expect = { transfer: { from: row.address, to, amount: op.amount } };
-      }
+      const expect = beklenenOlay(op, row);
       const st = await chain.checkPayout({ hash: op.tx_hash, raw: op.raw_tx, nonce: op.tx_nonce, from: row.address, since: op.created || 0, expect }).catch(() => 'waiting');
       if (st === 'sent') {
         q.opDone.run('sent', null, clock(), op.id);
@@ -272,6 +278,41 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
         if (op.kind === 'settle') q.addPending.run(op.amount, op.player);
       }
     }
+  }
+
+  // Yönetici çözümü (denetim 2026-10, açık kalan): zincirden de sonuçlanmayan ('waiting' kalan) ya da imza kaydı olmayan 'sending'
+  // kasa işlemini yönetici gezgine bakıp çözer. Aynı güvenlik kuralları: yalnız 'sending'; gerekçe zorunlu; tek adımlı durum geçişi
+  // (aynı çözüm iki kez uygulanamaz); zincirin kesin kanıtı yönetici kararıyla çelişirse reddedilir; olay günlüğüne yazılır.
+  //   'sent'   → işlem gerçekten gitti (aktarımsa oyuna yatırılan sayılır)
+  //   'failed' → gitmedi (aktarımsa borç kasanın bekleyenine geri döner ve yeniden aktarılır: orijinal bekliyorsa ÇİFT aktarım riski)
+  const cozumHatasi = (kod, mesaj) => Object.assign(new Error(mesaj), { kod });   // 400 girdi · 404 yok · 409 durum çelişkisi
+  async function resolveOp({ id, durum, gerekce = '' } = {}) {
+    const no = Number(id);
+    if (!Number.isInteger(no) || no < 1) throw cozumHatasi(400, 'Geçerli bir işlem numarası yaz.');
+    if (durum !== 'sent' && durum !== 'failed') throw cozumHatasi(400, "Durum 'sent' (gönderildi) ya da 'failed' (gitmedi) olmalı.");
+    const neden = String(gerekce == null ? '' : gerekce).trim();
+    if (neden.length < 10 || neden.length > 500) throw cozumHatasi(400, 'Gerekçe zorunlu (10-500 karakter): zincirde ne gördün, neden bu karar?');
+    const op = db.raw.prepare('SELECT * FROM kasa_ops WHERE id = ?').get(no);
+    if (!op) throw cozumHatasi(404, 'Kasa işlemi yok.');
+    if (op.status !== 'sending') throw cozumHatasi(409, `Yalnız "sending" (belirsiz) işlem çözülebilir; bu işlem "${op.status}".`);
+    const row = q.get.get(op.player);
+    let zincir = null;
+    if (!simulated && chain && chain.checkPayout && op.tx_hash && row) {
+      zincir = await chain.checkPayout({ hash: op.tx_hash, raw: op.raw_tx, nonce: op.tx_nonce, from: row.address, since: op.created || 0, expect: beklenenOlay(op, row) }).catch(() => null);
+      if (durum === 'failed' && zincir === 'sent') throw cozumHatasi(409, "Zincir bu işlemin gittiğini gösteriyor; 'failed' dersen ÇİFT işlem olur. 'sent' olarak çöz.");
+      if (durum === 'sent' && zincir === 'failed') throw cozumHatasi(409, "Zincir bu işlemin işlenmediğini gösteriyor; 'failed' olarak çöz.");
+    }
+    const sonuc = db.tx(() => {
+      const r = db.raw.prepare("UPDATE kasa_ops SET status = ?, error = ?, done_at = ? WHERE id = ? AND status = 'sending'")
+        .run(durum, durum === 'failed' ? 'Yönetici çözdü (gitmedi): ' + neden.slice(0, 200) : null, clock(), no);
+      if (Number(r.changes) !== 1) throw cozumHatasi(409, 'İşlem bu arada başka biri tarafından çözüldü.');
+      if (durum === 'sent' && op.kind === 'settle') { q.settled.run(op.amount, clock(), op.player); db.q.playerAddDeposit.run(op.amount, op.player); }
+      if (durum === 'failed' && op.kind === 'settle') q.addPending.run(op.amount, op.player);
+      db.event('kasa-op-resolve', op.player, { id: no, kind: op.kind, amount: op.amount, durum, txHash: op.tx_hash || null, oncekiHata: op.error || null, zincir, gerekce: neden });
+      return { id: no, durum, kind: op.kind, zincir };
+    });
+    if (durum === 'sent') await refresh(op.player).catch(() => {});
+    return sonuc;
   }
 
   // Saatlik: biriken kasa harcamalarını oyuna aktar (en az KASA_MIN_SETTLE ASTRA ya da 24 saattir bekleyen)
@@ -295,5 +336,5 @@ export function createKasa({ db, chain = null, accounts = null, cfg, clock = () 
 
   const isKasaAddress = addr => !!db.raw.prepare('SELECT 1 FROM kasa WHERE address = ?').get(String(addr || '').toLowerCase());
 
-  return { capOf, enforceCaps, isKasaAddress, enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, queueSettlements, refreshActive };
+  return { capOf, enforceCaps, isKasaAddress, enabled, simulated, ensure, available, consume, refresh, simulateDeposit, withdraw, status, processOps, reconcileOps, resolveOp, queueSettlements, refreshActive };
 }

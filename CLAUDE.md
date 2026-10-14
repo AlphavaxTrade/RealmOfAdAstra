@@ -40,6 +40,7 @@ OYUN-SUNUCUSU-DURDUR.bat     # stops it (kills the pid and whatever listens on 8
 
 node contracts/compile.mjs   # solc -> contracts/build/<Name>.json (gitignored)
 node contracts/deploy.mjs    # env-driven: DEPLOY_RPC, DEPLOYER_PRIVATE_KEY, OWNER_ADDRESS, TREASURY...; mainnet needs CONFIRM_MAINNET=1
+node contracts/deploy-kasa.mjs  # OyunKasasi (the vault): DRY_RUN=1 sends nothing; refuses limits looser than the decided 500/200 bps; GUARDIAN_ADDRESS is set BEFORE ownership transfer (afterwards only the guardian can change it); mainnet needs CONFIRM_MAINNET=1 + OWNER_ADDRESS
 bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (user realm, /srv/realm, 127.0.0.1:8090 behind Caddy, TEST_MODE)
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/seviye-tablolari-uret.mjs          # regenerates docs/v2/SEVIYE_TABLOLARI.md (level, silo, soldier, craft and dungeon tables) from the engine

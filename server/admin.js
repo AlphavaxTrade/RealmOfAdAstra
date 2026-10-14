@@ -35,6 +35,7 @@ async function load() {
   ratesView(s.rates);
   kapiView(s.kapi);
   uncertainView(s.payoutsBelirsiz || []);
+  uncertainKasaView(s.kasaOpsBelirsiz || []);
   $('uniStage').value = String(s.universeStage ?? 0);
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
@@ -75,6 +76,20 @@ function uncertainView(rows) {
   $('uncertain').innerHTML = '<tr><th>#</th><th>Tür</th><th>Adres</th><th>ASTRA</th><th>İşlem</th><th>Not</th><th></th></tr>' +
     (rows.map(p => `<tr><td>${p.id}</td><td>${esc(p.kind)}</td><td>${esc(String(p.address).slice(0, 12))}…</td><td>${fmt(p.amount)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">${esc(p.tx_hash.slice(0, 12))}…</a>` : '<span class="bad">kayıt yok</span>'}</td><td class="bad">${esc(p.error || '')}</td><td><button data-rid="${p.id}" data-d="sent" class="go">✅ Gönderildi</button> <button data-rid="${p.id}" data-d="pending" class="danger">↩️ Yeniden sıraya</button></td></tr>`).join('') || '<tr><td colspan="7">Belirsiz ödeme yok</td></tr>');
 }
+function uncertainKasaView(rows) {
+  $('uncertainKasa').innerHTML = '<tr><th>#</th><th>Tür</th><th>Oyuncu</th><th>Tutar</th><th>İşlem</th><th>Not</th><th></th></tr>' +
+    (rows.map(p => `<tr><td>${p.id}</td><td>${esc(p.kind)}</td><td>${esc(String(p.player).slice(0, 14))}</td><td>${fmt(p.amount)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">${esc(String(p.tx_hash).slice(0, 12))}…</a>` : '—'}</td><td>${esc(String(p.error || ''))}</td><td><button data-kid="${p.id}" data-d="sent">✅ Gitti</button> <button data-kid="${p.id}" data-d="failed">↩️ Gitmedi</button></td></tr>`).join('') ||
+      '<tr><td colspan="7" class="k">Belirsiz kasa işlemi yok.</td></tr>');
+}
+$('uncertainKasa').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-kid]');
+  if (!b) return;
+  const id = Number(b.dataset.kid), durum = b.dataset.d;
+  const gerekce = prompt('Kasa işlemi #' + id + ' için gerekçe (zincirde ne gördün? en az 10 karakter):');
+  if (gerekce == null) return;
+  if (durum === 'failed' && !confirm('#' + id + ' "gitmedi" sayılacak; aktarımsa borç yeniden aktarılır. Orijinal işlemin zincirde hiç görünmediğinden emin misin? (çift işlem riski)')) return;
+  act(async () => { const r = await api('POST', '/api/admin/kasa/ops/resolve', { id, durum, gerekce }); alert('Çözüldü: #' + r.id + ' → ' + r.durum); });
+});
 $('uncertain').addEventListener('click', ev => {
   const b = ev.target.closest('button[data-rid]');
   if (!b) return;

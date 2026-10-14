@@ -38,3 +38,27 @@ const ok = (ad) => console.log(`✅ ${ad}`);
   assert.ok(gs && gs.state, 'durum kuruldu');
   ok('QA-13: bozuk soldierUnits içeren kayıtla oyun açılıyor');
 }
+
+// (Bot ↔ elle alım) Oyuncu pazardan bir kaynak aldıysa bot o kaynağı 2 dakika satmaz; yoksa "Eksikleri al ve döv" akışında bot
+// satın alınanı arada geri satıp işlemi "Yetersiz Demir" ile bozuyordu.
+{
+  const { GAME_CONFIG } = await import('../js/config.js');
+  const { ammMarket } = await import('../js/ammMarket.js');
+  const { globalPool } = await import('../js/globalPool.js');
+  const { treasury } = await import('../js/treasury.js');
+  depo.clear(); ammMarket.resetPools(); globalPool.vanillaReset(); treasury.reset();
+  const gs = new GameStateManager();
+  let T = 1_800_000_000_000;
+  gs._now = () => T;
+  gs.state.level = 8; gs.state.warehouseLevel = 6; gs.state.adAstraBalance = 100000;
+  for (const k of GAME_CONFIG.RESOURCE_KEYS) gs.state.inventory[k] = 50;
+  const demirOnce = gs.state.inventory.iron;
+  const al = gs.marketBuy('iron', 5);
+  assert.equal(al.success, true, 'alım başarılı: ' + al.message);
+  assert.equal(gs._botKaynakSat('iron', 3), null, 'elle alınan kaynağı bot satmaz');
+  assert.ok(gs.state.inventory.iron >= demirOnce + 5, 'alınan demir yerinde duruyor');
+  assert.ok(gs._botKaynakSat('wood', 3), 'başka kaynakta koruma yok');
+  T += 121_000;
+  assert.ok(gs._botKaynakSat('iron', 3), '2 dakika sonra bot yine satabilir');
+  ok('Bot elle alınan kaynağı 2 dakika satmaz; diğer kaynaklar ve süre sonrası etkilenmez');
+}

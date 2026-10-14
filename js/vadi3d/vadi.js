@@ -191,10 +191,29 @@ export function startVadi3D(container) {
   // THREE.Clock three 0.186'da kaldırıldı (uyarı veriyordu, denetim QA-17): THREE.Timer her karede bir kez update() ister;
   // connect() sekme gizliyken büyük zaman sıçramasını önler (eski kodun 0,05 sn dt sınırı ayrıca duruyor).
   const timer = new THREE.Timer(); timer.connect(document); let statusTimer = 0, running = true, visible = true;
+  // Uyarlanır kalite (denetim 2. tur: entegre GPU'da masaüstü ~28 FPS): ilk 4 sn ısınma, sonra 2 sn'lik pencerelerde ölçülür;
+  // art arda iki pencere 30 FPS altındaysa bir kademe düşer: 1) çözünürlük çarpanı 1'e, 2) gölgeler kapanır. Yükseltme YOK
+  // (kalite ile kare hızı arasında salınım olmasın). Sekme gizliyken ve ısınmada ölçülmez.
+  const kalite = { kademe: 0, kareler: 0, pencereBas: 0, dusuk: 0, basla: performance.now() };
+  function kaliteDenetle(simdi) {
+    if (simdi - kalite.basla < 4000 || kalite.kademe >= 2) return;
+    if (!kalite.pencereBas) { kalite.pencereBas = simdi; kalite.kareler = 0; return; }
+    kalite.kareler++;
+    if (simdi - kalite.pencereBas < 2000) return;
+    const fps = kalite.kareler / ((simdi - kalite.pencereBas) / 1000);
+    kalite.pencereBas = simdi; kalite.kareler = 0;
+    kalite.dusuk = fps < 30 ? kalite.dusuk + 1 : 0;
+    if (kalite.dusuk < 2) return;
+    kalite.dusuk = 0; kalite.kademe++;
+    if (kalite.kademe === 1) { renderer.setPixelRatio(1); layout(); }
+    else { renderer.shadowMap.enabled = false; sun.castShadow = false; scene.traverse(o => { if (o.material) { for (const m of [].concat(o.material)) m.needsUpdate = true; } }); }
+    window.__vadiKalite = kalite.kademe;
+  }
   function frame() {
     if (!running) return;
     requestAnimationFrame(frame);
-    if (!visible) return;
+    if (!visible) { kalite.pencereBas = 0; return; }
+    kaliteDenetle(performance.now());
     timer.update(); const dt = Math.min(0.05, timer.getDelta()); const t = timer.getElapsed();
     for (const a of animated) a.obj.rotation[a.axis] += dt * a.speed;
     if (water) water.position.y = Math.sin(t * 1.2) * 0.04;

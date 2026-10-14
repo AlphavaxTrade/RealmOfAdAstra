@@ -145,5 +145,11 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   }
 
 
-  return { vanillaReset, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, resolvePayout, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, externalBuy, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  // Oyun Kasası'nda belirsiz kalan işlemi yönetici çözer (kasa kapalıysa 404)
+  const resolveKasaOp = (a) => {
+    if (!kasa || !kasa.resolveOp) throw Object.assign(new Error('Oyun Kasası kapalı.'), { kod: 404 });
+    return kasa.resolveOp(a);
+  };
+
+  return { vanillaReset, resolveKasaOp, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, resolvePayout, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, externalBuy, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

@@ -74,6 +74,8 @@ export const pazarYontemleri = {
     if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + sonuc.resourceReceived;
     else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + sonuc.resourceReceived;
     else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + sonuc.resourceReceived;
+    // Elle alınan kaynağı bot bir süre satmaz (botSilo._botKaynakSat)
+    if (RES_KEYS().includes(resKey)) this.state.elleAlim = { ...(this.state.elleAlim || {}), [resKey]: this._now() };
     this.saveState();
 
     // Duraklamış bot, eksik kaynak alınınca uyanmış olabilir

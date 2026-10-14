@@ -8,10 +8,15 @@ const YUKSELTME_BEKLEMESI_MS = 3000;
 // Silo yükseltme için gereken doluluk barajı ve "sat" modunda korunan pay
 const BARAJ_ORANI = 0.8;
 const SATIS_MODU_KORUMA = 0.5;
+// Oyuncu pazardan elle bir kaynak aldıysa bot o kaynağı bu süre boyunca satmaz: "Eksikleri al ve döv" gibi birden çok istekli akışlarda
+// bot satın alınanı arada geri satıp işlemi "Yetersiz Demir" ile bozmasın (13 Ekim 2026 denetimi, ikinci tur notu).
+const ELLE_ALIM_KORUMA_MS = 120000;
 
 export const botSiloYontemleri = {
   // Fazlalığı pazarda satıp kasaya yazar; başarılıysa kazancı, olmadıysa null döner.
   _botKaynakSat(nodeId, adet) {
+    const sonAlim = Number(this.state.elleAlim && this.state.elleAlim[nodeId]) || 0;
+    if (sonAlim && this._now() - sonAlim < ELLE_ALIM_KORUMA_MS) return null;
     const sonuc = ammMarket.executeSell(nodeId, adet);
     if (!sonuc || !sonuc.success) return null;
     const kazanc = sonuc.adAstraReceived || 0;

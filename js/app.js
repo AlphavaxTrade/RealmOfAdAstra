@@ -221,7 +221,12 @@ function cevrimdisiRaporuAc() {
 
 function rehberTiki(simdi) {
   // Oyun motorunun bıraktığı bildirimler kısa mesaj olarak gösterilir
-  gameState.consumeNotices().slice(-4).forEach((n) => bildir(n.message, n.type || 'info'));
+  // Hem kısa mesaj (toast) hem zil panelinde KALICI kayıt: kolezyum maç sonucu gibi sunucu bildirimleri 3,5 sn sonra kaybolup
+  // oyuncunun elinde hiçbir iz bırakmasın (denetim 2. tur notu). Toast yığını için yalnız son 4 gösterilir, hepsi zile yazılır.
+  const bildirimSimgesi = { success: '✨', error: '⚠️', warning: '⚠️' };
+  const gelenler = gameState.consumeNotices();
+  gelenler.slice(-4).forEach((n) => bildir(n.message, n.type || 'info'));
+  gelenler.forEach((n) => bildirimler.ekle(bildirimSimgesi[n.type] || '🔔', n.message));
 
   if (simdi - sonRehberTiki < 2000) return;
   sonRehberTiki = simdi;

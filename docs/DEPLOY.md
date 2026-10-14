@@ -102,7 +102,7 @@ roa.alphavaxtrade.com {
 
 - **⏸️ Durdur:** çekim ve zincir ödemeleri hemen durur. Bir sorun görürsen ilk bunu kullan. **▶️ Devam ettir:** kaldırır.
 - **📤 Bekleyen ödemeleri şimdi gönder:** `manual` modda ödemeler bu düğmeyle gider.
-- "⚠️ gönderiliyordu" durumundaki ödeme, sunucu gönderim sırasında kapanmış demektir; **çift ödeme olmasın diye kendiliğinden tekrar gönderilmez**. Zincirde gerçekleşip gerçekleşmediğine snowtrace.io'dan bak; panelden "şimdi gönder" zincirle sonuçlandırır.
+- "⚠️ gönderiliyordu" durumundaki ödeme, sunucu gönderim sırasında kapanmış demektir; **çift ödeme olmasın diye kendiliğinden tekrar gönderilmez**. Zincirde gerçekleşip gerçekleşmediğine snowtrace.io'dan bak; panelden "şimdi gönder" zincirle sonuçlandırır. Sunucu zincirden de karar veremezse ("onay bekleniyor" kalır), panelin **Belirsiz ödemeler** tablosunda her satırı gerekçe yazarak **Gitti** ya da **Yeniden sıraya** diye siz çözersiniz (aynı çözüm iki kez uygulanamaz; zincir kanıtıyla çelişen karar reddedilir; olay günlüğüne yazılır). Oyun Kasası işlemleri (aktarım, çekim, iade) için ayrı **Belirsiz Oyun Kasası işlemleri** tablosu vardır.
 
 ## 6. Ödeme sözleşmesini yükle
 

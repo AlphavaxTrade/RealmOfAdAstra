@@ -181,6 +181,7 @@ export const zindanYontemleri = {
       this._zindanKazanciYaz(sonuc.adaReward);   // Fatih Ödülü hesabında yol boyu geri kazanım
       if (monster.level === UST_SEVIYE) sonuc.fatihOdulu = this._fatihOduluVer();   // ilk 18. kat zaferinde ödenir
       sonuc.budgetFull = !!ganimet.budgetFull;
+      sonuc.personCapped = !!ganimet.personCapped;
       sonuc.budgetCapped = !!ganimet.budgetCapped;
       sonuc.scrollGained = ganimet.scrollGained || null;
       // Sonuç ekranı için ganimetin kalanı (yalnız gösterim; durum addDungeonXpAndDrops içinde işlendi)
@@ -242,10 +243,12 @@ export const zindanYontemleri = {
     const hedef = Math.min(taban.ada, gun.budgetLeft);
     let kazanilanAstra = 0;
     let butceDoldu = false;
+    let kisiKisti = false;   // haftalık KİŞİ payı ödülü kıstı (treasury.getPersonWeekCap): arayüz nedenini söyleyebilsin
     if (hedef > 0) {
       const cekim = treasury && treasury.withdraw ? this._kasaCekKisi('dungeon', hedef) : { granted: hedef };
       kazanilanAstra = Math.max(0, cekim.granted != null ? cekim.granted : hedef);
       butceDoldu = !!cekim.budgetFull;
+      kisiKisti = !!cekim.personCapped;
       this.state.dailyCounters.dungeonPaid = (this.state.dailyCounters.dungeonPaid || 0) + kazanilanAstra;
     }
     const butceKisti = kazanilanAstra < taban.ada;
@@ -288,7 +291,7 @@ export const zindanYontemleri = {
     this.saveState();
     return {
       xpGained: taban.xp, adAstraGained: kazanilanAstra, fragmentsGained: parca, boxGained: kutu, artifactDiscovered: eser,
-      scrollGained: parsomen, isBoss: buyukBoss, budgetCapped: butceKisti, budgetFull: butceDoldu, baseAda: taban.ada
+      scrollGained: parsomen, isBoss: buyukBoss, budgetCapped: butceKisti, budgetFull: butceDoldu, personCapped: kisiKisti, baseAda: taban.ada
     };
   },
 
