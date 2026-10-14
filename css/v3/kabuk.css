@@ -223,6 +223,8 @@ html.v3 #v3-dock {
 }
 html.v3 #v3-dock > * { pointer-events: auto; }
 @media (min-width: 900px) { html.v3 #v3-dock { bottom: 84px; } }
+/* Geniş masaüstü: alt çubuk ortada 520 px; kart yığını sol alt köşeye oturur (çubuğun solunda kalacak kadar daralır) */
+@media (min-width: 1280px) { html.v3 #v3-dock { bottom: 12px; width: min(440px, calc(50vw - 282px)); } }
 html.v3 body.modal-open #v3-dock { display: none; }
 html.v3 .v3-simdi:not([hidden]) { display: flex; align-items: center; gap: var(--v3-gap-3); padding: 10px 12px; border-radius: var(--v3-r); background: rgba(15,19,28,.96); border: 1px solid var(--v3-cizgi-guclu); box-shadow: var(--v3-golge); }
 html.v3 .v3-simdi-simge { font-size: calc(26px * var(--v3-yazi-olcek, 1)); flex: none; }

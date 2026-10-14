@@ -2,7 +2,7 @@
 // Bölge verisi ve canlı durum kuralları js/ui/harita-ortak.js'tedir (3B harita ile ORTAK); burada yalnız 2B kamera
 // (oranı bozmadan doldurma, sürükle, tekerlek/iki parmak yakınlaştırma) ve etiketlerin ekrana yerleşimi vardır.
 import Phaser from 'phaser';
-import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik } from './ui/harita-ortak.js';
+import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik, kartUstSiniri } from './ui/harita-ortak.js';
 
 export { TOWN_ZONES };
 
@@ -228,7 +228,8 @@ export class GrandTownScene extends Phaser.Scene {
     if (!this.kartBoyu) this.kartBoyu = { w: kart.offsetWidth || 270, h: kart.offsetHeight || 120 };
     const { w, h } = this.kartBoyu;
     const bosluk = 14;
-    const asagida = ust - h - bosluk < 8;
+    const ustSinir = kartUstSiniri();
+    const asagida = ust - h - bosluk < ustSinir;
     const y = asagida ? Math.min(alt + bosluk, kam.height - h - 8) : ust - h - bosluk;
     const sol = Math.max(8, Math.min(kam.width - w - 8, ax - w / 2));
     kart.classList.toggle('is-below', asagida);

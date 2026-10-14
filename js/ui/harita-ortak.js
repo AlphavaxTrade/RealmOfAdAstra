@@ -29,6 +29,13 @@ export const TOWN_ZONES = [
   { id: 'battlefield', icon: '🚩', name: 'Savaş Alanı',       sub: 'Dünya Bossu cephesi',                           px: 0.200, py: 0.850, pr: 0.130, color: '#f87171' }
 ];
 
+/** Üst çubuğun (HUD) altı: bölge kartı bunun üstüne taşmasın (kart HUD'un altında kalıp kırpılmasın) */
+export function kartUstSiniri() {
+  const h = document.getElementById('v3-hud');
+  const alt = h ? h.getBoundingClientRect().bottom : 0;
+  return Math.max(8, Math.ceil(alt) + 8);
+}
+
 // Hammadde bölgesi → hammadde anahtarı (config'ten, 6 bölge)
 export function kaynakBolgeleri(config = GAME_CONFIG) {
   const anahtarlar = config.RESOURCE_KEYS || [];

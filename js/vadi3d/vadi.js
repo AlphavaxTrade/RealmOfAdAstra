@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import Phaser from 'phaser';
 import { gameState } from '../gameState.js';
-import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik } from '../ui/harita-ortak.js';
+import { TOWN_ZONES, bolgeDurumlari, bolgeyiAc, etiketKatmaniKur, modalAcik, kartUstSiniri } from '../ui/harita-ortak.js';
 
 const W = 168, H = 100;                       // dünya birimleri (harita oranı 2048:1143)
 const toWorld = (px, py) => ({ x: px * W - W / 2, z: py * H - H / 2 });
@@ -154,7 +154,7 @@ export function startVadi3D(container) {
     if (!hoverZone) return;
     const top = screenOf(hoverZone.id, zoneTop.get(hoverZone.id) + 1), bottom = screenOf(hoverZone.id, -2);
     if (!cardSize) cardSize = { w: card.offsetWidth || 272, h: card.offsetHeight || 120 };
-    const { w, h } = cardSize, gap = 14; const below = top.y - h - gap < 8;
+    const { w, h } = cardSize, gap = 14; const below = top.y - h - gap < kartUstSiniri();
     const y = below ? Math.min(bottom.y + gap, size.h - h - 8) : top.y - h - gap; const left = Math.max(8, Math.min(size.w - w - 8, top.x - w / 2));
     card.classList.toggle('is-below', below); card.style.setProperty('--arrow-x', `${Math.max(18, Math.min(w - 18, top.x - left)).toFixed(0)}px`); card.style.transform = `translate(${left.toFixed(1)}px, ${y.toFixed(1)}px)`;
   }
