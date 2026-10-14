@@ -11,8 +11,9 @@
 # Kullanım: bash scripts/sunucuya-yukle.sh
 set -euo pipefail
 cd "$(dirname "$0")/.."
-HOST=ubuntu@54.81.201.200
-ADDR=54-81-201-200.sslip.io
+# HOST ve ADDR ortam değişkeniyle değiştirilebilir (ör. alan adı DNS'i bu makineye çevrildiğinde: ADDR=roa.alphavaxtrade.com)
+HOST="${HOST:-ubuntu@54.81.201.200}"
+ADDR="${ADDR:-54-81-201-200.sslip.io}"
 SITE=https://$ADDR
 # Sunucu anahtarı kasa betiği: varsayılan yol trade sitesi deposundadır; başka yerdeyse KASA_BETIGI ile verilir
 KASA_BETIGI="${KASA_BETIGI:-../megalodon-live-deck/scripts/kasa.sh}"
