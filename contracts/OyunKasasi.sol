@@ -4,11 +4,13 @@ pragma solidity 0.8.24;
 /// @title Realm of Astra — Oyun Kasası (tek yönlü kilit)
 /// @notice Bu sözleşmeye giren ASTRA bir daha HİÇBİR ZAMAN kişisel bir cüzdana çekilemez — sahibi dahil kimse.
 /// Sözleşmede "çekim" ya da "geri alma" işlevi YOKTUR; böyle bir fonksiyon hiç yazılmadı, sonradan da eklenemez
-/// (sözleşme yükseltilebilir değil). Para yalnız üç önceden belirlenmiş yoldan çıkabilir:
+/// (sözleşme yükseltilebilir değil; kod sabittir, yalnız AYARLAR 24 saat gecikmeyle değişir). Para yalnız şu yollardan çıkabilir:
 ///   1) oyuncuya ödeme (payPlayer)      — Üretim Hakkı / ödül kasaları sunucunun kararına göre
 ///   2) yakım (burn)                    — ölü adrese gönderim, arz kalıcı olarak azalır
 ///   3) yapımcı payı (payCreator)       — yalnız sabit yapımcı cüzdanına, hep aynı adres
-/// Bu üçü dışında hiçbir adrese tek satoshi gitmez: kontratta böyle bir kod yolu yok.
+///   4) yeni kasaya geçiş (migrate)     — YALNIZ hata çıkarsa: bekçi şart, 7 gün bekler, bekçi iptal/durdurabilir, günde en çok %25,
+///                                        hedef aynı token + yakım adresli bir sözleşme olmalı; kişisel cüzdana gidemez (kod hedefi ister)
+/// Bu dördü dışında hiçbir adrese tek satoshi gitmez: kontratta böyle bir kod yolu yok.
 ///
 /// Güvenlik modeli (iki katmanlı):
 ///  - "Dağıtıcı" anahtarı (sunucunun otomatik işler için kullandığı, düşük değerli operasyonel anahtar) yalnız
@@ -33,6 +35,12 @@ pragma solidity 0.8.24;
 /// Not: oyundaki zindan/kolezyum/dünya bossu/karnaval/görev/Fatih/Konsey gibi "kasa" yüzdeleri burada YOK — onlar
 /// sunucunun kendi defterinde tutulan sayılardır (bugün de öyle); bu sözleşme yalnız "sunucu kime öde diyorsa
 /// zincirde gerçekten gönderen taraf"tır. Bir kasanın yüzdesini değiştirmek bu sözleşmeye hiç dokunmaz.
+/// @dev Halef kasa doğrulaması için en küçük arayüz (aynı token ve aynı yakım adresi mi, yanlış adres yazılmasın)
+interface IKasaBenzer {
+    function token() external view returns (address);
+    function deadAddress() external view returns (address);
+}
+
 contract OyunKasasi {
     address public immutable token;         // ASTRA (ERC20)
     address public immutable deadAddress;   // yakım adresi
@@ -44,6 +52,8 @@ contract OyunKasasi {
     uint256 public constant MAX_SINGLE_DRAW_BPS = 1000;  // sahip bile tek ödemeyi kasanın %10'undan fazlasına ayarlayamaz
     uint256 public constant MAX_DAILY_LIMIT_BPS = 3000;  // ya da günlük toplamı %30'dan fazlasına
     uint256 private constant BPS = 10000;
+    uint256 public constant MIGRATION_DELAY = 7 days;     // yeni kasaya geçiş önerisi bu kadar bekler
+    uint256 public constant MIGRATION_DAILY_BPS = 2500;   // geçiş: herhangi bir 24 saatte en çok kasanın %25'i
 
     struct Config {
         address dagitici;         // ödeme tetikleme anahtarı
@@ -65,7 +75,11 @@ contract OyunKasasi {
     uint256 private constant SLOT_LEN = 1 hours;
     uint256 private constant SLOT_COUNT = 25;
     mapping(uint256 => uint256) private _slotSpent;
+    mapping(uint256 => uint256) private _migSlot;     // "yeni kasaya geçiş" için ayrı kayan pencere
     uint256 private _lock = 1;
+
+    address public successor;    // bekçinin onay verebildiği tek taşınma hedefi (0 = yok)
+    uint64 public successorAt;   // bu andan sonra migrate() çalışır
 
     event Deposited(address indexed from, uint256 amount);
     event PlayerPaid(address indexed to, uint256 amount, bytes32 indexed ref);
@@ -76,6 +90,9 @@ contract OyunKasasi {
     event ConfigApplied(Config cfg);
     event ConfigCancelled();
     event GuardianSet(address indexed guardian);
+    event SuccessorProposed(address indexed successor, uint64 effectiveAt);
+    event SuccessorCancelled(address indexed successor);
+    event Migrated(address indexed successor, uint256 amount);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
@@ -92,6 +109,8 @@ contract OyunKasasi {
     /// Token'ın bildirdiği aktarım ile bakiye farkı uyuşmuyor (ücret kesen / yakan / bakiyeyi değiştiren token): işlem geri alınır
     error AmountMismatch(uint256 expected, uint256 actual);
     error NothingPending();
+    error NotAContract();
+    error WrongSuccessor();
     error NotYet(uint64 effectiveAt);
     error Reentrancy();
 
@@ -173,9 +192,13 @@ contract OyunKasasi {
     }
 
     /// @dev Son 25 saatlik kovanın (içinde bulunulan saat dahil) toplamı
-    function _spentWindow() private view returns (uint256 sum) {
+    function _spentWindow() private view returns (uint256) {
+        return _windowSum(_slotSpent);
+    }
+
+    function _windowSum(mapping(uint256 => uint256) storage slots) private view returns (uint256 sum) {
         uint256 h = block.timestamp / SLOT_LEN;
-        for (uint256 i = 0; i < SLOT_COUNT && i <= h; i++) sum += _slotSpent[h - i];
+        for (uint256 i = 0; i < SLOT_COUNT && i <= h; i++) sum += slots[h - i];
     }
 
     function _balanceOf(address who) private view returns (uint256) {
@@ -298,6 +321,44 @@ contract OyunKasasi {
         if (cfg.dagitici == address(0) || cfg.creator == address(0)) revert ZeroAddress();
         if (cfg.singleDrawBps == 0 || cfg.singleDrawBps > MAX_SINGLE_DRAW_BPS) revert LimitTooHigh();
         if (cfg.dailyLimitBps == 0 || cfg.dailyLimitBps > MAX_DAILY_LIMIT_BPS) revert LimitTooHigh();
+    }
+
+    // ── Yeni kasaya geçiş (sözleşme yükseltilemez; hata çıkarsa tek çıkış yolu) ──
+    // Koruma katmanları: (1) bekçi atanmış olmalı, (2) hedef aynı token + aynı yakım adresine sahip bir sözleşme olmalı,
+    // (3) 7 gün bekler ve olay herkese görünür, (4) bekçi (ya da sahip) bu sürede ve sonrasında iptal edebilir, bekçi durdurabilir,
+    // (5) taşıma kayan 24 saatte en çok kasanın %25'i. Bu yol "kişisel cüzdana çekim" DEĞİLDİR: hedef kasa-benzeri bir sözleşmedir.
+    function proposeSuccessor(address s) external onlyOwner {
+        if (s == address(0) || s == address(this)) revert ZeroAddress();
+        if (guardian == address(0)) revert NotGuardian();
+        if (s.code.length == 0) revert NotAContract();
+        try IKasaBenzer(s).token() returns (address tk) { if (tk != token) revert WrongSuccessor(); } catch { revert WrongSuccessor(); }
+        try IKasaBenzer(s).deadAddress() returns (address da) { if (da != deadAddress) revert WrongSuccessor(); } catch { revert WrongSuccessor(); }
+        successor = s;
+        successorAt = uint64(block.timestamp + MIGRATION_DELAY);
+        emit SuccessorProposed(s, successorAt);
+    }
+
+    function cancelSuccessor() external {
+        if (msg.sender != owner && (guardian == address(0) || msg.sender != guardian)) revert NotOwner();
+        if (successor == address(0)) revert NothingPending();
+        emit SuccessorCancelled(successor);
+        successor = address(0);
+        successorAt = 0;
+    }
+
+    /// @notice Süre dolduktan sonra, yalnız sahip, yalnız durmamışken, kayan 24 saatte en çok %25 taşır.
+    function migrate(uint256 amount) external onlyOwner nonReentrant {
+        if (paused) revert IsPaused();
+        if (successor == address(0)) revert NothingPending();
+        if (block.timestamp < successorAt) revert NotYet(successorAt);
+        if (amount == 0) revert ZeroAmount();
+        uint256 spent = _windowSum(_migSlot);
+        uint256 cap = (_balance() + spent) * MIGRATION_DAILY_BPS / BPS;   // pencere başındaki bakiyenin %25'i
+        uint256 remaining = cap > spent ? cap - spent : 0;
+        if (amount > remaining) revert DailyLimitExceeded(amount, remaining);
+        _migSlot[block.timestamp / SLOT_LEN] += amount;
+        _safeTransfer(successor, amount);
+        emit Migrated(successor, amount);
     }
 
     /// @notice Sahiplik iki adımda devredilir (yanlış adrese devri önler)

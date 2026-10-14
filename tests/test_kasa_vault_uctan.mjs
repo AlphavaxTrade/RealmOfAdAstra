@@ -85,6 +85,22 @@ try {
     ok('Kasa sınırı denetimi: günlük sınırı %10 olan kasadan (karar %5) hiçbir ödeme çıkmıyor');
   }
 
+  // 1c) Kasada "yeni kasaya geçiş" önerisi bekliyorsa (sahip anahtarı yanlış kullanılmış olabilir) ödemeler başlamaz
+  {
+    const cfgK = { dagitici: gameAddr, creator: CREATOR, singleDrawBps: 200, dailyLimitBps: 1000 };
+    const eski = await dep('OyunKasasi', tokenAddr, DEAD, cfgK);
+    const yeni = await dep('OyunKasasi', tokenAddr, DEAD, cfgK);
+    await (await eski.connect(owner).setGuardian(new ethers.Wallet(otherKey).address)).wait();
+    await (await eski.connect(owner).proposeSuccessor(await yeni.getAddress())).wait();
+    const w3 = mkWorld(mkCfg({ vaultContract: (await eski.getAddress()).toLowerCase() }));
+    const id = add('withdraw', P1, 10, 97);
+    const r = await w3.processPayouts({ force: true });
+    assert.match(String(r.skipped), /yeni kasaya geçiş önerisi var/, JSON.stringify(r));
+    assert.equal(row(id).status, 'pending'); assert.equal(await bal(P1), 0n);
+    db.raw.prepare('DELETE FROM payouts WHERE id = ?').run(id);
+    ok('Kasada bekleyen "yeni kasaya geçiş" önerisi varken hiçbir ödeme çıkmıyor (satır pending kalıyor)');
+  }
+
   // 2) Normal ödemeler: kasadan, ref = satır numarası; oyun cüzdanı token tutmuyor
   const a = add('withdraw', P1, 1000, 2), b = add('burn', DEAD, 500, 2), cr = add('creator', CREATOR, 300, 2);
   const kasaBefore = await bal(kAddr);

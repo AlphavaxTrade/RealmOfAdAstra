@@ -46,7 +46,11 @@ const kasaAddr = await kasa.getAddress();
 const names = c.OyunKasasi.abi.filter(x => x.type === 'function').map(x => x.name);
 assert.ok(!names.some(n => /withdraw|cek|rescue|recover|sweep|drain/i.test(n)), `Şüpheli fonksiyon adı bulundu: ${names.join(',')}`);
 assert.deepEqual(names.filter(n => /pay|burn/i.test(n)).sort(), ['burn', 'payCreator', 'payPlayer'].sort(), 'Yalnız üç çıkış fonksiyonu var');
-ok('ABI taraması: çekim/geri alma anlamına gelebilecek hiçbir fonksiyon yok, yalnız 3 izinli çıkış var');
+// Para çıkarabilen tek ek yol "yeni kasaya geçiş"tir; fonksiyon listesi bilinen kümeyle birebir aynı olmalı (sessizce yeni bir fonksiyon eklenemez)
+assert.deepEqual([...names].sort(), ['DELAY', 'MAX_DAILY_LIMIT_BPS', 'MAX_SINGLE_DRAW_BPS', 'MIGRATION_DAILY_BPS', 'MIGRATION_DELAY', 'acceptOwnership', 'activeConfig', 'burn', 'cancelConfig', 'cancelSuccessor',
+  'current', 'dailyRemaining', 'deadAddress', 'deposit', 'effectiveAt', 'finalizeConfig', 'guardian', 'migrate', 'owner', 'pause', 'paused', 'payCreator', 'payPlayer', 'pendingConfig', 'pendingOwner',
+  'proposeConfig', 'proposeSuccessor', 'setGuardian', 'setPaused', 'singleDrawCap', 'spentInWindow', 'successor', 'successorAt', 'token', 'transferOwnership'].sort(), 'Fonksiyon listesi bilinen kümeyle aynı');
+ok('ABI taraması: çekim/geri alma adlı fonksiyon yok; 3 izinli çıkış + yalnız bekçili "yeni kasaya geçiş"; liste bilinen kümeyle birebir');
 
 // 1) Para girişi: approve + deposit, sözleşme bakiyesine gerçekten gider, Deposited olayı doğru
 await (await token.mint(await addr(player), ASTRA(1_000_000))).wait();
@@ -205,6 +209,52 @@ ok('Bekçi: durdurabiliyor, bekleyen öneriyi iptal edebiliyor; devam ettiremiyo
   assert.equal(await kasa.spentInWindow(), 0n, '25 saat sonra pencere boş');
   assert.equal(await kasa.dailyRemaining(), (await token.balanceOf(kasaAddr)) * 500n / 10000n, 'bütçe tamamen geri geldi');
   ok('Kayan pencere: 23s50dk sonra hâlâ dolu, 25 saat sonra tamamen boş');
+}
+
+// 10e) Yeni kasaya geçiş (kod sabit, hata çıkarsa tek yol): bekçi şart, 7 gün bekler, bekçi iptal eder, günde %25, yalnız benzer sözleşmeye
+{
+  const bekci = player;                                    // yukarıda bekçi olarak atandı
+  const yeni = await deploy('OyunKasasi', owner, await token.getAddress(), DEAD, initial);
+  const yeniAddr = await yeni.getAddress();
+  const baskaToken = await deploy('MockToken', owner);
+  const yanlis = await deploy('OyunKasasi', owner, await baskaToken.getAddress(), DEAD, initial);
+  if (await kasa.paused()) await (await kasa.setPaused(false)).wait();
+
+  await expectRevert(kasa.connect(attacker).proposeSuccessor(yeniAddr), 'NotOwner');
+  await expectRevert(kasa.proposeSuccessor(await addr(attacker)), 'NotAContract');            // kişisel cüzdana taşınamaz
+  await expectRevert(kasa.proposeSuccessor(ethers.ZeroAddress), 'ZeroAddress');
+  await expectRevert(kasa.proposeSuccessor(kasaAddr), 'ZeroAddress');                          // kendisine değil
+  await expectRevert(kasa.proposeSuccessor(await yanlis.getAddress()), 'WrongSuccessor');      // başka token'lı kasa
+  await expectRevert(kasa.proposeSuccessor(await token.getAddress()), 'WrongSuccessor');       // kasa olmayan sözleşme
+  await expectRevert(kasa.migrate(1n), 'NothingPending');                                       // öneri yokken taşıma yok
+  await expectRevert(yeni.proposeSuccessor(kasaAddr), 'NotGuardian');                          // bekçisi olmayan kasa taşıma öneremez
+
+  await (await kasa.proposeSuccessor(yeniAddr)).wait();
+  assert.equal((await kasa.successor()).toLowerCase(), yeniAddr.toLowerCase());
+  await expectRevert(kasa.migrate(ASTRA(1)), 'NotYet');                                         // 7 gün dolmadan taşınmaz
+  await provider.send('evm_increaseTime', [6 * 24 * 3600]); await provider.send('evm_mine', []);
+  await expectRevert(kasa.migrate(ASTRA(1)), 'NotYet');
+  await (await kasa.connect(bekci).cancelSuccessor()).wait();                                   // bekçi iptal eder
+  assert.equal(await kasa.successor(), ethers.ZeroAddress);
+  await expectRevert(kasa.connect(attacker).cancelSuccessor(), 'NotOwner');
+
+  await (await kasa.proposeSuccessor(yeniAddr)).wait();
+  await provider.send('evm_increaseTime', [7 * 24 * 3600 + 5]); await provider.send('evm_mine', []);
+  await expectRevert(kasa.connect(attacker).migrate(ASTRA(1)), 'NotOwner');
+  await expectRevert(kasa.migrate(0n), 'ZeroAmount');
+  const bal0 = await token.balanceOf(kasaAddr);
+  const kapak = bal0 * 2500n / 10000n;
+  await expectRevert(kasa.migrate(kapak + 1n), 'DailyLimitExceeded');                          // günde %25'ten fazlası taşınmaz
+  await (await kasa.migrate(kapak)).wait();
+  assert.equal(await token.balanceOf(yeniAddr), kapak, 'yeni kasaya tam tutar ulaştı');
+  assert.equal(await token.balanceOf(kasaAddr), bal0 - kapak);
+  await expectRevert(kasa.migrate(1n), 'DailyLimitExceeded');                                   // pencere dolu
+  await (await kasa.setPaused(true)).wait();                                                    // durdurma taşımayı da kilitler
+  await provider.send('evm_increaseTime', [25 * 3600 + 5]); await provider.send('evm_mine', []);
+  await expectRevert(kasa.migrate(1n), 'IsPaused');
+  await (await kasa.setPaused(false)).wait();
+  await (await kasa.migrate(1n)).wait();                                                         // 25 saat sonra pencere açılır
+  ok('Yeni kasaya geçiş: bekçi şart, hedef benzer kasa olmalı, 7 gün bekler, bekçi iptal eder, günde en çok %25, durdurma kilitler');
 }
 
 // 11) Sahiplik iki adımlı

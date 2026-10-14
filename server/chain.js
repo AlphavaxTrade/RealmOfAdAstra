@@ -17,11 +17,13 @@ const ERC20_ABI = [
   'event Transfer(address indexed from, address indexed to, uint256 value)'
 ];
 // Oyun Kasası (contracts/OyunKasasi.sol): tek yönlü kilit; çıkış yalnız bu üç fonksiyonla ve dağıtıcı anahtarıyla
+// (bir de bekçili, 7 gün bekleyen "yeni kasaya geçiş": ödemelere değil, kasanın kendisini taşımaya yarar; chain.checkVault bekleyen öneriyi görünce ödemeleri durdurur)
 const VAULT_ABI = [
   'function payPlayer(address to, uint256 amount, bytes32 ref)', 'function burn(uint256 amount, bytes32 ref)', 'function payCreator(uint256 amount, bytes32 ref)',
   'function singleDrawCap() view returns (uint256)', 'function dailyRemaining() view returns (uint256)', 'function paused() view returns (bool)',
   'function activeConfig() view returns (tuple(address dagitici, address creator, uint16 singleDrawBps, uint16 dailyLimitBps))',
-  'function deadAddress() view returns (address)', 'function token() view returns (address)'
+  'function deadAddress() view returns (address)', 'function token() view returns (address)',
+  'function successor() view returns (address)', 'function successorAt() view returns (uint64)'
 ];
 const FEED_ABI = ['function latestRoundData() view returns (uint80,int256,uint256,uint256,uint80)', 'function decimals() view returns (uint8)'];
 const PAIR_ABI = ['function getReserves() view returns (uint112,uint112,uint32)', 'function token0() view returns (address)'];
@@ -188,8 +190,11 @@ export function createChain(cfg, { providerFactory } = {}) {
       const v = new ethers.Contract(vaultAddr, VAULT_ABI, p);
       const token = new ethers.Contract(cfg.tokenAddress, ERC20_ABI, p);
       const [cfgNow, capWei, remainingWei, paused, dead, tokenOf, balanceWei] = await Promise.all([v.activeConfig(), v.singleDrawCap(), v.dailyRemaining(), v.paused(), v.deadAddress(), v.token(), token.balanceOf(vaultAddr)]);
+      // Yeni kasaya geçiş önerisi var mı (eski sürüm kasalarda bu işlev yoktur: okunamazsa öneri yok sayılır)
+      let successor = null;
+      try { const s = await v.successor(); if (s !== ethers.ZeroAddress) successor = s.toLowerCase(); } catch { /* successor() olmayan eski kasa */ }
       return { address: vaultAddr, dagitici: cfgNow.dagitici.toLowerCase(), creator: cfgNow.creator.toLowerCase(), singleDrawBps: Number(cfgNow.singleDrawBps), dailyLimitBps: Number(cfgNow.dailyLimitBps),
-        capWei, remainingWei, balanceWei, balance: toAda(balanceWei), paused, dead: dead.toLowerCase(), token: tokenOf.toLowerCase(), at: Date.now() };
+        capWei, remainingWei, balanceWei, balance: toAda(balanceWei), paused, successor, dead: dead.toLowerCase(), token: tokenOf.toLowerCase(), at: Date.now() };
     });
   }
 
@@ -205,6 +210,8 @@ export function createChain(cfg, { providerFactory } = {}) {
     const maxGunluk = cfg.vaultMaxDailyBps ?? VAULT_MAX_DAILY_BPS, maxTek = cfg.vaultMaxSingleBps ?? VAULT_MAX_SINGLE_BPS;   // yalnız testler programla gevşetir; ortam değişkeni YOK
     if (v.dailyLimitBps > maxGunluk) problems.push(`kasanın günlük çekim sınırı %${v.dailyLimitBps / 100} (kararlaştırılan en çok %${maxGunluk / 100})`);
     if (v.singleDrawBps > maxTek) problems.push(`kasanın tek ödeme sınırı %${v.singleDrawBps / 100} (kararlaştırılan en çok %${maxTek / 100})`);
+    // Sahip "yeni kasaya geçiş" önerdiyse (7 gün bekler): yanlış anahtar kullanımı olabilir; yönetici bakana kadar ödemeler başlamaz.
+    if (v.successor) problems.push(`kasada yeni kasaya geçiş önerisi var (${v.successor}); bekçi ya da yönetici inceleyene kadar ödemeler durur`);
     return { ok: problems.length === 0, problems, vault: v };
   }
 
