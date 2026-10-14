@@ -35,6 +35,7 @@ export const HUB = {
     { k: 'ekonomi', s: '📈', ad: 'Ekonomi panosu', ac: 'Oyunun parası nerede, ne kadar dönüyor' }
   ] },
   ben: { baslik: ['👤', 'Ben'], ogeler: [
+    { k: 'oyunrehberi', s: '📖', ad: 'Oyun rehberi', ac: 'Bütün özellikler: resimli ve örnekli anlatım' },
     { k: 'profil', s: '🧙', ad: 'Karakterim', ac: 'Seviye, envanter ve ekipman' },
     { k: 'hesap', s: '🔐', ad: 'Hesap ve cüzdan', ac: 'Giriş, yatırma ve çekim' },
     { k: 'kotalar', s: '📊', ad: 'Kotalarım', ac: 'Haftalık ve günlük sınırların' },

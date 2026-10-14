@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oyun Rehberi — Realm of AdAstra</title>
+<meta name="description" content="Realm of AdAstra'nın bütün özelliklerini sade dille, oyun içi görsellerle ve örneklerle anlatan resmî oyun rehberi.">
+<meta name="theme-color" content="#0b0f17">
+<link rel="icon" type="image/jpeg" href="/realm_of_astra_banner.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="rehber/rehber.css">
+</head>
+<body>
+<header class="ust">
+  <button class="dugme ikinci menu-ac" id="menu-ac" type="button" aria-label="İçindekiler menüsünü aç">☰</button>
+  <a class="marka" href="#basla"><span aria-hidden="true">📖</span><b>Oyun Rehberi</b></a>
+  <div class="ara"><input id="ara" type="search" placeholder="Rehberde ara (örn. silo, bot, kasa)…  ( / )" aria-label="Rehberde ara" autocomplete="off"></div>
+  <a class="dugme oyuna" href="/" title="Oyuna dön"><span>Oyuna dön</span>🎮</a>
+</header>
+
+<div class="sayfa">
+<nav class="yan" id="yan-liste" aria-label="İçindekiler"></nav>
+<main id="basla">
+<div class="kapsa">
+
+<div class="kahraman">
+  <div class="ic">
+    <h1>Realm of AdAstra<br>Oyun Rehberi</h1>
+    <p>Krallığını nasıl kuracağını, hammaddeyi nasıl paraya çevireceğini, ordunu nasıl büyüteceğini ve ASTRA'nın nereye gidip nereden geldiğini <b>baştan sona</b>, günlük dille anlatıyoruz.</p>
+    <div class="eylem">
+      <a class="dugme" href="#nedir">Baştan başla</a>
+      <a class="dugme ikinci" href="#ilk-10-dakika">İlk 10 dakika</a>
+      <a class="dugme ikinci" href="#sozluk">Sözlük</a>
+    </div>
+    <div class="rozetler"><span>Oyun içi görsellerle</span><span>Örnekli anlatım</span><span>Teknik bilgi gerekmez</span></div>
+  </div>
+</div>
+
+<div class="kutu ozet-kutu" data-s="🧭"><b>Bu rehber nasıl okunur?</b>
+<p>Soldaki içindekiler listesinden istediğin bölüme atlayabilirsin; üstteki kutuya bir kelime yazarsan (örneğin <i>silo</i>, <i>bot</i>, <i>kasa</i>) yalnızca o kelimenin geçtiği bölümler kalır. Resimlere dokunursan büyür. Gösterilen sayılar gelişmiş bir deneme hesabından alınmıştır; <b>senin ekranındaki sayılar farklı olabilir</b>, mantık aynıdır.</p></div>
+
+<!-- ============ BAŞLANGIÇ ============ -->
+<section class="bolum" id="nedir" data-grup="Başlangıç" data-ikon="🏰">
+  <div class="bolum-baslik"><div class="no">🏰</div><div><small>Başlangıç</small><h2>Realm of AdAstra nedir?</h2></div></div>
+  <p class="ozet">Tarayıcıda oynanan, krallık kurma ve strateji oyunu. Hammadde toplarsın, onu satar ya da işlersin, ordu kurarsın, zindanlarda ve arenalarda savaşırsın. Hepsinin ortak parası <b>ASTRA</b>'dır.</p>
+
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/harita.webp" alt="AdAstra Vadisi haritası" loading="lazy"></div>
+  <figcaption><b>AdAstra Vadisi.</b> Oyunun ana ekranı. Her bina bir özelliğe giden kapıdır: maden, orman, tarla, kale, Kolezyum, zindan mağarası, roket rampası…</figcaption></figure>
+
+  <h3>Oyunun tek cümlelik özeti</h3>
+  <p><b>Çalış → topla → sat ya da işle → güçlen → kazan.</b> Sen oyunda yokken bile seferlerin sürer, botun çalışır; döndüğünde "Sen yokken olanlar" raporu seni bekler.</p>
+
+  <h3>ASTRA nedir?</h3>
+  <p>ASTRA, oyunun parasıdır. Oyun içinde asker almak, eşya dövmek, pazardan alışveriş yapmak, çarka bakmak için ASTRA harcarsın; zindanda, Kolezyumda, boss savaşında ve görevlerde ASTRA kazanırsın. Kazandığın ASTRA oyunun ortak kasalarından gelir; <b>havadan basılmaz</b>. Bu yüzden oyunun ekonomisi bilerek dengelidir: çok kazandıran bir şey, çok harcatan bir şeyle bir arada durur.</p>
+
+  <div class="kartlar">
+    <div class="kart"><div class="ik">⛏️</div><h4>Üret</h4><p>Altı hammaddeyi (buğday, taş, odun, kömür, demir, şifalı ot) seferlerle topla.</p></div>
+    <div class="kart"><div class="ik">🏪</div><h4>Al-sat</h4><p>Pazarda fiyatlar arz ve talebe göre oynar. Ucuzken al, pahalıyken sat.</p></div>
+    <div class="kart"><div class="ik">⚔️</div><h4>Savaş</h4><p>Ordunu kur, teçhizat döv; zindan, Kolezyum ve dünya bossu seni bekliyor.</p></div>
+    <div class="kart"><div class="ik">🏛️</div><h4>Birlikte kur</h4><p>Sirius Konseyi'nde herkes ortak projelere katkı verir; herkes faydalanır.</p></div>
+  </div>
+
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Oyunu zorlamana gerek yok. Seferleri başlat, kapat, yarın dön: hammaddelerin birikmiş olur. Ağır bir "her gün saatlerce başında dur" oyunu değil.</p></div>
+</section>
+
+<section class="bolum" id="ilk-10-dakika" data-grup="Başlangıç" data-ikon="⏱️">
+  <div class="bolum-baslik"><div class="no">⏱️</div><div><small>Başlangıç</small><h2>İlk 10 dakika: ne yapmalıyım?</h2></div></div>
+  <p class="ozet">Yeni bir hesapta ilk adımlar. Hepsi birkaç dokunuş.</p>
+  <ol class="adimlar">
+    <li><b>Bir sefer başlat.</b> Üstteki <i>Kaynaklar</i> düğmesine ya da haritadaki bir bölgeye (orman, maden, tarla) dokun, <i>Sefere gönder</i> de. İşçilerin hammadde toplamaya çıkar.</li>
+    <li><b>Krallık Yolu görevlerine bak.</b> Sol alttaki "Krallık Yolu" kartı sana sıradaki görevi söyler. Her görevin küçük bir ASTRA ödülü vardır.</li>
+    <li><b>Hasadını topla.</b> Sefer bitince <i>Krallık merkezi → Tüm seferleri topla ve başlat</i> ile hammaddelerini ambara al ve yeni seferleri başlat.</li>
+    <li><b>Köy evi yap.</b> Köylüler üretimini artırır ve ileride asker olurlar. İlk ev ucuzdur.</li>
+    <li><b>Siloyu büyüt.</b> Silon dolunca fazlası boşa gider. Ambarlar %80 dolunca yükseltebilirsin.</li>
+    <li><b>İlk askerini al.</b> Kışlaya git, bir asker satın al. Zindan ve Kolezyum bununla açılır.</li>
+    <li><b>Hesabını bağla ve güvene al.</b> E-postanı doğrula, şifreni güçlü tut, mümkünse <i>Muhafız Mührü</i>'nü tak (iki adımlı doğrulama).</li>
+  </ol>
+  <div class="kutu ozet-kutu" data-s="📌"><b>Kısaca</b><p>Sefer → topla → silo → köy → asker → zindan. Ritim bu. Gerisi bu ritmi hızlandıran ya da güvenli kılan ayrıntılardır.</p></div>
+</section>
+
+<!-- ============ EKRAN ============ -->
+<section class="bolum" id="ekran" data-grup="Ekranı tanı" data-ikon="🖥️">
+  <div class="bolum-baslik"><div class="no">🖥️</div><div><small>Ekranı tanı</small><h2>Ekran düzeni: üst çubuk, sekmeler, kartlar</h2></div></div>
+  <p class="ozet">Oyunun bütün ekranı üç parçadan oluşur: üstte bilgi çubuğu, altta sekmeler, ortada harita.</p>
+
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/kaynak-tepsi.webp" alt="Üst çubuk ve açılan kaynak tepsisi" loading="lazy"></div>
+  <figcaption><b>Üst çubuk (HUD).</b> Solda seviyen ve stamina çubuğun; ortada ASTRA bakiyen; sağda Kaynaklar, Bot, Bildirimler ve Rehber. Burada Kaynaklar tepsisi açık: silodaki altı hammadde ve teçhizat parçası görünüyor.</figcaption></figure>
+
+  <h3>Üst çubuktaki her şey</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Öğe</th><th>Ne işe yarar?</th></tr>
+    <tr><td>🧙 Lv.30 ve çubuk</td><td>Hesap seviyen ve staminanın doluluğu. Dokununca <b>Karakterim</b> açılır.</td></tr>
+    <tr><td>🟣 ASTRA bakiyesi</td><td>Oyundaki paran. Dokununca <b>Hesap ve cüzdan</b> açılır.</td></tr>
+    <tr><td>📦 Kaynaklar</td><td>Silodaki hammadde miktarları ve doluluk yüzdeleri. Bir hammaddeye dokunursan o hammaddenin <b>sefer paneli</b> açılır.</td></tr>
+    <tr><td>🤖 Bot</td><td>Otomasyon botunun durumu (Kapalı / Çalışıyor). Dokununca Taverna açılır.</td></tr>
+    <tr><td>🔔 Bildirimler</td><td>Önemli olayların listesi: sefer bitti, görev tamamlandı, ödül hazır. Kırmızı sayı okunmamış bildirimdir.</td></tr>
+    <tr><td>📖 Rehber</td><td>Bu sayfa. Yeni sekmede açılır; oyunun kendisi arkada açık kalır.</td></tr>
+  </table></div>
+
+  <h3>Alt sekmeler</h3>
+  <p>Ekranın altında beş sekme var. Hepsi bir "menü paneli" açar; içindeki kartlara dokunarak ilgili ekrana gidersin. Kilitli bir özelliğin kartında <b>neden kilitli olduğu</b> ve nasıl açılacağı yazar (örneğin "Kışladan ilk askerini alınca").</p>
+  <div class="yan-yana">
+    <figure class="resim"><div class="cerceve"><img src="rehber/img/sekme-kralik.webp" alt="Krallık sekmesi" loading="lazy"></div><figcaption><b>🏰 Krallık.</b> Krallık merkezi, Silo, Taverna, Demirhane, Şifahane, Köy evleri, Sirius Konseyi, Uzay Limanı.</figcaption></figure>
+    <figure class="resim"><div class="cerceve"><img src="rehber/img/sekme-savas.webp" alt="Savaş sekmesi" loading="lazy"></div><figcaption><b>⚔️ Savaş.</b> Kışla, Zindan, Kolezyum, Savaş alanı (dünya bossu).</figcaption></figure>
+    <figure class="resim"><div class="cerceve"><img src="rehber/img/sekme-pazar.webp" alt="Pazar sekmesi" loading="lazy"></div><figcaption><b>🏪 Pazar.</b> Meydan pazarı, Karnaval (çark ve piyango), Sandıklar ve koleksiyon, Ekonomi panosu.</figcaption></figure>
+    <figure class="resim"><div class="cerceve"><img src="rehber/img/sekme-ben.webp" alt="Ben sekmesi" loading="lazy"></div><figcaption><b>👤 Ben.</b> Karakterim, Hesap ve cüzdan, Kotalarım, Hazine, Oyun turu, Rehber, Ara ve git, Ayarlar, Duyurular, Sürüm geçmişi.</figcaption></figure>
+  </div>
+
+  <h3>Sol alttaki kartlar</h3>
+  <p><b>"Şimdi" kartı:</b> oyunun o an sana önerdiği en yararlı adım (örneğin "İşçiler boşta bekliyor → Krallık Merkezi"). <b>Krallık Yolu kartı:</b> görev ilerlemen ve sıradaki görev. İkisi de dar ekranlarda alt sekmelerin üstüne oturur.</p>
+
+  <h3>Klavye kısayolları</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Tuş</th><th>Ne yapar?</th></tr>
+    <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td><td><b>Ara ve git:</b> aklına gelen yerin adını yaz, oraya git.</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>Krallık merkezini aç (panel kapalıyken).</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Açık paneli kapat.</td></tr>
+    <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Orman · Maden · Tarla sefer panelleri.</td></tr>
+    <tr><td><kbd>4</kbd> ya da <kbd>B</kbd></td><td>Kışla.</td></tr>
+    <tr><td><kbd>5</kbd> ya da <kbd>M</kbd></td><td>Pazar.</td></tr>
+    <tr><td><kbd>6</kbd> ya da <kbd>D</kbd></td><td>Zindan.</td></tr>
+    <tr><td><kbd>7</kbd> ya da <kbd>C</kbd></td><td>Kolezyum.</td></tr>
+    <tr><td><kbd>E</kbd></td><td>Karakterim ve envanter.</td></tr>
+    <tr><td><kbd>K</kbd></td><td>Kotalarım.</td></tr>
+  </table></div>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Telefonda klavye yok, ama <i>Ben → Ara ve git</i> aynı işi görür: yaz, git.</p></div>
+</section>
+
+<section class="bolum" id="harita" data-grup="Ekranı tanı" data-ikon="🗺️">
+  <div class="bolum-baslik"><div class="no">🗺️</div><div><small>Ekranı tanı</small><h2>Harita: AdAstra Vadisi</h2></div></div>
+  <p class="ozet">Harita oyunun ana menüsüdür: bir yere dokunmak, oranın ekranını açar.</p>
+
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/harita-kart.webp" alt="Harita üzerinde bilgi kartı" loading="lazy"></div>
+  <figcaption><b>Bilgi kartı.</b> Bir bölgenin üstüne gelince (ya da telefonda dokununca) o bölgenin adı, açıklaması ve canlı durumu görünür. Kilitliyse hangi koşulla açılacağını söyler.</figcaption></figure>
+
+  <ul>
+    <li><b>Orman, maden, taş ocağı, kömür, tarla, şifalı ot bahçesi:</b> sefer panelleri. Hammadde buradan gelir.</li>
+    <li><b>Kale ve meydan:</b> Krallık merkezi, pazar, Karnaval, Demirhane, Taverna.</li>
+    <li><b>Kolezyum (arena):</b> oyunculara karşı düello.</li>
+    <li><b>Zindan mağarası:</b> canavarlarla savaşılan katlar.</li>
+    <li><b>Roket rampası:</b> Uzay Limanı; ileride açılacak ikinci oyuna hazırlık.</li>
+  </ul>
+
+  <h3>2B ve 3B harita</h3>
+  <p>Oyun varsayılan olarak <b>2B piksel haritayla</b> açılır; hafiftir ve her cihazda sorunsuz çalışır. İstersen vadinin <b>3B</b> görünümünü de açabilirsin: adres çubuğundaki oyun adresinin sonuna <kbd>?harita=3d</kbd> ekle. Cihazın zayıfsa 3B harita kalitesini kendiliğinden düşürür.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/harita3d.webp" alt="3B vadi haritası" loading="lazy"></div>
+  <figcaption><b>3B vadi.</b> Aynı yerler, aynı işlevler; sadece görünüm farklı.</figcaption></figure>
+
+  <h3>Telefonda</h3>
+  <div class="yan-yana">
+    <figure class="resim dar"><div class="cerceve"><img src="rehber/img/tel-harita.webp" alt="Telefonda harita" loading="lazy"></div><figcaption>Telefon ekranında üst çubuk iki düğmeye sığar: bakiye ve "⋯". Kaynaklar, Bot, Bildirimler ve Rehber "⋯" menüsünün içindedir.</figcaption></figure>
+    <figure class="resim dar"><div class="cerceve"><img src="rehber/img/tel-merkez.webp" alt="Telefonda Krallık merkezi" loading="lazy"></div><figcaption>Paneller telefonda ekranın altından yukarı kayan bir sayfa gibi açılır; kapatmak için ✕ düğmesine dokun.</figcaption></figure>
+  </div>
+</section>
+
+
+<!-- ============ ÜRETİM ============ -->
+<section class="bolum" id="hammadde" data-grup="Üretim ve krallık" data-ikon="⛏️">
+  <div class="bolum-baslik"><div class="no">⛏️</div><div><small>Üretim ve krallık</small><h2>Hammaddeler ve seferler</h2></div></div>
+  <p class="ozet">Oyundaki her şey altı hammaddeyle başlar. Onları <b>sefer</b> adı verilen görevlerle toplarsın.</p>
+
+  <h3>Altı hammadde</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Hammadde</th><th>Nereden gelir?</th><th>Alet</th><th>Başlangıç hızı</th><th>Nerede kullanılır?</th></tr>
+    <tr><td>🌾 Buğday</td><td>Tarla</td><td>Orak</td><td>dakikada 9</td><td>Stamina, asker iyileştirme, köylülerin yemeği, seviye</td></tr>
+    <tr><td>🪨 Taş</td><td>Taş ocağı</td><td>Taş keskisi</td><td>dakikada 6</td><td>Köy evi, Konsey projeleri, seviye</td></tr>
+    <tr><td>🌲 Odun</td><td>Orman</td><td>Balta</td><td>dakikada 5,4</td><td>Köy evi, alet onarımı, eşya dövme</td></tr>
+    <tr><td>⚫ Kömür</td><td>Kömür ocağı</td><td>Kömür kazması</td><td>dakikada 4,5</td><td>Eşya dövme, roket, Konsey projeleri</td></tr>
+    <tr><td>⛏️ Demir</td><td>Demir madeni</td><td>Kazma</td><td>dakikada 3,6</td><td>Eşya dövme, alet onarımı, roket</td></tr>
+    <tr><td>🌿 Şifalı ot</td><td>Şifalı ot bahçesi</td><td>Ot bıçağı</td><td>dakikada 1,2</td><td>Şifahane (asker iyileştirme)</td></tr>
+  </table></div>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Hızlar seviye ve köylü sayınla büyür. Şifalı ot en yavaş hammaddedir, bu yüzden en değerlisidir: pazardaki açılış fiyatı buğdayın yaklaşık dokuz katıdır.</p></div>
+
+  <h3>Sefer nedir?</h3>
+  <p>Bir hammadde bölgesine işçi gönderirsin. İşçiler <b>sefer süresi boyunca</b> çalışır; süre bitince ürün ambarına gelir. Aynı anda altı alanın hepsinde birer sefer çalışabilir.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/sefer.webp" alt="Taş ocağı sefer paneli" loading="lazy"></div>
+  <figcaption><b>Taş Ocağı paneli.</b> Üstte seferin süresi, üretim hızı ve beklenen kazanç; ortada aletinin sağlamlığı ve "Göreve gönder" düğmesi; altta alet tamiratı.</figcaption></figure>
+
+  <h3>Panelde okuduğun satırlar</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Satır</th><th>Anlamı</th></tr>
+    <tr><td>Sefer süresi (26,3 saat)</td><td>İşçilerin kaç saat çalışacağı. Seviye atladıkça süre uzar, ürün de büyür.</td></tr>
+    <tr><td>Üretim (7,82 / dk)</td><td>Dakikada ne kadar hammadde çıkacağı.</td></tr>
+    <tr><td>Beklenen kazanç (~12.328 Taş)</td><td>Süre sonunda ambarına gelecek tahmini miktar.</td></tr>
+    <tr><td>Alet aşınması (−1.577 dk)</td><td>Sefer bitince aletinin ne kadar yıpranacağı. Aşınma sürenle aynı dakika kadardır.</td></tr>
+    <tr><td>Üretim hakkın</td><td>Bugün ve bu hafta çıkarabileceğin üst sınır. Ayrıntısı aşağıda.</td></tr>
+    <tr><td>Düğmedeki ⚡ bedeli (−1.013)</td><td>Seferin staminadan alacağı pay.</td></tr>
+  </table></div>
+
+  <h3>Stamina</h3>
+  <p>Her sefer biraz <b>stamina</b> harcar. Stamina zamanla kendiliğinden dolar; acelen varsa <b>buğdayla</b> da doldurabilirsin: 1 buğday = 1 stamina. Üst çubuktaki küçük çubuk staminanın doluluğudur.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Staminan 5.000 / 6.590 diyelim. Eksik 1.590'ı tek tuşla doldurmak için ambarında 1.590 buğday olması gerekir. Krallık merkezindeki "Staminayı doldur (1.590 🌾)" düğmesi tam bunu yapar.</p></div>
+
+  <h3>Aletler ve onarım</h3>
+  <p>Her alanın bir aleti vardır (taş keskisi, balta, kazma…). Aletin sağlamlığı <b>dakika</b> cinsindendir: başlangıç aletlerinde 72 saat (4.320 dakika). Her sefer bitince alet, seferin süresi kadar dakika yıpranır. Alet yıprandıkça onarman gerekir; <b>onarım</b> aşağıda anlatılıyor.</p>
+  <p>Onarım bedeli: aşınan her dakika için odun ve demir (o hammaddenin dakikalık üretiminin dörtte biri düzeyinde) ve bu malzemenin pazar değerinin %30'u kadar ASTRA. Onarım bedeli panelde "Bedel" satırında yazar; sağlam alette "tam sağlam" görünür.</p>
+
+  <h3>Üretim hakkı: neden her şeyi sınırsız çıkaramıyorum?</h3>
+  <p>Oyundaki bütün oyuncular aynı dünyayı paylaşır. Hammadde sınırsız olursa fiyat sıfıra düşer ve kimse bir şey kazanamaz. Bu yüzden <b>haftalık bir "çıkarma kapasitesi"</b> vardır ve herkesin payı (üretim hakkı) bu kapasiteden hesaplanır. Hakkın günlük parçalar halinde açılır.</p>
+  <ul>
+    <li>Payın; ne kadar <b>aktif</b> olduğuna, seviyene ve <b>katkı kademene</b> göre büyür.</li>
+    <li>Hakkın dolunca sefer "izin bekliyor" durumuna geçer; yeni gün açılınca devam eder.</li>
+    <li>Kalan hakkını <b>Kotalarım</b> ekranında görürsün.</li>
+  </ul>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/kotalar.webp" alt="Kotalarım ekranı" loading="lazy"></div>
+  <figcaption><b>Kotalarım.</b> Her hammadde için "alınabilir", haftalık toplam, kullanılan ve açılan miktar; günlük zindan ve Kolezyum sınırların; hafta ve gün sayaçları.</figcaption></figure>
+</section>
+
+<section class="bolum" id="merkez" data-grup="Üretim ve krallık" data-ikon="🏰">
+  <div class="bolum-baslik"><div class="no">🏰</div><div><small>Üretim ve krallık</small><h2>Krallık merkezi: tek dokunuşla toplu işlem</h2></div></div>
+  <p class="ozet">Her bölgeye tek tek girmek yerine, hepsini buradan yönetirsin.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/merkez.webp" alt="Krallık merkezi" loading="lazy"></div>
+  <figcaption><b>Krallık merkezi.</b> Dört toplu düğme ve genel durum kartları.</figcaption></figure>
+  <div class="tablo-kap"><table>
+    <tr><th>Düğme</th><th>Ne yapar?</th></tr>
+    <tr><td>⚡ Tüm seferleri topla ve başlat</td><td>Biten seferlerin ürününü alır ve boş kalan alanlarda yenilerini başlatır.</td></tr>
+    <tr><td>⚡ Staminayı doldur</td><td>Eksik staminayı buğdayla tamamlar. Parantezde kaç buğday harcayacağı yazar.</td></tr>
+    <tr><td>🔨 Tüm aletleri onar</td><td>Yıpranmış aletlerin hepsini tek seferde onarır.</td></tr>
+    <tr><td>🌾 Tüm orduyu doyur</td><td>Yaralı askerleri buğdayla iyileştirir.</td></tr>
+  </table></div>
+  <p>Aşağıda <b>Genel durum</b> (seviye, ASTRA, stamina), <b>Seferler</b> (6 alanın durumu), <b>Üretim hakkın</b>, <b>Aletler</b>, <b>Ordu</b> ve <b>Silo</b> kartları bulunur.</p>
+  <div class="kutu ozet-kutu" data-s="📌"><b>Kısaca</b><p>Her gün için en pratik rutin: Krallık merkezini aç → "Tüm seferleri topla ve başlat". Bitti.</p></div>
+</section>
+
+<section class="bolum" id="silo" data-grup="Üretim ve krallık" data-ikon="📦">
+  <div class="bolum-baslik"><div class="no">📦</div><div><small>Üretim ve krallık</small><h2>Silo ve depo</h2></div></div>
+  <p class="ozet">Hammaddelerini sakladığın ambar. Dolunca fazlası boşa gider; büyüttükçe daha çok alır.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/silo.webp" alt="Silo ekranı" loading="lazy"></div>
+  <figcaption><b>Silo.</b> Altı ambarın doluluğu, yükseltme şartı ve bedeli, yeni kapasiteler.</figcaption></figure>
+  <ul>
+    <li>Silonun <b>18 seviyesi</b> vardır; her seviyede altı hammaddenin de kapasitesi büyür. Oyunun başında (Universe açılmadan önce) 12. seviyeye kadar çıkılabilir.</li>
+    <li><b>Yükseltme şartı:</b> altı ambarın hepsi en az %80 dolu olmalı.</li>
+    <li><b>Yükseltme bedeli:</b> her hammaddede kapasitenin yarısı kadar hammadde, artı bu hammaddelerin pazar değeri kadar ASTRA.</li>
+  </ul>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Ambarlarında 963 buğday kapasiten 963 ise "dolu"dur. Seviye 4 bedeli: 481 buğday, 303 taş, 272 odun, 227 kömür, 183 demir, 60 şifalı ot, artı 29,75 ASTRA. Yükselince yeni kapasiteler: 1.285 buğday, 786 taş, 707 odun…</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Silon doluyken seferlerin biter ve ürün sığmazsa, sığmayan kısım <b>boşa gider</b>. Silo dolmak üzereyken ya hammaddeyi pazarda sat ya da siloyu yükselt. Botun "Silo dolarsa" ayarı bu işi senin yerine yapabilir.</p></div>
+</section>
+
+<section class="bolum" id="seviye" data-grup="Üretim ve krallık" data-ikon="⭐">
+  <div class="bolum-baslik"><div class="no">⭐</div><div><small>Üretim ve krallık</small><h2>Seviye ve deneyim (XP)</h2></div></div>
+  <p class="ozet">Seviye atladıkça seferlerin büyür, yeni özellikler açılır ve haftalık gelir payın artar.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/karakter.webp" alt="Karakterim ekranı" loading="lazy"></div>
+  <figcaption><b>Karakterim.</b> Seviye, ödüller, XP çubuğu, seviye bedeli, haftalık temel gelir, stamina ve envanter.</figcaption></figure>
+  <ol class="adimlar">
+    <li><b>XP kazan.</b> Sefer toplamak, savaşmak ve görev yapmak deneyim verir.</li>
+    <li><b>Bedeli karşıla.</b> Seviye atlamak için XP'ye ek olarak <b>hammadde ve biraz ASTRA</b> gerekir.</li>
+    <li><b>Seviye atla.</b> Sefer süren ve maksimum staminan büyür; ganimet şansların küçük bir miktar artar.</li>
+  </ol>
+  <h3>Bedel siloya sığar</h3>
+  <p>Seviye bedeli hesaplanırken oyun bir güvenlik kuralı uygular: <b>hiçbir hammaddenin bedeli, ulaşabileceğin en büyük silonun kapasitesinin %80'inden büyük olamaz.</b> Böylece "ne kadar toplasan da sığmaz" durumu yaşamazsın. Bedel kırpıldıysa panel bunu "kırpıldı" notuyla gösterir.</p>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Seviye atlayamıyorsan ekran sana <b>neyin eksik olduğunu</b> söyler ("Silon bu bedeli tutamıyor", "Eksik hammadde var"). Genellikle çözüm siloyu yükseltmektir.</p></div>
+  <h3>Seviyeyle neler açılır?</h3>
+  <ul>
+    <li>Taverna (bot), Demirhane, Kışla, Zindan, Kolezyum, Savaş alanı, Pazar ve Karnaval gibi özellikler belli adımlarda açılır. Kilitli kartta açılış şartı yazar.</li>
+    <li>Haftalık temel gelirden (UBI) alacağın pay seviyenle büyür.</li>
+    <li>Köy evi sayısı hesap seviyeni geçemez.</li>
+    <li>Asker seviyesi hesap seviyeni geçemez.</li>
+  </ul>
+</section>
+
+<section class="bolum" id="koy" data-grup="Üretim ve krallık" data-ikon="🏘️">
+  <div class="bolum-baslik"><div class="no">🏘️</div><div><small>Üretim ve krallık</small><h2>Köy evleri ve nüfus</h2></div></div>
+  <p class="ozet">Köylüler hem üretimini artırır hem de ileride senin askerlerin olurlar.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/koy.webp" alt="Köy evleri" loading="lazy"></div>
+  <figcaption><b>Köy evleri.</b> Köylü sayısı, günlük buğday tüketimi, emek puanı, üretim bonusu ve asker hakkı.</figcaption></figure>
+  <ul>
+    <li>Her ev <b>10 köylü</b> alır. Başta 1 ev ve 10 köylün vardır.</li>
+    <li>Köylüler günde <b>2 buğday</b> yer. Buğday varsa nüfus günde <b>%2</b> büyür (ev kapasitesine kadar).</li>
+    <li>Üç gün aç kalırlarsa günde %5'i göç eder.</li>
+    <li>Her köylü günde <b>1 emek puanı</b> üretir; emek puanı Konsey projelerinde kullanılır.</li>
+    <li>Her <b>10 köylü</b> üretimini <b>%1</b> artırır (en çok %20).</li>
+    <li>Her <b>asker için 1 köylü</b> gerekir.</li>
+  </ul>
+  <h3>Yeni ev yapmak</h3>
+  <p>İlk ev yapımı <b>400 odun + 200 taş + 50 demir</b> eder; her yeni ev bir öncekinden %20 pahalıdır. En çok 20 ev yapılır ve ev sayısı hesap seviyeni aşamaz.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>40 köylün varsa üretimin %4 artar ve günde 80 buğday yenir. Bu buğdayı üretmezsen üç gün sonra köylüler kaçmaya başlar. Önce tarlayı güçlendir, sonra köyü büyüt.</p></div>
+</section>
+
+<section class="bolum" id="taverna" data-grup="Üretim ve krallık" data-ikon="🍺">
+  <div class="bolum-baslik"><div class="no">🍺</div><div><small>Üretim ve krallık</small><h2>Taverna ve otomasyon botu</h2></div></div>
+  <p class="ozet">Sen yokken çalışan yardımcı. Altı alanda seferleri başlatır, staminayı buğdayla doldurur, aletleri onarır.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/taverna.webp" alt="Taverna ve bot" loading="lazy"></div>
+  <figcaption><b>Taverna.</b> Bot paketleri, ücretsiz deneme, altı alanın durumu ve bot ayarları.</figcaption></figure>
+  <h3>Paketler</h3>
+  <ul>
+    <li><b>6 saatlik</b> ve <b>24 saatlik</b> bot paketleri vardır. Ücret, botun sana kazandıracağı <b>günlük net kârın yarısıdır</b>; yani botun getirisi, ücretinin yaklaşık iki katıdır (tahmini).</li>
+    <li><b>1 saat ücretsiz dene:</b> hesap başına bir kerelik hediye.</li>
+    <li>Paket süresi bitince bot durur; istersen "<b>Süre bitince otomatik yenile</b>" kutusunu işaretlersin.</li>
+  </ul>
+  <h3>"Silo dolarsa" ayarı</h3>
+  <div class="kartlar">
+    <div class="kart"><div class="ik">🏗️</div><h4>Siloyu büyüt</h4><p>Güvenlik payının üstündeki ASTRA'yı kullanır; yetmezse fazla ürünü satar.</p></div>
+    <div class="kart"><div class="ik">💱</div><h4>Fazlasını sat</h4><p>Silonun yarısını yedek tutar, fazlasını pazarda satar.</p></div>
+  </div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Ekranda 6 saatlik bot 67 ASTRA, 24 saatlik bot 269 ASTRA görünüyor. Yani günde 24 saat boyunca çalışacak bot ona ödediğin ASTRA'nın yaklaşık iki katını sana kazandırıyor (ücret net kârın yarısı).</p></div>
+</section>
+
+<section class="bolum" id="demirhane" data-grup="Üretim ve krallık" data-ikon="⚒️">
+  <div class="bolum-baslik"><div class="no">⚒️</div><div><small>Üretim ve krallık</small><h2>Demirhane: eşya dövme ve geri dönüşüm</h2></div></div>
+  <p class="ozet">Askerlerin için silah ve zırh burada yapılır.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/demirhane.webp" alt="Demirhane" loading="lazy"></div>
+  <figcaption><b>Demirhane.</b> Beş parçanın dövme bedelleri: eksik hammaddeler tek tuşla pazardan alınabilir.</figcaption></figure>
+  <ul>
+    <li><b>Beş parça:</b> silah, miğfer, gövde zırhı, pantolon, ayakkabı.</li>
+    <li>Her parça demir, odun, kömür, <b>teçhizat parçası</b> (zindan ganimeti) ve biraz ASTRA ister.</li>
+    <li>Eşyanın <b>dayanıklılığı</b> vardır (örnek: 13). Savaştıkça aşınır.</li>
+    <li>Dövdüğün eşya <b>Cephanelik</b>'e gider; askerine <b>Kışla</b>'dan takarsın.</li>
+    <li><b>Geri dönüşüm:</b> kullanmadığın alet ya da eşyayı erittiğinde hammaddelerinin <b>%70'i</b> geri gelir (%30 kaybolur); ASTRA geri gelmez.</li>
+  </ul>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Eksik hammaddelerin kırmızı görünür; yanındaki düğmeyle pazardan tek dokunuşla alıp hemen dövebilirsin.</p></div>
+</section>
+
+<section class="bolum" id="sifahane" data-grup="Üretim ve krallık" data-ikon="🌿">
+  <div class="bolum-baslik"><div class="no">🌿</div><div><small>Üretim ve krallık</small><h2>Şifahane</h2></div></div>
+  <p class="ozet">Yaralı askerleri şifalı otla iyileştirir.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/sifahane.webp" alt="Şifahane" loading="lazy"></div>
+  <figcaption><b>Şifahane.</b> Bütün askerlerin canı tamsa "Bütün askerler tam can" yazar.</figcaption></figure>
+  <ul>
+    <li><b>1 şifalı ot = 5 can.</b> Buğday harcanmaz.</li>
+    <li>ASTRA bedeli, anında iyileştirmenin ücretinin yarısıdır.</li>
+    <li>Şifalı ot yalnızca <b>şifalı ot bahçesi</b> seferlerinden gelir.</li>
+    <li>Buğdayla iyileştirmek istersen <b>Kışla</b>'dan yaparsın; o yolda şifalı ot gerekmez.</li>
+  </ul>
+</section>
+
+
+<!-- ============ SAVAŞ ============ -->
+<section class="bolum" id="kisla" data-grup="Savaş" data-ikon="🛡️">
+  <div class="bolum-baslik"><div class="no">🛡️</div><div><small>Savaş</small><h2>Kışla: ordun, askerlerin ve teçhizatın</h2></div></div>
+  <p class="ozet">Savaşın bütün hazırlığı burada yapılır: asker al, eşya tak, dizilişi ayarla.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/kisla.webp" alt="Kışla" loading="lazy"></div>
+  <figcaption><b>Kışla.</b> Solda ordunun toplam gücü ve askerler listesi; sağda seçili askerin kartı ve ekipman yuvaları.</figcaption></figure>
+
+  <h3>İki sekme</h3>
+  <ul>
+    <li><b>🛡️ Ordu:</b> askerlerin, toplam saldırı ve can, diziliş, yeni asker alma.</li>
+    <li><b>🗃️ Cephanelik:</b> dövdüğün ve kazandığın eşyalar. Boştaki eşya sayısı sekmenin yanında yazar.</li>
+  </ul>
+
+  <h3>Asker kartı</h3>
+  <ul>
+    <li><b>Saldırı</b> ve <b>en yüksek can</b>: askerin gücü. Eşya taktıkça büyür.</li>
+    <li><b>Ön saf / arka saf:</b> ön saf darbeyi alır; arka saf geriden vurur. Düğmeye dokununca ⇄ yer değiştirir.</li>
+    <li><b>Beş ekipman yuvası:</b> silah, miğfer, zırh, dizlik, çizme. Her yuvaya uygun bir eşya "seç" diyerek takarsın.</li>
+    <li><b>Yetenekler:</b> askerin özel yetenekleri kartın altında listelenir.</li>
+    <li>✏️ ile askerine <b>isim</b> verebilirsin.</li>
+  </ul>
+
+  <h3>Yeni asker almak</h3>
+  <p>"Yeni asker" düğmesinin üzerinde ASTRA bedeli yazar; her yeni asker bir öncekinden daha pahalıdır. Hakkın şu kadardır: <b>geçtiğin zindan katı + 1</b>. Yani zindanda ilerledikçe daha çok asker taşıma hakkı kazanırsın. Her asker için de <b>bir köylü</b> gerekir (bkz. <a href="#koy">Köy evleri</a>).</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>1. katı yeni geçtin ve 4 asker hakkın var diyelim. 5. askeri almak için önce 2. kata ilerlemen gerekir. Bu sınır "sadece parayla ordu kurmayı" önler.</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Asker seviyesi hesap seviyeni geçemez. Askerini güçlendirmek için hem seviye atlamak hem de teçhizatını yenilemek gerekir.</p></div>
+</section>
+
+<section class="bolum" id="zindan" data-grup="Savaş" data-ikon="💀">
+  <div class="bolum-baslik"><div class="no">💀</div><div><small>Savaş</small><h2>Zindan: katlar, odalar ve canavarlar</h2></div></div>
+  <p class="ozet">Oyunun ana macerası. Canavarları yenip ASTRA, XP, teçhizat parçası ve kutu kazanırsın.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/zindan.webp" alt="Zindan 1. kat" loading="lazy"></div>
+  <figcaption><b>Zindan.</b> Üstte katlar (Kasaba ve 6 kat görünür), sol altta ödüllü giriş sayacın ve askerlerin. Ortada her katın üç odası.</figcaption></figure>
+
+  <h3>Yapı</h3>
+  <ul>
+    <li><b>18 katlı</b> bir zindan; her katta <b>3 oda</b> ve bir portal vardır. Bir kat temizlenince sonraki kat açılır.</li>
+    <li>Odaların canavarları ilerledikçe güçlenir; kat sonunda <b>boss</b> vardır.</li>
+    <li>Savaş <b>otomatik</b> ve sunucuda hesaplanır; sonucu sen izlersin.</li>
+  </ul>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/zindan-oda.webp" alt="Zindan odası" loading="lazy"></div>
+  <figcaption><b>Bir oda.</b> Canavarın canı ve saldırısı, ordunun kazanma şansı, ödüller. "Savaşa hazırla" ile başlarsın.</figcaption></figure>
+
+  <h3>Bir odada ne görürsün?</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Alan</th><th>Anlamı</th></tr>
+    <tr><td>Can / Saldırı</td><td>Canavarın gücü.</td></tr>
+    <tr><td>Ordunun kazanma şansı</td><td>Mevcut ordunun bu canavarı yenme olasılığı (örnek: %100). Şans düşükse önce ordunu ya da teçhizatını güçlendir.</td></tr>
+    <tr><td>+0,9 ASTRA</td><td>Kazanırsan alacağın ASTRA.</td></tr>
+    <tr><td>+200 hesap XP · +40 asker XP</td><td>Hesabına ve askerlerine giden deneyim.</td></tr>
+    <tr><td>Parça %6,64 · Kutu %0,066</td><td>Savaşın sonunda teçhizat parçası ve Pandora kutusu düşme şansı.</td></tr>
+  </table></div>
+
+  <h3>Günlük ödüllü giriş</h3>
+  <p>Her gün <b>5 ödüllü giriş</b> hakkın var ("5/5 ödüllü giriş"). Girişlerin ilki silahlarını yıpratmaz; sonraki girişlerde silahlarının dayanıklılığı bir azalır. 6. girişten sonrası harçlı ya da antrenman niteliğindedir. Günlük sınırlarını <b>Kotalarım</b> ekranından izlersin.</p>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Her gün ilk 5 girişi kullanmak, ASTRA kazancının büyük kısmını sağlar. Zindanın günlük ödemesi aynı zamanda <b>kasanın bakiyesinin %1'iyle</b> sınırlıdır, yani herkesin payı için adil bir tavan vardır.</p></div>
+
+  <h3>Yaralanma</h3>
+  <p>Savaşta askerler yaralanabilir. Yaralı askerleri iyileştirmek için <a href="#sifahane">Şifahane</a> (şifalı ot) ya da Kışla (buğday) kullanılır. Ekranın üstündeki "🩹 0 yaralı" sayacı sana kaç yaralın olduğunu gösterir.</p>
+
+  <h3>Kütük</h3>
+  <p>Sağ üstteki <b>📖 Kütük</b> düğmesi canavarların rehberidir: gördüğün canavarların özellikleri ve ne düşürdükleri orada yazar.</p>
+
+  <h3>Fatih ödülü</h3>
+  <p>Zindanın 18. katındaki son canavar <b>Fatih</b> sayılır. Onu yenmek, zindanın en büyük ödülünü (Fatih Kasası) açar. Ayrıntıları <i>Hazine ve gelir</i> ekranında görürsün.</p>
+</section>
+
+<section class="bolum" id="kolezyum" data-grup="Savaş" data-ikon="🏟️">
+  <div class="bolum-baslik"><div class="no">🏟️</div><div><small>Savaş</small><h2>Kolezyum: oyunculara karşı düello</h2></div></div>
+  <p class="ozet">Şampiyonunu seç, kendi ligine uygun bir rakiple dövüş. Kazanırsan puan ve ASTRA kazanırsın.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/kolezyum.webp" alt="Kolezyum" loading="lazy"></div>
+  <figcaption><b>Kolezyum.</b> Üç sekme: Düello, Lig, Rakipler. Düello'da şampiyonunu seçip "Kolezyuma çık" dersin.</figcaption></figure>
+  <ul>
+    <li><b>Şampiyon ölmez</b> ama yaralanabilir; yaralıyı buğdayla iyileştirirsin.</li>
+    <li>Her maç <b>1 arena anahtarı</b> ve biraz <b>stamina</b> (örnek: 12 ⚡) harcar.</li>
+    <li><b>Günde en çok 10 maç</b> yapabilirsin ve günlük ASTRA ödül tavanı vardır (örnek: 125 ASTRA).</li>
+    <li>Rakibin puanı seninkinin ±100 puan çevresinde seçilir; böylece adil maçlar yaparsın.</li>
+    <li>Haftalık sıralamada ilk 10 oyuncu ek ödül alır.</li>
+    <li><b>Lig:</b> Bronz Gladyatör ile başlarsın (1.000 puan); puan arttıkça ligin yükselir ve maç ödülün çarpılır.</li>
+  </ul>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p><b>Taktik</b> düğmesiyle diziliş stilini (dengeli, saldırgan…) değiştirebilirsin. Taktik seçimini her maçtan önce değiştirebilirsin.</p></div>
+</section>
+
+<section class="bolum" id="dunya-bossu" data-grup="Savaş" data-ikon="🌋">
+  <div class="bolum-baslik"><div class="no">🌋</div><div><small>Savaş</small><h2>Savaş alanı: haftalık dünya bossu</h2></div></div>
+  <p class="ozet">Bütün oyuncuların aynı anda saldırdığı dev canavar. Her Pazar 18:00'de (Türkiye saati) otomatik savaş yapılır.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/dunya-bossu.webp" alt="Dünya bossu" loading="lazy"></div>
+  <figcaption><b>Savaş alanı.</b> Bu haftanın ödül havuzu, ordunun hasar potansiyeli, bossun canı ve geri sayım.</figcaption></figure>
+  <ol class="adimlar">
+    <li><b>Orduyu kilitle.</b> "Tüm ordumu kilitle" düğmesi askerlerini bu haftanın savaşı için ayırır.</li>
+    <li><b>Hasarın hesaplanır.</b> Formül: saldırı × 1 + can × 0,25. Yetenek çeşitliliği küçük bir bonus verir.</li>
+    <li><b>Pazar 18:00.</b> Savaş otomatik yapılır; oyuncuların hasarı toplanır.</li>
+    <li><b>Havuz paylaşılır.</b> Haftanın havuzu hasar payına göre dağıtılır. Havuz, dünya bossu kasasının %3'üdür.</li>
+    <li><b>Ödülünü topla.</b> "Toplanmaya hazır ödülün" kartından alırsın.</li>
+  </ol>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Ekranda 4 askerin toplam hasarı 236 görünüyor ve 1 hasar = 0,178 ASTRA. Pazar günü bu hasarla yaklaşık 236 × 0,178 ≈ <b>42 ASTRA</b> alırsın. Hasarını artırmak için asker sayını ve teçhizatını büyüt.</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Kilitli ordun yoksa o hafta hasar yazılmaz. Pazar 18:00'den önce ordunu kilitlediğinden emin ol.</p></div>
+</section>
+
+
+<!-- ============ PAZAR VE EKONOMİ ============ -->
+<section class="bolum" id="pazar" data-grup="Pazar ve ekonomi" data-ikon="🏪">
+  <div class="bolum-baslik"><div class="no">🏪</div><div><small>Pazar ve ekonomi</small><h2>Meydan pazarı: al, sat, ilan ver</h2></div></div>
+  <p class="ozet">Hammaddeyi ASTRA'ya, ASTRA'yı hammaddeye çevirdiğin yer. Fiyatı bir kişi değil, <b>havuz</b> belirler.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/pazar.webp" alt="Pazar" loading="lazy"></div>
+  <figcaption><b>Pazar.</b> Üç sekme: Al / Sat, İlanlar, Yakım. Hammadde sekmeleri; seçili hammaddenin fiyatı; satın al ve sat kutuları.</figcaption></figure>
+
+  <h3>Fiyat nasıl belirlenir?</h3>
+  <p>Pazarda her hammaddenin bir <b>takas havuzu</b> vardır: havuzda belli miktarda hammadde ve belli miktarda ASTRA bulunur. Fiyat bu ikisinin oranından çıkar. Çok alınan hammadde havuzdan azalır ve <b>pahalanır</b>; çok satılan havuza yığılır ve <b>ucuzlar</b>. Alıcı ya da satıcı aramana gerek yoktur: işlem anında havuzla yapılır.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Açılış fiyatlarında 1 buğday = 0,009 ASTRA, 1 demir = 0,04 ASTRA'dır. Ekranlarda genelde "1.000 birim" başına yazılır: 1.000 demir = 40 ASTRA. 10.000 buğdayı satsan fiyat biraz düşer; ertesi gün başkaları alınca yeniden yükselir.</p></div>
+
+  <h3>Harç ve yakım</h3>
+  <ul>
+    <li>Her alım ve satımda hammaddenin <b>%2'si yakılır</b> (oyundan silinir; fiyatı korumaya yarar).</li>
+    <li>Ayrıca <b>%2 ASTRA harç</b> alınır; oyun kasalarına gider.</li>
+    <li>"Ödeyeceğin (harç dahil)" ve "Eline geçecek (harç sonrası)" satırları, işlemden önce net rakamı gösterir.</li>
+    <li>Tek işlemde havuzun %5'inden fazlasını alamazsın; ekran büyük işlemlerde fiyat etkisini önceden uyarır.</li>
+  </ul>
+
+  <h3>Hızlı işlemler</h3>
+  <ul>
+    <li><b>+100, +1.000, +10.000:</b> alım miktarını hızlıca artırır.</li>
+    <li><b>%25, Yarısı, %75, Hepsini sat:</b> satış miktarını yüzdeyle seçer.</li>
+    <li><b>Depoyu doldur:</b> silonda boş yer kadar tek hamlede satın alır.</li>
+  </ul>
+
+  <h3>Başka neler alınır?</h3>
+  <p>Hammaddelerin yanında <b>teçhizat parçası</b>, <b>Pandora kutusu</b> ve <b>arena anahtarı</b> da pazarda alınır; fiyatları aynı havuz mantığıyla belirlenir.</p>
+
+  <h3>İlanlar</h3>
+  <p>Oyuncular birbirine <b>teçhizat</b> satabilir. İlan 7 gün açık kalır; aynı anda en çok 10 ilan verebilirsin. Satıştan %2 komisyon alınır (yarısı yakılır, yarısı kasaya gider). Alıcı önce serbest bakiyesinden öder, yetmezse kalanı kilitli bakiyesinden.</p>
+
+  <h3>Yakım sekmesi</h3>
+  <p>Oyunda toplam ne kadar hammadde ve ASTRA yakıldığını gösterir. Yakım, kıtlık ve değer yaratır; ayrıntısı <a href="#ekonomi">Ekonomi</a> bölümünde.</p>
+
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Fiyat düşükken hammadde alıp bekleyen oyuncular, fiyat yükselince satar. Ama dikkat: pazarın bir <b>geri alım kasası</b> da vardır; fiyat açılışın çok altına düşerse kasa piyasadan hammadde alıp yakarak fiyatı toparlar.</p></div>
+</section>
+
+<section class="bolum" id="karnaval" data-grup="Pazar ve ekonomi" data-ikon="🎪">
+  <div class="bolum-baslik"><div class="no">🎪</div><div><small>Pazar ve ekonomi</small><h2>Karnaval: çark ve piyango</h2></div></div>
+  <p class="ozet">Şansını denediğin eğlence alanı. Ödüller Karnaval kasasından gelir, o yüzden herkes çarkı çevirebilir ama kasa bitince ödeme küçülür.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/karnaval.webp" alt="Karnaval" loading="lazy"></div>
+  <figcaption><b>Karnaval.</b> Çark, Piyango ve Kasalar sekmeleri; çevirme yolları ve günlük coşku ödülü.</figcaption></figure>
+
+  <h3>🎡 Çark</h3>
+  <ul>
+    <li><b>15 ödüllü</b> bir çark; ortalama dönüş yaklaşık <b>%81</b>'dir (yani uzun vadede verdiğinin %81'ini geri alırsın; çark bir kazanç yolu değil, eğlencedir).</li>
+    <li>Çevirme yolları: <b>1 ASTRA</b>, <b>eş değer hammadde</b> (günde 3 kez) ya da <b>1 piyango bileti</b>.</li>
+    <li>Biriktirdiğin <b>bilet parçaları</b> (3 parça = 1 bilet) da çark çevirmek için kullanılır.</li>
+    <li>Çevirmelerin yaklaşık %31'inde en az bedelini geri alırsın.</li>
+  </ul>
+  <h3>🎟️ Piyango</h3>
+  <p>Haftalık çekiliş. Bilet alırsın; haftanın sonunda <b>tek bir kazanan</b> çıkar. Şansın, senin biletlerinin toplam bilete oranıdır. Ayrıntılı kurallar ve bu haftanın durumu <i>Piyango</i> sekmesinde yazar.</p>
+  <h3>🎪 Coşku</h3>
+  <p>Günde bir kez karnavala katılıp <b>+10 stamina</b> kazanırsın. Küçük ama bedava.</p>
+  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Çarkın ortalama dönüşü %100'ün altındadır. Çarkı <b>kazanç planı</b> olarak değil, ayırdığın küçük bir eğlence bütçesi olarak düşün.</p></div>
+</section>
+
+<section class="bolum" id="koleksiyon" data-grup="Pazar ve ekonomi" data-ikon="👑">
+  <div class="bolum-baslik"><div class="no">👑</div><div><small>Pazar ve ekonomi</small><h2>Sandıklar ve koleksiyon (Genesis NFT)</h2></div></div>
+  <p class="ozet">Pandora kutularından çıkan 18 eseri toplarsan, <b>RoA Genesis NFT</b>'ni basabilirsin.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/koleksiyon.webp" alt="Koleksiyon" loading="lazy"></div>
+  <figcaption><b>Koleksiyon.</b> 18 eserlik koleksiyon; kilitli eserler "❓" olarak görünür. İki sekme: Koleksiyon ve Pandora kutuları.</figcaption></figure>
+  <ul>
+    <li><b>Pandora kutuları</b> zindan savaşlarından düşer ya da pazardan alınır. Açınca koleksiyondan bir eser, bazen başka ganimet çıkar.</li>
+    <li><b>18 eserin hepsi</b> tamamlanınca "Genesis NFT bas" düğmesi açılır (küçük bir ASTRA bedeli vardır).</li>
+    <li>Genesis NFT, ikinci oyun <b>Universe</b>'te gezegen satın alma hakkı verir. Bkz. <a href="#uzay">Uzay Limanı</a>.</li>
+  </ul>
+</section>
+
+<section class="bolum" id="konsey" data-grup="Pazar ve ekonomi" data-ikon="🏛️">
+  <div class="bolum-baslik"><div class="no">🏛️</div><div><small>Pazar ve ekonomi</small><h2>Sirius Konseyi: ortak projeler ve ortak kasa</h2></div></div>
+  <p class="ozet">Oyunun "devlet dairesi". Herkesin ortak çıkarma kapasitesi, ortak kasalar ve topluca yapılan büyük projeler burada.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/konsey.webp" alt="Sirius Konseyi" loading="lazy"></div>
+  <figcaption><b>Sirius Konseyi.</b> Her hammaddenin haftalık kapasitesi, kota yüzdesi ve ortak kasa miktarı; altında Madencilik Otoritesi ve aktif proje.</figcaption></figure>
+
+  <h3>Kota ve "dengeleyici"</h3>
+  <p>Her hammaddenin <b>haftalık</b> bir çıkarma kapasitesi vardır. Bunun içinden herkesin payı çıkar (üretim hakkın). Pay, bir <b>dengeleyici (termostat)</b> ile ayarlanır: bir hammaddenin fiyatı açılış fiyatının üstündeyse o hammaddenin kotası haftada %10 artar; altındaysa %10 azalır (en az %5, en çok %100). Böylece fiyat çok düşmez, çok da yükselmez.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Odun fiyatı iki hafta üst üste açılışın altına inerse, odunun kişi başı kotası küçülür; üretilen odun azalır, fiyat toparlanır. Fiyat yükselirse tersi olur.</p></div>
+
+  <h3>Madencilik Otoritesi</h3>
+  <p>Ortak bir yapıdır. Seviyesi her yükseldiğinde <b>herkesin üretim hakkı %5 artar</b> ve çalışma günü uzar. Yükseltmek için oyuncular Konseye hammadde bağışlar (taş, kömür, demir, odun, buğday, şifalı ot). Hammadde verdikçe katkı puanın da büyür.</p>
+
+  <h3>Konsey projeleri</h3>
+  <p>Her seferinde bir proje açıktır; herkes katkı verir, bitince herkes faydalanır.</p>
+  <div class="tablo-kap"><table>
+    <tr><th>Proje</th><th>Herkese faydası</th></tr>
+    <tr><td>🌉 Nehir Köprüsü</td><td>Sefer süreleri %2 kısalır.</td></tr>
+    <tr><td>🌾 Büyük Ambar</td><td>Silo kapasitesi %5 artar.</td></tr>
+    <tr><td>🌿 Şifa Bahçesi</td><td>Şifalı ot üretimi %5 artar.</td></tr>
+    <tr><td>⚓ Liman Rıhtımı</td><td>Hazırlık Deposu kişi sınırı iki katına çıkar.</td></tr>
+    <tr><td>🛡️ Savunma Duvarı</td><td>Dünya bossu savaşından erken çekilme cezası %18'den %12'ye iner.</td></tr>
+  </table></div>
+  <p>Her proje, çok miktarda hammadde ve ayrıca <b>emek puanı</b> ister. Emek puanını köylülerin üretir (köylü başına günde 1). En çok katkı yapan oyuncular rozet kazanır.</p>
+
+  <h3>Ortak kasa</h3>
+  <p>Çıkarılan her hammaddenin <b>%5'i</b> kendiliğinden Konseyin ortak kasasına eklenir; Otorite ve aktif proje bundan beslenir. Kendi cebinden bir şey çıkmaz; üretimin küçük bir parçası ortak işlere gider.</p>
+</section>
+
+<section class="bolum" id="ekonomi" data-grup="Pazar ve ekonomi" data-ikon="📈">
+  <div class="bolum-baslik"><div class="no">📈</div><div><small>Pazar ve ekonomi</small><h2>Ekonomi: ASTRA nereden gelir, nereye gider?</h2></div></div>
+  <p class="ozet">En önemli bölüm: oyunun parası <b>kapalı bir döngüdür</b>. Hiçbir ödül havadan basılmaz; her ödül bir kasadan çıkar.</p>
+
+  <h3>100 ASTRA harcadığında ne olur?</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Pay</th><th>Nereye?</th><th>Ne işe yarar?</th></tr>
+    <tr><td>%86</td><td>Oyun kasaları</td><td>Zindan, Kolezyum, boss, görev ödülleri bu kasalardan ödenir.</td></tr>
+    <tr><td>%6</td><td>Temel gelir (UBI)</td><td>Haftalık olarak aktif oyunculara paylaştırılır.</td></tr>
+    <tr><td>%5</td><td>Yakım</td><td>Sonsuza kadar oyundan silinir; arzı azaltır.</td></tr>
+    <tr><td>%3</td><td>Yapımcı payı</td><td>Oyunu geliştirenlere giden pay.</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir asker için 100 ASTRA ödedin. 86'sı kasalara gider (zindan kasasına, Kolezyum havuzuna…), 6'sı bu haftanın temel gelir havuzuna katılır, 5'i yanar, 3'ü yapımcıya gider. Yani paran kaybolmuyor: büyük kısmı <i>diğer oyunculara ödül</i> olarak dönüyor.</p></div>
+
+  <h3>Kasalar</h3>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/hazine.webp" alt="Hazine ve gelir" loading="lazy"></div>
+  <figcaption><b>Hazine ve gelir.</b> Her kasanın bakiyesi, harcamalardan aldığı pay ve "kasa sağlığı". Her kasa belli bir ödül türünü karşılar.</figcaption></figure>
+  <div class="tablo-kap"><table>
+    <tr><th>Kasa</th><th>Neyi öder?</th></tr>
+    <tr><td>🗺️ Zindan Ganimet Kasası</td><td>Zindan savaş ödülleri</td></tr>
+    <tr><td>🏟️ Kolezyum Şampiyonluk Havuzu</td><td>Kolezyum maç ve haftalık sıralama ödülleri</td></tr>
+    <tr><td>🌋 Dünya Bossu Ödül Havuzu</td><td>Haftalık boss savaşı payları</td></tr>
+    <tr><td>🛡️ Pazar Geri Alım Kasası</td><td>Fiyat düşünce hammadde alıp yakar</td></tr>
+    <tr><td>📜 Görev ve Ücretsiz Oyuncu Kasası</td><td>Krallık Yolu görevleri, promo kodları, ücretsiz oyuncu payı</td></tr>
+    <tr><td>🎪 Karnaval Ödül Havuzu</td><td>Çark ve piyango ödülleri</td></tr>
+    <tr><td>👑 Fatih Kasası</td><td>Zindanın 18. katındaki son canavarın ödülü</td></tr>
+    <tr><td>🏛️ Sirius Konseyi Kasası</td><td>Konsey projeleri</td></tr>
+    <tr><td>🚀 Universe Tohum Rezervi</td><td>İkinci oyun için ayrılmış, kilitli</td></tr>
+  </table></div>
+  <p><b>Kasa sağlığı</b> bir kasanın ne kadar dolu olduğunu söyler. Kasa zayıflarsa ödüller kendiliğinden küçülür, doluysa büyür; böylece kasalar uzun yıllar dayanır.</p>
+
+  <h3>🔒 Kilitli bakiye</h3>
+  <p>Kazandığın ASTRA'nın küçük bir kısmı hemen kullanılabilir (<b>serbest</b>); büyük kısmı <b>kilitli</b> gelir. Kilitli ASTRA oyunda harcanabilir ama çekilemez. Harcadıkça, oynadıkça ve zamanla açılır:</p>
+  <ul>
+    <li>Kazancının <b>%20'si</b> serbest, <b>%80'i</b> kilitli gelir.</li>
+    <li>Bir şey satın alırken önce <b>kilitli</b> bakiye kullanılır; harcadığının <b>%20'si kadar</b> kilit de açılır.</li>
+    <li>Her hafta kilitli bakiyenin <b>%1</b>'i kendiliğinden açılır; her gün oyuna girenler için haftada toplam %1,4.</li>
+  </ul>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Zindandan 100 ASTRA kazandın → 20'si serbest, 80'i kilitli. Demirhanede 50 ASTRA harcadın → 50'si kilitliden düşer, ayrıca 10 ASTRA'nın kilidi açılır. Böylece oyunda harcadıkça paranın daha çoğu çekilebilir hale gelir.</p></div>
+
+  <h3>🤝 Temel gelir (UBI)</h3>
+  <p>Her harcamanın %6'sı haftalık temel gelir havuzunda birikir. <b>Pazartesi 00:01'de</b> (Türkiye saati) havuz açılır; payın seviyene göre belirlenir ve haftada bir kez <b>talep edersin</b>. Havuzdaki toplam, "Karakterim" ve "Hazine" ekranlarında görünür.</p>
+
+  <h3>🌐 Ekonomi panosu</h3>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/ekonomi.webp" alt="Ekonomi panosu" loading="lazy"></div>
+  <figcaption><b>Ekonomi panosu.</b> Oyunun sağlığı, ASTRA akışı (harcanan, yakılan, yapımcı payı), kasalar ve yakılan hammaddeler.</figcaption></figure>
+  <p>Burada oyunun genel durumunu görürsün: "🟢 Sağlıklı", ödeme gücü (kasalardan çıkan / giren), ortalama kasa sağlığı ve yakılan miktarlar. <b>Ödeme gücü %100'ün altında</b> kaldıkça kasalar dolu kalır; üstüne çıkarsa ödüller kasaları eritiyor demektir ve ödüller küçülür.</p>
+
+  <div class="kutu ozet-kutu" data-s="📌"><b>Kısaca</b><p>Harcadığın her ASTRA'nın büyük kısmı başka oyunculara ödül olarak döner, küçük kısmı yanar. Kazandığın ASTRA kilitli başlar ve harcadıkça açılır. Oyun, kasaları boşaltmamak için ödülleri kendiliğinden ayarlar.</p></div>
+</section>
+
+
+<!-- ============ HESAP VE GÜVENLİK ============ -->
+<section class="bolum" id="hesap" data-grup="Hesap ve güvenlik" data-ikon="🔐">
+  <div class="bolum-baslik"><div class="no">🔐</div><div><small>Hesap ve güvenlik</small><h2>Hesabım: giriş, bakiyeler ve cüzdan</h2></div></div>
+  <p class="ozet">Hesabının kimliği, parası ve güvenliği burada. Üst çubuktaki ASTRA bakiyesine dokunarak açarsın.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/hesap.webp" alt="Hesabım paneli" loading="lazy"></div>
+  <figcaption><b>Hesabım.</b> E-posta, üç bakiye (Serbest, Kilitli, Çekimde), bağlı cüzdan ve Muhafız Mührü.</figcaption></figure>
+
+  <h3>Giriş: e-posta ve şifre</h3>
+  <ul>
+    <li>Hesabını <b>e-posta ve şifre</b> ile açarsın; e-postandaki bağlantıya tıklayarak doğrularsın.</li>
+    <li>Doğrulanmamış hesap oyun dünyasında gezebilir ama işlem yapamaz ve ücretsiz oyuncu payı alamaz.</li>
+    <li>Şifreni unutursan giriş ekranından "şifremi unuttum" ile e-postana sıfırlama bağlantısı gelir; şifre değişince tüm cihazlardan çıkış yapılır.</li>
+  </ul>
+
+  <h3>Üç bakiye</h3>
+  <div class="kartlar">
+    <div class="kart"><div class="ik">🔓</div><h4>Serbest</h4><p>Hemen harcayabileceğin ve çekim talep edebileceğin ASTRA.</p></div>
+    <div class="kart"><div class="ik">🔒</div><h4>Kilitli</h4><p>Oyunda harcanır ama çekilemez; harcadıkça ve zamanla açılır.</p></div>
+    <div class="kart"><div class="ik">🏦</div><h4>Çekimde</h4><p>Çekim talep ettin, haftalık hesaplaşmada sana ödenmeyi bekliyor.</p></div>
+  </div>
+
+  <h3>Cüzdan bağlama</h3>
+  <p>Çekim yapmak ya da cüzdanından ödeme yapmak için <b>Core</b> ya da <b>MetaMask</b> cüzdanını bağlarsın. Güvenlik için üç adım vardır:</p>
+  <ol class="adimlar">
+    <li>Cüzdanından bir mesajı <b>imzalarsın</b> (para göndermez; yalnızca "bu cüzdan benim" der).</li>
+    <li>E-postana gelen bağlantıyla <b>onaylarsın</b>.</li>
+    <li>Daha önce başka bir cüzdan bağlıysa değişiklik <b>48 saat sonra</b> geçerli olur; o zamana kadar ödemeler eski cüzdana gider ve "bu ben değilim" diyerek iptal edebilirsin.</li>
+  </ol>
+  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Hiçbir zaman cüzdanının <b>gizli kelimelerini (seed)</b> ya da <b>özel anahtarını</b> bir siteye, kişiye ya da bu oyuna yazma. Oyun bunları asla istemez; yalnızca imza ister.</p></div>
+
+  <h3>🏦 Oyun Kasası</h3>
+  <p>Sen yokken çalışan işler (bot ücreti, pasif iyileşme, botun pazar işlemleri, alet onarımı) önce oyunda kazandığın bakiyeden ödenir; yetmezse <b>Oyun Kasası</b>'ndan. Kasa, sana ait küçük bir "cep harçlığı" kesesidir:</p>
+  <ul>
+    <li>Kasadaki para <b>senindir</b>; istediğin an kesintisiz çekebilirsin.</li>
+    <li>Kasanın bir <b>üst sınırı</b> vardır (yaklaşık 30 günlük harcaman). Fazlası güvenliğin için kendiliğinden bağlı cüzdanına geri gönderilir.</li>
+    <li>Kasan ve kazandığın bakiye biterse: pasif iyileşme durur, bot ücreti yenilenemez, bot durur ve aletler onarılamaz.</li>
+  </ul>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Kasana yalnızca <b>birkaç günlük</b> harcamalık ASTRA koy; biriken servetini kendi cüzdanında tut.</p></div>
+
+  <h3>🏧 Kazanç çekimi</h3>
+  <ul>
+    <li>Yalnızca ASTRA'nın <b>serbest</b> kısmı çekilir.</li>
+    <li>Talepler <b>Pazartesi 00:01</b>'de (Türkiye saati) haftalık ortak havuzdan karşılanır.</li>
+    <li>Havuzdan payın, katkı puanına göre belirlenir ("bu haftaki tahmini hakkın").</li>
+    <li><b>Ücret %3</b>; hakkını aşan kısım için %1,5 "hak kirası" ödersin. Sığmayan kısım bakiyene döner.</li>
+    <li>Piyasa sert düştüğünde oyun bir <b>fren</b> devreye alır: o zaman ücret %6 olur.</li>
+  </ul>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Serbest bakiyende 500 ASTRA var ve 300'ünü çekmek istiyorsun. Haftalık hakkın 200 ASTRA ise: 200'ü normal çekilir (%3 ücretle); aşan 100 için hak kirası (%1,5) ödersin ya da sığmayan kısım bakiyene döner ve gelecek hafta tekrar denersin.</p></div>
+
+  <h3>🎟️ Promo kodu</h3>
+  <p>Elinde bir promo kodu varsa Hesabım'ın en altına yazarsın. Her kod bir hesapta bir kez kullanılır; ASTRA ödülü kilitli gelir.</p>
+</section>
+
+<section class="bolum" id="muhur" data-grup="Hesap ve güvenlik" data-ikon="🛡️">
+  <div class="bolum-baslik"><div class="no">🛡️</div><div><small>Hesap ve güvenlik</small><h2>Muhafız Mührü (iki adımlı doğrulama)</h2></div></div>
+  <p class="ozet">Şifren kale kapısının anahtarıdır; ama anahtarlar kopyalanabilir. Mühür, kapıya ikinci bir muhafız dikmektir.</p>
+  <ul>
+    <li>Mührü taktığında <b>giriş yaparken, cüzdan değiştirirken ve para çekerken</b> telefonundaki doğrulama uygulamasının o anki <b>6 haneli kodu</b> da gerekir.</li>
+    <li>Kod her 30 saniyede değişir; şifreni çalan biri bile telefonun olmadan geçemez.</li>
+    <li>Mührü takınca sana <b>10 yedek kod</b> verilir. Bunları güvenli bir yere yaz: telefonunu kaybedersen bu kodlarla girebilirsin. Her kod bir kez kullanılır.</li>
+    <li>Yedek kodların azaldığında <i>Hesabım → Yedek kodları yenile</i> ile 10 yeni kod üretebilirsin (eskiler geçersiz olur).</li>
+  </ul>
+  <h3>Telefonumu da yedek kodlarımı da kaybettim!</h3>
+  <p>Paran içeride kalmasın diye bir kurtarma yolu vardır; ama bilerek <b>yavaş ve güvenli</b> tasarlanmıştır:</p>
+  <ol class="adimlar">
+    <li>Oyunun yöneticisine ulaş ve kimliğini kanıtla.</li>
+    <li>Yönetici, yönetim panelinden <b>Muhafız Mührü sıfırlamasını başlatır</b>. Sana hiçbir kod gönderilmez.</li>
+    <li>E-postana <b>"mühür 48 saat sonra kaldırılacak"</b> uyarısı ve bir <b>iptal bağlantısı</b> gelir. İstemiyorsan hemen iptal edersin.</li>
+    <li><b>48 saat sonra</b> mühür kalkar; yalnız şifrenle girersin ve yeni telefonuna yeniden takarsın.</li>
+  </ol>
+  <div class="kutu ipucu" data-s="💡"><b>Neden 48 saat?</b><p>Biri senin e-postanı ya da şifreni ele geçirse bile, gerçek sahibe itiraz etmesi için süre kalır. Bekleme boyunca mühür çalışmaya devam eder, para çekimi için hâlâ kod ister.</p></div>
+</section>
+
+<!-- ============ TOPLULUK ============ -->
+<section class="bolum" id="kapi" data-grup="Topluluk" data-ikon="🚪">
+  <div class="bolum-baslik"><div class="no">🚪</div><div><small>Topluluk</small><h2>Kapı: vatandaşlık, bekleme sırası ve izin</h2></div></div>
+  <p class="ozet">Oyun dengeli kalsın diye aynı anda oynayabilecek <b>vatandaş sayısı sınırlıdır</b>. Yer açılana kadar bir bekleme sırası vardır.</p>
+  <ul>
+    <li><b>İlk dönemde 100 vatandaş.</b> Sınır, oyunun ekonomisi büyüdükçe yönetim tarafından kademeli artırılır.</li>
+    <li><b>Kayıt her zaman açık.</b> Yer yoksa sıraya girersin; sırada gezebilir ama işlem yapamazsın.</li>
+    <li>Sıradayken 3 küçük onay adımını (rehber, kurallar, "hazırım") tamamlarsan <b>hazır aday</b> olursun; yer açılınca önce hazır adaylara davet gider.</li>
+    <li>Davet <b>72 saat</b> geçerlidir. İlk gerçek oyun hareketin daveti kabul eder; cevapsız kalırsan sırada 3 basamak geriye düşersin, elenmezsin.</li>
+    <li>Her hesap tek cüzdana bağlıdır; kayıt harcı çok küçüktür (1 ASTRA).</li>
+  </ul>
+  <h3>Katılım puanı ve izin</h3>
+  <p>"Aktif vatandaş" olmak için haftada belli sayıda <b>farklı alana</b> dokunman yeter: sefer, bakım, Kışla, zindan, Kolezyum, dünya bossu, pazar, Konsey, Karnaval, rehber görevi. Aynı şeyi tekrar etmek ek puan getirmez. Gereken sayı seviyenle yavaşça yükselir (2'den 6'ya kadar).</p>
+  <ul>
+    <li>2 hafta düşük kalırsan bir <b>bildirim</b> alırsın.</li>
+    <li>3 hafta düşük kalırsan <b>"izin ister misin?"</b> sorusu gelir; 72 saat içinde cevaplarsın. Evet dersen yılda <b>30 güne kadar</b> izin hakkından (blok başına en çok 14 gün) kullanılır.</li>
+    <li>İzindeyken yerin korunur; ama o dönemde üretim hakkı ve temel gelir payı almazsın.</li>
+    <li>Cevap vermezsen hesabın <b>askıya</b> alınır; döndüğünde sıranın önüne geçersin.</li>
+    <li><b>Hiçbir zaman hesabın ya da verin silinmez.</b></li>
+  </ul>
+</section>
+
+<section class="bolum" id="uzay" data-grup="Topluluk" data-ikon="🚀">
+  <div class="bolum-baslik"><div class="no">🚀</div><div><small>Topluluk</small><h2>Uzay Limanı ve Universe'e hazırlık</h2></div></div>
+  <p class="ozet">Realm of AdAstra, ileride açılacak ikinci oyun <b>Universe</b>'ün hazırlık sahasıdır. Bu ekran, oraya hazırlığını gösterir.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/uzay.webp" alt="Uzay Limanı" loading="lazy"></div>
+  <figcaption><b>Uzay Limanı.</b> Hazırlık yüzden, roket parçaları ve Hazırlık Deposu.</figcaption></figure>
+  <ul>
+    <li><b>Roket Rampası:</b> parçalar ister (2.000 demir, 1.000 kömür, 500 taş, 300 odun, 100 ASTRA). Roketi yapınca "Roket hazır" rozeti ve hazırlık puanı kazanırsın.</li>
+    <li><b>Yük İskelesi (Hazırlık Deposu):</b> Universe'e götüreceğin hammaddeyi buraya koyarsın. Silodan çıkar, pazara giremez. Kişi başı sınır 4 haftalık üretimindir. Aşama 1'de açılır.</li>
+    <li><b>Gözlem Kulesi:</b> şimdilik kilitli; Konsey göstergelerine kısayoldur.</li>
+    <li><b>Hazırlık yüzdesi:</b> roket, depo doluluğu, köylü sayısı (100'e göre), asker sayısı (10'a göre) ve Genesis NFT'den oluşur.</li>
+  </ul>
+  <div class="kutu ipucu" data-s="💡"><b>Acele yok</b><p>Realm tek başına en az 1 yıl oynanacak şekilde tasarlandı. Universe açıldığında geçiş buradan yapılacak; o güne kadar hazırlıklar yeterince zaman alır.</p></div>
+</section>
+
+<!-- ============ YARDIM ============ -->
+<section class="bolum" id="gorevler" data-grup="Yardım" data-ikon="🧭">
+  <div class="bolum-baslik"><div class="no">🧭</div><div><small>Yardım</small><h2>Krallık Yolu: görevler ve ödüller</h2></div></div>
+  <p class="ozet">Oyunu öğrenirken sana yol gösteren 47 görevlik rehber. Her görev ödül verir.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/gorevler.webp" alt="Krallık Yolu" loading="lazy"></div>
+  <figcaption><b>Krallık Yolu.</b> 10 bölüm, 47 görev. Sıradaki görevin üstte; "Bana göster" seni ilgili ekrana götürür.</figcaption></figure>
+  <ul>
+    <li><b>10 bölüm:</b> krallığı tanı, üretim, köy, pazar, ordu, Demirhane, zindan, Kolezyum ve Karnaval, Konsey ve hazine, hesap ve ilerleme.</li>
+    <li>Her görevin ve her bölümün ASTRA ödülü vardır; tüm bölümleri bitirince "Krallık Yolu Fatihi" ödülü açılır.</li>
+    <li>Hesap başına toplam ödül sınırlıdır (en çok 994 ASTRA); bu bir hoş geldin hediyesidir.</li>
+    <li>"Hazır" yazan ödülü <b>Ben → Rehber ve yardım</b> (Krallık Yolu) ekranından alırsın.</li>
+  </ul>
+</section>
+
+<section class="bolum" id="diger" data-grup="Yardım" data-ikon="⚙️">
+  <div class="bolum-baslik"><div class="no">⚙️</div><div><small>Yardım</small><h2>Ayarlar, bildirimler, tur ve ara-git</h2></div></div>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/ayarlar.webp" alt="Ayarlar" loading="lazy"></div>
+  <figcaption><b>Ayarlar ve kısayollar.</b> Yazı boyutu, hareket azaltma ve klavye kısayolları.</figcaption></figure>
+  <ul>
+    <li><b>⚙️ Ayarlar:</b> yazı boyutu (Normal, Büyük, Çok büyük) ve "hareketi azalt" seçeneği.</li>
+    <li><b>🔔 Bildirimler:</b> sefer bitti, görev tamamlandı, ödül hazır gibi olaylar. Telefonda "⋯" menüsündedir.</li>
+    <li><b>📜 "Sen yokken olanlar":</b> oyuna uzun bir aradan sonra dönünce açılan rapor; seferlerin, botun ve kasaların bu sürede ne yaptığını özetler.</li>
+    <li><b>🎓 Oyun turu:</b> oyunu baştan adım adım tanıtan tur; <i>Ben → Oyun turu</i> ile istediğin zaman yeniden başlatırsın.</li>
+    <li><b>🔎 Ara ve git:</b> <kbd>Ctrl</kbd>+<kbd>K</kbd> ile açılır; ekran adını yaz, oraya git.</li>
+    <li><b>ℹ️ Duyurular:</b> önemli uyarılar ve bilgilendirmeler.</li>
+    <li><b>📜 Sürüm geçmişi:</b> oyunda neler değiştiğinin listesi.</li>
+  </ul>
+</section>
+
+<section class="bolum" id="sss" data-grup="Yardım" data-ikon="❓">
+  <div class="bolum-baslik"><div class="no">❓</div><div><small>Yardım</small><h2>Sık sorulan sorular</h2></div></div>
+  <details><summary>Seferim bitti ama hammadde ambarıma gelmedi, neden?</summary><div>İki ihtimal var: Silon dolmuş olabilir (fazlası boşa gider) ya da o hammaddenin <b>üretim hakkın</b> dolmuş olabilir; o zaman sefer "izin bekliyor" durumundadır, ertesi gün açılır. <i>Kotalarım</i> ekranından hangisi olduğunu görürsün.</div></details>
+  <details><summary>Alet "yıpranmış" diyor, ne yapmalıyım?</summary><div>İlgili bölgenin sefer panelinde "Tamirat" düğmesine bas ya da <i>Krallık merkezi → Tüm aletleri onar</i>. Bedel odun, demir ve biraz ASTRA'dır.</div></details>
+  <details><summary>Seviye atlayamıyorum, XP'm yeterli.</summary><div>Seviye atlamak için hammadde ve ASTRA bedeli de gerekir. Karakterim ekranı eksik olanı söyler; genellikle siloyu yükseltmek çözer.</div></details>
+  <details><summary>Zindanda kaybettim, ne olur?</summary><div>Ordun yara alabilir; iyileştirdikten sonra tekrar deneyebilirsin. Önce kazanma şansını (odanın ekranında) kontrol et; düşükse ordunu ya da teçhizatını güçlendir.</div></details>
+  <details><summary>Çarkı çevirmek kazandırır mı?</summary><div>Ortalamada hayır: ortalama dönüş yaklaşık %81'dir. Çark eğlence içindir.</div></details>
+  <details><summary>ASTRA'mı nasıl çekerim?</summary><div>Önce cüzdanını bağla, serbest bakiyenden çekim talebi ver. Talepler Pazartesi 00:01'de (Türkiye saati) haftalık havuzdan karşılanır. Ücret %3'tür.</div></details>
+  <details><summary>Hesabıma başkası girerse?</summary><div>Muhafız Mührü'nü tak: şifre tek başına yetmez. Cüzdan değişikliği zaten 48 saat bekler ve e-postana haber gelir.</div></details>
+  <details><summary>Oyun yavaş, ne yapabilirim?</summary><div>2B haritayı kullan (varsayılan). 3B haritada kalite kendiliğinden düşer. Ayarlar'dan "hareketi azalt"ı açmak da yardım eder.</div></details>
+  <details><summary>Bot beni zengin eder mi?</summary><div>Bot, sen yokken seferleri ve bakımı sürdürür; ücreti, kazandıracağı net kârın yarısıdır. Kendi başına büyük kazanç değil, <b>zamanını kurtaran</b> bir yardımcıdır.</div></details>
+</section>
+
+<section class="bolum" id="sozluk" data-grup="Yardım" data-ikon="📚">
+  <div class="bolum-baslik"><div class="no">📚</div><div><small>Yardım</small><h2>Sözlük</h2></div></div>
+  <dl class="sozluk">
+    <dt>ASTRA</dt><dd>Oyunun parası.</dd>
+    <dt>AMM / takas havuzu</dt><dd>Alıcı ve satıcı aramadan, havuzdaki miktara bakarak fiyat belirleyen pazar. Çok alınan pahalanır, çok satılan ucuzlar.</dd>
+    <dt>Harç</dt><dd>Her alım-satımdan kesilen küçük pay. Hammaddenin bir kısmı yakılır, ASTRA kısmı kasalara gider.</dd>
+    <dt>Yakım</dt><dd>Bir şeyin oyundan sonsuza dek silinmesi. Azalan miktar, kalanın değerini korumaya yardım eder.</dd>
+    <dt>Geri alım</dt><dd>Hazinenin, fiyatı düşen hammaddeyi piyasadan satın alıp yakması.</dd>
+    <dt>Kasa</dt><dd>Oyunun ASTRA biriktirdiği ve belirli amaçlarla dağıttığı ortak havuzlardan biri.</dd>
+    <dt>Kota</dt><dd>Belirli bir sürede yapabileceğin işin üst sınırı.</dd>
+    <dt>Üretim hakkı</dt><dd>Bir haftada çıkarabileceğin hammadde payı. Herkesin payı toplam kapasiteye göre ayarlanır.</dd>
+    <dt>Dengeleyici (termostat)</dt><dd>Hızlı kazanıldığında ödülü yavaşlatan, yavaşken hızlandıran ayar; kasalar uzun dayansın diye.</dd>
+    <dt>Temel gelir (UBI)</dt><dd>Her hafta ortak kasadan aktif oyunculara dağıtılan ASTRA.</dd>
+    <dt>Stamina</dt><dd>Sefere çıkmak için gereken enerji. Buğdayla ya da zamanla dolar.</dd>
+    <dt>Silo</dt><dd>Hammaddelerini sakladığın depo. Dolunca fazlası boşa gider.</dd>
+    <dt>Kapı</dt><dd>Oyuna katılan hesap sayısı sınırlıdır; yer açılana kadar bekleme sırası vardır.</dd>
+    <dt>Emek puanı</dt><dd>Köylülerinin ürettiği puan; Konsey projelerinde kullanılır.</dd>
+    <dt>Muhafız Mührü</dt><dd>İki adımlı doğrulama: şifreye ek olarak telefondaki 6 haneli kod.</dd>
+    <dt>Oyun Kasası</dt><dd>Sen yokken çalışan işlerin ücretini ödemek için kullanılan, sana ait küçük bakiye.</dd>
+    <dt>Genesis NFT</dt><dd>18 eseri tamamlayınca basılan, Universe'te gezegen satın alma hakkı veren koleksiyon ödülü.</dd>
+  </dl>
+</section>
+
+<div class="alt">
+  <p><b>Realm of AdAstra Oyun Rehberi</b> · Bu sayfa oyunun kendisi gibi güncellenir. Eksik ya da yanlış bir şey görürsen yönetime haber ver.</p>
+  <p><a href="/">← Oyuna dön</a> · <a href="#basla">Başa dön ↑</a></p>
+</div>
+
+</div>
+</main>
+</div>
+
+<a class="basa" id="basa" href="#basla" aria-label="Başa dön">↑</a>
+<div class="buyut" id="buyut" role="dialog" aria-label="Büyütülmüş görsel"><img alt=""></div>
+<script src="rehber/rehber.js"></script>
+</body>
+</html>

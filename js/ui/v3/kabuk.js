@@ -24,6 +24,13 @@ const EKRAN_KIMLIGI = {
 };
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
+// Oyun rehberi (public/rehber.html): yeni sekmede açılır; oyun arkada olduğu gibi kalır. Açılır pencere engellenirse aynı sekmede açılır.
+export function rehberAc() {
+  // Not: 'noopener' ile window.open her zaman null döner (başarıda bile); bu yüzden pencere açılıp opener elle kapatılır.
+  try { const w = window.open('rehber.html', '_blank'); if (w) { try { w.opener = null; } catch { /* çapraz kaynak değil: sorun yok */ } return; } } catch { /* engellendi: aynı sekmede aç */ }
+  window.location.href = 'rehber.html';
+}
+
 export function gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat, labAc, ayarlarAc, paletAc }) {
   const harita = {};
   for (const [anahtar, kimlik] of Object.entries(EKRAN_KIMLIGI)) harita[anahtar] = () => api.ekranAc(kimlik);
@@ -33,6 +40,7 @@ export function gitHaritasi(api, { sekmeSec, uyariMetni, turBaslat, labAc, ayarl
     hesap: () => api.openWallet(),
     tur: () => { api.closeModal(); sekmeSec('harita'); turBaslat(); },
     rehber: () => api.openOgretici(),
+    oyunrehberi: () => { api.closeModal(); rehberAc(); },
     komut: () => { api.closeModal(); paletAc(); },
     ayarlar: () => ayarlarAc(),
     duyurular: () => api.openPanel(['ℹ️', 'Duyurular ve uyarılar'], `<div class="v3-liste">${uyariMetni().map((a) => `<div class="v3-not"><b>${esc(a.badge || 'Duyuru')}</b><span>${esc(a.text)}</span></div>`).join('') || '<div class="v3-bos">Şu an duyuru yok. Önemli bir bildirim olduğunda burada görünür.</div>'}</div>`),
@@ -69,6 +77,9 @@ export function kurV3Kabuk(api) {
       </button>
       <button type="button" id="v3-zil" class="v3-hap v3-ikon" aria-label="Bildirimler">
         <span aria-hidden="true">🔔</span><span class="v3-etiket-menu" aria-hidden="true">Bildirimler</span><b id="v3-zil-sayi" class="v3-sayi" hidden>0</b>
+      </button>
+      <button type="button" id="v3-rehber" class="v3-hap v3-ikon" aria-label="Oyun rehberi (yeni sekmede açılır)" title="Oyun rehberi">
+        <span aria-hidden="true">📖</span><span class="v3-etiket-menu" aria-hidden="true">Oyun rehberi</span>
       </button>
     </div>`;
 
@@ -255,6 +266,7 @@ export function kurV3Kabuk(api) {
   $('v3-bakiye').addEventListener('click', () => { tepsiAc(false); api.openWallet(); });
   $('v3-bot').addEventListener('click', () => { tepsiAc(false); api.ekranAc('taverna'); });
   $('v3-zil').addEventListener('click', () => { tepsiAc(false); api.toggleNotif(); });
+  $('v3-rehber').addEventListener('click', () => { tepsiAc(false); rehberAc(); });
   $('v3-kaynak-dugme').addEventListener('click', () => tepsiAc(tepsi.hidden));
   tepsi.addEventListener('click', (e) => {
     const k = e.target.closest('[data-v3-kaynak]');
