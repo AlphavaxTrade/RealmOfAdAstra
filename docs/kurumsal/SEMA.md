@@ -3,7 +3,7 @@
 > Bu dosya **otomatik üretilir**: `node scripts/db/sema-belge.mjs` (güncelliği `tests/test_sema_belge.mjs` korur).
 > Şema değişikliği yalnız `server/gecis/` altına yeni numaralı geçiş eklenerek yapılır; uygulanmış geçişler değişmez (mühür).
 
-Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti
+Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama
 
 ## accounts
 
@@ -27,6 +27,8 @@ Hesaplar: e-posta (+ benzersiz email_key), parola özeti, doğrulama, bağlı/be
 | totp_step | INTEGER | evet | 0 |  |
 | backup_codes | TEXT |  |  |  |
 | email_key | TEXT |  |  |  |
+| totp_reset_at | INTEGER |  |  |  |
+| totp_reset_note | TEXT |  |  |  |
 
 İndeksler: `accounts_bekleyen_cuzdan`, `accounts_email_key`
 

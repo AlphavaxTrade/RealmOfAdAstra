@@ -58,5 +58,9 @@
   {
     "sql": "SELECT id FROM payouts WHERE tx_hash = ? AND id != ?",
     "neden": "yönetici belirsiz ödemeyi elle çözerken NADİREN (çözüm başına bir kez) çalışır; payouts tablosu haftada yüzlerce satır, indeks yazma maliyetine değmez"
+  },
+  {
+    "sql": "SELECT id, email, totp_reset_at, totp_reset_note FROM accounts WHERE totp_reset_at IS NOT NULL ORDER BY totp_reset_at",
+    "neden": "yönetici panelinin durum ekranı (elle yenileme) bekleyen Muhafız Mührü sıfırlamalarını listeler; tablo hesap sayısı kadar küçüktür ve sorgu sıcak yol değildir. İndeks yazma maliyetine değmez"
   }
 ]
