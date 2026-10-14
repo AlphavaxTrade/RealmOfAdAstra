@@ -16,7 +16,7 @@ export const SOZLUK = {
   tokenomics: { ad: 'Para düzeni', aciklama: 'ASTRA\'nın nereden gelip nereye gittiği: kaç tane var, ne kadarı yakıldı, kasalarda ne kadar duruyor.' },
   termostat: { ad: 'Dengeleyici', aciklama: 'Oyun, hızlı kazanıldığında ödülü yavaşlatır, yavaşken hızlandırır; böylece kasalar uzun süre dayanır.' },
   stamina: { ad: 'Stamina', aciklama: 'Sefere çıkmak için gereken enerji. Buğdayla doldurulur, zamanla kendiliğinden de dolar.' },
-  silo: { ad: 'Silo', aciklama: 'Hammaddelerini sakladığın depo. Dolunca fazlası boşa gider; yükselttikçe daha çok alır.' }
+  silo: { ad: 'Silo', aciklama: 'Hammaddelerini sakladığın depo. Dolunca biten seferlerin ürünü yer açılana kadar seferde bekler; yükselttikçe daha çok alır.' }
 };
 
 // Terimin yanına "?" düğmesi koyar. Bilinmeyen anahtarda düz (kaçırılmış) metin döner; sayfayı bozmaz.
