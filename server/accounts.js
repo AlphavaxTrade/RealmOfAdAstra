@@ -57,6 +57,7 @@ const normCode = yedekKodNormal;
 const yedekKodlariUret = () => Array.from({ length: 10 }, () => { const x = crypto.randomBytes(5).toString('hex'); return x.slice(0, 5) + '-' + x.slice(5); });
 
 export const WALLET_CHANGE_DELAY_MS = 48 * 3600 * 1000;
+export const TFA_RESET_DELAY_MS = 48 * 3600 * 1000;     // yönetici onaylı mühür sıfırlama: gerçek sahibin itiraz süresi
 export const playerIdOf = accountId => 'acc:' + accountId;
 export const accountIdOf = playerId => (typeof playerId === 'string' && playerId.startsWith('acc:') ? Number(playerId.slice(4)) : null);
 
@@ -93,7 +94,10 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     totpSifreliYaz: db.raw.prepare('UPDATE accounts SET totp_secret = ?, totp_pending = ? WHERE id = ?'),
     totpOff: db.raw.prepare('UPDATE accounts SET totp_secret = NULL, totp_pending = NULL, totp_enabled = 0, totp_step = 0, backup_codes = NULL WHERE id = ?'),
     totpStep: db.raw.prepare('UPDATE accounts SET totp_step = ? WHERE id = ?'),
-    backupSet: db.raw.prepare('UPDATE accounts SET backup_codes = ? WHERE id = ?')
+    backupSet: db.raw.prepare('UPDATE accounts SET backup_codes = ? WHERE id = ?'),
+    resetSet: db.raw.prepare('UPDATE accounts SET totp_reset_at = ?, totp_reset_note = ? WHERE id = ?'),
+    resetClear: db.raw.prepare('UPDATE accounts SET totp_reset_at = NULL, totp_reset_note = NULL WHERE id = ?'),
+    resetBekleyen: db.raw.prepare('SELECT id, email, totp_reset_at, totp_reset_note FROM accounts WHERE totp_reset_at IS NOT NULL ORDER BY totp_reset_at')
   };
   const link = (param, token) => `${cfg.publicUrl.replace(/\/$/, '')}/?${param}=${token}`;
   // Belirteç e-postadaki bağlantıda DÜZ gider, veritabanında yalnız SHA-256 özeti durur (kayıt dosyası sızsa bağlantı üretilemez)
@@ -143,6 +147,17 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
 
   // Bağlı cüzdan: 48 saati dolmuş bekleyen değişikliği etkinleştirir
   function refresh(acc) {
+    // Yönetici onaylı mühür sıfırlama: bekleme süresi dolduysa mühür kalkar (sahibi 48 saat içinde iptal etmedi)
+    if (acc && acc.totp_reset_at && acc.totp_reset_at <= clock()) {
+      q.totpOff.run(acc.id);
+      q.resetClear.run(acc.id);
+      q.tokensDelKind.run(acc.id, 'tfa_reset');
+      db.event('2fa-reset-applied', playerIdOf(acc.id), {});
+      Promise.resolve(mailer.send({ to: acc.email, subject: 'Realm of AdAstra — Muhafız Mührü kaldırıldı',
+        text: 'Muhafız Mührü sıfırlama isteğin tamamlandı: hesabında iki adımlı doğrulama artık KAPALI.\n\nGirişte yalnız şifren yeter. Hesabına girince Muhafız Mührü yeni telefonunla yeniden takmanı öneririz.\n\nBunu sen istemediysen hemen şifreni sıfırla ve bize haber ver.' }))
+        .catch(e => db.event('eposta-hata', playerIdOf(acc.id), { neden: String(e && e.message).slice(0, 80), konu: 'muhur-sifirlama' }));
+      acc = q.byId.get(acc.id);
+    }
     if (acc && acc.pending_wallet && acc.pending_confirmed && acc.pending_active_at && acc.pending_active_at <= clock()) {
       q.promote.run(clock(), acc.id);
       db.event('wallet-active', playerIdOf(acc.id), { wallet: acc.pending_wallet });
@@ -223,7 +238,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
   // Asenkron: yedek kod kayıtları scrypt ile özetlendiği için doğrulama iş parçacığı havuzunda yapılır (sunucuyu bloklamaz).
   // Deneme hakkı beklemeden ÖNCE düşülür: aynı anda yüzlerce istek gönderilse bile 5 hatalı deneme sınırı aşılamaz.
   async function check2fa(playerId, code) {
-    const acc = q.byId.get(accountIdOf(playerId));
+    const acc = refresh(q.byId.get(accountIdOf(playerId)));
     if (!acc || !acc.totp_enabled) return { ok: true };
     if (code == null || code === '') return { ok: false, need2fa: true, error: '🛡️ İki adımlı doğrulama kodunu yaz.' };
     if (tfaLocked(acc.id)) return { ok: false, need2fa: true, error: 'Çok fazla hatalı kod. 15 dakika sonra tekrar dene.' };
@@ -336,7 +351,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     if (!good) { noteFail('e:' + e); noteFail('i:' + ip); return { ok: false, error: BAD }; }
     if (!acc.email_verified) return { ok: false, error: BAD };
     fails.delete('e:' + e);
-    if (acc.totp_enabled) {
+    if (refresh(acc).totp_enabled) {
       const ticket = crypto.randomBytes(24).toString('hex');
       tickets.set(ticket, { playerId: playerIdOf(acc.id), exp: clock() + 5 * 60000, tries: 0 });
       if (tickets.size > 50000) for (const [k, v] of tickets) if (v.exp < clock()) tickets.delete(k);
@@ -422,6 +437,7 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
       email: acc.email, verified: !!acc.email_verified, wallet: acc.wallet || null,
       pendingWallet: acc.pending_wallet || null, pendingConfirmed: !!acc.pending_confirmed,
       pendingActiveAt: acc.pending_active_at || null, walletChangeDelayHours: WALLET_CHANGE_DELAY_MS / 3600000,
+      muhurSifirlamaAt: acc.totp_reset_at || null,
       twoFactor: !!acc.totp_enabled, backupLeft: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').length : 0,
       backupLegacy: acc.totp_enabled ? JSON.parse(acc.backup_codes || '[]').filter(k => yedekKodBicimi(k) !== 's2').length : 0
     };
@@ -510,5 +526,49 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     return r ? playerIdOf(r.id) : null;
   }
 
-  return { check2fa, yedekKodlariYenile, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
+  // ── Yönetici: Muhafız Mührü sıfırlama (telefon + yedek kodlar kaybedildiyse) ──
+  // Kod ya da yeni anahtar GÖNDERİLMEZ: 48 saat beklenir, hesabın e-postasına iptal bağlantısı gider, süre dolunca mühür kalkar.
+  const hata = (kod, mesaj) => Object.assign(new Error(mesaj), { kod });
+  const hedefHesap = ({ email, playerId }) => {
+    const id = playerId ? accountIdOf(String(playerId)) : null;
+    const acc = id ? q.byId.get(id) : q.byEmail.get(String(email || '').trim().toLowerCase().slice(0, 254));
+    if (!acc) throw hata(404, 'Bu e-posta / oyuncu kimliğiyle hesap bulunamadı.');
+    return acc;
+  };
+  async function adminTfaSifirla({ email, playerId, gerekce } = {}) {
+    const g = String(gerekce || '').trim();
+    if (g.length < 10 || g.length > 500) throw hata(400, 'Gerekçe 10-500 karakter olmalı (kimliği nasıl doğruladığını yaz).');
+    const acc = hedefHesap({ email, playerId });
+    if (!acc.totp_enabled) throw hata(409, 'Bu hesapta Muhafız Mührü zaten kapalı.');
+    if (acc.totp_reset_at) throw hata(409, 'Bu hesap için zaten bekleyen bir sıfırlama var (' + new Date(acc.totp_reset_at).toISOString() + ').');
+    const at = clock() + TFA_RESET_DELAY_MS;
+    q.resetSet.run(at, g, acc.id);
+    q.tokensDelKind.run(acc.id, 'tfa_reset');
+    const url = link('muhur-iptal', newToken(acc.id, 'tfa_reset', TFA_RESET_DELAY_MS + 7 * 86400000));
+    db.event('2fa-reset-requested', playerIdOf(acc.id), { gerekce: g, at });
+    await mailer.send({ to: acc.email, subject: 'Realm of AdAstra — Muhafız Mührü 48 saat sonra kaldırılacak',
+      text: 'Hesabın için Muhafız Mührü (iki adımlı doğrulama) sıfırlama isteği alındı. Mühür ' + Math.round(TFA_RESET_DELAY_MS / 3600000) + ' saat sonra kalkacak.\n\nBunu SEN istediysen bir şey yapma.\n\nSen istemediysen hemen iptal et:\n' + url + '\n\nArdından şifreni de değiştir.' });
+    return { ok: true, playerId: playerIdOf(acc.id), email: acc.email, applyAt: at, ...devLink(url) };
+  }
+  function adminTfaSifirlaIptal({ email, playerId } = {}) {
+    const acc = hedefHesap({ email, playerId });
+    if (!acc.totp_reset_at) throw hata(409, 'Bu hesap için bekleyen bir sıfırlama yok.');
+    q.resetClear.run(acc.id);
+    q.tokensDelKind.run(acc.id, 'tfa_reset');
+    db.event('2fa-reset-cancelled', playerIdOf(acc.id), { by: 'admin' });
+    return { ok: true, playerId: playerIdOf(acc.id) };
+  }
+  // Oyuncu e-postadaki "bu ben değilim" bağlantısına tıklar
+  function tfaSifirlaIptalLink(token) {
+    const t = takeToken(token, 'tfa_reset');
+    if (!t) return { ok: false, error: 'Bağlantı geçersiz ya da süresi dolmuş.' };
+    const acc = q.byId.get(t.account_id);
+    if (!acc || !acc.totp_reset_at) return { ok: false, error: 'Bu istek artık geçerli değil.' };
+    q.resetClear.run(acc.id);
+    db.event('2fa-reset-cancelled', playerIdOf(acc.id), { by: 'owner' });
+    return { ok: true };
+  }
+  const tfaSifirlamaBekleyenler = () => q.resetBekleyen.all().map(r => ({ playerId: playerIdOf(r.id), email: r.email, applyAt: r.totp_reset_at, gerekce: r.totp_reset_note }));
+
+  return { adminTfaSifirla, adminTfaSifirlaIptal, tfaSifirlaIptalLink, tfaSifirlamaBekleyenler, check2fa, yedekKodlariYenile, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
 }

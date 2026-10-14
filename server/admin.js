@@ -36,6 +36,7 @@ async function load() {
   kapiView(s.kapi);
   uncertainView(s.payoutsBelirsiz || []);
   uncertainKasaView(s.kasaOpsBelirsiz || []);
+  tfaPendingView(s.muhurSifirlamaBekleyen || []);
   $('uniStage').value = String(s.universeStage ?? 0);
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
@@ -76,6 +77,25 @@ function uncertainView(rows) {
   $('uncertain').innerHTML = '<tr><th>#</th><th>Tür</th><th>Adres</th><th>ASTRA</th><th>İşlem</th><th>Not</th><th></th></tr>' +
     (rows.map(p => `<tr><td>${p.id}</td><td>${esc(p.kind)}</td><td>${esc(String(p.address).slice(0, 12))}…</td><td>${fmt(p.amount)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">${esc(p.tx_hash.slice(0, 12))}…</a>` : '<span class="bad">kayıt yok</span>'}</td><td class="bad">${esc(p.error || '')}</td><td><button data-rid="${p.id}" data-d="sent" class="go">✅ Gönderildi</button> <button data-rid="${p.id}" data-d="pending" class="danger">↩️ Yeniden sıraya</button></td></tr>`).join('') || '<tr><td colspan="7">Belirsiz ödeme yok</td></tr>');
 }
+function tfaPendingView(rows) {
+  $('tfaPending').innerHTML = '<tr><th>Hesap</th><th>Mühür kalkma anı</th><th>Gerekçe</th><th></th></tr>' +
+    (rows.map(r => '<tr><td>' + esc(r.email || r.playerId) + '</td><td>' + new Date(r.applyAt).toLocaleString('tr-TR') + '</td><td>' + esc(String(r.gerekce || '').slice(0, 120)) + '</td><td><button data-tfa="' + esc(r.playerId) + '">İptal et</button></td></tr>').join('') ||
+      '<tr><td colspan="4" class="k">Bekleyen sıfırlama yok.</td></tr>');
+}
+$('tfaReset').onclick = () => act(async () => {
+  const hedef = $('tfaTarget').value.trim(), gerekce = $('tfaReason').value.trim();
+  if (!hedef) throw new Error('E-posta ya da oyuncu kimliği yaz');
+  if (gerekce.length < 10) throw new Error('Gerekçe en az 10 karakter olmalı (kimliği nasıl doğruladın?)');
+  if (!confirm(hedef + ' için Muhafız Mührü 48 saat sonra kaldırılacak; oyuncunun e-postasına iptal bağlantısı gider. Kimliğini doğruladığından emin misin?')) return;
+  const r = await api('POST', '/api/admin/hesap/muhur-sifirla', hedef.startsWith('acc:') ? { playerId: hedef, gerekce } : { email: hedef, gerekce });
+  $('tfaTarget').value = ''; $('tfaReason').value = '';
+  $('tfaMsg').textContent = 'Başlatıldı: ' + r.email + ' — mühür ' + new Date(r.applyAt).toLocaleString('tr-TR') + ' tarihinde kalkacak.';
+});
+$('tfaPending').addEventListener('click', ev => {
+  const b = ev.target.closest('button[data-tfa]');
+  if (!b) return;
+  act(async () => { await api('POST', '/api/admin/hesap/muhur-sifirla/iptal', { playerId: b.dataset.tfa }); $('tfaMsg').textContent = 'Sıfırlama iptal edildi.'; });
+});
 function uncertainKasaView(rows) {
   $('uncertainKasa').innerHTML = '<tr><th>#</th><th>Tür</th><th>Oyuncu</th><th>Tutar</th><th>İşlem</th><th>Not</th><th></th></tr>' +
     (rows.map(p => `<tr><td>${p.id}</td><td>${esc(p.kind)}</td><td>${esc(String(p.player).slice(0, 14))}</td><td>${fmt(p.amount)}</td><td>${p.tx_hash ? `<a href="https://snowtrace.io/tx/${esc(p.tx_hash)}" target="_blank" rel="noopener">${esc(String(p.tx_hash).slice(0, 12))}…</a>` : '—'}</td><td>${esc(String(p.error || ''))}</td><td><button data-kid="${p.id}" data-d="sent">✅ Gitti</button> <button data-kid="${p.id}" data-d="failed">↩️ Gitmedi</button></td></tr>`).join('') ||

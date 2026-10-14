@@ -64,5 +64,6 @@
   "test_denetim_2026_10_zincir.mjs",
   "test_server_kasa_hatalar.mjs",
   "test_yedek_kod.mjs",
-  "test_denetim_2026_10_yonetim.mjs"
+  "test_denetim_2026_10_yonetim.mjs",
+  "test_muhur_sifirlama.mjs"
 ]

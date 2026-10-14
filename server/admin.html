@@ -120,6 +120,17 @@
       <div class="k">Oyun Kasası'ndan oyuncu cüzdanına çekim, iade ya da oyuna aktarım "gönderiliyor" kaldıysa burada görünür. Önce zincir gezgininde bak; gerekçeni yaz.</div>
       <div class="scroll"><table id="uncertainKasa"></table></div>
     </div>
+    <h3>🛡️ Muhafız Mührü sıfırlama (telefon ve yedek kodlar kaybedildiyse)</h3>
+    <div class="card">
+      <div class="k">Kod GÖNDERİLMEZ: 48 saat beklenir, oyuncunun e-postasına "bu ben değilim" bağlantısı gider, süre dolunca mühür kalkar. Önce kimliğini başka bir yoldan doğrula; gerekçeni yaz.</div>
+      <div class="row" style="margin-top:6px;">
+        <input id="tfaTarget" placeholder="e-posta ya da acc:123">
+        <input id="tfaReason" placeholder="gerekçe (en az 10 karakter)">
+        <button id="tfaReset" class="go">Sıfırlamayı başlat (48 saat)</button>
+      </div>
+      <div id="tfaMsg" class="k"></div>
+      <div class="scroll"><table id="tfaPending"></table></div>
+    </div>
     <h3>Ödemeler (son 50)</h3>
     <div class="card scroll"><table id="payouts"></table></div>
     <h3>Olaylar (son 50)</h3>

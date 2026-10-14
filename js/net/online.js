@@ -1039,7 +1039,7 @@ export async function openWalletPanel() {
   };
 }
 
-// E-postadaki bağlantılar (?verify= / ?reset= / ?wallet=) oyunda açılınca
+// E-postadaki bağlantılar (?verify= / ?reset= / ?wallet= / ?muhur-iptal=) oyunda açılınca
 async function handleEmailLinks() {
   const p = new URLSearchParams(location.search);
   const clean = () => { try { history.replaceState(null, '', location.pathname); } catch { /* yok */ } };
@@ -1063,6 +1063,12 @@ async function handleEmailLinks() {
         ctx.toast('✅ E-postan doğrulandı. Şimdi giriş yap.', 'success');
         requireLogin('login');
       }
+    } catch (err) { ctx.toast(err.message, 'error'); }
+  } else if (p.get('muhur-iptal')) {
+    clean();
+    try {
+      await api('POST', '/api/account/2fa/reset-cancel', { token: p.get('muhur-iptal') });
+      ctx.toast('✅ Muhafız Mührü sıfırlama isteği iptal edildi. Mührün yerinde duruyor. Şifreni de değiştirmeni öneririz.', 'success');
     } catch (err) { ctx.toast(err.message, 'error'); }
   } else if (p.get('wallet')) {
     clean();

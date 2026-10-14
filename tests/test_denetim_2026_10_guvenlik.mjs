@@ -129,7 +129,7 @@ try {
     const ekle = d.prepare('INSERT INTO accounts (email, pass_hash, created_at) VALUES (?, ?, 1)');
     for (const e of ['a.b@gmail.com', 'ab@gmail.com', 'ab+x@gmail.com', 'baska@ornek.com']) ekle.run(e, 'h');
     const r = gecisleriCalistir(d);
-    assert.deepEqual(r.uygulanan, [5, 6, 7], 'yeni geçişler hatasız uygulandı');
+    assert.deepEqual(r.uygulanan, GECISLER.map(g => g.surum).filter(s => s > 4), 'yeni geçişler hatasız uygulandı');
     const anahtarlar = d.prepare('SELECT id, email_key FROM accounts ORDER BY id').all();
     assert.equal(anahtarlar[0].email_key, 'ab@gmail.com', 'ilk hesap düz anahtarı alır');
     assert.equal(anahtarlar[1].email_key, 'ab@gmail.com#2', 'çakışan ikincisi sonek alır (silinmedi)');

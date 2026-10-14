@@ -543,6 +543,37 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/account/2fa/reset-cancel:
+    post:
+      tags:
+        - Hesap
+      summary: Yönetici başlattığı Muhafız Mührü sıfırlamasını iptal et (e-postadaki "bu ben değilim" bağlantısı)
+      operationId: post_api_account_2fa_reset_cancel
+      security: *a1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+                - token
+      responses:
+        "200":
+          description: "{ ok }. Bağlantı geçersiz / süresi dolmuşsa ya da sıfırlama artık yoksa 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/account/wallet/confirm:
     post:
       tags:
@@ -1655,6 +1686,89 @@ paths:
       responses:
         "200":
           description: "{ ok, id, durum, kind, zincir }. İşlem 'sending' değilse 409; zincirin kesin kanıtı kararla çelişirse 409; yoksa 404; gerekçe/numara geçersizse 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/hesap/muhur-sifirla:
+    post:
+      tags:
+        - Yönetim
+      summary: Telefonunu ve yedek kodlarını kaybeden oyuncu için Muhafız Mührü sıfırlamasını başlat (48 saat bekler)
+      operationId: post_api_admin_hesap_muhur_sifirla
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Hesabın e-postası (email ya da playerId verilir)
+                playerId:
+                  type: string
+                  description: acc:<n> biçiminde oyuncu kimliği
+                gerekce:
+                  type: string
+                  description: 10-500 karakter; kimliğin nasıl doğrulandığı. Olay günlüğüne yazılır
+              required:
+                - gerekce
+      responses:
+        "200":
+          description: "{ ok, playerId, email, applyAt }. Kod ya da anahtar gönderilmez; hesabın e-postasına iptal bağlantısı gider, applyAt anında mühür kalkar. Mühür kapalıysa ya da bekleyen sıfırlama varsa 409; hesap yoksa 404; gerekçe uygun değilse 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/hesap/muhur-sifirla/iptal:
+    post:
+      tags:
+        - Yönetim
+      summary: Bekleyen Muhafız Mührü sıfırlamasını iptal et
+      operationId: post_api_admin_hesap_muhur_sifirla_iptal
+      security: *a3
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Hesabın e-postası (email ya da playerId verilir)
+                playerId:
+                  type: string
+                  description: acc:<n> biçiminde oyuncu kimliği
+      responses:
+        "200":
+          description: "{ ok, playerId }. Bekleyen sıfırlama yoksa 409; hesap yoksa 404."
           content:
             application/json:
               schema:

@@ -92,6 +92,12 @@ export default function hesapRotalari(ctx) {
       const r = await accounts.walletLink(me, signature);
       return r.ok ? r : [400, { error: r.error }];
     },
+    // E-postadaki "bu ben değilim" bağlantısı: yönetici başlattığı Muhafız Mührü sıfırlamasını iptal eder
+    'POST /api/account/2fa/reset-cancel': async (req) => {
+      const { token } = await readBody(req);
+      const r = accounts.tfaSifirlaIptalLink(token);
+      return r.ok ? r : [400, { error: r.error }];
+    },
     'POST /api/account/wallet/confirm': async (req) => {
       const { token } = await readBody(req);
       const r = accounts.walletConfirm(token);

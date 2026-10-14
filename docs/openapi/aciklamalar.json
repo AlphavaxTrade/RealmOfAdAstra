@@ -802,5 +802,66 @@
       400,
       404
     ]
+  },
+  "POST /api/account/2fa/reset-cancel": {
+    "etiket": "Hesap",
+    "ozet": "Yönetici başlattığı Muhafız Mührü sıfırlamasını iptal et (e-postadaki \"bu ben değilim\" bağlantısı)",
+    "govde": {
+      "token": {
+        "tur": "string",
+        "zorunlu": true
+      }
+    },
+    "yanit": "{ ok }. Bağlantı geçersiz / süresi dolmuşsa ya da sıfırlama artık yoksa 400.",
+    "kodlar": [
+      400,
+      429
+    ]
+  },
+  "POST /api/admin/hesap/muhur-sifirla": {
+    "etiket": "Yönetim",
+    "ozet": "Telefonunu ve yedek kodlarını kaybeden oyuncu için Muhafız Mührü sıfırlamasını başlat (48 saat bekler)",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "aciklama": "Hesabın e-postası (email ya da playerId verilir)"
+      },
+      "playerId": {
+        "tur": "string",
+        "aciklama": "acc:<n> biçiminde oyuncu kimliği"
+      },
+      "gerekce": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "10-500 karakter; kimliğin nasıl doğrulandığı. Olay günlüğüne yazılır"
+      }
+    },
+    "yanit": "{ ok, playerId, email, applyAt }. Kod ya da anahtar gönderilmez; hesabın e-postasına iptal bağlantısı gider, applyAt anında mühür kalkar. Mühür kapalıysa ya da bekleyen sıfırlama varsa 409; hesap yoksa 404; gerekçe uygun değilse 400.",
+    "kodlar": [
+      400,
+      401,
+      404,
+      409
+    ]
+  },
+  "POST /api/admin/hesap/muhur-sifirla/iptal": {
+    "etiket": "Yönetim",
+    "ozet": "Bekleyen Muhafız Mührü sıfırlamasını iptal et",
+    "govde": {
+      "email": {
+        "tur": "string",
+        "aciklama": "Hesabın e-postası (email ya da playerId verilir)"
+      },
+      "playerId": {
+        "tur": "string",
+        "aciklama": "acc:<n> biçiminde oyuncu kimliği"
+      }
+    },
+    "yanit": "{ ok, playerId }. Bekleyen sıfırlama yoksa 409; hesap yoksa 404.",
+    "kodlar": [
+      401,
+      404,
+      409
+    ]
   }
 }

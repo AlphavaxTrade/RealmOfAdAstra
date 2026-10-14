@@ -6,5 +6,6 @@ import * as g004 from './004_indeksler.js';
 import * as g005 from './005_eposta_anahtari.js';
 import * as g006 from './006_kapi_ip.js';
 import * as g007 from './007_eposta_belirtec_ozeti.js';
+import * as g008 from './008_muhur_sifirlama.js';
 
-export const GECISLER = [g001, g002, g003, g004, g005, g006, g007].sort((a, b) => a.surum - b.surum);
+export const GECISLER = [g001, g002, g003, g004, g005, g006, g007, g008].sort((a, b) => a.surum - b.surum);

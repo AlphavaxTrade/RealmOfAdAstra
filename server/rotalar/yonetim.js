@@ -2,7 +2,7 @@
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
 
 export default function yonetimRotalari(ctx) {
-  const { db, E, world, promo, kapi, chain, cfg, clock, readBody } = ctx;
+  const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody } = ctx;
   return {
     'GET /api/admin/status': () => {
       const e = world.econ();
@@ -28,6 +28,8 @@ export default function yonetimRotalari(ctx) {
         payoutsBelirsiz: db.q.payoutsSending.all().map(p => ({ id: p.id, epoch: p.epoch, kind: p.kind, address: p.address, amount: p.amount, status: p.status, tx_hash: p.tx_hash, error: p.error, created_at: p.created_at, sent_at: p.sent_at })),
         // Oyun Kasası'nda belirsiz ('sending') işlemler: yönetici çözebilsin
         kasaOpsBelirsiz: db.raw.prepare("SELECT id, player, kind, amount, status, tx_hash, error, created FROM kasa_ops WHERE status = 'sending' ORDER BY id").all(),
+        // Muhafız Mührü sıfırlaması bekleyen hesaplar (48 saat dolunca mühür kalkar; yönetici iptal edebilir)
+        muhurSifirlamaBekleyen: accounts ? accounts.tfaSifirlamaBekleyenler() : [],
         events: db.q.eventsRecent.all(50)
       };
     },
@@ -46,6 +48,17 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/kasa/ops/resolve': async (req) => {
       const { id, durum, gerekce } = await readBody(req);
       try { return { ok: true, ...(await world.resolveKasaOp({ id, durum, gerekce })) }; }
+      catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
+    },
+    // Muhafız Mührü'nü (telefon + yedek kod) kaybeden oyuncu için sıfırlama: 48 saat bekler, e-postadaki bağlantıyla iptal edilebilir
+    'POST /api/admin/hesap/muhur-sifirla': async (req) => {
+      const b = await readBody(req);
+      try { return await accounts.adminTfaSifirla({ email: b.email, playerId: b.playerId, gerekce: b.gerekce }); }
+      catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
+    },
+    'POST /api/admin/hesap/muhur-sifirla/iptal': async (req) => {
+      const b = await readBody(req);
+      try { return accounts.adminTfaSifirlaIptal({ email: b.email, playerId: b.playerId }); }
       catch (err) { if (err && err.kod) return [err.kod, { error: err.message }]; throw err; }
     },
     'POST /api/admin/weekly/run': async () => world.runWeekly(E.globalPool.state.epochId - 1),

@@ -9,6 +9,7 @@
 //  POST /api/account/forgot   {email}             şifre sıfırlama e-postası
 //  POST /api/account/reset    {token, password}   yeni şifre
 //  POST /api/account/wallet/confirm {token}       cüzdan bağlama onayı (e-postadaki bağlantı)
+//  POST /api/account/2fa/reset-cancel {token}     yönetici başlattığı mühür sıfırlamasını iptal (e-postadaki bağlantı)
 //  GET  /api/account/me                           hesap + bağlı cüzdan durumu           (giriş gerekli)
 //  POST /api/account/resend                       doğrulama e-postasını yeniden gönder  (giriş gerekli)
 //  POST /api/account/wallet/nonce {address}       cüzdana imzalatılacak mesaj           (giriş gerekli)
@@ -65,7 +66,7 @@ const yetkiOf = key => (key.startsWith('GET /api/admin') || key.startsWith('POST
 const userError = msg => Object.assign(new Error(msg), { userError: true });
 
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
-  'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm'];
+  'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm', 'POST /api/account/2fa/reset-cancel'];
 
 export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
