@@ -108,6 +108,24 @@ const tokenOf = devLink => new URL(devLink).searchParams.get('muhur-iptal');
   ok('Süre dolunca mühür kalkar (giriş, işlem kapısı, hesap özeti); oyuncu yeni telefonla yeniden takabilir');
 }
 
+// 4b) Hesabım'dan iptal: oturum + geçerli kod şart; kodsuz / yanlış kodla iptal edilemez
+{
+  const p = await yeniHesap('sifirla5@ornek.com');
+  const { secret } = await muhurTak(p);
+  assert.equal((await acc.tfaSifirlaIptalOyuncu(p, '')).ok, false, 'bekleyen yokken');
+  await acc.adminTfaSifirla({ playerId: p, gerekce: 'telefon kayip, kimlik gorusmede dogrulandi' });
+  const kodsuz = await acc.tfaSifirlaIptalOyuncu(p, '');
+  assert.ok(!kodsuz.ok && kodsuz.need2fa, 'kodsuz iptal reddedilir');
+  assert.equal((await acc.tfaSifirlaIptalOyuncu(p, '000000')).ok, false, 'yanlış kod reddedilir');
+  assert.equal(acc.tfaSifirlamaBekleyenler().some(r => r.playerId === p), true, 'hâlâ bekliyor');
+  const iyi = await acc.tfaSifirlaIptalOyuncu(p, totpCode(secret, Math.floor(simdi / 30000) + 1));
+  assert.ok(iyi.ok, JSON.stringify(iyi));
+  assert.equal(acc.me(p).muhurSifirlamaAt, null);
+  assert.equal(acc.me(p).twoFactor, true);
+  assert.equal(olaylar('2fa-reset-cancelled').filter(e => /owner-panel/.test(e.data || '')).length, 1);
+  ok('Oyuncu kendi hesap panelinden iptal edebilir; kodsuz ya da yanlış kodla edemez');
+}
+
 // 5) Kuru gün kontrolü: kod / anahtar hiçbir e-postada yok
 {
   const giden = d.raw.prepare("SELECT value FROM kv WHERE key = 'dev:outbox'").get();

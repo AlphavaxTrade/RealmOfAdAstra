@@ -92,6 +92,12 @@ export default function hesapRotalari(ctx) {
       const r = await accounts.walletLink(me, signature);
       return r.ok ? r : [400, { error: r.error }];
     },
+    // Hesabım'dan iptal: oturum + geçerli mühür kodu (sıfırlamayı başkası başlattıysa gerçek sahip buradan durdurur)
+    'POST /api/account/2fa/reset-cancel-me': async (req, me) => {
+      const { code } = await readBody(req);
+      const r = await accounts.tfaSifirlaIptalOyuncu(me, code);
+      return r.ok ? r : [r.need2fa ? 403 : 400, { error: r.error, need2fa: !!r.need2fa }];
+    },
     // E-postadaki "bu ben değilim" bağlantısı: yönetici başlattığı Muhafız Mührü sıfırlamasını iptal eder
     'POST /api/account/2fa/reset-cancel': async (req) => {
       const { token } = await readBody(req);

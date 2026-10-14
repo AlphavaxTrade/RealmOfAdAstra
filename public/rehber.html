@@ -348,6 +348,10 @@
     <li>✏️ ile askerine <b>isim</b> verebilirsin.</li>
   </ul>
 
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/cephanelik.webp" alt="Cephanelik" loading="lazy"></div>
+  <figcaption><b>Cephanelik.</b> Eşyaların toplu yönetimi: boş yuvaları doldur, hepsini onar, seviye 1 fazlalıkları erit, hepsini soy; türe ve duruma göre süz ve sırala.</figcaption></figure>
+
+  <p><b>Cephanelik</b> toplu işlemler sunar: <i>Boş yuvaları doldur</i> (boş ekipman yuvalarına eşya yerleştirir), <i>Hepsini onar</i>, <i>Seviye 1 fazlalıkları erit</i> ve <i>Hepsini soy</i> (askerlerden eşyaları çıkarır). Üstteki filtrelerle silah, miğfer, zırh, dizlik ve çizmeyi ayrı ayrı görürsün.</p>
   <h3>Yeni asker almak</h3>
   <p>"Yeni asker" düğmesinin üzerinde ASTRA bedeli yazar; her yeni asker bir öncekinden daha pahalıdır. Hakkın şu kadardır: <b>geçtiğin zindan katı + 1</b>. Yani zindanda ilerledikçe daha çok asker taşıma hakkı kazanırsın. Her asker için de <b>bir köylü</b> gerekir (bkz. <a href="#koy">Köy evleri</a>).</p>
   <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>1. katı yeni geçtin ve 4 asker hakkın var diyelim. 5. askeri almak için önce 2. kata ilerlemen gerekir. Bu sınır "sadece parayla ordu kurmayı" önler.</p></div>
@@ -406,6 +410,21 @@
     <li>Haftalık sıralamada ilk 10 oyuncu ek ödül alır.</li>
     <li><b>Lig:</b> Bronz Gladyatör ile başlarsın (1.000 puan); puan arttıkça ligin yükselir ve maç ödülün çarpılır.</li>
   </ul>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/kolezyum-lig.webp" alt="Kolezyum lig sekmesi" loading="lazy"></div>
+  <figcaption><b>Lig sekmesi.</b> Puanın, galibiyet / mağlubiyet sayın ve lig kademeleri. Her kademenin ödül çarpanı yanında yazar.</figcaption></figure>
+
+  <h3>Lig kademeleri</h3>
+  <div class="tablo-kap"><table>
+    <tr><th>Kademe</th><th>Gereken puan</th><th>Zafer ödülü çarpanı</th></tr>
+    <tr><td>🥉 Bronz Gladyatör</td><td>0+</td><td>×1</td></tr>
+    <tr><td>🥈 Gümüş Gladyatör</td><td>1.150+</td><td>×1,1</td></tr>
+    <tr><td>🥇 Altın Gladyatör</td><td>1.300+</td><td>×1,3</td></tr>
+    <tr><td>💎 Elmas Gladyatör</td><td>1.500+</td><td>×1,6</td></tr>
+    <tr><td>👑 Efsanevi Şampiyon</td><td>1.800+</td><td>×2</td></tr>
+  </table></div>
+  <p>Puan her maçta <b>rakibin puanına göre</b> değişir (ELO sistemi): güçlü birini yenersen çok, zayıf birine kaybedersen çok puan kaybedersin. Başlangıç puanın 1.000'dir.</p>
+  <h3>Gerçek rakipler</h3>
+  <p><b>Rakipler</b> sekmesi sunucu açıkken çalışır: askerini seçip "Maç ara"ya basarsın, sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır. <b>1v1</b> zaferi <b>1 puan</b>, <b>3v3</b> zaferi <b>3 puan</b> getirir; haftalık sıralamada <b>ilk 10</b> ödül alır. Tek başına (çevrimdışı deneme) modunda düello puanın ve ligin kayıt altındadır ama haftalık sıralama çalışmaz.</p>
   <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p><b>Taktik</b> düğmesiyle diziliş stilini (dengeli, saldırgan…) değiştirebilirsin. Taktik seçimini her maçtan önce değiştirebilirsin.</p></div>
 </section>
 
@@ -458,8 +477,17 @@
   <h3>İlanlar</h3>
   <p>Oyuncular birbirine <b>teçhizat</b> satabilir. İlan 7 gün açık kalır; aynı anda en çok 10 ilan verebilirsin. Satıştan %2 komisyon alınır (yarısı yakılır, yarısı kasaya gider). Alıcı önce serbest bakiyesinden öder, yetmezse kalanı kilitli bakiyesinden.</p>
 
-  <h3>Yakım sekmesi</h3>
-  <p>Oyunda toplam ne kadar hammadde ve ASTRA yakıldığını gösterir. Yakım, kıtlık ve değer yaratır; ayrıntısı <a href="#ekonomi">Ekonomi</a> bölümünde.</p>
+  <h3>Yakım sekmesi: geri alım</h3>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/pazar-yakim.webp" alt="Pazar yakım sekmesi" loading="lazy"></div>
+  <figcaption><b>Hazine geri alım ve yakım.</b> Kasanın bakiyesi, haftalık müdahale tavanı ve her varlığın açılış fiyatına göre durumu.</figcaption></figure>
+
+  <p>Hazineye giren ASTRA'nın <b>%15'i</b> Pazar Geri Alım Kasası'na gider. Bir varlığın fiyatı <b>açılış fiyatının en az %20 altına</b> inerse, kasa o varlığı piyasadan alıp <b>yakar</b>; böylece fiyat toparlanır. Kasa her hafta kendi bakiyesinin en çok %3'ünü kullanabilir.</p>
+  <div class="tablo-kap"><table>
+    <tr><th>Varlık</th><th>Açılış fiyatı (ASTRA)</th></tr>
+    <tr><td>🌾 Buğday</td><td>0,009</td></tr><tr><td>🪨 Taş</td><td>0,012</td></tr><tr><td>🌲 Odun</td><td>0,025</td></tr>
+    <tr><td>⚫ Kömür</td><td>0,018</td></tr><tr><td>⛏️ Demir</td><td>0,04</td></tr><tr><td>🌿 Şifalı ot</td><td>0,08</td></tr>
+    <tr><td>🧩 Teçhizat parçası</td><td>0,45</td></tr><tr><td>🔑 Arena anahtarı</td><td>10</td></tr><tr><td>📦 Pandora kutusu</td><td>100</td></tr>
+  </table></div>
 
   <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Fiyat düşükken hammadde alıp bekleyen oyuncular, fiyat yükselince satar. Ama dikkat: pazarın bir <b>geri alım kasası</b> da vardır; fiyat açılışın çok altına düşerse kasa piyasadan hammadde alıp yakarak fiyatı toparlar.</p></div>
 </section>
@@ -477,10 +505,33 @@
     <li>Biriktirdiğin <b>bilet parçaları</b> (3 parça = 1 bilet) da çark çevirmek için kullanılır.</li>
     <li>Çevirmelerin yaklaşık %31'inde en az bedelini geri alırsın.</li>
   </ul>
+  <p>Çarkın ASTRA bedelinin <b>%80'i</b> doğrudan Karnaval kasasına girer; çark ve eşya ödülleri buradan ödenir. Kasa <b>en az 200 ASTRA</b> altına inerse ödül yoktan verilmez, <b>çark kapanır</b>.</p>
   <h3>🎟️ Piyango</h3>
-  <p>Haftalık çekiliş. Bilet alırsın; haftanın sonunda <b>tek bir kazanan</b> çıkar. Şansın, senin biletlerinin toplam bilete oranıdır. Ayrıntılı kurallar ve bu haftanın durumu <i>Piyango</i> sekmesinde yazar.</p>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/piyango.webp" alt="Piyango sekmesi" loading="lazy"></div>
+  <figcaption><b>Piyango.</b> Kasadaki ödül, kazanma şansın, sonraki çekilişe kalan süre ve bilet alma kutusu.</figcaption></figure>
+
+  <ul>
+    <li><b>Çekiliş:</b> her <b>Pazartesi 00:01</b>'de (Türkiye saati). Her hafta <b>tek bir kazanan</b> çıkar.</li>
+    <li><b>Şansın:</b> senin biletlerinin toplam bilete oranıdır. 10 biletin varsa ve toplam 100 bilet varsa şansın %10'dur.</li>
+    <li><b>Kazanırsan:</b> biletlerine ödediğinin <b>2 katını</b> piyango kasasından alırsın.</li>
+    <li><b>Kazanamazsan:</b> biletlerin yanmaz, <b>sonraki haftaya devreder</b>.</li>
+    <li><b>Bilet fiyatı:</b> 1 ASTRA; hesap başına haftada en çok <b>100 bilet</b> alabilirsin.</li>
+    <li>Piyango kasası başlangıçta 12 milyon ASTRA'dır.</li>
+  </ul>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>20 bilet aldın (20 ASTRA). Toplam 400 bilet varsa şansın %5. Kazanırsan 40 ASTRA alırsın; kazanamazsan 20 biletin sonraki hafta yine çekilişte olur.</p></div>
   <h3>🎪 Coşku</h3>
   <p>Günde bir kez karnavala katılıp <b>+10 stamina</b> kazanırsın. Küçük ama bedava.</p>
+  <h3>🎁 Haftalık ücretsiz oyuncu payı</h3>
+  <figure class="resim"><div class="cerceve"><img src="rehber/img/karnaval-kasalar.webp" alt="Karnaval kasaları sekmesi" loading="lazy"></div>
+  <figcaption><b>Kasalar sekmesi.</b> Karnaval ve piyango kasaları, ücretsiz oyuncu payı şartların.</figcaption></figure>
+
+  <p>Para yatırmadan oynayanlar için her hafta küçük bir pay vardır. Hak kazanmak için üç şart vardır:</p>
+  <ul>
+    <li>Hesabın en az <b>3. seviyede</b> olmalı.</li>
+    <li>O hafta en az <b>1 katkı puanı</b> toplamış olmalısın (harcamak, yakmak ya da net hammadde satmak puan getirir).</li>
+    <li>E-postan <b>doğrulanmış</b> olmalı.</li>
+  </ul>
+  <p>Düzenli oynadıkça <b>sadakat serin</b> büyür (çarpan en çok ×2); bir hafta kaçırırsan seri yarıya iner. Pay <b>kilitli</b> gelir ve oyunda harcadıkça açılır.</p>
   <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Çarkın ortalama dönüşü %100'ün altındadır. Çarkı <b>kazanç planı</b> olarak değil, ayırdığın küçük bir eğlence bütçesi olarak düşün.</p></div>
 </section>
 
@@ -490,7 +541,7 @@
   <figure class="resim"><div class="cerceve"><img src="rehber/img/koleksiyon.webp" alt="Koleksiyon" loading="lazy"></div>
   <figcaption><b>Koleksiyon.</b> 18 eserlik koleksiyon; kilitli eserler "❓" olarak görünür. İki sekme: Koleksiyon ve Pandora kutuları.</figcaption></figure>
   <ul>
-    <li><b>Pandora kutuları</b> zindan savaşlarından düşer ya da pazardan alınır. Açınca koleksiyondan bir eser, bazen başka ganimet çıkar.</li>
+    <li><b>Pandora kutuları</b> zindan savaşlarında canavar öldürerek düşer ya da pazardan alınır. <b>Her kutuyu açmak 1 arena anahtarı</b> ister; anahtar Kolezyum derecesinden, Şans Çarkından ya da pazardan gelir.</li>
     <li><b>18 eserin hepsi</b> tamamlanınca "Genesis NFT bas" düğmesi açılır (küçük bir ASTRA bedeli vardır).</li>
     <li>Genesis NFT, ikinci oyun <b>Universe</b>'te gezegen satın alma hakkı verir. Bkz. <a href="#uzay">Uzay Limanı</a>.</li>
   </ul>
@@ -647,6 +698,7 @@
     <li>E-postana <b>"mühür 48 saat sonra kaldırılacak"</b> uyarısı ve bir <b>iptal bağlantısı</b> gelir. İstemiyorsan hemen iptal edersin.</li>
     <li><b>48 saat sonra</b> mühür kalkar; yalnız şifrenle girersin ve yeni telefonuna yeniden takarsın.</li>
   </ol>
+  <p>Sıfırlama başlayınca, hâlâ giriş yapabiliyorsan <i>Hesabım</i> ekranında kırmızı bir uyarı görürsün: <b>"Mühür … tarihinde kalkacak"</b>. Bunu sen istemediysen oradaki <b>"Bu ben değilim, iptal et"</b> düğmesine basarsın (doğrulama kodunu ister); e-postadaki bağlantı da aynı işi görür.</p>
   <div class="kutu ipucu" data-s="💡"><b>Neden 48 saat?</b><p>Biri senin e-postanı ya da şifreni ele geçirse bile, gerçek sahibe itiraz etmesi için süre kalır. Bekleme boyunca mühür çalışmaya devam eder, para çekimi için hâlâ kod ister.</p></div>
 </section>
 

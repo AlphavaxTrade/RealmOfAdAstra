@@ -568,7 +568,18 @@ export function createAccounts({ db, cfg, mailer, clock = () => Date.now(), veri
     db.event('2fa-reset-cancelled', playerIdOf(acc.id), { by: 'owner' });
     return { ok: true };
   }
+  // Oyuncunun kendisi (oturum açık + geçerli mühür kodu): bekleyen sıfırlamayı Hesabım'dan iptal eder
+  async function tfaSifirlaIptalOyuncu(playerId, code) {
+    const acc = refresh(q.byId.get(accountIdOf(playerId)));
+    if (!acc || !acc.totp_reset_at) return { ok: false, error: 'Bekleyen bir sıfırlama yok.' };
+    const g = await check2fa(playerId, code);
+    if (!g.ok) return g;
+    q.resetClear.run(acc.id);
+    q.tokensDelKind.run(acc.id, 'tfa_reset');
+    db.event('2fa-reset-cancelled', playerId, { by: 'owner-panel' });
+    return { ok: true };
+  }
   const tfaSifirlamaBekleyenler = () => q.resetBekleyen.all().map(r => ({ playerId: playerIdOf(r.id), email: r.email, applyAt: r.totp_reset_at, gerekce: r.totp_reset_note }));
 
-  return { adminTfaSifirla, adminTfaSifirlaIptal, tfaSifirlaIptalLink, tfaSifirlamaBekleyenler, check2fa, yedekKodlariYenile, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
+  return { adminTfaSifirla, adminTfaSifirlaIptal, tfaSifirlaIptalLink, tfaSifirlaIptalOyuncu, tfaSifirlamaBekleyenler, check2fa, yedekKodlariYenile, totpSetup, totpEnable, totpDisable, login2fa, playerOfWallet, register, login, verifyEmail, resendVerify, forgot, reset, me, activeWallet, isVerified, walletNonce, walletLink, walletConfirm, walletCancel };
 }

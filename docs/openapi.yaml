@@ -543,6 +543,42 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/account/2fa/reset-cancel-me:
+    post:
+      tags:
+        - Hesap
+      summary: Bekleyen Muhafız Mührü sıfırlamasını Hesabım'dan iptal et (oturum + geçerli mühür kodu)
+      operationId: post_api_account_2fa_reset_cancel_me
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: 6 haneli doğrulama kodu ya da yedek kod
+              required:
+                - code
+      responses:
+        "200":
+          description: "{ ok }. Bekleyen sıfırlama yoksa 400; kod eksik/yanlışsa 403 (need2fa) ya da 400."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/account/2fa/reset-cancel:
     post:
       tags:

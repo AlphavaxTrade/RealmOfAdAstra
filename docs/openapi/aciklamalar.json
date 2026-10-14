@@ -863,5 +863,22 @@
       404,
       409
     ]
+  },
+  "POST /api/account/2fa/reset-cancel-me": {
+    "etiket": "Hesap",
+    "ozet": "Bekleyen Muhafız Mührü sıfırlamasını Hesabım'dan iptal et (oturum + geçerli mühür kodu)",
+    "govde": {
+      "code": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "6 haneli doğrulama kodu ya da yedek kod"
+      }
+    },
+    "yanit": "{ ok }. Bekleyen sıfırlama yoksa 400; kod eksik/yanlışsa 403 (need2fa) ya da 400.",
+    "kodlar": [
+      400,
+      401,
+      403
+    ]
   }
 }

@@ -600,9 +600,13 @@ function lockPanelHtml() {
 }
 
 function twoFactorSection(acc) {
+  const bekleyen = acc.muhurSifirlamaAt
+    ? `<div style="margin:8px 0;padding:8px 10px;border-radius:8px;border:1px solid #f87171;background:#3f1d1d;color:#fecaca;font-size:0.82rem;line-height:1.5;">⚠️ Bu hesap için <strong>Muhafız Mührü sıfırlama</strong> isteği var: mühür <strong>${new Date(acc.muhurSifirlamaAt).toLocaleString('tr-TR')}</strong> tarihinde kalkacak. Bunu sen istemediysen hemen iptal et ve şifreni değiştir.<br><button id="tf-reset-cancel" style="margin-top:6px;padding:6px 12px;border-radius:8px;border:1px solid #fca5a5;background:#7f1d1d;color:#fff;font-weight:800;cursor:pointer;">Bu ben değilim, iptal et</button></div>`
+    : '';
   return `<div style="${boxCss}">
     <div style="font-weight:800;color:#86efac;margin-bottom:4px;">🛡️ Muhafız Mührü (iki adımlı doğrulama) · ${acc.twoFactor ? '<span style="color:#4ade80;">AÇIK ✓</span>' : '<span style="color:#fbbf24;">kapalı</span>'}</div>
     <div style="font-size:0.78rem;color:#94a3b8;line-height:1.5;">${MUHAFIZ_MUHRU}</div>
+    ${bekleyen}
     ${acc.twoFactor
       ? `<div style="font-size:0.78rem;color:#cbd5e1;margin-top:6px;">Kalan yedek kod: <strong>${acc.backupLeft}</strong>${acc.backupLeft <= 3 ? ' <span style="color:#fbbf24;">(azaldı: aşağıdan yeni kodlar al)</span>' : ''}${acc.backupLegacy ? ' <span style="color:#fbbf24;">(eski biçimde: yenilemen önerilir)</span>' : ''}</div>
          <button id="tf-renew" style="margin-top:8px;margin-right:6px;padding:6px 12px;border-radius:8px;border:1px solid #60a5fa;background:#1e3a8a;color:#dbeafe;font-weight:800;cursor:pointer;">🔄 Yedek kodları yenile</button>
@@ -1006,6 +1010,11 @@ export async function openWalletPanel() {
   };
   if ($('tf-on')) $('tf-on').onclick = () => enable2faFlow();
   if ($('tf-renew')) $('tf-renew').onclick = () => renewBackupFlow();
+  if ($('tf-reset-cancel')) $('tf-reset-cancel').onclick = async () => {
+    try { await withCode(code => api('POST', '/api/account/2fa/reset-cancel-me', { code }), 'Sıfırlamayı iptal et'); ctx.toast('✅ Muhafız Mührü sıfırlama isteği iptal edildi.', 'success'); }
+    catch (err) { ctx.toast(err.message, 'error'); }
+    openWalletPanel();
+  };
   if ($('tf-off')) $('tf-off').onclick = async () => {
     if (!confirm('Muhafız Mührü kaldırılsın mı? Hesabın yalnız şifreyle korunur.')) return;
     try { await withCode(code => api('POST', '/api/account/2fa/disable', { code }), 'Mührü kaldır'); ctx.toast('Muhafız Mührü kaldırıldı.', 'info'); }
