@@ -153,7 +153,7 @@ export const genesisYontemleri = {
       { id: 'krallik', ad: 'Krallık Yolu tamamlandı', ok: !S.KRALLIK_YOLU || !!(finalId && s.onboardingSections && s.onboardingSections[finalId] && s.onboardingSections[finalId].claimed), deger: '' },
       { id: 'fatih', ad: 'Zindanın 18. kat bossu yenildi (Fatih)', ok: !S.FATIH || !!(s.fatih && s.fatih.alindi), deger: '' },
       { id: 'katki', ad: `Son ${hafta} haftanın her birinde katkı en az ${kademe.name} (${Math.ceil(esik).toLocaleString('tr-TR')} puan)`, ok: gecmis.length >= hafta && gecmis.every(v => (Number(v) || 0) >= esik), deger: gecmis.map(v => Math.round(Number(v) || 0)).join(' · ') || '-' },
-      { id: 'eser', ad: `${gerekliEser} eserin hepsi keşfedildi ve uyandırıldı`, ok: uyanmis >= gerekliEser, deger: `${uyanmis}/${gerekliEser} uyandı (${kesfedilen} keşfedildi)` },
+      { id: 'eser', ad: `${gerekliEser} eserin hepsi uyandı (${kesfedilen} keşfedildi)`, ok: uyanmis >= gerekliEser, deger: `${uyanmis}/${gerekliEser}` },
       { id: 'defter', ad: `Ekosisteme net katkı (mühür dahil) en az ${Math.round(maliyet.gerekli)} $`, ok: net + muhurUsd >= maliyet.gerekli - 1e-9, deger: `${(net + muhurUsd).toFixed(2)} $` },
       { id: 'yer', ad: 'Açık mühür yeri var', ok: d.basilan < yerSiniri, deger: `${d.basilan}/${yerSiniri}` }
     ];
