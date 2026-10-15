@@ -25,7 +25,7 @@ async function load() {
     card('ADASTRA fiyatı (1M)', m.priceUsd ? '$' + (m.priceUsd * 1e6).toFixed(3) : '—'),
     card('Piyasa değeri', m.mcapUsd ? '$' + fmt(m.mcapUsd) : '—'),
     card('Fren', s.brake && s.brake.on ? '🔴 AÇIK' : '🟢 kapalı', s.brake && s.brake.on ? 'bad' : 'ok'),
-    card('Fiyat çarpanı', '×' + (s.priceMultiplier || 1)),
+    card('Bedel çarpanı', '×' + (s.bedelCarpani || s.priceMultiplier || 1) + `<br><span style="font-size:0.75rem;">fiyat ×${s.priceMultiplier || 1} · oyun içi endeks ×${s.oyunEndeksi || 1}</span>`),
     card('Bu haftaki çekim sınırı', fmt(s.weeklyCap) + ' ASTRA'),
     card('Akış dengesi (haftalık)', s.akis ? `trade alımı ${fmt(s.akis.tradeAlimi)} · net piyasa alımı ${fmt(s.akis.netAlim)}<br><span style="font-size:0.75rem;">çıkış ≤ ikisinin de yarısı; taban yok</span>` : '—'),
     card('Ödeme kadranı', '×' + (s.kadran || 1)),

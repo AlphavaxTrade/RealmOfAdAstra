@@ -1,6 +1,6 @@
 // Realm of AdAstra sunucusu — dünya: haftalık hesaplaşma (Pazartesi 00:01 TSİ)
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
-import { allocateWithdrawals, faucetWeekly, nextMultiplier, runwayPoolTotal, lotteryTicketPrice, odemeKadrani, WEEKLY_RULES } from '../economy.js';
+import { allocateWithdrawals, faucetWeekly, nextMultiplier, runwayPoolTotal, lotteryTicketPrice, odemeKadrani, oyunIciEndeks, etkinCarpan, WEEKLY_RULES } from '../economy.js';
 import { runDraw } from '../../js/economy/lottery.js';
 import { rastgele } from '../rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../../js/economy/faucet.js';
@@ -119,7 +119,7 @@ export function olusturHaftalik(w) {
       // o hafta yeterli katkı puanı toplamış. Pay eşit değil: katkı^1,5 × sadakat serisi (sahte hesaplara karşı;
       // ayrıntı js/economy/faucet.js). Pay tamamen kilitli gelir.
       const FP = { ...FAUCET_DEFAULTS, ...(E.GAME_CONFIG.FREE_PLAYER_POOL || {}) };
-      const mult = Number(e.priceMultiplier) || 1;
+      const mult = etkinCarpan(e);   // katkı eşikleri bedel çarpanıyla ölçeklenir (oyuncu tarafındaki adaPrice gibi)
       const free = [];
       for (const p of players) {
         if (p.deposited_ada > 0 || p.last_seen < now - 7 * DAY) continue;
@@ -202,7 +202,7 @@ export function olusturHaftalik(w) {
       const LC = E.GAME_CONFIG.CARNIVAL?.LOTTERY || {};
       // Bilet fiyatı 3 basamağa yuvarlanır (oyuncu tarafındaki adaPrice ile aynı); tam sayıya yuvarlama 1 × 0,4 çarpanında 0'a düşüyordu
       // ve ödenen tutarı sıfırlıyordu (13 Ekim 2026 denetimi EK-08)
-      const ticketPrice = lotteryTicketPrice(LC.TICKET_COST_ADA || 100, e.priceMultiplier);
+      const ticketPrice = lotteryTicketPrice(LC.TICKET_COST_ADA || 100, etkinCarpan(e));
       const rules = { ticketPrice, winnerMultiplier: LC.WINNER_MULTIPLIER || 2, amortiShare: LC.AMORTI_SHARE ?? 0.02, carryAgingRate: LC.CARRY_AGING_RATE ?? 0.05, carryValueFloor: LC.CARRY_VALUE_FLOOR ?? 0.5 };
       const holders = [];
       for (const p of players) {
@@ -262,8 +262,21 @@ export function olusturHaftalik(w) {
       // Ödeme Kadranı: gelecek haftanın kasa bütçeleri bununla açılır (aşağıda openWeekBudgets)
       const kadran = kadranHesapla(now, Number(e.kadran) || 1);
       summary.kadran = kadran;
+      // Oyun İçi Fiyat Endeksi (makro plan B1): bu hafta bütçeli kasalardan (zindan, kolezyum, boss, görev, karnaval) oyunculara ödenen
+      // ÷ aktif vatandaş, tasarım payına (aynı kasaların tohum × haftalık oranından 100 vatandaşa düşen) oranlanır. Ücretsiz havuz ve
+      // temel gelir iki tarafta da sayılmaz (yalnız birinde sayılsa endeks dış para olmadan da kayardı). Trade girişi bu kasalara
+      // girdiği ve bütçenin giriş payıyla ödendiği için bolluk bu ölçüde görünür.
+      const TBc = E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET || {};
+      const butceli = Object.keys(TBc.RATES || {});
+      const dagitim = butceli.reduce((s, id) => s + (Number((T.state.weekSpent || {})[id]) || 0), 0);
+      const aktifSay = Math.max(Number(TBc.PERSON_CAP_MIN_ACTIVE) || 1, players.filter(p => p.last_seen >= now - 7 * DAY).length);
+      const tasarimKisi = butceli.reduce((s, id) => s + (Number(E.GAME_CONFIG.TREASURY_SEED[id]) || 0) * TBc.RATES[id], 0) / (Number((E.GAME_CONFIG.KAPI || {}).START_LIMIT) || 100);
+      const dagitimSeri = [...(Array.isArray(e.dagitimSeri) ? e.dagitimSeri : []), dagitim / aktifSay].slice(-WEEKLY_RULES.endeksHafta);
+      const oyunEndeksi = oyunIciEndeks({ kisiBasiSeri: dagitimSeri, tasarimKisi, onceki: Number(e.oyunEndeksi) || 1 });
+      summary.oyunEndeksi = oyunEndeksi;
+      summary.bedelCarpani = etkinCarpan({ priceMultiplier, oyunEndeksi });
       setEcon({
-        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap, kadran,
+        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap, kadran, oyunEndeksi, dagitimSeri,
         settled: { burned: Number(gp.state.totalBurned) || 0, creator: (Number(settled.creator) || 0) + creatorPay },
         faucetPerPlayer: summary.faucet.perPlayer, lastWeekly: summary
       });

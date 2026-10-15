@@ -8,6 +8,7 @@
 //    senkron olduğu için iki istek birbirine karışamaz.
 // ============================================================================
 import { runAction, ACTIONS } from './actions.js';
+import { etkinCarpan } from './economy.js';
 import { guvenliRastgeleKur } from './rastgele.js';
 
 const BACKUP_SUFFIX = '__yedek';
@@ -91,7 +92,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
 
   function applyWorldOverrides() {
     const w = world();
-    const m = Number(w.priceMultiplier) > 0 ? Number(w.priceMultiplier) : 1;
+    const m = etkinCarpan(w);   // en büyüğü(fiyat çarpanı, oyun içi fiyat endeksi): makro plan B1, server/economy.js
     gs.state.adaPriceMultiplier = m;
     gs.state.unlockK = Number(w.k) > 0 ? Number(w.k) : 1;   // KARAR 6: kilit açılma tabanı (haftalık %1) × k
     gs.state.adaPriceMultiplierTarget = m;

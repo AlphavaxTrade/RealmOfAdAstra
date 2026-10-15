@@ -1,5 +1,6 @@
 // Realm of AdAstra sunucusu — rotalar: yönetici uçları (ADMIN_TOKEN gerekir)
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
+import { etkinCarpan } from '../economy.js';
 
 export default function yonetimRotalari(ctx) {
   const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody } = ctx;
@@ -13,6 +14,7 @@ export default function yonetimRotalari(ctx) {
         paused: !!e.paused, market: e.market || null, brake: e.brake || null, priceMultiplier: e.priceMultiplier || 1,
         lastWeekly: e.lastWeekly || null, weeklyCap: world.currentCap(),
         akis: world.akisSerileri ? world.akisSerileri() : null, kadran: Number(e.kadran) || 1,
+        oyunEndeksi: Number(e.oyunEndeksi) || 1, bedelCarpani: etkinCarpan(e),
         players: { total: players.length, activeWeek: players.filter(p => p.last_seen >= clock() - 7 * 86400000).length,
           depositors: players.filter(p => p.deposited_ada > 0).length,
           pendingWithdraw: players.reduce((s, p) => s + (p.pending_withdraw || 0), 0) },

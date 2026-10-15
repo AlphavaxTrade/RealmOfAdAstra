@@ -14,6 +14,7 @@ import { createMailer } from './mailer.js';
 import { createAccounts } from './accounts.js';
 import { createPayments } from './payments.js';
 import { createKasa } from './kasa.js';
+import { etkinCarpan } from './economy.js';
 import { createKapi } from './kapi.js';
 import { createPazar } from './pazar.js';
 import { createSponsor } from './sponsor.js';
@@ -69,7 +70,7 @@ const accounts = createAccounts({ db, cfg, mailer, verifyMessage: (m, s) => ethe
 const arena = createArena({ db, engine, botWhenEmpty: cfg.testMode });
 if (cfg.testMode) log.warn('🧪 DENEME MODU: test menüsü ve bot rakip açık. Gerçek sunucuda TEST_MODE kullanmayın!');
 const kasa = createKasa({ db, chain, accounts, cfg, log,
-  priceMultiplier: () => Number(db.kvJson('world:economy', {}).priceMultiplier) || 1,
+  priceMultiplier: () => etkinCarpan(db.kvJson('world:economy', {})),   // bedel çarpanı: en büyüğü(fiyat çarpanı, oyun içi endeks)
   notify: (pid, msg) => engine.mutatePlayer(pid, gs => gs.pushNotice(msg, 'info')) });
 engine.setKasa(kasa);
 if (!kasa.enabled) log.warn('🏦 Oyun Kasası kapalı (KASA_MASTER_KEY ve PAYMENTS_CONTRACT gerekli).');

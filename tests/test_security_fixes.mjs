@@ -124,7 +124,9 @@ E.withPlayer(P, () => null);
   Math.random = () => 0.99;                       // ödül: bilet parçası (kasaya maliyetsiz)
   try {
     const c0 = E.treasury.getPool('carnival');
-    const cost = E.GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA;   // v2: 1 ASTRA
+    // v2: 1 ASTRA × bedel çarpanı (en büyüğü(fiyat çarpanı, oyun içi endeks); yukarıdaki hesaplaşma endeksi değiştirmiş olabilir)
+    const carpanli = base => E.withPlayer(P, gs => gs.adaPrice(base)).result;
+    const cost = carpanli(E.GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA);
     const carnShare = E.GAME_CONFIG.TREASURY_ALLOCATION.carnival;
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
     const gain = E.treasury.getPool('carnival') - c0;
@@ -133,7 +135,7 @@ E.withPlayer(P, () => null);
     assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
     const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ticket']).result.success);
-    const tkNet = E.GAME_CONFIG.CARNIVAL.LOTTERY.TICKET_COST_ADA * (1 - E.GAME_CONFIG.CARNIVAL.LOTTERY.AMORTI_SHARE);   // v2: 0,98 ASTRA
+    const tkNet = carpanli(E.GAME_CONFIG.CARNIVAL.LOTTERY.TICKET_COST_ADA) * (1 - E.GAME_CONFIG.CARNIVAL.LOTTERY.AMORTI_SHARE);   // v2: 0,98 ASTRA × çarpan
     assert.ok(Math.abs(E.treasury.getPool('carnival') - c1 - tkNet) < 1e-6, 'Biletin amorti dışı bedeli Karnaval kasasına geçti');
     assert.ok(Math.abs(l0 - E.lottery().pool - tkNet) < 1e-6, 'Ortak piyango kasasından düştü');
     // Hammadde: günde 3

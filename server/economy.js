@@ -58,7 +58,9 @@ export const WEEKLY_RULES = {
   kadranExp: 0.5, kadranMin: 0.6, kadranMax: 1.5, kadranStep: 0.05,
   kadranShortDays: 7, kadranLongDays: 91, kadranWarmupDays: 28,
   kadranHealth1: 0.5, kadranCap1: 1.0,     // ödeme yapan kasaların sağlığı (bakiye ÷ hedef rezerv) bunun altındaysa kadran en çok 1
-  kadranHealth2: 0.25, kadranCap2: 0.8     // bunun altındaysa en çok 0,8
+  kadranHealth2: 0.25, kadranCap2: 0.8,    // bunun altındaysa en çok 0,8
+  // Oyun İçi Fiyat Endeksi (15 Ekim 2026, makro plan B1): kişi başı haftalık dağıtım ÷ tasarım dağıtımı; bedel çarpanı = en büyüğü(endeks, fiyat çarpanı)
+  endeksHafta: 4, endeksYukari: 0.25, endeksAsagi: 0.05, endeksMin: 0.05, endeksMax: 1000
 };
 
 const r2 = v => Math.floor(v * 100) / 100;
@@ -190,6 +192,28 @@ export function nextMultiplier({ current = 1, priceUsd, launchPriceUsd, runwayMo
 export function priceFactorK({ cur, peak }, rules = WEEKLY_RULES) {
   if (!(peak > 0) || !(cur >= 0)) return 1;
   return Math.round(Math.max(rules.kMin, Math.min(rules.kMax, cur / peak)) * 10000) / 10000;
+}
+
+// OYUN İÇİ FİYAT ENDEKSİ (15 Ekim 2026, makro plan B1, denge modelinde sınandı: scripts/model/denge_modeli.mjs endeks=1).
+// Bugünkü fiyatla 200 M ASTRA ~38 $ eder; trade girişi oyuna tasarımın çok üstünde ASTRA sokunca bedeller (asker, seviye, bilet)
+// gelire göre anlamsızlaşıyordu. Endeks = son endeksHafta haftada kişi başı haftalık dağıtımın ortalaması ÷ tasarım dağıtımı
+// (tohum kasaların haftalık oranıyla 100 vatandaşa düşen pay). Haftada en çok %25 yükselir, %5 iner. Veri yoksa önceki değer kalır.
+export function oyunIciEndeks({ kisiBasiSeri = [], tasarimKisi, onceki = 1 }, rules = WEEKLY_RULES) {
+  const once = Number(onceki) > 0 ? Number(onceki) : 1;
+  const s = (Array.isArray(kisiBasiSeri) ? kisiBasiSeri : []).slice(-rules.endeksHafta).map(v => Math.max(0, Number(v) || 0));
+  if (!s.length || !(tasarimKisi > 0)) return once;
+  const hedef = Math.max(rules.endeksMin, Math.min(rules.endeksMax, s.reduce((t, v) => t + v, 0) / s.length / tasarimKisi));
+  const yeni = Math.max(once * (1 - rules.endeksAsagi), Math.min(once * (1 + rules.endeksYukari), hedef));
+  return Math.round(yeni * 10000) / 10000;
+}
+
+// Oyunun bedel çarpanı (asker, seviye, bilet, çark, kayıt harcı, eşikler): en büyüğü(fiyat çarpanı, oyun içi endeks).
+// Fiyat düşünce fiyat çarpanı (dolar tabanı) bedeli korur; oyuna tasarımın üstünde ASTRA girince endeks korur. Pazar koridorları
+// bundan etkilenmez (endeksi pazara uygulamak denge modelinde hammadde pazarını donduruyordu: fiyat endeksi 0,18).
+export function etkinCarpan(econ = {}) {
+  const fc = Number(econ.priceMultiplier) > 0 ? Number(econ.priceMultiplier) : 1;
+  const oe = Number(econ.oyunEndeksi) > 0 ? Number(econ.oyunEndeksi) : 0;
+  return Math.max(fc, oe);
 }
 
 // Haftalık seri ölçüsü (en yenisi sonda): son flowWeeks haftanın ortalaması ile son haftanın küçüğü; eksi olamaz.

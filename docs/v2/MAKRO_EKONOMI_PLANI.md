@@ -377,6 +377,34 @@ Dürüst not: yakım arzı kalıcı yok eder ama fiyatı alım yükseltir.
 
 **Uyarı:** Bu, 30 Eylül kararı olan fiyat çarpanının işleyişini değiştirir. Koda geçmeden önce denge modelinde (`scripts/model/denge_modeli.mjs`) 50-1000 oyuncuyla sınanmalıdır. Aşama 1'in ilk işi budur.
 
+**Sınama sonucu (Aşama 1a, 15 Ekim 2026).** Denge modeline yeni seçenekler eklendi (varsayılan davranış değişmedi; N=100'de yine 5/5):
+- `disGiris`: dış para girişi; haftada azalır.
+- `fiyat=x40`: fiyat bir yılda 40 katına çıkar.
+- `odulCarpan=0`: kasa ödemeleri, oyundaki gibi çarpanla çarpılmaz.
+- `endeks=1` ve `endeksPazar`.
+
+Ölçülen şey: ücretsiz oyuncunun seviye ASTRA bedeli ÷ haftalık geliri (1. / 3. / 6. / 12. ay). 200 oyuncu, trade akışı 120 M ASTRA/hafta, yarılanma 12 hafta:
+
+| Kurgu | Bedel ÷ gelir | Hammadde fiyat endeksi (en düşük) |
+|---|---|---|
+| Tasarım (dış para yok) | 0,054 / 0,175 / 0,211 / 0,35 | 0,95 |
+| Bugünkü çarpan + trade akışı | 0,003 / 0,004 / 0,002 / 0,001 (60-300 kat ucuz) | 1,43 |
+| **Endeks yalnız bedellere** | 0,006 / 0,075 / 0,169 / 0,203 (6. aydan sonra tasarıma yakın) | 1,43 |
+| Endeks pazar koridorlarına da | 0,006 / 0,077 / 0,173 / 0,163 | **0,18** (pazar donar) |
+
+- 1.000 oyuncuda "yalnız bedellere" tasarımla neredeyse aynı (0,03 / 0,33 / 0,77 / 0,98, tasarım 0,14 / 0,67 / 1,10 / 1,05).
+- Fiyat yarıya düşüp dış para gelmeyen kurguda endeks devreye girmiyor (en çok 1,1), dolar tabanı çalışıyor, 5/5.
+- Düşen iki denetim üç kurguda da aynı: "kasa ömrü" (yüzdeyle ödemede ~1/oran çıkan bir ölçü) ve 1.000 oyuncuda "kota kullanımı". İkisi de trade akışından geliyor, endeksten değil.
+
+**Uygulandı (15 Ekim 2026):** endeks oyunda yalnız sabit ASTRA bedellerine ve eşiklere uygulanır, pazara uygulanmaz.
+- **Hesap:** `server/economy.js` `oyunIciEndeks` ve `etkinCarpan`.
+- **Haftalık güncelleme:** `server/world/haftalik.js`. Pay ve payda aynı temelde: bütçeli kasaların ödemesi.
+- **Oyuncuya uygulama:** `server/engine.js`, her oyuncunun bedel çarpanı = en büyüğü(fiyat çarpanı, endeks).
+- **Test:** `tests/test_cikis_kapisi.mjs` 5. bölüm.
+- **Uygulandığı yerler:** asker, çark, bilet, iyileştirme, Genesis, taverna, katkı eşikleri ve kasa tabanı.
+- **Değişmeyenler:** pazar fiyatlı bedeller (seviye, silo, teçhizat) zaten pazardan ayarlanıyor. Zindan, kolezyum ve boss ödülleri sabit kalır.
+- **Fiyat çarpanının alt sınırı (B7)** ASTRA bolken artık işlemez: bedel, endeksin altına inmez.
+
 ### B2. Altın kural tutuyor
 
 - 9 senaryo × 156 haftada sıfır ihlal.
@@ -464,7 +492,7 @@ Altın kayıt yalnız iki adımın dünya özetinde değişti, oyuncu kayıtlar�
 | Aşama | İş | Durum |
 |---|---|---|
 | 0 | Belge, makro model (`scripts/model/makro_model.mjs`), ortak zincir hesabı (`scripts/model/zincir.mjs`), değişmez testi (`tests/test_makro_model.mjs`), anayasa 9-10. ilke | **bitti (15 Ekim 2026)** |
-| 1a | OFE'yi denge modelinde sınama (50-1000 oyuncu); sonuç kullanıcıya | onay bekliyor |
+| 1a | OFE'yi denge modelinde sınama (50-1000 oyuncu) ve uygulama (yalnız sabit bedellere; bölüm 11-B1) | **bitti (15 Ekim 2026)** |
 | 1b | Çıkış Kapısı + Ödeme Kadranı + 5 sorunun düzeltilmesi (`server/economy.js` WEEKLY_RULES: bütün haftalık hesaplaşma oranları zaten orada olduğu için ayrı bir config bloğu açılmadı; `server/world/piyasa.js`, `server/world/haftalik.js`, `js/treasury.js`); yönetici panosu ve cüzdan ekranı; rehber çekim bölümü; testler | **bitti (15 Ekim 2026)** |
 | 2 | Genesis Yolu (şartlar, uyandırma, dolar mühür, gelire bağlı açık mühür sayısı) + `contracts/GenesisNFT.sol` (Fuji) | onay bekliyor |
 | 3 | Trade sitesi (ayrı proje, SITE sohbeti): Bot Kasası 20/30/10/40; taze ödeme ile kredi ödemesini ayrı yayımlama (TB ölçüsü); Genesis sahipliğini zincirden okuyup süresiz Uydu + Gözlemevi %50 + "Genesis yeri"; EP indirimi (tavan %15) | kullanıcı onayı |

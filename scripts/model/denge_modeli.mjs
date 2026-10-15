@@ -67,7 +67,13 @@ export function defaults() {
     yatir: { f2p: 0, mid: num('yatirMid', 0), whale: num('yatirWhale', 0) },   // yıllık dış para (ASTRA), haftalara yayılır; varsayılan 0 = hiç para girmeyen dünya
     armyShare: { f2p: 0.3, mid: 0.5, whale: 0.6 },   // ASTRA gelirinin orduya (asker + teçhizat) giden payı
     botFee: 0.30,                                     // bot ücreti ≈ haftalık üretim değerinin %30'u (24 s net kârın %50'si)
-    siloWeeks: 2                                      // silo = 2 haftalık üretim; fazlası çöp
+    siloWeeks: 2,                                     // silo = 2 haftalık üretim; fazlası çöp
+    // Makro plan Aşama 1a (15 Ekim 2026): Oyun İçi Fiyat Endeksi denemesi. Varsayılanlar eski davranışı korur.
+    disGiris: num('disGiris', 0),        // 1. haftada dışarıdan kasalara giren ASTRA (trade payı: her harcama gibi bölünür); haftada azalır
+    disYari: num('disYari', 12),         // dış girişin yarılanma süresi (hafta): fiyat yükseldikçe aynı dolar daha az ASTRA eder
+    odulCarpan: num('odulCarpan', 1),    // 1: kasa ödemeleri de çarpanla çarpılır (eski model); 0: oyundaki gibi çarpılmaz (yüzdeyle ödeme)
+    endeks: num('endeks', 0), endeksPazar: num('endeksPazar', 0),            // 1: bedel çarpanı = en büyüğü(Oyun İçi Fiyat Endeksi, fiyat çarpanı)
+    endeksYukari: 0.25, endeksAsagi: 0.05   // endeks haftada en çok %25 yükselir, %5 iner
   };
 }
 
@@ -89,19 +95,32 @@ export function run(P) {
   const monthly = []; let m = 1;      // fiyat çarpanı
   const qppNow = Object.fromEntries(RES.map(r => [r, P.qpp]));   // termostatta kaynak başına kişi başı kota
   let ubiPaid = 0;
-  const priceAt = w => { const f = w / P.weeks; return P.fiyat === 'x3' ? P.p0usd * (1 + 2 * f) : P.fiyat === 'yarim' ? P.p0usd * (1 - 0.5 * f) : P.p0usd; };
+  // x40: makro modelin "trade 750 $/ay" senaryosundaki gibi fiyat bir yılda ~40 katına çıkar (üstel)
+  const priceAt = w => { const f = w / P.weeks; return P.fiyat === 'x3' ? P.p0usd * (1 + 2 * f) : P.fiyat === 'yarim' ? P.p0usd * (1 - 0.5 * f) : P.fiyat === 'x40' ? P.p0usd * Math.pow(40, w / 48) : P.p0usd; };
   let weeklyPay = 0;
+  // Oyun İçi Fiyat Endeksi: son 4 haftada kişi başı haftalık dağıtım ÷ tasarım dağıtımı (tohum kasaların haftalık oranıyla, N oyuncuya)
+  const tasarimKisi = (P.seed.dungeon * P.pay.dungeon + P.seed.arena * P.pay.arena + P.seed.boss * P.pay.boss + P.seed.quest * P.pay.quest) / P.N;
+  const dagitimGecmis = []; let endeks = 1, fiyatCarpani = 1;
+  const olcum = { endeksEnYuksek: 1, karsilanabilirlik: [] };   // karşılanabilirlik: ücretsiz oyuncunun seviye ASTRA bedeli ÷ haftalık geliri
 
   for (let w = 1; w <= P.weeks; w++) {
     if (w % 4 === 1 && w > 1) addWave(cohorts.reduce((s, c) => s + c.count, 0) * P.growth, w);
     const N = cohorts.reduce((s, c) => s + c.count, 0);
     const p = priceAt(w); const target = p < P.p0usd ? P.p0usd / p : Math.pow(P.p0usd / p, 0.6);
-    m = Math.max(m * 0.95, Math.min(m * 1.05, target));
+    fiyatCarpani = Math.max(fiyatCarpani * 0.95, Math.min(fiyatCarpani * 1.05, target));
+    if (P.endeks && dagitimGecmis.length) {
+      const son = dagitimGecmis.slice(-4); const hedefE = Math.max(1, son.reduce((s, v) => s + v, 0) / son.length / tasarimKisi);
+      endeks = Math.max(endeks * (1 - P.endeksAsagi), Math.min(endeks * (1 + P.endeksYukari), hedefE));
+      olcum.endeksEnYuksek = Math.max(olcum.endeksEnYuksek, endeks);
+    }
+    m = P.endeks ? Math.max(endeks, fiyatCarpani) : fiyatCarpani;
+    const mPazar = P.endeks && !P.endeksPazar ? fiyatCarpani : m;   // pazar koridoru, termostat ve geri alım: endeks yalnız bedellere (endeksPazar=1 ise pazara da)
+    if (P.disGiris > 0) spend(P.disGiris * Math.pow(0.5, (w - 1) / P.disYari));   // trade payı oyuna: her harcama gibi bölünür
     // Otorite etkisi
     const oMult = 1 + OT.PER_LEVEL_BONUS * otorite, oHours = ((OT.HOURS_BASE + OT.HOURS_PER_LEVEL * otorite) * (OT.DAYS_BASE + OT.DAYS_PER_LEVEL * otorite)) / 168;
     // ── 1) kota ve Üretim Hakkı dağılımı ──
     if (P.kotaModu === 'termostat' && w > 1) for (const r of RES) {   // arz fiyatı izler: fiyat hedefin üstündeyse kota artar, altındaysa azalır
-      const rel = price(r) / (P0[r] * m) / P.termoHedef; const step = Math.max(-P.termoAdim, Math.min(P.termoAdim, (rel - 1)));
+      const rel = price(r) / (P0[r] * mPazar) / P.termoHedef; const step = Math.max(-P.termoAdim, Math.min(P.termoAdim, (rel - 1)));
       qppNow[r] = Math.min(P.qppMax, Math.max(P.qppMin, qppNow[r] * (1 + step)));
     }
     const Q = Object.fromEntries(RES.map(r => [r, qppNow[r] * TABAN[r] * 168 * N * oMult * oHours * P.kota]));
@@ -159,7 +178,7 @@ export function run(P) {
     });
     // ── 3) pazar satışı (taban fiyata kadar, orantılı) ──
     for (const r of RES) {
-      const { A: Aa, R } = pool[r]; const floor = P.taban * P0[r] * m;
+      const { A: Aa, R } = pool[r]; const floor = P.taban * P0[r] * mPazar;
       const maxNet = Math.max(0, Math.sqrt(Aa * R / floor) - R);          // taban fiyata kadar satılabilecek net miktar
       const want = sellWant[r].reduce((s, x) => s + x.q * x.c.count, 0);
       const f = want > 0 ? Math.min(1, maxNet / (want * (1 - P.resFee))) : 0;
@@ -174,7 +193,7 @@ export function run(P) {
     }
     // ── 4) kasalardan ödemeler ──
     weeklyPay = 0;
-    const payPool = (k, rate, weightFn) => { const budget = K[k] * rate * m; const ws = cohorts.map(weightFn); const tot = ws.reduce((s, x, i) => s + x * cohorts[i].count, 0); if (!(tot > 0) || !(budget > 0)) return; K[k] -= budget; weeklyPay += budget; cohorts.forEach((c, i) => earn(c, budget * ws[i] / tot)); };
+    const payPool = (k, rate, weightFn) => { const budget = K[k] * rate * (P.odulCarpan ? m : 1); const ws = cohorts.map(weightFn); const tot = ws.reduce((s, x, i) => s + x * cohorts[i].count, 0); if (!(tot > 0) || !(budget > 0)) return; K[k] -= budget; weeklyPay += budget; cohorts.forEach((c, i) => earn(c, budget * ws[i] / tot)); };
     payPool('dungeon', P.pay.dungeon, c => c.army > 0 ? c.army : 0);
     payPool('arena', P.pay.arena, c => (c.type === 'f2p' ? 0 : Math.max(1, c.army)));
     payPool('boss', P.pay.boss, c => P.act[c.type] * (1 + 0.1 * c.level));
@@ -188,17 +207,21 @@ export function run(P) {
       const a = c.inc * P.armyShare[c.type]; if (!(a > 0)) return;
       const x = pay(c, a * 0.5);                                   // asker/teçhizat ASTRA kısmı
       let budget = Math.min(a * 0.5, Math.max(0, c.bal)) * c.count; // hammadde kısmı: demir %50, kömür %30, taş %20
-      for (const [r, s] of [['demir', 0.5], ['komur', 0.3], ['tas', 0.2]]) { const b = budget * s; const ceil = P.tavan * P0[r] * m; const xMax = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / ceil)); const q = Math.min(pool[r].R * b / (pool[r].A + b), xMax); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; c.bal -= cost / c.count; c.out += cost / c.count; outgo[c.type] += cost; spend(cost * P.fee); T.resBurned += q; } }
-      c.army += (x + budget / c.count) / (P.askerBirim * P.fiyatOlcek);    // askerBirim ASTRA ≈ 1 asker gücü
+      for (const [r, s] of [['demir', 0.5], ['komur', 0.3], ['tas', 0.2]]) { const b = budget * s; const ceil = P.tavan * P0[r] * mPazar; const xMax = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / ceil)); const q = Math.min(pool[r].R * b / (pool[r].A + b), xMax); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; c.bal -= cost / c.count; c.out += cost / c.count; outgo[c.type] += cost; spend(cost * P.fee); T.resBurned += q; } }
+      c.army += (x + budget / c.count) / (P.askerBirim * P.fiyatOlcek * (P.endeks ? m : 1));    // askerBirim ASTRA ≈ 1 asker gücü
     });
     // ── 6) geri alım: fiyat eşiğin altındaysa kasanın %x'i ile al-yak ──
-    for (const r of RES) { const thr = P.geriAlimEsik * P0[r] * m; if (price(r) < thr && K.buyback > 0) { const B = K.buyback * P.geriAlimHiz / RES.length; const xThr = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / thr)); const xB = pool[r].R * B / (pool[r].A + B); const q = Math.min(xThr, xB); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; K.buyback -= cost; T.buybackSpent += cost; T.resBurned += q; } } }
+    for (const r of RES) { const thr = P.geriAlimEsik * P0[r] * mPazar; if (price(r) < thr && K.buyback > 0) { const B = K.buyback * P.geriAlimHiz / RES.length; const xThr = Math.max(0, pool[r].R - Math.sqrt(pool[r].A * pool[r].R / thr)); const xB = pool[r].R * B / (pool[r].A + B); const q = Math.min(xThr, xB); if (q > 0) { const cost = pool[r].A * q / (pool[r].R - q); pool[r].A += cost; pool[r].R -= q; K.buyback -= cost; T.buybackSpent += cost; T.resBurned += q; } } }
     // ── 7) Otorite ilerlemesi (karışımın TAMAMI hammadde: çelik payı kömürdür, Konsey kasasından ASTRA çıkmaz; 13 Ekim 2026) ──
     while (otorite < OT.MAX_LEVEL && otoritePool >= otoriteCost(otorite)) { otoritePool -= otoriteCost(otorite); otorite++; }
     cohorts.forEach(c => { c.incHist.push(c.inc); c.outHist.push(c.out); });
+    dagitimGecmis.push(weeklyPay / Math.max(1, N));
+    { const f = cohorts.filter(c => c.type === 'f2p'); const n = f.reduce((s, c) => s + c.count, 0); const gelir = n ? f.reduce((s, c) => s + c.inc * c.count, 0) / n : 0;
+      const sv = n ? Math.round(f.reduce((s, c) => s + c.level * c.count, 0) / n) : 1; const bedel = LEVEL[Math.min(80, sv)].adAstra * m * P.fiyatOlcek;
+      if (w % 4 === 0) olcum.karsilanabilirlik.push(gelir > 0 ? +(bedel / gelir).toFixed(3) : null); }
     // ── aylık kayıt ──
     if (w % 4 === 0) {
-      const idx = Math.exp(RES.reduce((s, r) => s + Math.log(price(r) / (P0[r] * m)), 0) / RES.length);   // çarpan düzeltilmiş fiyat endeksi
+      const idx = Math.exp(RES.reduce((s, r) => s + Math.log(price(r) / (P0[r] * mPazar)), 0) / RES.length);   // çarpan düzeltilmiş fiyat endeksi
       const idxUsd = Math.exp(RES.reduce((s, r) => s + Math.log(price(r) * p / (P0[r] * P.p0usd)), 0) / RES.length);
       const byType = {}; for (const t of TYPES) { const cs = cohorts.filter(c => c.type === t); const n = cs.reduce((s, c) => s + c.count, 0); byType[t] = { n, inc: income[t] / Math.max(1, n), net: (income[t] - outgo[t]) / Math.max(1, n), level: cs.length ? Math.round(cs.reduce((s, c) => s + c.level * c.count, 0) / n) : 0, bal: cs.length ? cs.reduce((s, c) => s + c.bal * c.count, 0) / n : 0 }; }
       const incTot = TYPES.reduce((s, t) => s + income[t], 0);
@@ -212,7 +235,7 @@ export function run(P) {
   const f2pUsdMonth = last.byType.f2p.net * 4.33 * priceAt(P.weeks);
   const checks = { fiyat: idxMin >= 0.5, kasa: runwayMin >= 12, f2pSeviye: last.byType.f2p.level >= 8, adalet: last.whaleF2pRatio <= 6 && last.top5Share <= 0.35, kota: last.quotaUse >= 0.6 };
   const passed = Object.values(checks).filter(Boolean).length;
-  return { P: { N: P.N, fiyatOlcek: P.fiyatOlcek, qpp: P.qpp, qppSon: last.qpp, kotaModu: P.kotaModu, kota: P.kota, pazar: P.pazar, geriAlimEsik: P.geriAlimEsik, hazirlik: P.hazirlik, fiyat: P.fiyat, hakTavan: P.hakTavan, yatirMid: P.yatir.mid, yatirWhale: P.yatir.whale }, idxMin: +idxMin.toFixed(2), idxUsdMin: +idxUsdMin.toFixed(2), runwayMin, f2pLevel: last.byType.f2p.level, f2pNetMonth: Math.round(last.byType.f2p.net * 4.33), f2pUsdMonth: +f2pUsdMonth.toFixed(4), whaleF2pRatio: last.whaleF2pRatio, top5Share: last.top5Share, quotaUse: last.quotaUse, otorite: last.otorite, pazarASTRA: last.pazarASTRA, pools: last.pools, burned: last.burned, buyback: last.buyback, waste: last.waste, hazirlik: last.hazirlikASTRA, deposits: Math.round(T.deposits), checks, passed, monthly };
+  return { P: { N: P.N, fiyatOlcek: P.fiyatOlcek, qpp: P.qpp, qppSon: last.qpp, kotaModu: P.kotaModu, kota: P.kota, pazar: P.pazar, geriAlimEsik: P.geriAlimEsik, hazirlik: P.hazirlik, fiyat: P.fiyat, hakTavan: P.hakTavan, yatirMid: P.yatir.mid, yatirWhale: P.yatir.whale }, idxMin: +idxMin.toFixed(2), idxUsdMin: +idxUsdMin.toFixed(2), runwayMin, f2pLevel: last.byType.f2p.level, f2pNetMonth: Math.round(last.byType.f2p.net * 4.33), f2pUsdMonth: +f2pUsdMonth.toFixed(4), whaleF2pRatio: last.whaleF2pRatio, top5Share: last.top5Share, quotaUse: last.quotaUse, otorite: last.otorite, pazarASTRA: last.pazarASTRA, pools: last.pools, burned: last.burned, buyback: last.buyback, waste: last.waste, hazirlik: last.hazirlikASTRA, deposits: Math.round(T.deposits), endeksEnYuksek: +olcum.endeksEnYuksek.toFixed(2), karsilanabilirlik: olcum.karsilanabilirlik, checks, passed, monthly };
 }
 
 const fmt = v => Math.round(v).toLocaleString('tr-TR');

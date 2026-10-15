@@ -8,7 +8,7 @@ import { openDb } from '../server/db.js';
 import { createEngine } from '../server/engine.js';
 import { createWorld } from '../server/world.js';
 import { loadConfig } from '../server/config.js';
-import { odemeKadrani, WEEKLY_RULES as R } from '../server/economy.js';
+import { odemeKadrani, oyunIciEndeks, etkinCarpan, WEEKLY_RULES as R } from '../server/economy.js';
 
 let toplam = 0;
 const ok = ad => { toplam++; console.log(`✅ ${ad}`); };
@@ -112,6 +112,31 @@ E.globalPool.state.creatorRoyaltyTotal = 500; E.globalPool.saveState();   // öd
   ok('Kadran fiyat geçmişinden hesaplanır, saklanır ve kasa bütçesinin kasa × oran kısmını çarpar');
 }
 
+// 5) Oyun İçi Fiyat Endeksi (makro plan B1): dağıtım tasarımın üstüne çıkınca bedel çarpanı yükselir
+{
+  const tas = 7700;
+  assert.equal(oyunIciEndeks({ kisiBasiSeri: [], tasarimKisi: tas, onceki: 2 }), 2, 'veri yoksa önceki değer');
+  assert.equal(oyunIciEndeks({ kisiBasiSeri: [tas * 10], tasarimKisi: tas, onceki: 1 }), 1.25, 'yükselişte haftada en çok %25');
+  assert.equal(oyunIciEndeks({ kisiBasiSeri: [0], tasarimKisi: tas, onceki: 1 }), 0.95, 'düşüşte haftada en çok %5');
+  assert.equal(oyunIciEndeks({ kisiBasiSeri: [tas * 3, tas * 3, tas * 3, tas * 3], tasarimKisi: tas, onceki: 2.9 }), 3, 'hedef = son 4 haftanın kişi başı dağıtımı ÷ tasarım');
+  assert.equal(etkinCarpan({ priceMultiplier: 0.3, oyunEndeksi: 2 }), 2, 'bol ASTRA: endeks');
+  assert.equal(etkinCarpan({ priceMultiplier: 1.8, oyunEndeksi: 1.1 }), 1.8, 'fiyat düşünce dolar tabanı');
+  assert.equal(etkinCarpan({}), 1);
+  const tasarim = Object.keys(E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES).reduce((s, id) => s + E.GAME_CONFIG.TREASURY_SEED[id] * E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES[id], 0) / E.GAME_CONFIG.KAPI.START_LIMIT;
+  assert.equal(tasarim, tas, 'tasarım payı: tohum kasaların haftalık oranıyla 100 vatandaşa ~7.700 ASTRA');
+
+  // Dünya: bol dağıtım haftası → endeks %25 artar, oyuncunun bedel çarpanı en büyüğü(fiyat çarpanı, endeks) olur
+  const once = Number(world.econ().oyunEndeksi) || 1;
+  E.treasury.state.weekSpent = { ...(E.treasury.state.weekSpent || {}), dungeon: 1e9 };
+  const ep = E.globalPool.state.epochId + 3;
+  hazirla(ep, 100);
+  const s = world.settleWeek(ep, world.econ().market);
+  assert.equal(s.oyunEndeksi, Math.round(once * 1.25 * 1e4) / 1e4, `endeks haftada %25 yükseldi: ${once} → ${s.oyunEndeksi}`);
+  const { result: m } = E.withPlayer(P, gs => gs.getAdaPriceMultiplier());
+  assert.equal(m, Math.max(world.econ().priceMultiplier || 1, s.oyunEndeksi), 'oyuncunun bedel çarpanı = en büyüğü(fiyat çarpanı, endeks)');
+  ok(`Oyun İçi Fiyat Endeksi: dağıtım tasarımı aşınca haftada en çok %25 yükselir (${once} → ${s.oyunEndeksi}); bedel çarpanı en büyüğü`);
+}
+
 db.close();
-console.log(`\n${toplam} akış dengesi / kadran kontrolü geçti.`);
+console.log(`\n${toplam} akış dengesi / kadran / endeks kontrolü geçti.`);
 process.exit(0);
