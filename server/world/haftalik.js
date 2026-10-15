@@ -1,6 +1,6 @@
 // Realm of AdAstra sunucusu — dünya: haftalık hesaplaşma (Pazartesi 00:01 TSİ)
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
-import { allocateWithdrawals, faucetWeekly, nextMultiplier, runwayPoolTotal, lotteryTicketPrice, WEEKLY_RULES } from '../economy.js';
+import { allocateWithdrawals, faucetWeekly, nextMultiplier, runwayPoolTotal, lotteryTicketPrice, odemeKadrani, WEEKLY_RULES } from '../economy.js';
 import { runDraw } from '../../js/economy/lottery.js';
 import { rastgele } from '../rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../../js/economy/faucet.js';
@@ -8,7 +8,25 @@ import { fmt, DAY } from './yardimci.js';
 import { izindeMiState } from '../aktiflik.js';
 
 export function olusturHaftalik(w) {
-  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, externalBuy, sponsor, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
+  const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, akisSerileri, sponsor, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
+
+  // ÖDEME KADRANI (15 Ekim 2026): son 7 günün ortalama fiyatı ÷ son 91 günün; ödeme yapan kasaların sağlığı düşükse tavanlı
+  function kadranHesapla(now, onceki) {
+    const R = WEEKLY_RULES;
+    const fiyatlar = db.q.pricesSince.all(now - R.kadranLongDays * DAY).map(r => ({ at: r.at, p: Number(r.price_usd) || 0 })).filter(x => x.p > 0);
+    const ort = liste => (liste.length ? liste.reduce((s, x) => s + x.p, 0) / liste.length : 0);
+    const T = E.treasury;
+    const kimlikler = Object.keys((E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET || {}).RATES || {});
+    const hedef = kimlikler.reduce((s, id) => s + (Number(E.GAME_CONFIG.TREASURY_TARGET_RESERVE[id]) || 0), 0);
+    const bakiye = kimlikler.reduce((s, id) => s + (Number(T.state.pools[id]) || 0), 0);
+    return odemeKadrani({
+      kisaOrt: ort(fiyatlar.filter(x => x.at >= now - R.kadranShortDays * DAY)),
+      uzunOrt: ort(fiyatlar),
+      veriGun: fiyatlar.length ? (now - fiyatlar[0].at) / DAY : 0,
+      onceki,
+      kasaSagligi: hedef > 0 ? bakiye / hedef : 1
+    });
+  }
   function settleWeek(closedEpoch, market) {
     const now = clock();
     const e = econ();
@@ -40,7 +58,14 @@ export function olusturHaftalik(w) {
         }
         if (score > 0 || requested > 0) rows.push({ id: p.address, requested, score });
       }
-      const cap = currentCap(market);
+      // AKIŞ DENGESİ (15 Ekim 2026): yapımcı payı da ekosistemden çıkan ASTRA'dır; zarfın içinden önce o ödenir, kalan oyunculara.
+      // Zarfa sığmayan yapımcı payı devreder (sonraki haftaların zarfından ödenir).
+      const gp = E.globalPool;
+      const settled = e.settled || { burned: 0, creator: 0 };
+      const creatorDue = Math.max(0, (Number(gp.state.creatorRoyaltyTotal) || 0) - (Number(settled.creator) || 0));
+      const zarf = currentCap(market);
+      const creatorPay = Math.min(creatorDue, zarf);
+      const cap = Math.max(0, zarf - creatorPay);
       const alloc = allocateWithdrawals(rows, cap, { brake });
       let sponsorTotal = 0;
       for (const r of alloc.rows) {
@@ -68,11 +93,11 @@ export function olusturHaftalik(w) {
           gs.pushNotice(`🤝 Kullanmadığın çekim hakkın başkasına kiralandı: +${fmt(rp.amount)} ASTRA hak kirası.`, 'success');
         });
       }
-      const gp = E.globalPool;
       gp.state.ubiWeekAccrued = (Number(gp.state.ubiWeekAccrued) || 0) + alloc.totals.feeToUbi;
       gp.state.ubiPool = (Number(gp.state.ubiClaimPot) || 0) + gp.state.ubiWeekAccrued;
       let burn = alloc.totals.feeBurn;
-      summary.withdraw = { cap, k: Number(econ().k) || 1, externalBuy4w: externalBuy(), ...alloc.totals };
+      const akis = akisSerileri();
+      summary.withdraw = { zarf, cap, creatorPay, k: Number(econ().k) || 1, tradeAlimi: akis.tradeAlimi, netAlim: akis.netAlim, ...alloc.totals };
       summary.withdraw.sponsorShare = sponsorTotal;
       summary.withdraw.sent -= sponsorTotal;   // zincire giden = net − sponsor payı (pay oyun içinde kalır)
 
@@ -161,16 +186,16 @@ export function olusturHaftalik(w) {
       }
 
       // 6) Oyun içi yakım ve yapımcı payı → zincir
-      // Sunucu dünyası sıfırdan başlar: ilk haftada bugüne kadarki yakım ve yapımcı payının tamamı aktarılır
-      const settled = e.settled || { burned: 0, creator: 0 };
+      // Sunucu dünyası sıfırdan başlar: ilk haftada bugüne kadarki yakımın tamamı aktarılır. Yapımcı payı yalnız çıkış zarfına
+      // sığan kadar gider (adım 1); kalanı devreder.
       const burnedDelta = Math.max(0, (Number(gp.state.totalBurned) || 0) - settled.burned);
-      const creatorDelta = Math.max(0, (Number(gp.state.creatorRoyaltyTotal) || 0) - settled.creator);
       burn += burnedDelta;
       queuePayout(closedEpoch, 'burn', cfg.deadAddress, burn);
-      queuePayout(closedEpoch, 'creator', creatorWallet(), creatorDelta);
+      queuePayout(closedEpoch, 'creator', creatorWallet(), creatorPay);
       gp.saveState();
       summary.burn = { total: burn, spend: burnedDelta, fee: alloc.totals.feeBurn, defense };
-      summary.creator = creatorDelta;
+      summary.creator = creatorPay;
+      summary.creatorDeferred = Math.max(0, creatorDue - creatorPay);
 
       // 7) Ortak piyango çekilişi: bütün oyuncuların biletleri arasından TEK kazanan (şans = bilet / toplam).
       // Kazanan biletlerine ödediğinin 2 katını alır; kasa yetmezse kalan biletlere amorti dağıtılır (js/economy/lottery.js).
@@ -234,9 +259,12 @@ export function olusturHaftalik(w) {
       if (kapi) { try { kapi.recordWeek(summary, Number((econ().market || {}).priceUsd) || 0); } catch (err) { log.warn('Kapı göstergesi:', err.message); } }
       // Katılım puanı (E-planı Faz 1): bu haftanın değerlendirmesi — eşiğin altında kalanlara uyarı/izin sorusu
       if (kapi) { try { summary.katilim = kapi.haftalikKatilimDegerlendir(closedEpoch); } catch (err) { log.warn('Katılım puanı:', err.message); } }
+      // Ödeme Kadranı: gelecek haftanın kasa bütçeleri bununla açılır (aşağıda openWeekBudgets)
+      const kadran = kadranHesapla(now, Number(e.kadran) || 1);
+      summary.kadran = kadran;
       setEcon({
-        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap,
-        settled: { burned: Number(gp.state.totalBurned) || 0, creator: Number(gp.state.creatorRoyaltyTotal) || 0 },
+        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap, kadran,
+        settled: { burned: Number(gp.state.totalBurned) || 0, creator: (Number(settled.creator) || 0) + creatorPay },
         faucetPerPlayer: summary.faucet.perPlayer, lastWeekly: summary
       });
       db.event('weekly', null, summary);
@@ -249,7 +277,7 @@ export function olusturHaftalik(w) {
       // Kimse son 7 günde görülmediyse (uzun duraklama, yeni sıfırlama) kayıtlı oyuncu sayısı yedek olur; sayı yine de taban
       // PERSON_CAP_MIN_ACTIVE'in altına inerse hazine defteri tabanı uygular.
       const aktif7 = players.filter(p => p.last_seen >= now - 7 * DAY).length;
-      T.openWeekBudgets({ aktif: aktif7 > 0 ? aktif7 : players.length });
+      T.openWeekBudgets({ aktif: aktif7 > 0 ? aktif7 : players.length, kadran });
       return summary;
     }); } finally { T.bypassBudget = false; }
   }

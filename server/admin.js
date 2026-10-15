@@ -27,6 +27,8 @@ async function load() {
     card('Fren', s.brake && s.brake.on ? '🔴 AÇIK' : '🟢 kapalı', s.brake && s.brake.on ? 'bad' : 'ok'),
     card('Fiyat çarpanı', '×' + (s.priceMultiplier || 1)),
     card('Bu haftaki çekim sınırı', fmt(s.weeklyCap) + ' ASTRA'),
+    card('Akış dengesi (haftalık)', s.akis ? `trade alımı ${fmt(s.akis.tradeAlimi)} · net piyasa alımı ${fmt(s.akis.netAlim)}<br><span style="font-size:0.75rem;">çıkış ≤ ikisinin de yarısı; taban yok</span>` : '—'),
+    card('Ödeme kadranı', '×' + (s.kadran || 1)),
     card('Oyuncular', `${fmt(s.players.total)} (bu hafta ${fmt(s.players.activeWeek)}, yatıran ${fmt(s.players.depositors)})`),
     card('Bekleyen çekim talepleri', fmt(s.players.pendingWithdraw) + ' ASTRA'),
     card('Sonraki hafta', s.nextWeekAt ? new Date(s.nextWeekAt).toLocaleString('tr-TR') : '—'),

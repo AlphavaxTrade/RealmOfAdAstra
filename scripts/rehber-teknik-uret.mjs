@@ -114,7 +114,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
   ['En az çekim', 'Talep başına', `${sayi(1000)} ASTRA (sunucu ayarı)`, 'Sana özel'],
   ['Çekilebilir bakiye', 'Anlık', 'Yalnız <b>serbest</b> bakiyen (kilitli ve sponsorlu kısım çekilemez)', 'Sana özel'],
   ['Çekim zamanı', 'Haftalık', 'Talepler yalnız <b>Pazartesi 00:01</b>\'de, haftalık havuzdan karşılanır. Günlük çekim yoktur', 'Herkes'],
-  ['Haftalık çekim havuzu', 'Haftalık', `Fiyatı en çok ${yuzde(W.maxPriceDrop, 0)} düşürecek miktar × fiyat katsayısı (k); ayrıca son 4 haftadaki dış alımın ${yuzde(W.externalBuyShare, 0)}'si; en az ${yuzde(W.capFloorShare, 0)} taban`, 'Küresel (herkes)'],
+  ['Haftalık çekim havuzu (akış dengesi)', 'Haftalık', `En küçüğü: haftalık trade alımının ${yuzde(W.exitTradeShare, 0)}'si, haftalık net piyasa alımının ${yuzde(W.exitMarketShare, 0)}'si, fiyatı en çok ${yuzde(W.maxPriceDrop, 0)} düşürecek miktar × k. <b>Taban yok:</b> trade alımı yoksa çekim de yok. Yapımcı payı da bu havuzdan ödenir`, 'Küresel (herkes)'],
   ['Kişisel pay', 'Haftalık', 'Havuz × <b>senin katkı puanın ÷ herkesin toplam puanı</b>; kullanılmayan paylar isteyenlere kiralanır', 'Sana özel'],
   ['Çekim ücreti', 'Çekim başına', `${yuzde(W.fee, 0)} (fren açıkken ${yuzde(W.feeBrake, 0)}); ücretin yarısı temel gelire, yarısı yakıma. Kiraladığın hak için ${yuzde(W.rent)} kira`, 'Sana özel'],
   ['Sunucunun haftalık gönderim güvenlik tavanı', 'Haftalık', `${sayi(100000000)} ASTRA (sunucu ayarı; ayrıca oyun cüzdanının bakiyesini aşamaz)`, 'Küresel (herkes)'],
@@ -122,7 +122,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
 ])}
   <h3>🏛️ Ödül kasaları</h3>
 ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
-  ['Her kasanın haftalık ödeme bütçesi', 'Haftalık', `Kasa × oran × sağlık + son ${n(TB.INFLOW_WEEKS)} hafta girişinin ortalamasının ${yuzde(TB.INFLOW_SHARE, 0)}'ı. Oranlar: zindan ${yuzde(kasaOran('dungeon'))}, kolezyum ${yuzde(kasaOran('arena'))}, boss ${yuzde(kasaOran('worldBoss'))}, görev ${yuzde(kasaOran('quest'))}, karnaval ${yuzde(kasaOran('carnival'))}`, 'Küresel (herkes)'],
+  ['Her kasanın haftalık ödeme bütçesi', 'Haftalık', `Kasa × oran × <b>Ödeme Kadranı</b> × sağlık + son ${n(TB.INFLOW_WEEKS)} hafta girişinin ortalamasının ${yuzde(TB.INFLOW_SHARE, 0)}'ı. Kadran ${n(W.kadranMin)} – ${n(W.kadranMax)} arası (fiyat yükselirken büyür, düşerken küçülür; "ASTRA çekimi" bölümünde). Oranlar: zindan ${yuzde(kasaOran('dungeon'))}, kolezyum ${yuzde(kasaOran('arena'))}, boss ${yuzde(kasaOran('worldBoss'))}, görev ${yuzde(kasaOran('quest'))}, karnaval ${yuzde(kasaOran('carnival'))}`, 'Küresel (herkes)'],
   ['Kişi başı haftalık pay tavanı', 'Haftalık', `Bütçe × ${n(TB.PERSON_CAP_MULT)} ÷ aktif oyuncu (en az ${n(TB.PERSON_CAP_MIN_ACTIVE)} sayılır)`, 'Sana özel'],
   ['Tek ödül', 'İşlem başı', `Kasanın en çok ${yuzde(C.TREASURY_SINGLE_DRAW_CAP, 0)}'si`, 'Herkes'],
   ['Kasa zayıfsa ödül küçülür', 'Anlık', `Kasa sağlığı &lt; 1 ise ödül sağlıkla çarpılır (en az ${yuzde(C.TREASURY_MIN_PAYOUT_RATIO, 0)} kalır)`, 'Herkes']
@@ -424,7 +424,7 @@ const ornekSonuc = allocateWithdrawals([
 ], ornekCap);
 const satirOrnek = (id, ad) => { const r = ornekSonuc.rows.find((x) => x.id === id); return [ad, sayi(r.requested), sayi(r.own), sayi(r.granted), sayi(r.extra), sayi(r.fee), sayi(r.rent), sayi(r.net)]; };
 const kirasi = (id) => { const p = ornekSonuc.rentPayouts.find((x) => x.id === id); return p ? sayi(p.amount) : '0'; };
-const cekim = bolum('t-cekim', '🏦', 'ASTRA çekimi: haftalık, küresel limitler', 'ASTRA\'yı oyundan cüzdanına <b>haftada bir</b>, <b>ortak bir havuzdan</b> çekersin. Havuz, çekilen ASTRA piyasada satılsa fiyatı çok düşürmeyecek kadar küçük tutulur. Böylece kimse "çıkış kapısında" ezilmez ve token değeri korunur.',
+const cekim = bolum('t-cekim', '🏦', 'ASTRA çekimi: haftalık, küresel limitler', 'ASTRA\'yı oyundan cüzdanına <b>haftada bir</b>, <b>ortak bir havuzdan</b> çekersin. Temel kural (<b>akış dengesi</b>): bir haftada oyundan çıkan ASTRA, trade uygulamasının o hafta piyasadan yaptırdığı alımın <b>yarısını</b> hiçbir zaman geçemez. Böylece trade kullanıldıkça fiyat yukarı gider, oyun ekosistemi eritmez ve kimse "çıkış kapısında" ezilmez.',
 `  <h3>Adım adım</h3>
   <ol class="adimlar">
     <li><b>Şartlar:</b> e-postan doğrulanmış, hesabına cüzdan bağlı, Muhafız Mührü açıksa kod girilmiş olmalı. En az ${sayi(1000)} ASTRA talep edebilirsin ve yalnız <b>serbest</b> bakiyenden.</li>
@@ -435,11 +435,22 @@ const cekim = bolum('t-cekim', '🏦', 'ASTRA çekimi: haftalık, küresel limit
   <h3>Haftalık havuz nasıl hesaplanır?</h3>
 ${formul([
   `<b>Fiyat tavanı</b> = fiyatı en çok ${yuzde(W.maxPriceDrop, 0)} düşürecek token miktarı. Borsaya geçmeden önce (bağlanma eğrisinde): arz × (1 − √(1 − ${n(W.maxPriceDrop)})) = arzın %${sayi((1 - Math.sqrt(1 - W.maxPriceDrop)) * 100, 3)}'i. Borsada: havuzdaki token × (1 ÷ √(1 − ${n(W.maxPriceDrop)}) − 1) = havuzun %${sayi((1 / Math.sqrt(1 - W.maxPriceDrop) - 1) * 100, 3)}'i.`,
-  `<b>Dış alım tavanı</b> = son ${n(W.externalWindowDays)} gündeki piyasadan net token alımı (ve trade sitesinden gelen pay) × ${n(W.externalBuyShare)}.`,
-  `<b>Haftalık havuz</b> = en büyüğü( fiyat tavanı × ${n(W.capFloorShare)} ,  en küçüğü( fiyat tavanı × k ,  dış alım tavanı ) ).  <i>k</i> = güncel piyasa değeri ÷ 30 günlük zirve (${n(W.kMin)} – ${n(W.kMax)} arası).`,
+  `<b>Trade alımı</b> (haftalık) = o hafta trade sitesinden oyuna gelen ASTRA ÷ ${n(W.tradeGameShare)} (trade gelirinin ${yuzde(W.tradeGameShare, 0)}'ı oyuna gelir; geri kalanı yakılır, sahipte tutulur ve trade ödül havuzuna gider).`,
+  `<b>Net piyasa alımı</b> (haftalık) = piyasadan net token alımı + o hafta oyundan çıkan ASTRA (çekilip satılan, kendi çıkışımız ölçüyü küçültmesin diye geri eklenir).`,
+  `<b>Ölçü</b> = son ${n(W.flowWeeks)} haftanın ortalaması ile son haftanın <b>küçüğü</b> (ani artışta tek haftaya güvenilmez; trade durursa çekim hemen kısılır).`,
+  `<b>Haftalık havuz</b> = en küçüğü( trade alımı ölçüsü × ${n(W.exitTradeShare)} ,  net piyasa alımı ölçüsü × ${n(W.exitMarketShare)} ,  fiyat tavanı × k ).  <b>Taban yok.</b>  <i>k</i> = güncel fiyat ÷ 30 günlük zirve fiyat (${n(W.kMin)} – ${n(W.kMax)} arası).`,
   `Ayrıca sunucu ayarı haftalık gönderim tavanı (varsayılan ${sayi(100000000)} ASTRA) ve oyun cüzdanındaki bakiye havuzu geçemez.`,
-  `<b>Kişisel pay</b> = havuz × (senin haftalık katkı puanın ÷ herkesin toplam katkı puanı).`
+  `<b>Yapımcı payı</b> (her harcamanın ${yuzde(C.CREATOR_ROYALTY_RATE, 0)}'ü) da ekosistemden çıkan ASTRA'dır: önce o havuzdan ödenir, sığmayanı sonraki haftalara devreder.`,
+  `<b>Kişisel pay</b> = (havuz − yapımcı payı) × (senin haftalık katkı puanın ÷ herkesin toplam katkı puanı).`
 ])}
+  ${ornek(`<p><b>Trade uygulaması bu hafta 1.000.000 ASTRA'lık satış yaptı</b> (müşteriler bu ASTRA'yı piyasadan aldı). Oyuna ${sayi(1000000 * W.tradeGameShare)} ASTRA gelir. Her hafta aynı olduysa trade alımı ölçüsü 1.000.000'dur ve bu haftanın havuzu en çok <b>${sayi(1000000 * W.exitTradeShare)} ASTRA</b> olur (piyasadaki net alım da en az bu kadarsa ve fiyat tavanı daha büyükse). Yani müşterilerin aldığı her 100 ASTRA'ya karşılık oyundan en çok ${sayi(100 * W.exitTradeShare)} ASTRA çıkar; en az ${sayi(100 - 100 * W.exitTradeShare)}'si fiyatı yukarı iten net alım olarak kalır.</p>`)}
+  <h3>Ödeme Kadranı: fiyat yükselirken oyun daha çok öder</h3>
+${formul([
+  `<b>Kadran</b> = (son ${n(W.kadranShortDays)} günün ortalama fiyatı ÷ son ${n(W.kadranLongDays)} günün ortalama fiyatı) ^ ${n(W.kadranExp)};  en az ${n(W.kadranMin)}, en çok ${n(W.kadranMax)}; haftada en çok ±%${sayi(W.kadranStep * 100)} değişir; ilk ${n(W.kadranWarmupDays)} gün 1.`,
+  `Her ödül kasasının haftalık bütçesindeki "kasa × oran" kısmı kadranla çarpılır (kasaya giren yeni paranın payı çarpılmaz).`,
+  `<b>Kasa koruması:</b> ödeme yapan kasaların toplamı hedef rezervin %${sayi(W.kadranHealth1 * 100)}'sinin altındaysa kadran en çok ${n(W.kadranCap1)}, %${sayi(W.kadranHealth2 * 100)}'inin altındaysa en çok ${n(W.kadranCap2)}.`
+])}
+  <p>Örnek: fiyat 91 günlük ortalamasının %30 üstündeyse kadran √1,3 ≈ ${sayi(Math.sqrt(1.3), 2)} olur: zindan kasasının haftalık oranı %${sayi(kasaOran('dungeon') * 100, 1)} yerine %${sayi(kasaOran('dungeon') * 100 * Math.sqrt(1.3), 2)}. Fiyat %40 altındaysa ≈ ${sayi(Math.sqrt(0.6), 2)}.</p>
   <h3>Ücret ve "hak kirası"</h3>
 ${tablo(['Kalem', 'Oran', 'Ne olur?'], [
   ['Çekim ücreti', yuzde(W.fee, 0), 'Çekilen miktardan kesilir. Yarısı haftalık temel gelire, yarısı yakıma gider'],
@@ -448,7 +459,7 @@ ${tablo(['Kalem', 'Oran', 'Ne olur?'], [
 ])}
   <h3>Fren (piyasa düşerken koruma)</h3>
   <ul>
-    <li><b>Açılır:</b> piyasa değerinin son 3 günlük ortalaması, 30 günlük zirvenin %${sayi(W.brakeOnRatio * 100)}'inin altına inerse.</li>
+    <li><b>Açılır:</b> fiyatın son 3 günlük ortalaması, 30 günlük zirvenin %${sayi(W.brakeOnRatio * 100)}'inin altına inerse (piyasa değerine değil fiyata bakılır: oyunun kendi yakımı ölçüyü bozmasın diye).</li>
     <li><b>Kapanır:</b> zirvenin %${sayi(W.brakeOffRatio * 100)}'ine dönerse ya da ${n(W.brakeQuietDays)} gün yeni dip yapılmazsa.</li>
     <li><b>Açıkken:</b> çekim ücreti ${yuzde(W.feeBrake, 0)} olur ve her kasanın haftada %${sayi(W.defenseBurnWeekly * 100)}'i yakılır (fiyat savunması).</li>
   </ul>
@@ -458,7 +469,7 @@ ${tablo(['Oyuncu', 'İstediği', 'Kendi payı', 'Payından aldığı', 'Kiralad�
   <p>A payından fazla istedi: B'nin kullanmadığı ${sayi(ornekSonuc.rows.find((x) => x.id === 'B').unused)} ve C'nin ${sayi(ornekSonuc.rows.find((x) => x.id === 'C').unused)} payından ${sayi(ornekSonuc.rows.find((x) => x.id === 'A').extra)} kiraladı. A'nın ödediği ${sayi(ornekSonuc.rows.find((x) => x.id === 'A').rent)} kira, payını kullanmayanlara dağıldı: B ${kirasi('B')}, C ${kirasi('C')} ASTRA. Toplam ücret ${sayi(ornekSonuc.totals.fee)}: yarısı (${sayi(ornekSonuc.totals.feeToUbi)}) temel gelire, yarısı (${sayi(ornekSonuc.totals.feeBurn)}) yakıma.</p>
   <h3>Oyun Kasası çekimi: bu havuza girmez</h3>
   <p>Her hesaba, sunucunun yönettiği küçük bir <b>Oyun Kasası</b> adresi açılır. Sen yokken çalışan işler (bot, iyileştirme, onarım) buradan ödenir. Kasaya <b>sen koyduğun</b> ASTRA ve AVAX'ı istediğin an, ücret ve havuz olmadan, bağlı cüzdanına geri çekebilirsin. Kazanılmış ASTRA kasaya aktarılamaz (kesinti kaçışı olmasın diye). Kasadaki paranın "günlük ortalama harcamanın 30 katı"nı (en az 20.000 ASTRA) aşan kısmı otomatik cüzdanına iade edilir.</p>
-  ${dikkat('Neden "haftada bir ve havuzdan"?', '<p>Tüm oyuncular aynı gün hepsini çekmeye kalksa fiyat çökerdi. Havuz, her hafta çekimin fiyatı en çok %2 düşüreceği büyüklüğe ayarlandığı için herkes çekebilir ve piyasa dayanır. Çekmediğin pay kaybolmaz; kullanmayana kira olarak döner.</p>')}`);
+  ${dikkat('Neden "haftada bir ve havuzdan"?', '<p>Tüm oyuncular aynı gün hepsini çekmeye kalksa fiyat çökerdi. Havuz, trade uygulamasının yarattığı alımın yarısıyla ve fiyatı en çok %2 düşürecek miktarla sınırlı olduğu için oyun fiyatı aşağı itemez: trade kullanıldıkça fiyat yükselir. Bunun dürüst sonucu, 100 vatandaşın toplam nakit çekiminin trade gelirinin en çok yarısı kadar olmasıdır; oyunda kazandığın değerin büyük kısmı oyunda (ve elinde tuttuğun ASTRA\'nın değerinde) kalır. Çekmediğin pay kaybolmaz; kullanmayana kira olarak döner.</p>')}`);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 10) PAZAR (AMM)

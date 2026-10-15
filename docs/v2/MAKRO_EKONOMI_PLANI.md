@@ -445,7 +445,11 @@ Fiyat çok yükselirse çarpan 2. yılda alt sınıra (0,05) iniyor ve orada kal
 
 ---
 
-## 12. Bugünkü kodda yeni kuralı bozan 5 sorun (Aşama 1'de düzelir)
+## 12. Kodda yeni kuralı bozan 5 sorun (15 Ekim 2026: beşi de düzeltildi, Aşama 1b)
+
+Düzeltmeler `server/economy.js` (`ekosistemCikisTavani`, `haftalikOlcu`, `odemeKadrani`), `server/world/piyasa.js` (`akisSerileri`), `server/world/haftalik.js` ve `js/treasury.js` dosyalarında. Testler: `tests/test_cikis_kapisi.mjs`, `tests/test_karar_5_6.mjs`. Makro model de artık aynı fonksiyonları kullanıyor.
+
+Altın kayıt yalnız iki adımın dünya özetinde değişti, oyuncu kayıtları aynı kaldı. Nedeni: hesaplaşmada yapımcı payı artık zarfın içinde ve kadran saklanıyor.
 
 1. **Çekim tavanı haftalık alımın 2 katına çıkabiliyor.** Son 4 haftanın **toplam** dış alımının yarısı **haftalık** tavan yapılıyor (`server/world/piyasa.js` externalBuy + `server/economy.js` dualWithdrawCap).
 2. **Alım yokken de çıkış var.** Dış alım sıfırken bile çıkışa %2 kuralının %20'si kadar taban izin veriyor (KARAR 5). Yeni kural tabanı kaldırır. `tests/test_karar_5_6.mjs` taban satırları yeni karara göre değişir; bu, testi zayıflatmak değil, kararın güncellenmesidir.
@@ -461,7 +465,7 @@ Fiyat çok yükselirse çarpan 2. yılda alt sınıra (0,05) iniyor ve orada kal
 |---|---|---|
 | 0 | Belge, makro model (`scripts/model/makro_model.mjs`), ortak zincir hesabı (`scripts/model/zincir.mjs`), değişmez testi (`tests/test_makro_model.mjs`), anayasa 9-10. ilke | **bitti (15 Ekim 2026)** |
 | 1a | OFE'yi denge modelinde sınama (50-1000 oyuncu); sonuç kullanıcıya | onay bekliyor |
-| 1b | Çıkış Kapısı + Ödeme Kadranı + 5 sorunun düzeltilmesi (`server/economy.js`, `server/world/piyasa.js`, `server/world/haftalik.js`, `js/treasury.js`, `js/config.js` EKOSISTEM bloğu); Konsey panosu; rehber "Akış dengesi" bölümü; testler | onay bekliyor |
+| 1b | Çıkış Kapısı + Ödeme Kadranı + 5 sorunun düzeltilmesi (`server/economy.js` WEEKLY_RULES: bütün haftalık hesaplaşma oranları zaten orada olduğu için ayrı bir config bloğu açılmadı; `server/world/piyasa.js`, `server/world/haftalik.js`, `js/treasury.js`); yönetici panosu ve cüzdan ekranı; rehber çekim bölümü; testler | **bitti (15 Ekim 2026)** |
 | 2 | Genesis Yolu (şartlar, uyandırma, dolar mühür, gelire bağlı açık mühür sayısı) + `contracts/GenesisNFT.sol` (Fuji) | onay bekliyor |
 | 3 | Trade sitesi (ayrı proje, SITE sohbeti): Bot Kasası 20/30/10/40; taze ödeme ile kredi ödemesini ayrı yayımlama (TB ölçüsü); Genesis sahipliğini zincirden okuyup süresiz Uydu + Gözlemevi %50 + "Genesis yeri"; EP indirimi (tavan %15) | kullanıcı onayı |
 | 4 | Stake sitesi (yeni proje): emanetsiz sözleşme, 14 gün bekleme, 7 günde olgunlaşan EP, erken çözme yakımı; bağımsız denetim → Fuji → ana ağ | sonra |

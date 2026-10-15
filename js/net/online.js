@@ -961,7 +961,7 @@ export async function openWalletPanel() {
     ${kasaSection(k)}
     <div style="${boxCss}">
       <div style="font-weight:800;color:#bfdbfe;margin-bottom:4px;">🏧 Kazanç Çekimi</div>
-      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ASTRA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ASTRA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
+      <div style="font-size:0.8rem;color:#cbd5e1;line-height:1.45;">Oyunda kazandığın ASTRA'nın serbest kısmı çekilir. Talepler <strong>${next}</strong> haftalık ortak havuzdan karşılanır. Bu haftaki havuz <strong>${fmt(wd.weeklyCap)} ASTRA</strong>: trade uygulamasının piyasadan yaptırdığı alımın en çok yarısı kadardır (akış dengesi; trade alımı yoksa çekim de yoktur). Bu haftaki tahmini hakkın (katkı puanına göre): <strong>${fmt(wd.estimatedRight)} ASTRA</strong>. Ücret %${(wd.feeRate * 100).toFixed(0)}${wd.brake ? ' (fiyat freni açık)' : ''}; hakkını aşan kısım için %${(wd.rentRate * 100).toFixed(1).replace('.', ',')} hak kirası. Sığmayan kısım bakiyene döner.</div>
       ${wd.paused ? '<div style="margin-top:6px;color:#fca5a5;font-size:0.82rem;">Çekimler şu an bakımda.</div>' : `
       ${etiketHtml('wp-amount', 'Çekmek istediğin miktar (ASTRA)', { gizli: true })}
       <div style="display:flex;gap:6px;margin-top:8px;">

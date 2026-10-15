@@ -4,8 +4,10 @@
 //   3) Bütün senaryolarda: haftalık çıkış ≤ trade alımının yarısı, trade yoksa çıkış yok, kasa eksiye düşmez, Genesis ≤ sezon tavanı,
 //      spekülatör şoku dışında fiyat hiçbir hafta düşmez (kullanıcı kuralı, 15 Ekim 2026)
 //   4) Zincir hesabı Arena sözleşmesinin kendi teklifleriyle aynı (11 Ekim 2026 ölçümü)
+//   (Çıkış Kapısı ve Kadran formülleri oyunun kendisinden gelir: server/economy.js; model aynı fonksiyonları kullanır.)
 import assert from 'node:assert/strict';
-import { calistir, SENARYOLAR, AKIS, ekosistemCikisTavani, odemeKadrani } from '../scripts/model/makro_model.mjs';
+import { calistir, SENARYOLAR } from '../scripts/model/makro_model.mjs';
+import { ekosistemCikisTavani, odemeKadrani, WEEKLY_RULES as R } from '../server/economy.js';
 import { curveR, zincirOlustur } from '../scripts/model/zincir.mjs';
 
 let toplam = 0;
@@ -26,19 +28,18 @@ const ok = ad => { toplam++; console.log(`✅ ${ad}`); };
 
 // 2) Ödeme Kadranı
 {
-  assert.equal(odemeKadrani({ fiyatlar: [1, 2, 3] }), 1, 'ilk 4 hafta veri birikir: 1');
-  const yukselen = Array.from({ length: 13 }, (_, i) => 1 + i * 0.2);
-  const k1 = odemeKadrani({ fiyatlar: yukselen, onceki: 1 });
-  assert.ok(k1 > 1 && k1 <= 1 + AKIS.KADRAN_ADIM + 1e-9, 'fiyat ortalamasının üstünde: yükselir, haftada en çok %5');
-  const dusen = Array.from({ length: 13 }, (_, i) => 3 - i * 0.2);
-  const k2 = odemeKadrani({ fiyatlar: dusen, onceki: 1 });
-  assert.ok(k2 < 1 && k2 >= 1 - AKIS.KADRAN_ADIM - 1e-9, 'fiyat ortalamasının altında: düşer, haftada en çok %5');
+  const gun = R.kadranLongDays;
+  assert.equal(odemeKadrani({ kisaOrt: 3, uzunOrt: 2, veriGun: R.kadranWarmupDays - 7 }), 1, 'ilk 4 hafta veri birikir: 1');
+  const k1 = odemeKadrani({ kisaOrt: 3.4, uzunOrt: 2.2, veriGun: gun, onceki: 1 });
+  assert.ok(k1 > 1 && k1 <= 1 + R.kadranStep + 1e-9, 'fiyat ortalamasının üstünde: yükselir, haftada en çok %5');
+  const k2 = odemeKadrani({ kisaOrt: 0.6, uzunOrt: 1.8, veriGun: gun, onceki: 1 });
+  assert.ok(k2 < 1 && k2 >= 1 - R.kadranStep - 1e-9, 'fiyat ortalamasının altında: düşer, haftada en çok %5');
   let k = 1;
-  for (let i = 0; i < 60; i++) k = odemeKadrani({ fiyatlar: yukselen.map(v => v * 100), onceki: k });
-  assert.ok(k <= AKIS.KADRAN_MAX + 1e-9, 'tavan 1,5');
+  for (let i = 0; i < 60; i++) k = odemeKadrani({ kisaOrt: 340, uzunOrt: 2.2, veriGun: gun, onceki: k });
+  assert.ok(k <= R.kadranMax + 1e-9, 'tavan 1,5');
   k = 1.3;
-  for (let i = 0; i < 20; i++) k = odemeKadrani({ fiyatlar: yukselen, onceki: k, kasaSagligi: AKIS.SAGLIK_2 - 0.01 });
-  assert.ok(k <= AKIS.KADRAN_TAVAN_2 + 1e-9, 'kasa sağlığı dörtte birin altında: en çok 0,8');
+  for (let i = 0; i < 20; i++) k = odemeKadrani({ kisaOrt: 3.4, uzunOrt: 2.2, veriGun: gun, onceki: k, kasaSagligi: R.kadranHealth2 - 0.01 });
+  assert.ok(k <= R.kadranCap2 + 1e-9, 'kasa sağlığı dörtte birin altında: en çok 0,8');
   ok('Ödeme Kadranı: ısınma, ±%5 adım, 0,6-1,5 sınırı, kasa koruması');
 }
 
@@ -49,7 +50,7 @@ const ok = ad => { toplam++; console.log(`✅ ${ad}`); };
     const r = calistir(ad);
     sonuc[ad] = r;
     for (const [kural, sayi] of Object.entries(r.ozet.ihlal)) assert.equal(sayi, 0, `${ad}: ${kural} ihlali ${sayi} hafta`);
-    assert.ok(r.ozet.enYuksekHaftalikOran <= AKIS.CIKIS_TRADE_PAYI + 1e-9, `${ad}: haftalık çıkış ÷ taze trade alımı ${r.ozet.enYuksekHaftalikOran}`);
+    assert.ok(r.ozet.enYuksekHaftalikOran <= R.exitTradeShare + 1e-9, `${ad}: haftalık çıkış ÷ taze trade alımı ${r.ozet.enYuksekHaftalikOran}`);
     assert.ok(r.ozet.genesis.adet <= r.girdiler.genesis.sezonTavan, `${ad}: Genesis sezon tavanı`);
     for (const a of r.aylik) for (const [k2, v] of Object.entries(a)) if (typeof v === 'number') assert.ok(Number.isFinite(v), `${ad} ${a.ay}. ay ${k2} sayı değil`);
   }

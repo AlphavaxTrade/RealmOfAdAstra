@@ -788,7 +788,7 @@
     <tr><td>En az çekim</td><td>Talep başına</td><td>1.000 ASTRA (sunucu ayarı)</td><td>Sana özel</td></tr>
     <tr><td>Çekilebilir bakiye</td><td>Anlık</td><td>Yalnız <b>serbest</b> bakiyen (kilitli ve sponsorlu kısım çekilemez)</td><td>Sana özel</td></tr>
     <tr><td>Çekim zamanı</td><td>Haftalık</td><td>Talepler yalnız <b>Pazartesi 00:01</b>'de, haftalık havuzdan karşılanır. Günlük çekim yoktur</td><td>Herkes</td></tr>
-    <tr><td>Haftalık çekim havuzu</td><td>Haftalık</td><td>Fiyatı en çok %2 düşürecek miktar × fiyat katsayısı (k); ayrıca son 4 haftadaki dış alımın %50'si; en az %20 taban</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Haftalık çekim havuzu (akış dengesi)</td><td>Haftalık</td><td>En küçüğü: haftalık trade alımının %50'si, haftalık net piyasa alımının %50'si, fiyatı en çok %2 düşürecek miktar × k. <b>Taban yok:</b> trade alımı yoksa çekim de yok. Yapımcı payı da bu havuzdan ödenir</td><td>Küresel (herkes)</td></tr>
     <tr><td>Kişisel pay</td><td>Haftalık</td><td>Havuz × <b>senin katkı puanın ÷ herkesin toplam puanı</b>; kullanılmayan paylar isteyenlere kiralanır</td><td>Sana özel</td></tr>
     <tr><td>Çekim ücreti</td><td>Çekim başına</td><td>%3 (fren açıkken %6); ücretin yarısı temel gelire, yarısı yakıma. Kiraladığın hak için %1,5 kira</td><td>Sana özel</td></tr>
     <tr><td>Sunucunun haftalık gönderim güvenlik tavanı</td><td>Haftalık</td><td>100.000.000 ASTRA (sunucu ayarı; ayrıca oyun cüzdanının bakiyesini aşamaz)</td><td>Küresel (herkes)</td></tr>
@@ -797,7 +797,7 @@
   <h3>🏛️ Ödül kasaları</h3>
 <div class="tablo-kap"><table>
     <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
-    <tr><td>Her kasanın haftalık ödeme bütçesi</td><td>Haftalık</td><td>Kasa × oran × sağlık + son 4 hafta girişinin ortalamasının %90'ı. Oranlar: zindan %2,5, kolezyum %2, boss %3, görev %2,5, karnaval %2</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Her kasanın haftalık ödeme bütçesi</td><td>Haftalık</td><td>Kasa × oran × <b>Ödeme Kadranı</b> × sağlık + son 4 hafta girişinin ortalamasının %90'ı. Kadran 0,6 – 1,5 arası (fiyat yükselirken büyür, düşerken küçülür; "ASTRA çekimi" bölümünde). Oranlar: zindan %2,5, kolezyum %2, boss %3, görev %2,5, karnaval %2</td><td>Küresel (herkes)</td></tr>
     <tr><td>Kişi başı haftalık pay tavanı</td><td>Haftalık</td><td>Bütçe × 3 ÷ aktif oyuncu (en az 10 sayılır)</td><td>Sana özel</td></tr>
     <tr><td>Tek ödül</td><td>İşlem başı</td><td>Kasanın en çok %2'si</td><td>Herkes</td></tr>
     <tr><td>Kasa zayıfsa ödül küçülür</td><td>Anlık</td><td>Kasa sağlığı &lt; 1 ise ödül sağlıkla çarpılır (en az %15 kalır)</td><td>Herkes</td></tr>
@@ -1314,7 +1314,7 @@
 
 <section class="bolum" id="t-cekim" data-grup="Teknik başvuru" data-ikon="🏦">
   <div class="bolum-baslik"><div class="no">🏦</div><div><small>Teknik başvuru</small><h2>ASTRA çekimi: haftalık, küresel limitler</h2></div></div>
-  <p class="ozet">ASTRA'yı oyundan cüzdanına <b>haftada bir</b>, <b>ortak bir havuzdan</b> çekersin. Havuz, çekilen ASTRA piyasada satılsa fiyatı çok düşürmeyecek kadar küçük tutulur. Böylece kimse "çıkış kapısında" ezilmez ve token değeri korunur.</p>
+  <p class="ozet">ASTRA'yı oyundan cüzdanına <b>haftada bir</b>, <b>ortak bir havuzdan</b> çekersin. Temel kural (<b>akış dengesi</b>): bir haftada oyundan çıkan ASTRA, trade uygulamasının o hafta piyasadan yaptırdığı alımın <b>yarısını</b> hiçbir zaman geçemez. Böylece trade kullanıldıkça fiyat yukarı gider, oyun ekosistemi eritmez ve kimse "çıkış kapısında" ezilmez.</p>
   <h3>Adım adım</h3>
   <ol class="adimlar">
     <li><b>Şartlar:</b> e-postan doğrulanmış, hesabına cüzdan bağlı, Muhafız Mührü açıksa kod girilmiş olmalı. En az 1.000 ASTRA talep edebilirsin ve yalnız <b>serbest</b> bakiyenden.</li>
@@ -1323,7 +1323,11 @@
     <li><b>Ödeme:</b> net tutar cüzdanına gönderilir (ücret ve kira düşülmüş).</li>
   </ol>
   <h3>Haftalık havuz nasıl hesaplanır?</h3>
-<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Fiyat tavanı</b> = fiyatı en çok %2 düşürecek token miktarı. Borsaya geçmeden önce (bağlanma eğrisinde): arz × (1 − √(1 − 0,02)) = arzın %1,005'i. Borsada: havuzdaki token × (1 ÷ √(1 − 0,02) − 1) = havuzun %1,015'i.</p><p><b>Dış alım tavanı</b> = son 28 gündeki piyasadan net token alımı (ve trade sitesinden gelen pay) × 0,5.</p><p><b>Haftalık havuz</b> = en büyüğü( fiyat tavanı × 0,2 ,  en küçüğü( fiyat tavanı × k ,  dış alım tavanı ) ).  <i>k</i> = güncel piyasa değeri ÷ 30 günlük zirve (0,5 – 1,5 arası).</p><p>Ayrıca sunucu ayarı haftalık gönderim tavanı (varsayılan 100.000.000 ASTRA) ve oyun cüzdanındaki bakiye havuzu geçemez.</p><p><b>Kişisel pay</b> = havuz × (senin haftalık katkı puanın ÷ herkesin toplam katkı puanı).</p></div>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Fiyat tavanı</b> = fiyatı en çok %2 düşürecek token miktarı. Borsaya geçmeden önce (bağlanma eğrisinde): arz × (1 − √(1 − 0,02)) = arzın %1,005'i. Borsada: havuzdaki token × (1 ÷ √(1 − 0,02) − 1) = havuzun %1,015'i.</p><p><b>Trade alımı</b> (haftalık) = o hafta trade sitesinden oyuna gelen ASTRA ÷ 0,4 (trade gelirinin %40'ı oyuna gelir; geri kalanı yakılır, sahipte tutulur ve trade ödül havuzuna gider).</p><p><b>Net piyasa alımı</b> (haftalık) = piyasadan net token alımı + o hafta oyundan çıkan ASTRA (çekilip satılan, kendi çıkışımız ölçüyü küçültmesin diye geri eklenir).</p><p><b>Ölçü</b> = son 4 haftanın ortalaması ile son haftanın <b>küçüğü</b> (ani artışta tek haftaya güvenilmez; trade durursa çekim hemen kısılır).</p><p><b>Haftalık havuz</b> = en küçüğü( trade alımı ölçüsü × 0,5 ,  net piyasa alımı ölçüsü × 0,5 ,  fiyat tavanı × k ).  <b>Taban yok.</b>  <i>k</i> = güncel fiyat ÷ 30 günlük zirve fiyat (0,5 – 1,5 arası).</p><p>Ayrıca sunucu ayarı haftalık gönderim tavanı (varsayılan 100.000.000 ASTRA) ve oyun cüzdanındaki bakiye havuzu geçemez.</p><p><b>Yapımcı payı</b> (her harcamanın %3'ü) da ekosistemden çıkan ASTRA'dır: önce o havuzdan ödenir, sığmayanı sonraki haftalara devreder.</p><p><b>Kişisel pay</b> = (havuz − yapımcı payı) × (senin haftalık katkı puanın ÷ herkesin toplam katkı puanı).</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p><b>Trade uygulaması bu hafta 1.000.000 ASTRA'lık satış yaptı</b> (müşteriler bu ASTRA'yı piyasadan aldı). Oyuna 400.000 ASTRA gelir. Her hafta aynı olduysa trade alımı ölçüsü 1.000.000'dur ve bu haftanın havuzu en çok <b>500.000 ASTRA</b> olur (piyasadaki net alım da en az bu kadarsa ve fiyat tavanı daha büyükse). Yani müşterilerin aldığı her 100 ASTRA'ya karşılık oyundan en çok 50 ASTRA çıkar; en az 50'si fiyatı yukarı iten net alım olarak kalır.</p></div>
+  <h3>Ödeme Kadranı: fiyat yükselirken oyun daha çok öder</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kadran</b> = (son 7 günün ortalama fiyatı ÷ son 91 günün ortalama fiyatı) ^ 0,5;  en az 0,6, en çok 1,5; haftada en çok ±%5 değişir; ilk 28 gün 1.</p><p>Her ödül kasasının haftalık bütçesindeki "kasa × oran" kısmı kadranla çarpılır (kasaya giren yeni paranın payı çarpılmaz).</p><p><b>Kasa koruması:</b> ödeme yapan kasaların toplamı hedef rezervin %50'sinin altındaysa kadran en çok 1, %25'inin altındaysa en çok 0,8.</p></div>
+  <p>Örnek: fiyat 91 günlük ortalamasının %30 üstündeyse kadran √1,3 ≈ 1,14 olur: zindan kasasının haftalık oranı %2,5 yerine %2,85. Fiyat %40 altındaysa ≈ 0,77.</p>
   <h3>Ücret ve "hak kirası"</h3>
 <div class="tablo-kap"><table>
     <tr><th>Kalem</th><th>Oran</th><th>Ne olur?</th></tr>
@@ -1333,7 +1337,7 @@
   </table></div>
   <h3>Fren (piyasa düşerken koruma)</h3>
   <ul>
-    <li><b>Açılır:</b> piyasa değerinin son 3 günlük ortalaması, 30 günlük zirvenin %75'inin altına inerse.</li>
+    <li><b>Açılır:</b> fiyatın son 3 günlük ortalaması, 30 günlük zirvenin %75'inin altına inerse (piyasa değerine değil fiyata bakılır: oyunun kendi yakımı ölçüyü bozmasın diye).</li>
     <li><b>Kapanır:</b> zirvenin %85'ine dönerse ya da 28 gün yeni dip yapılmazsa.</li>
     <li><b>Açıkken:</b> çekim ücreti %6 olur ve her kasanın haftada %1'i yakılır (fiyat savunması).</li>
   </ul>
@@ -1348,7 +1352,7 @@
   <p>A payından fazla istedi: B'nin kullanmadığı 200.000 ve C'nin 100.000 payından 200.000 kiraladı. A'nın ödediği 3.000 kira, payını kullanmayanlara dağıldı: B 2.000, C 1.000 ASTRA. Toplam ücret 27.000: yarısı (13.500) temel gelire, yarısı (13.500) yakıma.</p>
   <h3>Oyun Kasası çekimi: bu havuza girmez</h3>
   <p>Her hesaba, sunucunun yönettiği küçük bir <b>Oyun Kasası</b> adresi açılır. Sen yokken çalışan işler (bot, iyileştirme, onarım) buradan ödenir. Kasaya <b>sen koyduğun</b> ASTRA ve AVAX'ı istediğin an, ücret ve havuz olmadan, bağlı cüzdanına geri çekebilirsin. Kazanılmış ASTRA kasaya aktarılamaz (kesinti kaçışı olmasın diye). Kasadaki paranın "günlük ortalama harcamanın 30 katı"nı (en az 20.000 ASTRA) aşan kısmı otomatik cüzdanına iade edilir.</p>
-  <div class="kutu dikkat" data-s="⚠️"><b>Neden "haftada bir ve havuzdan"?</b><p>Tüm oyuncular aynı gün hepsini çekmeye kalksa fiyat çökerdi. Havuz, her hafta çekimin fiyatı en çok %2 düşüreceği büyüklüğe ayarlandığı için herkes çekebilir ve piyasa dayanır. Çekmediğin pay kaybolmaz; kullanmayana kira olarak döner.</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Neden "haftada bir ve havuzdan"?</b><p>Tüm oyuncular aynı gün hepsini çekmeye kalksa fiyat çökerdi. Havuz, trade uygulamasının yarattığı alımın yarısıyla ve fiyatı en çok %2 düşürecek miktarla sınırlı olduğu için oyun fiyatı aşağı itemez: trade kullanıldıkça fiyat yükselir. Bunun dürüst sonucu, 100 vatandaşın toplam nakit çekiminin trade gelirinin en çok yarısı kadar olmasıdır; oyunda kazandığın değerin büyük kısmı oyunda (ve elinde tuttuğun ASTRA'nın değerinde) kalır. Çekmediğin pay kaybolmaz; kullanmayana kira olarak döner.</p></div>
 </section>
 
 <section class="bolum" id="t-pazar" data-grup="Teknik başvuru" data-ikon="🏪">

@@ -7,13 +7,13 @@
 // Kullanım: node scripts/model/makro_model.mjs senaryo=t750 [weeks=156 oyuncuAlim=1 out=dosya.json]
 //           node scripts/model/makro_model.mjs hepsi   (bütün senaryolar, özet tablo + docs/v2/model_makro_<senaryo>.json)
 // Oyun sabitleri js/config.js ve server/economy.js'ten okunur (EK-09 deseni). "VARSAYIM" yazan her sayı ölçülmemiş bir girdidir.
-// Çıkış Kapısı ve Ödeme Kadranı formülleri burada tanımlı; Aşama 1'de server/economy.js'e taşınır ve model oradan okur.
+// Çıkış Kapısı (ekosistemCikisTavani) ve Ödeme Kadranı (odemeKadrani) oyunun kendi kurallarıdır: server/economy.js (Aşama 1, 15 Ekim 2026).
 // ============================================================================
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { GAME_CONFIG as C } from '../../js/config.js';
-import { WEEKLY_RULES as WR, nextMultiplier, priceFactorK, brakeState } from '../../server/economy.js';
+import { WEEKLY_RULES as WR, nextMultiplier, priceFactorK, brakeState, ekosistemCikisTavani, odemeKadrani } from '../../server/economy.js';
 import { zincirOlustur } from './zincir.mjs';
 
 const GUN = 86400000;
@@ -32,40 +32,10 @@ export const SENARYOLAR = {
   tohum: { ad: 'Kıyas: yalnız 200 M tohum (trade yok, oyuncu alımı yok)', tradeUsdAy: 0, oyuncuAlim: 0, stakeAcik: 0, genesisAcik: 0 }
 };
 
-// ── Tasarım kuralları (plan C3) ──
-export const AKIS = {
-  CIKIS_TRADE_PAYI: 0.5,      // haftalık ekosistem çıkışı ≤ trade alımının yarısı (altın kural 1)
-  CIKIS_PIYASA_PAYI: 0.5,     // ve ≤ net piyasa alımının yarısı (kendi çıkışımız geri eklenmiş ölçü)
-  ORTALAMA_HAFTA: 4,          // ölçü: son 4 haftanın haftalık ortalaması ile son haftanın küçüğü (ani düşüşte hemen kısılır)
-  KADRAN_US: 0.5, KADRAN_MIN: 0.6, KADRAN_MAX: 1.5, KADRAN_ADIM: 0.05, KADRAN_KISA_HAFTA: 1, KADRAN_UZUN_HAFTA: 13, KADRAN_ISINMA_HAFTA: 4,
-  // Kasa koruması: ödeme yapan kasaların toplam sağlığı (bakiye ÷ hedef rezerv). İlk taslaktaki "kasa ömrü < 12 ay" ölçüsü yüzdeyle
-  // ödemeye uymuyordu: haftada %2,5 ödeyen kasanın "ömrü" tanım gereği ~9 aydır (hiç bitmese de), kadran hep tavanda kalıyordu.
-  SAGLIK_1: 0.5, KADRAN_TAVAN_1: 1.0, SAGLIK_2: 0.25, KADRAN_TAVAN_2: 0.8
-};
-
-// Haftalık ekosistem çıkış tavanı (token). tb/na: haftalık seriler (en yenisi sonda). Taban YOK: alım yoksa çıkış yok.
-export function ekosistemCikisTavani({ tb = [], na = [], fiyatEtkisiTavani = Infinity, k = 1, gonderimTavani = Infinity }, R = AKIS) {
-  const olcu = seri => {
-    if (!seri.length) return 0;
-    const son = seri.slice(-R.ORTALAMA_HAFTA);
-    const ort = son.reduce((s, v) => s + v, 0) / son.length;
-    return Math.max(0, Math.min(ort, seri[seri.length - 1]));
-  };
-  return Math.max(0, Math.min(R.CIKIS_TRADE_PAYI * olcu(tb), R.CIKIS_PIYASA_PAYI * olcu(na), fiyatEtkisiTavani * (k > 0 ? k : 1), gonderimTavani));
-}
-
-// Ödeme Kadranı: (kısa dönem ortalama fiyat ÷ uzun dönem ortalama fiyat)^üs; sınırlı, haftada en çok ±adım; kasa ömrü kısaysa tavanlı.
-// Fiyat kullanılır, piyasa değeri değil: piyasa değeri ölçüsü (fiyat × (arz − yakılan)) oyunun kendi yakımıyla düşer.
-export function odemeKadrani({ fiyatlar = [], onceki = 1, kasaSagligi = 1 }, R = AKIS) {
-  if (fiyatlar.length < R.KADRAN_ISINMA_HAFTA) return 1;
-  const ort = n => { const s = fiyatlar.slice(-n); return s.reduce((t, v) => t + v, 0) / s.length; };
-  const uzun = ort(R.KADRAN_UZUN_HAFTA);
-  let hedef = uzun > 0 ? Math.pow(ort(R.KADRAN_KISA_HAFTA) / uzun, R.KADRAN_US) : 1;
-  hedef = Math.max(R.KADRAN_MIN, Math.min(R.KADRAN_MAX, hedef));
-  if (kasaSagligi < R.SAGLIK_2) hedef = Math.min(hedef, R.KADRAN_TAVAN_2);
-  else if (kasaSagligi < R.SAGLIK_1) hedef = Math.min(hedef, R.KADRAN_TAVAN_1);
-  const yeni = Math.max(onceki * (1 - R.KADRAN_ADIM), Math.min(onceki * (1 + R.KADRAN_ADIM), hedef));
-  return Math.round(yeni * 10000) / 10000;
+// Haftalık fiyat serisinden kadran (sunucu günlük fiyatla aynı hesabı yapar: son 7 gün ÷ son 91 gün)
+function kadranHaftalik(fiyatlar, onceki, kasaSagligi) {
+  const ort = n => { const s = fiyatlar.slice(-n); return s.length ? s.reduce((t, v) => t + v, 0) / s.length : 0; };
+  return odemeKadrani({ kisaOrt: ort(Math.round(WR.kadranShortDays / 7)), uzunOrt: ort(Math.round(WR.kadranLongDays / 7)), veriGun: fiyatlar.length * 7, onceki, kasaSagligi });
 }
 
 // ── Modelin girdileri (VARSAYIM'lar burada) ──
@@ -310,7 +280,7 @@ export function calistir(senaryoAdi = 't750', ek = {}) {
     toplamCikis += cikisToplam; toplamTradeTaze += taze;
 
     // değişmezler
-    if (cikisToplam > AKIS.CIKIS_TRADE_PAYI * tb + 1e-6) ihlal.cikisTrade++;
+    if (cikisToplam > WR.exitTradeShare * tb + 1e-6) ihlal.cikisTrade++;
     if (taze > 0) enYuksekOran = Math.max(enYuksekOran, cikisToplam / taze);
     if (cikisToplam > taze + 1e-6) ihlal.kullaniciKurali++;
     if (taze <= 0 && cikisToplam > 1e-9) ihlal.tradeYokCikis++;
@@ -334,7 +304,7 @@ export function calistir(senaryoAdi = 't750', ek = {}) {
     const kasaOmruAy = faucetHafta > 0 ? odeyenToplam / (faucetHafta * HAFTA_AY) : 999;
     const kasaSagligi = odeyenToplam / ODEYEN.reduce((s, id) => s + (C.TREASURY_TARGET_RESERVE[id] || 0), 0);
     carpan = nextMultiplier({ current: carpan, priceUsd: fiyatSon, launchPriceUsd: fiyatAcilis, runwayMonths: kasaOmruAy });
-    kadran = odemeKadrani({ fiyatlar: seri.fiyat, onceki: kadran, kasaSagligi });
+    kadran = kadranHaftalik(seri.fiyat, kadran, kasaSagligi);
     dagitimAy += dagitim; oyunaGelenAy += oyunaGelen;
 
     // 10) Ay sonu kaydı (4 haftada bir)

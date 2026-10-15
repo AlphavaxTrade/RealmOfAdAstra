@@ -1,6 +1,6 @@
 // Realm of AdAstra sunucusu — dünya: piyasa verisi, çekim havuzu ve çekim talepleri
 // (kurumsal A3.10: server/world.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar createWorld'den `w` ile gelir.)
-import { brakeState, withdrawCapTokens, dualWithdrawCap, priceFactorK, netTokenFlow, WEEKLY_RULES } from '../economy.js';
+import { brakeState, withdrawCapTokens, ekosistemCikisTavani, haftalikOlcu, priceFactorK, netTokenFlow, WEEKLY_RULES } from '../economy.js';
 import { fmt, DAY } from './yardimci.js';
 
 const dayKey = t => new Date(t).toISOString().slice(0, 10);
@@ -13,9 +13,10 @@ export function olusturPiyasa(w) {
     const m = await chain.readMarket();
     db.q.priceAdd.run(m.at, m.priceUsd, m.mcapUsd, m.supply, m.dead, m.avaxUsd, m.graduated ? 1 : 0);
     const e = econ();
-    const hist = db.q.pricesSince.all(clock() - 31 * DAY).map(r => ({ at: r.at, mcapUsd: r.mcap_usd }));
+    // Fren ve k fiyata bakar (15 Ekim 2026): piyasa değeri ölçüsü oyunun kendi yakımıyla düşüyordu
+    const hist = db.q.pricesSince.all(clock() - 31 * DAY).map(r => ({ at: r.at, value: r.price_usd }));
     const brake = brakeState(hist, e.brake || {}, clock());
-    // KARAR 5/6: günlük net token akışı (dış alım ölçümü) ve tek fiyat çarpanı k
+    // Günlük net token akışı (net piyasa alımı ölçümü) ve tek fiyat çarpanı k
     const flow = { ...(e.flow || {}) };
     const key = dayKey(m.at);
     flow[key] = (Number(flow[key]) || 0) + netTokenFlow(e.market, m);
@@ -27,21 +28,36 @@ export function olusturPiyasa(w) {
     return m;
   }
 
-  // Son 4 haftadaki dış alım (token): piyasadan net alım (negatifse 0) + trade sitesinden oyuna gelen pay
-  function externalBuy(now = clock(), e = econ()) {
-    const from = now - WEEKLY_RULES.externalWindowDays * DAY;
-    const fromKey = dayKey(from);
-    let net = 0;
-    for (const [d, v] of Object.entries(e.flow || {})) if (d >= fromKey) net += Number(v) || 0;
-    const partner = db.raw.prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at >= ?').get(from).t;
-    return Math.max(0, net) + (Number(partner) || 0);
+  // AKIŞ DENGESİ ölçüleri (15 Ekim 2026): son flowWeeks adet 7 günlük pencere, eskiden yeniye.
+  //  tb: trade alımı = o hafta trade sitesinden oyuna gelen ortak gelir ÷ tradeGameShare (gelirin %40'ı oyuna gelir)
+  //  na: net piyasa alımı = günlük net token akışı + o hafta oyunun kendi çıkışı (çekim + yapımcı payı; satılmış sayılır, geri eklenir:
+  //      eklenmezse kapı kendi satışını "alım azaldı" diye okuyup kendini kısar)
+  // Not: trade ödül havuzu kredisiyle yapılan ödemeler de ortak gelire girer (yeni alım değildir); trade sitesi taze ödemeyi ayrı
+  // yayımlayana dek (makro plan Aşama 3) bunu ikinci bekçi (net piyasa alımı) yakalar.
+  // Pencere (bas, bit]: şu anki kayıt son pencereye girer
+  const cikisQ = db.raw.prepare("SELECT COALESCE(SUM(amount), 0) AS t FROM payouts WHERE kind IN ('withdraw', 'creator') AND status IN ('pending', 'sending', 'sent') AND created_at > ? AND created_at <= ?");
+  const ortakQ = db.raw.prepare('SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at > ? AND at <= ?');
+  function akisSerileri(now = clock(), e = econ()) {
+    const R = WEEKLY_RULES;
+    const tb = [], na = [];
+    for (let i = R.flowWeeks - 1; i >= 0; i--) {
+      const bit = now - i * 7 * DAY, bas = bit - 7 * DAY;
+      tb.push((Number(ortakQ.get(bas, bit).t) || 0) / R.tradeGameShare);
+      let net = 0;
+      for (const [d, v] of Object.entries(e.flow || {})) {
+        const t = Date.parse(d + 'T00:00:00Z');   // günlük kutu günün başına yazılır (bugünün kutusu her zaman son pencerede)
+        if (t > bas && t <= bit) net += Number(v) || 0;
+      }
+      na.push(net + (Number(cikisQ.get(bas, bit).t) || 0));
+    }
+    return { tb, na, tradeAlimi: haftalikOlcu(tb), netAlim: haftalikOlcu(na) };
   }
 
   function currentCap(market = econ().market) {
     if (!market) return 0;
     const e = econ();
-    let cap = dualWithdrawCap({ baseCap: withdrawCapTokens(market), k: e.k, externalBuy: externalBuy(clock(), e) });
-    cap = Math.min(cap, cfg.weeklySendCapAda);
+    const { tb, na } = akisSerileri(clock(), e);
+    let cap = ekosistemCikisTavani({ tb, na, fiyatEtkisiTavani: withdrawCapTokens(market), k: e.k, gonderimTavani: cfg.weeklySendCapAda });
     if (chain && chain.gameWallet && market.walletAda != null) cap = Math.min(cap, Math.max(0, market.walletAda));
     return cap;
   }
@@ -90,6 +106,7 @@ export function olusturPiyasa(w) {
     const live = e.live || {};
     const myScore = weekScore(st, E.globalPool.state.epochId);
     const cap = currentCap();
+    const akis = akisSerileri(clock(), e);
     const bal = Number(st.adAstraBalance) || 0;
     const sponsored = Math.min(Math.max(0, bal - Math.min(Number(st.lockedAda) || 0, bal)), Math.max(0, Number(st.sponsorAda) || 0));
     return {
@@ -101,7 +118,9 @@ export function olusturPiyasa(w) {
       scoreTotal: live.scoreTotal || 0,
       weeklyCap: cap,
       priceFactorK: Number(e.k) || 1,
-      externalBuy4w: externalBuy(clock(), e),
+      tradeAlimi: akis.tradeAlimi,                 // haftalık trade alımı ölçüsü (token)
+      netAlim: akis.netAlim,                       // haftalık net piyasa alımı ölçüsü (kendi çıkışımız geri eklenmiş)
+      kadran: Number(e.kadran) || 1,
       estimatedRight: live.scoreTotal > 0 ? cap * myScore / live.scoreTotal : 0,
       brake: !!(e.brake && e.brake.on),
       feeRate: e.brake && e.brake.on ? WEEKLY_RULES.feeBrake : WEEKLY_RULES.fee,
@@ -115,5 +134,5 @@ export function olusturPiyasa(w) {
   }
 
 
-  return { snapshotMarket, currentCap, externalBuy, weekScore, requestWithdraw, cancelWithdraw, withdrawStatus };
+  return { snapshotMarket, currentCap, akisSerileri, weekScore, requestWithdraw, cancelWithdraw, withdrawStatus };
 }

@@ -44,6 +44,10 @@
     "neden": "yönetici durum kartı; ortak gelir kaydı küçük"
   },
   {
+    "sql": "SELECT COALESCE(SUM(amount), 0) AS t FROM partner_income WHERE at > ? AND at <= ?",
+    "neden": "akış dengesi: haftalık trade alımı ölçüsü (4 pencere); ortak gelir kaydı küçük (trade sitesi günde en çok bir aktarım yapar, yılda ~365 satır)"
+  },
+  {
     "sql": "DELETE FROM kv WHERE key LIKE 'ls:%'",
     "neden": "YALNIZ deneme sunucusu \"vanilla sıfırla\" (TEST_MODE); gerçek sunucuda çalışmaz"
   },

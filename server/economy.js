@@ -15,6 +15,14 @@
 //    ama bugünkü kuralın %20'sinden asla az değil. Dış alım = piyasadan net token alımı + trade sitesinden oyuna gelen pay.
 //  • KARAR 6 (8 Ekim 2026): tek fiyat çarpanı k = piyasa değeri / 30 günlük zirve (0,5–1,5); kilit açılma tabanına (haftalık %1 × k)
 //    ve çekim tavanına (× k) uygulanır. Giriş günü primi (%1,4) k'den etkilenmez.
+//  • AKIŞ DENGESİ (kullanıcı kuralı, 15 Ekim 2026; docs/v2/MAKRO_EKONOMI_PLANI.md, EKONOMI_ILKELERI 9. ilke): KARAR 5'in yerini aldı.
+//    Oyundan çıkıp satılabilecek ASTRA hiçbir zaman trade uygulamasının yarattığı alımı geçmez. Haftalık ekosistem çıkışı (oyuncu
+//    çekimi + yapımcı payı) ≤ 0,5 × trade alımı VE ≤ 0,5 × net piyasa alımı (oyunun kendi çıkışı geri eklenmiş). Taban YOK: alım
+//    yoksa çıkış yoktur. Ölçü = son 4 haftanın haftalık ortalaması ile son haftanın küçüğü (trade durursa çıkış hemen kısılır).
+//    KARAR 5'teki iki kusur düzeldi: 4 haftalık TOPLAM alımın yarısı haftalık tavan yapılıyordu (haftalık alımın 2 katı çıkış) ve
+//    dış alım sıfırken %20 taban çıkışa izin veriyordu. Fren ve k artık fiyata bakar (piyasa değeri ölçüsü oyunun yakımıyla düşüyordu).
+//  • ÖDEME KADRANI (15 Ekim 2026): kasaların haftalık ödeme oranı × (son 7 günün ortalama fiyatı ÷ son 91 günün)^0,5; 0,6–1,5,
+//    haftada ±%5; ödeme yapan kasaların sağlığı düşükse tavanlı. Fiyat yükselirken oyun daha çok, düşerken daha az öder.
 // ============================================================================
 
 export const WEEKLY_RULES = {
@@ -40,9 +48,17 @@ export const WEEKLY_RULES = {
   multMax: 20,
   kMin: 0.5,
   kMax: 1.5,
-  externalBuyShare: 0.5,
-  capFloorShare: 0.2,
-  externalWindowDays: 28
+  // Akış dengesi (15 Ekim 2026)
+  exitTradeShare: 0.5,         // haftalık çıkış ≤ trade alımının bu payı
+  exitMarketShare: 0.5,        // ve ≤ net piyasa alımının (kendi çıkışımız geri eklenmiş) bu payı
+  tradeGameShare: 0.40,        // trade gelirinin oyuna gelen payı (kullanıcı kararı 7 Ekim 2026): trade alımı = ortak gelir ÷ bu pay
+  flowWeeks: 4,                // ölçü penceresi (hafta)
+  externalWindowDays: 28,      // = flowWeeks × 7 (günlük akış kutularının saklanma penceresi)
+  // Ödeme Kadranı (15 Ekim 2026)
+  kadranExp: 0.5, kadranMin: 0.6, kadranMax: 1.5, kadranStep: 0.05,
+  kadranShortDays: 7, kadranLongDays: 91, kadranWarmupDays: 28,
+  kadranHealth1: 0.5, kadranCap1: 1.0,     // ödeme yapan kasaların sağlığı (bakiye ÷ hedef rezerv) bunun altındaysa kadran en çok 1
+  kadranHealth2: 0.25, kadranCap2: 0.8     // bunun altındaysa en çok 0,8
 };
 
 const r2 = v => Math.floor(v * 100) / 100;
@@ -107,15 +123,18 @@ export function allocateWithdrawals(requests, cap, { brake = false, rules = WEEK
   };
 }
 
-// Fren durumu. history: [{ at, mcapUsd }] (günlük, eskiden yeniye). prev: { on, since, lowAt, low }
+// Fren durumu. history: [{ at, value }] (günlük, eskiden yeniye; value = fiyat). prev: { on, since, lowAt, low }
+// 15 Ekim 2026: ölçü piyasa değeri değil FİYAT (piyasa değeri = fiyat × (arz − yakılan); oyunun kendi yakımı onu düşürüp freni
+// yanlışlıkla tetikleyebiliyordu). Yalnız oranlar kullanıldığı için eski { mcapUsd } kayıtları da okunur.
+const degerOf = h => Number(h.value != null ? h.value : h.mcapUsd) || 0;
 export function brakeState(history, prev = {}, now = Date.now(), rules = WEEKLY_RULES) {
   const day = 86400000;
   const last30 = history.filter(h => h.at >= now - 30 * day);
   if (!last30.length) return { on: false };
-  const peak = Math.max(...last30.map(h => h.mcapUsd));
+  const peak = Math.max(...last30.map(degerOf));
   const recent = history.filter(h => h.at > now - 3 * day);   // son 3 gün (tam 3 gün önceki kayıt hariç)
-  const cur = (recent.length ? recent : last30.slice(-1)).reduce((s, h) => s + h.mcapUsd, 0) / Math.max(1, recent.length || 1);
-  const latest = last30[last30.length - 1].mcapUsd;
+  const cur = (recent.length ? recent : last30.slice(-1)).reduce((s, h) => s + degerOf(h), 0) / Math.max(1, recent.length || 1);
+  const latest = degerOf(last30[last30.length - 1]);
   const st = { on: !!prev.on, since: prev.since || null, low: prev.low ?? null, lowAt: prev.lowAt ?? null, peak, cur };
   if (!st.on) {
     if (peak > 0 && cur < rules.brakeOnRatio * peak) { st.on = true; st.since = now; st.low = latest; st.lowAt = now; }
@@ -173,13 +192,36 @@ export function priceFactorK({ cur, peak }, rules = WEEKLY_RULES) {
   return Math.round(Math.max(rules.kMin, Math.min(rules.kMax, cur / peak)) * 10000) / 10000;
 }
 
-// KARAR 5 + 6: ikili çekim tavanı (token). baseCap = fiyatı maxDrop düşürecek miktar (withdrawCapTokens).
-// Taban: baseCap × capFloorShare — dış alım sıfır olsa bile çekim tamamen kilitlenmez.
-export function dualWithdrawCap({ baseCap, k = 1, externalBuy = 0 }, rules = WEEKLY_RULES) {
-  const base = Math.max(0, Number(baseCap) || 0);
-  const priceCap = base * (Number(k) > 0 ? Number(k) : 1);
-  const buyCap = Math.max(0, Number(externalBuy) || 0) * rules.externalBuyShare;
-  return Math.max(base * rules.capFloorShare, Math.min(priceCap, buyCap));
+// Haftalık seri ölçüsü (en yenisi sonda): son flowWeeks haftanın ortalaması ile son haftanın küçüğü; eksi olamaz.
+// Ortalama, eksik haftaları da sayar (sunucu yeni açıldıysa ölçü küçük başlar: temkinli).
+export function haftalikOlcu(seri, rules = WEEKLY_RULES) {
+  const s = (Array.isArray(seri) ? seri : []).map(v => Number(v) || 0);
+  if (!s.length) return 0;
+  const n = Math.max(1, rules.flowWeeks);
+  const son = s.slice(-n);
+  const ort = son.reduce((t, v) => t + v, 0) / n;
+  return Math.max(0, Math.min(ort, s[s.length - 1]));
+}
+
+// AKIŞ DENGESİ: haftalık ekosistem çıkış tavanı (token). tb: haftalık trade alımı serisi, na: haftalık net piyasa alımı serisi (oyunun
+// kendi çıkışı geri eklenmiş); fiyatEtkisiTavani: fiyatı maxDrop düşürecek miktar (withdrawCapTokens). Taban yok.
+export function ekosistemCikisTavani({ tb = [], na = [], fiyatEtkisiTavani = Infinity, k = 1, gonderimTavani = Infinity }, rules = WEEKLY_RULES) {
+  const fiyat = Math.max(0, Number(fiyatEtkisiTavani)) * (Number(k) > 0 ? Number(k) : 1);
+  const gonderim = Number(gonderimTavani) >= 0 ? Number(gonderimTavani) : Infinity;
+  return Math.max(0, Math.min(rules.exitTradeShare * haftalikOlcu(tb, rules), rules.exitMarketShare * haftalikOlcu(na, rules), fiyat, gonderim));
+}
+
+// ÖDEME KADRANI: kasaların haftalık ödeme oranının çarpanı. kisaOrt / uzunOrt: son kadranShortDays ve kadranLongDays günün ortalama
+// fiyatı; veriGun: kaç günlük fiyat verisi var (kadranWarmupDays dolana dek 1); kasaSagligi: ödeme yapan kasaların bakiye ÷ hedef rezervi.
+export function odemeKadrani({ kisaOrt, uzunOrt, veriGun = 0, onceki = 1, kasaSagligi = 1 }, rules = WEEKLY_RULES) {
+  const once = Number(onceki) > 0 ? Number(onceki) : 1;
+  if (!(veriGun >= rules.kadranWarmupDays) || !(kisaOrt > 0) || !(uzunOrt > 0)) return 1;
+  let hedef = Math.pow(kisaOrt / uzunOrt, rules.kadranExp);
+  hedef = Math.max(rules.kadranMin, Math.min(rules.kadranMax, hedef));
+  if (kasaSagligi < rules.kadranHealth2) hedef = Math.min(hedef, rules.kadranCap2);
+  else if (kasaSagligi < rules.kadranHealth1) hedef = Math.min(hedef, rules.kadranCap1);
+  const yeni = Math.max(once * (1 - rules.kadranStep), Math.min(once * (1 + rules.kadranStep), hedef));
+  return Math.round(yeni * 10000) / 10000;
 }
 
 // İki piyasa fotoğrafı arasındaki net token alımı (alım +, satım −). Borsaya geçmeden önce Arena eğrisinin arzı, geçtikten sonra

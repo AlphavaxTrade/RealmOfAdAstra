@@ -12,6 +12,7 @@ export default function yonetimRotalari(ctx) {
         payoutMode: cfg.payoutMode, canSend: !!(chain && chain.canSend), gameWallet: chain ? chain.gameWallet : null,
         paused: !!e.paused, market: e.market || null, brake: e.brake || null, priceMultiplier: e.priceMultiplier || 1,
         lastWeekly: e.lastWeekly || null, weeklyCap: world.currentCap(),
+        akis: world.akisSerileri ? world.akisSerileri() : null, kadran: Number(e.kadran) || 1,
         players: { total: players.length, activeWeek: players.filter(p => p.last_seen >= clock() - 7 * 86400000).length,
           depositors: players.filter(p => p.deposited_ada > 0).length,
           pendingWithdraw: players.reduce((s, p) => s + (p.pending_withdraw || 0), 0) },

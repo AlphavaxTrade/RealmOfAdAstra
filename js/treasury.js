@@ -131,12 +131,15 @@ export class TreasuryLedger {
   // bütçeye eklenir; ayrıca kasa × oran × sağlık çarpanı kadar da çekilebilir.
   // opts.aktif: o hafta aktif vatandaş sayısı (sunucu verir; kişi başı pay tavanı için). Verilmezse ya da PERSON_CAP_MIN_ACTIVE'in
   // altındaysa kişi tavanı taban sayıya göre hesaplanır (getPersonWeekCap).
+  // opts.kadran: Ödeme Kadranı (15 Ekim 2026, server/economy.js odemeKadrani; makro plan): kasa × oran kısmını çarpar, giriş payını
+  // çarpmaz. Fiyat 91 günlük ortalamasının üstündeyse oyun daha çok, altındaysa daha az öder. Verilmezse 1.
   openWeekBudgets(opts = {}) {
     const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
     if (!B) return {};
     const st = this.state;
     st.weekSeq = (Number(st.weekSeq) || 0) + 1;                           // oyuncuların hafta sayacı bununla sıfırlanır
     st.weekActive = Math.max(0, Math.floor(Number(opts && opts.aktif) || 0));
+    const kadran = Number(opts && opts.kadran) > 0 ? Number(opts.kadran) : 1;
     const isaret = st.inflowMark || {};
     const kimlikler = Object.keys(B.RATES);
     const ilkAcilis = !Object.keys(isaret).length;   // o ana dek biriken giriş bir haftanın girişi sayılmaz
@@ -159,7 +162,7 @@ export class TreasuryLedger {
       const gecmis = st.inflowHistory;
       const ortalamaGiris = gecmis.reduce((t, h) => t + (h[id] || 0), 0) / Math.max(1, gecmis.length);
       const saglik = Math.max(B.HEALTH_MIN, this.getPoolHealth(id));
-      st.weekBudget[id] = (st.pools[id] || 0) * oran * saglik + ortalamaGiris * B.INFLOW_SHARE;
+      st.weekBudget[id] = (st.pools[id] || 0) * oran * kadran * saglik + ortalamaGiris * B.INFLOW_SHARE;
     }
     this.save();
     return { ...st.weekBudget };

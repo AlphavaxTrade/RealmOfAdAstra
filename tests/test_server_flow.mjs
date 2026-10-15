@@ -65,9 +65,10 @@ const engine = await createEngine(db);
 const GAME_WALLET = '0x' + '11'.repeat(20);
 const sent = [];
 let depositLogs = [];
+let piyasaArz = 2.1325e9;
 const chain = {
   gameWallet: GAME_WALLET, canSend: true,
-  async readMarket() { return { at: Date.now(), graduated: false, supply: 2.1325e9, dead: 1.65e8, curveSupply: 2.1325e9, priceAvax: 1.76e-8, avaxUsd: 11.3, priceUsd: 2e-7, mcapUsd: 400, walletAda: 2e8 }; },
+  async readMarket() { return { at: Date.now(), graduated: false, supply: piyasaArz, dead: 1.65e8, curveSupply: piyasaArz, priceAvax: 1.76e-8, avaxUsd: 11.3, priceUsd: 2e-7, mcapUsd: 400, walletAda: 2e8 }; },
   async latestBlock() { return 1000; },
   async scanDeposits() { const l = depositLogs; depositLogs = []; return l; },
   async sendAda(to, amount) { sent.push({ to, amount }); return '0xhash' + sent.length; }
@@ -280,6 +281,14 @@ try {
   assert.ok(engine.lottery().pool > poolBefore, 'Bilet parası ortak kasaya girdi');
   assert.equal(lB.body.player.lotteryPool, engine.lottery().pool, 'Oyuncu ortak kasayı görüyor');
   ok('Ortak piyango: biletler ve kasa bütün oyuncular için tek');
+
+  // Akış dengesi (15 Ekim 2026): çekim ancak trade alımı varsa açılır. Trade müşterileri piyasadan 10 M ASTRA alır (eğride arz artar),
+  // trade sitesi bunun %40'ını (4 M) oyuna gönderir. Bu haftanın çıkış zarfı: en küçüğü(0,5 × trade alımı ölçüsü, 0,5 × net alım ölçüsü).
+  await world.snapshotMarket();
+  piyasaArz += 1e7;
+  await world.snapshotMarket();
+  db.raw.prepare('INSERT INTO partner_income (tx_hash, log_index, sender, amount, block, at) VALUES (?, ?, ?, ?, ?, ?)').run('0xtrade1', 0, '0x' + '33'.repeat(20), 4e6, 1, Date.now());
+  assert.ok(world.currentCap() >= 30000, `trade alımı olunca zarf açılır: ${world.currentCap()}`);
 
   // Haftalık hesaplaşma: hafta değişir
   const aliceBeforeWeek = (await call('GET', '/api/state', null, tA)).body.player.adAstraBalance;
