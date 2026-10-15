@@ -31,6 +31,15 @@ const ok = ad => { toplam++; console.log(`✅ ${ad}`); };
   ok(`Rehber sayfası: ${bolumler.length} bölüm, ${resimler.length} resim, bağlantılar ve dosyalar tam, satır içi betik yok`);
 }
 
+// 1b) Menü davranışı (15 Ekim 2026 hatası): menüdeki bağlantıyı scrollIntoView ile ortalamak sayfayı da kaydırıp tıklamayı
+// bozuyordu; sayfa içi bağlantılar doğrudan hedefe gider ve görseller yüklendikçe yeniden hizalanır
+{
+  const js = fs.readFileSync(path.join(kok, 'public/rehber/rehber.js'), 'utf8');
+  assert.ok(!js.includes('.scrollIntoView('), 'rehber.js menü için scrollIntoView kullanmamalı');
+  assert.ok(js.includes('hizala(') && js.includes("behavior: 'instant'"), 'bölüme gitme yeniden hizalanmalı');
+  ok('Rehber menüsü: tıklama hedefe doğrudan gider, menü sayfayı kaydırmaz');
+}
+
 // 2) Oyundaki giriş noktaları
 {
   const kart = HUB.ben.ogeler.find(o => o.k === 'oyunrehberi');

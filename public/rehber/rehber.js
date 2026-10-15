@@ -32,10 +32,13 @@
     var y = window.scrollY + 120, aktif = bolumler[0];
     bolumler.forEach(function (b) { if (b.offsetTop <= y) aktif = b; });
     linkler.forEach(function (l) { l.classList.toggle('aktif', l.getAttribute('data-bolum') === aktif.id); });
+    // Aktif bağlantıyı menüde görünür tut: yalnız menünün kendi kaydırmasını değiştir (scrollIntoView sayfayı da kaydırıp
+    // tıklamayı ve yumuşak kaydırmayı bozuyordu) ve kullanıcı menünün üstündeyken (tıklamak üzereyken) listeyi oynatma
     var a = $('a.aktif', yan);
-    if (a && yan.scrollHeight > yan.clientHeight) {
+    if (a && yan.scrollHeight > yan.clientHeight && !yan.matches(':hover')) {
       var r = a.getBoundingClientRect(), p = yan.getBoundingClientRect();
-      if (r.top < p.top + 40 || r.bottom > p.bottom - 40) a.scrollIntoView({ block: 'center' });
+      if (r.top < p.top + 40) yan.scrollTop -= (p.top + 40 - r.top);
+      else if (r.bottom > p.bottom - 40) yan.scrollTop += (r.bottom - (p.bottom - 40));
     }
     var basa = $('#basa');
     if (basa) basa.classList.toggle('goster', window.scrollY > 900);
@@ -47,6 +50,42 @@
     window.requestAnimationFrame(function () { bekliyor = false; aktifGuncelle(); });
   }, { passive: true });
   aktifGuncelle();
+
+  // 2b) Sayfa içi bağlantılar: hedefe doğrudan git. Tarayıcının yumuşak kaydırması çok uzun sayfada (≈90.000 px) yarıda kalıyor
+  // ve geç yüklenen görseller (loading="lazy") hedefi kaydırıyordu; bu yüzden birkaç kez yeniden hizalanır, kullanıcı kaydırırsa durur.
+  var hizaToken = 0;
+  function bolumeGit(id) {
+    var s = document.getElementById(id);
+    if (!s) return;
+    var y = s.getBoundingClientRect().top + window.scrollY - 86;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+  }
+  function hizala(id) {
+    var t = ++hizaToken;
+    bolumeGit(id);
+    [150, 450, 1000, 2000].forEach(function (ms) {
+      setTimeout(function () { if (t === hizaToken) bolumeGit(id); }, ms);
+    });
+  }
+  ['wheel', 'touchstart', 'keydown', 'mousedown'].forEach(function (ad) {
+    window.addEventListener(ad, function (e) {
+      if (ad === 'mousedown' && e.target.closest && e.target.closest('a[href^="#"]')) return;
+      hizaToken++;
+    }, { passive: true });
+  });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    var id = decodeURIComponent(a.getAttribute('href').slice(1));
+    if (!id || !document.getElementById(id)) return;
+    e.preventDefault();
+    if (history.replaceState) history.replaceState(null, '', '#' + id);
+    hizala(id);
+  });
+  if (location.hash.length > 1) {
+    var ilk = decodeURIComponent(location.hash.slice(1));
+    if (document.getElementById(ilk)) window.addEventListener('load', function () { hizala(ilk); });
+  }
 
   // 3) Arama: bölüm metninde geçen kelimeye göre menüyü ve bölümleri süzer
   var arama = $('#ara');
