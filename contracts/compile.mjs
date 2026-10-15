@@ -6,7 +6,7 @@ import solc from 'solc';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-export function compile(files = ['RealmPayments.sol', 'RealmRates.sol', 'OyunKasasi.sol', 'test/MockToken.sol', 'test/BadTokens.sol']) {
+export function compile(files = ['RealmPayments.sol', 'RealmRates.sol', 'OyunKasasi.sol', 'GenesisNFT.sol', 'test/MockToken.sol', 'test/BadTokens.sol', 'test/GenesisAlici.sol']) {
   const sources = Object.fromEntries(files.map(f => [f, { content: fs.readFileSync(path.join(here, f), 'utf8') }]));
   const input = {
     language: 'Solidity',
