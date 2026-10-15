@@ -176,7 +176,8 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     if (kapi) snap.kapi = kapi.publicSummary();   // Kapı: sınır, vatandaş / sıra sayıları, gösterge (Sirius Konseyi ekranı)
     // E-planı Faz 2 (8 Ekim): trade sitesinden gelen gerçek dış gelir, herkese açık (Konsey gelir panosu).
     if (world && world.partnerIncomeStatus) snap.partnerIncome = world.partnerIncomeStatus();
-    return { player: state, world: snap, address, epochId: E.globalPool.state.epochId, gate: kapi ? kapi.statusOf(address) : null };
+    const satir = db.q.playerGet.get(address);
+    return { player: state, world: snap, address, epochId: E.globalPool.state.epochId, gate: kapi ? kapi.statusOf(address) : null, hesapAcilis: satir ? Number(satir.created_at) || null : null };
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir

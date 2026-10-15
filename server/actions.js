@@ -49,6 +49,8 @@ const T = {
   // Krallık Yolu: bölüm kimliği (10 bölüm + final) ve "ekranı gördü" anahtarı (sabit liste)
   section: v => typeof v === 'string' && ((GAME_CONFIG.ONBOARDING_SECTIONS || []).some(b => b.id === v) || v === (GAME_CONFIG.ONBOARDING_FINAL || {}).id),
   gorulen: v => typeof v === 'string' && OGRETICI_GORULENLER.includes(v),
+  // Genesis Yolu: koleksiyon eserinin kimliği (yalnız oyunun 18 eseri)
+  eser: v => typeof v === 'string' && (GAME_CONFIG.COLLECTION_ARTIFACTS || []).some(c => c.id === v),
   fightOpts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).every(k => k === 'payGateFee') &&
     (v.payGateFee === undefined || typeof v.payGateFee === 'boolean'),
   // v2: Konsey katkısı — { hammadde: miktar } (yalnız oyunun 6 hammaddesi, pozitif sayılar)
@@ -143,6 +145,7 @@ export const ACTIONS = {
   ogreticiGordu: A(['gorulen']),
   claimWeeklyUbi: A([]),
   mintGenesisNft: A([]),
+  uyandirEser: A(['eser']),
   // Katılım puanı: izin sorusuna cevap, izni erken bitirme (E-planı Faz 1)
   cevaplaIzinSorusu: A(['bool']),
   bitirIzin: A([])

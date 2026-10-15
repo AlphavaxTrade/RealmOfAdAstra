@@ -205,11 +205,20 @@ const DAY = 86400;
   ok('Konsey projeleri: katkı, sıra, bonuslar');
 }
 
-// 8) Genesis NFT hakkı: gezegen satın alma hakkı
+// 8) Genesis NFT hakkı: gezegen satın alma hakkı. 15 Ekim 2026: Genesis Yolu şartları (seviye, hesap yaşı, Krallık Yolu, Fatih,
+// 4 hafta Altın katkı, 18 eser uyanmış, 3 yıllık önden katkı, açık mühür yeri) ve dolar sabit mühür; ayrıntı tests/test_genesis_yolu.mjs
 {
   const gs = fresh();
-  gs.state.adAstraBalance = 1000;
-  for (const a of gs.state.collectionArtifacts) a.discovered = true;
+  const s = gs.state;
+  gs._dunya = { astraUsd: 1e-6, genesisAcik: 100, hesapAcilis: gs._now() - 200 * 86400000 };
+  s.level = 30;
+  s.onboardingSections = { [GAME_CONFIG.ONBOARDING_FINAL.id]: { claimed: true } };
+  s.fatih = { harcanan: 0, kazanilan: 0, alindi: true, odul: 0, at: 0 };
+  const altin = GAME_CONFIG.URETIM_HAKKI.TIERS.find(t => t.id === 'gold').min * gs.getAdaPriceMultiplier();
+  gs._contribution().gecmis = [altin, altin, altin, altin];
+  for (const a of s.collectionArtifacts) { a.discovered = true; a.uyandi = true; }
+  s.genesisKatki = { harcananUsd: 200, yakilanUsd: 0, cekilenUsd: 0 };
+  s.adAstraBalance = gs.genesisMuhurBedeli() + 1;
   const r = gs.mintGenesisNft();
   assert.ok(r.success, r.message);
   assert.ok(gs.hasGrant('universe_planet_purchase'), 'Genesis = gezegen satın alma hakkı');

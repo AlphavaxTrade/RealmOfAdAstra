@@ -40,6 +40,7 @@ import { rehberYontemleri } from './gameState/rehber.js';
 import { pazarYontemleri } from './gameState/pazar.js';
 import { katilimYontemleri } from './gameState/katilim.js';
 import { fatihYontemleri } from './gameState/fatih.js';
+import { genesisYontemleri } from './gameState/genesis.js';
 import { ogreticiYontemleri, ogreticiIsaretleriKur } from './gameState/ogretici.js';
 
 // Oyuncunun yazdığı isimler için temizleyici dışarı da açıktır (sunucu ve testler kullanır)
@@ -351,7 +352,7 @@ for (const karisim of [
   ekonomiYontemleri, orduYontemleri, seferYontemleri, botYontemleri, hasatYontemleri, gelisimYontemleri,
   techizatYontemleri, botPaketiYontemleri, botSiloYontemleri, karnavalYontemleri, piyangoYontemleri, promoYontemleri, parsomenYontemleri, kesifYontemleri, gelistiriciYontemleri,
   ozetYontemleri, topluYontemleri, gunlukYontemleri, zindanYontemleri, kolezyumYontemleri, dunyaBossuYontemleri,
-  askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri, fatihYontemleri,
+  askerGelisimYontemleri, rehberYontemleri, pazarYontemleri, katilimYontemleri, fatihYontemleri, genesisYontemleri,
   // Köy Evleri, Şifahane, geri dönüşüm, roket, Konsey katkıları, Hazırlık Deposu (js/v2/koyVeKonsey.js)
   gameStateV2, gameStateV2Depot,
   // Krallık Yolu: bölüm ödülleri ve "ilk kez yapıldı" işaretleri (tüm karışımlardan SONRA)

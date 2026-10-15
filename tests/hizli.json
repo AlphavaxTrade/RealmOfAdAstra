@@ -70,5 +70,6 @@
   "test_rehber_teknik.mjs",
   "test_ordu_siniri.mjs",
   "test_makro_model.mjs",
-  "test_cikis_kapisi.mjs"
+  "test_cikis_kapisi.mjs",
+  "test_genesis_yolu.mjs"
 ]

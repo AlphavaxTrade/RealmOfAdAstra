@@ -20,6 +20,7 @@ export const ekonomiYontemleri = {
     const birimFiyat = Number(ammMarket.getPrice(resourceKey));
     if (isFinite(birimFiyat) && birimFiyat > 0) {
       this._addContribution(miktar * birimFiyat * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
+      if (this._genesisKatkiYaz) this._genesisKatkiYaz(miktar * birimFiyat, 'yakim');   // Genesis katkı defteri (dolar)
     }
     return miktar;
   },
@@ -175,6 +176,11 @@ export const ekonomiYontemleri = {
     const bal = Math.max(0, Number(this.state.adAstraBalance) || 0);
     this.state.sponsorAda = Math.min(Math.max(0, Number(this.state.sponsorAda) || 0), bal);
     this.state.lockedAda = Math.min(locked, Math.max(0, bal - this.state.sponsorAda));
+    // Genesis katkı defteri (dolar): kendi parasından harcanan; pazardan hammadde alımında yalnız sistemin aldığı kısım
+    if (v > 0 && this._genesisKatkiYaz) {
+      const oran = (GAME_CONFIG.AMM_FEE_RATE ?? 0.02) / (1 + (GAME_CONFIG.AMM_FEE_RATE ?? 0.02)) + (GAME_CONFIG.AMM_RESOURCE_FEE_RATE ?? 0.02);
+      this._genesisKatkiYaz(boughtResource ? Math.min(v, sinkPart != null ? Math.max(0, Number(sinkPart) || 0) : v * oran) : v);
+    }
     if (boughtResource) {
       const c = this._contribution();
       const credit = c.buyCredit;
@@ -214,6 +220,12 @@ export const ekonomiYontemleri = {
     if (!c || typeof c !== 'object') c = this.state.contribution = { total: 0, week: 0, lastWeek: 0, epochId, buyCredit: {} };
     if (!c.buyCredit) c.buyCredit = {};
     if (c.epochId !== epochId) {
+      // Son 4 haftanın puanları (Genesis Yolu: "son 4 haftanın her birinde Altın"); atlanan haftalar 0
+      const gecen = Math.max(1, epochId - (Number(c.epochId) || 0));
+      const gecmis = Array.isArray(c.gecmis) ? c.gecmis : [];
+      gecmis.push(Number(c.week) || 0);
+      for (let i = 1; i < Math.min(gecen, 4); i++) gecmis.push(0);
+      c.gecmis = gecmis.slice(-4);
       c.lastWeek = c.epochId === epochId - 1 ? c.week : 0;
       c.week = 0;
       c.epochId = epochId;

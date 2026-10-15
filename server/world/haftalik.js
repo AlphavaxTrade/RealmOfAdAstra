@@ -6,6 +6,7 @@ import { rastgele } from '../rastgele.js';
 import { qualifies, nextStreak, weightOf, distribute, capFraction, FAUCET_DEFAULTS } from '../../js/economy/faucet.js';
 import { fmt, DAY } from './yardimci.js';
 import { izindeMiState } from '../aktiflik.js';
+import { genesisAcikMuhur } from '../../js/economy/genesis.js';
 
 export function olusturHaftalik(w) {
   const { db, E, arena, accounts, kapi, cfg, clock, log, econ, setEcon, creatorWallet, atomic, snapshotMarket, currentCap, akisSerileri, sponsor, weekScore, walletOf, queuePayout, processPayouts, refreshUretim } = w;
@@ -78,6 +79,7 @@ export function olusturHaftalik(w) {
           gs.state.pendingWithdrawAda = 0;
           if (r.returned > 0) gs.state.adAstraBalance = (Number(gs.state.adAstraBalance) || 0) + r.returned;
           gs.state.withdrawnAda = (Number(gs.state.withdrawnAda) || 0) + r.total;
+          if (gs.genesisCekimYaz) gs.genesisCekimYaz(toWallet, market && market.priceUsd);   // Genesis katkı defteri: ekosistemden çıkan (dolar)
           gs.pushNotice(`🏦 Haftalık çekim: ${fmt(toWallet)} ASTRA cüzdanına gönderiliyor (ücret ${fmt(r.fee)}, hak kirası ${fmt(r.rent)}${sp.total > 0 ? `, sponsor payı ${fmt(sp.total)}` : ''}).` +
             (r.returned > 0 ? ` ${fmt(r.returned)} ASTRA bu haftaki havuza sığmadı, bakiyene döndü.` : ''), 'success');
         });
@@ -274,9 +276,16 @@ export function olusturHaftalik(w) {
       const dagitimSeri = [...(Array.isArray(e.dagitimSeri) ? e.dagitimSeri : []), dagitim / aktifSay].slice(-WEEKLY_RULES.endeksHafta);
       const oyunEndeksi = oyunIciEndeks({ kisiBasiSeri: dagitimSeri, tasarimKisi, onceki: Number(e.oyunEndeksi) || 1 });
       summary.oyunEndeksi = oyunEndeksi;
+      // Genesis Yolu (makro plan B5): açık mühür sayısı = trade aylık geliri × pay ÷ sahip başı aylık ayrıcalık maliyeti (sezon tavanına kadar).
+      // Fiyat yoksa (zincirsiz deneme) null: oyun sezon tavanını kullanır.
+      const GY = E.GAME_CONFIG.GENESIS_YOLU || {};
+      const fiyatUsd = Number(market && market.priceUsd) || 0;
+      const tradeAylikUsd = akis.tb.reduce((s, v) => s + (Number(v) || 0), 0) * (30 / (7 * akis.tb.length || 28)) * fiyatUsd;
+      const genesisAcik = fiyatUsd > 0 ? genesisAcikMuhur({ tradeAylikUsd, G: GY }) : null;
+      summary.genesisAcik = genesisAcik;
       summary.bedelCarpani = etkinCarpan({ priceMultiplier, oyunEndeksi });
       setEcon({
-        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap, kadran, oyunEndeksi, dagitimSeri,
+        epochSettled: closedEpoch, priceMultiplier, ubiTotalWeight, withdrawCap: cap, kadran, oyunEndeksi, dagitimSeri, genesisAcik,
         settled: { burned: Number(gp.state.totalBurned) || 0, creator: (Number(settled.creator) || 0) + creatorPay },
         faucetPerPlayer: summary.faucet.perPlayer, lastWeekly: summary
       });

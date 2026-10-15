@@ -620,8 +620,29 @@ export const GAME_CONFIG = {
     name: 'RoA Genesis NFT',
     icon: '🏆',
     requiredArtifacts: 18,
-    adAstraCost: 5,
+    adAstraCost: 5,          // eski sabit bedel (yalnız eski kayıtlar ve ölçüm için; mühür bedeli artık GENESIS_YOLU.MUHUR)
     grants: ['universe_planet_purchase']
+  },
+
+  // Genesis Yolu (makro plan C6, kullanıcı onayı 15 Ekim 2026; docs/v2/MAKRO_EKONOMI_PLANI.md): uzun ve pahalı yol, karşılığı ayrıcalık.
+  // Kullanıcı kuralı: Genesis basan, ekosisteme en az KATKI_YIL yıllık beklenen ayrıcalık maliyetini önden ödemiş olmalı
+  // (net katkı = oyunda harcadığı ASTRA'nın harcandığı andaki dolar değeri + yakılan hammaddenin dolar değeri − oyundan çektiği).
+  // Ayrıcalıkların beklenen yıllık maliyeti = 12 × (Uydu aylık × ödeyecek olma payı + Gözlemevi yıllık × indirim ÷ 12 × alacak olma payı)
+  // = 12 × (10 × 0,5 + 600 × 0,5 ÷ 12 × 0,2) = 120 $ → 3 yıl = 360 $ (mühür bedeli dahil).
+  GENESIS_YOLU: {
+    SART: { HESAP_SEVIYESI: 30, HESAP_YASI_GUN: 180, KRALLIK_YOLU: true, FATIH: true, KATKI_KADEMESI: 'gold', KATKI_HAFTA: 4 },
+    UYANDIRMA: {
+      BIRIM: { common: 1, rare: 2, epic: 4, legendary: 8 },          // 18 eser: 5×1 + 5×2 + 6×4 + 2×8 = 55 birim
+      BIRIM_ASTRA: 2000,                                              // × bedel çarpanı
+      BIRIM_HAMMADDE: { stone: 500, iron: 250, coal: 250, herb: 50 }, // yakılır; en büyük (8 birim) silo 12'ye sığar
+      SURE_SAAT: 72                                                   // aynı anda tek eser; 18 eser en az 54 gün
+    },
+    MUHUR: { USD: 250, YAKIM_PAYI: 0.5 },     // mühür anındaki ASTRA fiyatından; yarısı yakılır, yarısı her harcama gibi kasalara
+    SEZON_TAVAN: 100,                         // Sezon 1'de en çok 100 numaralı Genesis
+    ACIK_MUHUR_TRADE_PAYI: 0.10,              // açık mühür = trade aylık geliri × 0,10 ÷ sahip başı aylık ayrıcalık maliyeti (sunucu haftalık hesaplar)
+    AYRICALIK: { UYDU_AY_USD: 10, UYDU_ODEYECEKTI: 0.5, GOZLEMEVI_YIL_USD: 600, GOZLEMEVI_INDIRIM: 0.5, GOZLEMEVI_ALACAKTI: 0.2 },   // VARSAYIM payları
+    KATKI_YIL: 3,
+    YEDEK_ASTRA_USD: 1.9e-7                   // fiyat bilinmezken (tek oyunculu mod, zincirsiz deneme sunucusu): 11 Ekim 2026 ölçümü
   },
 
   // ═══════════════════════════════════════════════════════════════════════

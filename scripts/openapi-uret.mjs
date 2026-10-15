@@ -47,6 +47,7 @@ export const TIP_ACIKLAMALARI = {
   quest: 'Rehber görevi kimliği',
   section: 'Krallık Yolu bölüm kimliği (10 bölümden biri ya da final)',
   gorulen: 'Krallık Yolu için "ekranı gördü" anahtarı (sabit liste)',
+  eser: 'Genesis Yolu: koleksiyon eserinin kimliği (yalnız oyunun 18 eseri, ör. artifact_01)',
   fightOpts: 'Seçenekler { payGateFee?: boolean }',
   amounts: 'Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)'
 };

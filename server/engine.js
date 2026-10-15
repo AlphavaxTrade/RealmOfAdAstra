@@ -97,6 +97,9 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     gs.state.unlockK = Number(w.k) > 0 ? Number(w.k) : 1;   // KARAR 6: kilit açılma tabanı (haftalık %1) × k
     gs.state.adaPriceMultiplierTarget = m;
     gs.state.adaPriceMultiplierEpoch = globalPool.state.epochId;
+    // Genesis Yolu için dünya bilgisi (kayda yazılmaz): ASTRA'nın dolar fiyatı, açık mühür sayısı, hesap açılış zamanı
+    const satir = current && current !== SYSTEM ? db.q.playerGet.get(current) : null;
+    gs._dunya = { astraUsd: Number((w.market || {}).priceUsd) || null, genesisAcik: w.genesisAcik != null ? Number(w.genesisAcik) : null, hesapAcilis: satir ? Number(satir.created_at) || null : null };
     const L = lottery();
     gs.state.lotteryPool = L.pool;
     gs.state.lotteryAmortiPool = L.amortiPool;

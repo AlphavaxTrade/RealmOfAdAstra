@@ -195,6 +195,9 @@ function apply(payload) {
     online.partnerIncome = w.partnerIncome || null;   // E-planı Faz 2: trade sitesinden gelen gerçek dış gelir (herkese açık)
     if (Array.isArray(w.rates)) applyRates(GAME_CONFIG, null, w.rates);   // oranlar sunucudan (RealmRates sözleşmesi)
     if (w.universeStage != null) GAME_CONFIG.UNIVERSE_STAGE = Number(w.universeStage) || 0;   // Universe aşaması (yönetici)
+    // Genesis Yolu dünya bilgisi (kayda yazılmaz; sunucu motorundaki gs._dunya ile aynı)
+    const e = w.economy || {};
+    gameState._dunya = { astraUsd: Number((e.market || {}).priceUsd) || null, genesisAcik: e.genesisAcik != null ? Number(e.genesisAcik) : null, hesapAcilis: Number(payload.hesapAcilis) || null };
   }
   online.gate = payload.gate || null;    // bu hesabın kapı durumu: citizen / waiting / suspended
   online.lastSync = Date.now();

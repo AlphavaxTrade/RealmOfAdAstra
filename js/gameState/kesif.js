@@ -2,7 +2,6 @@
 // (zindan ganimetinin dağıtımı js/gameState/zindan.js içindedir)
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
-import { globalPool } from '../globalPool.js';
 
 // Pandora kutusunun nadirlik zarı: [üst sınır, nadirlik]; zar 0-1 arası tek sayıdır
 const NADIRLIK_ESIKLERI = [[0.05, 'legendary'], [0.20, 'epic'], [0.50, 'rare']];
@@ -82,28 +81,7 @@ export const kesifYontemleri = {
     return this.unboxMysteryBox();
   },
 
-  // 18 eserin tamamı toplanınca Genesis NFT basılır (Universe'de gezegen satın alma hakkı verir)
-  mintGenesisNft() {
-    if (this.state.genesisNftMinted) return { success: false, message: 'Genesis NFT zaten basıldı!' };
-
-    const gereken = GAME_CONFIG.GENESIS_NFT.requiredArtifacts;
-    const bulunan = this.state.collectionArtifacts.filter(a => a.discovered).length;
-    if (bulunan < gereken) return { success: false, message: `Tüm koleksiyonu tamamlamalısın! (${bulunan}/${gereken} Eser)` };
-
-    const bedel = this.adaPrice(GAME_CONFIG.GENESIS_NFT.adAstraCost);
-    if (this.state.adAstraBalance < bedel) return { success: false, message: `Yetersiz ASTRA! (${bedel} ASTRA gerekli)` };
-
-    this.state.adAstraBalance -= bedel;
-    this._onAdaSpent(bedel);
-    globalPool.recordTokenSpend(bedel);
-    this.state.genesisNftMinted = true;
-    const mevcut = Array.isArray(this.state.grants) ? this.state.grants : [];
-    const yeni = (GAME_CONFIG.GENESIS_NFT && GAME_CONFIG.GENESIS_NFT.grants) || ['universe_planet_purchase'];
-    this.state.grants = Array.from(new Set([...mevcut, ...yeni]));
-
-    this.saveState();
-    return { success: true, message: `🏆 ${GAME_CONFIG.GENESIS_NFT.name} başarıyla basıldı! Efsane tamamlandı!` };
-  },
+  // Genesis NFT basma artık Genesis Yolu'nda: js/gameState/genesis.js mintGenesisNft (şartlar, uyandırma, dolar sabit mühür)
 
   // Kolezyum girişleri için Arena anahtarı ekler
   addArenaKey(count = 1) {
