@@ -84,3 +84,15 @@ Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RA
 - Ana ağdaki 0,01 AVAX'ın (test cüzdanı) iadesi: kullanıcının geri gönderme adresi bekleniyor.
 - GitHub'a gönderim: kullanıcı isteyince.
 
+## 15 Ekim 2026: Teknik başvuru (rehberin sayılar bölümü) ve bulunan boşluk
+
+**Yapıldı:**
+- `public/rehber.html` sonuna 18 "Teknik başvuru" bölümü eklendi (bütün limitler tek tabloda, ASTRA bölüşümü, sefer/stamina tabloları, seviye 1-81 bedelleri, silo bedelleri, kota formülleri, Otorite ve Konsey, kilitli bakiye, çekim formülleri ve örnek, pazar formülü, kasa bütçeleri, asker/teçhizat/onarım, köy/bot, zindan-kolezyum-boss-çark-piyango, UBI ve ücretsiz havuz, fiyat çarpanı, zincir sınırları).
+- Bölümler `node scripts/rehber-teknik-uret.mjs` ile oyun motorundan üretilir; `tests/test_rehber_teknik.mjs` eskiyince kırılır (hizli kapıda).
+- Rehberin el yazısı bölümleri koda karşı doğrulandı ve düzeltildi: roket bedeli 1 ASTRA (100 değil), zindan günlük bütçesi %0,36 (%1 değil), çark dönüşü ~%83 (%81 değil), kilit açılma haftalık ek %1,4 (toplam ~%2,4), çekim örneği en az 1.000 ASTRA.
+- Hafta gününe bağlı iki kararsız test düzeltildi (test_bot_kurallari: zaman haftanın ilk gününe sabitlendi; test_battle_settlement_before_replay: kolezyum günlük ödül tavanı hesaba katıldı). İddialar korundu.
+
+**KARAR BEKLİYOR (ekonomi sayısı, kullanıcıyla konuşulur):** `docs/v2/KARARLAR_KESIN.md` iki kural yazıyor ama motorda uygulanmıyor:
+1. **Asker hakkı = geçilen zindan katı + 1.** Motor yalnız ASTRA bedeli ve köylü sayısına bakıyor (50 köylüyle 1. katta 30 asker alınabiliyor).
+2. **Asker seviyesi <= hesap seviyesi.** Motorda üst sınır yok (hesap seviyesi 1 iken asker seviyesi 100'ü aşabiliyor).
+Seçenekler: (a) kuralları koda ekle (ekonomik etkisi: ordu daha yavaş büyür, Fatih/zindan hesapları değişir; altın kayıt testleri yenilenir), (b) kararı belgeden kaldır, rehber şu an gerçek durumu yazıyor.

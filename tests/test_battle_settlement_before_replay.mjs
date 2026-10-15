@@ -16,6 +16,7 @@ const { simulateBattle } = await import('../js/combat.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
+const { GAME_CONFIG } = await import('../js/config.js');
 
 const fresh = () => {
   localStorage.clear();
@@ -89,6 +90,10 @@ const fight = (gs, monster, indices) => {
   gs.buySoldierUnit();
   gs.state.arenaKeys = 50;
   let wins = 0, losses = 0;
+  // Günlük kolezyum ödül tavanı (EK-06): tavan dolunca zafer ödülü 0 olur. Eskiden 8 maçta >= 6 zafer gelirse 6. zafer ödülsüzdü
+  // ve test rastgele kırılıyordu; iddia tavan altında aynen korunur, tavan dolduktan sonra ödül toplamının tavanı aşmaması beklenir.
+  const gunlukTavan = GAME_CONFIG.COLOSSEUM.DAILY_REWARD_CAP_ASTRA;
+  let gunlukOdul = 0;
   for (let i = 0; i < 8; i++) {
     gs.state.soldierUnits[0].hp = gs.state.soldierUnits[0].maxHp;
     const startHp = gs.state.soldierUnits[0].hp;
@@ -99,7 +104,12 @@ const fight = (gs, monster, indices) => {
     assert.equal(res.replay.allies[0].uid, res.allyUid);
     assert.equal(res.replay.enemies[0].uid, res.enemyUid);
     assert.equal(gs.state.soldierUnits[0].hp, Math.max(1, Math.round(res.replay.allies[0].hp)), 'Şampiyonun canı kayıttaki sonuçla aynı olmalı');
-    if (res.isVictory) { wins++; assert.ok(res.rewardAda > 0); } else { losses++; assert.equal(res.rewardAda, 0); }
+    if (res.isVictory) {
+      wins++;
+      if (gunlukOdul < gunlukTavan - 1e-9) assert.ok(res.rewardAda > 0, 'tavan dolmadan zafer ödülü > 0');
+      assert.ok(gunlukOdul + res.rewardAda <= gunlukTavan + 1e-9, 'günlük ödül tavanı aşılmaz');
+      gunlukOdul += res.rewardAda;
+    } else { losses++; assert.equal(res.rewardAda, 0); }
   }
   ok(`Kolezyum: arena gerçek sonucu oynatır (${wins} zafer, ${losses} yenilgi, ödüller tutarlı)`);
 }

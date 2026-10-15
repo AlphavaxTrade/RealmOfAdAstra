@@ -28,18 +28,19 @@
 <div class="kahraman">
   <div class="ic">
     <h1>Realm of AdAstra<br>Oyun Rehberi</h1>
-    <p>Krallığını nasıl kuracağını, hammaddeyi nasıl paraya çevireceğini, ordunu nasıl büyüteceğini ve ASTRA'nın nereye gidip nereden geldiğini <b>baştan sona</b>, günlük dille anlatıyoruz.</p>
+    <p>Krallığını nasıl kuracağını, hammaddeyi nasıl paraya çevireceğini, ordunu nasıl büyüteceğini ve ASTRA'nın nereye gidip nereden geldiğini <b>baştan sona</b>, günlük dille anlatıyoruz. Ekonominin <b>bütün sayıları ve formülleri</b> (seviye ve silo bedelleri, günlük/haftalık limitler, çekim kuralları) sayfanın sonundaki <a href="#t-giris">Teknik başvuru</a> bölümlerindedir.</p>
     <div class="eylem">
       <a class="dugme" href="#nedir">Baştan başla</a>
       <a class="dugme ikinci" href="#ilk-10-dakika">İlk 10 dakika</a>
+      <a class="dugme ikinci" href="#t-giris">Sayılar ve formüller</a>
       <a class="dugme ikinci" href="#sozluk">Sözlük</a>
     </div>
-    <div class="rozetler"><span>Oyun içi görsellerle</span><span>Örnekli anlatım</span><span>Teknik bilgi gerekmez</span></div>
+    <div class="rozetler"><span>Oyun içi görsellerle</span><span>Örnekli anlatım</span><span>Teknik bilgi gerekmez</span><span>Bütün sayılar ve formüller açık</span></div>
   </div>
 </div>
 
 <div class="kutu ozet-kutu" data-s="🧭"><b>Bu rehber nasıl okunur?</b>
-<p>Soldaki içindekiler listesinden istediğin bölüme atlayabilirsin; üstteki kutuya bir kelime yazarsan (örneğin <i>silo</i>, <i>bot</i>, <i>kasa</i>) yalnızca o kelimenin geçtiği bölümler kalır. Resimlere dokunursan büyür. Gösterilen sayılar gelişmiş bir deneme hesabından alınmıştır; <b>senin ekranındaki sayılar farklı olabilir</b>, mantık aynıdır.</p></div>
+<p>Soldaki içindekiler listesinden istediğin bölüme atlayabilirsin; üstteki kutuya bir kelime yazarsan (örneğin <i>silo</i>, <i>bot</i>, <i>kasa</i>) yalnızca o kelimenin geçtiği bölümler kalır. Resimlere dokunursan büyür. Gösterilen sayılar gelişmiş bir deneme hesabından alınmıştır; <b>senin ekranındaki sayılar farklı olabilir</b>, mantık aynıdır. Sayıların ve formüllerin tamamını merak ediyorsan <a href="#t-giris">Teknik başvuru</a> bölümlerine bak: her bedel ve limit orada, oyunun ayar dosyasından üretilmiş olarak yazılıdır.</p></div>
 
 <!-- ============ BAŞLANGIÇ ============ -->
 <section class="bolum" id="nedir" data-grup="Başlangıç" data-ikon="🏰">
@@ -160,6 +161,7 @@
 <section class="bolum" id="hammadde" data-grup="Üretim ve krallık" data-ikon="⛏️">
   <div class="bolum-baslik"><div class="no">⛏️</div><div><small>Üretim ve krallık</small><h2>Hammaddeler ve seferler</h2></div></div>
   <p class="ozet">Oyundaki her şey altı hammaddeyle başlar. Onları <b>sefer</b> adı verilen görevlerle toplarsın.</p>
+  <div class="kutu ipucu" data-s="📐"><b>Sayılar</b><p>Hızlar, sefer süreleri, stamina ve haftalık/günlük kota formülleri: <a href="#t-uretim">Üretim ve sefer</a> · <a href="#t-kota">Kota</a> · <a href="#t-limitler">Bütün limitler</a>.</p></div>
 
   <h3>Altı hammadde</h3>
   <div class="tablo-kap"><table>
@@ -227,6 +229,7 @@
 <section class="bolum" id="silo" data-grup="Üretim ve krallık" data-ikon="📦">
   <div class="bolum-baslik"><div class="no">📦</div><div><small>Üretim ve krallık</small><h2>Silo ve depo</h2></div></div>
   <p class="ozet">Hammaddelerini sakladığın ambar. Dolunca yeni ürün alamaz; büyüttükçe daha çok alır.</p>
+  <div class="kutu ipucu" data-s="📐"><b>Sayılar</b><p>Her silo seviyesinin kapasitesi ve yükseltme bedeli (hammadde ve ASTRA): <a href="#t-silo">Silo bedelleri</a>.</p></div>
   <figure class="resim"><div class="cerceve"><img src="rehber/img/silo.webp" alt="Silo ekranı" loading="lazy"></div>
   <figcaption><b>Silo.</b> Altı ambarın doluluğu, yükseltme şartı ve bedeli, yeni kapasiteler.</figcaption></figure>
   <ul>
@@ -241,6 +244,7 @@
 <section class="bolum" id="seviye" data-grup="Üretim ve krallık" data-ikon="⭐">
   <div class="bolum-baslik"><div class="no">⭐</div><div><small>Üretim ve krallık</small><h2>Seviye ve deneyim (XP)</h2></div></div>
   <p class="ozet">Seviye atladıkça seferlerin büyür, yeni özellikler açılır ve haftalık gelir payın artar.</p>
+  <div class="kutu ipucu" data-s="📐"><b>Sayılar</b><p>1'den 81'e her seviye atlamanın XP, hammadde ve ASTRA bedeli: <a href="#t-seviye">Seviye atlama bedelleri</a>.</p></div>
   <figure class="resim"><div class="cerceve"><img src="rehber/img/karakter.webp" alt="Karakterim ekranı" loading="lazy"></div>
   <figcaption><b>Karakterim.</b> Seviye, ödüller, XP çubuğu, seviye bedeli, haftalık temel gelir, stamina ve envanter.</figcaption></figure>
   <ol class="adimlar">
@@ -256,13 +260,12 @@
     <li>Taverna (bot), Demirhane, Kışla, Zindan, Kolezyum, Savaş alanı, Pazar ve Karnaval gibi özellikler belli adımlarda açılır. Kilitli kartta açılış şartı yazar.</li>
     <li>Haftalık temel gelirden (UBI) alacağın pay seviyenle büyür.</li>
     <li>Köy evi sayısı hesap seviyeni geçemez.</li>
-    <li>Asker seviyesi hesap seviyeni geçemez.</li>
   </ul>
 </section>
 
 <section class="bolum" id="koy" data-grup="Üretim ve krallık" data-ikon="🏘️">
   <div class="bolum-baslik"><div class="no">🏘️</div><div><small>Üretim ve krallık</small><h2>Köy evleri ve nüfus</h2></div></div>
-  <p class="ozet">Köylüler hem üretimini artırır hem de ileride senin askerlerin olurlar.</p>
+  <p class="ozet">Köylüler üretimini artırır; ayrıca ordu kurmak için köylü gerekir (her asker bir köylü sayılır).</p>
   <figure class="resim"><div class="cerceve"><img src="rehber/img/koy.webp" alt="Köy evleri" loading="lazy"></div>
   <figcaption><b>Köy evleri.</b> Köylü sayısı, günlük buğday tüketimi, emek puanı, üretim bonusu ve asker hakkı.</figcaption></figure>
   <ul>
@@ -353,9 +356,9 @@
 
   <p><b>Cephanelik</b> toplu işlemler sunar: <i>Boş yuvaları doldur</i> (boş ekipman yuvalarına eşya yerleştirir), <i>Hepsini onar</i>, <i>Seviye 1 fazlalıkları erit</i> ve <i>Hepsini soy</i> (askerlerden eşyaları çıkarır). Üstteki filtrelerle silah, miğfer, zırh, dizlik ve çizmeyi ayrı ayrı görürsün.</p>
   <h3>Yeni asker almak</h3>
-  <p>"Yeni asker" düğmesinin üzerinde ASTRA bedeli yazar; her yeni asker bir öncekinden daha pahalıdır. Hakkın şu kadardır: <b>geçtiğin zindan katı + 1</b>. Yani zindanda ilerledikçe daha çok asker taşıma hakkı kazanırsın. Her asker için de <b>bir köylü</b> gerekir (bkz. <a href="#koy">Köy evleri</a>).</p>
-  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>1. katı yeni geçtin ve 4 asker hakkın var diyelim. 5. askeri almak için önce 2. kata ilerlemen gerekir. Bu sınır "sadece parayla ordu kurmayı" önler.</p></div>
-  <div class="kutu dikkat" data-s="⚠️"><b>Dikkat</b><p>Asker seviyesi hesap seviyeni geçemez. Askerini güçlendirmek için hem seviye atlamak hem de teçhizatını yenilemek gerekir.</p></div>
+  <p>"Yeni asker" düğmesinin üzerinde ASTRA bedeli yazar; her yeni asker bir öncekinden daha pahalıdır (1. asker 50, 18. asker 18.000 ASTRA; tam tablo <a href="#t-savas">Teknik başvuru</a>'dadır). Asker sayısını iki şey sınırlar: <b>ASTRA bedeli</b> ve <b>köylü sayın</b> (her asker bir köylü sayılır; bkz. <a href="#koy">Köy evleri</a>).</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>30 köylün varsa en çok 30 asker alabilirsin; 31. asker için önce köy evi yapıp köylülerin çoğalmasını beklersin. Tek bir zindan savaşına en çok 18 asker götürürsün.</p></div>
+  <div class="kutu ipucu" data-s="💡"><b>Gelişim</b><p>Askerler savaşlarda deneyim kazanıp seviye atlar: her seviyede +6 saldırı ve +25 can. Teçhizat (silah, zırh…) ayrıca güç verir.</p></div>
 </section>
 
 <section class="bolum" id="zindan" data-grup="Savaş" data-ikon="💀">
@@ -385,7 +388,7 @@
 
   <h3>Günlük ödüllü giriş</h3>
   <p>Her gün <b>5 ödüllü giriş</b> hakkın var ("5/5 ödüllü giriş"). Girişlerin ilki silahlarını yıpratmaz; sonraki girişlerde silahlarının dayanıklılığı bir azalır. 6. girişten sonrası harçlı ya da antrenman niteliğindedir. Günlük sınırlarını <b>Kotalarım</b> ekranından izlersin.</p>
-  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Her gün ilk 5 girişi kullanmak, ASTRA kazancının büyük kısmını sağlar. Zindanın günlük ödemesi aynı zamanda <b>kasanın bakiyesinin %1'iyle</b> sınırlıdır, yani herkesin payı için adil bir tavan vardır.</p></div>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Her gün ilk 5 girişi kullanmak, ASTRA kazancının büyük kısmını sağlar. Zindanın günlük ödemesi aynı zamanda <b>zindan kasasının bakiyesinin %0,36'sıyla</b> sınırlıdır (herkes için ortak); ayrıca kişisel günlük ve haftalık tavanların da vardır (kasa herkese yetsin diye).</p></div>
 
   <h3>Yaralanma</h3>
   <p>Savaşta askerler yaralanabilir. Yaralı askerleri iyileştirmek için <a href="#sifahane">Şifahane</a> (şifalı ot) ya da Kışla (buğday) kullanılır. Ekranın üstündeki "🩹 0 yaralı" sayacı sana kaç yaralın olduğunu gösterir.</p>
@@ -459,7 +462,7 @@
   <h3>Harç ve yakım</h3>
   <ul>
     <li>Her alım ve satımda hammaddenin <b>%2'si yakılır</b> (oyundan silinir; fiyatı korumaya yarar).</li>
-    <li>Ayrıca <b>%2 ASTRA harç</b> alınır; oyun kasalarına gider.</li>
+    <li>Ayrıca <b>%2 ASTRA harç</b> alınır; her harcama gibi bölünür (%5 yakım, %3 yapımcı, %6 temel gelir, %86 kasalar).</li>
     <li>"Ödeyeceğin (harç dahil)" ve "Eline geçecek (harç sonrası)" satırları, işlemden önce net rakamı gösterir.</li>
     <li>Tek işlemde havuzun %5'inden fazlasını alamazsın; ekran büyük işlemlerde fiyat etkisini önceden uyarır.</li>
   </ul>
@@ -500,7 +503,7 @@
 
   <h3>🎡 Çark</h3>
   <ul>
-    <li><b>15 ödüllü</b> bir çark; ortalama dönüş yaklaşık <b>%81</b>'dir (yani uzun vadede verdiğinin %81'ini geri alırsın; çark bir kazanç yolu değil, eğlencedir).</li>
+    <li><b>15 ödüllü</b> bir çark; ortalama dönüş yaklaşık <b>%83</b>'tür (çok nadir 24 saatlik bot ikramiyesi dahil %93; yani uzun vadede verdiğinin yaklaşık %83'ünü geri alırsın; çark bir kazanç yolu değil, eğlencedir).</li>
     <li>Çevirme yolları: <b>1 ASTRA</b>, <b>eş değer hammadde</b> (günde 3 kez) ya da <b>1 piyango bileti</b>.</li>
     <li>Biriktirdiğin <b>bilet parçaları</b> (3 parça = 1 bilet) da çark çevirmek için kullanılır.</li>
     <li>Çevirmelerin yaklaşık %31'inde en az bedelini geri alırsın.</li>
@@ -579,6 +582,7 @@
 <section class="bolum" id="ekonomi" data-grup="Pazar ve ekonomi" data-ikon="📈">
   <div class="bolum-baslik"><div class="no">📈</div><div><small>Pazar ve ekonomi</small><h2>Ekonomi: ASTRA nereden gelir, nereye gider?</h2></div></div>
   <p class="ozet">En önemli bölüm: oyunun parası <b>kapalı bir döngüdür</b>. Hiçbir ödül havadan basılmaz; her ödül bir kasadan çıkar.</p>
+  <div class="kutu ipucu" data-s="📐"><b>Sayılar</b><p>Oranların, bütçelerin ve çekim kurallarının tam hali: <a href="#t-akis">ASTRA nereye gider</a> · <a href="#t-kasalar">Kasaların bütçesi</a> · <a href="#t-kilit">Kilitli bakiye</a> · <a href="#t-cekim">ASTRA çekimi (haftalık ve küresel limitler)</a> · <a href="#t-limitler">Bütün limitler</a>.</p></div>
 
   <h3>100 ASTRA harcadığında ne olur?</h3>
   <div class="tablo-kap"><table>
@@ -612,7 +616,7 @@
   <ul>
     <li>Kazancının <b>%20'si</b> serbest, <b>%80'i</b> kilitli gelir.</li>
     <li>Bir şey satın alırken önce <b>kilitli</b> bakiye kullanılır; harcadığının <b>%20'si kadar</b> kilit de açılır.</li>
-    <li>Her hafta kilitli bakiyenin <b>%1</b>'i kendiliğinden açılır; her gün oyuna girenler için haftada toplam %1,4.</li>
+    <li>Her hafta kilitli bakiyenin <b>%1</b>'i kendiliğinden açılır; her gün oyuna girersen üstüne haftada <b>%1,4</b> daha açılır (toplam yaklaşık %2,4).</li>
   </ul>
   <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Zindandan 100 ASTRA kazandın → 20'si serbest, 80'i kilitli. Demirhanede 50 ASTRA harcadın → 50'si kilitliden düşer, ayrıca 10 ASTRA'nın kilidi açılır. Böylece oyunda harcadıkça paranın daha çoğu çekilebilir hale gelir.</p></div>
 
@@ -675,7 +679,7 @@
     <li><b>Ücret %3</b>; hakkını aşan kısım için %1,5 "hak kirası" ödersin. Sığmayan kısım bakiyene döner.</li>
     <li>Piyasa sert düştüğünde oyun bir <b>fren</b> devreye alır: o zaman ücret %6 olur.</li>
   </ul>
-  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Serbest bakiyende 500 ASTRA var ve 300'ünü çekmek istiyorsun. Haftalık hakkın 200 ASTRA ise: 200'ü normal çekilir (%3 ücretle); aşan 100 için hak kirası (%1,5) ödersin ya da sığmayan kısım bakiyene döner ve gelecek hafta tekrar denersin.</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Serbest bakiyende 5.000 ASTRA var ve 3.000'ini çekmek istiyorsun (en az çekim 1.000 ASTRA'dır). Haftalık hakkın 2.000 ASTRA ise: 2.000'i normal çekilir (%3 ücretle); aşan 1.000 için başkalarının kullanmadığı hak varsa onu kiralarsın (%1,5 kira), yoksa sığmayan kısım bakiyene döner ve gelecek hafta tekrar denersin.</p></div>
 
   <h3>🎟️ Promo kodu</h3>
   <p>Elinde bir promo kodu varsa Hesabım'ın en altına yazarsın. Her kod bir hesapta bir kez kullanılır; ASTRA ödülü kilitli gelir.</p>
@@ -730,7 +734,7 @@
   <figure class="resim"><div class="cerceve"><img src="rehber/img/uzay.webp" alt="Uzay Limanı" loading="lazy"></div>
   <figcaption><b>Uzay Limanı.</b> Hazırlık yüzden, roket parçaları ve Hazırlık Deposu.</figcaption></figure>
   <ul>
-    <li><b>Roket Rampası:</b> parçalar ister (2.000 demir, 1.000 kömür, 500 taş, 300 odun, 100 ASTRA). Roketi yapınca "Roket hazır" rozeti ve hazırlık puanı kazanırsın.</li>
+    <li><b>Roket Rampası:</b> parçalar ister (2.000 demir, 1.000 kömür, 500 taş, 300 odun ve 1 ASTRA). Roketi yapınca "Roket hazır" rozeti ve hazırlık puanı kazanırsın.</li>
     <li><b>Yük İskelesi (Hazırlık Deposu):</b> Universe'e götüreceğin hammaddeyi buraya koyarsın. Silodan çıkar, pazara giremez. Kişi başı sınır 4 haftalık üretimindir. Aşama 1'de açılır.</li>
     <li><b>Gözlem Kulesi:</b> şimdilik kilitli; Konsey göstergelerine kısayoldur.</li>
     <li><b>Hazırlık yüzdesi:</b> roket, depo doluluğu, köylü sayısı (100'e göre), asker sayısı (10'a göre) ve Genesis NFT'den oluşur.</li>
@@ -739,6 +743,922 @@
 </section>
 
 <!-- ============ YARDIM ============ -->
+<!-- ============ TEKNİK BAŞVURU: BAŞLA (scripts/rehber-teknik-uret.mjs üretir; elle düzenleme) ============ -->
+
+<section class="bolum" id="t-giris" data-grup="Teknik başvuru" data-ikon="📐">
+  <div class="bolum-baslik"><div class="no">📐</div><div><small>Teknik başvuru</small><h2>Bu bölüm: oyunun bütün sayıları</h2></div></div>
+  <p class="ozet">Bu oyun bir yatırım ve strateji oyunudur; ne kadar kazanıp ne kadar harcayacağını <b>baştan bilmek senin hakkındır</b>. Aşağıdaki bölümlerde her bedel, her limit ve her formül açıkça yazılı.</p>
+  <div class="kutu ozet-kutu" data-s="🧭"><b>Bu bölüm nasıl okunur?</b>
+  <p>Her başlıkta önce <b>kural</b> (düz cümleyle), sonra <b>formül</b>, sonra <b>örnek</b> ve <b>tablolar</b> var. Uzun tablolar "aç / kapa" kutularının içindedir. Sayıların hepsi oyunun ayar dosyasından ve hesap kodundan <b>otomatik üretilmiştir</b>; elle yazılmış sayı yoktur.</p></div>
+  <h3>Önce şunları bil</h3>
+  <ul>
+    <li><b>Sürüm:</b> 2.0.0-dev · <b>Hazırlanma:</b> 15 Ekim 2026. Oyun şu an <b>deneme aşamasındadır</b>: sayılar test sonuçlarına göre ayarlanabilir. Bir ayar değişirse bu sayfa da yenilenir.</li>
+    <li><b>Kesin güncel değer</b> her zaman oyunun ilgili ekranındadır (Kotalarım, Silo, Karakterim, Ekonomi panosu, Hazine). Bu sayfa <i>nasıl hesaplandığını</i> ve temel değerleri anlatır.</li>
+    <li><b>ASTRA bedelleri "temel fiyattır".</b> Oyunda ASTRA'nın dolar değeri çok düşerse ya da yükselirse bedeller bir <b>fiyat çarpanıyla</b> ölçeklenir (<a href="#t-fiyat">fiyat çarpanı</a>). Çarpan 1,0 iken değerler aynen bu sayfadaki gibidir.</li>
+    <li><b>Hammadde karşılıklı ASTRA değerleri</b> (örneğin "seviye bedeli 15,77 ASTRA") pazarın <b>açılış fiyatıyla</b> hesaplanmıştır. Pazar fiyatı oynadıkça bu ASTRA kısmı da oynar.</li>
+    <li><b>Haftalık sıfırlama</b> her Pazartesi 00:01'dedir (Türkiye saati). "Günlük" sayaçlar da Türkiye saatiyle gece yarısı yenilenir.</li>
+  </ul>
+  <h3>Hızlı gitmek için</h3>
+  <ul>
+    <li><a href="#t-limitler">Bütün limitler tek tabloda</a> (günlük, haftalık, küresel)</li>
+    <li><a href="#t-akis">ASTRA nereye gider</a> · <a href="#t-kasalar">Ödül kasaları</a> · <a href="#t-cekim">ASTRA çekimi</a> · <a href="#t-kilit">Kilitli bakiye</a></li>
+    <li><a href="#t-uretim">Üretim ve sefer</a> · <a href="#t-kota">Günlük ve haftalık kota</a> · <a href="#t-otorite">Otorite ve Konsey</a></li>
+    <li><a href="#t-seviye">Seviye atlama bedelleri</a> · <a href="#t-silo">Silo bedelleri</a> · <a href="#t-savas">Asker ve teçhizat</a> · <a href="#t-koy">Köy ve bot</a></li>
+    <li><a href="#t-pazar">Pazar formülleri</a> · <a href="#t-kazanc">Zindan, Kolezyum, boss, çark, piyango</a> · <a href="#t-gelir">Temel gelir ve ücretsiz havuz</a> · <a href="#t-zincir">Zincir sınırları</a></li>
+  </ul>
+</section>
+
+<section class="bolum" id="t-limitler" data-grup="Teknik başvuru" data-ikon="🚦">
+  <div class="bolum-baslik"><div class="no">🚦</div><div><small>Teknik başvuru</small><h2>Bütün limitler tek tabloda</h2></div></div>
+  <p class="ozet">Oyunda "en fazla şu kadar" diyen her sınır: <b>günlük</b>, <b>haftalık</b> ve <b>küresel</b> (herkesin ortak) limitler. Ayrıntısı ilgili bölümde.</p>
+  <h3>⛏️ Hammadde çıkarma (kota)</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
+    <tr><td>Kişisel haftalık çıkarma hakkın (Üretim Hakkı)</td><td>Haftalık</td><td>Her hammadde için ayrı: temel üretim × çalışma süresi × kota katsayısı × senin ağırlığın. Başlangıç ayarlarında ağırlığı 1,0 olan oyuncuya buğdaydan 25.920 birim</td><td>Sana özel</td></tr>
+    <tr><td>Günlük açılan pay</td><td>Günlük</td><td>Haftalık hakkın her gün <b>1/7'si</b> açılır; kullanmadığın birikir (yalnız o hafta içinde)</td><td>Sana özel</td></tr>
+    <tr><td>Başkasının kullanmadığı hak</td><td>Günlük</td><td>Kendi hakkın bitince, toplam çıkardığın miktar açılmış payının <b>3 katına</b> varana dek (ortak kapasitede boş yer varsa) çıkarabilirsin</td><td>Sana özel</td></tr>
+    <tr><td>Dünyanın toplam haftalık kapasitesi</td><td>Haftalık</td><td>Tüm aktif oyuncuların ağırlıkları toplamı × birim hak. Oyuncu arttıkça kapasite büyür, kişi başı hak değişmez</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kota katsayısı (termostat)</td><td>Haftalık</td><td>Başlangıç 0,4; her hafta fiyata göre en çok ±%10; en az 0,05, en çok 1</td><td>Küresel (her hammadde ayrı)</td></tr>
+    <tr><td>Stamina (enerji)</td><td>Sürekli</td><td>En çok: 100 + 50 × (seviye − 1) (ya da 6 alanı aynı anda başlatmaya yetecek kadar); her 150 saniyede 1 yenilenir</td><td>Sana özel</td></tr>
+  </table></div>
+  <h3>🏦 ASTRA çekimi</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
+    <tr><td>En az çekim</td><td>Talep başına</td><td>1.000 ASTRA (sunucu ayarı)</td><td>Sana özel</td></tr>
+    <tr><td>Çekilebilir bakiye</td><td>Anlık</td><td>Yalnız <b>serbest</b> bakiyen (kilitli ve sponsorlu kısım çekilemez)</td><td>Sana özel</td></tr>
+    <tr><td>Çekim zamanı</td><td>Haftalık</td><td>Talepler yalnız <b>Pazartesi 00:01</b>'de, haftalık havuzdan karşılanır. Günlük çekim yoktur</td><td>Herkes</td></tr>
+    <tr><td>Haftalık çekim havuzu</td><td>Haftalık</td><td>Fiyatı en çok %2 düşürecek miktar × fiyat katsayısı (k); ayrıca son 4 haftadaki dış alımın %50'si; en az %20 taban</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kişisel pay</td><td>Haftalık</td><td>Havuz × <b>senin katkı puanın ÷ herkesin toplam puanı</b>; kullanılmayan paylar isteyenlere kiralanır</td><td>Sana özel</td></tr>
+    <tr><td>Çekim ücreti</td><td>Çekim başına</td><td>%3 (fren açıkken %6); ücretin yarısı temel gelire, yarısı yakıma. Kiraladığın hak için %1,5 kira</td><td>Sana özel</td></tr>
+    <tr><td>Sunucunun haftalık gönderim güvenlik tavanı</td><td>Haftalık</td><td>100.000.000 ASTRA (sunucu ayarı; ayrıca oyun cüzdanının bakiyesini aşamaz)</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Oyun Kasası çekimi</td><td>Anlık</td><td>Kesintisiz ve havuzsuz: kasaya sen koyduğun senin paran</td><td>Sana özel</td></tr>
+  </table></div>
+  <h3>🏛️ Ödül kasaları</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
+    <tr><td>Her kasanın haftalık ödeme bütçesi</td><td>Haftalık</td><td>Kasa × oran × sağlık + son 4 hafta girişinin ortalamasının %90'ı. Oranlar: zindan %2,5, kolezyum %2, boss %3, görev %2,5, karnaval %2</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kişi başı haftalık pay tavanı</td><td>Haftalık</td><td>Bütçe × 3 ÷ aktif oyuncu (en az 10 sayılır)</td><td>Sana özel</td></tr>
+    <tr><td>Tek ödül</td><td>İşlem başı</td><td>Kasanın en çok %2'si</td><td>Herkes</td></tr>
+    <tr><td>Kasa zayıfsa ödül küçülür</td><td>Anlık</td><td>Kasa sağlığı &lt; 1 ise ödül sağlıkla çarpılır (en az %15 kalır)</td><td>Herkes</td></tr>
+  </table></div>
+  <h3>⚔️ Oyun içi günlük ve haftalık sınırlar</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
+    <tr><td>Zindan: ödüllü giriş</td><td>Günlük</td><td>5 giriş (ilk giriş silahı aşındırmaz). 6. girişten sonra kapı harcı: katın ödülünün %20'si</td><td>Sana özel</td></tr>
+    <tr><td>Zindan: kişisel ASTRA tavanı</td><td>Günlük</td><td>En az 5 ödüllü girişin değeri; ya da orduya harcadığın × 0,7 ÷ 93 (hangisi büyükse)</td><td>Sana özel</td></tr>
+    <tr><td>Zindan kasası günlük bütçesi</td><td>Günlük</td><td>Kasanın %0,36'sı</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kolezyum: maç</td><td>Günlük</td><td>10 maç; her maça 1 anahtar ve 12 stamina</td><td>Sana özel</td></tr>
+    <tr><td>Kolezyum: ödül</td><td>Günlük</td><td>En çok 125 ASTRA</td><td>Sana özel</td></tr>
+    <tr><td>Kolezyum: gerçek rakip sıralaması</td><td>Haftalık</td><td>İlk 10 oyuncu; kolezyum kasasının %2'si paylaşılır</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Dünya bossu</td><td>Haftalık</td><td>Pazar 18:00 (TSİ) tek savaş; havuz boss kasasının %3'ü</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Çark: hammaddeyle çevirme</td><td>Günlük</td><td>3 çevirme (ASTRA ile çevirmenin günlük sınırı yok)</td><td>Sana özel</td></tr>
+    <tr><td>Çark: kasa şartı</td><td>Anlık</td><td>Karnaval kasasında en az 200 ASTRA yoksa çark kapanır</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Piyango bileti</td><td>Haftalık</td><td>Hesap başına en çok 100 bilet</td><td>Sana özel</td></tr>
+    <tr><td>Pazar: tek işlem</td><td>İşlem başı</td><td>Havuzdaki malın en çok %5'i</td><td>Herkes</td></tr>
+    <tr><td>Pazar: fiyat koridoru</td><td>Sürekli</td><td>Fiyat açılışın 0,5 katının altına inemez, 2,5 katının üstüne çıkamaz</td><td>Herkes</td></tr>
+    <tr><td>İlan pazarı</td><td>Sürekli</td><td>En çok 10 açık ilan; ilan 7 gün durur; komisyon %2</td><td>Sana özel</td></tr>
+    <tr><td>Temel gelir (UBI)</td><td>Haftalık</td><td>3. seviyeden itibaren; tek kişi haftalık kasanın en çok %5'ini alır</td><td>Sana özel</td></tr>
+    <tr><td>Ücretsiz oyuncu havuzu</td><td>Haftalık</td><td>Görev kasasının en çok %1,5'i; aylık piyasa değerinin %1'i; kişi başı en çok 100 $/ay</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Krallık Yolu görev ödülleri</td><td>Hesap başına</td><td>Toplam 994 ASTRA (47 görev 494 + 10 bölüm bonusu 400 + final 100)</td><td>Sana özel</td></tr>
+  </table></div>
+  <h3>🏘️ Yapı ve kayıt sınırları</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
+    <tr><td>Silo seviyesi</td><td>Kalıcı</td><td>18 seviye; ikinci oyun (Universe) açılana kadar en çok 12</td><td>Sana özel</td></tr>
+    <tr><td>Köy evi</td><td>Kalıcı</td><td>En çok 20 ev ve ev sayısı hesap seviyeni geçemez; ev başına 10 köylü</td><td>Sana özel</td></tr>
+    <tr><td>Asker sayısı</td><td>Kalıcı</td><td>Her asker 1 köylü ister (200 köylüye kadar); tek zindan savaşına en çok 18 asker</td><td>Sana özel</td></tr>
+    <tr><td>Vatandaş sayısı (kapı)</td><td>Sürekli</td><td>Başlangıç sınırı 100; aynı internet adresinden günde en çok 3 yeni vatandaş; kayıt harcı 1 ASTRA</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kasa sözleşmesi: tek ödeme</td><td>İşlem başı</td><td>Kasadaki paranın en çok %2'si (kontratta sahibin bile üst sınırı %10)</td><td>Küresel (herkes)</td></tr>
+    <tr><td>Kasa sözleşmesi: günlük toplam</td><td>Kayan 24 saat</td><td>Kasadaki paranın en çok %5'i (kontratta sahibin bile üst sınırı %30)</td><td>Küresel (herkes)</td></tr>
+  </table></div>
+</section>
+
+<section class="bolum" id="t-akis" data-grup="Teknik başvuru" data-ikon="💸">
+  <div class="bolum-baslik"><div class="no">💸</div><div><small>Teknik başvuru</small><h2>ASTRA nereye gider? (harcama bölüşümü)</h2></div></div>
+  <p class="ozet">Oyunda harcadığın her ASTRA dört yere bölünür. Hiçbir ASTRA yok olmaz ve havadan yenisi basılmaz: ya yakılır ya da başka bir kasaya geçer.</p>
+  <h3>Her harcamanın bölüşümü</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Pay</th><th>Oran</th><th>1.000 ASTRA harcayınca</th><th>Ne olur?</th></tr>
+    <tr><td>🔥 Yakım</td><td>%5</td><td>50 ASTRA</td><td>Kalıcı olarak silinir (haftalık hesaplaşmada ölü adrese gönderilir); arz azalır</td></tr>
+    <tr><td>🎨 Yapımcı payı</td><td>%3</td><td>30 ASTRA</td><td>Sabit yapımcı cüzdanına gider</td></tr>
+    <tr><td>🤝 Temel gelir (UBI)</td><td>%6</td><td>60 ASTRA</td><td>O haftanın temel gelir kasasında birikir; Pazartesi 00:01'de oyunculara dağıtılır</td></tr>
+    <tr><td>🏛️ Ödül kasaları</td><td>%86</td><td>860 ASTRA</td><td>Aşağıdaki 8 kasaya bölünür</td></tr>
+  </table></div>
+  <h3>Kasalara bölüşüm (hazine payının içinde)</h3>
+  <p>Hazineye giden %86, sabit oranlarla sekiz kasaya dağılır. 1.000 ASTRA harcandığında her kasaya düşen miktar yanda yazılıdır:</p>
+<div class="tablo-kap"><table>
+    <tr><th>Kasa</th><th>Hazine payının %'si</th><th>1.000 ASTRA harcayınca</th><th>Ne ödeme yapar?</th></tr>
+    <tr><td>🗺️ Zindan Ganimet Kasası</td><td>%27</td><td>232,2 ASTRA</td><td>Zindan zafer ödülleri</td></tr>
+    <tr><td>🏟️ Kolezyum Şampiyonluk Havuzu</td><td>%14</td><td>120,4 ASTRA</td><td>Kolezyum maç ödülü ve haftalık ilk 10</td></tr>
+    <tr><td>🌋 Dünya Bossu Ödül Havuzu</td><td>%12</td><td>103,2 ASTRA</td><td>Pazar günkü boss savaşı payları</td></tr>
+    <tr><td>🛡️ Pazar Geri Alım Kasası</td><td>%15</td><td>129 ASTRA</td><td>Fiyat düşünce hammadde alıp yakar (oyuncuya ödeme yapmaz)</td></tr>
+    <tr><td>📜 Görev ve Ücretsiz Oyuncu Kasası</td><td>%18</td><td>154,8 ASTRA</td><td>Krallık Yolu, promo kodları, ücretsiz oyuncu payı</td></tr>
+    <tr><td>🎪 Karnaval Ödül Havuzu</td><td>%4</td><td>34,4 ASTRA</td><td>Çark ve piyango ödülleri</td></tr>
+    <tr><td>👑 Fatih Kasası</td><td>%5</td><td>43 ASTRA</td><td>18. kat bossunu ilk kez yenene Fatih Ödülü</td></tr>
+    <tr><td>🏛️ Sirius Konseyi Kasası</td><td>%5</td><td>43 ASTRA</td><td>Sirius Konseyi projeleri</td></tr>
+  </table></div>
+  <div class="kutu ipucu" data-s="💡"><b>Bilmen gereken</b>
+  <p>Bu bölüşüm <b>RealmRates</b> adlı bir zincir sözleşmesinden okunur; değiştirmek için <b>24 saatlik bekleme</b> gerekir. Yani oranlar bir gecede değişemez, herkes önceden görür.</p></div>
+  <h3>Başlangıç parası: 200 milyon ASTRA nereye ayrıldı?</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Yer</th><th>Başlangıç tohumu</th><th>Not</th></tr>
+    <tr><td>🏪 Pazar havuzları</td><td>100.000.000 ASTRA</td><td>6 hammaddeye 90.000.000, parça/anahtar/kutu/parşömenlere 10.000.000</td></tr>
+    <tr><td>🗺️ Zindan Ganimet Kasası</td><td>10.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>🏟️ Kolezyum Şampiyonluk Havuzu</td><td>4.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>🌋 Dünya Bossu Ödül Havuzu</td><td>6.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>🛡️ Pazar Geri Alım Kasası</td><td>7.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>📜 Görev ve Ücretsiz Oyuncu Kasası</td><td>8.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>🎪 Karnaval Ödül Havuzu</td><td>3.000.000 ASTRA</td><td>Ödeme kasası</td></tr>
+    <tr><td>👑 Fatih Kasası</td><td>20.000.000 ASTRA</td><td>Yalnız 18. kat bossu için</td></tr>
+    <tr><td>🏛️ Sirius Konseyi Kasası</td><td>10.000.000 ASTRA</td><td>Proje kasası</td></tr>
+    <tr><td>🚀 Universe Tohum Rezervi (kilitli)</td><td>20.000.000 ASTRA</td><td>İkinci oyun açılana kadar kimse kullanamaz</td></tr>
+    <tr><td>🎟️ Piyango kasası</td><td>12.000.000 ASTRA</td><td>Kazanan ödülünü buradan alır</td></tr>
+  </table></div>
+  <p>Toplam: <b>200.000.000 ASTRA</b>.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir askere 205,12 ASTRA ödedin. <b>10,26</b> yanar, <b>6,15</b> yapımcıya gider, <b>12,31</b> temel gelir kasasına girer, kalan <b>176,4</b> sekiz kasaya dağılır (zindan kasasına 47,63 gibi).</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>İki istisna</b>
+  <p><b>Zindan kapı harcı</b> yüzde yüz zindan kasasına gider. <b>Çarkın ASTRA ile çevirme bedelinin %80'i</b> doğrudan karnaval kasasına, kalan %20'i normal bölüşüme girer. Piyango biletlerinin %98'si piyango kasasına, %2'si amorti kasasına gider.</p></div>
+</section>
+
+<section class="bolum" id="t-uretim" data-grup="Teknik başvuru" data-ikon="⛏️">
+  <div class="bolum-baslik"><div class="no">⛏️</div><div><small>Teknik başvuru</small><h2>Üretim hızı, sefer süresi ve stamina</h2></div></div>
+  <p class="ozet">Bir seferin ne kadar sürdüğü, ne kadar ürün getirdiği ve ne kadar enerji harcadığı. Seviye atladıkça <b>dakikalık üretim biraz artar, sefer süresi çok uzar</b>.</p>
+  <h3>1) Dakikalık temel üretim</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Hammadde</th><th>Dakikada</th><th>Saatte</th><th>Günde (24 saat)</th><th>Açılış fiyatı (1 birim)</th></tr>
+    <tr><td>🌾 Buğday</td><td>9</td><td>540</td><td>12.960</td><td>0,009 ASTRA</td></tr>
+    <tr><td>🪨 Taş</td><td>6</td><td>360</td><td>8.640</td><td>0,012 ASTRA</td></tr>
+    <tr><td>🌲 Odun</td><td>5,4</td><td>324</td><td>7.776</td><td>0,025 ASTRA</td></tr>
+    <tr><td>⚫ Kömür</td><td>4,5</td><td>270</td><td>6.480</td><td>0,018 ASTRA</td></tr>
+    <tr><td>⛏️ Demir</td><td>3,6</td><td>216</td><td>5.184</td><td>0,04 ASTRA</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>1,2</td><td>72</td><td>1.728</td><td>0,08 ASTRA</td></tr>
+  </table></div>
+  <p>Bu değerler <b>1. seviyedeki</b> hızdır. Her seviye atlayışta üretim %1 artar; ayrıca köylü bonusu eklenir.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Dakikalık üretim</b> = temel hız × (1 + 0,01 × (seviye − 1)) × (1 + köylü bonusu)</p><p><b>Köylü bonusu</b> = her 10 köylü için +%1, en çok +%20 (200 köylüde dolar). Şifa Bahçesi projesi bitince şifalı ota ayrıca +%5.</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>30. seviyede buğday: 9 × (1 + 0,01 × 29) = 9 × 1,29 = <b>11,61 / dakika</b>. 100 köylün varsa bonus +%10: 11,61 × 1,10 = <b>12,77 / dakika</b>.</p></div>
+  <h3>2) Sefer süresi</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Sefer süresi (dakika)</b> = 18 + (seviye − 1) × 53,78</p><p>1. seviyede 18 dakika, 81. seviyede 72 saat. Nehir Köprüsü projesi bitince süreler %2 kısalır.</p></div>
+  <h3>3) Bir seferin getirisi ve maliyeti</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Sefer ürünü</b> = dakikalık üretim × sefer süresi (en az 10 birim). Sefer başladığı andaki hız geçerlidir; sefer sırasında seviye atlamak geçmişe dönük artırmaz.</p><p><b>Sefer XP'si</b> = 35 × sefer süresi (saat), en az 5.</p><p><b>Sefer stamina bedeli</b> = 12 × (sefer süresi ÷ 18 dk) × üretim çarpanı × 0,99 <sup>(seviye − 1)</sup></p><p><b>En çok stamina</b> = 100 + 50 × (seviye − 1); ama en az 6 alanı birden başlatmaya yetecek kadar (sefer bedelinin 6,5 katı).</p><p><b>Stamina yenilenmesi:</b> her 150 saniyede 1 (saatte 24). İstersen buğdayla doldurursun: 1 stamina = 1 buğday.</p></div>
+  <p>Aşağıda seçili seviyeler görünüyor (köylü bonusu hariç, yalın değerler). Bütün seviyelerin tablosu bu başlığın en altında.</p>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Sefer süresi</th><th>Üretim çarpanı</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>Sefer stamina</th><th>En çok stamina</th><th>Sefer XP'si</th></tr>
+    <tr><td><b>Lv.1</b></td><td>18 dk</td><td>×1</td><td>162</td><td>108</td><td>97</td><td>81</td><td>64</td><td>21</td><td>12 ⚡</td><td>100 ⚡</td><td>10</td></tr>
+    <tr><td><b>Lv.2</b></td><td>72 dk</td><td>×1,01</td><td>654</td><td>436</td><td>392</td><td>327</td><td>261</td><td>87</td><td>48 ⚡</td><td>320 ⚡</td><td>42</td></tr>
+    <tr><td><b>Lv.3</b></td><td>2,1 sa</td><td>×1,02</td><td>1.156</td><td>771</td><td>694</td><td>578</td><td>462</td><td>154</td><td>84 ⚡</td><td>550 ⚡</td><td>73</td></tr>
+    <tr><td><b>Lv.5</b></td><td>3,9 sa</td><td>×1,04</td><td>2.180</td><td>1.453</td><td>1.308</td><td>1.090</td><td>872</td><td>290</td><td>155 ⚡</td><td>1.010 ⚡</td><td>135</td></tr>
+    <tr><td><b>Lv.10</b></td><td>8,4 sa</td><td>×1,09</td><td>4.924</td><td>3.283</td><td>2.954</td><td>2.462</td><td>1.969</td><td>656</td><td>333 ⚡</td><td>2.170 ⚡</td><td>292</td></tr>
+    <tr><td><b>Lv.15</b></td><td>12,9 sa</td><td>×1,14</td><td>7.910</td><td>5.273</td><td>4.746</td><td>3.955</td><td>3.164</td><td>1.054</td><td>509 ⚡</td><td>3.310 ⚡</td><td>449</td></tr>
+    <tr><td><b>Lv.20</b></td><td>17,3 sa</td><td>×1,19</td><td>11.138</td><td>7.425</td><td>6.683</td><td>5.569</td><td>4.455</td><td>1.485</td><td>682 ⚡</td><td>4.440 ⚡</td><td>606</td></tr>
+    <tr><td><b>Lv.25</b></td><td>21,8 sa</td><td>×1,24</td><td>14.608</td><td>9.738</td><td>8.765</td><td>7.304</td><td>5.843</td><td>1.947</td><td>850 ⚡</td><td>5.530 ⚡</td><td>763</td></tr>
+    <tr><td><b>Lv.30</b></td><td>26,3 sa</td><td>×1,29</td><td>18.308</td><td>12.205</td><td>10.985</td><td>9.154</td><td>7.323</td><td>2.441</td><td>1.013 ⚡</td><td>6.590 ⚡</td><td>919</td></tr>
+    <tr><td><b>Lv.40</b></td><td>35,3 sa</td><td>×1,39</td><td>26.458</td><td>17.639</td><td>15.875</td><td>13.229</td><td>10.583</td><td>3.527</td><td>1.324 ⚡</td><td>8.610 ⚡</td><td>1.233</td></tr>
+    <tr><td><b>Lv.50</b></td><td>44,2 sa</td><td>×1,49</td><td>35.576</td><td>23.717</td><td>21.346</td><td>17.788</td><td>14.230</td><td>4.743</td><td>1.610 ⚡</td><td>10.470 ⚡</td><td>1.547</td></tr>
+    <tr><td><b>Lv.60</b></td><td>53,2 sa</td><td>×1,59</td><td>45.663</td><td>30.442</td><td>27.397</td><td>22.831</td><td>18.265</td><td>6.088</td><td>1.869 ⚡</td><td>12.150 ⚡</td><td>1.861</td></tr>
+    <tr><td><b>Lv.70</b></td><td>62,1 sa</td><td>×1,69</td><td>56.702</td><td>37.801</td><td>34.021</td><td>28.351</td><td>22.681</td><td>7.560</td><td>2.099 ⚡</td><td>13.650 ⚡</td><td>2.174</td></tr>
+    <tr><td><b>Lv.81</b></td><td>72 sa</td><td>×1,8</td><td>69.984</td><td>46.656</td><td>41.990</td><td>34.992</td><td>27.993</td><td>9.331</td><td>2.320 ⚡</td><td>15.080 ⚡</td><td>2.520</td></tr>
+  </table></div>
+  <details><summary>📋 Bütün seviyeler (1 – 81)</summary><div><div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Sefer süresi</th><th>Üretim çarpanı</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>Sefer stamina</th><th>En çok stamina</th><th>Sefer XP'si</th></tr>
+    <tr><td><b>Lv.1</b></td><td>18 dk</td><td>×1</td><td>162</td><td>108</td><td>97</td><td>81</td><td>64</td><td>21</td><td>12 ⚡</td><td>100 ⚡</td><td>10</td></tr>
+    <tr><td><b>Lv.2</b></td><td>72 dk</td><td>×1,01</td><td>654</td><td>436</td><td>392</td><td>327</td><td>261</td><td>87</td><td>48 ⚡</td><td>320 ⚡</td><td>42</td></tr>
+    <tr><td><b>Lv.3</b></td><td>2,1 sa</td><td>×1,02</td><td>1.156</td><td>771</td><td>694</td><td>578</td><td>462</td><td>154</td><td>84 ⚡</td><td>550 ⚡</td><td>73</td></tr>
+    <tr><td><b>Lv.4</b></td><td>3 sa</td><td>×1,03</td><td>1.659</td><td>1.106</td><td>995</td><td>829</td><td>663</td><td>221</td><td>119 ⚡</td><td>780 ⚡</td><td>104</td></tr>
+    <tr><td><b>Lv.5</b></td><td>3,9 sa</td><td>×1,04</td><td>2.180</td><td>1.453</td><td>1.308</td><td>1.090</td><td>872</td><td>290</td><td>155 ⚡</td><td>1.010 ⚡</td><td>135</td></tr>
+    <tr><td><b>Lv.6</b></td><td>4,8 sa</td><td>×1,05</td><td>2.712</td><td>1.808</td><td>1.627</td><td>1.356</td><td>1.084</td><td>361</td><td>191 ⚡</td><td>1.250 ⚡</td><td>167</td></tr>
+    <tr><td><b>Lv.7</b></td><td>5,7 sa</td><td>×1,06</td><td>3.253</td><td>2.168</td><td>1.951</td><td>1.626</td><td>1.301</td><td>433</td><td>227 ⚡</td><td>1.480 ⚡</td><td>198</td></tr>
+    <tr><td><b>Lv.8</b></td><td>6,6 sa</td><td>×1,07</td><td>3.794</td><td>2.529</td><td>2.276</td><td>1.897</td><td>1.517</td><td>505</td><td>262 ⚡</td><td>1.710 ⚡</td><td>229</td></tr>
+    <tr><td><b>Lv.9</b></td><td>7,5 sa</td><td>×1,08</td><td>4.354</td><td>2.903</td><td>2.612</td><td>2.177</td><td>1.741</td><td>580</td><td>298 ⚡</td><td>1.940 ⚡</td><td>261</td></tr>
+    <tr><td><b>Lv.10</b></td><td>8,4 sa</td><td>×1,09</td><td>4.924</td><td>3.283</td><td>2.954</td><td>2.462</td><td>1.969</td><td>656</td><td>333 ⚡</td><td>2.170 ⚡</td><td>292</td></tr>
+    <tr><td><b>Lv.11</b></td><td>9,3 sa</td><td>×1,1</td><td>5.504</td><td>3.669</td><td>3.302</td><td>2.752</td><td>2.201</td><td>733</td><td>369 ⚡</td><td>2.400 ⚡</td><td>324</td></tr>
+    <tr><td><b>Lv.12</b></td><td>10,2 sa</td><td>×1,11</td><td>6.093</td><td>4.062</td><td>3.656</td><td>3.046</td><td>2.437</td><td>812</td><td>404 ⚡</td><td>2.630 ⚡</td><td>355</td></tr>
+    <tr><td><b>Lv.13</b></td><td>11,1 sa</td><td>×1,12</td><td>6.683</td><td>4.455</td><td>4.009</td><td>3.341</td><td>2.673</td><td>891</td><td>439 ⚡</td><td>2.860 ⚡</td><td>386</td></tr>
+    <tr><td><b>Lv.14</b></td><td>12 sa</td><td>×1,13</td><td>7.291</td><td>4.861</td><td>4.375</td><td>3.645</td><td>2.916</td><td>972</td><td>474 ⚡</td><td>3.090 ⚡</td><td>418</td></tr>
+    <tr><td><b>Lv.15</b></td><td>12,9 sa</td><td>×1,14</td><td>7.910</td><td>5.273</td><td>4.746</td><td>3.955</td><td>3.164</td><td>1.054</td><td>509 ⚡</td><td>3.310 ⚡</td><td>449</td></tr>
+    <tr><td><b>Lv.16</b></td><td>13,8 sa</td><td>×1,15</td><td>8.538</td><td>5.692</td><td>5.123</td><td>4.269</td><td>3.415</td><td>1.138</td><td>544 ⚡</td><td>3.540 ⚡</td><td>481</td></tr>
+    <tr><td><b>Lv.17</b></td><td>14,6 sa</td><td>×1,16</td><td>9.166</td><td>6.110</td><td>5.499</td><td>4.583</td><td>3.666</td><td>1.222</td><td>578 ⚡</td><td>3.760 ⚡</td><td>512</td></tr>
+    <tr><td><b>Lv.18</b></td><td>15,5 sa</td><td>×1,17</td><td>9.813</td><td>6.542</td><td>5.888</td><td>4.906</td><td>3.925</td><td>1.308</td><td>613 ⚡</td><td>3.990 ⚡</td><td>543</td></tr>
+    <tr><td><b>Lv.19</b></td><td>16,4 sa</td><td>×1,18</td><td>10.471</td><td>6.980</td><td>6.282</td><td>5.235</td><td>4.188</td><td>1.396</td><td>647 ⚡</td><td>4.210 ⚡</td><td>575</td></tr>
+    <tr><td><b>Lv.20</b></td><td>17,3 sa</td><td>×1,19</td><td>11.138</td><td>7.425</td><td>6.683</td><td>5.569</td><td>4.455</td><td>1.485</td><td>682 ⚡</td><td>4.440 ⚡</td><td>606</td></tr>
+    <tr><td><b>Lv.21</b></td><td>18,2 sa</td><td>×1,2</td><td>11.815</td><td>7.876</td><td>7.089</td><td>5.907</td><td>4.726</td><td>1.575</td><td>716 ⚡</td><td>4.660 ⚡</td><td>638</td></tr>
+    <tr><td><b>Lv.22</b></td><td>19,1 sa</td><td>×1,21</td><td>12.490</td><td>8.327</td><td>7.494</td><td>6.245</td><td>4.996</td><td>1.665</td><td>749 ⚡</td><td>4.870 ⚡</td><td>669</td></tr>
+    <tr><td><b>Lv.23</b></td><td>20 sa</td><td>×1,22</td><td>13.186</td><td>8.791</td><td>7.912</td><td>6.593</td><td>5.274</td><td>1.758</td><td>783 ⚡</td><td>5.090 ⚡</td><td>700</td></tr>
+    <tr><td><b>Lv.24</b></td><td>20,9 sa</td><td>×1,23</td><td>13.892</td><td>9.261</td><td>8.335</td><td>6.946</td><td>5.557</td><td>1.852</td><td>817 ⚡</td><td>5.320 ⚡</td><td>732</td></tr>
+    <tr><td><b>Lv.25</b></td><td>21,8 sa</td><td>×1,24</td><td>14.608</td><td>9.738</td><td>8.765</td><td>7.304</td><td>5.843</td><td>1.947</td><td>850 ⚡</td><td>5.530 ⚡</td><td>763</td></tr>
+    <tr><td><b>Lv.26</b></td><td>22,7 sa</td><td>×1,25</td><td>15.322</td><td>10.215</td><td>9.193</td><td>7.661</td><td>6.129</td><td>2.043</td><td>883 ⚡</td><td>5.740 ⚡</td><td>794</td></tr>
+    <tr><td><b>Lv.27</b></td><td>23,6 sa</td><td>×1,26</td><td>16.057</td><td>10.704</td><td>9.634</td><td>8.028</td><td>6.422</td><td>2.140</td><td>916 ⚡</td><td>5.960 ⚡</td><td>826</td></tr>
+    <tr><td><b>Lv.28</b></td><td>24,5 sa</td><td>×1,27</td><td>16.802</td><td>11.201</td><td>10.081</td><td>8.401</td><td>6.720</td><td>2.240</td><td>949 ⚡</td><td>6.170 ⚡</td><td>857</td></tr>
+    <tr><td><b>Lv.29</b></td><td>25,4 sa</td><td>×1,28</td><td>17.556</td><td>11.704</td><td>10.533</td><td>8.778</td><td>7.022</td><td>2.340</td><td>981 ⚡</td><td>6.380 ⚡</td><td>889</td></tr>
+    <tr><td><b>Lv.30</b></td><td>26,3 sa</td><td>×1,29</td><td>18.308</td><td>12.205</td><td>10.985</td><td>9.154</td><td>7.323</td><td>2.441</td><td>1.013 ⚡</td><td>6.590 ⚡</td><td>919</td></tr>
+    <tr><td><b>Lv.31</b></td><td>27,2 sa</td><td>×1,3</td><td>19.082</td><td>12.721</td><td>11.449</td><td>9.541</td><td>7.633</td><td>2.544</td><td>1.046 ⚡</td><td>6.800 ⚡</td><td>951</td></tr>
+    <tr><td><b>Lv.32</b></td><td>28,1 sa</td><td>×1,31</td><td>19.866</td><td>13.244</td><td>11.919</td><td>9.933</td><td>7.946</td><td>2.648</td><td>1.078 ⚡</td><td>7.010 ⚡</td><td>982</td></tr>
+    <tr><td><b>Lv.33</b></td><td>29 sa</td><td>×1,32</td><td>20.659</td><td>13.772</td><td>12.395</td><td>10.329</td><td>8.263</td><td>2.754</td><td>1.109 ⚡</td><td>7.210 ⚡</td><td>1.014</td></tr>
+    <tr><td><b>Lv.34</b></td><td>29,9 sa</td><td>×1,33</td><td>21.462</td><td>14.308</td><td>12.877</td><td>10.731</td><td>8.584</td><td>2.861</td><td>1.141 ⚡</td><td>7.420 ⚡</td><td>1.045</td></tr>
+    <tr><td><b>Lv.35</b></td><td>30,8 sa</td><td>×1,34</td><td>22.262</td><td>14.841</td><td>13.357</td><td>11.131</td><td>8.905</td><td>2.968</td><td>1.172 ⚡</td><td>7.620 ⚡</td><td>1.076</td></tr>
+    <tr><td><b>Lv.36</b></td><td>31,7 sa</td><td>×1,35</td><td>23.085</td><td>15.390</td><td>13.851</td><td>11.542</td><td>9.234</td><td>3.078</td><td>1.203 ⚡</td><td>7.820 ⚡</td><td>1.108</td></tr>
+    <tr><td><b>Lv.37</b></td><td>32,6 sa</td><td>×1,36</td><td>23.916</td><td>15.944</td><td>14.350</td><td>11.958</td><td>9.566</td><td>3.188</td><td>1.234 ⚡</td><td>8.030 ⚡</td><td>1.139</td></tr>
+    <tr><td><b>Lv.38</b></td><td>33,5 sa</td><td>×1,37</td><td>24.758</td><td>16.505</td><td>14.855</td><td>12.379</td><td>9.903</td><td>3.301</td><td>1.264 ⚡</td><td>8.220 ⚡</td><td>1.171</td></tr>
+    <tr><td><b>Lv.39</b></td><td>34,4 sa</td><td>×1,38</td><td>25.597</td><td>17.065</td><td>15.358</td><td>12.798</td><td>10.239</td><td>3.413</td><td>1.294 ⚡</td><td>8.420 ⚡</td><td>1.202</td></tr>
+    <tr><td><b>Lv.40</b></td><td>35,3 sa</td><td>×1,39</td><td>26.458</td><td>17.639</td><td>15.875</td><td>13.229</td><td>10.583</td><td>3.527</td><td>1.324 ⚡</td><td>8.610 ⚡</td><td>1.233</td></tr>
+    <tr><td><b>Lv.41</b></td><td>36,2 sa</td><td>×1,4</td><td>27.329</td><td>18.219</td><td>16.397</td><td>13.664</td><td>10.931</td><td>3.643</td><td>1.354 ⚡</td><td>8.810 ⚡</td><td>1.265</td></tr>
+    <tr><td><b>Lv.42</b></td><td>37,1 sa</td><td>×1,41</td><td>28.209</td><td>18.806</td><td>16.925</td><td>14.104</td><td>11.283</td><td>3.761</td><td>1.384 ⚡</td><td>9.000 ⚡</td><td>1.296</td></tr>
+    <tr><td><b>Lv.43</b></td><td>38 sa</td><td>×1,42</td><td>29.100</td><td>19.400</td><td>17.460</td><td>14.550</td><td>11.640</td><td>3.880</td><td>1.413 ⚡</td><td>9.190 ⚡</td><td>1.328</td></tr>
+    <tr><td><b>Lv.44</b></td><td>38,8 sa</td><td>×1,43</td><td>29.987</td><td>19.991</td><td>17.992</td><td>14.993</td><td>11.994</td><td>3.998</td><td>1.442 ⚡</td><td>9.380 ⚡</td><td>1.359</td></tr>
+    <tr><td><b>Lv.45</b></td><td>39,7 sa</td><td>×1,44</td><td>30.896</td><td>20.597</td><td>18.537</td><td>15.448</td><td>12.358</td><td>4.119</td><td>1.471 ⚡</td><td>9.570 ⚡</td><td>1.390</td></tr>
+    <tr><td><b>Lv.46</b></td><td>40,6 sa</td><td>×1,45</td><td>31.815</td><td>21.210</td><td>19.089</td><td>15.907</td><td>12.726</td><td>4.242</td><td>1.499 ⚡</td><td>9.750 ⚡</td><td>1.422</td></tr>
+    <tr><td><b>Lv.47</b></td><td>41,5 sa</td><td>×1,46</td><td>32.744</td><td>21.829</td><td>19.646</td><td>16.372</td><td>13.097</td><td>4.365</td><td>1.528 ⚡</td><td>9.940 ⚡</td><td>1.453</td></tr>
+    <tr><td><b>Lv.48</b></td><td>42,4 sa</td><td>×1,47</td><td>33.670</td><td>22.446</td><td>20.202</td><td>16.835</td><td>13.468</td><td>4.489</td><td>1.555 ⚡</td><td>10.110 ⚡</td><td>1.484</td></tr>
+    <tr><td><b>Lv.49</b></td><td>43,3 sa</td><td>×1,48</td><td>34.618</td><td>23.079</td><td>20.771</td><td>17.309</td><td>13.847</td><td>4.615</td><td>1.583 ⚡</td><td>10.290 ⚡</td><td>1.516</td></tr>
+    <tr><td><b>Lv.50</b></td><td>44,2 sa</td><td>×1,49</td><td>35.576</td><td>23.717</td><td>21.346</td><td>17.788</td><td>14.230</td><td>4.743</td><td>1.610 ⚡</td><td>10.470 ⚡</td><td>1.547</td></tr>
+    <tr><td><b>Lv.51</b></td><td>45,1 sa</td><td>×1,5</td><td>36.544</td><td>24.363</td><td>21.926</td><td>18.272</td><td>14.617</td><td>4.872</td><td>1.638 ⚡</td><td>10.650 ⚡</td><td>1.579</td></tr>
+    <tr><td><b>Lv.52</b></td><td>46 sa</td><td>×1,51</td><td>37.521</td><td>25.014</td><td>22.513</td><td>18.760</td><td>15.008</td><td>5.002</td><td>1.665 ⚡</td><td>10.830 ⚡</td><td>1.610</td></tr>
+    <tr><td><b>Lv.53</b></td><td>46,9 sa</td><td>×1,52</td><td>38.495</td><td>25.663</td><td>23.097</td><td>19.247</td><td>15.398</td><td>5.132</td><td>1.691 ⚡</td><td>11.000 ⚡</td><td>1.641</td></tr>
+    <tr><td><b>Lv.54</b></td><td>47,8 sa</td><td>×1,53</td><td>39.492</td><td>26.328</td><td>23.695</td><td>19.746</td><td>15.796</td><td>5.265</td><td>1.717 ⚡</td><td>11.170 ⚡</td><td>1.673</td></tr>
+    <tr><td><b>Lv.55</b></td><td>48,7 sa</td><td>×1,54</td><td>40.498</td><td>26.999</td><td>24.299</td><td>20.249</td><td>16.199</td><td>5.399</td><td>1.743 ⚡</td><td>11.330 ⚡</td><td>1.704</td></tr>
+    <tr><td><b>Lv.56</b></td><td>49,6 sa</td><td>×1,55</td><td>41.515</td><td>27.676</td><td>24.909</td><td>20.757</td><td>16.606</td><td>5.535</td><td>1.769 ⚡</td><td>11.500 ⚡</td><td>1.736</td></tr>
+    <tr><td><b>Lv.57</b></td><td>50,5 sa</td><td>×1,56</td><td>42.527</td><td>28.351</td><td>25.516</td><td>21.263</td><td>17.010</td><td>5.670</td><td>1.794 ⚡</td><td>11.670 ⚡</td><td>1.766</td></tr>
+    <tr><td><b>Lv.58</b></td><td>51,4 sa</td><td>×1,57</td><td>43.562</td><td>29.041</td><td>26.137</td><td>21.781</td><td>17.425</td><td>5.808</td><td>1.820 ⚡</td><td>11.830 ⚡</td><td>1.798</td></tr>
+    <tr><td><b>Lv.59</b></td><td>52,3 sa</td><td>×1,58</td><td>44.608</td><td>29.738</td><td>26.764</td><td>22.304</td><td>17.843</td><td>5.947</td><td>1.845 ⚡</td><td>12.000 ⚡</td><td>1.829</td></tr>
+    <tr><td><b>Lv.60</b></td><td>53,2 sa</td><td>×1,59</td><td>45.663</td><td>30.442</td><td>27.397</td><td>22.831</td><td>18.265</td><td>6.088</td><td>1.869 ⚡</td><td>12.150 ⚡</td><td>1.861</td></tr>
+    <tr><td><b>Lv.61</b></td><td>54,1 sa</td><td>×1,6</td><td>46.728</td><td>31.152</td><td>28.036</td><td>23.364</td><td>18.691</td><td>6.230</td><td>1.894 ⚡</td><td>12.320 ⚡</td><td>1.892</td></tr>
+    <tr><td><b>Lv.62</b></td><td>55 sa</td><td>×1,61</td><td>47.788</td><td>31.858</td><td>28.672</td><td>23.894</td><td>19.115</td><td>6.371</td><td>1.917 ⚡</td><td>12.470 ⚡</td><td>1.923</td></tr>
+    <tr><td><b>Lv.63</b></td><td>55,9 sa</td><td>×1,62</td><td>48.872</td><td>32.581</td><td>29.323</td><td>24.436</td><td>19.548</td><td>6.516</td><td>1.941 ⚡</td><td>12.620 ⚡</td><td>1.955</td></tr>
+    <tr><td><b>Lv.64</b></td><td>56,8 sa</td><td>×1,63</td><td>49.966</td><td>33.310</td><td>29.979</td><td>24.983</td><td>19.986</td><td>6.662</td><td>1.965 ⚡</td><td>12.780 ⚡</td><td>1.986</td></tr>
+    <tr><td><b>Lv.65</b></td><td>57,7 sa</td><td>×1,64</td><td>51.069</td><td>34.046</td><td>30.641</td><td>25.534</td><td>20.427</td><td>6.809</td><td>1.988 ⚡</td><td>12.930 ⚡</td><td>2.018</td></tr>
+    <tr><td><b>Lv.66</b></td><td>58,6 sa</td><td>×1,65</td><td>52.168</td><td>34.778</td><td>31.300</td><td>26.084</td><td>20.867</td><td>6.955</td><td>2.011 ⚡</td><td>13.080 ⚡</td><td>2.049</td></tr>
+    <tr><td><b>Lv.67</b></td><td>59,5 sa</td><td>×1,66</td><td>53.290</td><td>35.527</td><td>31.974</td><td>26.645</td><td>21.316</td><td>7.105</td><td>2.033 ⚡</td><td>13.220 ⚡</td><td>2.080</td></tr>
+    <tr><td><b>Lv.68</b></td><td>60,4 sa</td><td>×1,67</td><td>54.423</td><td>36.282</td><td>32.654</td><td>27.211</td><td>21.769</td><td>7.256</td><td>2.056 ⚡</td><td>13.370 ⚡</td><td>2.112</td></tr>
+    <tr><td><b>Lv.69</b></td><td>61,3 sa</td><td>×1,68</td><td>55.566</td><td>37.044</td><td>33.339</td><td>27.783</td><td>22.226</td><td>7.408</td><td>2.078 ⚡</td><td>13.510 ⚡</td><td>2.143</td></tr>
+    <tr><td><b>Lv.70</b></td><td>62,1 sa</td><td>×1,69</td><td>56.702</td><td>37.801</td><td>34.021</td><td>28.351</td><td>22.681</td><td>7.560</td><td>2.099 ⚡</td><td>13.650 ⚡</td><td>2.174</td></tr>
+    <tr><td><b>Lv.71</b></td><td>63 sa</td><td>×1,7</td><td>57.864</td><td>38.576</td><td>34.718</td><td>28.932</td><td>23.145</td><td>7.715</td><td>2.121 ⚡</td><td>13.790 ⚡</td><td>2.206</td></tr>
+    <tr><td><b>Lv.72</b></td><td>63,9 sa</td><td>×1,71</td><td>59.036</td><td>39.357</td><td>35.421</td><td>29.518</td><td>23.614</td><td>7.871</td><td>2.142 ⚡</td><td>13.930 ⚡</td><td>2.237</td></tr>
+    <tr><td><b>Lv.73</b></td><td>64,8 sa</td><td>×1,72</td><td>60.217</td><td>40.144</td><td>36.130</td><td>30.108</td><td>24.086</td><td>8.028</td><td>2.163 ⚡</td><td>14.060 ⚡</td><td>2.269</td></tr>
+    <tr><td><b>Lv.74</b></td><td>65,7 sa</td><td>×1,73</td><td>61.408</td><td>40.938</td><td>36.844</td><td>30.704</td><td>24.563</td><td>8.187</td><td>2.184 ⚡</td><td>14.200 ⚡</td><td>2.300</td></tr>
+    <tr><td><b>Lv.75</b></td><td>66,6 sa</td><td>×1,74</td><td>62.593</td><td>41.728</td><td>37.555</td><td>31.296</td><td>25.037</td><td>8.345</td><td>2.204 ⚡</td><td>14.330 ⚡</td><td>2.331</td></tr>
+    <tr><td><b>Lv.76</b></td><td>67,5 sa</td><td>×1,75</td><td>63.803</td><td>42.535</td><td>38.281</td><td>31.901</td><td>25.521</td><td>8.507</td><td>2.224 ⚡</td><td>14.460 ⚡</td><td>2.363</td></tr>
+    <tr><td><b>Lv.77</b></td><td>68,4 sa</td><td>×1,76</td><td>65.023</td><td>43.348</td><td>39.013</td><td>32.511</td><td>26.009</td><td>8.669</td><td>2.244 ⚡</td><td>14.590 ⚡</td><td>2.394</td></tr>
+    <tr><td><b>Lv.78</b></td><td>69,3 sa</td><td>×1,77</td><td>66.252</td><td>44.168</td><td>39.751</td><td>33.126</td><td>26.501</td><td>8.833</td><td>2.264 ⚡</td><td>14.720 ⚡</td><td>2.426</td></tr>
+    <tr><td><b>Lv.79</b></td><td>70,2 sa</td><td>×1,78</td><td>67.476</td><td>44.984</td><td>40.485</td><td>33.738</td><td>26.990</td><td>8.996</td><td>2.282 ⚡</td><td>14.840 ⚡</td><td>2.457</td></tr>
+    <tr><td><b>Lv.80</b></td><td>71,1 sa</td><td>×1,79</td><td>68.725</td><td>45.816</td><td>41.235</td><td>34.362</td><td>27.490</td><td>9.163</td><td>2.301 ⚡</td><td>14.960 ⚡</td><td>2.488</td></tr>
+    <tr><td><b>Lv.81</b></td><td>72 sa</td><td>×1,8</td><td>69.984</td><td>46.656</td><td>41.990</td><td>34.992</td><td>27.993</td><td>9.331</td><td>2.320 ⚡</td><td>15.080 ⚡</td><td>2.520</td></tr>
+  </table></div></div></details>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>1. seviyede 18 dakikalık bir sefer: odun 97, demir 64, buğday 162 birim getirir ve 12 stamina yer. Altı alanı birden çalıştırsan 72 stamina gider (başlangıç stamina çubuğu 100).</p></div>
+  <h3>4) Aletler</h3>
+  <p>Her hammaddenin kendi aleti vardır (orak, keski, balta, kömür kazması, kazma, ot bıçağı). Bir alet <b>4.320 dakika</b> dayanır; sefer sürdükçe dakikada 1 aşınır. Alet bozulursa o alandaki sefer durur. Onarım bedeli aşağıda "Köy ve bot" başlığında.</p>
+</section>
+
+<section class="bolum" id="t-seviye" data-grup="Teknik başvuru" data-ikon="⭐">
+  <div class="bolum-baslik"><div class="no">⭐</div><div><small>Teknik başvuru</small><h2>Seviye atlama bedelleri (1 → 81)</h2></div></div>
+  <p class="ozet">Her seviye atlayışta <b>ne kadar XP, hangi hammaddeden ne kadar ve kaç ASTRA</b> gittiği. 80 geçişin hepsi aşağıda.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Toplam XP (seviye L'ye kadar)</b> = 2.520 × 1.100 × ((L − 1) ÷ 80) <sup>2,2</sup>  → bir seviyeden sonrakine gereken XP, bu toplamın farkıdır (en az 60). Hedef: günde ~2.520 XP ile 81. seviyeye yaklaşık 1.100 günde varılsın.</p><p><b>Hammadde bedeli</b> = bir "XP döngüsü"nde altı alanda toplanan miktarın <b>yarısı</b>. Döngü sayısı = gereken XP ÷ (6 × sefer XP'si); sefer XP'si = 35 × sefer süresi (saat).</p><p><b>Silo tavanı:</b> hiçbir hammaddenin bedeli, ulaşılabilir en büyük silonun (12. seviye) kapasitesinin <b>%80'ini</b> geçemez. Bu tavanlar: 🌾 10.380 · 🪨 5.038 · 🌲 4.534 · ⚫ 3.778 · ⛏️ 3.184 · 🌿 1.008.</p><p><b>ASTRA bedeli</b> = bu hammaddelerin o anki pazar değeri (tabloda açılış fiyatıyla).</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Sık yapılan hata</b><p>Seviye atlamak için XP tek başına yetmez: bedeldeki <b>hammaddenin hepsi</b> ve ASTRA da siloda/cüzdanında olmalı. Bedel silonun alabileceğinden büyükse oyun sana "önce siloyu yükselt" der.</p></div>
+  <h3>Toplamlar (1 → 81)</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Kalem</th><th>Toplam</th></tr>
+    <tr><td>Gereken XP</td><td>2.772.000</td></tr>
+    <tr><td>🌾 Buğday</td><td>770.203</td></tr>
+    <tr><td>🪨 Taş</td><td>380.652</td></tr>
+    <tr><td>🌲 Odun</td><td>342.573</td></tr>
+    <tr><td>⚫ Kömür</td><td>285.454</td></tr>
+    <tr><td>⛏️ Demir</td><td>239.997</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>76.159</td></tr>
+    <tr><td>ASTRA (açılış fiyatıyla)</td><td>39.275 ASTRA</td></tr>
+  </table></div>
+  <p>Tablolar silo tavanına takılan yerlerde (✂️) hammaddeyi tavandan fazla istemez; bu yüzden orta seviyelerden sonra bedel <b>sabit kalır</b>.</p>
+  <h3>Seçili seviyeler</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Geçiş</th><th>Gereken XP</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>ASTRA</th><th>Not</th></tr>
+    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>243</td><td>162</td><td>146</td><td>122</td><td>97</td><td>32</td><td>15,77</td><td>—</td></tr>
+    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>972</td><td>648</td><td>583</td><td>486</td><td>389</td><td>130</td><td>63,2</td><td>—</td></tr>
+    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>1.701</td><td>1.134</td><td>1.021</td><td>851</td><td>680</td><td>227</td><td>110,56</td><td>—</td></tr>
+    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>3.146</td><td>2.097</td><td>1.887</td><td>1.573</td><td>1.258</td><td>419</td><td>204,38</td><td>—</td></tr>
+    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>9.036</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>510,1</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+  </table></div>
+  <details><summary>📋 Bütün geçişler (1 → 2 … 80 → 81)</summary><div><div class="tablo-kap"><table>
+    <tr><th>Geçiş</th><th>Gereken XP</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>ASTRA</th><th>Not</th></tr>
+    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>243</td><td>162</td><td>146</td><td>122</td><td>97</td><td>32</td><td>15,77</td><td>—</td></tr>
+    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>972</td><td>648</td><td>583</td><td>486</td><td>389</td><td>130</td><td>63,2</td><td>—</td></tr>
+    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>1.701</td><td>1.134</td><td>1.021</td><td>851</td><td>680</td><td>227</td><td>110,56</td><td>—</td></tr>
+    <tr><td><b>Lv.4 → 5</b></td><td>1.786</td><td>2.417</td><td>1.611</td><td>1.450</td><td>1.208</td><td>967</td><td>322</td><td>157,04</td><td>—</td></tr>
+    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>3.146</td><td>2.097</td><td>1.887</td><td>1.573</td><td>1.258</td><td>419</td><td>204,38</td><td>—</td></tr>
+    <tr><td><b>Lv.6 → 7</b></td><td>3.069</td><td>5.166</td><td>3.444</td><td>3.100</td><td>2.583</td><td>2.066</td><td>689</td><td>335,73</td><td>—</td></tr>
+    <tr><td><b>Lv.7 → 8</b></td><td>3.750</td><td>6.138</td><td>4.092</td><td>3.683</td><td>3.069</td><td>2.455</td><td>818</td><td>398,86</td><td>—</td></tr>
+    <tr><td><b>Lv.8 → 9</b></td><td>4.452</td><td>7.092</td><td>4.728</td><td>4.255</td><td>3.546</td><td>2.837</td><td>946</td><td>460,92</td><td>—</td></tr>
+    <tr><td><b>Lv.9 → 10</b></td><td>5.174</td><td>8.064</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>501,7</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>9.036</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>510,1</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.11 → 12</b></td><td>6.666</td><td>10.008</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>518,5</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.12 → 13</b></td><td>7.435</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.13 → 14</b></td><td>8.217</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.14 → 15</b></td><td>9.013</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.16 → 17</b></td><td>10.638</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.17 → 18</b></td><td>11.466</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.18 → 19</b></td><td>12.305</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.19 → 20</b></td><td>13.153</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.21 → 22</b></td><td>14.878</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.22 → 23</b></td><td>15.752</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.23 → 24</b></td><td>16.636</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.24 → 25</b></td><td>17.527</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.26 → 27</b></td><td>19.332</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.27 → 28</b></td><td>20.245</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.28 → 29</b></td><td>21.165</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.29 → 30</b></td><td>22.092</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.31 → 32</b></td><td>23.965</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.32 → 33</b></td><td>24.911</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.33 → 34</b></td><td>25.863</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.34 → 35</b></td><td>26.821</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.35 → 36</b></td><td>27.785</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.36 → 37</b></td><td>28.754</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.37 → 38</b></td><td>29.728</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.38 → 39</b></td><td>30.709</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.39 → 40</b></td><td>31.693</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.41 → 42</b></td><td>33.679</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.42 → 43</b></td><td>34.680</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.43 → 44</b></td><td>35.685</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.44 → 45</b></td><td>36.695</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.45 → 46</b></td><td>37.710</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.46 → 47</b></td><td>38.729</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.47 → 48</b></td><td>39.752</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.48 → 49</b></td><td>40.780</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.49 → 50</b></td><td>41.813</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.51 → 52</b></td><td>43.890</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.52 → 53</b></td><td>44.936</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.53 → 54</b></td><td>45.984</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.54 → 55</b></td><td>47.037</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.55 → 56</b></td><td>48.095</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.56 → 57</b></td><td>49.155</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.57 → 58</b></td><td>50.220</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.58 → 59</b></td><td>51.289</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.59 → 60</b></td><td>52.361</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.61 → 62</b></td><td>54.517</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.62 → 63</b></td><td>55.599</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.63 → 64</b></td><td>56.686</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.64 → 65</b></td><td>57.776</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.65 → 66</b></td><td>58.869</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.66 → 67</b></td><td>59.967</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.67 → 68</b></td><td>61.067</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.68 → 69</b></td><td>62.170</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.69 → 70</b></td><td>63.277</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.71 → 72</b></td><td>65.500</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.72 → 73</b></td><td>66.617</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.73 → 74</b></td><td>67.737</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.74 → 75</b></td><td>68.860</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.75 → 76</b></td><td>69.985</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.76 → 77</b></td><td>71.114</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.77 → 78</b></td><td>72.246</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.78 → 79</b></td><td>73.380</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.79 → 80</b></td><td>74.518</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.80 → 81</b></td><td>75.659</td><td>10.380</td><td>5.038</td><td>4.534</td><td>3.778</td><td>3.184</td><td>1.008</td><td>521,72</td><td>✂️ silo tavanı</td></tr>
+  </table></div></div></details>
+  <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Seviye atlayınca sefer süren uzar. Bu yüzden her seviyede biraz daha az sık, ama daha büyük sefer yaparsın; üretim <b>dakikalık</b> olarak yalnız %1 artar.</p></div>
+</section>
+
+<section class="bolum" id="t-silo" data-grup="Teknik başvuru" data-ikon="📦">
+  <div class="bolum-baslik"><div class="no">📦</div><div><small>Teknik başvuru</small><h2>Silo: kapasite ve yükseltme bedelleri</h2></div></div>
+  <p class="ozet">Her silo seviyesinde ne kadar mal saklayabildiğin ve bir üst seviye için <b>ne kadar hammadde ve ASTRA</b> harcayacağın.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kapasite (seviye L)</b> = 1. seviye kapasite × (büyüme oranı) <sup>(L − 1)</sup>. Büyüme oranı her hammaddede farklıdır: son seviye kapasitesi ÷ ilk seviye kapasitesi'nin 17. kökü. Örnek: buğday 540 → 73.500, aşama başına ×1,335.</p><p><b>1. seviye silo = tek alanın 1 saatlik üretimi</b> (buğday 9 × 60 = 540, taş 6 × 60 = 360 …). Yani ilk silo yaklaşık üç 18 dakikalık seferin ürününü alır; ondan fazlası siloya sığmaz ve seferde bekler.</p><p><b>Parça kapasitesi</b> = 100 + 140 × (L − 1); son seviyede 2.500.</p><p><b>Yükseltme bedeli (L → L+1)</b> = her hammaddede <b>şimdiki kapasitenin yarısı</b> + bu miktarların pazar değeri kadar ASTRA.</p><p><b>Yükseltme şartı:</b> altı ambarın hepsi şimdiki kapasitenin en az %80'i kadar dolu olmalı.</p><p>Büyük Ambar Konsey projesi bitince herkesin silo kapasitesi %5 artar.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>🧩 Parça</th><th>Bedel 🌾</th><th>Bedel 🪨</th><th>Bedel 🌲</th><th>Bedel ⚫</th><th>Bedel ⛏️</th><th>Bedel 🌿</th><th>Bedel ASTRA</th></tr>
+    <tr><td><b>1</b></td><td>540</td><td>360</td><td>324</td><td>270</td><td>216</td><td>72</td><td>100</td><td>270</td><td>180</td><td>162</td><td>135</td><td>108</td><td>36</td><td>17,55</td></tr>
+    <tr><td><b>2</b></td><td>721</td><td>467</td><td>420</td><td>350</td><td>282</td><td>93</td><td>240</td><td>360</td><td>233</td><td>210</td><td>175</td><td>141</td><td>46</td><td>22,82</td></tr>
+    <tr><td><b>3</b></td><td>963</td><td>606</td><td>545</td><td>454</td><td>367</td><td>121</td><td>380</td><td>481</td><td>303</td><td>272</td><td>227</td><td>183</td><td>60</td><td>29,75</td></tr>
+    <tr><td><b>4</b></td><td>1.285</td><td>786</td><td>707</td><td>589</td><td>478</td><td>157</td><td>520</td><td>642</td><td>393</td><td>353</td><td>294</td><td>239</td><td>78</td><td>38,81</td></tr>
+    <tr><td><b>5</b></td><td>1.716</td><td>1.019</td><td>917</td><td>764</td><td>623</td><td>204</td><td>660</td><td>858</td><td>509</td><td>458</td><td>382</td><td>311</td><td>102</td><td>50,67</td></tr>
+    <tr><td><b>6</b></td><td>2.291</td><td>1.322</td><td>1.190</td><td>992</td><td>812</td><td>264</td><td>800</td><td>1.145</td><td>661</td><td>595</td><td>496</td><td>406</td><td>132</td><td>66,11</td></tr>
+    <tr><td><b>7</b></td><td>3.059</td><td>1.715</td><td>1.543</td><td>1.286</td><td>1.058</td><td>343</td><td>940</td><td>1.529</td><td>857</td><td>771</td><td>643</td><td>529</td><td>171</td><td>86,18</td></tr>
+    <tr><td><b>8</b></td><td>4.084</td><td>2.224</td><td>2.002</td><td>1.668</td><td>1.379</td><td>445</td><td>1.080</td><td>2.042</td><td>1.112</td><td>1.001</td><td>834</td><td>689</td><td>222</td><td>112,44</td></tr>
+    <tr><td><b>9</b></td><td>5.452</td><td>2.885</td><td>2.597</td><td>2.164</td><td>1.798</td><td>577</td><td>1.220</td><td>2.726</td><td>1.442</td><td>1.298</td><td>1.082</td><td>899</td><td>288</td><td>146,71</td></tr>
+    <tr><td><b>10</b></td><td>7.280</td><td>3.743</td><td>3.369</td><td>2.807</td><td>2.343</td><td>749</td><td>1.360</td><td>3.640</td><td>1.871</td><td>1.684</td><td>1.403</td><td>1.171</td><td>374</td><td>191,43</td></tr>
+    <tr><td><b>11</b></td><td>9.719</td><td>4.855</td><td>4.370</td><td>3.641</td><td>3.053</td><td>971</td><td>1.500</td><td>4.859</td><td>2.427</td><td>2.185</td><td>1.820</td><td>1.526</td><td>485</td><td>249,78</td></tr>
+    <tr><td><b>12</b></td><td>12.976</td><td>6.298</td><td>5.668</td><td>4.723</td><td>3.980</td><td>1.260</td><td>1.640</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    <tr><td><b>13</b> 🔒</td><td>17.325</td><td>8.169</td><td>7.352</td><td>6.127</td><td>5.186</td><td>1.634</td><td>1.780</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>Universe</td></tr>
+    <tr><td><b>14</b> 🔒</td><td>23.131</td><td>10.597</td><td>9.537</td><td>7.947</td><td>6.759</td><td>2.119</td><td>1.920</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>Universe</td></tr>
+    <tr><td><b>15</b> 🔒</td><td>30.883</td><td>13.745</td><td>12.371</td><td>10.309</td><td>8.809</td><td>2.749</td><td>2.060</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>Universe</td></tr>
+    <tr><td><b>16</b> 🔒</td><td>41.233</td><td>17.830</td><td>16.047</td><td>13.372</td><td>11.481</td><td>3.566</td><td>2.200</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>Universe</td></tr>
+    <tr><td><b>17</b> 🔒</td><td>55.051</td><td>23.128</td><td>20.815</td><td>17.346</td><td>14.962</td><td>4.626</td><td>2.340</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>🔒</td><td>Universe</td></tr>
+    <tr><td><b>18</b> 🔒</td><td>73.500</td><td>30.000</td><td>27.000</td><td>22.500</td><td>19.500</td><td>6.000</td><td>2.500</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>en üst</td></tr>
+  </table></div>
+  <p>🔒 işaretli seviyeler ikinci oyun (Universe) açılana kadar kapalıdır. Üst seviyeler Universe'ten gelen malzeme isteyecektir.</p>
+  <h3>1. seviyeden 12. seviyeye toplam maliyet</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Kalem</th><th>Toplam</th></tr>
+    <tr><td>🌾 Buğday</td><td>18.552</td></tr>
+    <tr><td>🪨 Taş</td><td>9.988</td></tr>
+    <tr><td>🌲 Odun</td><td>8.989</td></tr>
+    <tr><td>⚫ Kömür</td><td>7.491</td></tr>
+    <tr><td>⛏️ Demir</td><td>6.202</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>1.994</td></tr>
+    <tr><td>ASTRA (açılış fiyatıyla)</td><td>1.012 ASTRA</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Silo 3 → 4: buğday kapasiten 963; bedel buğdayda 481 (yarısı) ve 29,75 ASTRA. Şartı sağlamak için altı ambarın da kapasitesinin %80'ini doldurman gerekir: buğday 770 ve diğerleri.</p></div>
+</section>
+
+<section class="bolum" id="t-kota" data-grup="Teknik başvuru" data-ikon="📊">
+  <div class="bolum-baslik"><div class="no">📊</div><div><small>Teknik başvuru</small><h2>Kota: günlük ve haftalık çıkarma limitleri</h2></div></div>
+  <p class="ozet">Hammaddeyi sınırsız çıkaramazsın: her hafta herkesin çıkarabileceği bir <b>ortak kapasite</b> ve senin payın vardır. Sınır, hammaddelerin kıt kalması (ve fiyatın çökmemesi) içindir.</p>
+  <h3>Kural, sade anlatımla</h3>
+  <ol class="adimlar">
+    <li><b>Dünyanın haftalık kapasitesi</b> her hammadde için ayrı hesaplanır. Oyuncu sayısı arttıkça kapasite de büyür; yani <b>kişi başına düşen hak oyuncu sayısına bağlı değildir</b>.</li>
+    <li><b>Senin haftalık hakkın</b> = birim hak × senin <b>ağırlığın</b>. Ağırlık; seviyene, geçen haftaki katkı kademene ve ne kadar düzenli oynadığına bağlıdır.</li>
+    <li>Hakkın <b>her gün 1/7'si açılır</b> ve kullanmadığın o hafta içinde birikir. Pazartesi 00:01'de hepsi sıfırlanır.</li>
+    <li>Hakkın bitince, başkalarının kullanmadığı pay varsa <b>açılmış payının 3 katına kadar</b> çıkarabilirsin.</li>
+  </ol>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Birim hak (hammadde başına, haftalık)</b> = temel hız (dakika) × çalışma dakikası × kota katsayısı × Otorite çarpanı × yönetici çarpanı</p><p><b>Çalışma dakikası</b> = (günlük çalışma saati × 60) × haftada çalışılan gün. Otorite yokken: 20 saat × 6 gün = 7.200 dakika.</p><p><b>Senin hakkın</b> = birim hak × ağırlığın.   <b>Dünya kapasitesi</b> = birim hak × tüm aktif oyuncuların ağırlıkları toplamı.</p><p><b>Ağırlık</b> = seviye faktörü × katkı kademesi çarpanı × aktiflik. Seviye faktörü = en çok 2 olmak üzere 1 + 0,025 × seviye; aktiflik = son 7 günün kaçında sefer topladığın ÷ 7 (en az 0,25; ilk hafta tam sayılır).</p><p><b>Adalet tavanı:</b> hiç kimsenin ağırlığı, dünyadaki en düşük aktif ağırlığın 3 katını geçemez.</p></div>
+  <h3>Başlangıç ayarlarında bir "birim hak"</h3>
+  <p>Kota katsayısı 0,4, Otorite 0. seviye, ağırlık 1,0 iken haftalık hak ve açılış fiyatıyla ASTRA karşılığı:</p>
+<div class="tablo-kap"><table>
+    <tr><th>Hammadde</th><th>Haftalık hak</th><th>Her gün açılan (1/7)</th><th>Açılış fiyatıyla değeri</th></tr>
+    <tr><td>🌾 Buğday</td><td>25.920</td><td>3.703</td><td>233,3 ASTRA</td></tr>
+    <tr><td>🪨 Taş</td><td>17.280</td><td>2.469</td><td>207,4 ASTRA</td></tr>
+    <tr><td>🌲 Odun</td><td>15.552</td><td>2.222</td><td>388,8 ASTRA</td></tr>
+    <tr><td>⚫ Kömür</td><td>12.960</td><td>1.851</td><td>233,3 ASTRA</td></tr>
+    <tr><td>⛏️ Demir</td><td>10.368</td><td>1.481</td><td>414,7 ASTRA</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>3.456</td><td>494</td><td>276,5 ASTRA</td></tr>
+    <tr><td><b>Toplam</b></td><td></td><td></td><td><b>1.754 ASTRA</b></td></tr>
+  </table></div>
+  <p>Bu değerin <b>hepsini toplayıp pazara satmak</b> mümkün değildir: satışta %2 komisyon, %2 hammadde yakımı ve fiyat düşüşü (kayma) vardır; üstelik hammaddenin bir kısmı seviye atlamak, teçhizat, silo gibi yerlere gider.</p>
+  <h3>Dünyanın haftalık kapasitesi oyuncu sayısıyla büyür</h3>
+  <p>Ağırlıklar toplamı = oyuncu sayısı × ortalama ağırlık. Ortalama ağırlığı 1,0 varsayarsak (kota katsayısı 0,4, Otorite 0) dünyanın haftalık kapasitesi:</p>
+<div class="tablo-kap"><table>
+    <tr><th>Oyuncu sayısı</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th></tr>
+    <tr><td><b>1</b></td><td>25.920</td><td>17.280</td><td>15.552</td><td>12.960</td><td>10.368</td><td>3.456</td></tr>
+    <tr><td><b>50</b></td><td>1.296.000</td><td>864.000</td><td>777.600</td><td>648.000</td><td>518.400</td><td>172.800</td></tr>
+    <tr><td><b>100</b></td><td>2.592.000</td><td>1.728.000</td><td>1.555.200</td><td>1.296.000</td><td>1.036.800</td><td>345.600</td></tr>
+    <tr><td><b>500</b></td><td>12.960.000</td><td>8.640.000</td><td>7.776.000</td><td>6.480.000</td><td>5.184.000</td><td>1.728.000</td></tr>
+    <tr><td><b>1.000</b></td><td>25.920.000</td><td>17.280.000</td><td>15.552.000</td><td>12.960.000</td><td>10.368.000</td><td>3.456.000</td></tr>
+  </table></div>
+  <p>Kişi başı hak değişmez; yani kalabalıkta herkes için pay küçülmez. Küçülen şey fiyattır: çok oyuncu çok hammadde üretir, termostat fiyat düşerse kota katsayısını azaltır.</p>
+  <h3>Günlük açılma</h3>
+  <p>Buğdayda 25.920 birimlik haftalık hak için açılan toplam:</p>
+<div class="tablo-kap"><table>
+    <tr><th>Gün</th><th>O güne kadar açılmış toplam</th><th>Yüzde</th></tr>
+    <tr><td>1. gün (Pzt)</td><td>3.702</td><td>%14</td></tr>
+    <tr><td>2. gün (Sal)</td><td>7.405</td><td>%29</td></tr>
+    <tr><td>3. gün (Çar)</td><td>11.108</td><td>%43</td></tr>
+    <tr><td>4. gün (Per)</td><td>14.811</td><td>%57</td></tr>
+    <tr><td>5. gün (Cum)</td><td>18.514</td><td>%71</td></tr>
+    <tr><td>6. gün (Cmt)</td><td>22.217</td><td>%86</td></tr>
+    <tr><td>7. gün (Paz)</td><td>25.920</td><td>%100</td></tr>
+  </table></div>
+  <h3>Kota katsayısı (termostat) ve Otorite ne yapar?</h3>
+  <p>Aşağıdaki tablo, ağırlığı 1,0 olan bir oyuncunun <b>6 hammaddelik toplam haftalık hakkının açılış fiyatıyla değerini</b> gösterir. Satırlar kota katsayısı, sütunlar Otorite seviyesidir:</p>
+<div class="tablo-kap"><table>
+    <tr><th>Kota katsayısı</th><th>Otorite 0</th><th>Otorite 5</th><th>Otorite 10</th><th>Otorite 15</th><th>Otorite 20</th></tr>
+    <tr><td><b>0,05</b></td><td>219 ASTRA</td><td>300 ASTRA</td><td>392 ASTRA</td><td>496 ASTRA</td><td>614 ASTRA</td></tr>
+    <tr><td><b>0,2</b></td><td>877 ASTRA</td><td>1.199 ASTRA</td><td>1.567 ASTRA</td><td>1.985 ASTRA</td><td>2.455 ASTRA</td></tr>
+    <tr><td><b>0,4</b></td><td>1.754 ASTRA</td><td>2.398 ASTRA</td><td>3.135 ASTRA</td><td>3.971 ASTRA</td><td>4.911 ASTRA</td></tr>
+    <tr><td><b>0,7</b></td><td>3.069 ASTRA</td><td>4.196 ASTRA</td><td>5.486 ASTRA</td><td>6.949 ASTRA</td><td>8.594 ASTRA</td></tr>
+    <tr><td><b>1</b></td><td>4.385 ASTRA</td><td>5.995 ASTRA</td><td>7.838 ASTRA</td><td>9.927 ASTRA</td><td>12.277 ASTRA</td></tr>
+  </table></div>
+  <ul>
+    <li><b>Termostat:</b> her hafta bir hammaddenin fiyatı açılış fiyatının <b>üstündeyse</b> o hammaddenin kota katsayısı %10 artar (daha çok çıkarılsın); <b>altındaysa</b> %10 azalır. Böylece fiyat çökmez.</li>
+    <li><b>Otorite:</b> Konsey'in ortak inşaatıdır; her seviye herkesin hakkını %5 artırır, çalışma süresini uzatır (<a href="#t-otorite">bedelleri</a>).</li>
+    <li><b>Yakım kotayı da düşürür:</b> harcanan (yakılan) hammadde o haftanın dünya kapasitesinden <b>kalıcı olarak</b> düşer; yani çok harcayan herkesin kotasını biraz kısar.</li>
+    <li><b>Konsey ortak kasası:</b> çıkardığın miktarın ayrıca %5'i dünya kapasitesinden alınıp Konsey stoğuna girer (senin hakkından da sayılır).</li>
+  </ul>
+  <h3>Ağırlık: örnek değerler</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Seviye faktörü</th><th>Katkı kademesi</th><th>Kademe çarpanı</th><th>Aktiflik</th><th>Ağırlık</th></tr>
+    <tr><td>Lv.1</td><td>1,025</td><td>Yok</td><td>×1</td><td>%100</td><td><b>1,025</b></td></tr>
+    <tr><td>Lv.10</td><td>1,25</td><td>Bronz</td><td>×1,05</td><td>%100</td><td><b>1,313</b></td></tr>
+    <tr><td>Lv.20</td><td>1,5</td><td>Gümüş</td><td>×1,1</td><td>%100</td><td><b>1,65</b></td></tr>
+    <tr><td>Lv.30</td><td>1,75</td><td>Altın</td><td>×1,2</td><td>%100</td><td><b>2,1</b></td></tr>
+    <tr><td>Lv.40</td><td>2</td><td>Platin</td><td>×1,35</td><td>%100</td><td><b>2,7</b></td></tr>
+    <tr><td>Lv.50</td><td>2</td><td>Elmas</td><td>×1,5</td><td>%100</td><td><b>3</b></td></tr>
+    <tr><td>Lv.30</td><td>1,75</td><td>Altın</td><td>×1,2</td><td>%50</td><td><b>1,05</b></td></tr>
+    <tr><td>Lv.20</td><td>1,5</td><td>Yok</td><td>×1</td><td>%25</td><td><b>0,375</b></td></tr>
+  </table></div>
+  <p>Katkı kademeleri <b>geçen haftanın katkı puanına</b> göre belirlenir: Yok ≥ 0 (×1), Bronz ≥ 50 (×1,05), Gümüş ≥ 200 (×1,1), Altın ≥ 500 (×1,2), Platin ≥ 1.500 (×1,35), Elmas ≥ 5.000 (×1,5). Eşikler fiyat çarpanıyla ölçeklenir. Katkı puanı: harcadığın her ASTRA 1 puan; yakılan ya da net satılan hammaddenin değeri 0,5 puan.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Seviye 20, Gümüş kademe, haftanın her günü oynuyorsun: ağırlık = 1,5 × 1,10 × 1,0 = <b>1,65</b>. Haftalık buğday hakkın: 25.920 × 1,65 = <b>42.768</b> birim; her gün bunun 1/7'si açılır.</p></div>
+</section>
+
+<section class="bolum" id="t-otorite" data-grup="Teknik başvuru" data-ikon="🏛️">
+  <div class="bolum-baslik"><div class="no">🏛️</div><div><small>Teknik başvuru</small><h2>Otorite ve Konsey projeleri: maliyetler</h2></div></div>
+  <p class="ozet">Sirius Konseyi herkesin ortak inşaatıdır. <b>Otorite</b> herkesin kotasını büyütür, <b>projeler</b> kalıcı bonus verir. Malzemeyi tek tek oyuncular verir (ASTRA gerekmez).</p>
+  <h3>Madencilik Otoritesi (20 seviye)</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Bir seviyenin bedeli (birim)</b> = 2.000.000 × 1,4 <sup>(seviye)</sup>. 0 → 1 için 2.000.000 birim, her seviyede 1,4 kat.</p><p><b>Karışım:</b> 🌾 Buğday %15, 🪨 Taş %30, 🌲 Odun %15, ⚫ Kömür %20, ⛏️ Demir %15, 🌿 Şifalı Ot %5. Her hammaddenin kendi payı ayrı ayrı dolmalı.</p><p><b>Etkisi:</b> her seviye herkesin hakkını +%5 büyütür; günlük çalışma süresi 20 saatten (0,2 saat/seviye) en çok 24'e, haftalık gün sayısı 6'dan (0,05 gün/seviye) en çok 7'ye çıkar.</p><p><b>Otomatik katkı:</b> çıkarılan her hammaddenin %5'i Konsey stoğuna girer; stok her hammadde için yarı yarıya Otorite'ye ve etkin projeye kendiliğinden aktarılır.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye geçişi</th><th>Toplam birim</th><th>Çalışma süresi</th><th>Herkesin hak çarpanı</th><th>Toplam kapasite (0. seviyeye göre)</th></tr>
+    <tr><td><b>0 → 1</b></td><td>2.000.000</td><td>20,2 sa × 6,05 gün</td><td>×1,05</td><td>×1,07</td></tr>
+    <tr><td><b>1 → 2</b></td><td>2.800.000</td><td>20,4 sa × 6,1 gün</td><td>×1,1</td><td>×1,14</td></tr>
+    <tr><td><b>2 → 3</b></td><td>3.920.000</td><td>20,6 sa × 6,15 gün</td><td>×1,15</td><td>×1,21</td></tr>
+    <tr><td><b>3 → 4</b></td><td>5.488.000</td><td>20,8 sa × 6,2 gün</td><td>×1,2</td><td>×1,29</td></tr>
+    <tr><td><b>4 → 5</b></td><td>7.683.200</td><td>21 sa × 6,25 gün</td><td>×1,25</td><td>×1,37</td></tr>
+    <tr><td><b>5 → 6</b></td><td>10.756.480</td><td>21,2 sa × 6,3 gün</td><td>×1,3</td><td>×1,45</td></tr>
+    <tr><td><b>6 → 7</b></td><td>15.059.072</td><td>21,4 sa × 6,35 gün</td><td>×1,35</td><td>×1,53</td></tr>
+    <tr><td><b>7 → 8</b></td><td>21.082.701</td><td>21,6 sa × 6,4 gün</td><td>×1,4</td><td>×1,61</td></tr>
+    <tr><td><b>8 → 9</b></td><td>29.515.781</td><td>21,8 sa × 6,45 gün</td><td>×1,45</td><td>×1,7</td></tr>
+    <tr><td><b>9 → 10</b></td><td>41.322.094</td><td>22 sa × 6,5 gün</td><td>×1,5</td><td>×1,79</td></tr>
+    <tr><td><b>10 → 11</b></td><td>57.850.931</td><td>22,2 sa × 6,55 gün</td><td>×1,55</td><td>×1,88</td></tr>
+    <tr><td><b>11 → 12</b></td><td>80.991.303</td><td>22,4 sa × 6,6 gün</td><td>×1,6</td><td>×1,97</td></tr>
+    <tr><td><b>12 → 13</b></td><td>113.387.825</td><td>22,6 sa × 6,65 gün</td><td>×1,65</td><td>×2,07</td></tr>
+    <tr><td><b>13 → 14</b></td><td>158.742.955</td><td>22,8 sa × 6,7 gün</td><td>×1,7</td><td>×2,16</td></tr>
+    <tr><td><b>14 → 15</b></td><td>222.240.137</td><td>23 sa × 6,75 gün</td><td>×1,75</td><td>×2,26</td></tr>
+    <tr><td><b>15 → 16</b></td><td>311.136.191</td><td>23,2 sa × 6,8 gün</td><td>×1,8</td><td>×2,37</td></tr>
+    <tr><td><b>16 → 17</b></td><td>435.590.668</td><td>23,4 sa × 6,85 gün</td><td>×1,85</td><td>×2,47</td></tr>
+    <tr><td><b>17 → 18</b></td><td>609.826.935</td><td>23,6 sa × 6,9 gün</td><td>×1,9</td><td>×2,58</td></tr>
+    <tr><td><b>18 → 19</b></td><td>853.757.708</td><td>23,8 sa × 6,95 gün</td><td>×1,95</td><td>×2,69</td></tr>
+    <tr><td><b>19 → 20</b></td><td>1.195.260.792</td><td>24 sa × 7 gün</td><td>×2</td><td>×2,8</td></tr>
+  </table></div>
+  <p>Karışım örneği (0 → 1 seviyesi, 2.000.000 birim): 🌾 Buğday 300.000 · 🪨 Taş 600.000 · 🌲 Odun 300.000 · ⚫ Kömür 400.000 · ⛏️ Demir 300.000 · 🌿 Şifalı Ot 100.000.</p>
+  <h3>Konsey projeleri (5 proje, sırayla)</h3>
+  <p>Her proje <b>6.000.000 birim hammadde</b> ve <b>50.000 emek puanı</b> ister. Emek puanını köylülerin üretir (köylü başına günde 1 puan). Biri açık olur; bitince sıradaki başlar.</p>
+<div class="tablo-kap"><table>
+    <tr><th>Proje</th><th>Etkisi</th><th>Karışım</th></tr>
+    <tr><td>🌉 Nehir Köprüsü</td><td>Sefer süreleri %2 kısalır.</td><td>🌾 %15 · 🪨 %35 · 🌲 %30 · ⚫ %5 · ⛏️ %15</td></tr>
+    <tr><td>🏚️ Büyük Ambar</td><td>Herkesin silosu %5 büyür.</td><td>🌾 %30 · 🪨 %25 · 🌲 %30 · ⛏️ %15</td></tr>
+    <tr><td>🌿 Şifa Bahçesi</td><td>Şifalı ot üretimi %5 artar.</td><td>🌾 %30 · 🪨 %22 · 🌲 %21 · ⚫ %15 · 🌿 %12</td></tr>
+    <tr><td>⚓ Liman Rıhtımı</td><td>Hazırlık Deposu kişi tavanı 2 katına çıkar.</td><td>🪨 %25 · 🌲 %25 · ⚫ %25 · ⛏️ %25</td></tr>
+    <tr><td>🧱 Savunma Duvarı</td><td>Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur.</td><td>🪨 %45 · 🌲 %10 · ⚫ %20 · ⛏️ %25</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir projenin 6.000.000 birimi, 1.000 oyuncu her gün 1.000 birim verirse 6 günde dolar. 100 oyuncuda 60 gün sürer. Bu yüzden Konsey stoğunun otomatik aktarımı önemlidir: çıkarılan her hammaddenin %5'i kendiliğinden buraya gider.</p></div>
+</section>
+
+<section class="bolum" id="t-kilit" data-grup="Teknik başvuru" data-ikon="🔒">
+  <div class="bolum-baslik"><div class="no">🔒</div><div><small>Teknik başvuru</small><h2>Kilitli bakiye: ne zaman açılır?</h2></div></div>
+  <p class="ozet">Kazandığın ASTRA'nın <b>çoğu kilitli</b> gelir: oyunda harcayabilirsin ama çekemezsin. Kilit üç şekilde açılır: harcayarak, zamanla ve her gün oyuna girerek.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kazanç:</b> oyunda kazanılan ASTRA'nın <b>%20'i serbest</b>, <b>%80'i kilitli</b> gelir.</p><p><b>Harcama:</b> önce kilitli bakiye harcanır; ayrıca harcadığın tutarın <b>%20'i kadar</b> kilit daha açılır (serbest olur).</p><p><b>Zaman:</b> kilitli bakiyenin her hafta <b>%1'i</b> kendiliğinden açılır (geçen süreye orantılı, günlük kesirle).</p><p><b>Aktiflik:</b> o gün oyuna girdiysen ek olarak günde %0,2 daha açılır. Her gün girersen bu haftada <b>%1,4</b> ek eder; zamanla birlikte toplam yaklaşık %2,4/hafta.</p><p>Fiyat dalgalanırsa kilit açılma tabanı fiyat katsayısı (k) ile ölçeklenir (0,5 – 1,5).</p></div>
+  <h3>1.000 kilitli ASTRA hiç harcamasan kaç haftada açılır?</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Hafta</th><th>Hiç girmezsen kalan kilitli</th><th>Her gün girersen kalan kilitli</th><th>Her gün girersen açılan toplam</th></tr>
+    <tr><td>1. hafta</td><td>990</td><td>976</td><td>24</td></tr>
+    <tr><td>2. hafta</td><td>980</td><td>953</td><td>47</td></tr>
+    <tr><td>4. hafta</td><td>961</td><td>908</td><td>92</td></tr>
+    <tr><td>8. hafta</td><td>923</td><td>825</td><td>175</td></tr>
+    <tr><td>12. hafta</td><td>886</td><td>749</td><td>251</td></tr>
+    <tr><td>26. hafta</td><td>770</td><td>535</td><td>465</td></tr>
+    <tr><td>52. hafta</td><td>593</td><td>286</td><td>714</td></tr>
+  </table></div>
+  <p>Yani harcamadan yalnız zamana güvenirsen kilidin yarısı <b>yaklaşık 29</b> haftada (her gün girersen) açılır. Oyunda harcamak bunu çok hızlandırır.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Zindandan <b>100 ASTRA</b> kazandın: 20 serbest, 80 kilitli. Sonra bir yükseltme için <b>50 ASTRA</b> harcadın: 50'si kilitliden düşer (kilitli 80 → 30), üstüne harcamanın %20'si olan <b>10 ASTRA</b>'nın kilidi daha açılır (kilitli 30 → 20, serbest 20 → 30). (Harcama her zaman önce kilitli bakiyeden yapılır.)</p></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Pazardan alınan hammaddeye özel kural</b>
+  <p>Kilitli ASTRA ile hammadde alıp pazarda geri satarak kilidi açamazsın: alımda kilit yalnız pazarın aldığı komisyon ve yakım payı kadar açılır, geri satışta o kısım yine kilitli döner. Aynı hammaddeyi alıp satmak katkı puanı da getirmez.</p></div>
+  <p>Oyundan kazandığın <b>her</b> ASTRA bu kuralla (%20 serbest) gelir: zindan, kolezyum, boss, çark, piyango, Krallık Yolu görevleri, Fatih Ödülü ve <b>pazara hammadde satınca aldığın ASTRA</b> da. <b>Ücretsiz oyuncu havuzu payı ve promosyon kodu ödülleri ise tamamen kilitli</b> gelir.</p>
+</section>
+
+<section class="bolum" id="t-cekim" data-grup="Teknik başvuru" data-ikon="🏦">
+  <div class="bolum-baslik"><div class="no">🏦</div><div><small>Teknik başvuru</small><h2>ASTRA çekimi: haftalık, küresel limitler</h2></div></div>
+  <p class="ozet">ASTRA'yı oyundan cüzdanına <b>haftada bir</b>, <b>ortak bir havuzdan</b> çekersin. Havuz, çekilen ASTRA piyasada satılsa fiyatı çok düşürmeyecek kadar küçük tutulur. Böylece kimse "çıkış kapısında" ezilmez ve token değeri korunur.</p>
+  <h3>Adım adım</h3>
+  <ol class="adimlar">
+    <li><b>Şartlar:</b> e-postan doğrulanmış, hesabına cüzdan bağlı, Muhafız Mührü açıksa kod girilmiş olmalı. En az 1.000 ASTRA talep edebilirsin ve yalnız <b>serbest</b> bakiyenden.</li>
+    <li><b>Talep:</b> tutar bakiyenden düşer ve sıraya girer; istersen Pazartesi'den önce iptal edip geri alırsın.</li>
+    <li><b>Hesaplaşma:</b> her Pazartesi 00:01'de (TSİ) haftalık havuz, katkı puanlarına göre herkesin payına bölünür. Payına sığmayan talep <b>bakiyene geri döner</b>; kayıp olmaz.</li>
+    <li><b>Ödeme:</b> net tutar cüzdanına gönderilir (ücret ve kira düşülmüş).</li>
+  </ol>
+  <h3>Haftalık havuz nasıl hesaplanır?</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Fiyat tavanı</b> = fiyatı en çok %2 düşürecek token miktarı. Borsaya geçmeden önce (bağlanma eğrisinde): arz × (1 − √(1 − 0,02)) = arzın %1,005'i. Borsada: havuzdaki token × (1 ÷ √(1 − 0,02) − 1) = havuzun %1,015'i.</p><p><b>Dış alım tavanı</b> = son 28 gündeki piyasadan net token alımı (ve trade sitesinden gelen pay) × 0,5.</p><p><b>Haftalık havuz</b> = en büyüğü( fiyat tavanı × 0,2 ,  en küçüğü( fiyat tavanı × k ,  dış alım tavanı ) ).  <i>k</i> = güncel piyasa değeri ÷ 30 günlük zirve (0,5 – 1,5 arası).</p><p>Ayrıca sunucu ayarı haftalık gönderim tavanı (varsayılan 100.000.000 ASTRA) ve oyun cüzdanındaki bakiye havuzu geçemez.</p><p><b>Kişisel pay</b> = havuz × (senin haftalık katkı puanın ÷ herkesin toplam katkı puanı).</p></div>
+  <h3>Ücret ve "hak kirası"</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Kalem</th><th>Oran</th><th>Ne olur?</th></tr>
+    <tr><td>Çekim ücreti</td><td>%3</td><td>Çekilen miktardan kesilir. Yarısı haftalık temel gelire, yarısı yakıma gider</td></tr>
+    <tr><td>Fren açıkken ücret</td><td>%6</td><td>Piyasa değeri sert düşünce ücret iki katına çıkar</td></tr>
+    <tr><td>Hak kirası</td><td>%1,5</td><td>Kendi payından fazla çekersen, fazla çektiğin miktarın bu kadarı payını kullanmayanlara kira olarak gider</td></tr>
+  </table></div>
+  <h3>Fren (piyasa düşerken koruma)</h3>
+  <ul>
+    <li><b>Açılır:</b> piyasa değerinin son 3 günlük ortalaması, 30 günlük zirvenin %75'inin altına inerse.</li>
+    <li><b>Kapanır:</b> zirvenin %85'ine dönerse ya da 28 gün yeni dip yapılmazsa.</li>
+    <li><b>Açıkken:</b> çekim ücreti %6 olur ve her kasanın haftada %1'i yakılır (fiyat savunması).</li>
+  </ul>
+  <h3>Sayılarla örnek</h3>
+  <p>Bu hafta havuz <b>1.000.000 ASTRA</b> olsun. Üç oyuncu: A (katkı puanı 600, <b>800.000</b> çekmek istiyor), B (puan 300, 100.000 istiyor), C (puan 100, hiç çekmiyor). Toplam puan 1.000 olduğu için payları 600.000 / 300.000 / 100.000'dir.</p>
+<div class="tablo-kap"><table>
+    <tr><th>Oyuncu</th><th>İstediği</th><th>Kendi payı</th><th>Payından aldığı</th><th>Kiraladığı ek</th><th>Ücret (%3)</th><th>Kira (%1,5)</th><th>Eline geçen</th></tr>
+    <tr><td>A</td><td>800.000</td><td>600.000</td><td>600.000</td><td>200.000</td><td>24.000</td><td>3.000</td><td>773.000</td></tr>
+    <tr><td>B</td><td>100.000</td><td>300.000</td><td>100.000</td><td>0</td><td>3.000</td><td>0</td><td>97.000</td></tr>
+    <tr><td>C</td><td>0</td><td>100.000</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+  </table></div>
+  <p>A payından fazla istedi: B'nin kullanmadığı 200.000 ve C'nin 100.000 payından 200.000 kiraladı. A'nın ödediği 3.000 kira, payını kullanmayanlara dağıldı: B 2.000, C 1.000 ASTRA. Toplam ücret 27.000: yarısı (13.500) temel gelire, yarısı (13.500) yakıma.</p>
+  <h3>Oyun Kasası çekimi: bu havuza girmez</h3>
+  <p>Her hesaba, sunucunun yönettiği küçük bir <b>Oyun Kasası</b> adresi açılır. Sen yokken çalışan işler (bot, iyileştirme, onarım) buradan ödenir. Kasaya <b>sen koyduğun</b> ASTRA ve AVAX'ı istediğin an, ücret ve havuz olmadan, bağlı cüzdanına geri çekebilirsin. Kazanılmış ASTRA kasaya aktarılamaz (kesinti kaçışı olmasın diye). Kasadaki paranın "günlük ortalama harcamanın 30 katı"nı (en az 20.000 ASTRA) aşan kısmı otomatik cüzdanına iade edilir.</p>
+  <div class="kutu dikkat" data-s="⚠️"><b>Neden "haftada bir ve havuzdan"?</b><p>Tüm oyuncular aynı gün hepsini çekmeye kalksa fiyat çökerdi. Havuz, her hafta çekimin fiyatı en çok %2 düşüreceği büyüklüğe ayarlandığı için herkes çekebilir ve piyasa dayanır. Çekmediğin pay kaybolmaz; kullanmayana kira olarak döner.</p></div>
+</section>
+
+<section class="bolum" id="t-pazar" data-grup="Teknik başvuru" data-ikon="🏪">
+  <div class="bolum-baslik"><div class="no">🏪</div><div><small>Teknik başvuru</small><h2>Pazar: fiyat nasıl oluşur?</h2></div></div>
+  <p class="ozet">Pazarda alıcı ve satıcı aranmaz: her malın bir <b>havuzu</b> vardır ve fiyat havuzdaki oranla belirlenir. Çok alınan pahalanır, çok satılan ucuzlar.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Fiyat</b> = havuzdaki ASTRA ÷ havuzdaki mal.  <b>Sabit çarpım kuralı:</b> mal × ASTRA = sabit; birini alırsan diğeri oransal olarak değişir.</p><p><b>Satış:</b> havuza giren net mal = sattığın × (1 − 0,02); eline geçen brüt ASTRA = havuz_ASTRA × net_mal ÷ (havuz_mal + net_mal); sonra %2 komisyon düşülür.</p><p><b>Alış:</b> havuzdan çıkan brüt mal = aldığın × (1 + 0,02); ödediğin ASTRA = havuz_ASTRA × brüt_mal ÷ (havuz_mal − brüt_mal), üstüne %2 komisyon.</p><p><b>Hammadde yakımı:</b> alırken ve satarken işlem miktarının %2'si kalıcı olarak yakılır.</p><p><b>Tek işlem sınırı:</b> havuzdaki malın en çok %5'i. <b>Koridor:</b> fiyat açılışın 0,5 katından aşağı inemez, 2,5 katından yukarı çıkamaz.</p></div>
+  <h3>Başlangıç havuzları ve koridor</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Mal</th><th>Açılış fiyatı</th><th>Taban</th><th>Tavan</th><th>Havuz: ASTRA</th><th>Havuz: mal</th><th>Tek işlem sınırı</th></tr>
+    <tr><td>🌾 Buğday</td><td>0,009</td><td>0,0045</td><td>0,0225</td><td>11.970.443</td><td>1.330.049.261</td><td>66.502.463</td></tr>
+    <tr><td>🪨 Taş</td><td>0,012</td><td>0,006</td><td>0,03</td><td>10.640.394</td><td>886.699.507</td><td>44.334.975</td></tr>
+    <tr><td>🌲 Odun</td><td>0,025</td><td>0,0125</td><td>0,0625</td><td>19.950.739</td><td>798.029.557</td><td>39.901.478</td></tr>
+    <tr><td>⚫ Kömür</td><td>0,018</td><td>0,009</td><td>0,045</td><td>11.970.443</td><td>665.024.631</td><td>33.251.232</td></tr>
+    <tr><td>⛏️ Demir</td><td>0,04</td><td>0,02</td><td>0,1</td><td>21.280.788</td><td>532.019.704</td><td>26.600.985</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>0,08</td><td>0,04</td><td>0,2</td><td>14.187.192</td><td>177.339.901</td><td>8.866.995</td></tr>
+    <tr><td>🧩 Teçhizat Parçaları</td><td>0,45</td><td>0,225</td><td>1,125</td><td>4.000.000</td><td>8.888.889</td><td>444.444</td></tr>
+    <tr><td>📦 Pandora Kutusu</td><td>100</td><td>50</td><td>250</td><td>2.000.000</td><td>20.000</td><td>1.000</td></tr>
+    <tr><td>🔑 Arena Anahtarı</td><td>10</td><td>5</td><td>25</td><td>2.000.000</td><td>200.000</td><td>10.000</td></tr>
+    <tr><td>📜 Ordu İyileştirme Parşömeni</td><td>0,3</td><td>0,15</td><td>0,75</td><td>1.000.000</td><td>3.333.333</td><td>166.667</td></tr>
+    <tr><td>⚡ 100 Stamina Doldurma Parşömeni</td><td>0,6</td><td>0,3</td><td>1,5</td><td>1.000.000</td><td>1.666.667</td><td>83.333</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p><b>1.000 odun sat.</b> Havuz 798.029.557 odun ve 19.950.739 ASTRA tutuyor (fiyat 0,025). 980 odun havuza girer, 20 odun yanar. Brüt ASTRA: 24,5; komisyon (%2): 0,49; <b>eline geçen 24,01 ASTRA</b> (ortalama 0,024/odun, fiyat farkı küçük çünkü havuz büyük).</p>
+  <p><b>1.000 odun al.</b> Brüt 1.020 odun çıkar, 20 odun yanar. Havuza 25,5 ASTRA girer + %2 komisyon 0,51 → <b>toplam 26,01 ASTRA</b>.</p></div>
+  <h3>Geri alım (fiyat düşünce destek)</h3>
+  <ul>
+    <li>Bir malın fiyatı açılışın <b>%20'ünden fazla</b> düşerse, Pazar Geri Alım Kasası <b>haftada kendi bakiyesinin %3'üne kadar</b> o malı alıp yakar.</li>
+    <li>Öncelik: hammaddeler %75 (üretim değerine göre), parça %10, anahtar %8, kutu %7.</li>
+    <li>Bu kasa oyuncuya ödeme yapmaz; yalnız fiyatı savunur.</li>
+  </ul>
+  <h3>Komisyon nereye gider?</h3>
+  <p>%2 komisyon her harcama gibi bölünür: %5 yakım, %3 yapımcı, %6 temel gelir, %86 kasalar. Hammadde yakımı ise ASTRA değil <b>hammaddenin kendisi</b> silinir ve o hammaddenin haftalık dünya kapasitesini de düşürür.</p>
+  <h3>Oyuncular arası ilan pazarı</h3>
+  <p>Teçhizat için ayrıdır: satıcı fiyatı kendisi koyar (0,01 – 1.000.000.000 ASTRA); komisyon %2 (yarısı yakılır, yarısı kasalara); ilan 7 gün durur; satıcıya gelen paranın en az %80'i kilitli gelir.</p>
+</section>
+
+<section class="bolum" id="t-kasalar" data-grup="Teknik başvuru" data-ikon="🏛️">
+  <div class="bolum-baslik"><div class="no">🏛️</div><div><small>Teknik başvuru</small><h2>Ödül kasaları: bütçe, sağlık ve kişi tavanı</h2></div></div>
+  <p class="ozet">Ödüller kasalardan çıkar ve kasalar <b>asla yoktan para basmaz</b>. Bunun için her kasanın haftalık bir ödeme bütçesi, kişi başına pay tavanı ve "sağlık" derecesi vardır.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kasa sağlığı</b> = kasadaki ASTRA ÷ hedef rezerv (0 – 1). Hedef rezerv = 12 aylık ödeme = tohum × (1 − (1 − haftalık oran) <sup>52</sup>).</p><p><b>Haftalık bütçe</b> = kasa × oran × en büyüğü(sağlık, 0,15) + son 4 haftanın ortalama girişinin %90'ı.</p><p><b>Kişi başı haftalık pay tavanı</b> = bütçe × 3 ÷ en büyüğü(aktif vatandaş, 10). Böylece biri tüm bütçeyi tek başına süpüremez.</p><p><b>Tek ödül</b> ≤ kasanın %2'si.  <b>Sağlık &lt; 1</b> ise ödül sağlıkla çarpılır (en az %15).</p><p>Bütçe dolunca oyun "Bu haftaki ödeme payı doldu; Pazartesi yenilenir." der: kayıp yok, hak Pazartesi yenilenir.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Kasa</th><th>Tohum</th><th>Haftalık bütçe oranı</th><th>Hedef rezerv (12 ay)</th><th>Başlangıç haftalık bütçe</th><th>100 aktif oyuncuda kişi tavanı</th></tr>
+    <tr><td>🗺️ Zindan Ganimet Kasası</td><td>10.000.000</td><td>%2,5</td><td>7.319.351</td><td>250.000</td><td>7.500</td></tr>
+    <tr><td>🏟️ Kolezyum Şampiyonluk Havuzu</td><td>4.000.000</td><td>%2</td><td>2.601.006</td><td>80.000</td><td>2.400</td></tr>
+    <tr><td>🌋 Dünya Bossu Ödül Havuzu</td><td>6.000.000</td><td>%3</td><td>4.768.934</td><td>180.000</td><td>5.400</td></tr>
+    <tr><td>📜 Görev ve Ücretsiz Oyuncu Kasası</td><td>8.000.000</td><td>%2,5</td><td>4.354.358</td><td>200.000</td><td>6.000</td></tr>
+    <tr><td>🎪 Karnaval Ödül Havuzu</td><td>3.000.000</td><td>%2</td><td>3.000.000</td><td>60.000</td><td>1.800</td></tr>
+  </table></div>
+  <p>Başlangıç haftalık bütçe, kasa dolu ve sağlıklıyken <b>harcamalardan gelen girişi hesaba katmadan</b> yazılmıştır; giriş arttıkça bütçe büyür.</p>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Zindan kasası 10.000.000 ASTRA, oran %2,5: ilk haftanın bütçesi 250.000 ASTRA. 100 aktif oyuncuyla bir kişi bu hafta zindandan en çok 7.500 ASTRA alabilir. Bunun yanında zindanın günlük bütçesi kasanın %0,36'sı: 36.000 ASTRA/gün (herkes için).</p></div>
+  <p>Hedef rezervin altına düşen kasada ödüller küçülür; böylece kasa hiçbir zaman sıfırlanmaz ve yıllarca dayanır. <b>Konsey</b>, <b>Fatih</b> ve <b>Universe</b> kasaları sürekli ödeme yapmaz: proje, tek olay ve kilitli rezerv içindir.</p>
+</section>
+
+<section class="bolum" id="t-savas" data-grup="Teknik başvuru" data-ikon="⚔️">
+  <div class="bolum-baslik"><div class="no">⚔️</div><div><small>Teknik başvuru</small><h2>Asker, teçhizat ve onarım bedelleri</h2></div></div>
+  <p class="ozet">Ordunu kurmanın ve silahlandırmanın maliyeti. Bütün bedeller <b>temel fiyattır</b> (fiyat çarpanı 1,0).</p>
+  <h3>Asker alım bedeli</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>n. asker</b> = 50 × n <sup>2,0365</sup> ASTRA. İlk asker 50, 18. asker tam 18.000 ASTRA'dır.</p><p><b>Köylü şartı:</b> her asker bir köylü sayılır; köylün yoksa asker alamazsın (<a href="#t-koy">köy evleri</a>).</p><p>Asker alırken harcadığın ASTRA normal bölüşüme girer (%5 yakım, %3 yapımcı, %6 temel gelir, %86 kasalar). Bu harcama Fatih Ödülü hesabına da yazılır.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Sıra</th><th>Bedel</th><th>Şu ana kadar toplam</th></tr>
+    <tr><td><b>1. asker</b></td><td>50 ASTRA</td><td>50 ASTRA</td></tr>
+    <tr><td><b>2. asker</b></td><td>205,12 ASTRA</td><td>255 ASTRA</td></tr>
+    <tr><td><b>3. asker</b></td><td>468,39 ASTRA</td><td>724 ASTRA</td></tr>
+    <tr><td><b>4. asker</b></td><td>841,47 ASTRA</td><td>1.565 ASTRA</td></tr>
+    <tr><td><b>5. asker</b></td><td>1.325,53 ASTRA</td><td>2.890 ASTRA</td></tr>
+    <tr><td><b>6. asker</b></td><td>1.921,49 ASTRA</td><td>4.812 ASTRA</td></tr>
+    <tr><td><b>8. asker</b></td><td>3.451,99 ASTRA</td><td>10.894 ASTRA</td></tr>
+    <tr><td><b>10. asker</b></td><td>5.437,79 ASTRA</td><td>20.720 ASTRA</td></tr>
+    <tr><td><b>12. asker</b></td><td>7.882,63 ASTRA</td><td>35.205 ASTRA</td></tr>
+    <tr><td><b>14. asker</b></td><td>10.789,59 ASTRA</td><td>55.273 ASTRA</td></tr>
+    <tr><td><b>16. asker</b></td><td>14.161,29 ASTRA</td><td>81.851 ASTRA</td></tr>
+    <tr><td><b>18. asker</b></td><td>18.000 ASTRA</td><td>115.873 ASTRA</td></tr>
+    <tr><td><b>20. asker</b></td><td>22.307,73 ASTRA</td><td>158.276 ASTRA</td></tr>
+    <tr><td><b>25. asker</b></td><td>35.140,51 ASTRA</td><td>307.131 ASTRA</td></tr>
+    <tr><td><b>30. asker</b></td><td>50.939,76 ASTRA</td><td>529.040 ASTRA</td></tr>
+  </table></div>
+  <p>18 askerin toplamı <b>115.873 ASTRA</b>'dır; "Fatih Ödülü" tavanı da bu rakamdır.</p>
+  <h3>Asker gelişimi</h3>
+  <ul>
+    <li><b>Seviye başına:</b> +6 saldırı, +25 can. Başlangıç: 25 saldırı, 100 can.</li>
+    <li><b>Gereken XP</b> = seviye × 100 (Lv.1 → 2 için 100, Lv.10 → 11 için 1.000 …).</li>
+    <li><b>Yetenekler:</b> 10. seviyede Şok Dalgası, 25'te Zırh Kırıcı, 45'te Sahra Merhemi, 65'te Son Direniş.</li>
+  </ul>
+  <h3>Teçhizat: dövme</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Dövme bedeli</b> = eşyanın "değer dakikası" × dakikalık üretim. Değer dakikası = 2 × saldırı + 0,8 × can. Odun ve demir tam, kömür üçte biri; 1 teçhizat parçası; ayrıca bu hammaddelerin pazar değeri kadar ASTRA.</p><p><b>Yükseltme (L → L+1)</b> = dövme bedelinin 1,18 <sup>L</sup> katı (odun, demir, kömür) + <b>bileme taşı</b>; parça: 2 <sup>L</sup> (1 → 2 → 4 → 8 …). En çok 10. seviye.</p><p><b>Her yükseltmede güç</b> = temel × (1 + 0,35 × (seviye − 1)). Dayanıklılık 13; her zafer −1; yükseltme dayanıklılığı da tamamlar.</p><p><b>Onarım</b> = eşyaya o ana kadar harcanan toplam hammaddenin %10'u × (eksik dayanıklılık ÷ 13) + pazar değeri kadar ASTRA.  <b>Geri dönüşüm:</b> hammaddelerin %70'i geri gelir, ASTRA geri gelmez.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Yuva</th><th>Saldırı</th><th>Can</th><th>Odun</th><th>Demir</th><th>Kömür</th><th>Parça</th><th>ASTRA (dövme)</th></tr>
+    <tr><td>🗡️ Silah</td><td>25</td><td>0</td><td>270</td><td>180</td><td>75</td><td>1</td><td>14,69</td></tr>
+    <tr><td>🪖 Miğfer</td><td>10</td><td>30</td><td>238</td><td>158</td><td>66</td><td>1</td><td>12,93</td></tr>
+    <tr><td>🛡️ Zırh</td><td>0</td><td>60</td><td>259</td><td>173</td><td>72</td><td>1</td><td>14,11</td></tr>
+    <tr><td>👖 Dizlik</td><td>5</td><td>40</td><td>227</td><td>151</td><td>63</td><td>1</td><td>12,34</td></tr>
+    <tr><td>👢 Çizme</td><td>8</td><td>20</td><td>173</td><td>115</td><td>48</td><td>1</td><td>9,4</td></tr>
+  </table></div>
+  <h3>Silahın yükseltme bedelleri (1 → 10)</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Geçiş</th><th>Odun</th><th>Demir</th><th>Kömür</th><th>Taş</th><th>Parça</th><th>ASTRA</th><th>Yeni güç</th></tr>
+    <tr><td><b>1 → 2</b></td><td>319</td><td>212</td><td>89</td><td>118</td><td>2</td><td>18,7</td><td>+34 ATK</td></tr>
+    <tr><td><b>2 → 3</b></td><td>376</td><td>251</td><td>104</td><td>139</td><td>4</td><td>22,07</td><td>+43 ATK</td></tr>
+    <tr><td><b>3 → 4</b></td><td>444</td><td>296</td><td>123</td><td>164</td><td>8</td><td>26,05</td><td>+51 ATK</td></tr>
+    <tr><td><b>4 → 5</b></td><td>523</td><td>349</td><td>145</td><td>194</td><td>16</td><td>30,71</td><td>+60 ATK</td></tr>
+    <tr><td><b>5 → 6</b></td><td>618</td><td>412</td><td>172</td><td>229</td><td>32</td><td>36,28</td><td>+69 ATK</td></tr>
+    <tr><td><b>6 → 7</b></td><td>729</td><td>486</td><td>202</td><td>270</td><td>64</td><td>42,78</td><td>+77 ATK</td></tr>
+    <tr><td><b>7 → 8</b></td><td>860</td><td>573</td><td>239</td><td>319</td><td>128</td><td>50,47</td><td>+86 ATK</td></tr>
+    <tr><td><b>8 → 9</b></td><td>1.015</td><td>677</td><td>282</td><td>376</td><td>256</td><td>59,59</td><td>+95 ATK</td></tr>
+    <tr><td><b>9 → 10</b></td><td>1.198</td><td>798</td><td>333</td><td>444</td><td>512</td><td>70,29</td><td>+104 ATK</td></tr>
+  </table></div>
+  <h3>Bir eşyayı en üst seviyeye (10) çıkarmanın toplamı</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Yuva</th><th>Odun</th><th>Demir</th><th>Kömür</th><th>Taş</th><th>Parça</th><th>ASTRA</th></tr>
+    <tr><td>🗡️ Silah</td><td>6.352</td><td>4.234</td><td>1.764</td><td>2.253</td><td>1.023</td><td>372</td></tr>
+    <tr><td>🪖 Miğfer</td><td>5.597</td><td>3.716</td><td>1.552</td><td>1.983</td><td>1.023</td><td>327</td></tr>
+    <tr><td>🛡️ Zırh</td><td>6.094</td><td>4.068</td><td>1.693</td><td>2.163</td><td>1.023</td><td>357</td></tr>
+    <tr><td>👖 Dizlik</td><td>5.339</td><td>3.552</td><td>1.482</td><td>1.893</td><td>1.023</td><td>312</td></tr>
+    <tr><td>👢 Çizme</td><td>4.068</td><td>2.704</td><td>1.130</td><td>1.442</td><td>1.023</td><td>238</td></tr>
+  </table></div>
+  <p>Beş yuvanın hepsi 10. seviyede: 1.605 ASTRA ve 5.115 parça ister (asker başına).</p>
+  <h3>Küme bonusu</h3>
+  <p>Aynı askerin üstünde 2 parça: +%5 saldırı ve can; 4 parça: +%12; 5 parça (tam takım): <b>+%25</b>.</p>
+  <h3>İyileştirme bedeli (1 can başına)</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Yöntem</th><th>Süre</th><th>Buğday</th><th>ASTRA</th><th>100 can için</th></tr>
+    <tr><td>Pasif (kendiliğinden)</td><td>24 saatte tam can</td><td>0,3</td><td>0,001</td><td>30 buğday + 0,1 ASTRA</td></tr>
+    <tr><td>Hızlı (anında)</td><td>Anında</td><td>3</td><td>0,01</td><td>300 buğday + 1 ASTRA</td></tr>
+    <tr><td>Şifahane (şifalı ot)</td><td>Anında</td><td>1 ot = 5 can</td><td>hızlı bedelin %50'i</td><td>Otla birlikte ASTRA yarıya iner</td></tr>
+  </table></div>
+</section>
+
+<section class="bolum" id="t-koy" data-grup="Teknik başvuru" data-ikon="🏘️">
+  <div class="bolum-baslik"><div class="no">🏘️</div><div><small>Teknik başvuru</small><h2>Köy, alet onarımı, bot ve taverna</h2></div></div>
+  <p class="ozet">Köylülerin nasıl çoğaldığı, ev ve alet onarım bedelleri ve botun günlük ücretinin nasıl hesaplandığı.</p>
+  <h3>Köy evleri</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Başlangıç:</b> 1 ev, 10 köylü. Ev başına 10 köylü kapasitesi.</p><p><b>Büyüme:</b> kapasite boşsa köylü sayısı günde %2 artar. Her köylü günde 2 buğday yer.</p><p><b>Açlık:</b> buğday yetmezse 3 gün sonra köylüler günde %5 azalır.</p><p><b>Faydası:</b> her köylü günde 1 emek puanı üretir; her 10 köylü üretimi %1 artırır (en çok %20); her asker 1 köylü sayılır.</p><p><b>n. evin bedeli</b> = 400 odun, 200 taş, 50 demir × 1,2 <sup>(n − 2)</sup> (2. ev taban). En çok 20 ev ve ev sayısı hesap seviyeni geçemez.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Ev</th><th>Odun</th><th>Taş</th><th>Demir</th><th>Kapasite (köylü)</th></tr>
+    <tr><td><b>2. ev</b></td><td>400</td><td>200</td><td>50</td><td>20</td></tr>
+    <tr><td><b>3. ev</b></td><td>480</td><td>240</td><td>60</td><td>30</td></tr>
+    <tr><td><b>4. ev</b></td><td>576</td><td>288</td><td>72</td><td>40</td></tr>
+    <tr><td><b>5. ev</b></td><td>691</td><td>346</td><td>86</td><td>50</td></tr>
+    <tr><td><b>6. ev</b></td><td>829</td><td>415</td><td>104</td><td>60</td></tr>
+    <tr><td><b>8. ev</b></td><td>1.194</td><td>597</td><td>149</td><td>80</td></tr>
+    <tr><td><b>10. ev</b></td><td>1.720</td><td>860</td><td>215</td><td>100</td></tr>
+    <tr><td><b>12. ev</b></td><td>2.477</td><td>1.238</td><td>310</td><td>120</td></tr>
+    <tr><td><b>15. ev</b></td><td>4.280</td><td>2.140</td><td>535</td><td>150</td></tr>
+    <tr><td><b>18. ev</b></td><td>7.395</td><td>3.698</td><td>924</td><td>180</td></tr>
+    <tr><td><b>20. ev</b></td><td>10.649</td><td>5.325</td><td>1.331</td><td>200</td></tr>
+  </table></div>
+  <h3>Alet onarımı (tam aşınmış alet)</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Odun</b> = eksik dakika × (dakikalık odun üretimi × %25 ÷ 6 alet).  <b>Demir</b> aynı şekilde demir üretiminden.</p><p><b>ASTRA</b> = bu odun ve demirin pazar değerinin %30'i.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Odun</th><th>Demir</th><th>ASTRA</th></tr>
+    <tr><td><b>Lv.1</b></td><td>972</td><td>648</td><td>14,47</td></tr>
+    <tr><td><b>Lv.10</b></td><td>1.060</td><td>707</td><td>15,78</td></tr>
+    <tr><td><b>Lv.20</b></td><td>1.157</td><td>772</td><td>17,23</td></tr>
+    <tr><td><b>Lv.30</b></td><td>1.254</td><td>836</td><td>18,67</td></tr>
+    <tr><td><b>Lv.50</b></td><td>1.449</td><td>966</td><td>21,57</td></tr>
+    <tr><td><b>Lv.81</b></td><td>1.750</td><td>1.167</td><td>26,06</td></tr>
+  </table></div>
+  <h3>Otomasyon botu (Taverna)</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Günlük net kâr</b> = 24 saatlik üretimin pazar değeri − o üretim için harcanan stamina (buğday) − alet aşınma bedeli. Üretim, senin <b>kendi üretim hakkınla</b> sınırlanır.</p><p><b>Bot ücreti (24 saat)</b> = net kârın <b>%50'si</b> (en az 1 ASTRA). 6 saatlik paket = günlüğün ¼'ü (en az 0,5). İlk kez 1 saat ücretsiz deneme.</p><p><b>Güvenlik payı:</b> bot kasada her zaman en az 5 ASTRA (oto-yenileme açıksa ertesi günün ücreti) bırakır. Oyun kapalıyken en çok 168 saat telafi eder.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Brüt üretim değeri/gün</th><th>Stamina (buğday)</th><th>Alet aşınması</th><th>Net kâr/gün</th><th>24 saatlik bot ücreti</th></tr>
+    <tr><td><b>Lv.1</b></td><td>877</td><td>46,7</td><td>130,6</td><td>79,6</td><td>39,8</td></tr>
+    <tr><td><b>Lv.10</b></td><td>955,9</td><td>46,4</td><td>142,3</td><td>124,5</td><td>62,2</td></tr>
+    <tr><td><b>Lv.20</b></td><td>1.043,6</td><td>45,8</td><td>155,4</td><td>174,7</td><td>87,3</td></tr>
+    <tr><td><b>Lv.30</b></td><td>1.131,3</td><td>44,8</td><td>168,4</td><td>225,3</td><td>112,6</td></tr>
+  </table></div>
+  <p>Değerler <b>haftanın ilk günü</b> için, açılış fiyatlarıyla ve ağırlığı 1,0 olan bir oyuncu için hesaplanmıştır: o gün yalnız günlük açılan pay (haftalık hakkın 1/7'si) kullanılabildiği için ücret düşüktür. Hafta ilerledikçe kullanmadığın hak biriktiği için, pazar fiyatı ve kalan kotan değiştikçe ücret de yükselir. Ücretin <b>%50 yakım + kasalar</b> olarak normal bölüşüme girer.</p>
+</section>
+
+<section class="bolum" id="t-kazanc" data-grup="Teknik başvuru" data-ikon="💰">
+  <div class="bolum-baslik"><div class="no">💰</div><div><small>Teknik başvuru</small><h2>Kazanç kaynakları: zindan, kolezyum, boss, çark, piyango</h2></div></div>
+  <p class="ozet">ASTRA kazandıran bütün yollar, her birinin sınırı ve ödülün hangi kasadan çıktığı.</p>
+  <h3>🗺️ Zindan</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Zafer ödülü</b> = 0,9 ASTRA × canavar seviyesi (9. ve 18. seviyede ×3). Ödül zindan kasasından çıkar ve %20'i serbest, kalanı kilitli gelir.</p><p><b>Günlük giriş:</b> 5 ödüllü giriş; sonrası kapı harcıyla (ödülün %20'si, tamamı zindan kasasına) ödüllü, ödenmezse yalnız deneyim.</p><p><b>Kişisel günlük tavan</b> = en büyüğü( 5 × ulaştığın en değerli katın ödülü ,  orduya harcadığın ASTRA × 0,7 ÷ 93 ).</p><p><b>Her giriş stamina ister:</b> asker başına 5 + canavar seviyesi (tablo aşağıda).</p><p><b>Fatih Ödülü:</b> 18. kat bossunu ilk kez yenince, orduya harcadığın − zindandan kazandığın fark (en çok 18 askerin toplam fiyatı kadar) Fatih kasasından bir defaya mahsus ödenir.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Canavar</th><th>Can</th><th>Saldırı</th><th>Ödül (ASTRA)</th><th>Kapı harcı</th><th>Stamina/asker</th><th>Asker XP</th></tr>
+    <tr><td><b>Sv.1</b> (Kat 1)</td><td>🟢 Bataklık Balçığı</td><td>200</td><td>30</td><td>0,9</td><td>0,18</td><td>6</td><td>40</td></tr>
+    <tr><td><b>Sv.2</b> (Kat 1)</td><td>👺 Mağara Goblini</td><td>380</td><td>50</td><td>1,8</td><td>0,36</td><td>7</td><td>80</td></tr>
+    <tr><td><b>Sv.3</b> (Kat 1)</td><td>🐺 Gölge Kurdu</td><td>600</td><td>75</td><td>2,7</td><td>0,54</td><td>8</td><td>130</td></tr>
+    <tr><td><b>Sv.4</b> (Kat 2)</td><td>💀 Kemik Mahzeni İskeletleri</td><td>850</td><td>105</td><td>3,6</td><td>0,72</td><td>9</td><td>200</td></tr>
+    <tr><td><b>Sv.5</b> (Kat 2)</td><td>🧙‍♂️ Lanetli Kemik Büyücüsü</td><td>1.150</td><td>130</td><td>4,5</td><td>0,9</td><td>10</td><td>260</td></tr>
+    <tr><td><b>Sv.6</b> (Kat 2)</td><td>🗡️ Kemik Taht Muhafızı</td><td>1.450</td><td>155</td><td>5,4</td><td>1,08</td><td>11</td><td>320</td></tr>
+    <tr><td><b>Sv.7</b> (Kat 3)</td><td>🧙‍♂️ Karanlık Tarikatçı</td><td>1.800</td><td>185</td><td>6,3</td><td>1,26</td><td>12</td><td>400</td></tr>
+    <tr><td><b>Sv.8</b> (Kat 3)</td><td>🐺 Cehennem Tazısı</td><td>2.200</td><td>215</td><td>7,2</td><td>1,44</td><td>13</td><td>480</td></tr>
+    <tr><td><b>Sv.9</b> (Kat 3)</td><td>🗿 Kadim Taş Golyat</td><td>9.500</td><td>520</td><td>24,3</td><td>4,86</td><td>14</td><td>1.800</td></tr>
+    <tr><td><b>Sv.10</b> (Kat 4)</td><td>🧟 Sargılı Mumyalar</td><td>2.800</td><td>245</td><td>9</td><td>1,8</td><td>15</td><td>560</td></tr>
+    <tr><td><b>Sv.11</b> (Kat 4)</td><td>👻 Gölge Hayaletler</td><td>3.200</td><td>270</td><td>9,9</td><td>1,98</td><td>16</td><td>640</td></tr>
+    <tr><td><b>Sv.12</b> (Kat 4)</td><td>👑 Lanetli Firavun</td><td>3.700</td><td>300</td><td>10,8</td><td>2,16</td><td>17</td><td>720</td></tr>
+    <tr><td><b>Sv.13</b> (Kat 5)</td><td>😈 Ateş İblisleri</td><td>4.200</td><td>330</td><td>11,7</td><td>2,34</td><td>18</td><td>800</td></tr>
+    <tr><td><b>Sv.14</b> (Kat 5)</td><td>🌋 Lav Elementalleri</td><td>4.700</td><td>360</td><td>12,6</td><td>2,52</td><td>19</td><td>880</td></tr>
+    <tr><td><b>Sv.15</b> (Kat 5)</td><td>⚔️ Obsidyen Berserker</td><td>5.300</td><td>395</td><td>13,5</td><td>2,7</td><td>20</td><td>960</td></tr>
+    <tr><td><b>Sv.16</b> (Kat 6)</td><td>🛡️ Kıyamet Şövalyesi</td><td>6.000</td><td>430</td><td>14,4</td><td>2,88</td><td>21</td><td>1.100</td></tr>
+    <tr><td><b>Sv.17</b> (Kat 6)</td><td>👁️ Kadim Gölge Lordu</td><td>7.000</td><td>470</td><td>15,3</td><td>3,06</td><td>22</td><td>1.300</td></tr>
+    <tr><td><b>Sv.18</b> (Kat 6)</td><td>🐉 Kıyamet Ejderhası IGNIS</td><td>38.000</td><td>1.250</td><td>48,6</td><td>9,72</td><td>23</td><td>6.000</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir oyuncu orduya <b>10.000 ASTRA</b> harcadı ve 12. kata kadar açtı. Kişisel günlük tavan = en büyüğü(5 × 10,8 = 54, 10.000 × 0,7 ÷ 93 = 75,3) = <b>75,3 ASTRA/gün</b>.</p></div>
+  <h3>🏟️ Kolezyum</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Maç ödülü</b> = en küçüğü( 25 × lig çarpanı ,  kolezyum kasasının %0,02'si ). Günlük ödül tavanı 125 ASTRA.</p><p><b>Giriş:</b> 1 anahtar + 12 stamina; günde en çok 10 maç. Rakip puanı seninkinin ±100 civarındadır; puan değişimi ELO (K = 32), başlangıç 1.000.</p><p><b>Gerçek rakiplerle sıralama:</b> 1v1 zaferi 1 puan, 3v3 zaferi 3 puan. Haftalık ilk 10 oyuncu, kolezyum kasasının %2'sini şu paylarla alır: 1. %25, 2. %18, 3. %14, 4. %10, 5. %8, 6. %7, 7. %6, 8. %5, 9. %4, 10. %3.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Lig</th><th>En az puan</th><th>Maç ödül çarpanı</th><th>Maç ödülü (taban)</th></tr>
+    <tr><td>🥉 Bronz Gladyatör</td><td>0</td><td>×1</td><td>25 ASTRA</td></tr>
+    <tr><td>🥈 Gümüş Gladyatör</td><td>1.150</td><td>×1,1</td><td>27,5 ASTRA</td></tr>
+    <tr><td>🥇 Altın Gladyatör</td><td>1.300</td><td>×1,3</td><td>32,5 ASTRA</td></tr>
+    <tr><td>💎 Elmas Gladyatör</td><td>1.500</td><td>×1,6</td><td>40 ASTRA</td></tr>
+    <tr><td>👑 Efsanevi Şampiyon</td><td>1.800</td><td>×2</td><td>50 ASTRA</td></tr>
+  </table></div>
+  <h3>🌋 Dünya bossu</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Zamanı:</b> her Pazar 18:00 (TSİ); tek otomatik savaş. Ordunu Pazar'dan önce "kilitlersin".</p><p><b>Hasar</b> = (toplam saldırı × 1,0 + toplam can × 0,25) × <b>beceri çeşitliliği çarpanı</b>. Çeşitlilik: ilk rolden sonraki her farklı rol için +%6, en çok +%50 (Tank, AoE, Şifacı, Anti-Tank, Kontrol, Berserker, Hayatta Kalma).</p><p><b>Haftalık havuz</b> = boss kasasının %3'ü.  <b>Ödülün</b> = havuz × (senin hasarın ÷ geçen haftanın toplam krallık hasarı ya da boss canı 1.000.000; hangisi büyükse).</p><p><b>Erken çekilme cezası:</b> tahmini kazancının %18'i (Savunma Duvarı projesi bitince %12).</p></div>
+  <h3>🎡 Şans çarkı</h3>
+  <p>Bir çevirme <b>1 ASTRA</b>'dır (ya da dengi hammadde ya da bilet). Ortalama geri dönüş: <b>%83,4</b> (24 saatlik bot ikramiyesi sayılmadan), bot dahil <b>%92,6</b>. Amorti bilet parçaları (3 parça = 1 bedava çevirme) hesaba katılmıştır. ASTRA ile çevirme bedelinin %80'i karnaval kasasına girer; ödüller oradan çıkar.</p>
+<div class="tablo-kap"><table>
+    <tr><th>Ödül</th><th>Şans</th><th>Değeri (ASTRA)</th></tr>
+    <tr><td>🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)</td><td>%0,02</td><td>460</td></tr>
+    <tr><td>💎 50 ASTRA BÜYÜK İKRAMİYE</td><td>%0,06</td><td>50</td></tr>
+    <tr><td>10 ASTRA Değerinde Odun</td><td>%0,3</td><td>10</td></tr>
+    <tr><td>10 ASTRA Değerinde Demir</td><td>%0,3</td><td>10</td></tr>
+    <tr><td>10 ASTRA Değerinde Buğday</td><td>%0,3</td><td>10</td></tr>
+    <tr><td>👑 10 ASTRA İKRAMİYE (10×)</td><td>%0,5</td><td>10</td></tr>
+    <tr><td>1 Pandora Kutusu Anahtarı</td><td>%0,08</td><td>10</td></tr>
+    <tr><td>10 Teçhizat Parçası</td><td>%0,2</td><td>4,5</td></tr>
+    <tr><td>2 ASTRA Nakit Ödül (2×)</td><td>%8</td><td>2</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Taş</td><td>%7</td><td>1</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Kömür</td><td>%7</td><td>1</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot</td><td>%7</td><td>1</td></tr>
+    <tr><td>0,5 ASTRA Teselli Ödülü</td><td>%29</td><td>0,5</td></tr>
+    <tr><td>Amorti Çark Bileti (3 Adet = 1 Çevirme)</td><td>%39,74</td><td>0,33</td></tr>
+    <tr><td>AlphAvax Vercel App Özel Coin Analiz Bileti</td><td>%0,5</td><td>0</td></tr>
+  </table></div>
+  <h3>🎟️ Haftalık piyango</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Bilet:</b> 1 ASTRA. Bedelin %98'i piyango kasasına, %2'si amorti kasasına. Hesap başına haftada en çok 100 bilet.</p><p><b>Çekiliş:</b> haftada TEK kazanan (Pazartesi 00:01). Şansın = senin biletlerin ÷ toplam bilet. Kazanan, biletlerine ödediğinin <b>2 katını</b> alır; biletleri yanar.</p><p><b>Kazanamayanların biletleri</b> yanmaz, sonraki haftaya devreder; ama her çekilişte ödenen değerleri %5 düşer (en çok yarıya kadar).</p><p><b>Kasa bitince:</b> kazanan kasada kalanı alır, amorti kasası kalan biletlere bölünür ve biletler kapanır; piyango sıfırdan dolar.</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Toplam 1.000 bilet var, sen 20 tane aldın: şansın %2. Kazanırsan 20 × 1 × 2 = <b>40 ASTRA</b>. Kazanmazsan biletlerin sonraki haftaya geçer, değerleri %5 düşer.</p></div>
+</section>
+
+<section class="bolum" id="t-gelir" data-grup="Teknik başvuru" data-ikon="🎁">
+  <div class="bolum-baslik"><div class="no">🎁</div><div><small>Teknik başvuru</small><h2>Temel gelir, ücretsiz oyuncu havuzu ve kapı</h2></div></div>
+  <p class="ozet">Para yatırmadan da oynayanlara ve aktif herkese giden düzenli paylar; ve oyuna giriş sınırı.</p>
+  <h3>🤝 Temel gelir (UBI)</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kasa:</b> bir haftada harcanan her ASTRA'nın %6'sı + çekim ücretinin yarısı + önceki haftadan çekilmeyen pay. Pazartesi 00:01'de açılır.</p><p><b>Hak:</b> 3. seviye ve üstü, son 2 haftada oynamış, izinde olmayan oyuncular.</p><p><b>Ağırlık</b> W(L) = 1 + 0,75 × √(L − 1).  <b>Payın</b> = kasa × W(sen) ÷ (tüm hak sahiplerinin W toplamı); tek kişi en çok kasanın %5'ini alır, artanı kasada kalıp sonraki haftaya geçer.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Seviye</th><th>Ağırlık W(L)</th></tr>
+    <tr><td>Lv.3</td><td>2,06</td></tr>
+    <tr><td>Lv.5</td><td>2,5</td></tr>
+    <tr><td>Lv.10</td><td>3,25</td></tr>
+    <tr><td>Lv.20</td><td>4,27</td></tr>
+    <tr><td>Lv.30</td><td>5,04</td></tr>
+    <tr><td>Lv.40</td><td>5,68</td></tr>
+    <tr><td>Lv.50</td><td>6,25</td></tr>
+    <tr><td>Lv.60</td><td>6,76</td></tr>
+    <tr><td>Lv.70</td><td>7,23</td></tr>
+    <tr><td>Lv.81</td><td>7,71</td></tr>
+  </table></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bu haftanın kasası 100.000 ASTRA, hak sahiplerinin W toplamı 400 olsun. 30. seviyedeki bir oyuncu (W = 5,04) kasadan 100.000 × 5,04 ÷ 400 = <b>1.260 ASTRA</b> alır.</p></div>
+  <h3>🎁 Ücretsiz oyuncu havuzu</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Kimler?</b> hiç para yatırmamış, e-postası doğrulanmış, en az 3. seviye, o hafta en az 1 katkı puanı toplamış (fiyat çarpanıyla ölçeklenir) ve izinde olmayan oyuncular.</p><p><b>Havuz büyüklüğü (haftalık)</b> = en küçüğü( piyasa değerinin %1'i ÷ 4,33 hafta, kişi başı 100 $ × kişi ÷ 4,33, görev kasasının %1,5'i ).</p><p><b>Kişisel ağırlık</b> = en küçüğü(katkı puanın, 100) <sup>1,5</sup> × sadakat çarpanı. Sadakat çarpanı her üst üste hafta +%10 (en çok ×2); bir hafta kaçırırsan seri yarıya iner.</p><p><b>Kişi başı tavan</b> kendi ağırlığınla ölçeklenir; tam tavan için 10 katkı puanı ve en yüksek seri gerekir. Pay <b>tamamen kilitli</b> gelir.</p></div>
+<div class="tablo-kap"><table>
+    <tr><th>Haftalık katkı puanı</th><th>Seri</th><th>Sadakat çarpanı</th><th>Ağırlık</th><th>Tavanın yüzdesi</th></tr>
+    <tr><td>1</td><td>1. hafta</td><td>×1</td><td>1</td><td>%2</td></tr>
+    <tr><td>10</td><td>1. hafta</td><td>×1</td><td>31,6</td><td>%50</td></tr>
+    <tr><td>10</td><td>5. hafta</td><td>×1,4</td><td>44,3</td><td>%70</td></tr>
+    <tr><td>10</td><td>11. hafta</td><td>×2</td><td>63,2</td><td>%100</td></tr>
+    <tr><td>50</td><td>1. hafta</td><td>×1</td><td>353,6</td><td>%100</td></tr>
+    <tr><td>100</td><td>1. hafta</td><td>×1</td><td>1.000</td><td>%100</td></tr>
+    <tr><td>1.000</td><td>1. hafta</td><td>×1</td><td>1.000</td><td>%100</td></tr>
+  </table></div>
+  <p>Üs 1,5 (1'den büyük) olduğu için aynı emeği birkaç hesaba bölmek sana <b>daha az</b> kazandırır; tek hesapta toplamak her zaman daha iyidir.</p>
+  <h3>🏅 Katkı puanı</h3>
+  <ul>
+    <li><b>Harcadığın her ASTRA</b> → 1 puan (pazardan hammadde alımı hariç).</li>
+    <li><b>Yakılan ya da harcanan hammaddenin değeri</b> → 0,5 puan (ASTRA cinsinden).</li>
+    <li><b>Pazara net hammadde satışı</b> → 0,5 puan. Aynı hammaddeyi alıp satmak puan getirmez.</li>
+    <li>Puan her hafta sıfırlanır; <b>çekim payın</b> ve <b>üretim hakkı kademen</b> geçen haftanın puanına göre belirlenir.</li>
+  </ul>
+  <h3>🚪 Kapı (giriş sınırı) ve katılım puanı</h3>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Vatandaş sınırı:</b> başlangıçta 100 kişi. Yer açılana kadar bekleme sırası vardır; sıra gelince 72 saatlik davet süresi.</p><p><b>Büyüme:</b> kişi başı aylık dolar göstergesi (son 3 ayın ortalaması) kademeli eşikleri (50 / 100 / 300 $) geçtikçe sınır %10'lik adımlarla büyür. Şu an otomatik büyüme kapalıdır; sınırı yalnız yönetici değiştirir.</p><p><b>Katılım puanı:</b> haftada dokunduğun farklı alan sayısı (sefer, bakım, kışla, zindan, kolezyum, boss, pazar, konsey, karnaval, rehber). Eşik = en çok 6, 2 + (seviye ÷ 10). 2 hafta eşiğin altında kalırsan uyarı, 3 haftada "izin ister misin" sorusu gelir; yıllık 30 gün izin hakkın vardır.</p><p><b>Kayıt harcı:</b> 1 ASTRA; aynı internet adresinden günde en çok 3 yeni vatandaş.</p></div>
+</section>
+
+<section class="bolum" id="t-fiyat" data-grup="Teknik başvuru" data-ikon="💱">
+  <div class="bolum-baslik"><div class="no">💱</div><div><small>Teknik başvuru</small><h2>Fiyat çarpanı: ASTRA ucuzlarsa ne olur?</h2></div></div>
+  <p class="ozet">Oyundaki sabit ASTRA bedelleri, ASTRA'nın <b>dolar karşılığı</b> değişince ölçeklenir; böylece oyuna giriş maliyeti dolar bazında korunur.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>ASTRA açılış fiyatının altındaysa</b> çarpan hedefi = açılış fiyatı ÷ güncel fiyat (dolar maliyeti sabit kalır). <b>Üstündeyse</b> = (açılış ÷ güncel) <sup>0,6</sup> (bedeller yavaş yavaş düşer).</p><p><b>Kasa ömrü düzeltmesi</b> (ASTRA açılış fiyatının üstündeyken): kasalar 12 aydan kısa dayanıyorsa çarpan düşmez; 36 aydan uzunsa %10, 60 aydan uzunsa %20 daha düşer.</p><p><b>Haftalık değişim sınırı:</b> çarpan bir haftada en çok %5 oynar; alt sınır 0,05, üst sınır 20.</p><p><b>Neye uygulanır?</b> asker bedeli, çark (bedel ve ASTRA ödülleri), piyango bileti, asker iyileştirmenin ASTRA kısmı, Genesis NFT, taverna güçlendirmeleri ve ücretsiz havuz katkı eşikleri. <b>Uygulanmaz:</b> zindan, kolezyum ve boss ödülleri (sabit) ile pazar fiyatlı bedeller (teçhizat, silo, seviye atlama, alet onarımı, bot ücreti): bunlar zaten pazardan ayarlanır.</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>ASTRA'nın dolar fiyatı açılışın yarısına düşerse çarpan hedefi 2,0'dır; haftada en çok %5 oynayacağı için 14 hafta civarında 2,0'a ulaşır. 18. asker 18.000 yerine 36.000 ASTRA olur — dolar karşılığı aynı kalır.</p></div>
+</section>
+
+<section class="bolum" id="t-zincir" data-grup="Teknik başvuru" data-ikon="⛓️">
+  <div class="bolum-baslik"><div class="no">⛓️</div><div><small>Teknik başvuru</small><h2>Zincir tarafı: kontratlar ve güvenlik sınırları</h2></div></div>
+  <p class="ozet">ASTRA zincirde (Avalanche) gerçek bir token olduğu için, oyun parası kontratlarla da korunur. Sınırlar kodla (kontratla) konmuştur; sunucu ele geçirilse bile aşılamaz.</p>
+  <h3>Oyun Kasası sözleşmesi (OyunKasasi)</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Kural</th><th>Değer</th></tr>
+    <tr><td>Para çıkış yolları</td><td>1) oyuncuya ödeme  2) yakım  3) sabit yapımcı cüzdanına  4) yeni kasaya geçiş (yalnız arıza için). <b>Başka hiçbir yol yoktur</b>: kişisel cüzdana çekim fonksiyonu kontratta bulunmaz.</td></tr>
+    <tr><td>Tek ödeme sınırı</td><td>Kasadaki paranın en çok %2'si (sunucu bu değeri doğrular; sahibin kontrattaki en üst sınırı %10)</td></tr>
+    <tr><td>Günlük toplam sınır</td><td>Herhangi bir 24 saatte kasadaki paranın en çok %5'i (kayan pencere; sahibin kontrattaki en üst sınırı %30)</td></tr>
+    <tr><td>Ayar değişikliği</td><td>Sahibin önerdiği her değişiklik <b>24 saat</b> bekler; bekçi bu sürede iptal edebilir</td></tr>
+    <tr><td>Acil durdurma</td><td>Sahip ve bekçi kasayı durdurabilir; durdurmak parayı hiçbir yere göndermez, yalnız kilitler</td></tr>
+    <tr><td>Yeni kasaya geçiş</td><td>Yalnız hata durumunda: bekçi şart, <b>7 gün</b> bekler, günde en çok %25, hedef aynı token ve aynı yakım adresli bir kontrat olmak zorunda; sunucu bekleyen öneride ödemeyi durdurur</td></tr>
+    <tr><td>Kontrat yükseltilebilir mi?</td><td><b>Hayır.</b> Kod sabittir; yalnız ayarlar (24 saat gecikmeyle) değişir</td></tr>
+  </table></div>
+  <h3>Diğer kontratlar ve sunucu ayarları</h3>
+<div class="tablo-kap"><table>
+    <tr><th>Parça</th><th>Ne yapar?</th><th>Sınır / not</th></tr>
+    <tr><td>RealmPayments</td><td>Oyun içi ASTRA ödemelerini zincirde alır (pay(miktar, ref)).</td><td>Ağ ücretine ek komisyon = gaz fiyatı × 100.000 gaz (yaklaşık ağ ücreti kadar), AVAX olarak alınır</td></tr>
+    <tr><td>RealmRates</td><td>Yakım, telif, temel gelir, kasa payları gibi bütün ASTRA oranlarını tutar.</td><td>Sahibin değişikliği 24 saat sonra geçerli olur; sunucu 5 dakikada bir okur</td></tr>
+    <tr><td>Sıcak / soğuk cüzdan</td><td>Oyun cüzdanında yalnız ~1 haftalık ihtiyaç kadar ASTRA durur; fazlası günde bir kez donanım (soğuk) cüzdanına gider.</td><td>Sunucu soğuk cüzdanın yalnız adresini bilir</td></tr>
+    <tr><td>Oyuncu kasaları</td><td>Her hesabın şifreli, sunucu yönetimli küçük cüzdanı.</td><td>Üst sınır: günlük ortalama harcama × 30 gün (en az 20.000 ASTRA); fazlası cüzdanına iade</td></tr>
+    <tr><td>Haftalık gönderim tavanı</td><td>Sunucunun bir haftada oyunculara gönderebileceği toplam.</td><td>Varsayılan 100.000.000 ASTRA ve oyun cüzdanının bakiyesi</td></tr>
+    <tr><td>Cüzdan değişikliği</td><td>Hesaba bağlı cüzdan değişince</td><td>48 saat bekler, e-postaya "bu ben değilim" bağlantısı gider</td></tr>
+  </table></div>
+  <div class="kutu dikkat" data-s="⚠️"><b>Şu an hangi ağda?</b><p>Oyun şu an <b>test ağında</b> (Avalanche Fuji, sahte token) deneniyor; bu sayfadaki zincir sınırları kontratlarda aynıdır ama gerçek ağa geçmeden önce kontratlar bağımsız denetimden geçecektir.</p></div>
+</section>
+
+<!-- ============ TEKNİK BAŞVURU: BİTİŞ ============ -->
+
 <section class="bolum" id="gorevler" data-grup="Yardım" data-ikon="🧭">
   <div class="bolum-baslik"><div class="no">🧭</div><div><small>Yardım</small><h2>Krallık Yolu: görevler ve ödüller</h2></div></div>
   <p class="ozet">Oyunu öğrenirken sana yol gösteren 47 görevlik rehber. Her görev ödül verir.</p>
@@ -773,7 +1693,7 @@
   <details><summary>Alet "yıpranmış" diyor, ne yapmalıyım?</summary><div>İlgili bölgenin sefer panelinde "Tamirat" düğmesine bas ya da <i>Krallık merkezi → Tüm aletleri onar</i>. Bedel odun, demir ve biraz ASTRA'dır.</div></details>
   <details><summary>Seviye atlayamıyorum, XP'm yeterli.</summary><div>Seviye atlamak için hammadde ve ASTRA bedeli de gerekir. Karakterim ekranı eksik olanı söyler; genellikle siloyu yükseltmek çözer.</div></details>
   <details><summary>Zindanda kaybettim, ne olur?</summary><div>Ordun yara alabilir; iyileştirdikten sonra tekrar deneyebilirsin. Önce kazanma şansını (odanın ekranında) kontrol et; düşükse ordunu ya da teçhizatını güçlendir.</div></details>
-  <details><summary>Çarkı çevirmek kazandırır mı?</summary><div>Ortalamada hayır: ortalama dönüş yaklaşık %81'dir. Çark eğlence içindir.</div></details>
+  <details><summary>Çarkı çevirmek kazandırır mı?</summary><div>Ortalamada hayır: ortalama dönüş yaklaşık %83'tür (verdiğinin %17'sini kaybedersin). Çark eğlence içindir.</div></details>
   <details><summary>ASTRA'mı nasıl çekerim?</summary><div>Önce cüzdanını bağla, serbest bakiyenden çekim talebi ver. Talepler Pazartesi 00:01'de (Türkiye saati) haftalık havuzdan karşılanır. Ücret %3'tür.</div></details>
   <details><summary>Hesabıma başkası girerse?</summary><div>Muhafız Mührü'nü tak: şifre tek başına yetmez. Cüzdan değişikliği zaten 48 saat bekler ve e-postana haber gelir.</div></details>
   <details><summary>Oyun yavaş, ne yapabilirim?</summary><div>2B haritayı kullan (varsayılan). 3B haritada kalite kendiliğinden düşer. Ayarlar'dan "hareketi azalt"ı açmak da yardım eder.</div></details>

@@ -54,6 +54,10 @@ console.log('✅ bot bedeli = net kârın yarısı');
 // eskiden yalnız dünyanın kalan haftalık kapasitesine bakıldığı için payı küçük oyuncuya fazla bedel yazılıyordu
 {
   const gs = yeni();
+  // Zamanı haftanın ilk gününe sabitle: açılan hak haftanın gününe göre büyür (gün 4+'da birikmiş hak günlük üretimi aşar ve
+  // "sınırsız hak" ile "normal" aynı sonucu verir). Test hangi gün koşulursa koşulsun aynı durumu görsün (15 Ekim 2026: Perşembe
+  // günü koşan tam kapı bu yüzden kırıldı; iddia aynen korunur, yalnız zaman sabitlendi).
+  globalPool.state.epochEndTime = Date.now() + 7 * 24 * SAAT - 60000;
   const gercek = gs.getUretimHakki.bind(gs);
   const hakla = (hak) => { gs.getUretimHakki = (k) => ({ ...gercek(k), ...hak }); return gs.calculateTavernaBotProfitAndCost(); };
 

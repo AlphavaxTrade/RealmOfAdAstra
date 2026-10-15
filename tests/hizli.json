@@ -66,5 +66,6 @@
   "test_yedek_kod.mjs",
   "test_denetim_2026_10_yonetim.mjs",
   "test_muhur_sifirlama.mjs",
-  "test_rehber.mjs"
+  "test_rehber.mjs",
+  "test_rehber_teknik.mjs"
 ]
