@@ -750,7 +750,11 @@ ${tablo(['Parça', 'Ne yapar?', 'Sınır / not'], [
 const blok = [giris, limitler, akis, uretim, seviyeBolum, silo, kota, konsey, kilit, cekim, pazar, kasalar, savasBolum, koy, kazanc, gelir, fiyat, zincir].join('\n\n');
 const govdeBlok = `${BASLA}\n\n${blok}\n\n${BITIS}`;
 
-let mevcut = fs.readFileSync(HEDEF, 'utf8');
+// Satır sonu: dosya Windows'ta CRLF'e çevrilmiş olabilir (git autocrlf); karşılaştırma LF üzerinden, yazma dosyanın kendi biçimiyle
+const ham = fs.readFileSync(HEDEF, 'utf8');
+const CRLF = '\r\n';
+const crlf = ham.includes(CRLF);
+const mevcut = ham.split(CRLF).join('\n');
 const bas = mevcut.indexOf(BASLA);
 const bit = mevcut.indexOf(BITIS);
 let yeni;
@@ -772,7 +776,7 @@ if (process.argv.includes('--konsol')) {
   }
   console.log('✅ Teknik başvuru bölümleri güncel');
 } else {
-  fs.writeFileSync(HEDEF, yeni);
+  fs.writeFileSync(HEDEF, crlf ? yeni.split('\n').join(CRLF) : yeni);
   console.log(`✅ ${path.relative(process.cwd(), HEDEF)} güncellendi (${blok.length} karakter, ${(blok.match(/<section /g) || []).length} bölüm)`);
 }
 process.exit(0);
