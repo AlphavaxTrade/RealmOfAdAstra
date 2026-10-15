@@ -36,7 +36,7 @@ Tek asker türü AdAstra Şampiyonu: 1. seviyede 100 can, 25 saldırı; her sevi
 
 ### 3b. v2 değişiklikleri
 - **Asker eğitmek köylü ister:** her yeni asker için 1 köylü Kışla'ya alınır (köyden düşer). Para bedeli bugünkü kural (ilk asker 5.000 ASTRA, her sonraki daha pahalı; 30 Eylül zindan modeli: n. asker 3.150 × n² ASTRA) R4'teki fiyat ölçeğiyle küçülür (R8'de).
-- **Asker sayısı sınırı** (30 Eylül kararı): zindan ilerlemesi + hesap seviyesi birlikte. Kural: asker hakkı = geçilen zindan katı + 1, ve asker seviyesi ≤ hesap seviyesi.
+- **Asker sayısı sınırı** (30 Eylül kararı): zindan ilerlemesi + hesap seviyesi birlikte. Kural: asker hakkı = geçilen zindan katı + 1, ve asker seviyesi ≤ hesap seviyesi. (15 Ekim 2026: asker seviyesi sınırı motorda AÇIK; zindan katı sınırı koda eklendi ama KAPALI, config `ORDU_SINIRI`, çünkü canavar tablosu bu sınırla dengeli değil: bkz. SONRA_YAPILACAKLAR.md.)
 - **İyileşme Şifahane'de:** bugünkü buğday + ASTRA iyileşmesine ek olarak Şifalı Ot (yeni hammadde) iyileşmeyi hızlandırır (VARSAYIM: 1 şifalı ot = 5 can, ASTRA kısmı yarıya iner). Universe gelince Biyolüminit daha da hızlandırır.
 - **Teçhizat geri dönüşümü** (R4b kararı): Demirhane'de %70 hammadde geri.
 

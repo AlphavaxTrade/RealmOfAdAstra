@@ -211,6 +211,8 @@ export const gelisimYontemleri = {
 
     this.state.currentXp -= gerek.xp;
     this.state.level += 1;
+    // Hesap seviyesi arttı: tavana takılıp birikmiş asker XP'si seviyeye döner (config ORDU_SINIRI)
+    (this.state.soldierUnits || []).forEach((_, i) => this.addSoldierXp(i, 0));
     this.state.maxStamina = this.getMaxStamina(this.state.level);
     this.state.stamina = this.state.maxStamina;
     this.saveState();

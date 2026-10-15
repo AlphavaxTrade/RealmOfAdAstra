@@ -35,7 +35,12 @@ export const askerGelisimYontemleri = {
     let yeniSeviye = asker.level || 1;
     const acilanlar = [];
 
-    while (asker.xp >= (asker.level * 100)) {
+    // Asker, hesap seviyesinden yüksek seviyeye çıkamaz (config ORDU_SINIRI); XP birikir, hesap seviyesi artınca seviye atlar.
+    // Önceden kayıtta hesap seviyesini aşmış asker düşürülmez, yalnız yeni seviye atlamaz.
+    const sinir = GAME_CONFIG.ORDU_SINIRI || {};
+    const hesapSeviyesi = Math.max(1, Math.floor(Number(this.state.level) || 1));
+    const tavan = sinir.ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ ? hesapSeviyesi : Infinity;
+    while (asker.xp >= (asker.level * 100) && asker.level < tavan) {
       asker.xp -= (asker.level * 100);
       asker.level += 1;
       asker.baseAtk = 25 + (asker.level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);

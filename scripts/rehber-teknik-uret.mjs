@@ -551,6 +551,7 @@ ${tablo(['Sıra', 'Bedel', 'Şu ana kadar toplam'], [1, 2, 3, 4, 5, 6, 8, 10, 12
     <li><b>Seviye başına:</b> +${n(C.SOLDIER_ATK_PER_LEVEL)} saldırı, +${n(C.SOLDIER_HP_PER_LEVEL)} can. Başlangıç: ${n(C.SOLDIER_BASE_ATK)} saldırı, ${n(C.SOLDIER_MAX_HP)} can.</li>
     <li><b>Gereken XP</b> = seviye × 100 (Lv.1 → 2 için 100, Lv.10 → 11 için 1.000 …).</li>
     <li><b>Yetenekler:</b> 10. seviyede Şok Dalgası, 25'te Zırh Kırıcı, 45'te Sahra Merhemi, 65'te Son Direniş.</li>
+    <li><b>Asker seviyesi hesap seviyeni geçemez.</b> Fazla XP birikir; hesabın seviye atlayınca askerlerin bekleyen seviyeleri işlenir.</li>
   </ul>
   <h3>Teçhizat: dövme</h3>
 ${formul([

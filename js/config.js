@@ -412,6 +412,13 @@ export const GAME_CONFIG = {
   SOLDIER_COST_EXPONENT: 2.0364522367650437, // Kademeli artış üssü (1. asker: 50, 18. asker: 18.000)
   SOLDIER_18_TARGET_COST: 18000,      // 18. asker maliyeti (v2 ölçekli)
   MAX_SOLDIERS: Infinity,             // Sınırsız ordu ve asker alımı
+  // Ordu sınırları (30 Eylül 2026 kararı 5, docs/v2/R5_NUFUS_ORDU.md): "zindan ilerlemesi + hesap seviyesi birlikte".
+  //  • ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: asker, hesap seviyesinden yüksek seviyeye çıkamaz (kazanılan XP birikir, hesap
+  //    seviyesi artınca asker seviye atlar). Açık.
+  //  • ASKER_HAKKI_ZINDAN_KATINA_BAGLI: asker sayısı <= geçilen zindan katı + 1. KAPALI: 15 Ekim 2026 ölçümü, mevcut canavar
+  //    tablosuyla (docs/v2/SONRA_YAPILACAKLAR.md) bu sınır birinci canavarı bile teçhizatsız yenilmez kılıyor (Sv.1 en az 2 asker,
+  //    Sv.3 en az 6, hak 1 ve 3); açmadan önce canavar/ödül dengesi yeniden kurulmalı.
+  ORDU_SINIRI: { ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: true, ASKER_HAKKI_ZINDAN_KATINA_BAGLI: false },
   SOLDIER_MAX_HP: 100,                // Fix Level 1 HP
   SOLDIER_BASE_ATK: 25,               // Fix Level 1 ATK
   SOLDIER_HP_PER_LEVEL: 25,           // Her seviye atlayışta +25 HP

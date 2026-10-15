@@ -42,10 +42,9 @@ const ok = (ad) => { toplam++; console.log(`✅ ${ad}`); };
   ok(`18 teknik bölüm, tablo/formül içeriyor, bozuk değer ve ham ondalık yok (${bolumler.length})`);
 }
 
-// 3) Kodda OLMAYAN kurallar rehberde yazmasın (14 Ekim 2026: karar belgesinde var, motorda uygulanmıyor)
+// 3) Kodda KAPALI kurallar rehberde yazmasın (asker hakkı = zindan katı + 1: config ORDU_SINIRI, varsayılan kapalı)
 {
   assert.ok(!/geçtiğin zindan katı \+ 1/.test(html), 'asker hakkı "zindan katı + 1" kodda uygulanmıyor');
-  assert.ok(!/Asker seviyesi hesap seviyeni geçemez/.test(html), 'asker seviyesi hesap seviyesiyle sınırlı değil');
   assert.ok(!/100 ASTRA\)\. Roketi yapınca/.test(html), 'roket bedeli 1 ASTRA (config UZAY_LIMANI.ROCKET_PARTS.adAstra)');
   ok('Kodda uygulanmayan kurallar rehberde yer almıyor');
 }

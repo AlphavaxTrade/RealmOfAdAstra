@@ -92,7 +92,9 @@ Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RA
 - Rehberin el yazısı bölümleri koda karşı doğrulandı ve düzeltildi: roket bedeli 1 ASTRA (100 değil), zindan günlük bütçesi %0,36 (%1 değil), çark dönüşü ~%83 (%81 değil), kilit açılma haftalık ek %1,4 (toplam ~%2,4), çekim örneği en az 1.000 ASTRA.
 - Hafta gününe bağlı iki kararsız test düzeltildi (test_bot_kurallari: zaman haftanın ilk gününe sabitlendi; test_battle_settlement_before_replay: kolezyum günlük ödül tavanı hesaba katıldı). İddialar korundu.
 
-**KARAR BEKLİYOR (ekonomi sayısı, kullanıcıyla konuşulur):** `docs/v2/KARARLAR_KESIN.md` iki kural yazıyor ama motorda uygulanmıyor:
+**Güncelleme (15 Ekim, akşam):** 2. kural (asker seviyesi <= hesap seviyesi) motora eklendi ve açık (`GAME_CONFIG.ORDU_SINIRI`, `tests/test_ordu_siniri.mjs`). 1. kural (asker hakkı = geçilen kat + 1) koda eklendi ama **KAPALI**: ölçüm aşağıda; açmadan önce canavar tablosu yeniden dengelenmeli. Ölçüm (teçhizatsız ordu, savaş motorunun %80 şans eşiği): hak Sv.1'de 1, gereken en az 2; Sv.2'de hak 2, gereken 4; Sv.3'te hak 3, gereken 6; Sv.8 ve sonrası 18 askerle bile %80 yok (teçhizat ve asker seviyesi gerekir). Açmak için tek satır: `ASKER_HAKKI_ZINDAN_KATINA_BAGLI: true`.
+
+İlk tespit (kısaltılmıştır): `docs/v2/KARARLAR_KESIN.md` iki kural yazıyordu ama motorda uygulanmıyordu:
 1. **Asker hakkı = geçilen zindan katı + 1.** Motor yalnız ASTRA bedeli ve köylü sayısına bakıyor (50 köylüyle 1. katta 30 asker alınabiliyor).
 2. **Asker seviyesi <= hesap seviyesi.** Motorda üst sınır yok (hesap seviyesi 1 iken asker seviyesi 100'ü aşabiliyor).
 Seçenekler: (a) kuralları koda ekle (ekonomik etkisi: ordu daha yavaş büyür, Fatih/zindan hesapları değişir; altın kayıt testleri yenilenir), (b) kararı belgeden kaldır, rehber şu an gerçek durumu yazıyor.

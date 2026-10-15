@@ -33,6 +33,14 @@ export const orduYontemleri = {
     if (enFazla !== Infinity && asker.length >= enFazla) {
       return { success: false, message: `Maksimum ${enFazla} askere zaten sahipsin!` };
     }
+    // Zindan ilerlemesine bağlı asker hakkı (config ORDU_SINIRI; varsayılan KAPALI): hak = geçilen kat + 1 = dungeonProgress
+    const sinir = GAME_CONFIG.ORDU_SINIRI || {};
+    if (sinir.ASKER_HAKKI_ZINDAN_KATINA_BAGLI) {
+      const hak = Math.max(1, Math.floor(Number(this.state.dungeonProgress) || 1));
+      if (asker.length + 1 > hak) {
+        return { success: false, message: `⚔️ Asker hakkın dolu: ${hak} asker taşıyabilirsin (geçtiğin zindan katı + 1). Zindanda bir kat ilerleyince yeni hak açılır.` };
+      }
+    }
     // Her asker bir köylü ister
     if (this.getVillageInfo) {
       const koy = this.getVillageInfo();
