@@ -68,5 +68,6 @@
   "test_muhur_sifirlama.mjs",
   "test_rehber.mjs",
   "test_rehber_teknik.mjs",
-  "test_ordu_siniri.mjs"
+  "test_ordu_siniri.mjs",
+  "test_makro_model.mjs"
 ]

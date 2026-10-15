@@ -45,6 +45,7 @@ bash scripts/sunucuya-yukle.sh                   # game server -> the AWS box (u
 docker compose up -d --build                     # production packaging (Dockerfile; docs/DEPLOY.md)
 node scripts/seviye-tablolari-uret.mjs          # regenerates docs/v2/SEVIYE_TABLOLARI.md (level, silo, soldier, craft and dungeon tables) from the engine
 node scripts/model/hammadde_kullanim.mjs [--eski]   # weekly demand / full production per resource at levels 5-40 (target band 0.40-1.00; --eski = pre-13-Oct rules); plan: docs/v2/HAMMADDE_KULLANIM_PLANI.md
+node scripts/model/makro_model.mjs hepsi   # ecosystem macro model (trade app + game + stake + Genesis, weekly, 3 years; chain math in scripts/model/zincir.mjs, shared with astra_fiyat_yolu.mjs): checks the flow rule (weekly exits <= half of fresh trade-app buys, no floor) in 9 scenarios, writes docs/v2/model_makro_<scenario>.json; design docs/v2/MAKRO_EKONOMI_PLANI.md (proposals awaiting approval, game code unchanged); test tests/test_makro_model.mjs
 node scripts/tarayici/stil-kaydi.mjs out.json [--html dom.json]   # MANUAL (needs npm run dev): computed style of every element in 144 screen states; stil-fark.mjs compares two records; css-sadelestir.mjs dom.json [--yaz | --dogrula] removes CSS declarations that change nothing (proof across 17 widths) - how css/style.css, theme.css and battle-arena.css were slimmed on 13 Oct 2026
 python scripts/gorsel_isle.py ikon <in.jpg> <out.webp>   # Gemini image -> transparent 256x256 webp icon (video_edit venv python)
 ```

@@ -1,0 +1,1750 @@
+{
+ "senaryo": "t5000",
+ "ad": "Trade 5.000 $/ay (kontenjan büyümüş)",
+ "girdiler": {
+  "weeks": 156,
+  "avaxUsd": 10.4,
+  "S0": 2157553980,
+  "dead0": 165000000,
+  "oyuncuAlim": 1,
+  "stakeAcik": 1,
+  "genesisAcik": 1,
+  "tipler": {
+   "ucretsiz": {
+    "n": 70,
+    "agirlik": 1,
+    "alimIlkUsd": 0,
+    "alimAyUsd": 0,
+    "stakeIlkUsd": 0,
+    "stakeAyUsd": 0,
+    "stakeOran": 0,
+    "tradeAyUsd": 0
+   },
+   "orta": {
+    "n": 25,
+    "agirlik": 1.5,
+    "alimIlkUsd": 20,
+    "alimAyUsd": 2,
+    "stakeIlkUsd": 10,
+    "stakeAyUsd": 1,
+    "stakeOran": 0.5,
+    "tradeAyUsd": 10
+   },
+   "buyuk": {
+    "n": 5,
+    "agirlik": 3,
+    "alimIlkUsd": 200,
+    "alimAyUsd": 20,
+    "stakeIlkUsd": 100,
+    "stakeAyUsd": 10,
+    "stakeOran": 1,
+    "tradeAyUsd": 40
+   }
+  },
+  "harcamaPayi": 0.6,
+  "satisEgilimi": 0.25,
+  "kullanim": 0.9,
+  "pazarOran": 0.0055,
+  "fatihBaslaHafta": 26,
+  "fatihOran": 0.01,
+  "trade": {
+   "yakim": 0.2,
+   "tut": 0.3,
+   "havuz": 0.1,
+   "oyun": 0.4,
+   "stakePayi": 0.05,
+   "krediGeriDonus": 0.5
+  },
+  "genesis": {
+   "muhurUsd": 250,
+   "muhurYakim": 0.5,
+   "birim": 55,
+   "birimAstra": 2000,
+   "uyandirmaHafta": 8,
+   "sezonTavan": 100,
+   "takvim": {
+    "buyuk": {
+     "adet": 5,
+     "ilk": 34,
+     "son": 38
+    },
+    "orta": {
+     "adet": 10,
+     "ilk": 52,
+     "son": 78
+    },
+    "ucretsiz": {
+     "adet": 0,
+     "ilk": 90,
+     "son": 130
+    }
+   },
+   "uyduAyUsd": 10,
+   "uyduOdeyecekti": 0.5,
+   "gozlemeviYilIndirimUsd": 300,
+   "gozlemeviAlacakti": 0.2
+  },
+  "stake": {
+   "baslaHafta": 26,
+   "odulCozulmeHafta": 26,
+   "indirimHer200Usd": 0.01,
+   "indirimTavan": 0.25
+  },
+  "ad": "Trade 5.000 $/ay (kontenjan büyümüş)",
+  "tradeUsdAy": 5000
+ },
+ "ozet": {
+  "fiyat1M": {
+   "acilis": 0.1878,
+   "ay12": 175.3397,
+   "ay24": 494.8584,
+   "ay36": 1050.7951
+  },
+  "piyasaDegeriUsd": {
+   "ay12": 1362622,
+   "ay36": 8223411
+  },
+  "mezuniyetHaftasi": 4,
+  "toplamCikis": 612226383,
+  "toplamTradeTaze": 6574430650,
+  "cikisTradeOrani": 0.093,
+  "enYuksekHaftalikOran": 0.5,
+  "yakilan": {
+   "tradeYakim": 1454838209,
+   "oyunYakim": 428879045,
+   "ucretYakim": 4935145,
+   "savunmaYakim": 0,
+   "genesisYakim": 9997996
+  },
+  "yakilanArzPayi": 0.1899,
+  "sahibinKasasi": 2182257313,
+  "oyunStok": {
+   "acilis": 200000000,
+   "ay12": 3604727788,
+   "ay36": 3583156412
+  },
+  "oyunIciEndeks": {
+   "ay1": 14.79,
+   "ay12": 18.02,
+   "ay36": 17.92
+  },
+  "dagitimKisiHaftaAstra": {
+   "ay1": 7562167,
+   "ay12": 162279,
+   "ay36": 82133
+  },
+  "fiyatCarpani36": 0.05,
+  "kasaSagligi36": 1.47,
+  "kasaSagligiEnDusuk": 0.414,
+  "tradeKayipUsdToplam": 3865,
+  "kadranAraligi": [
+   1.0321,
+   1.5
+  ],
+  "genesis": {
+   "adet": 15,
+   "ilkHafta": 34,
+   "sonHafta": 78
+  },
+  "stakeOrani36": 0.002,
+  "kisiBasiAy12": {
+   "ucretsiz": {
+    "dagitilanUsd": 90.505,
+    "cekilenUsd": 12.969
+   },
+   "orta": {
+    "dagitilanUsd": 135.757,
+    "cekilenUsd": 19.454
+   },
+   "buyuk": {
+    "dagitilanUsd": 271.514,
+    "cekilenUsd": 38.905
+   }
+  },
+  "kisiBasiAy36": {
+   "ucretsiz": {
+    "dagitilanUsd": 280.038,
+    "cekilenUsd": 9.783
+   },
+   "orta": {
+    "dagitilanUsd": 420.057,
+    "cekilenUsd": 14.673
+   },
+   "buyuk": {
+    "dagitilanUsd": 840.113,
+    "cekilenUsd": 29.339
+   }
+  },
+  "kapiAcilirAy": 10,
+  "ihlal": {
+   "cikisTrade": 0,
+   "kullaniciKurali": 0,
+   "kasaEksi": 0,
+   "genesisTavan": 0,
+   "fiyatDususu": 0,
+   "tradeYokCikis": 0
+  }
+ },
+ "aylik": [
+  {
+   "ay": 1,
+   "fiyat1M": 2.7396,
+   "piyasaDegeriUsd": 17833,
+   "rezervAvax": 569.8,
+   "mezun": true,
+   "tbHafta": 498758210,
+   "cikisTavani": 21741868,
+   "cikis": 21741868,
+   "kadran": 1.05,
+   "carpan": 0.8145,
+   "fren": false,
+   "kasaSagligi": 24.85,
+   "kasaOmruAy": 64.1,
+   "odeyenKasalar": 547781430,
+   "oyunStok": 2957533865,
+   "oyuncuStok": 1141444813,
+   "dagitimKisiHaftaAstra": 7562167,
+   "oyunaGelenHaftaAstra": 454667292,
+   "oyunIciEndeks": 14.79,
+   "stakeOrani": 0,
+   "yakilan": 1162532139,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 51.398,
+     "cekilenUsd": 1.083
+    },
+    "orta": {
+     "dagitilanUsd": 77.097,
+     "cekilenUsd": 1.625
+    },
+    "buyuk": {
+     "dagitilanUsd": 154.193,
+     "cekilenUsd": 3.25
+    }
+   },
+   "cekilebilirKisiUsd": 2.579,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 2,
+   "fiyat1M": 8.2564,
+   "piyasaDegeriUsd": 58822,
+   "rezervAvax": 989.3,
+   "mezun": true,
+   "tbHafta": 153591810,
+   "cikisTavani": 12525963,
+   "cikis": 12525963,
+   "kadran": 1.2763,
+   "carpan": 0.6634,
+   "fren": false,
+   "kasaSagligi": 2.978,
+   "kasaOmruAy": 64.2,
+   "odeyenKasalar": 65643079,
+   "oyunStok": 3316609662,
+   "oyuncuStok": 1722817643,
+   "dagitimKisiHaftaAstra": 3752345,
+   "oyunaGelenHaftaAstra": 116116979,
+   "oyunIciEndeks": 16.58,
+   "stakeOrani": 0,
+   "yakilan": 1464527005,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 64.853,
+     "cekilenUsd": 1.032
+    },
+    "orta": {
+     "dagitilanUsd": 97.28,
+     "cekilenUsd": 1.548
+    },
+    "buyuk": {
+     "dagitilanUsd": 194.56,
+     "cekilenUsd": 3.096
+    }
+   },
+   "cekilebilirKisiUsd": 4.478,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 3,
+   "fiyat1M": 16.3648,
+   "piyasaDegeriUsd": 120625,
+   "rezervAvax": 1392.7,
+   "mezun": true,
+   "tbHafta": 74661030,
+   "cikisTavani": 8897657,
+   "cikis": 8897657,
+   "kadran": 1.5,
+   "carpan": 0.5404,
+   "fren": false,
+   "kasaSagligi": 1.116,
+   "kasaOmruAy": 64.2,
+   "odeyenKasalar": 24610000,
+   "oyunStok": 3453719825,
+   "oyuncuStok": 1836841501,
+   "dagitimKisiHaftaAstra": 887077,
+   "oyunaGelenHaftaAstra": 46703818,
+   "oyunIciEndeks": 17.27,
+   "stakeOrani": 0,
+   "yakilan": 1578869498,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 37.128,
+     "cekilenUsd": 2.943
+    },
+    "orta": {
+     "dagitilanUsd": 55.692,
+     "cekilenUsd": 4.414
+    },
+    "buyuk": {
+     "dagitilanUsd": 111.384,
+     "cekilenUsd": 8.829
+    }
+   },
+   "cekilebilirKisiUsd": 6.305,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 4,
+   "fiyat1M": 26.7527,
+   "piyasaDegeriUsd": 200706,
+   "rezervAvax": 1780.7,
+   "mezun": true,
+   "tbHafta": 44794354,
+   "cikisTavani": 6959115,
+   "cikis": 6959115,
+   "kadran": 1.4306,
+   "carpan": 0.4401,
+   "fren": false,
+   "kasaSagligi": 0.684,
+   "kasaOmruAy": 64.2,
+   "odeyenKasalar": 15074588,
+   "oyunStok": 3519576761,
+   "oyuncuStok": 1886972490,
+   "dagitimKisiHaftaAstra": 462622,
+   "oyunaGelenHaftaAstra": 25192578,
+   "oyunIciEndeks": 17.6,
+   "stakeOrani": 0,
+   "yakilan": 1640505180,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 34.376,
+     "cekilenUsd": 4.35
+    },
+    "orta": {
+     "dagitilanUsd": 51.564,
+     "cekilenUsd": 6.526
+    },
+    "buyuk": {
+     "dagitilanUsd": 103.127,
+     "cekilenUsd": 13.051
+    }
+   },
+   "cekilebilirKisiUsd": 8.061,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 5,
+   "fiyat1M": 39.1367,
+   "piyasaDegeriUsd": 296756,
+   "rezervAvax": 2153.8,
+   "mezun": true,
+   "tbHafta": 30258800,
+   "cikisTavani": 5753734,
+   "cikis": 5753734,
+   "kadran": 1.327,
+   "carpan": 0.3584,
+   "fren": false,
+   "kasaSagligi": 0.5,
+   "kasaOmruAy": 64.2,
+   "odeyenKasalar": 11022508,
+   "oyunStok": 3556110851,
+   "oyuncuStok": 1917588991,
+   "dagitimKisiHaftaAstra": 318410,
+   "oyunaGelenHaftaAstra": 16039250,
+   "oyunIciEndeks": 17.78,
+   "stakeOrani": 0,
+   "yakilan": 1680115604,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 36.111,
+     "cekilenUsd": 5.615
+    },
+    "orta": {
+     "dagitilanUsd": 54.167,
+     "cekilenUsd": 8.422
+    },
+    "buyuk": {
+     "dagitilanUsd": 108.333,
+     "cekilenUsd": 16.844
+    }
+   },
+   "cekilebilirKisiUsd": 9.75,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 6,
+   "fiyat1M": 53.2589,
+   "piyasaDegeriUsd": 406690,
+   "rezervAvax": 2512.5,
+   "mezun": true,
+   "tbHafta": 22057871,
+   "cikisTavani": 4932288,
+   "cikis": 4932288,
+   "kadran": 1.0808,
+   "carpan": 0.2919,
+   "fren": false,
+   "kasaSagligi": 0.414,
+   "kasaOmruAy": 65,
+   "odeyenKasalar": 9130787,
+   "oyunStok": 3578094532,
+   "oyuncuStok": 1939297636,
+   "dagitimKisiHaftaAstra": 246069,
+   "oyunaGelenHaftaAstra": 11276325,
+   "oyunIciEndeks": 17.89,
+   "stakeOrani": 0,
+   "yakilan": 1708283060,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 38.989,
+     "cekilenUsd": 6.803
+    },
+    "orta": {
+     "dagitilanUsd": 58.484,
+     "cekilenUsd": 10.204
+    },
+    "buyuk": {
+     "dagitilanUsd": 116.967,
+     "cekilenUsd": 20.408
+    }
+   },
+   "cekilebilirKisiUsd": 11.374,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 7,
+   "fiyat1M": 71.8956,
+   "piyasaDegeriUsd": 552405,
+   "rezervAvax": 2919.2,
+   "mezun": true,
+   "tbHafta": 16246927,
+   "cikisTavani": 4245153,
+   "cikis": 4245153,
+   "kadran": 1.1025,
+   "carpan": 0.2377,
+   "fren": false,
+   "kasaSagligi": 0.568,
+   "kasaOmruAy": 65.6,
+   "odeyenKasalar": 12530217,
+   "oyunStok": 3590802043,
+   "oyuncuStok": 1959987291,
+   "dagitimKisiHaftaAstra": 224593,
+   "oyunaGelenHaftaAstra": 8175556,
+   "oyunIciEndeks": 17.95,
+   "stakeOrani": 0.0017,
+   "yakilan": 1729298910,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 48.728,
+     "cekilenUsd": 7.977
+    },
+    "orta": {
+     "dagitilanUsd": 73.093,
+     "cekilenUsd": 11.965
+    },
+    "buyuk": {
+     "dagitilanUsd": 146.185,
+     "cekilenUsd": 23.931
+    }
+   },
+   "cekilebilirKisiUsd": 13.216,
+   "tradeKayipUsdAy": 0
+  },
+  {
+   "ay": 8,
+   "fiyat1M": 89.3168,
+   "piyasaDegeriUsd": 688701,
+   "rezervAvax": 3253.7,
+   "mezun": true,
+   "tbHafta": 13016345,
+   "cikisTavani": 3808715,
+   "cikis": 3808715,
+   "kadran": 1.1888,
+   "carpan": 0.1936,
+   "fren": false,
+   "kasaSagligi": 0.72,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 15869745,
+   "oyunStok": 3597114114,
+   "oyuncuStok": 1979883161,
+   "dagitimKisiHaftaAstra": 209490,
+   "oyunaGelenHaftaAstra": 6033070,
+   "oyunIciEndeks": 17.99,
+   "stakeOrani": 0.0022,
+   "yakilan": 1745373450,
+   "genesis": 0,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 57.611,
+     "cekilenUsd": 9.048
+    },
+    "orta": {
+     "dagitilanUsd": 86.417,
+     "cekilenUsd": 13.571
+    },
+    "buyuk": {
+     "dagitilanUsd": 172.833,
+     "cekilenUsd": 27.144
+    }
+   },
+   "cekilebilirKisiUsd": 14.73,
+   "tradeKayipUsdAy": 2
+  },
+  {
+   "ay": 9,
+   "fiyat1M": 112.0607,
+   "piyasaDegeriUsd": 866735,
+   "rezervAvax": 3644.5,
+   "mezun": true,
+   "tbHafta": 10426885,
+   "cikisTavani": 3400299,
+   "cikis": 3400299,
+   "kadran": 1.1746,
+   "carpan": 0.1577,
+   "fren": false,
+   "kasaSagligi": 0.939,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 20699343,
+   "oyunStok": 3603681970,
+   "oyuncuStok": 1998981073,
+   "dagitimKisiHaftaAstra": 195163,
+   "oyunaGelenHaftaAstra": 4839939,
+   "oyunIciEndeks": 18.02,
+   "stakeOrani": 0.0026,
+   "yakilan": 1762253905,
+   "genesis": 3,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 66.828,
+     "cekilenUsd": 10.018
+    },
+    "orta": {
+     "dagitilanUsd": 100.242,
+     "cekilenUsd": 15.028
+    },
+    "buyuk": {
+     "dagitilanUsd": 200.484,
+     "cekilenUsd": 30.056
+    }
+   },
+   "cekilebilirKisiUsd": 16.499,
+   "tradeKayipUsdAy": 22
+  },
+  {
+   "ay": 10,
+   "fiyat1M": 134.5237,
+   "piyasaDegeriUsd": 1042690,
+   "rezervAvax": 3993.1,
+   "mezun": true,
+   "tbHafta": 8490730,
+   "cikisTavani": 3103457,
+   "cikis": 3103457,
+   "kadran": 1.1504,
+   "carpan": 0.1284,
+   "fren": false,
+   "kasaSagligi": 1.035,
+   "kasaOmruAy": 66.4,
+   "odeyenKasalar": 22821726,
+   "oyunStok": 3606411250,
+   "oyuncuStok": 2017965892,
+   "dagitimKisiHaftaAstra": 186799,
+   "oyunaGelenHaftaAstra": 3862321,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0029,
+   "yakilan": 1775321397,
+   "genesis": 5,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 78.805,
+     "cekilenUsd": 11.148
+    },
+    "orta": {
+     "dagitilanUsd": 118.207,
+     "cekilenUsd": 16.721
+    },
+    "buyuk": {
+     "dagitilanUsd": 236.414,
+     "cekilenUsd": 33.443
+    }
+   },
+   "cekilebilirKisiUsd": 18.077,
+   "tradeKayipUsdAy": 54
+  },
+  {
+   "ay": 11,
+   "fiyat1M": 154.6631,
+   "piyasaDegeriUsd": 1200537,
+   "rezervAvax": 4281.6,
+   "mezun": true,
+   "tbHafta": 7370186,
+   "cikisTavani": 2894358,
+   "cikis": 2894358,
+   "kadran": 1.1223,
+   "carpan": 0.1046,
+   "fren": false,
+   "kasaSagligi": 1.11,
+   "kasaOmruAy": 66.5,
+   "odeyenKasalar": 24461878,
+   "oyunStok": 3605971755,
+   "oyuncuStok": 2035333334,
+   "dagitimKisiHaftaAstra": 172399,
+   "oyunaGelenHaftaAstra": 3285266,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0031,
+   "yakilan": 1784816880,
+   "genesis": 5,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 84.362,
+     "cekilenUsd": 12.125
+    },
+    "orta": {
+     "dagitilanUsd": 126.543,
+     "cekilenUsd": 18.188
+    },
+    "buyuk": {
+     "dagitilanUsd": 253.086,
+     "cekilenUsd": 36.374
+    }
+   },
+   "cekilebilirKisiUsd": 19.383,
+   "tradeKayipUsdAy": 54
+  },
+  {
+   "ay": 12,
+   "fiyat1M": 175.3397,
+   "piyasaDegeriUsd": 1362622,
+   "rezervAvax": 4558.8,
+   "mezun": true,
+   "tbHafta": 6487327,
+   "cikisTavani": 2718351,
+   "cikis": 2718351,
+   "kadran": 1.1018,
+   "carpan": 0.0852,
+   "fren": false,
+   "kasaSagligi": 1.203,
+   "kasaOmruAy": 66.5,
+   "odeyenKasalar": 26524321,
+   "oyunStok": 3604727788,
+   "oyuncuStok": 2051700872,
+   "dagitimKisiHaftaAstra": 162279,
+   "oyunaGelenHaftaAstra": 2874623,
+   "oyunIciEndeks": 18.02,
+   "stakeOrani": 0.0033,
+   "yakilan": 1793272832,
+   "genesis": 5,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 90.505,
+     "cekilenUsd": 12.969
+    },
+    "orta": {
+     "dagitilanUsd": 135.757,
+     "cekilenUsd": 19.454
+    },
+    "buyuk": {
+     "dagitilanUsd": 271.514,
+     "cekilenUsd": 38.905
+    }
+   },
+   "cekilebilirKisiUsd": 20.638,
+   "tradeKayipUsdAy": 56
+  },
+  {
+   "ay": 13,
+   "fiyat1M": 198.3054,
+   "piyasaDegeriUsd": 1542656,
+   "rezervAvax": 4848.2,
+   "mezun": true,
+   "tbHafta": 5779900,
+   "cikisTavani": 2555769,
+   "cikis": 2555769,
+   "kadran": 1.0953,
+   "carpan": 0.0694,
+   "fren": false,
+   "kasaSagligi": 1.312,
+   "kasaOmruAy": 66.4,
+   "odeyenKasalar": 28924706,
+   "oyunStok": 3604538881,
+   "oyuncuStok": 2068658087,
+   "dagitimKisiHaftaAstra": 155576,
+   "oyunaGelenHaftaAstra": 2549145,
+   "oyunIciEndeks": 18.02,
+   "stakeOrani": 0.0033,
+   "yakilan": 1801548462,
+   "genesis": 6,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 97.877,
+     "cekilenUsd": 12.001
+    },
+    "orta": {
+     "dagitilanUsd": 146.816,
+     "cekilenUsd": 18.002
+    },
+    "buyuk": {
+     "dagitilanUsd": 293.632,
+     "cekilenUsd": 35.999
+    }
+   },
+   "cekilebilirKisiUsd": 21.945,
+   "tradeKayipUsdAy": 58
+  },
+  {
+   "ay": 14,
+   "fiyat1M": 221.4671,
+   "piyasaDegeriUsd": 1724205,
+   "rezervAvax": 5123.5,
+   "mezun": true,
+   "tbHafta": 5097038,
+   "cikisTavani": 2418516,
+   "cikis": 2418516,
+   "kadran": 1.0883,
+   "carpan": 0.0565,
+   "fren": false,
+   "kasaSagligi": 1.393,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 30699071,
+   "oyunStok": 3606064328,
+   "oyuncuStok": 2087796311,
+   "dagitimKisiHaftaAstra": 151247,
+   "oyunaGelenHaftaAstra": 2256324,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0031,
+   "yakilan": 1809027378,
+   "genesis": 7,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 107.04,
+     "cekilenUsd": 8.68
+    },
+    "orta": {
+     "dagitilanUsd": 160.561,
+     "cekilenUsd": 13.019
+    },
+    "buyuk": {
+     "dagitilanUsd": 321.121,
+     "cekilenUsd": 26.035
+    }
+   },
+   "cekilebilirKisiUsd": 23.192,
+   "tradeKayipUsdAy": 78
+  },
+  {
+   "ay": 15,
+   "fiyat1M": 244.8497,
+   "piyasaDegeriUsd": 1907451,
+   "rezervAvax": 5387.2,
+   "mezun": true,
+   "tbHafta": 4595733,
+   "cikisTavani": 2297866,
+   "cikis": 2297866,
+   "kadran": 1.0805,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.459,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 32156814,
+   "oyunStok": 3606431904,
+   "oyuncuStok": 2105934984,
+   "dagitimKisiHaftaAstra": 146747,
+   "oyunaGelenHaftaAstra": 2019972,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0029,
+   "yakilan": 1815887616,
+   "genesis": 8,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 115.492,
+     "cekilenUsd": 10.181
+    },
+    "orta": {
+     "dagitilanUsd": 173.238,
+     "cekilenUsd": 15.272
+    },
+    "buyuk": {
+     "dagitilanUsd": 346.475,
+     "cekilenUsd": 30.538
+    }
+   },
+   "cekilebilirKisiUsd": 24.362,
+   "tradeKayipUsdAy": 88
+  },
+  {
+   "ay": 16,
+   "fiyat1M": 271.1988,
+   "piyasaDegeriUsd": 2113963,
+   "rezervAvax": 5669.6,
+   "mezun": true,
+   "tbHafta": 4174795,
+   "cikisTavani": 2087398,
+   "cikis": 2087398,
+   "kadran": 1.0772,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.527,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 33655867,
+   "oyunStok": 3606620509,
+   "oyuncuStok": 2123541667,
+   "dagitimKisiHaftaAstra": 142601,
+   "oyunaGelenHaftaAstra": 1824948,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0027,
+   "yakilan": 1822697131,
+   "genesis": 10,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 123.962,
+     "cekilenUsd": 10.963
+    },
+    "orta": {
+     "dagitilanUsd": 185.943,
+     "cekilenUsd": 16.444
+    },
+    "buyuk": {
+     "dagitilanUsd": 371.887,
+     "cekilenUsd": 32.882
+    }
+   },
+   "cekilebilirKisiUsd": 24.512,
+   "tradeKayipUsdAy": 98
+  },
+  {
+   "ay": 17,
+   "fiyat1M": 296.5011,
+   "piyasaDegeriUsd": 2312271,
+   "rezervAvax": 5928.2,
+   "mezun": true,
+   "tbHafta": 3771396,
+   "cikisTavani": 1885698,
+   "cikis": 1885698,
+   "kadran": 1.071,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.567,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 34532915,
+   "oyunStok": 3606101289,
+   "oyuncuStok": 2140923579,
+   "dagitimKisiHaftaAstra": 138837,
+   "oyunaGelenHaftaAstra": 1650004,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0026,
+   "yakilan": 1828539097,
+   "genesis": 11,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 132.578,
+     "cekilenUsd": 11.167
+    },
+    "orta": {
+     "dagitilanUsd": 198.867,
+     "cekilenUsd": 16.751
+    },
+    "buyuk": {
+     "dagitilanUsd": 397.734,
+     "cekilenUsd": 33.495
+    }
+   },
+   "cekilebilirKisiUsd": 24.21,
+   "tradeKayipUsdAy": 118
+  },
+  {
+   "ay": 18,
+   "fiyat1M": 325.3339,
+   "piyasaDegeriUsd": 2538293,
+   "rezervAvax": 6209.8,
+   "mezun": true,
+   "tbHafta": 3455853,
+   "cikisTavani": 1727927,
+   "cikis": 1727927,
+   "kadran": 1.0697,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.612,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 35536969,
+   "oyunStok": 3605816314,
+   "oyuncuStok": 2158085490,
+   "dagitimKisiHaftaAstra": 134880,
+   "oyunaGelenHaftaAstra": 1505486,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0025,
+   "yakilan": 1834372414,
+   "genesis": 13,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 140.879,
+     "cekilenUsd": 11.169
+    },
+    "orta": {
+     "dagitilanUsd": 211.319,
+     "cekilenUsd": 16.754
+    },
+    "buyuk": {
+     "dagitilanUsd": 422.638,
+     "cekilenUsd": 33.5
+    }
+   },
+   "cekilebilirKisiUsd": 24.341,
+   "tradeKayipUsdAy": 128
+  },
+  {
+   "ay": 19,
+   "fiyat1M": 352.8784,
+   "piyasaDegeriUsd": 2754205,
+   "rezervAvax": 6467.3,
+   "mezun": true,
+   "tbHafta": 3147639,
+   "cikisTavani": 1573820,
+   "cikis": 1573820,
+   "kadran": 1.0648,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.637,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 36080410,
+   "oyunStok": 3605072000,
+   "oyuncuStok": 2175060458,
+   "dagitimKisiHaftaAstra": 131334,
+   "oyunaGelenHaftaAstra": 1375675,
+   "oyunIciEndeks": 18.03,
+   "stakeOrani": 0.0024,
+   "yakilan": 1839425601,
+   "genesis": 14,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 149.16,
+     "cekilenUsd": 11.105
+    },
+    "orta": {
+     "dagitilanUsd": 223.74,
+     "cekilenUsd": 16.657
+    },
+    "buyuk": {
+     "dagitilanUsd": 447.48,
+     "cekilenUsd": 33.306
+    }
+   },
+   "cekilebilirKisiUsd": 24.047,
+   "tradeKayipUsdAy": 150
+  },
+  {
+   "ay": 20,
+   "fiyat1M": 381.4897,
+   "piyasaDegeriUsd": 2978488,
+   "rezervAvax": 6724.4,
+   "mezun": true,
+   "tbHafta": 2905392,
+   "cikisTavani": 1452696,
+   "cikis": 1452696,
+   "kadran": 1.0608,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.657,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 36517343,
+   "oyunStok": 3604266916,
+   "oyuncuStok": 2191804126,
+   "dagitimKisiHaftaAstra": 127801,
+   "oyunaGelenHaftaAstra": 1265000,
+   "oyunIciEndeks": 18.02,
+   "stakeOrani": 0.0024,
+   "yakilan": 1844164456,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 157.279,
+     "cekilenUsd": 11.048
+    },
+    "orta": {
+     "dagitilanUsd": 235.919,
+     "cekilenUsd": 16.571
+    },
+    "buyuk": {
+     "dagitilanUsd": 471.838,
+     "cekilenUsd": 33.134
+    }
+   },
+   "cekilebilirKisiUsd": 23.996,
+   "tradeKayipUsdAy": 160
+  },
+  {
+   "ay": 21,
+   "fiyat1M": 408.4466,
+   "piyasaDegeriUsd": 3189775,
+   "rezervAvax": 6957.9,
+   "mezun": true,
+   "tbHafta": 2713504,
+   "cikisTavani": 1356752,
+   "cikis": 1356752,
+   "kadran": 1.055,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.666,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 36728033,
+   "oyunStok": 3603114230,
+   "oyuncuStok": 2208211779,
+   "dagitimKisiHaftaAstra": 124144,
+   "oyunaGelenHaftaAstra": 1174467,
+   "oyunIciEndeks": 18.02,
+   "stakeOrani": 0.0023,
+   "yakilan": 1848306832,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 163.903,
+     "cekilenUsd": 11.062
+    },
+    "orta": {
+     "dagitilanUsd": 245.855,
+     "cekilenUsd": 16.592
+    },
+    "buyuk": {
+     "dagitilanUsd": 491.709,
+     "cekilenUsd": 33.176
+    }
+   },
+   "cekilebilirKisiUsd": 23.995,
+   "tradeKayipUsdAy": 160
+  },
+  {
+   "ay": 22,
+   "fiyat1M": 436.327,
+   "piyasaDegeriUsd": 3408304,
+   "rezervAvax": 7191.5,
+   "mezun": true,
+   "tbHafta": 2538946,
+   "cikisTavani": 1269473,
+   "cikis": 1269473,
+   "kadran": 1.0512,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.676,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 36942468,
+   "oyunStok": 3601940067,
+   "oyuncuStok": 2224292177,
+   "dagitimKisiHaftaAstra": 120739,
+   "oyunaGelenHaftaAstra": 1098071,
+   "oyunIciEndeks": 18.01,
+   "stakeOrani": 0.0023,
+   "yakilan": 1852235916,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 170.348,
+     "cekilenUsd": 11.076
+    },
+    "orta": {
+     "dagitilanUsd": 255.522,
+     "cekilenUsd": 16.613
+    },
+    "buyuk": {
+     "dagitilanUsd": 511.043,
+     "cekilenUsd": 33.219
+    }
+   },
+   "cekilebilirKisiUsd": 23.984,
+   "tradeKayipUsdAy": 162
+  },
+  {
+   "ay": 23,
+   "fiyat1M": 465.1291,
+   "piyasaDegeriUsd": 3634057,
+   "rezervAvax": 7425,
+   "mezun": true,
+   "tbHafta": 2381619,
+   "cikisTavani": 1190809,
+   "cikis": 1190809,
+   "kadran": 1.049,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.683,
+   "kasaOmruAy": 66.2,
+   "odeyenKasalar": 37089118,
+   "oyunStok": 3600754360,
+   "oyuncuStok": 2240109115,
+   "dagitimKisiHaftaAstra": 117794,
+   "oyunaGelenHaftaAstra": 1028928,
+   "oyunIciEndeks": 18,
+   "stakeOrani": 0.0022,
+   "yakilan": 1855973445,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 177.217,
+     "cekilenUsd": 11.053
+    },
+    "orta": {
+     "dagitilanUsd": 265.826,
+     "cekilenUsd": 16.579
+    },
+    "buyuk": {
+     "dagitilanUsd": 531.652,
+     "cekilenUsd": 33.15
+    }
+   },
+   "cekilebilirKisiUsd": 23.983,
+   "tradeKayipUsdAy": 162
+  },
+  {
+   "ay": 24,
+   "fiyat1M": 494.8584,
+   "piyasaDegeriUsd": 3867075,
+   "rezervAvax": 7658.6,
+   "mezun": true,
+   "tbHafta": 2238444,
+   "cikisTavani": 1119222,
+   "cikis": 1119222,
+   "kadran": 1.0475,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.685,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 37153554,
+   "oyunStok": 3599558858,
+   "oyuncuStok": 2255674833,
+   "dagitimKisiHaftaAstra": 115053,
+   "oyunaGelenHaftaAstra": 966302,
+   "oyunIciEndeks": 18,
+   "stakeOrani": 0.0022,
+   "yakilan": 1859536589,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 184.209,
+     "cekilenUsd": 11.036
+    },
+    "orta": {
+     "dagitilanUsd": 276.313,
+     "cekilenUsd": 16.553
+    },
+    "buyuk": {
+     "dagitilanUsd": 552.626,
+     "cekilenUsd": 33.097
+    }
+   },
+   "cekilebilirKisiUsd": 23.982,
+   "tradeKayipUsdAy": 162
+  },
+  {
+   "ay": 25,
+   "fiyat1M": 525.5108,
+   "piyasaDegeriUsd": 4107324,
+   "rezervAvax": 7892.3,
+   "mezun": true,
+   "tbHafta": 2106921,
+   "cikisTavani": 1053460,
+   "cikis": 1053460,
+   "kadran": 1.046,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.685,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 37137588,
+   "oyunStok": 3598362778,
+   "oyuncuStok": 2270997827,
+   "dagitimKisiHaftaAstra": 112429,
+   "oyunaGelenHaftaAstra": 909130,
+   "oyunIciEndeks": 17.99,
+   "stakeOrani": 0.0022,
+   "yakilan": 1862938984,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 191.208,
+     "cekilenUsd": 10.992
+    },
+    "orta": {
+     "dagitilanUsd": 286.812,
+     "cekilenUsd": 16.487
+    },
+    "buyuk": {
+     "dagitilanUsd": 573.624,
+     "cekilenUsd": 32.966
+    }
+   },
+   "cekilebilirKisiUsd": 23.971,
+   "tradeKayipUsdAy": 164
+  },
+  {
+   "ay": 26,
+   "fiyat1M": 557.0796,
+   "piyasaDegeriUsd": 4354751,
+   "rezervAvax": 8125.9,
+   "mezun": true,
+   "tbHafta": 1987447,
+   "cikisTavani": 993724,
+   "cikis": 993724,
+   "kadran": 1.0447,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.681,
+   "kasaOmruAy": 66.3,
+   "odeyenKasalar": 37048508,
+   "oyunStok": 3597170467,
+   "oyuncuStok": 2286078271,
+   "dagitimKisiHaftaAstra": 109887,
+   "oyunaGelenHaftaAstra": 856703,
+   "oyunIciEndeks": 17.99,
+   "stakeOrani": 0.0021,
+   "yakilan": 1866192322,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 198.161,
+     "cekilenUsd": 10.937
+    },
+    "orta": {
+     "dagitilanUsd": 297.242,
+     "cekilenUsd": 16.405
+    },
+    "buyuk": {
+     "dagitilanUsd": 594.484,
+     "cekilenUsd": 32.802
+    }
+   },
+   "cekilebilirKisiUsd": 23.97,
+   "tradeKayipUsdAy": 164
+  },
+  {
+   "ay": 27,
+   "fiyat1M": 589.5731,
+   "piyasaDegeriUsd": 4609419,
+   "rezervAvax": 8359.5,
+   "mezun": true,
+   "tbHafta": 1877842,
+   "cikisTavani": 938921,
+   "cikis": 938921,
+   "kadran": 1.0434,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.674,
+   "kasaOmruAy": 66.4,
+   "odeyenKasalar": 36895267,
+   "oyunStok": 3595985165,
+   "oyuncuStok": 2300913954,
+   "dagitimKisiHaftaAstra": 107417,
+   "oyunaGelenHaftaAstra": 808915,
+   "oyunIciEndeks": 17.98,
+   "stakeOrani": 0.0021,
+   "yakilan": 1869307947,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 205.055,
+     "cekilenUsd": 10.882
+    },
+    "orta": {
+     "dagitilanUsd": 307.583,
+     "cekilenUsd": 16.322
+    },
+    "buyuk": {
+     "dagitilanUsd": 615.166,
+     "cekilenUsd": 32.636
+    }
+   },
+   "cekilebilirKisiUsd": 23.969,
+   "tradeKayipUsdAy": 164
+  },
+  {
+   "ay": 28,
+   "fiyat1M": 622.9864,
+   "piyasaDegeriUsd": 4871288,
+   "rezervAvax": 8593.1,
+   "mezun": true,
+   "tbHafta": 1776328,
+   "cikisTavani": 888164,
+   "cikis": 888164,
+   "kadran": 1.0421,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.664,
+   "kasaOmruAy": 66.4,
+   "odeyenKasalar": 36685388,
+   "oyunStok": 3594815628,
+   "oyuncuStok": 2315510429,
+   "dagitimKisiHaftaAstra": 105014,
+   "oyunaGelenHaftaAstra": 764944,
+   "oyunIciEndeks": 17.97,
+   "stakeOrani": 0.0021,
+   "yakilan": 1872295189,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 211.878,
+     "cekilenUsd": 10.791
+    },
+    "orta": {
+     "dagitilanUsd": 317.817,
+     "cekilenUsd": 16.185
+    },
+    "buyuk": {
+     "dagitilanUsd": 635.634,
+     "cekilenUsd": 32.362
+    }
+   },
+   "cekilebilirKisiUsd": 23.958,
+   "tradeKayipUsdAy": 166
+  },
+  {
+   "ay": 29,
+   "fiyat1M": 657.3121,
+   "piyasaDegeriUsd": 5140300,
+   "rezervAvax": 8826.7,
+   "mezun": true,
+   "tbHafta": 1683508,
+   "cikisTavani": 841754,
+   "cikis": 841754,
+   "kadran": 1.041,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.652,
+   "kasaOmruAy": 66.4,
+   "odeyenKasalar": 36425890,
+   "oyunStok": 3593662848,
+   "oyuncuStok": 2329866371,
+   "dagitimKisiHaftaAstra": 102673,
+   "oyunaGelenHaftaAstra": 724312,
+   "oyunIciEndeks": 17.97,
+   "stakeOrani": 0.0021,
+   "yakilan": 1875162353,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 218.615,
+     "cekilenUsd": 10.696
+    },
+    "orta": {
+     "dagitilanUsd": 327.923,
+     "cekilenUsd": 16.043
+    },
+    "buyuk": {
+     "dagitilanUsd": 655.845,
+     "cekilenUsd": 32.077
+    }
+   },
+   "cekilebilirKisiUsd": 23.958,
+   "tradeKayipUsdAy": 166
+  },
+  {
+   "ay": 30,
+   "fiyat1M": 692.5596,
+   "piyasaDegeriUsd": 5416527,
+   "rezervAvax": 9060.2,
+   "mezun": true,
+   "tbHafta": 1597776,
+   "cikisTavani": 798888,
+   "cikis": 798888,
+   "kadran": 1.0399,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.639,
+   "kasaOmruAy": 66.5,
+   "odeyenKasalar": 36123907,
+   "oyunStok": 3592527552,
+   "oyuncuStok": 2343979946,
+   "dagitimKisiHaftaAstra": 100392,
+   "oyunaGelenHaftaAstra": 687035,
+   "oyunIciEndeks": 17.96,
+   "stakeOrani": 0.0021,
+   "yakilan": 1877917757,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 225.267,
+     "cekilenUsd": 10.605
+    },
+    "orta": {
+     "dagitilanUsd": 337.9,
+     "cekilenUsd": 15.906
+    },
+    "buyuk": {
+     "dagitilanUsd": 675.8,
+     "cekilenUsd": 31.804
+    }
+   },
+   "cekilebilirKisiUsd": 23.957,
+   "tradeKayipUsdAy": 166
+  },
+  {
+   "ay": 31,
+   "fiyat1M": 728.718,
+   "piyasaDegeriUsd": 5699883,
+   "rezervAvax": 9293.8,
+   "mezun": true,
+   "tbHafta": 1517821,
+   "cikisTavani": 758910,
+   "cikis": 758910,
+   "kadran": 1.0389,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.623,
+   "kasaOmruAy": 66.5,
+   "odeyenKasalar": 35784602,
+   "oyunStok": 3591410486,
+   "oyuncuStok": 2357851829,
+   "dagitimKisiHaftaAstra": 98169,
+   "oyunaGelenHaftaAstra": 652375,
+   "oyunIciEndeks": 17.96,
+   "stakeOrani": 0.0021,
+   "yakilan": 1880568028,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 231.825,
+     "cekilenUsd": 10.508
+    },
+    "orta": {
+     "dagitilanUsd": 347.738,
+     "cekilenUsd": 15.761
+    },
+    "buyuk": {
+     "dagitilanUsd": 695.476,
+     "cekilenUsd": 31.514
+    }
+   },
+   "cekilebilirKisiUsd": 23.946,
+   "tradeKayipUsdAy": 168
+  },
+  {
+   "ay": 32,
+   "fiyat1M": 765.7936,
+   "piyasaDegeriUsd": 5990415,
+   "rezervAvax": 9527.2,
+   "mezun": true,
+   "tbHafta": 1444294,
+   "cikisTavani": 722147,
+   "cikis": 722147,
+   "kadran": 1.0379,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.607,
+   "kasaOmruAy": 66.6,
+   "odeyenKasalar": 35416260,
+   "oyunStok": 3590311874,
+   "oyuncuStok": 2371479535,
+   "dagitimKisiHaftaAstra": 95990,
+   "oyunaGelenHaftaAstra": 620386,
+   "oyunIciEndeks": 17.95,
+   "stakeOrani": 0.0021,
+   "yakilan": 1883119752,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 238.257,
+     "cekilenUsd": 10.417
+    },
+    "orta": {
+     "dagitilanUsd": 357.386,
+     "cekilenUsd": 15.624
+    },
+    "buyuk": {
+     "dagitilanUsd": 714.772,
+     "cekilenUsd": 31.24
+    }
+   },
+   "cekilebilirKisiUsd": 23.946,
+   "tradeKayipUsdAy": 168
+  },
+  {
+   "ay": 33,
+   "fiyat1M": 803.7752,
+   "piyasaDegeriUsd": 6288037,
+   "rezervAvax": 9760.7,
+   "mezun": true,
+   "tbHafta": 1375081,
+   "cikisTavani": 687541,
+   "cikis": 687541,
+   "kadran": 1.0369,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.589,
+   "kasaOmruAy": 66.7,
+   "odeyenKasalar": 35025503,
+   "oyunStok": 3589232397,
+   "oyuncuStok": 2384862890,
+   "dagitimKisiHaftaAstra": 93855,
+   "oyunaGelenHaftaAstra": 590534,
+   "oyunIciEndeks": 17.95,
+   "stakeOrani": 0.002,
+   "yakilan": 1885578288,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 244.555,
+     "cekilenUsd": 10.32
+    },
+    "orta": {
+     "dagitilanUsd": 366.833,
+     "cekilenUsd": 15.479
+    },
+    "buyuk": {
+     "dagitilanUsd": 733.666,
+     "cekilenUsd": 30.951
+    }
+   },
+   "cekilebilirKisiUsd": 23.929,
+   "tradeKayipUsdAy": 171.25
+  },
+  {
+   "ay": 34,
+   "fiyat1M": 842.6664,
+   "piyasaDegeriUsd": 6592775,
+   "rezervAvax": 9994,
+   "mezun": true,
+   "tbHafta": 1311583,
+   "cikisTavani": 655791,
+   "cikis": 655791,
+   "kadran": 1.036,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.57,
+   "kasaOmruAy": 66.8,
+   "odeyenKasalar": 34616851,
+   "oyunStok": 3588172138,
+   "oyuncuStok": 2398002549,
+   "dagitimKisiHaftaAstra": 91771,
+   "oyunaGelenHaftaAstra": 562844,
+   "oyunIciEndeks": 17.94,
+   "stakeOrani": 0.002,
+   "yakilan": 1887949147,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 250.736,
+     "cekilenUsd": 10.227
+    },
+    "orta": {
+     "dagitilanUsd": 376.104,
+     "cekilenUsd": 15.339
+    },
+    "buyuk": {
+     "dagitilanUsd": 752.209,
+     "cekilenUsd": 30.67
+    }
+   },
+   "cekilebilirKisiUsd": 23.928,
+   "tradeKayipUsdAy": 171.25
+  },
+  {
+   "ay": 35,
+   "fiyat1M": 882.4725,
+   "piyasaDegeriUsd": 6904670,
+   "rezervAvax": 10227.3,
+   "mezun": true,
+   "tbHafta": 1251870,
+   "cikisTavani": 625935,
+   "cikis": 625935,
+   "kadran": 1.0352,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.551,
+   "kasaOmruAy": 66.9,
+   "odeyenKasalar": 34193290,
+   "oyunStok": 3587130948,
+   "oyuncuStok": 2410900246,
+   "dagitimKisiHaftaAstra": 89741,
+   "oyunaGelenHaftaAstra": 537150,
+   "oyunIciEndeks": 17.94,
+   "stakeOrani": 0.002,
+   "yakilan": 1890237515,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 256.816,
+     "cekilenUsd": 10.138
+    },
+    "orta": {
+     "dagitilanUsd": 385.224,
+     "cekilenUsd": 15.205
+    },
+    "buyuk": {
+     "dagitilanUsd": 770.448,
+     "cekilenUsd": 30.402
+    }
+   },
+   "cekilebilirKisiUsd": 23.918,
+   "tradeKayipUsdAy": 173.25
+  },
+  {
+   "ay": 36,
+   "fiyat1M": 923.1852,
+   "piyasaDegeriUsd": 7223657,
+   "rezervAvax": 10460.6,
+   "mezun": true,
+   "tbHafta": 1196633,
+   "cikisTavani": 598317,
+   "cikis": 598317,
+   "kadran": 1.0344,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.531,
+   "kasaOmruAy": 67,
+   "odeyenKasalar": 33756919,
+   "oyunStok": 3586108953,
+   "oyuncuStok": 2423559089,
+   "dagitimKisiHaftaAstra": 87765,
+   "oyunaGelenHaftaAstra": 513071,
+   "oyunIciEndeks": 17.93,
+   "stakeOrani": 0.002,
+   "yakilan": 1892447684,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 262.787,
+     "cekilenUsd": 10.045
+    },
+    "orta": {
+     "dagitilanUsd": 394.181,
+     "cekilenUsd": 15.067
+    },
+    "buyuk": {
+     "dagitilanUsd": 788.362,
+     "cekilenUsd": 30.125
+    }
+   },
+   "cekilebilirKisiUsd": 23.917,
+   "tradeKayipUsdAy": 173.25
+  },
+  {
+   "ay": 37,
+   "fiyat1M": 964.8156,
+   "piyasaDegeriUsd": 7549821,
+   "rezervAvax": 10693.8,
+   "mezun": true,
+   "tbHafta": 1144974,
+   "cikisTavani": 572487,
+   "cikis": 572487,
+   "kadran": 1.0336,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.511,
+   "kasaOmruAy": 67.1,
+   "odeyenKasalar": 33310337,
+   "oyunStok": 3585105912,
+   "oyuncuStok": 2435981109,
+   "dagitimKisiHaftaAstra": 85839,
+   "oyunaGelenHaftaAstra": 490722,
+   "oyunIciEndeks": 17.93,
+   "stakeOrani": 0.002,
+   "yakilan": 1894584186,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 268.651,
+     "cekilenUsd": 9.959
+    },
+    "orta": {
+     "dagitilanUsd": 402.977,
+     "cekilenUsd": 14.937
+    },
+    "buyuk": {
+     "dagitilanUsd": 805.954,
+     "cekilenUsd": 29.866
+    }
+   },
+   "cekilebilirKisiUsd": 23.917,
+   "tradeKayipUsdAy": 173.25
+  },
+  {
+   "ay": 38,
+   "fiyat1M": 1007.347,
+   "piyasaDegeriUsd": 7883032,
+   "rezervAvax": 10927,
+   "mezun": true,
+   "tbHafta": 1096153,
+   "cikisTavani": 548076,
+   "cikis": 548076,
+   "kadran": 1.0329,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.49,
+   "kasaOmruAy": 67.2,
+   "odeyenKasalar": 32855045,
+   "oyunStok": 3584121832,
+   "oyuncuStok": 2448170017,
+   "dagitimKisiHaftaAstra": 83962,
+   "oyunaGelenHaftaAstra": 469619,
+   "oyunIciEndeks": 17.92,
+   "stakeOrani": 0.002,
+   "yakilan": 1896650429,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 274.401,
+     "cekilenUsd": 9.867
+    },
+    "orta": {
+     "dagitilanUsd": 411.601,
+     "cekilenUsd": 14.799
+    },
+    "buyuk": {
+     "dagitilanUsd": 823.202,
+     "cekilenUsd": 29.591
+    }
+   },
+   "cekilebilirKisiUsd": 23.906,
+   "tradeKayipUsdAy": 175.25
+  },
+  {
+   "ay": 39,
+   "fiyat1M": 1050.7951,
+   "piyasaDegeriUsd": 8223411,
+   "rezervAvax": 11160.2,
+   "mezun": true,
+   "tbHafta": 1050807,
+   "cikisTavani": 525404,
+   "cikis": 525404,
+   "kadran": 1.0321,
+   "carpan": 0.05,
+   "fren": false,
+   "kasaSagligi": 1.47,
+   "kasaOmruAy": 67.3,
+   "odeyenKasalar": 32393297,
+   "oyunStok": 3583156412,
+   "oyuncuStok": 2460128066,
+   "dagitimKisiHaftaAstra": 82133,
+   "oyunaGelenHaftaAstra": 450022,
+   "oyunIciEndeks": 17.92,
+   "stakeOrani": 0.002,
+   "yakilan": 1898650396,
+   "genesis": 15,
+   "kisiBasi": {
+    "ucretsiz": {
+     "dagitilanUsd": 280.038,
+     "cekilenUsd": 9.783
+    },
+    "orta": {
+     "dagitilanUsd": 420.057,
+     "cekilenUsd": 14.673
+    },
+    "buyuk": {
+     "dagitilanUsd": 840.113,
+     "cekilenUsd": 29.339
+    }
+   },
+   "cekilebilirKisiUsd": 23.906,
+   "tradeKayipUsdAy": 175.25
+  }
+ ]
+}

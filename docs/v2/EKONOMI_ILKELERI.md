@@ -51,3 +51,16 @@ Adlar: para **ADASTRA** (kısa adı **ASTRA**; eski kısaltma ADA artık kullan�
 
 - Önce denge modeli (simülatör: 50-1000 oyuncu, 12 ay, bütün hammadde kullanımı), sonra sayılar, sonra kod. Modelden geçmeyen sayı oyuna girmez.
 - Her sayı tek bir ayar dosyasında durur; oyun içinden (yönetici paneli) değiştirilebilir.
+
+## 9. Akış dengesi ilkesi (kullanıcı, 15 Ekim 2026)
+
+- Oyundan (ve ileride stake ödülünden) çıkıp satılabilecek ASTRA, **hiçbir zaman** trade uygulamasının yarattığı alımdan fazla olamaz. Uygulama payı: bir haftada ekosistemden cüzdanlara çıkan (oyuncu çekimi + yapımcı payı + stake ödülü) ≤ trade uygulamasına **taze** ödenen ASTRA'nın yarısı. Taban yoktur: alım yoksa çıkış yoktur. Trade kullanıldıkça fiyat yukarı gider.
+- Ödüller basılmaz, hep kasanın yüzdesi olarak ödenir; kasa sıfırlanmaz. Uzun vadede oyunun ödediği kasaya girene eşitlenir; girişin ana kaynağı trade payı olduğu için ödeme trade alımıyla kendiliğinden artıp azalır.
+- Piyasa değeri (fiyat) yükselirken oyun daha çok, düşerken daha az öder (Ödeme Kadranı). Dolar olarak ödeme zaten fiyatla büyür.
+- Ayrıntı, formüller ve model: `docs/v2/MAKRO_EKONOMI_PLANI.md`.
+
+## 10. Fayda ile geri ödeme ilkesi (kullanıcı, 15 Ekim 2026)
+
+- Ekosisteme büyük katkı yapan (Genesis basan, stake eden) karşılığını mümkün olan her yerde ASTRA olarak değil ayrıcalık, indirim ve öncelik olarak alır. Fayda satılamaz, satış baskısı yaratmaz.
+- Ayrıcalıklar motoru yememelidir: Genesis ve stake ayrıcalıklarının trade uygulamasına toplam maliyeti trade gelirinin küçük bir payında tutulur (öneri %10; plan bölüm 11-B5).
+- Stake ve sermaye avantajı tavanlıdır; emekle gelen katkı her zaman sermayeden büyük kalır (3. ilke).

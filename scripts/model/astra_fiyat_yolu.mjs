@@ -12,6 +12,7 @@
 import fs from 'fs';
 import { GAME_CONFIG as C } from '../../js/config.js';
 import { WEEKLY_RULES as WR } from '../../server/economy.js';
+import { zincirOlustur } from './zincir.mjs';
 const A = Object.fromEntries(process.argv.slice(2).map(x => x.split('=')));
 const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 const SENARYO = {
@@ -36,23 +37,12 @@ const P = {
   tradeBurn: 0.2, tradeGame: 0.4, tradeHold: 0.3, tradeReward: 0.1,   // trade gelirinin bolusumu (kullanici 7 Ekim)
   ...S
 };
-// ── zincir ──
-const a = 901, c = 232210432401, GRAD = 7.3e9;
-const curveR = s => a * s ** 3 / (3 * c) / 1e18, curveS = r => Math.cbrt(r * 3 * c * 1e18 / a), curveP = s => a * s * s / c / 1e18;
-const M = { S: 2.1325e9, dead: 165e6, grad: false, R: curveR(2.1325e9), T: 0, gradWeek: null };
-const priceAvax = () => (M.grad ? M.R / M.T : curveP(M.S));
-const price = () => priceAvax() * P.avaxUsd;
-const circ = () => M.S - M.dead - (M.grad ? M.T : 0);
-function buyUsd(usd) {
-  let avax = usd / P.avaxUsd * 0.99, got = 0;
-  if (!M.grad) { const R0 = curveR(M.S), room = curveR(GRAD) - R0; const use = Math.min(avax, room); const S1 = curveS(R0 + use); got += S1 - M.S; M.S = S1; avax -= use;
-    if (M.S >= GRAD - 1) { M.grad = true; M.R = curveR(GRAD); M.T = 2.45e9; M.S += 2.7e9; M.gradWeek = W; } }
-  if (M.grad && avax > 0) { const out = M.T - M.R * M.T / (M.R + avax); M.R += avax; M.T -= out; got += out; }
-  return got;
-}
-function sellAda(q) { if (q <= 0) return 0; if (!M.grad) { const S1 = Math.max(M.dead + 1, M.S - q); const out = curveR(M.S) - curveR(S1); M.S = S1; return out * P.avaxUsd; } const out = M.R - M.R * M.T / (M.T + q); M.R -= out; M.T += q; return out * P.avaxUsd; }
-const wdCap = () => (M.grad ? M.T * (1 / Math.sqrt(1 - P.wdPriceDrop) - 1) : M.S * (1 - Math.sqrt(1 - P.wdPriceDrop)));
-const burn = q => { if (!(q > 0)) return; if (P.yakim) { M.dead += q; T.burned += q; } else { H.free += q; } };   // yakım kapalıysa token oyuncularda kalır
+// ── zincir (ortak hesap: scripts/model/zincir.mjs) ──
+const Z = zincirOlustur({ avaxUsd: P.avaxUsd });
+const { M, price, circ, sellAda } = Z;
+const buyUsd = usd => Z.buyUsd(usd, W);
+const wdCap = () => Z.wdCap(P.wdPriceDrop);
+const burn = q => { if (!(q > 0)) return; if (P.yakim) { Z.burnTokens(q); T.burned += q; } else { H.free += q; } };   // yakım kapalıysa token oyuncularda kalır
 // ── oyun tarafı (toplu) ──
 let N = P.N0, havuz = P.havuz0, ubiNext = 0, W = 0;
 const H = { free: 0, locked: 0 };
@@ -87,7 +77,7 @@ for (W = 1; W <= P.weeks; W++) {
     const avg3 = usdHist.slice(-3).reduce((s, v) => s + v, 0) / Math.min(3, usdHist.length);
     if (usdHist.length >= 3 && avg3 >= P.kapiHedefUsd && N < P.Nmax) { if (T.kapiAy == null) T.kapiAy = ay; N = Math.min(P.Nmax, Math.round(N * (1 + P.kapiArtis))); }
     if (T.N200Ay == null && N >= 200) T.N200Ay = ay; if (T.N1000Ay == null && N >= 1000) T.N1000Ay = ay;
-    monthly.push({ ay, N, fiyatUsd: p, fiyat1M: +(p * 1e6).toFixed(2), mcapUsd: Math.round(p * circ()), havuzAvax: Math.round(M.grad ? M.R : curveR(M.S)), mezun: M.grad, usdPerPlayer: +usdPerPlayer.toFixed(2), wdUsdPerPlayer: +(T.wdUsdMonth / N).toFixed(2), burned: Math.round(T.burned), locked: Math.round(H.locked), free: Math.round(H.free), havuzAstra: Math.round(havuz), circ: Math.round(circ()) });
+    monthly.push({ ay, N, fiyatUsd: p, fiyat1M: +(p * 1e6).toFixed(2), mcapUsd: Math.round(p * circ()), havuzAvax: Math.round(Z.rezervAvax()), mezun: M.grad, usdPerPlayer: +usdPerPlayer.toFixed(2), wdUsdPerPlayer: +(T.wdUsdMonth / N).toFixed(2), burned: Math.round(T.burned), locked: Math.round(H.locked), free: Math.round(H.free), havuzAstra: Math.round(havuz), circ: Math.round(circ()) });
     T.incMonth = 0; T.wdUsdMonth = 0;
   }
 }
