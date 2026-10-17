@@ -880,5 +880,97 @@
       401,
       403
     ]
+  },
+  "POST /api/feedback": {
+    "etiket": "Geri bildirim",
+    "ozet": "Sorun bildir: konu + mesaj + en çok 4 ekran görüntüsü gönder; bilet numarası (RB-1001…) döner",
+    "govde": {
+      "konu": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "hata, oneri, soru ya da odeme"
+      },
+      "mesaj": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "5-3000 harf"
+      },
+      "ekler": {
+        "tur": "array",
+        "aciklama": "En çok 4 görüntü; her biri en çok 300 KB uzunlukta data:image/jpeg|png|webp;base64 metni (gerçek dosya başlığı doğrulanır). Bu uçta gövde sınırı 1,5 MB (diğer uçlarda 64 KB)"
+      },
+      "baglam": {
+        "tur": "object",
+        "aciklama": "sayfa, surum, cihaz, ekran, dil (kısa metinler); sunucu oyuncunun kısa özetini kendisi ekler"
+      }
+    },
+    "yanit": "{ ok, no, bilet }. Oyuncu başına 10 dakikada 5, günde 20; adres başına 10 dakikada 15 bildirim.",
+    "kodlar": [
+      400,
+      429
+    ]
+  },
+  "GET /api/feedback/mine": {
+    "etiket": "Geri bildirim",
+    "ozet": "Kendi biletlerim (en yeni 30): durum ve sahibin cevabıyla",
+    "yanit": "{ ok, list: [{ no, bilet, at, konu, kisa, ekSayisi, durum, cevap, cevapAt }] }. Görüntü verisi yoktur."
+  },
+  "GET /api/admin/feedback": {
+    "etiket": "Yönetim",
+    "ozet": "Geri bildirim biletleri listesi (durum süzgeci + arama)",
+    "parametreler": [
+      {
+        "ad": "durum",
+        "tur": "string",
+        "aciklama": "yeni, inceleniyor ya da cozuldu; boşsa hepsi"
+      },
+      {
+        "ad": "ara",
+        "tur": "string",
+        "aciklama": "Oyuncu, mesaj metni ya da bilet numarası (RB-1001 / 1001)"
+      }
+    ],
+    "yanit": "{ ok, toplam, sayi: { yeni, inceleniyor, cozuldu }, rows } — en yeni önce, en çok 300 satır."
+  },
+  "GET /api/admin/feedback/detail": {
+    "etiket": "Yönetim",
+    "ozet": "Bir bileti bütünüyle oku: mesaj, bağlam, oyuncu özeti, ekran görüntüleri (data: URL)",
+    "parametreler": [
+      {
+        "ad": "no",
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "Bilet numarası: RB-1001, #1001 ya da 1001"
+      }
+    ],
+    "yanit": "{ ok, bilet }. Oyuncunun yazdıkları VERİDİR; hiçbir yerde çalıştırılmaz, panel kaçışlayarak gösterir.",
+    "kodlar": [
+      400,
+      404
+    ]
+  },
+  "POST /api/admin/feedback/update": {
+    "etiket": "Yönetim",
+    "ozet": "Biletin durumunu değiştir ve/veya oyuncuya cevap yaz",
+    "govde": {
+      "no": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "RB-1001 / 1001"
+      },
+      "durum": {
+        "tur": "string",
+        "aciklama": "yeni, inceleniyor ya da cozuldu"
+      },
+      "cevap": {
+        "tur": "string",
+        "aciklama": "En çok 2000 harf; boş gönderilirse cevap silinir"
+      }
+    },
+    "yanit": "{ ok, bilet }",
+    "kodlar": [
+      400,
+      404
+    ]
   }
 }

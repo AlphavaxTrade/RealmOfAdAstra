@@ -30,6 +30,7 @@
 // ============================================================================
 import http from 'node:http';
 import { createPromo } from './promo.js';
+import { createGeriBildirim } from './geri-bildirim.js';
 import { tokenOzeti } from './oturum.js';
 import { createMetrik } from './metrik.js';
 import { sonYedekYasiSn, sonDenemeBasarili } from './yedek/yedekle.js';
@@ -42,6 +43,7 @@ import cuzdanRotalari from './rotalar/cuzdan.js';
 import pvpRotalari from './rotalar/pvp.js';
 import ilanRotalari from './rotalar/ilan.js';
 import sponsorRotalari from './rotalar/sponsor.js';
+import geriBildirimRotalari from './rotalar/geri-bildirim.js';
 import yonetimRotalari from './rotalar/yonetim.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -68,11 +70,12 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm', 'POST /api/account/2fa/reset-cancel'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, geriBildirim = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
   metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
+  geriBildirim = geriBildirim || createGeriBildirim({ db, engine, kapi, cfg, clock, log });   // 📮 "Sorun bildir" biletleri (server/geri-bildirim.js)
 
   // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
   const rate = new Map();
@@ -111,10 +114,11 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
     res.end(body);
   }
 
-  function readBody(req) {
+  // sınır varsayılan 64 KB; yalnız görüntü taşıyan uç (geri bildirim) daha büyük bir sınır ister
+  function readBody(req, sinir = 64 * 1024) {
     return new Promise((resolve, reject) => {
       let size = 0; const chunks = [];
-      req.on('data', c => { size += c.length; if (size > 64 * 1024) { reject(userError('İstek çok büyük')); req.destroy(); } else chunks.push(c); });
+      req.on('data', c => { size += c.length; if (size > sinir) { reject(userError('İstek çok büyük')); req.destroy(); } else chunks.push(c); });
       req.on('end', () => {
         try {
           const v = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
@@ -181,10 +185,10 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir
-  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
+  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, geriBildirim, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
   const routes = {
     ...genelRotalar(ctx), ...hesapRotalari(ctx), ...oyunRotalari(ctx), ...cuzdanRotalari(ctx),
-    ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...yonetimRotalari(ctx)
+    ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...geriBildirimRotalari(ctx), ...yonetimRotalari(ctx)
   };
   const serveStatic = createStatic({ cfg, secHeaders: SEC_HEADERS });
 

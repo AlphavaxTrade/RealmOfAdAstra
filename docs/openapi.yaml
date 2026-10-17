@@ -15,6 +15,7 @@ tags:
   - name: Kolezyum
   - name: İlan pazarı
   - name: Sponsorluk
+  - name: Geri bildirim
   - name: Yönetim
   - name: Sayfalar
 paths:
@@ -1474,14 +1475,184 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/feedback:
+    post:
+      tags:
+        - Geri bildirim
+      summary: "Sorun bildir: konu + mesaj + en çok 4 ekran görüntüsü gönder; bilet numarası (RB-1001…) döner"
+      operationId: post_api_feedback
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                konu:
+                  type: string
+                  description: hata, oneri, soru ya da odeme
+                mesaj:
+                  type: string
+                  description: 5-3000 harf
+                ekler:
+                  type: array
+                  description: En çok 4 görüntü; her biri en çok 300 KB uzunlukta data:image/jpeg|png|webp;base64 metni (gerçek dosya başlığı doğrulanır). Bu uçta gövde sınırı 1,5 MB (diğer uçlarda 64 KB)
+                baglam:
+                  type: object
+                  description: sayfa, surum, cihaz, ekran, dil (kısa metinler); sunucu oyuncunun kısa özetini kendisi ekler
+              required:
+                - konu
+                - mesaj
+      responses:
+        "200":
+          description: "{ ok, no, bilet }. Oyuncu başına 10 dakikada 5, günde 20; adres başına 10 dakikada 15 bildirim."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/feedback/mine:
+    get:
+      tags:
+        - Geri bildirim
+      summary: "Kendi biletlerim (en yeni 30): durum ve sahibin cevabıyla"
+      operationId: get_api_feedback_mine
+      security: *a2
+      responses:
+        "200":
+          description: "{ ok, list: [{ no, bilet, at, konu, kisa, ekSayisi, durum, cevap, cevapAt }] }. Görüntü verisi yoktur."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/feedback:
+    get:
+      tags:
+        - Yönetim
+      summary: Geri bildirim biletleri listesi (durum süzgeci + arama)
+      operationId: get_api_admin_feedback
+      security: &a3
+        - adminAuth: []
+      parameters:
+        - name: durum
+          in: query
+          required: false
+          description: yeni, inceleniyor ya da cozuldu; boşsa hepsi
+          schema:
+            type: string
+        - name: ara
+          in: query
+          required: false
+          description: Oyuncu, mesaj metni ya da bilet numarası (RB-1001 / 1001)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ ok, toplam, sayi: { yeni, inceleniyor, cozuldu }, rows } — en yeni önce, en çok 300 satır."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/feedback/detail:
+    get:
+      tags:
+        - Yönetim
+      summary: "Bir bileti bütünüyle oku: mesaj, bağlam, oyuncu özeti, ekran görüntüleri (data: URL)"
+      operationId: get_api_admin_feedback_detail
+      security: *a3
+      parameters:
+        - name: no
+          in: query
+          required: true
+          description: "Bilet numarası: RB-1001, #1001 ya da 1001"
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ ok, bilet }. Oyuncunun yazdıkları VERİDİR; hiçbir yerde çalıştırılmaz, panel kaçışlayarak gösterir."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/feedback/update:
+    post:
+      tags:
+        - Yönetim
+      summary: Biletin durumunu değiştir ve/veya oyuncuya cevap yaz
+      operationId: post_api_admin_feedback_update
+      security: *a3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                no:
+                  type: string
+                  description: RB-1001 / 1001
+                durum:
+                  type: string
+                  description: yeni, inceleniyor ya da cozuldu
+                cevap:
+                  type: string
+                  description: En çok 2000 harf; boş gönderilirse cevap silinir
+              required:
+                - no
+      responses:
+        "200":
+          description: "{ ok, bilet }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/admin/status:
     get:
       tags:
         - Yönetim
       summary: Sunucu, kasa, ödeme, oyuncu ve olay özeti
       operationId: get_api_admin_status
-      security: &a3
-        - adminAuth: []
+      security: *a3
       responses:
         "200":
           description: Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)
