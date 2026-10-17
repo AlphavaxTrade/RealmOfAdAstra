@@ -22,7 +22,7 @@ const ACIKLAMA = {
   wallet_nonces: 'Cüzdan bağlama imza mesajları', kasa: 'Oyun Kasası: oyuncu başına sunucu yönetimli cüzdan (anahtar şifreli)', kasa_ops: 'Kasa zincir işlemleri',
   kasa_usage: 'Kasa günlük harcama toplamı (üst sınır hesabı için)', pay_quotes: 'Cüzdandan ödeme teklifleri', listings: 'İlan pazarı (teçhizat)',
   promo_codes: 'Promo kodları', promo_uses: 'Promo kodu kullanımları', promo_pending: 'Kayıtta girilen, doğrulamada kullanılacak promo kodu',
-  partner_income: 'Trade sitesinden gelen ADASTRA transferleri (her biri bir kez sayılır)', kapi_ip_kabul: 'Kapı: hangi (tuzlu özetli) istemci adresinden kim ne zaman vatandaş oldu (24 saatlik adres kotası; ham adres yok)', schema_migrations: 'Uygulanmış şema geçişleri (sürüm, ad, zaman)'
+  partner_income: 'Trade sitesinden gelen ADASTRA transferleri (her biri bir kez sayılır)', kapi_ip_kabul: 'Kapı: hangi (tuzlu özetli) istemci adresinden kim ne zaman vatandaş oldu (24 saatlik adres kotası; ham adres yok)', geri_bildirim: '"Sorun bildir" biletleri: no = bilet numarası (RB-1001…), konu, mesaj, durum, yönetici cevabı, tarayıcı bağlamı ve sunucunun eklediği oyuncu özeti (JSON)', geri_bildirim_ek: 'Bir biletin ekran görüntüleri (en çok 4; data: URL, ayrı tablo ki liste sorguları büyük satır taşımasın)', schema_migrations: 'Uygulanmış şema geçişleri (sürüm, ad, zaman)'
 };
 
 export function belgeUret() {

@@ -3,7 +3,7 @@
 > Bu dosya **otomatik üretilir**: `node scripts/db/sema-belge.mjs` (güncelliği `tests/test_sema_belge.mjs` korur).
 > Şema değişikliği yalnız `server/gecis/` altına yeni numaralı geçiş eklenerek yapılır; uygulanmış geçişler değişmez (mühür).
 
-Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama
+Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama, 009_geri_bildirim
 
 ## accounts
 
@@ -72,6 +72,37 @@ Olay günlüğü (giriş, yönetici işlemleri, kapı...)
 | address | TEXT |  |  |  |
 | type | TEXT | evet |  |  |
 | data | TEXT |  |  |  |
+
+## geri_bildirim
+
+"Sorun bildir" biletleri: no = bilet numarası (RB-1001…), konu, mesaj, durum, yönetici cevabı, tarayıcı bağlamı ve sunucunun eklediği oyuncu özeti (JSON)
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| no | INTEGER |  |  | PK |
+| player | TEXT | evet |  |  |
+| konu | TEXT | evet |  |  |
+| mesaj | TEXT | evet |  |  |
+| durum | TEXT | evet | 'yeni' |  |
+| cevap | TEXT | evet | '' |  |
+| cevap_at | INTEGER |  |  |  |
+| baglam | TEXT |  |  |  |
+| ozet | TEXT |  |  |  |
+| ek_sayisi | INTEGER | evet | 0 |  |
+| at | INTEGER | evet |  |  |
+| guncel | INTEGER | evet |  |  |
+
+İndeksler: `geri_bildirim_durum`, `geri_bildirim_oyuncu`
+
+## geri_bildirim_ek
+
+Bir biletin ekran görüntüleri (en çok 4; data: URL, ayrı tablo ki liste sorguları büyük satır taşımasın)
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| no | INTEGER | evet |  | PK |
+| sira | INTEGER | evet |  | PK |
+| veri | TEXT | evet |  |  |
 
 ## kapi_ip_kabul
 

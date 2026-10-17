@@ -6,5 +6,6 @@
   "005_eposta_anahtari.js": "0166474162d1dc3fadfb46a4936dfc91779c1e16ba96bc3e2b9dcf3e82d623f8",
   "006_kapi_ip.js": "9a310b732bd7b747a3d95fb78d5b6568c77f3b91d42de24fc564ee5ff3082297",
   "007_eposta_belirtec_ozeti.js": "67ca8cad22304300a4fb1f0bb22bf6c7512b48cc6787986dfeadd8db71758189",
-  "008_muhur_sifirlama.js": "d03f86ccda419cb4fac446aaf04d6b1b93ce6730a211b17c36e7ea17ca7481b8"
+  "008_muhur_sifirlama.js": "d03f86ccda419cb4fac446aaf04d6b1b93ce6730a211b17c36e7ea17ca7481b8",
+  "009_geri_bildirim.js": "60549aecd5b36f93c4ac751385a7c7cfeddf8c6ccc4649c34adb5106f7695893"
 }
