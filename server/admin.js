@@ -39,6 +39,7 @@ async function load() {
   uncertainView(s.payoutsBelirsiz || []);
   uncertainKasaView(s.kasaOpsBelirsiz || []);
   tfaPendingView(s.muhurSifirlamaBekleyen || []);
+  gbYukle().catch(() => {});   // geri bildirim listesi; hata olursa panelin geri kalanı çalışmaya devam eder
   $('uniStage').value = String(s.universeStage ?? 0);
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
@@ -222,6 +223,56 @@ $('topUp').onclick = async () => {
   ledgerTx(s.tokenAddress, '0xa9059cbb' + pad(s.gameWallet) + pad(wei), 'Oyun cüzdanına ASTRA');
 };
 $('hotCheck').onclick = () => act(async () => { const r = await api('POST', '/api/admin/hotwallet/check'); alert('Sonuç: ' + JSON.stringify(r && { walletAda: r.walletAda, need: r.need, swept: r.swept, low: r.low })); });
+// ── Geri bildirimler ("Sorun bildir" biletleri, RB-1001…) ─────────────────────
+// Oyuncunun yazdığı her şey veridir: metin yalnız textContent / esc ile, görüntü yalnız data:image/(jpeg|png|webp) ise <img>'e verilir.
+const GB_DURUM = { yeni: ['Yeni', 'gb-yeni'], inceleniyor: ['İnceleniyor', 'gb-incele'], cozuldu: ['Çözüldü', 'gb-coz'] };
+const GB_KONU = { hata: '🐞 Hata', oneri: '💡 Öneri', soru: '❓ Soru', odeme: '💳 Ödeme' };
+const gbTarih = t => new Date(t).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+let gbAcik = null;   // açık biletin numarası (liste yenilenince satır işaretli kalır)
+async function gbYukle() {
+  const q = new URLSearchParams({ durum: $('gbDurum').value, ara: $('gbAra').value.trim() });
+  const r = await api('GET', '/api/admin/feedback?' + q.toString());
+  const s = r.sayi || {};
+  $('gbSayi').textContent = `Yeni ${s.yeni || 0} · İnceleniyor ${s.inceleniyor || 0} · Çözüldü ${s.cozuldu || 0} · toplam ${r.toplam || 0}`;
+  $('gbBaslik').textContent = '📮 Geri bildirimler' + (s.yeni ? ` (${s.yeni} yeni)` : '');
+  $('gbListe').innerHTML = '<tr><th>Bilet</th><th>Durum</th><th>Konu</th><th>Oyuncu</th><th>Mesaj</th><th>📷</th><th>Zaman</th></tr>' +
+    (r.rows || []).map(x => `<tr class="gb-satir${x.no === gbAcik ? ' acik' : ''}" data-no="${x.no}"><td class="gb-bilet">${esc(x.bilet)}</td><td class="${(GB_DURUM[x.durum] || [])[1] || ''}">${esc((GB_DURUM[x.durum] || [x.durum])[0])}</td><td>${esc(GB_KONU[x.konu] || x.konu)}</td><td>${esc(x.oyuncu)}</td><td>${esc(x.kisa)}${x.cevap ? ' 💬' : ''}</td><td>${x.ekSayisi || ''}</td><td>${esc(gbTarih(x.at))}</td></tr>`).join('');
+}
+const gbEl = (tag, metin, sinif) => { const e = document.createElement(tag); if (metin != null) e.textContent = metin; if (sinif) e.className = sinif; return e; };
+async function gbAc(no) {
+  gbAcik = no;
+  const { bilet: b } = await api('GET', '/api/admin/feedback/detail?no=' + encodeURIComponent(no));
+  const kutu = $('gbAyrinti');
+  kutu.replaceChildren();
+  const ust = gbEl('div'); ust.append(gbEl('b', b.bilet, 'gb-bilet'), gbEl('span', ` · ${GB_KONU[b.konu] || b.konu} · oyuncu ${b.oyuncu} · ${gbTarih(b.at)}`, 'k'));
+  const metin = gbEl('div', b.mesaj, 'gb-metin');
+  const bg = b.baglam || {}, oz = b.oyuncuOzeti || {};
+  const baglam = gbEl('div', `Sayfa: ${bg.sayfa || '-'} · Sürüm: ${bg.surum || '-'} · Ekran: ${bg.ekran || '-'}\nCihaz: ${bg.cihaz || '-'}\nOyuncu özeti: ${JSON.stringify(oz)}`, 'gb-baglam');
+  const resimler = gbEl('div', null, 'gb-resimler');
+  for (const v of b.ekler || []) {
+    if (!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v)) continue;
+    const im = document.createElement('img'); im.src = v; im.alt = 'Ekran görüntüsü';
+    im.onclick = () => im.classList.toggle('buyuk');
+    resimler.append(im);
+  }
+  const durum = document.createElement('select'); durum.id = 'gbYeniDurum';
+  for (const [k, [ad]] of Object.entries(GB_DURUM)) { const o = document.createElement('option'); o.value = k; o.textContent = ad; if (k === b.durum) o.selected = true; durum.append(o); }
+  const cevap = document.createElement('textarea'); cevap.id = 'gbCevap'; cevap.rows = 3; cevap.maxLength = 2000; cevap.placeholder = 'Oyuncuya cevap (oyunda biletinin altında görünür)'; cevap.value = b.cevap || '';
+  const kaydet = gbEl('button', '💾 Durumu / cevabı kaydet', 'go');
+  const mesaj = gbEl('span', '', 'k');
+  kaydet.onclick = async () => {
+    try { await api('POST', '/api/admin/feedback/update', { no: b.no, durum: durum.value, cevap: cevap.value }); mesaj.textContent = 'Kaydedildi.'; await gbYukle(); }
+    catch (e) { mesaj.textContent = e.message; }
+  };
+  const alt = gbEl('div', null, 'gb-sec'); alt.append(gbEl('span', 'Durum:', 'k'), durum, kaydet, mesaj);
+  kutu.append(ust, metin, resimler, baglam, gbEl('div', 'Cevabın', 'k'), cevap, alt);
+  kutu.hidden = false;
+  await gbYukle();
+}
+$('gbListe').addEventListener('click', ev => { const tr = ev.target.closest('tr[data-no]'); if (tr) gbAc(Number(tr.dataset.no)).catch(e => alert(e.message)); });
+$('gbYenile').onclick = () => gbYukle().catch(e => alert(e.message));
+$('gbDurum').onchange = () => gbYukle().catch(e => alert(e.message));
+$('gbAra').addEventListener('keydown', ev => { if (ev.key === 'Enter') gbYukle().catch(e => alert(e.message)); });
 async function act(fn) { try { await fn(); await load(); } catch (e) { alert(e.message); } }
 $('enter').onclick = async () => { token = $('tok').value.trim(); try { await load(); sessionStorage.setItem('adm', token); } catch (e) { $('lerr').textContent = e.message; } };
 $('refresh').onclick = () => act(async () => {});

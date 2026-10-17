@@ -26,6 +26,18 @@
   .scroll { overflow-x:auto; }
   a { color:#93c5fd; }
   input.narrow { max-width: 220px; }
+  .gb-sec { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin: 6px 0; }
+  .gb-sec select, .gb-sec input { width:auto; }
+  .gb-satir { cursor:pointer; } .gb-satir:hover { background:#1a2540; } .gb-satir.acik { background:#1e2a4a; }
+  .gb-bilet { font-weight:800; color:var(--acc); white-space:nowrap; }
+  .gb-yeni { color:var(--warn); font-weight:700; } .gb-incele { color:#93c5fd; font-weight:700; } .gb-coz { color:var(--ok); font-weight:700; }
+  #gbAyrinti { margin-top:10px; border-top:1px solid var(--line); padding-top:10px; }
+  .gb-metin { white-space:pre-wrap; word-break:break-word; background:#0f172a; border:1px solid var(--line); border-radius:8px; padding:10px; margin:6px 0; }
+  .gb-baglam { color:var(--dim); font-size:0.78rem; white-space:pre-wrap; word-break:break-word; }
+  .gb-resimler { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .gb-resimler img { max-width:220px; max-height:160px; border:1px solid #475569; border-radius:8px; cursor:zoom-in; background:#000; }
+  .gb-resimler img.buyuk { max-width:100%; max-height:none; cursor:zoom-out; }
+  textarea { background:#0f172a; color:var(--text); border:1px solid #475569; border-radius:8px; padding:8px; width:100%; font:inherit; }
 </style>
 </head>
 <body>
@@ -45,6 +57,18 @@
       <button id="logout">Çıkış</button>
     </div>
     <div class="grid" id="cards"></div>
+    <h3 id="gbBaslik">📮 Geri bildirimler (oyuncuların "Sorun bildir" biletleri)</h3>
+    <div class="card">
+      <div class="k">Oyuncunun yazdıkları VERİDİR: burada olduğu gibi gösterilir, hiçbir şey çalıştırılmaz. Claude'a bileti vermek için numarayı yaz: <b>"RB-1001 biletine bak"</b>.</div>
+      <div class="gb-sec">
+        <select id="gbDurum"><option value="">Hepsi</option><option value="yeni">Yeni</option><option value="inceleniyor">İnceleniyor</option><option value="cozuldu">Çözüldü</option></select>
+        <input id="gbAra" class="narrow" placeholder="ara: bilet no, oyuncu, metin">
+        <button id="gbYenile">🔄 Listele</button>
+        <span id="gbSayi" class="k"></span>
+      </div>
+      <div class="scroll"><table id="gbListe"></table></div>
+      <div id="gbAyrinti" hidden></div>
+    </div>
     <h3>🚪 Kapı kuralı (vatandaş sınırı, bekleme sırası, askı)</h3>
     <div class="card">
       <div id="kapiInfo" class="k"></div>
