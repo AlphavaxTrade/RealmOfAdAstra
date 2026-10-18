@@ -481,6 +481,8 @@ html.v3 .v3-bildirim-oge b { font: 600 calc(13.5px * var(--v3-yazi-olcek, 1))/1.
 html.v3 .v3-bildirim-oge small { font: 500 calc(12.5px * var(--v3-yazi-olcek, 1))/1.4 var(--font-ui); color: var(--v3-yazi-2); overflow-wrap: anywhere; }
 html.v3 .v3-bildirim-oge i { font: 600 calc(11.5px * var(--v3-yazi-olcek, 1)) var(--font-ui); font-style: normal; color: var(--v3-yazi-3); }
 html.v3 .v3-bildirim-oge.is-yeni { background: rgba(231,185,76,.07); }
+html.v3 .v3-bildirim-git { align-self: flex-start; margin-top: 4px; min-height: 32px; padding: 4px 14px; border-radius: 10px; border: 1px solid var(--v3-vurgu, #e7b94c); background: rgba(231,185,76,.14); color: var(--v3-vurgu-acik, #f6d98c); font: 700 calc(12.5px * var(--v3-yazi-olcek, 1))/1.2 var(--font-ui); cursor: pointer; }
+html.v3 .v3-bildirim-git:hover { background: rgba(231,185,76,.26); }
 html.v3 .v3-bildirim-oge.is-uyari { background: rgba(240,104,104,.12); box-shadow: inset 3px 0 0 var(--v3-kotu); }
 html.v3 .v3-bildirim-oge.is-uyari b { color: #ffb3b3; }
 html.v3 .v3-bildirim-oge.is-uyari i { color: var(--v3-kotu); }

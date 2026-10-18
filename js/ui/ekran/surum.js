@@ -1,5 +1,6 @@
 // Realm of AdAstra — Sürüm geçmişi: en yeni üç sürüm açık, eskileri katlı.
 import { ekranKaydet, kap, kart, katli, etiket, esc } from './cekirdek.js';
+import { surumuGoruldu } from '../v3/surum-bildirim.js';
 
 const ACIK_SURUM = 3;
 
@@ -17,6 +18,7 @@ const ekran = {
   baslik: () => ['📜', 'Sürüm geçmişi'],
 
   govde(b) {
+    surumuGoruldu(b.GAME_CONFIG.CHANGELOG);   // sürüm geçmişi açıldı: "yeni sürüm" bildirimi bir daha çıkmaz
     const kayitlar = [...(b.GAME_CONFIG.CHANGELOG || [])].reverse();   // en yeni üstte
     const yeni = kayitlar.slice(0, ACIK_SURUM);
     const eski = kayitlar.slice(ACIK_SURUM);

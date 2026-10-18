@@ -1576,6 +1576,15 @@ export const GAME_CONFIG = {
       changes: [
         `Zindan savaşlarında aşınan eşya sayısı artık kata, zindan moduna ve büyük bosslara göre artıyor. Savaşa giren her askerin takılı eşyalarından rastgele seçilen birkaç tanesi birer dayanıklılık kaybeder; aynı eşya bir savaşta iki kez aşınmaz. Ortalama aşınan eşya: Normal 1,0 (1. kat) - 2,0 (6. kat), Zor 1,6 - 2,6, Uzman 2,2 - 3,2, Cehennem 2,8 - 3,8; büyük bosslarda +0,5. Savaşa hazırlan ekranı o canavar için sayıyı gösterir.`
       ]
+    },
+    {
+      version: 'v1.59',
+      title: '🆕 Yeni Sürüm Bildirimi ve Çark Stamina Düzeltmesi',
+      date: '18 Ekim 2026',
+      changes: [
+        `Her yeni sürüm geldiğinde zil panelinde "🆕 Yeni sürüm geldi" bildirimi çıkıyor ve yanındaki "Oku" düğmesi doğrudan Sürüm geçmişini açıyor. Sürüm geçmişini açınca ya da bildirimi temizleyince o sürüm okundu sayılır, bir daha çıkmaz. Yeni hesaplara çıkmaz.`,
+        `Çarktan stamina ödülü düştüğünde stamina deposu kısmen boşsa sığmayan kısmın değeri artık kaybolmuyor: depo dolana kadar stamina verilir, kalanın değeri ASTRA olarak ödenir (depo tamamen doluysa zaten tamamı ASTRA ödeniyordu).`
+      ]
     }
   ],
 

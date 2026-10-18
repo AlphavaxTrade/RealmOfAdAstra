@@ -19,6 +19,7 @@ import { kurYukleme } from './ui/yukleme.js';
 import { kurZindan } from './ui/zindan/ekran.js';
 import { hudVerisi } from './ui/hud-verisi.js';
 import { kurBildirimler } from './ui/v3/bildirim.js';
+import { surumBildirimi, surumuGoruldu } from './ui/v3/surum-bildirim.js';
 import { kurKapiSeridi } from './ui/kapi-seridi.js';
 import { kurYol } from './ui/yol.js';
 
@@ -45,7 +46,9 @@ const zindan = kurZindan({ gs: gameState, phaser: () => phaserGame, panelKapat: 
 const bildirimler = kurBildirimler({
   botUyarisi: () => gameState.getBotResourceDeficitWarning(),
   degisti: () => { if (window.__v3) window.__v3.guncelle(); },   // zil sayısı hudVeri().bildirim'den gelir
-  ilk: { simge: '🏰', metin: 'AdAstra Krallığına hoş geldin! Krallığını büyütmek için sefere çık.' }
+  ilk: { simge: '🏰', metin: 'AdAstra Krallığına hoş geldin! Krallığını büyütmek için sefere çık.' },
+  git: (ekran) => ekranAc(ekran),                                  // bildirimdeki "Oku" gibi düğmeler
+  eylemKapandi: (eylem) => { if (eylem.ekran === 'surum') surumuGoruldu(GAME_CONFIG.CHANGELOG); }
 });
 
 // ---------------------------------------------------------------------------
@@ -412,6 +415,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     kutu: $('guide-widget')
   });
   renderTopBar();
+
+  // Yeni sürüm geldiyse zil panelinde haber ver ("Oku" düğmesi Sürüm geçmişini açar)
+  const yeniSurum = surumBildirimi(GAME_CONFIG.CHANGELOG, { yeniOyuncu: (gameState.state.level || 1) <= 1 });
+  if (yeniSurum) {
+    bildirimler.ekle(yeniSurum.simge, yeniSurum.metin, yeniSurum.eylem);
+    bildir(`🆕 ${yeniSurum.metin} Zil panelinden okuyabilirsin.`, 'info');
+  }
 
   const { kurV3Kabuk } = await import('./ui/v3/kabuk.js');
   kurV3Kabuk({

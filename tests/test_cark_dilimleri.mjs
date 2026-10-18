@@ -13,6 +13,7 @@ globalThis.localStorage = {
 const { GameStateManager } = await import('../js/gameState.js');
 const { GAME_CONFIG } = await import('../js/config.js');
 const { treasury } = await import('../js/treasury.js');
+const { ammMarket } = await import('../js/ammMarket.js');
 
 const K = GAME_CONFIG.CARNIVAL;
 const dilimler = K.WHEEL_REWARDS;
@@ -159,6 +160,26 @@ try {
     assert.ok(Math.abs(gs.state.adAstraBalance - (bakiyeOnce - gs.getWheelCostAda() + 1)) < 1e-6);
     assert.equal(gs.state.stamina, gs.getMaxStamina(), 'stamina tavanı aşılmaz');
     console.log('✅ dolu stamina deposunda ödül nakde dönüyor');
+  }
+
+  // 2c) Stamina deposu KISMEN boşsa (ödülün yarısından fazlası sığıyor): sığan kadarı stamina olur, sığmayan kısmın değeri ASTRA ödenir
+  {
+    const gs = yeniOyuncu(1e6);
+    const fiyat = ammMarket.getPrice('wheat');
+    const esdeger = 1 / fiyat / (GAME_CONFIG.WHEAT_PER_STAMINA || 1);
+    const bos = Math.floor(esdeger * 0.6);   // ödülün %60'ı sığar
+    gs.state.stamina = gs.getMaxStamina() - bos;
+    sabitle(sira('stamina_1'));
+    const bakiyeOnce = gs.state.adAstraBalance;
+    const r = gs.spinCarnivalWheel('ada');
+    assert.equal(r.success, true);
+    assert.ok(r.buybackInfo && r.gain.stamina === bos, 'sığan kadarı stamina olur');
+    assert.equal(gs.state.stamina, gs.getMaxStamina(), 'stamina tavanı aşılmaz');
+    const beklenen = 1 * (1 - bos / esdeger);
+    assert.ok(Math.abs(r.gain.astra - beklenen) < 0.02, `sığmayan %40'ın değeri ödendi (${r.gain.astra} ≈ ${beklenen})`);
+    assert.ok(Math.abs(gs.state.adAstraBalance - (bakiyeOnce - gs.getWheelCostAda() + r.gain.astra)) < 1e-6, 'bakiye ödenen kadar arttı');
+    assert.match(r.rewardSummaryText, /sığmayan kısmın değeri/);
+    console.log('✅ kısmen boş stamina deposunda sığmayan kısım ASTRA olarak ödeniyor');
   }
 
   // 3) Kasa asgarinin altında: çark kapalı, hiçbir şey harcanmaz

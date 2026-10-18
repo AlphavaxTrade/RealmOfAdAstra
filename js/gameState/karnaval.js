@@ -293,6 +293,17 @@ export const karnavalYontemleri = {
             kazanc.stamina = Math.floor(n / bugdayBasi);
           }
         });
+        // Depoya sığmayan kısmın değeri kaybolmaz: aynı değer ASTRA olarak (kasadan) ödenir. Yarım staminadan küçük artık (0,01 ASTRA altı) yok sayılır.
+        const kalanDeger = deger * (1 - stam / esdeger);
+        if (kalanDeger >= 0.01) {
+          const ek = this._drawCarnival(kalanDeger);
+          if (ek > 0) {
+            this.state.adAstraBalance += ek;
+            this._onAdaEarned(ek);
+            kazanc.astra = (kazanc.astra || 0) + ek;
+            ozetMetni += ` — depoya sığmayan kısmın değeri olarak ${tr(ek)} ASTRA da ödendi`;
+          }
+        }
       }
     } else if (odul.type === 'key' || odul.id === 'box_key') {
       const adet = (odul.amount || 1) * c;
