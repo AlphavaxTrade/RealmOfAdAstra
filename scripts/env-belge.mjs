@@ -34,6 +34,8 @@ export const DEGISKENLER = [
   ['Hız sınırı', 'PUBLIC_RATE_LIMIT_PER_SEC', 'Giriş/kayıt gibi herkese açık uçlar için IP başına', '5', ''],
   ['Yönetici ve e-posta', 'ADMIN_TOKEN', 'Yönetici paneli şifresi (en az 24 karakter; `openssl rand -hex 32`). Boş ya da kısaysa panel KAPALI', '(boş)', 'G'],
   ['Yönetici ve e-posta', 'ADMIN_EMAIL', 'Uyarı e-postaları (oyun cüzdanı azaldı, zamanlayıcı hatası...)', '(boş)', ''],
+  ['Yönetici ve e-posta', 'TELEGRAM_BOT_TOKEN', 'Sahibine Telegram bildirimi (yeni "Sorun bildir" bileti): BotFather\'ın verdiği bot anahtarı (123456:ABC...). TELEGRAM_CHAT_ID ile birlikte; ikisinden biri boşsa bildirim kapalı', '(boş: kapalı)', 'G'],
+  ['Yönetici ve e-posta', 'TELEGRAM_CHAT_ID', 'Bildirimin gideceği Telegram sohbet numarası (sayı) ya da @kanaladi. Bulmak için: botuna bir mesaj yaz, sonra node scripts/telegram.mjs bul', '(boş)', ''],
   ['Yönetici ve e-posta', 'SMTP_URL', 'E-posta sunucusu: smtp://kullanici:sifre@sunucu:587. Boşsa e-postalar günlüğe yazılır (yalnız deneme). Üretimde zorunlu', '(boş)', 'GZ'],
   ['Yönetici ve e-posta', 'MAIL_FROM', 'Gönderen adı ve adresi', 'Realm of AdAstra <no-reply@localhost>', ''],
   ['Zincir (Avalanche)', 'CHAIN_ENABLED', '0: zincire hiç bağlanma (deneme/yerel)', '1', ''],

@@ -15,11 +15,12 @@ const WEBP = 'data:image/webp;base64,' + Buffer.concat([Buffer.from('RIFF'), Buf
 
 const kur = (ekstra = {}) => {
   const db = openDb(':memory:');
-  const postalar = [];
-  const mailer = { send: async m => { postalar.push(m); return { dev: true }; } };
+  const mesajlar = [], postalar = [];
+  const telegram = { enabled: true, send: async m => { mesajlar.push(m); return { ok: true }; } };
+  const mailer = { send: async m => { postalar.push(m); return { dev: true }; } };   // kullanılmamalı: sahibi e-postayı kapattı
   const engine = { readPlayer: () => ({ level: 7, village: { villagers: 31 }, soldierUnits: [{ level: 3 }, { level: 5 }, {}], warehouseLevel: 2, adAstraBalance: 12.3456, lockedAda: 80, botActiveUntil: 0 }) };
-  const gb = createGeriBildirim({ db, engine, mailer, cfg: { adminEmail: 'sahip@ornek.com' }, clock, log: sessiz, ...ekstra });
-  return { db, gb, postalar };
+  const gb = createGeriBildirim({ db, engine, telegram, mailer, cfg: { adminEmail: 'sahip@ornek.com' }, clock, log: sessiz, ...ekstra });
+  return { db, gb, mesajlar, postalar };
 };
 const gecerli = (ekle = {}) => ({ konu: 'hata', mesaj: 'Zindanda canavar yenilince ödül gelmedi.', ekler: [], baglam: { sayfa: '#/zindan', surum: '2.0.0', cihaz: 'test', ekran: '390x844' }, ...ekle });
 
@@ -153,20 +154,30 @@ const gecerli = (ekle = {}) => ({ konu: 'hata', mesaj: 'Zindanda canavar yenilin
   ok('hız sınırı: oyuncu 10 dakikada 5 / günde 20, adres 10 dakikada 15; süre dolunca açılır');
 }
 
-// 8) sahibine e-posta: ADMIN_EMAIL varsa gider, yoksa sessiz; e-posta hatası bildirimi bozmaz
+// 8) sahibine Telegram: ayar varsa gider, yoksa sessiz; hata bildirimi bozmaz; e-posta ASLA gitmez (sahibi kapattı)
 {
-  const { gb, postalar } = kur();
-  gb.kaydet('ali', gb.temizle(gecerli({ ekler: [PNG] })));
+  const { gb, mesajlar, postalar } = kur();
+  gb.kaydet('ali', gb.temizle(gecerli({ ekler: [PNG], mesaj: 'Zindanda ödül gelmedi, *bu* _işaretler_ düz kalmalı.' })));
   await new Promise(r => setImmediate(r));
-  assert.equal(postalar.length, 1);
-  assert.equal(postalar[0].to, 'sahip@ornek.com'); assert.match(postalar[0].subject, /RB-1001/); assert.match(postalar[0].text, /1 ekran görüntüsü/);
-  const { gb: yok, postalar: p2 } = kur({ cfg: {} });
-  yok.kaydet('ali', yok.temizle(gecerli()));
-  assert.equal(p2.length, 0, 'ADMIN_EMAIL yoksa e-posta yok');
-  const bozuk = kur({ mailer: { send: async () => { throw new Error('smtp yok'); } } }).gb;
-  assert.equal(bozuk.kaydet('ali', bozuk.temizle(gecerli())).no, 1001, 'e-posta hatası bildirimi engellemez');
+  assert.equal(mesajlar.length, 1);
+  assert.match(mesajlar[0], /^📮 Yeni geri bildirim RB-1001 · 🐞 Hata · oyuncu ali · 1 ekran görüntüsü/);
+  assert.ok(mesajlar[0].includes('Zindanda ödül gelmedi, *bu* _işaretler_ düz kalmalı.'), 'oyuncunun metni olduğu gibi (düz metin)');
+  assert.ok(mesajlar[0].includes('Claude\'a: "RB-1001 biletine bak"'));
+  assert.equal(postalar.length, 0, 'ADMIN_EMAIL tanımlı olsa bile e-posta gitmez');
+  const uzun = kur();
+  uzun.gb.kaydet('ali', uzun.gb.temizle(gecerli({ mesaj: 'u'.repeat(2500) })));
   await new Promise(r => setImmediate(r));
-  ok('sahibine e-posta (ADMIN_EMAIL varsa); e-posta hatası bildirimi bozmaz');
+  assert.ok(uzun.mesajlar[0].length < 700 && uzun.mesajlar[0].includes('…'), 'mesaj Telegram için kısaltılır');
+  const kapali = kur({ telegram: { enabled: false, send: async () => { throw new Error('çağrılmamalı'); } } });
+  assert.equal(kapali.gb.kaydet('ali', kapali.gb.temizle(gecerli())).no, 1001, 'Telegram kapalıyken bilet yine kaydedilir');
+  const yok = kur({ telegram: null });
+  assert.equal(yok.gb.kaydet('ali', yok.gb.temizle(gecerli())).no, 1001);
+  const bozuk = kur({ telegram: { enabled: true, send: async () => { throw new Error('ağ yok'); } } }).gb;
+  assert.equal(bozuk.kaydet('ali', bozuk.temizle(gecerli())).no, 1001, 'Telegram hatası bildirimi engellemez');
+  const bozuk2 = kur({ telegram: { enabled: true, send: () => { throw new Error('eşzamanlı hata'); } } }).gb;
+  assert.equal(bozuk2.kaydet('ali', bozuk2.temizle(gecerli())).no, 1001, 'send eşzamanlı patlasa da kayıt ve yanıt bozulmaz');
+  await new Promise(r => setImmediate(r));
+  ok('sahibine Telegram mesajı (düz metin, kısaltılmış); kapalıyken ya da hata verirken bilet yine kaydedilir; e-posta hiç gitmez');
 }
 
 console.log('\n8/8 geri bildirim testi geçti');

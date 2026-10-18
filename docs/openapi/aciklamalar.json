@@ -520,7 +520,7 @@
   "GET /api/admin/status": {
     "etiket": "Yönetim",
     "ozet": "Sunucu, kasa, ödeme, oyuncu ve olay özeti",
-    "yanit": "Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)"
+    "yanit": "Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...) Ayrıca telegramAcik (sahibine Telegram bildirimi bağlı mı)."
   },
   "GET /api/admin/promo": {
     "etiket": "Yönetim",
@@ -971,6 +971,15 @@
     "kodlar": [
       400,
       404
+    ]
+  },
+  "POST /api/admin/telegram/dene": {
+    "etiket": "Yönetim",
+    "ozet": "Telegram bildirimini dene: sahibine bir deneme mesajı gönderir",
+    "yanit": "{ ok: true }. Telegram ayarlı değilse 409, mesaj gitmediyse 503 (ayrıntı sunucu günlüğünde).",
+    "kodlar": [
+      409,
+      503
     ]
   }
 }

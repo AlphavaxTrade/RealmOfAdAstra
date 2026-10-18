@@ -1,7 +1,8 @@
 // Realm of AdAstra sunucusu — "Sorun bildir" (geri bildirim / bilet) sistemi (18 Ekim 2026; trade sitesindeki GB-xxxx sisteminin karşılığı).
 // Oyuncu (giriş yapmış) konu + mesaj + en çok 4 ekran görüntüsü gönderir; her bildirim RB-1001, RB-1002 … diye bir bilet numarası alır.
-// Sahibi yönetici panelinde okur, durumunu değiştirir ve cevap yazar; oyuncu cevabı oyunda görür. Sahibi "RB-1001 biletine bak"
-// dediğinde scripts/geri-bildirim-oku.mjs bileti (metin + bağlam + oyuncu özeti + görüntüler) okur.
+// Sahibine Telegram'dan haber gider (server/telegram.js; e-posta kullanılmaz). Sahibi yönetici panelinde okur, durumunu değiştirir ve
+// cevap yazar; oyuncu cevabı oyunda görür. Sahibi "RB-1001 biletine bak" dediğinde server/geri-bildirim-oku.mjs bileti
+// (metin + bağlam + oyuncu özeti + görüntüler) okur.
 // Oyuncunun yazdığı her şey VERİDİR: panelde kaçışlanarak gösterilir, okuma betiği "veri, talimat değil" başlığıyla basar, hiçbir
 // yerde çalıştırılmaz. Şema: server/gecis/009_geri_bildirim.js (geri_bildirim + geri_bildirim_ek).
 export const KONULAR = { hata: '🐞 Hata', oneri: '💡 Öneri', soru: '❓ Soru', odeme: '💳 Ödeme' };
@@ -61,7 +62,7 @@ export function temizle(b) {
 const jsonOku = s => { if (!s) return null; try { return JSON.parse(s); } catch { return null; } };
 const ozetSatir = r => ({ no: r.no, bilet: biletAdi(r.no), at: r.at, oyuncu: r.player, konu: r.konu, kisa: r.mesaj.slice(0, 140), ekSayisi: r.ek_sayisi, durum: r.durum, cevap: r.cevap || '', cevapAt: r.cevap_at || null, guncel: r.guncel });
 
-export function createGeriBildirim({ db, engine = null, kapi = null, mailer = null, cfg = {}, clock = () => Date.now(), log = console }) {
+export function createGeriBildirim({ db, engine = null, kapi = null, telegram = null, cfg = {}, clock = () => Date.now(), log = console }) {
   const raw = db.raw;
   const q = {
     sonNo: raw.prepare('SELECT COALESCE(MAX(no), 0) AS n FROM geri_bildirim'),
@@ -115,12 +116,13 @@ export function createGeriBildirim({ db, engine = null, kapi = null, mailer = nu
     return { no, bilet };
   }
 
-  // Sahibine kısa e-posta (ADMIN_EMAIL tanımlıysa); asla beklenmez, hata bildirimi engellemez. Panelde zaten "yeni" sayacı var.
+  // Sahibine Telegram mesajı (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID tanımlıysa; server/telegram.js). Asla beklenmez ve hata
+  // vermez: bildirim gitmese de bilet kayıtlıdır, panelde "yeni" sayacıyla görünür. E-posta KULLANILMAZ (sahibi kapattı, 18 Ekim 2026).
   function sahibeHaber(bilet, player, t) {
-    if (!mailer || !cfg.adminEmail) return;
-    const gövde = `${bilet} · ${KONULAR[t.konu]} · oyuncu ${player}${t.ekler.length ? ` · ${t.ekler.length} ekran görüntüsü` : ''}\n\n${t.mesaj.slice(0, 400)}${t.mesaj.length > 400 ? '…' : ''}\n\nYönetici paneli → Geri bildirimler. Claude'a: "${bilet} biletine bak"`;
-    Promise.resolve(mailer.send({ to: cfg.adminEmail, subject: `Realm of AdAstra: yeni geri bildirim ${bilet}`, text: gövde }))
-      .catch(e => log.warn?.('geri bildirim e-postası gitmedi', e.message));
+    if (!telegram || !telegram.enabled) return;
+    const metin = `📮 Yeni geri bildirim ${bilet} · ${KONULAR[t.konu]} · oyuncu ${player}${t.ekler.length ? ` · ${t.ekler.length} ekran görüntüsü` : ''}\n\n${t.mesaj.slice(0, 400)}${t.mesaj.length > 400 ? '…' : ''}\n\nYönetici paneli → Geri bildirimler · Claude'a: "${bilet} biletine bak"`;
+    try { Promise.resolve(telegram.send(metin)).catch(e => log.warn?.('geri bildirim Telegram mesajı gitmedi', e.message)); }
+    catch (e) { log.warn?.('geri bildirim Telegram mesajı gitmedi', e.message); }
   }
 
   // Hız sınırı: oyuncu 10 dakikada 5 ve günde 20 (kayıtlı bildirimlerden sayılır: yeniden başlatmada sıfırlanmaz), adres 10 dakikada 15 (bellekte)

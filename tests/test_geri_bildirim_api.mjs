@@ -8,6 +8,7 @@ import { createWorld } from '../server/world.js';
 import { createApp } from '../server/app.js';
 import { loadConfig } from '../server/config.js';
 import { createMailer } from '../server/mailer.js';
+import { createTelegram } from '../server/telegram.js';
 import { createGeriBildirim } from '../server/geri-bildirim.js';
 import { tokenOzeti } from '../server/oturum.js';
 
@@ -21,8 +22,12 @@ let now = Date.UTC(2026, 9, 18, 12);
 const clock = () => now;
 const mailer = createMailer({ db, cfg, log: sessiz });
 const world = createWorld({ db, engine, chain: null, accounts: null, mailer, cfg, clock, log: sessiz });
-const geriBildirim = createGeriBildirim({ db, engine, mailer, cfg, clock, log: sessiz });
-const app = createApp({ db, engine, world, accounts: null, geriBildirim, chain: null, cfg, clock, log: sessiz });
+// Telegram: gerçek createTelegram, ağ yerine sahte fetch (giden istekler `giden` listesinde)
+const giden = [];
+const telegram = createTelegram({ cfg: { telegramToken: '123456:' + 'Abc_dEf-Gh'.repeat(4), telegramSohbet: '987654321' }, log: sessiz,
+  fetchFn: async (url, o) => { giden.push({ url, govde: JSON.parse(o.body) }); return { ok: true, status: 200, json: async () => ({ ok: true }) }; } });
+const geriBildirim = createGeriBildirim({ db, engine, telegram, mailer, cfg, clock, log: sessiz });
+const app = createApp({ db, engine, world, accounts: null, geriBildirim, telegram, chain: null, cfg: { ...cfg, telegramToken: 'x', telegramSohbet: '1' }, clock, log: sessiz });
 const server = app.server().listen(0);
 await new Promise(r => server.once('listening', r));
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -63,11 +68,27 @@ try {
     assert.deepEqual([r.body.ok, r.body.bilet, r.body.no], [true, 'RB-1001', 1001]);
     no = r.body.bilet;
     await new Promise(x => setImmediate(x));
-    const posta = db.kvJson('dev:outbox', []).find(m => m.to === 'sahip@ornek.com');
-    assert.ok(posta && /RB-1001/.test(posta.subject) && /2 ekran görüntüsü/.test(posta.text), 'sahibine e-posta');
+    assert.equal(giden.length, 1, 'sahibine tek Telegram mesajı');
+    assert.match(giden[0].url, /^https:\/\/api\.telegram\.org\/bot123456:.*\/sendMessage$/);
+    assert.equal(giden[0].govde.chat_id, '987654321');
+    assert.match(giden[0].govde.text, /RB-1001/); assert.match(giden[0].govde.text, /2 ekran görüntüsü/);
+    assert.ok(!giden[0].govde.text.includes('data:image'), 'görüntü verisi Telegram mesajına girmez');
+    assert.equal(db.kvJson('dev:outbox', []).filter(m => m.to === 'sahip@ornek.com').length, 0, 'ADMIN_EMAIL tanımlı olsa da e-posta gitmez');
     const r2 = await call('POST', '/api/feedback', govde({ konu: 'oneri', mesaj: 'Haritaya arama kutusu gelsin.', ekler: [] }), veli.token);
     assert.equal(r2.body.bilet, 'RB-1002');
-    ok('gönderim: RB-1001 / RB-1002 numarası, sahibine e-posta');
+    ok('gönderim: RB-1001 / RB-1002 numarası, sahibine Telegram mesajı (e-posta yok)');
+  }
+
+  // 2b) yönetici paneli: Telegram durumu ve deneme mesajı
+  {
+    assert.equal((await call('POST', '/api/admin/telegram/dene')).status, 401, 'şifresiz');
+    assert.equal((await call('POST', '/api/admin/telegram/dene', undefined, ali.token)).status, 401, 'oyuncu anahtarıyla');
+    assert.equal((await call('GET', '/api/admin/status', undefined, ADMIN)).body.telegramAcik, true);
+    const once = giden.length;
+    const r = await call('POST', '/api/admin/telegram/dene', undefined, ADMIN);
+    assert.equal(r.status, 200); assert.equal(giden.length, once + 1);
+    assert.match(giden[giden.length - 1].govde.text, /Telegram bildirimi çalışıyor/);
+    ok('panel: telegramAcik durumu, deneme mesajı yalnız yönetici şifresiyle gider');
   }
 
   // 3) oyuncu yalnız kendi biletlerini görür
@@ -138,4 +159,4 @@ try {
   server.close();
   db.close && db.close();
 }
-console.log('\n7/7 geri bildirim uç testi geçti');
+console.log('\n8/8 geri bildirim uç testi geçti');

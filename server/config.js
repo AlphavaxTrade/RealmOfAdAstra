@@ -84,6 +84,8 @@ export function loadConfig(env = process.env) {
     hotWalletMinAda: num('HOT_WALLET_MIN_ADA', 0),                 // geçmiş yokken (ilk haftalar) oyun cüzdanında kalacak en az ASTRA
     contractOwner: (env.CONTRACT_OWNER || '').trim(),              // ödeme sözleşmesinin olması gereken sahibi (donanım cüzdanı)
     adminEmail: (env.ADMIN_EMAIL || '').trim(),                    // uyarı e-postaları (oyun cüzdanı azaldı vb.)
+    telegramToken: gizli('TELEGRAM_BOT_TOKEN'),                    // sahibine Telegram bildirimi (yeni geri bildirim bileti); boşsa kapalı
+    telegramSohbet: (env.TELEGRAM_CHAT_ID || '').trim(),           // bildirimin gideceği sohbet numarası (node scripts/telegram.mjs bul)
     // Ortak gelir (kullanıcı kararı 6 Ekim 2026): trade sitesindeki (AlphAvax) harcamaların %40'ı ADASTRA olarak oyuna
     // gönderilir. Sunucu PARTNER_INCOME_FROM cüzdan(lar)ından PARTNER_INCOME_TO adresine gelen ADASTRA'yı izler ve her
     // oyun harcaması gibi dağıtır: %5 yakım, %6 temel gelir, %3 yapımcı payı, %86 ödül kasaları. TO boşsa oyun cüzdanı.
@@ -117,6 +119,9 @@ export function dogrula(cfg, env = process.env) {
   if (cfg.dbFile === ':memory:') hatalar.push('DB_FILE bellek içi (:memory:) olamaz: kayıtlar kalıcı olmalı');
   if (!cfg.smtpUrl) hatalar.push('SMTP_URL tanımlı değil: doğrulama e-postaları gitmez, kimse giriş yapamaz');
   if (!cfg.adminToken) uyarilar.push('ADMIN_TOKEN yok: yönetici paneli kapalı');
+  if (cfg.telegramToken && !/^\d{5,12}:[A-Za-z0-9_-]{30,60}$/.test(cfg.telegramToken)) hatalar.push('TELEGRAM_BOT_TOKEN biçimi geçersiz (BotFather\'ın verdiği 123456:ABC... biçiminde olmalı)');
+  if (cfg.telegramSohbet && !/^(-?\d{1,20}|@[A-Za-z0-9_]{5,32})$/.test(cfg.telegramSohbet)) hatalar.push('TELEGRAM_CHAT_ID geçersiz (sayı, ya da @kanaladi)');
+  if (!!cfg.telegramToken !== !!cfg.telegramSohbet) uyarilar.push('Telegram bildirimi için TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID ikisi birlikte gerekli: biri eksik, bildirim kapalı');
   else if (cfg.adminToken.length < 24) hatalar.push('ADMIN_TOKEN en az 24 karakter olmalı (kısaysa yönetici paneli kapalı kalır; openssl rand -hex 32)');
   if (cfg.gameWalletKey && !/^(0x)?[0-9a-fA-F]{64}$/.test(cfg.gameWalletKey)) hatalar.push('GAME_WALLET_PRIVATE_KEY biçimi geçersiz (64 onaltılık hane, başında 0x olabilir)');
   if (cfg.kasaMasterKey && !/^[0-9a-fA-F]{64}$/.test(cfg.kasaMasterKey)) hatalar.push('KASA_MASTER_KEY 64 haneli onaltılık olmalı (openssl rand -hex 32)');

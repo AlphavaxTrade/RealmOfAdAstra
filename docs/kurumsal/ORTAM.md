@@ -48,6 +48,8 @@
 |---|---|---|
 | 🔒 `ADMIN_TOKEN` | Yönetici paneli şifresi (en az 24 karakter; `openssl rand -hex 32`). Boş ya da kısaysa panel KAPALI | (boş) |
 | `ADMIN_EMAIL` | Uyarı e-postaları (oyun cüzdanı azaldı, zamanlayıcı hatası...) | (boş) |
+| 🔒 `TELEGRAM_BOT_TOKEN` | Sahibine Telegram bildirimi (yeni "Sorun bildir" bileti): BotFather'ın verdiği bot anahtarı (123456:ABC...). TELEGRAM_CHAT_ID ile birlikte; ikisinden biri boşsa bildirim kapalı | (boş: kapalı) |
+| `TELEGRAM_CHAT_ID` | Bildirimin gideceği Telegram sohbet numarası (sayı) ya da @kanaladi. Bulmak için: botuna bir mesaj yaz, sonra node scripts/telegram.mjs bul | (boş) |
 | 🔒 ⚠️ `SMTP_URL` | E-posta sunucusu: smtp://kullanici:sifre@sunucu:587. Boşsa e-postalar günlüğe yazılır (yalnız deneme). Üretimde zorunlu | (boş) |
 | `MAIL_FROM` | Gönderen adı ve adresi | Realm of AdAstra <no-reply@localhost> |
 | 🔒 ⚠️ `HESAP_ANAHTARI` | Hesap sırlarını (iki adımlı doğrulama sırrı) veritabanında AES-256-GCM ile şifreleyen anahtar (64 onaltılık hane; `openssl rand -hex 32`). Üretimde ZORUNLU. KAYBEDİLİRSE iki adımlı doğrulama uygulaması kodları çözülemez (yedek kodlar çalışır); veritabanıyla AYNI YERDE yedeklenmez, KASA_MASTER_KEY anahtarından farklı olmalı. Boşsa (yalnız deneme) sırlar düz yazılır; sonradan eklenirse mevcut sırlar açılışta şifrelenir | (boş: düz; üretimde hata) |

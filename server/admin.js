@@ -15,6 +15,7 @@ async function load() {
   const m = s.market || {};
   const pools = Object.entries(s.treasury || {}).map(([k, v]) => `${esc(k)}: ${fmt(v)}`).join('<br>');
   $('cards').innerHTML = [
+    card('Telegram bildirimi', s.telegramAcik ? '✅ bağlı' : '⚠️ kapalı', s.telegramAcik ? 'ok' : 'warn'),
     card('Durum', s.paused ? '⏸️ DURDURULDU' : '✅ Çalışıyor', s.paused ? 'bad' : 'ok'),
     card('Ödeme modu', s.payoutMode === 'auto' ? (s.canSend ? 'Otomatik' : 'Otomatik (anahtar yok!)') : 'Yönetici onayı', s.payoutMode === 'auto' && !s.canSend ? 'bad' : ''),
     card('Oyun cüzdanı', s.gameWallet ? `<a href="https://snowtrace.io/address/${esc(s.gameWallet)}" target="_blank" rel="noopener">${esc(s.gameWallet.slice(0, 8))}…</a>` : '—'),
@@ -270,6 +271,7 @@ async function gbAc(no) {
   await gbYukle();
 }
 $('gbListe').addEventListener('click', ev => { const tr = ev.target.closest('tr[data-no]'); if (tr) gbAc(Number(tr.dataset.no)).catch(e => alert(e.message)); });
+$('tgDene').onclick = async () => { $('tgDurum').textContent = 'Gönderiliyor…'; try { await api('POST', '/api/admin/telegram/dene'); $('tgDurum').textContent = 'Gönderildi: Telegram uygulamana bak.'; } catch (e) { $('tgDurum').textContent = e.message; } };
 $('gbYenile').onclick = () => gbYukle().catch(e => alert(e.message));
 $('gbDurum').onchange = () => gbYukle().catch(e => alert(e.message));
 $('gbAra').addEventListener('keydown', ev => { if (ev.key === 'Enter') gbYukle().catch(e => alert(e.message)); });

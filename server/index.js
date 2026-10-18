@@ -12,6 +12,7 @@ import { createApp } from './app.js';
 import { createArena } from './arena.js';
 import { createMailer } from './mailer.js';
 import { createGeriBildirim } from './geri-bildirim.js';
+import { createTelegram } from './telegram.js';
 import { createAccounts } from './accounts.js';
 import { createPayments } from './payments.js';
 import { createKasa } from './kasa.js';
@@ -82,8 +83,10 @@ const sponsor = createSponsor({ db, engine, kapi, accounts, log });
 const world = createWorld({ db, engine, chain, arena, accounts, kasa, mailer, kapi, pazar, sponsor, cfg, log });
 if (cfg.chainEnabled && !cfg.testMode && !/^0x[0-9a-fA-F]{40}$/.test(cfg.reserveWallet)) log.warn('🧊 RESERVE_WALLET yok: oyun cüzdanındaki fazla ASTRA yedek (donanım) cüzdana aktarılmaz. Önerilir!');
 const payments = createPayments({ db, engine, accounts, chain, kasa, cfg, log });
-const geriBildirim = createGeriBildirim({ db, engine, kapi, mailer, cfg, log });   // 📮 "Sorun bildir" biletleri; sahibe e-posta (ADMIN_EMAIL)
-const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, sponsor, geriBildirim, chain, cfg, log });
+const telegram = createTelegram({ cfg, log });   // 📲 sahibine Telegram bildirimi (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
+const geriBildirim = createGeriBildirim({ db, engine, kapi, telegram, cfg, log });   // 📮 "Sorun bildir" biletleri; sahibe Telegram'dan haber
+const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, sponsor, geriBildirim, telegram, chain, cfg, log });
+if (!telegram.enabled) log.warn('📲 Telegram bildirimi kapalı (TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID yok): yeni geri bildirimler yalnız yönetici panelinde görünür.');
 if (!cfg.paymentsContract) log.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) log.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');
 

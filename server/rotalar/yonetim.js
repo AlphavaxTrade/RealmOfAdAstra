@@ -3,7 +3,7 @@
 import { etkinCarpan } from '../economy.js';
 
 export default function yonetimRotalari(ctx) {
-  const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody } = ctx;
+  const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody, telegram } = ctx;
   return {
     'GET /api/admin/status': () => {
       const e = world.econ();
@@ -21,6 +21,7 @@ export default function yonetimRotalari(ctx) {
         treasury: E.treasury.state.pools,
         kapi: kapi ? kapi.adminSummary() : null,
         universeStage: world.universeStage ? world.universeStage() : (Number(E.GAME_CONFIG.UNIVERSE_STAGE) || 0),
+        telegramAcik: !!(telegram && telegram.enabled),
         chainId: cfg.chainId, tokenAddress: cfg.tokenAddress, paymentsContract: cfg.paymentsContract || null,
         reserveWallet: cfg.reserveWallet || null, contractOwner: cfg.contractOwner || null,
         hotWallet: e.hotWallet || null, hotNeed: world.hotWalletNeed ? world.hotWalletNeed() : null,
@@ -41,6 +42,12 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/promo/active': async (req) => { const { code, active } = await readBody(req); return promo.setActive(code, !!active); },
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
+    // Telegram bildirimi çalışıyor mu: sahibine bir deneme mesajı gönderir (ayar sonrası bir kez bakmak için)
+    'POST /api/admin/telegram/dene': async () => {
+      if (!telegram || !telegram.enabled) return [409, { error: 'Telegram ayarlı değil: TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID gerekli.' }];
+      const r = await telegram.send('✅ Realm of AdAstra: Telegram bildirimi çalışıyor. Yeni bir "Sorun bildir" bileti geldiğinde buraya haber gelecek.');
+      return r.ok ? { ok: true } : [503, { error: 'Telegram mesajı gitmedi (ayrıntı sunucu günlüğünde).' }];
+    },
     // Belirsiz ('sending') ödeme satırını yönetici çözer: gönderildi (işlem no) ya da yeniden sıraya; gerekçe zorunlu, olay günlüğüne yazılır
     'POST /api/admin/payouts/resolve': async (req) => {
       const { id, durum, txHash, gerekce } = await readBody(req);

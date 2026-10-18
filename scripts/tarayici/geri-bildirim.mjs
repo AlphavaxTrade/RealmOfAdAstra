@@ -84,6 +84,8 @@ try {
   await paletle(o.sayfa, 'sorunbildir');
   let metin = await panel(o.sayfa);
   kontrol('Ctrl+K paletinden "Sorun bildir" ekranı açılıyor', /Sorun bildir/.test(metin) && /Ne oldu/.test(metin), metin.slice(0, 80).replace(/\n/g, ' '));
+  await o.sayfa.waitForFunction(() => /Henüz bildirim göndermedin/.test((document.getElementById('modal-body') || document.body).innerText), null, { timeout: 10000 }).catch(() => {});
+  metin = await panel(o.sayfa);
   kontrol('boş başlangıçta önceki bilet yok', /Henüz bildirim göndermedin/.test(metin));
   await o.sayfa.click('[data-e="konu"][data-k="oneri"]');
   await o.sayfa.fill('#gb-mesaj', 'Haritaya bir arama kutusu eklenirse çok iyi olur, şimdi köyleri bulmak zor.');
@@ -125,12 +127,17 @@ try {
   const yBaglam = await tarayici.newContext({ viewport: { width: 1280, height: 900 } });
   const y = await yBaglam.newPage();
   y.on('pageerror', e => hatalar.push('admin pageerror: ' + e.message));
-  y.on('console', m => { if (m.type() === 'error') hatalar.push('admin console.error: ' + m.text().slice(0, 200)); });
+  // 409: "Telegram deneme mesajı" ayarsız sunucuda BİLEREK 409 döndürür (aşağıda denenir); tarayıcı bunu konsola yazar
+  y.on('console', m => { if (m.type() === 'error' && !/status of 409/.test(m.text())) hatalar.push('admin console.error: ' + m.text().slice(0, 200)); });
   await y.goto(BASE + '/admin', { waitUntil: 'load' });
   await y.fill('#tok', ADMIN); await y.click('#enter');
   await y.waitForSelector('#gbListe tr[data-no]', { timeout: 15000 });
   const baslik = await y.textContent('#gbBaslik');
   kontrol('panelde liste ve "1 yeni" başlığı', /1 yeni/.test(baslik) && (await y.textContent('#gbListe')).includes('RB-1001'), baslik);
+  kontrol('panelde "Telegram bildirimi" kartı: ayarsız sunucuda ⚠️ kapalı', /Telegram bildirimi[\s\S]*kapalı/.test(await y.textContent('#cards')));
+  await y.click('#tgDene');
+  await y.waitForFunction(() => /ayarlı değil/.test(document.getElementById('tgDurum').textContent), null, { timeout: 8000 });
+  kontrol('"Telegram deneme mesajı" düğmesi ayarsızken anlaşılır uyarı veriyor', /TELEGRAM_BOT_TOKEN/.test(await y.textContent('#tgDurum')), await y.textContent('#tgDurum'));
   await y.click('#gbListe tr[data-no="1001"]');
   await y.waitForSelector('#gbAyrinti .gb-resimler img', { timeout: 10000 });
   await bekle(500);

@@ -31,6 +31,7 @@
 import http from 'node:http';
 import { createPromo } from './promo.js';
 import { createGeriBildirim } from './geri-bildirim.js';
+import { createTelegram } from './telegram.js';
 import { tokenOzeti } from './oturum.js';
 import { createMetrik } from './metrik.js';
 import { sonYedekYasiSn, sonDenemeBasarili } from './yedek/yedekle.js';
@@ -70,12 +71,13 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm', 'POST /api/account/2fa/reset-cancel'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, geriBildirim = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, geriBildirim = null, telegram = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
   metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
   promo = promo || createPromo({ db, engine, clock, log });   // 🎟️ promo kodları (server/promo.js)
-  geriBildirim = geriBildirim || createGeriBildirim({ db, engine, kapi, cfg, clock, log });   // 📮 "Sorun bildir" biletleri (server/geri-bildirim.js)
+  telegram = telegram || createTelegram({ cfg, log });   // 📲 sahibine Telegram bildirimi (server/telegram.js); ayar yoksa kapalı
+  geriBildirim = geriBildirim || createGeriBildirim({ db, engine, kapi, telegram, cfg, clock, log });   // 📮 "Sorun bildir" biletleri (server/geri-bildirim.js)
 
   // Basit hız sınırı: oturum başına saniyede en fazla cfg.rateLimitPerSec (varsayılan 15) istek
   const rate = new Map();
@@ -185,7 +187,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir
-  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, geriBildirim, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
+  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, geriBildirim, telegram, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
   const routes = {
     ...genelRotalar(ctx), ...hesapRotalari(ctx), ...oyunRotalari(ctx), ...cuzdanRotalari(ctx),
     ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...geriBildirimRotalari(ctx), ...yonetimRotalari(ctx)

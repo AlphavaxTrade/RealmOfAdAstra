@@ -1655,7 +1655,7 @@ paths:
       security: *a3
       responses:
         "200":
-          description: Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...)
+          description: Panelin tek bakışlık durumu (ödeme modu, duraklatma, hazine, son ödemeler ve olaylar...) Ayrıca telegramAcik (sahibine Telegram bildirimi bağlı mı).
           content:
             application/json:
               schema:
@@ -1814,6 +1814,30 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/admin/telegram/dene:
+    post:
+      tags:
+        - Yönetim
+      summary: "Telegram bildirimini dene: sahibine bir deneme mesajı gönderir"
+      operationId: post_api_admin_telegram_dene
+      security: *a3
+      responses:
+        "200":
+          description: "{ ok: true }. Telegram ayarlı değilse 409, mesaj gitmediyse 503 (ayrıntı sunucu günlüğünde)."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "409":
+          $ref: "#/components/responses/Hata409"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+        "503":
+          $ref: "#/components/responses/Hata503"
   /api/admin/payouts/resolve:
     post:
       tags:
