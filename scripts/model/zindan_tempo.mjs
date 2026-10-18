@@ -28,19 +28,23 @@ export function takimGunu(n, t) {
   return { gun: Math.round(gun * 10) / 10, darbogaz };
 }
 
-const SEVIYELER = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 18, 20, 24, 28, 32, 40];
-// bir canavar için en erken gün: tüm (asker seviyesi, takım seviyesi) çiftleri arasında en küçük max(seviye günü, takım günü)
+export const SEVIYELER = Array.from({ length: 40 }, (_, i) => i + 1);   // asker seviyesi 1..40 (hesap seviyesi 40 ≈ 226. gün)
+// bir canavar için en erken gün: tüm (asker seviyesi, takım seviyesi) çiftleri arasında en küçük max(seviye günü, takım günü).
+// Her asker seviyesinde gereken en az takım seviyesi ikili aramayla bulunur (takım seviyesi arttıkça kazanma şansı azalmaz).
 export function enErkenGun(canavar, n, { ornek = 40 } = {}) {
+  const enYuksek = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+  const yener = (s, t) => kazanmaSansi(ordu(n, s, t), canavar, n, ornek) >= ESIK;
   let en = null;
   for (const s of SEVIYELER) {
     const sg = seviyeGunu(s);
     if (en && sg >= en.gun) break;                       // daha yüksek seviye zaten daha geç
-    for (let t = 0; t <= (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10); t++) {
-      const tg = takimGunu(n, t);
-      const gun = Math.max(sg, t ? tg.gun : 0);
-      if (en && gun >= en.gun) continue;
-      if (kazanmaSansi(ordu(n, s, t), canavar, n, ornek) >= ESIK) { en = { gun, askerSeviyesi: s, takim: t, darbogaz: t ? tg.darbogaz : '-' }; break; }
-    }
+    if (!yener(s, enYuksek)) continue;                   // bu asker seviyesinde en yüksek takım bile yetmiyor
+    let alt = 0, ust = enYuksek;                         // en küçük t: yener(s, t)
+    if (yener(s, 0)) ust = 0;
+    else { alt = 1; while (alt < ust) { const orta = (alt + ust) >> 1; if (yener(s, orta)) ust = orta; else alt = orta + 1; } }
+    const tg = takimGunu(n, ust);
+    const gun = Math.max(sg, ust ? tg.gun : 0);
+    if (!en || gun < en.gun) en = { gun, askerSeviyesi: s, takim: ust, darbogaz: ust ? tg.darbogaz : '-' };
   }
   return en;   // null: hiçbir (seviye ≤ 40, takım ≤ 10) çifti yetmiyor
 }
