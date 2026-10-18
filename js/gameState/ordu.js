@@ -162,7 +162,7 @@ export const orduYontemleri = {
   // ── İyileşme ───────────────────────────────────────────────────────────
   // Bir askerin iyileşme bilgisi (HP, kalan süre, bedeller); arayüz buna dayanır.
   // Pasif (kendiliğinden): 24 saatte tam can, 1 HP = 0,30 buğday + 0,001 ASTRA. Hemen iyileştirme yalnız şifalı otla
-  // (getHerbHealInfo, koyVeKonsey.js); buradaki adaCost onun ASTRA payıdır (SIFAHANE.ADA_PER_HP).
+  // (getHerbHealInfo, koyVeKonsey.js). Buradaki can TABAN ölçektedir (kayıtlı can); ekranda görünen savaş ölçeği getSoldierBattleStart'tadır.
   getSoldierHealInfo(soldierIndex) {
     const asker = (this.state.soldierUnits || [])[soldierIndex];
     if (!asker) return null;
@@ -175,8 +175,6 @@ export const orduYontemleri = {
 
     const pasifBugday = pasif.wheatPerHp != null ? pasif.wheatPerHp : BUGDAY_YEDEK;
     const pasifAstra = (pasif.adaPerHp != null ? pasif.adaPerHp : ASTRA_YEDEK) * carpan;
-    const hizliAstra = ((GAME_CONFIG.SIFAHANE || {}).ADA_PER_HP ?? 0.01) * carpan;
-    const gerekenAstra = Math.round(eksik * hizliAstra * 1000) / 1000;
 
     const tamIyilesmeSn = pasif.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
     const stokBugday = Math.floor(this.state.inventory?.wheat || 0);
@@ -195,9 +193,6 @@ export const orduYontemleri = {
       passiveAdaRate: pasifAstra,
       passiveWheatNeeded: Math.round(eksik * pasifBugday * 100) / 100,
       passiveAdaCost: Math.round(eksik * pasifAstra * 100) / 100,
-      fastAdaRate: hizliAstra,
-      adaCost: gerekenAstra,
-      adAstraCost: gerekenAstra,
       secondsRemaining: eksik > 0 ? Math.ceil((eksik / maxHp) * tamIyilesmeSn) : 0,
       wheatInStock: stokBugday,
       adaInBalance: bakiye

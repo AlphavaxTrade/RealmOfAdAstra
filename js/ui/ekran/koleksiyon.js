@@ -1,6 +1,6 @@
 // Realm of AdAstra — Sandıklar ve koleksiyon ekranı: Genesis Yolu (şartlar, katkı defteri, eser uyandırma, mühür) ve Pandora kutuları.
 // Kurallar js/gameState/genesis.js (makro plan C6; kullanıcı kuralı: Genesis basan, 3 yıllık ayrıcalık maliyetini önden ödemiş olmalı).
-import { ekranKaydet, kap, kart, sekmeler, dugme, uyari, not, bos, izgara, etiket, satir, cubukSatiri, sure, tam, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, sekmeler, dugme, uyari, not, bos, izgara, etiket, satir, cubukSatiri, sure, tam, astra, esc } from './cekirdek.js';
 
 const SEKMELER = [{ id: 'koleksiyon', ad: 'Genesis Yolu (18 eser)', simge: '👑' }, { id: 'kutular', ad: 'Pandora kutuları', simge: '📦' }];
 const dolar = (v) => `${(Number(v) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
@@ -26,7 +26,7 @@ function genesisKarti(b, y) {
       + satir('Oyunda harcadığın (harcandığı andaki değer)', dolar(y.defter.harcananUsd))
       + satir('Yaktığın hammadde', dolar(y.defter.yakilanUsd))
       + satir('Oyundan çektiğin (düşülür)', dolar(y.defter.cekilenUsd))
-      + satir('Mühür bedeli', `${y.muhur.usd} $ ≈ ${tam(y.muhur.astra)} ASTRA (yarısı yakılır)`)
+      + satir('Mühür bedeli', `${y.muhur.usd} $ ≈ ${astra(y.muhur.astra)} ASTRA (yarısı yakılır)`)
       + (y.dunya.fiyatOlculdu ? '' : not('ASTRA fiyatı şu an ölçülemiyor; hesap yedek fiyatla yapılıyor.'))
       + dugme({ e: 'genesis', metin: `🏆 Genesis NFT bas (${y.muhur.usd} $)`, ton: 'birincil', devreDisi: !y.hazir, genis: true })
   });
@@ -44,7 +44,7 @@ function eserIzgarasi(b, y) {
     else {
       const bd = b.gameState.getUyandirmaBedeli(a.id);
       const hm = Object.entries(bd.hammadde).map(([k, v]) => `${tam(v)} ${(b.GAME_CONFIG.RESOURCE_META[k] || {}).name || k}`).join(', ');
-      alt = dugme({ e: 'uyandir', veri: { eser: a.id }, metin: `Uyandır · ${tam(bd.astra)} ASTRA`, ton: 'iyi', devreDisi: !!aktif, ipucu: `${bd.birim} birim: ${tam(bd.astra)} ASTRA + ${hm} (yakılır), ${Math.round(bd.sureMs / 3600000)} saat` });
+      alt = dugme({ e: 'uyandir', veri: { eser: a.id }, metin: `Uyandır · ${astra(bd.astra)} ASTRA`, ton: 'iyi', devreDisi: !!aktif, ipucu: `${bd.birim} birim: ${astra(bd.astra)} ASTRA + ${hm} (yakılır), ${Math.round(bd.sureMs / 3600000)} saat` });
     }
     return `<div class="ek-hucre ek-eser rarity-${esc(cfg.rarity)}" title="${esc(`${cfg.name}: ${cfg.lore}`)}"><b>${esc(cfg.icon)}</b><small>${esc(cfg.name)}</small>${alt}</div>`;
   });

@@ -63,6 +63,7 @@ await kayitYaz((gs) => {
   gs.state.level = 10; gs.state.adAstraBalance = 50000; gs.state.warehouseLevel = 6;
   gs.buySoldierUnit(); gs.buySoldierUnit();
   gs.state.soldierUnits.forEach((a) => { a.hp = Math.round((a.maxHp || 100) * 0.3); });   // iki yaralı asker
+  gs.state.soldierUnits[0].equipment = { armor: { name: 'Deneme Zırhı', slot: 'armor', durability: 13, maxDurability: 13, atkBonus: 0, hpBonus: 400 } };   // teçhizatlı: bedeli savaş canına göre
   gs.state.inventory.herb = 0;                                                             // iyileştirmek için şifalı ot yok
 }, 1e6);
 

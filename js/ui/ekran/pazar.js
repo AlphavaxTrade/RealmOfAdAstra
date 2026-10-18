@@ -48,7 +48,7 @@ function islemKarti(b, key) {
     ${silo
       ? `<div class="ek-cubuk-etiket"><span>Silo</span><b>${esc(tam(sahip))} / ${esc(tam(silo))}</b></div>${cubuk(siloYuzde, { ton: siloYuzde >= 95 ? 'dolu' : '' })}`
       : `<div class="ek-satir"><span>Elinde</span><b>${esc(tam(sahip))}</b></div>`}
-    ${katli(`${terim('havuz', 'Havuz')} bilgisi`, `<p class="ek-kucuk">${esc(tam(havuz.resourceReserve))} ${esc(havuz.name)} · ${esc(tam(havuz.adAstraReserve))} ASTRA</p>`, { k: 'havuz' })}`;
+    ${katli(`${terim('havuz', 'Havuz')} bilgisi`, `<p class="ek-kucuk">${esc(tam(havuz.resourceReserve))} ${esc(havuz.name)} · ${esc(astra(havuz.adAstraReserve))} ASTRA</p>`, { k: 'havuz' })}`;
 
   const alKutusu = `<div class="ek-kutu">
       <div class="ek-alt-baslik">🛒 Satın al</div>
@@ -130,7 +130,7 @@ function yakimBolumu(b) {
     return `<div class="ek-oge">
       <div class="ek-oge-govde"><b>${esc(a.icon)} ${esc(a.name)}</b>
         <small>Açılış ${esc(sayi(a.genesisPrice, 3))} → şimdi ${esc(a.currentPrice >= 100 ? sayi(a.currentPrice, 1) : sayi(a.currentPrice, 3))} ASTRA</small>
-        <small>${a.allocatedBudget > 0 ? `Ayrılan ${esc(tam(a.allocatedBudget))} ASTRA · 🔥 ~${esc(tam(a.estimatedUnitsToBurn))} adet yakılacak` : 'Bu döngü müdahale yok'}</small></div>
+        <small>${a.allocatedBudget > 0 ? `Ayrılan ${esc(astra(a.allocatedBudget))} ASTRA · 🔥 ~${esc(tam(a.estimatedUnitsToBurn))} adet yakılacak` : 'Bu döngü müdahale yok'}</small></div>
       <b class="${a.dropPct >= 50 ? 'ek-kotu' : (dusuyor ? 'ek-uyari-renk' : 'ek-iyi')}">${dusuyor ? `-%${esc(sayi(a.dropPct, 1))}` : '✅ sağlıklı'}</b>
     </div>`;
   }).join('');
@@ -138,17 +138,17 @@ function yakimBolumu(b) {
   const sonRapor = son ? kart({
     baslik: '✅ Son geri alım raporu',
     rozet: `<span class="ek-kucuk">${esc(new Date(son.timestamp).toLocaleString('tr-TR'))}</span>`,
-    icerik: `<p class="ek-not">Kasadan toplam <b>${esc(tam(son.totalSpent))} ASTRA</b> harcandı; malzemeler yakılıp toplam arzdan silindi.</p>`
-      + `<div class="ek-liste">${son.items.map((i) => `<div class="ek-satir"><span>${esc(i.icon)} ${esc(i.name)}</span><b>-${esc(tam(i.unitsBurned))} adet (${esc(tam(i.budgetSpent))} ASTRA)</b></div>`).join('')}</div>`
+    icerik: `<p class="ek-not">Kasadan toplam <b>${esc(astra(son.totalSpent))} ASTRA</b> harcandı; malzemeler yakılıp toplam arzdan silindi.</p>`
+      + `<div class="ek-liste">${son.items.map((i) => `<div class="ek-satir"><span>${esc(i.icon)} ${esc(i.name)}</span><b>-${esc(tam(i.unitsBurned))} adet (${esc(astra(i.budgetSpent))} ASTRA)</b></div>`).join('')}</div>`
   }) : '';
 
   return [
     kart({
       baslik: '🛡️ Hazine geri alım ve yakım',
       icerik: not(`Hazineye giren ASTRA'nın %${kasaYuzde}'i bu kasaya gider. Fiyatı açılışın en az %${Math.round((C.AMM_BUYBACK?.TRIGGER_DROP ?? 0.2) * 100)} altına inen varlıklar bu kasadan alınıp yakılır; böylece fiyat toparlanır.`)
-        + satir('Kasadaki ASTRA', `${tam(analiz.availableTreasury)} ASTRA`)
-        + satir(`Haftalık müdahale tavanı (%${haftalik})`, `${tam(analiz.maxCycleFund)} ASTRA`)
-        + satir('Bu döngü kullanılacak fon', `${tam(analiz.totalFundToSpend)} ASTRA`, analiz.totalFundToSpend > 0 ? 'uyari' : 'iyi')
+        + satir('Kasadaki ASTRA', `${astra(analiz.availableTreasury)} ASTRA`)
+        + satir(`Haftalık müdahale tavanı (%${haftalik})`, `${astra(analiz.maxCycleFund)} ASTRA`)
+        + satir('Bu döngü kullanılacak fon', `${astra(analiz.totalFundToSpend)} ASTRA`, analiz.totalFundToSpend > 0 ? 'uyari' : 'iyi')
         + (b.online && b.online.active ? '' : dugme({ e: 'geriAlim', metin: '⚡ Geri alımı şimdi çalıştır', ton: 'birincil', devreDisi: analiz.totalFundToSpend <= 1, genis: true }))
     }),
     kart({ baslik: '📊 Varlık durumu', icerik: `<div class="ek-liste">${varliklar}</div>` }),
@@ -269,7 +269,7 @@ const ekran = {
       const kalan = adet < elde ? ` Fiyat en alt sınıra inmesin diye şimdilik ${tam(adet)} adet satılabilir; kalan ${tam(elde - adet)} adet siloda kalır.` : '';
       const tamam = await onay({
         baslik: `${tam(adet)} ${ad} satılsın mı?`,
-        metin: `Tahmini kazanç ~${tam(Math.floor(b.ammMarket.getEstimatedAdAstraForSell(key, adet)))} ASTRA (%2 harç sonrası).${kalan}`,
+        metin: `Tahmini kazanç ~${astra(Math.floor(b.ammMarket.getEstimatedAdAstraForSell(key, adet)))} ASTRA (%2 harç sonrası).${kalan}`,
         tamam: 'Sat'
       });
       if (!tamam) return false;

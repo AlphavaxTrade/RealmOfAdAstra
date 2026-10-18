@@ -1,7 +1,7 @@
 // Realm of AdAstra — Kışla: ordu listesi, askerin sayfası (yuvalar, iyileştirme, yetenekler) ve cephanelik.
 // 11 Ekim 2026'da js/ui/barracks.js'ten ekran mimarisiyle baştan yazıldı; kurallar js/ui/kisla-kurallari.js'te (saf, testli).
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
-import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
 import { hizliIyilestir } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
@@ -151,8 +151,8 @@ function askerSayfasi(b, s, idx) {
     : heal.isPaused ? 'İyileşme durdu: buğday ya da ASTRA yetersiz'
       : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</small>
       ${heal.isFull ? '' : dugmeler(
-    ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${sayi(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
-    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ~${sayi(Math.ceil(otPlani.total + otPlani.extraAda))} ASTRA`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
+    ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${astra(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
+    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ~${astra(otPlani.total + otPlani.extraAda)} ASTRA`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
     parsomen > 0 ? dugme({ e: 'parsomen', metin: `Parşömen (${sayi(parsomen)})` }) : ''
   )}
     </div>` : '';

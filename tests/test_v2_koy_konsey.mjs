@@ -113,6 +113,44 @@ const DAY = 86400;
   ok('Şifahane: otla iyileştirme');
 }
 
+// 3b) Şifahane bedeli EKRANDA GÖRÜNEN (savaş ölçeği) cana göredir: teçhizatlı asker daha çok ot yakar; kısmi iyileştirme eldeki otla yetinir
+{
+  const gs = fresh();
+  gs.state.adAstraBalance = 1e6;
+  gs.buySoldierUnit();
+  const s = gs.state.soldierUnits[0];
+  s.maxHp = 150; s.hp = 88;
+  const ciplak = gs.getHerbHealInfo(0);
+  assert.equal(ciplak.missingBattleHp, 62, 'teçhizatsız: savaş ölçeği = taban');
+  s.equipment = { armor: { name: 'z', slot: 'armor', durability: 13, maxDurability: 13, atkBonus: 0, hpBonus: 500 } };
+  const savas = gs.getSoldierBattleStart(0);
+  const donanimli = gs.getHerbHealInfo(0);
+  assert.equal(donanimli.battleMaxHp, savas.maxHp);
+  assert.equal(donanimli.missingBattleHp, savas.maxHp - savas.hp, 'eksik can ekrandaki can farkıdır');
+  assert.equal(donanimli.herbsNeeded, Math.ceil(donanimli.missingBattleHp / S.HP_PER_HERB), '1 ot = HP_PER_HERB can (ekrandaki sayıyla)');
+  assert.ok(donanimli.herbsNeeded > ciplak.herbsNeeded * 3, 'güçlü teçhizat iyileştirmeyi daha çok ot yakan yapar');
+  assert.ok(near(donanimli.herbAdaCost, donanimli.missingBattleHp * S.ADA_PER_HP * gs.getAdaPriceMultiplier(), 1e-2), 'ASTRA payı: eksik can × ADA_PER_HP');
+
+  // Kısmi iyileştirme: ot yetmiyorsa kismi olmadan reddedilir, kismi ile eldeki kadarı iyileştirir ve ASTRA oranlanır
+  const hp0 = s.hp, ada0 = gs.state.adAstraBalance;
+  gs.state.inventory.herb = Math.floor(donanimli.herbsNeeded / 2);
+  assert.equal(gs.healSoldierWithHerb(0).success, false, 'kısmi izni yoksa ot yetmezse olmaz');
+  const k = gs.healSoldierWithHerb(0, { kismi: true });
+  assert.equal(k.success, true, k.message);
+  assert.equal(k.partial, true);
+  assert.equal(gs.state.inventory.herb, 0, 'eldeki ot harcandı');
+  assert.ok(s.hp > hp0 && s.hp < 150, 'can arttı ama tam değil');
+  const oran = k.herbsUsed / donanimli.herbsNeeded;
+  assert.ok(near(ada0 - gs.state.adAstraBalance, donanimli.herbAdaCost * oran, 2e-3), 'ASTRA payı da oranlandı');
+  // kalanını tamamla
+  const kalan = gs.getHerbHealInfo(0);
+  gs.state.inventory.herb = kalan.herbsNeeded;
+  const t = gs.healSoldierWithHerb(0, { kismi: true });
+  assert.equal(t.success && !t.partial, true, 'kalan ot yetince tam iyileşir');
+  assert.equal(s.hp, 150);
+  ok('Şifahane: bedel ekrandaki cana göre, teçhizat çarpar, kısmi iyileştirme');
+}
+
 // 4) Demirhane geri dönüşümü: %70 hammadde geri, eşya yok olur
 {
   const gs = fresh();

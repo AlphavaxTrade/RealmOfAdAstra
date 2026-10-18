@@ -212,7 +212,7 @@ function pvpSekmesi(b, secenek) {
     });
 
   const ilk10 = st.top.length
-    ? st.top.map((r, i) => `<div class="ek-satir${r.me ? ' is-iyi' : ''}"><span>${esc(r.rank)}. ${esc(r.name)}</span><b>${esc(r.points)} puan · ~${esc(tam(st.prizes[i]))} ASTRA</b></div>`).join('')
+    ? st.top.map((r, i) => `<div class="ek-satir${r.me ? ' is-iyi' : ''}"><span>${esc(r.rank)}. ${esc(r.name)}</span><b>${esc(r.points)} puan · ~${esc(astra(st.prizes[i]))} ASTRA</b></div>`).join('')
     : not('Bu hafta henüz maç yok. İlk puanı sen al!');
   const benim = st.mine
     ? satir('Senin sıran', `${st.mine.rank}. · ${st.mine.points} puan · ${st.mine.wins} G / ${st.mine.losses} M`, 'iyi')
@@ -332,7 +332,8 @@ const ekran = {
       const sampiyon = asker(b)[idx];
       if (!sampiyon) { b.bildir('Kolezyuma çıkacak bir şampiyon bulunamadı!', 'error'); return false; }
       if ((sampiyon.hp || 0) <= 15) {
-        b.bildir(`⚠️ ${sampiyon.name} ağır yaralı (Can: ${sampiyon.hp}/${sampiyon.maxHp}). Kolezyuma çıkmadan önce iyileştirilmelidir!`, 'error');
+        const sv = gs.getSoldierBattleStart(idx);   // ekranda görünen (savaş ölçeği) can
+        b.bildir(`⚠️ ${sampiyon.name} ağır yaralı (Can: ${sv.hp}/${sv.maxHp}). Kolezyuma çıkmadan önce şifalı otla iyileştirilmelidir!`, 'error');
         return false;
       }
       const r = await gs.executeColosseum1v1Match(idx);
@@ -386,7 +387,7 @@ const ekran = {
             baslik: '💀 MAĞLUBİYET',
             altBaslik: `${r.opponentName} kazandı`,
             satirlar: [eloSatiri, '🩹 Şampiyonun yaralandı'],
-            not: 'Yaralı şampiyonu buğdayla ya da şifalı otla iyileştirip yeniden dene.',
+            not: 'Yaralı şampiyonu şifalı otla iyileştirip (ya da 24 saat bekleyip) yeniden dene.',
             eylemler: [
               { etiket: '🌾 Kışlaya git (iyileştir)', birincil: true, tikla: () => ac('kisla') },
               { etiket: '🏟️ Kolezyuma dön', tikla: () => ac('kolezyum') }

@@ -266,7 +266,7 @@ export const GAME_CONFIG = {
     { id: 'dungeon_preview', section: 'zindan', icon: '🔎', title: 'Savaş öncesi ekranı oku', desc: 'Zindanda bir canavara dokun: kazanma şansı, giriş kuralları ve taktik burada.', rewardAda: 2, show: 'zindan' },
     { id: 'dungeon_win', section: 'zindan', icon: '🏆', title: 'Zindanda ilk zaferin', desc: 'Birinci katın ilk canavarını yen.', rewardAda: 20, show: 'zindan' },
     { id: 'fragment_drop', section: 'zindan', icon: '🧩', title: 'Teçhizat parçası düşür', desc: 'Zindan zaferlerinden teçhizat parçası ve Pandora kutusu şansı vardır.', rewardAda: 15, show: 'zindan' },
-    { id: 'heal_soldier', section: 'zindan', icon: '🩹', title: 'Yaralı askeri iyileştir', desc: 'Savaştan sonra askerlerini buğdayla ya da otla iyileştir ve yeniden gir.', rewardAda: 5, show: 'kisla' },
+    { id: 'heal_soldier', section: 'zindan', icon: '🩹', title: 'Yaralı askeri iyileştir', desc: 'Savaştan sonra askerlerini şifalı otla iyileştir (ya da 24 saat bekle) ve yeniden gir.', rewardAda: 5, show: 'kisla' },
     { id: 'dungeon_boss3', section: 'zindan', icon: '🗿', title: 'Ara boss\'u yen', desc: 'Üçüncü katın sonundaki Kadim Taş Golyat\'ı devir.', rewardAda: 40, show: 'zindan' },
     // ── Kolezyum ve Karnaval ──
     { id: 'colosseum_first', section: 'kolezyum', icon: '🏟️', title: 'İlk kolezyum düellon', desc: 'Şampiyonunu seçip Kolezyuma çık; sonuç ELO puanını değiştirir.', rewardAda: 15, show: 'kolezyum' },
@@ -1584,6 +1584,16 @@ export const GAME_CONFIG = {
       changes: [
         `Her yeni sürüm geldiğinde zil panelinde "🆕 Yeni sürüm geldi" bildirimi çıkıyor ve yanındaki "Oku" düğmesi doğrudan Sürüm geçmişini açıyor. Sürüm geçmişini açınca ya da bildirimi temizleyince o sürüm okundu sayılır, bir daha çıkmaz. Yeni hesaplara çıkmaz.`,
         `Çarktan stamina ödülü düştüğünde stamina deposu kısmen boşsa sığmayan kısmın değeri artık kaybolmuyor: depo dolana kadar stamina verilir, kalanın değeri ASTRA olarak ödenir (depo tamamen doluysa zaten tamamı ASTRA ödeniyordu).`
+      ]
+    },
+    {
+      version: 'v1.60',
+      title: '🌿 Şifalı Ot Bedeli Ekrandaki Cana Göre',
+      date: '18 Ekim 2026',
+      changes: [
+        `Şifalı otla iyileştirmenin bedeli artık ekranda gördüğün can sayısına göre hesaplanıyor (teçhizat ve set bonusu dahil): 1 ot 2 can iyileştirir, can başına 0,01 ASTRA. Eskiden bedel gizli "taban can" üzerinden hesaplanıyordu, bu yüzden 580/966 canlı askerin iyileştirmesi "31 ot + 0 ASTRA" yazıyordu; şimdi 193 ot ve doğru ASTRA yazar. Güçlü teçhizatlı asker daha çok can taşıdığı için iyileştirmesi daha çok şifalı ot yakar.`,
+        `"Hızlı iyileştir" artık silo küçükken de çalışır: bir askerin tam bedeli siloya sığmıyorsa eksik ot parça parça alınıp tur tur iyileştirilir. Kısa ASTRA bedelleri artık "0" yerine küsuratıyla (ör. 3,86) gösteriliyor.`,
+        `Kapsamlı tarama düzeltmeleri: Kotalarım ekranı zindan kasasının günlük ödeme payını "%1" yazıyordu, gerçek oran %0,36 (artık ayardan okunuyor); 1 ASTRA'nın altındaki tutarlar (hazine, karnaval, savaş alanı, seviye atlama gibi ekranlarda) "0" görünüyordu, artık küsuratıyla yazılıyor; Ekonomi panosundaki "-0%" yazımı "0%" oldu; Kolezyum ve Danışman metinlerinde kalan "buğdayla iyileştir" ifadeleri şifalı ota çevrildi; Kolezyum'da "ağır yaralı" uyarısı artık ekrandaki can sayısını gösteriyor.`
       ]
     }
   ],

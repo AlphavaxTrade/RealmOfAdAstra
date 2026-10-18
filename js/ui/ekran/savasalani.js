@@ -49,7 +49,7 @@ const ekran = {
 
     const aciklama = kart({
       baslik: '🌋 Haftalık dünya bossu',
-      rozet: etiket(`Bu haftanın havuzu: ${tam(boss.weeklyAdaPool)} ASTRA`, 'vurgu'),
+      rozet: etiket(`Bu haftanın havuzu: ${astra(boss.weeklyAdaPool)} ASTRA`, 'vurgu'),
       vurgu: 'uyari',
       icerik: not('<b>Otomatik savaş:</b> manuel saldırmazsın. Hafta boyunca kilitlenen orduların saldırı ve can puanlarından toplam hasar hesaplanır; <b>her Pazar 18:00\'de (TSİ)</b> savaş otomatik yapılır ve haftanın havuzu hasar payına göre paylaşılır. Havuz kasanın %' + Math.round((b.GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE || 0.03) * 100) + '\'ü kadardır (kasada toplam ' + tam(boss.vaultAda || 0) + ' ASTRA).')
         + satir('Hasar formülü', 'ATK × 1,0 + HP × 0,25 (yetenek çeşitliliği bonuslu)')
@@ -64,11 +64,11 @@ const ekran = {
         hucre('Can katkısı (1:0,25)', `❤️ +${tam(v.hpKatki)}`),
         hucre('Hesaplanan hasar', `🎯 ${tam(v.hasar)}`, 'iyi')
       ])
-      + satir(v.kilitli ? 'Kilitli ordunun Pazar kazancı' : 'Tahmini Pazar kazancı', `~${tam(v.beklenen)} ASTRA`, 'iyi')
+      + satir(v.kilitli ? 'Kilitli ordunun Pazar kazancı' : 'Tahmini Pazar kazancı', `~${astra(v.beklenen)} ASTRA`, 'iyi')
       + `<p class="ek-kucuk">${esc(tam(v.hasar))} hasar × ${esc(sayi(v.oran, 3))} ASTRA</p>`
       + dugmeler(
         dugme({ e: 'kilitle', metin: v.kilitli ? '🔄 Kilitli orduyu güncelle' : '🛡️ Tüm ordumu kilitle (Pazar 18:00 için)', ton: v.kilitli ? '' : 'birincil', devreDisi: v.asker.length === 0 }),
-        v.kilitli ? dugme({ e: 'erken', metin: `🔓 %${Math.round(cezaOrani * 100)} cezayla erken çek (${tam(Math.max(1, Math.round(v.g.estimatedAda * cezaOrani)))} ASTRA)`, ton: 'tehlike' }) : ''
+        v.kilitli ? dugme({ e: 'erken', metin: `🔓 %${Math.round(cezaOrani * 100)} cezayla erken çek (${astra(Math.max(1, Math.round(v.g.estimatedAda * cezaOrani)))} ASTRA)`, ton: 'tehlike' }) : ''
       )
       + (v.asker.length === 0 ? uyari('Kışladan asker alıp ordunu kurduğunda burada kilitleyebilirsin.') : '')
     });
@@ -85,10 +85,10 @@ const ekran = {
     const odul = kart({
       baslik: '🎁 Toplanmaya hazır ödülün',
       vurgu: talep > 0 ? 'iyi' : '',
-      icerik: `<div class="ek-buyuk">🟣 ${esc(tam(talep))} <small>ASTRA</small></div>`
+      icerik: `<div class="ek-buyuk">🟣 ${esc(astra(talep))} <small>ASTRA</small></div>`
         + dugme({
           e: 'talep',
-          metin: talep > 0 ? `🎁 ${tam(talep)} ASTRA ödülünü ve ordunu topla` : (v.kilitli ? '⏳ Pazar 18:00 savaşı bekleniyor (ordu kilitli)' : '⏳ Kilitli ordu ya da ödül yok'),
+          metin: talep > 0 ? `🎁 ${astra(talep)} ASTRA ödülünü ve ordunu topla` : (v.kilitli ? '⏳ Pazar 18:00 savaşı bekleniyor (ordu kilitli)' : '⏳ Kilitli ordu ya da ödül yok'),
           ton: talep > 0 ? 'birincil' : '', devreDisi: !(talep > 0 || v.kilitli), genis: true
         })
     });
@@ -106,7 +106,7 @@ const ekran = {
       const ceza = Math.max(1, Math.round(g.estimatedAda * g.earlyUnstakePenaltyRate));
       const tamam = await onay({
         baslik: 'Ordu erken çekilsin mi?',
-        metin: `Tahmini kazancının %${Math.round(g.earlyUnstakePenaltyRate * 100)}'i olan ${tam(ceza)} ASTRA ceza ödenir ve ordun serbest kalır.`,
+        metin: `Tahmini kazancının %${Math.round(g.earlyUnstakePenaltyRate * 100)}'i olan ${astra(ceza)} ASTRA ceza ödenir ve ordun serbest kalır.`,
         tamam: 'Cezayı öde ve çek', tehlikeli: true
       });
       if (!tamam) return false;

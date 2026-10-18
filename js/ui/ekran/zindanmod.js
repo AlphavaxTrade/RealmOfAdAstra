@@ -3,7 +3,7 @@
 // katkısı (yakılır) ve ASTRA ile bir üst moda geçer; zindan baştan başlar, canavarlar çok daha güçlüdür, ASTRA ödülü ve eşya düşme şansı
 // artar, asker hakkı birikir. Kurallar: js/gameState/zindan.js (getDungeonModeInfo, contributeToDungeonGate, advanceDungeonMode),
 // sayılar: js/config.js ZINDAN_MODLARI, js/economy/ordu-hakki.js. Bu dosya yalnız gösterir ve eylemleri çağırır.
-import { ekranKaydet, kap, kart, katli, satir, cubukSatiri, dugme, dugmeler, uyari, not, etiket, tam, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, satir, cubukSatiri, dugme, dugmeler, uyari, not, etiket, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
 import { askerHakki, katOf } from '../../economy/ordu-hakki.js';
 
@@ -45,13 +45,13 @@ function gecisKarti(b, gs, bilgi) {
       + (g.kalan[k] > 0 ? dugme({ e: 'katki', metin: `Ver (${tam(verilebilir)})`, devreDisi: verilebilir <= 0, veri: { k }, ipucu: 'Envanterindekinden, kalan ihtiyacı aşmayacak kadarını yakar' }) : '') + '</div>';
   }).join('');
   const verilebilirVar = Object.keys(g.gerek).some((k) => g.kalan[k] > 0 && Math.floor(Number(env[k]) || 0) > 0);
-  const astraDurumu = g.astraYeter ? `Bakiyen yeter (${tam(Math.floor(gs.state.adAstraBalance))} ASTRA).` : `Bakiyen yetmiyor (${tam(Math.floor(gs.state.adAstraBalance))} ASTRA).`;
+  const astraDurumu = g.astraYeter ? `Bakiyen yeter (${astra(Math.floor(gs.state.adAstraBalance))} ASTRA).` : `Bakiyen yetmiyor (${astra(Math.floor(gs.state.adAstraBalance))} ASTRA).`;
   return kart({
     baslik: `${g.hedefSimge} Sonraki mod: ${esc(g.hedefAd)}`, vurgu: g.yapilabilir ? 'iyi' : '',
     icerik: not(ozet)
       + uyari('🔥 Geçiş bedelindeki hammadde YAKILIR (geri dönmez): silo sınırına takılmaman için günlere yayarak katkı verebilirsin.', 'uyari')
       + satirlar
-      + satir('💰 ASTRA bedeli (son adımda)', `${tam(g.astra)} ASTRA`, g.astraYeter ? 'iyi' : 'kotu') + `<div class="ek-kucuk">${astraDurumu}</div>`
+      + satir('💰 ASTRA bedeli (son adımda)', `${astra(g.astra)} ASTRA`, g.astraYeter ? 'iyi' : 'kotu') + `<div class="ek-kucuk">${astraDurumu}</div>`
       + dugmeler(
         dugme({ e: 'katkiHepsi', metin: 'Elindeki hepsini ver', devreDisi: !verilebilirVar || g.hammaddeTamam, ipucu: 'Her hammaddeden, kalan ihtiyacı aşmayacak kadarını yakar' }),
         dugme({ e: 'gec', metin: `${g.hedefSimge} ${esc(g.hedefAd)} moda geç`, ton: 'birincil', devreDisi: !g.yapilabilir })
@@ -101,7 +101,7 @@ const ekran = {
       const g = bilgi.gecis;
       const tamam = await onay({
         baslik: `${g.hedefAd} moda geçilsin mi?`,
-        metin: `Zindan baştan başlar (ilerlemen 1. kata döner), canavarlar çok daha güçlü olur. ${tam(g.astra)} ASTRA harcanır. Asker hakkın ${tam(g.yeniAskerHakki)}'e çıkar; askerlerin ve teçhizatın korunur. Geri dönüş yok.`,
+        metin: `Zindan baştan başlar (ilerlemen 1. kata döner), canavarlar çok daha güçlü olur. ${astra(g.astra)} ASTRA harcanır. Asker hakkın ${tam(g.yeniAskerHakki)}'e çıkar; askerlerin ve teçhizatın korunur. Geri dönüş yok.`,
         tamam: `${g.hedefAd} moda geç`, tehlikeli: true
       });
       if (!tamam) return false;

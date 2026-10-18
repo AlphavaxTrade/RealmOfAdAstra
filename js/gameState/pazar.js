@@ -141,7 +141,7 @@ export const pazarYontemleri = {
       if (!iyilestirme.count) return { ok: false, items: [], reason: tek == null ? 'Yaralı asker yok.' : 'Asker zaten tam can.' };
       hedef = { herb: iyilestirme.totalHerbs };
       ekAstra = Number(iyilestirme.totalAda) || 0;
-      kapasitesiz = tek == null;   // bütün yaralılar: asker asker iyileştirilir, ot hepsi birden siloda durmak zorunda değil
+      kapasitesiz = true;   // tahmin: iyileştirme tur tur yapılır (ekran/bilesik.js hizliIyilestir), ot hepsi birden siloda durmak zorunda değil
     } else {
       return { ok: false, items: [], reason: 'Geçersiz.' };
     }

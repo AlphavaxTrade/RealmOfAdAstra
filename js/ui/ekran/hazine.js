@@ -25,11 +25,11 @@ function ozet(b) {
   const yakilan = b.globalPool.state.totalBurned || 0;
   return kart({
     baslik: '👑 Krallık kasaları',
-    icerik: satir('Kasalardaki toplam ASTRA', `${tam(t.totalBalance)} ASTRA`)
+    icerik: satir('Kasalardaki toplam ASTRA', `${astra(t.totalBalance)} ASTRA`)
       + satir('Ortalama kasa sağlığı', oran(t.avgHealth), t.avgHealth < 0.4 ? 'kotu' : (t.avgHealth < 0.7 ? 'uyari' : 'iyi'))
-      + satir('Pazar likidite rezervi', `${tam(b.ammMarket.getTotalAdAstraLiquidity())} ASTRA`)
-      + satir('🔥 Kalıcı yakılan', `${tam(yakilan)} ASTRA`, 'uyari')
-      + satir('Kasalardan çıkan / giren', `${tam(t.lifetimeWithdrawn)} / ${tam(t.lifetimeDeposited)} ASTRA`)
+      + satir('Pazar likidite rezervi', `${astra(b.ammMarket.getTotalAdAstraLiquidity())} ASTRA`)
+      + satir('🔥 Kalıcı yakılan', `${astra(yakilan)} ASTRA`, 'uyari')
+      + satir('Kasalardan çıkan / giren', `${astra(t.lifetimeWithdrawn)} / ${astra(t.lifetimeDeposited)} ASTRA`)
   });
 }
 
@@ -60,12 +60,12 @@ function kasalar(b) {
     const m = KASA[p.id] || { simge: '💰', renk: '#94a3b8', gider: '', git: '', gitAd: '' };
     const tavan = butce[p.id];
     const butceSatiri = tavan != null
-      ? cubukSatiri('Bu haftaki ödeme payı', `${tam(harcanan[p.id] || 0)} / ${tam(tavan)} ASTRA`, tavan > 0 ? ((harcanan[p.id] || 0) / tavan) * 100 : 0, { renk: m.renk })
+      ? cubukSatiri('Bu haftaki ödeme payı', `${astra(harcanan[p.id] || 0)} / ${astra(tavan)} ASTRA`, tavan > 0 ? ((harcanan[p.id] || 0) / tavan) * 100 : 0, { renk: m.renk })
       : '';
     const gelir = pay[p.id] ? `her harcamadan ${oran((H.TOKEN_REWARD_POOL_RATE ?? 0.86) * pay[p.id])} pay` : '';
     return kart({
       icerik: `<div class="ek-oge"><span class="ek-simge" aria-hidden="true">${m.simge}</span>
-          <div class="ek-oge-govde"><b>${esc(p.name)}</b><small>${tam(p.balance)} ASTRA</small>${gelir ? `<small>${esc(gelir)}</small>` : ''}</div></div>`
+          <div class="ek-oge-govde"><b>${esc(p.name)}</b><small>${astra(p.balance)} ASTRA</small>${gelir ? `<small>${esc(gelir)}</small>` : ''}</div></div>`
         + cubukSatiri('Kasa sağlığı (hedef rezerv)', oran(p.health), p.health * 100, { renk: m.renk, ton: p.health < 0.25 ? 'kotu' : '' })
         + butceSatiri
         + katli('Bu kasa ne işe yarar?', not(esc(m.gider)), { k: `kasa-${p.id}` })
@@ -81,7 +81,7 @@ function ubiKarti(b) {
   return kart({
     baslik: '🤝 Temel gelir (UBI)',
     rozet: etiket(`Haftalık hakkın: ${astra(u.payout)} ASTRA`, u.eligible ? 'iyi' : ''),
-    icerik: not(`Harcanan her ASTRA'nın %6'sı haftalık UBI kasasında birikir; Pazartesi 00:01 (TSİ) seviyene göre paylaşılır. Bu haftanın kasası ${tam(u.weeklyBudget)} ASTRA, çekilmeyi bekleyen ${tam(u.claimRemaining)} ASTRA.`)
+    icerik: not(`Harcanan her ASTRA'nın %6'sı haftalık UBI kasasında birikir; Pazartesi 00:01 (TSİ) seviyene göre paylaşılır. Bu haftanın kasası ${astra(u.weeklyBudget)} ASTRA, çekilmeyi bekleyen ${astra(u.claimRemaining)} ASTRA.`)
       + dugme({ e: 'git', metin: '🤝 Ekonomi panosunda talep et ➔', veri: { hedef: 'ekonomi', bolum: '' } })
   });
 }
@@ -114,7 +114,7 @@ function gelirKarti(b) {
       + satir('Gerçekten çekilebilen', `${sayi(cekilebilen, 2)} $ / hedef ${sayi(esikC, 1)} $`)
       + `<p class="ek-kucuk">${esc(uzaklik(esikC > 0 ? cekilebilen / esikC : 0))}</p>`
       + not(`Büyüme (vatandaş sınırının artması) için <b>ikisi birden</b> hedefi geçmeli: ${kp.growthLocked ? '<b>şimdilik kilitli</b> (yönetici açana dek)' : 'kilit açık, eşikler geçilince ayda %10 büyür'}.`)
-      + (pi && pi.enabled ? not(`Trade sitesinden gelen gerçek dış gelir: bu hafta <b>${tam(pi.weekAda)}</b> / toplam <b>${tam(pi.totalAda)}</b> ASTRA.`) : '')
+      + (pi && pi.enabled ? not(`Trade sitesinden gelen gerçek dış gelir: bu hafta <b>${astra(pi.weekAda)}</b> / toplam <b>${astra(pi.totalAda)}</b> ASTRA.`) : '')
   });
 }
 
@@ -146,17 +146,17 @@ function sponsorKarti(b, s) {
   const { tablo: t, benim: m } = d;
   const c = m.config;
   const benimId = b.online.playerId;
-  const satirHtml = (x, dugmeHtml) => `<div class="ek-satir"><span>${esc(x.sponsor === `Vatandaş #${String(benimId || '').slice(4)}` ? x.target : x.sponsor)} · ${tam(x.principal)} ASTRA · ${esc(x.status)}</span><span>${dugmeHtml}</span></div>`;
+  const satirHtml = (x, dugmeHtml) => `<div class="ek-satir"><span>${esc(x.sponsor === `Vatandaş #${String(benimId || '').slice(4)}` ? x.target : x.sponsor)} · ${astra(x.principal)} ASTRA · ${esc(x.status)}</span><span>${dugmeHtml}</span></div>`;
   const verdigim = m.given.map((x) => satirHtml(x, x.status === 'active' ? dugme({ e: 'feragat', metin: 'Vazgeç', veri: { id: x.id } }) : '')).join('');
   const aldigim = m.received.map((x) => satirHtml(x, (x.status === 'active' && x.returned >= x.principal) ? dugme({ e: 'sponsorKapat', metin: 'Kapat', veri: { id: x.id } }) : '')).join('');
   const secenekler = t.rows.filter((r) => r.id !== benimId && !r.izinde).slice(0, 100)
     .map((r) => `<option value="${esc(r.id)}">${esc(r.ad)} · Sv.${esc(r.level)} · bu hafta ${esc(r.haftaKategori)} kategori · ort. net çekim ${esc(tam(r.ortNetCekim4Hafta))} · ${esc(r.sponsorSayisi)} sponsor</option>`).join('');
   return kart({
     baslik: '🤝 Sponsorluk',
-    rozet: etiket(`sponsorlu paran: ${tam(m.sponsoredBalance)} ASTRA`),
+    rozet: etiket(`sponsorlu paran: ${astra(m.sponsoredBalance)} ASTRA`),
     icerik: not(`Bir vatandaşa ASTRA ile sponsor olursun; o para <b>çekilemez</b>, yalnız oyunda harcanır. Karşılığında o oyuncunun her haftalık <b>net çekiminin %${Math.round(c.share * 100)}'i</b> (toplam getirin anaparanın ${esc(c.returnCap)} katına ya da ${esc(c.days)} güne dek) sana ödenir.`)
       + `<label class="ek-alan"><span>Vatandaş</span><select id="sp-hedef" class="ek-girdi">${secenekler || '<option value="">Sponsor olunabilecek vatandaş yok</option>'}</select></label>`
-      + `<label class="ek-alan"><span>Miktar (en az ${esc(tam(c.minAmount))} ASTRA)</span><input id="sp-miktar" type="number" class="ek-girdi" min="${esc(c.minAmount)}" step="100" inputmode="numeric"></label>`
+      + `<label class="ek-alan"><span>Miktar (en az ${esc(astra(c.minAmount))} ASTRA)</span><input id="sp-miktar" type="number" class="ek-girdi" min="${esc(c.minAmount)}" step="100" inputmode="numeric"></label>`
       + dugme({ e: 'sponsorOl', metin: '🤝 Sponsor ol', ton: 'birincil', genis: true })
       + (verdigim ? `<div class="ek-alt-baslik">Verdiğim</div>${verdigim}` : '')
       + (aldigim ? `<div class="ek-alt-baslik">Aldığım</div>${aldigim}` : '')

@@ -1,5 +1,5 @@
 // Realm of AdAstra — Kotalarım: kişisel Üretim Hakkı, Sirius'un herkes için kapasitesi, günlük ve haftalık sınırlar.
-import { ekranKaydet, kap, kart, katli, satir, cubukSatiri, hucre, izgara, etiket, not, tam, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, satir, cubukSatiri, hucre, izgara, etiket, not, tam, sayi, esc } from './cekirdek.js';
 
 const GUN_ADLARI = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
@@ -112,7 +112,7 @@ const ekran = {
       }),
       sinirSatiri('🏟️', 'Kolezyum maçı', sayaclar.arenaMatches || 0, kolezyumSiniri),
       sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
-        birim: ' ASTRA', not: "Kasa günde en fazla bakiyesinin %1'ini öder"
+        birim: ' ASTRA', not: `Kasa günde en fazla bakiyesinin %${sayi(((b.GAME_CONFIG.DUNGEON || {}).DAILY_BUDGET_RATE ?? 0.0036) * 100, 2)}'ini öder`
       }),
       girisBasamaklari(zindan)
     ].join('');

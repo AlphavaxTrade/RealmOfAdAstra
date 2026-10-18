@@ -23,7 +23,7 @@ function botKarti(b) {
 
   const paketDugmeleri = paketler.map((h) => dugme({
     e: 'paketAl', ton: 'birincil', veri: { saat: h }, id: `btn-bot-paket-${h}`,
-    metin: `<span class="ek-dugme-yazi"><span>${calisiyor ? `⚡ +${h} saat uzat` : `🤖 ${h} saatlik bot`}</span><small>${esc(tam(gs.getBotPackageCost(h)))} ASTRA</small></span>`
+    metin: `<span class="ek-dugme-yazi"><span>${calisiyor ? `⚡ +${h} saat uzat` : `🤖 ${h} saatlik bot`}</span><small>${esc(astra(gs.getBotPackageCost(h)))} ASTRA</small></span>`
   }));
   if (!gs.state.botTrialUsed) {
     paketDugmeleri.push(dugme({ e: 'deneme', metin: `<span class="ek-dugme-yazi"><span>🎁 ${botCfg.TRIAL_HOURS || 1} saat ücretsiz dene</span><small>bir kerelik hediye</small></span>`, ton: 'iyi', id: 'btn-bot-deneme' }));

@@ -20,7 +20,7 @@ const ekran = {
       const yeter = ot >= bilgi.herbsNeeded && bakiye >= bilgi.herbAdaCost;
       const plan = !yeter && ot < bilgi.herbsNeeded ? gs.getQuickBuyPlan(`heal:${i}`) : null;
       return `<div class="ek-oge">
-        <div class="ek-oge-govde"><b>${esc(s.name)}</b><small>${esc(tam(bilgi.hp))} / ${esc(tam(bilgi.maxHp))} can</small></div>
+        <div class="ek-oge-govde"><b>${esc(s.name)}</b><small>${esc(tam(bilgi.battleHp))} / ${esc(tam(bilgi.battleMaxHp))} can</small></div>
         ${plan && plan.items.length
     ? dugme({ e: 'hizli', metin: `⚡ Eksik otu al ve iyileştir · ~${tam(Math.ceil(plan.total + plan.extraAda))} ASTRA`, ton: 'iyi', veri: { asker: i }, devreDisi: !plan.ok })
     : dugme({ e: 'iyilestir', metin: `🌿 İyileştir (${tam(bilgi.herbsNeeded)} ot + ${astra(bilgi.herbAdaCost)} ASTRA)`, ton: 'iyi', veri: { asker: i }, devreDisi: !yeter })}

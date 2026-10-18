@@ -35,7 +35,7 @@ export const gelisimYontemleri = {
       return {
         icon: '❤️',
         title: 'Askerler Dinlenmek İstiyor',
-        advice: 'Orduda yaralı askerlerin var. Kışlaya gidip **"Tek Dokunuşla Ordumu Hazırla"** ile onları doyurabilirsin!',
+        advice: 'Orduda yaralı askerlerin var. Kışlaya gidip **"Tek Dokunuşla Ordumu Hazırla"** ile onları şifalı otla iyileştirebilirsin!',
         action: 'open_barracks',
         actionLabel: '⚔️ Kışlaya Git'
       };

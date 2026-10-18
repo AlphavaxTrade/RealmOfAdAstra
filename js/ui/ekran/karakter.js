@@ -37,7 +37,7 @@ function seviyeKarti(b) {
   const yeter = xpYeter && hammaddeTamam && s.adAstraBalance >= req.adAstra;
   let neden = '';
   if (!xpYeter) neden = `Yetersiz deneyim (${tam(s.currentXp)}/${tam(req.xp)} XP)`;
-  else if (s.adAstraBalance < req.adAstra) neden = `Yetersiz ASTRA (${tam(s.adAstraBalance)}/${tam(req.adAstra)})`;
+  else if (s.adAstraBalance < req.adAstra) neden = `Yetersiz ASTRA (${astra(s.adAstraBalance)}/${astra(req.adAstra)})`;
   else if (!yeter) neden = 'Eksik hammadde var';
   const silo = siloIpucuKarti(b, req);
 
@@ -91,8 +91,8 @@ function ubiKarti(b) {
     rozet: etiket(u.eligible ? `+${astra(u.payout)} ASTRA / hafta` : 'Seviye 3\'te açılır', u.eligible ? 'iyi' : ''),
     icerik: not(`Oyundaki her harcamanın <b>%6'sı</b> bu havuzda toplanır. Pazartesi 00:01'de (TSİ) kasa açılır; payın seviyene göre belirlenir ve haftada bir kez talep edersin.`)
       + izgara([
-        hucre('Havuzdaki toplam', `${tam(u.totalPool)} ASTRA`),
-        hucre('Bu haftanın kasası', `${tam(u.weeklyBudget)} ASTRA`),
+        hucre('Havuzdaki toplam', `${astra(u.totalPool)} ASTRA`),
+        hucre('Bu haftanın kasası', `${astra(u.weeklyBudget)} ASTRA`),
         hucre(`Senin payın (Lv.${gs.state.level})`, `${astra(u.payout)} ASTRA`, 'iyi'),
         hucre(`Sonraki seviye (Lv.${Math.min(81, gs.state.level + 1)})`, `${astra(u.nextLevelPayout)} ASTRA (+%${tam(u.increasePct)})`)
       ])

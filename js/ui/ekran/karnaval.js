@@ -27,12 +27,12 @@ function kisaAd(b, r) {
   if (r.pity) return `Şans ${astra(b.gameState.adaPrice(r.amount || 0))}`;
   if (r.type === 'ada') return `${astra(b.gameState.adaPrice(r.amount || 0))} ASTRA`;
   if (r.key === 'fragments') return `${r.amount} Parça`;
-  if (r.type === 'amm_raw') return `${kaynakAdi(b, r.key)} ${tam(r.adaVal)} ASTRA`;
+  if (r.type === 'amm_raw') return `${kaynakAdi(b, r.key)} ${astra(r.adaVal)} ASTRA`;
   if (r.type === 'key') return 'Anahtar';
   if (r.type === 'bot_free') return `${r.hours || 24}s Bot`;
   if (r.type === 'ticket_shard') return 'Bilet Parçası';
   if (r.type === 'lottery_ticket') return 'Piyango Bileti';
-  if (r.type === 'stamina_buy') return `${tam(r.adaVal)} ASTRA Stamina`;
+  if (r.type === 'stamina_buy') return `${astra(r.adaVal)} ASTRA Stamina`;
   return String(r.name || '').slice(0, 12);
 }
 
@@ -145,7 +145,7 @@ function carkSekmesi(b, secenek) {
     }),
     sahne,
     sonucKarti(b, secenek.sonuc),
-    durum.open ? '' : uyari(`Karnaval kasası yenileniyor (${esc(tam(durum.balance))} / ${esc(tam(durum.minBalance))} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.`, 'uyari'),
+    durum.open ? '' : uyari(`Karnaval kasası yenileniyor (${esc(astra(durum.balance))} / ${esc(astra(durum.minBalance))} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.`, 'uyari'),
     odemeDugmeleri(b, carpan),
     kart({
       baslik: '🎪 Karnaval coşkusu',
@@ -166,7 +166,7 @@ function piyangoSekmesi(b) {
   const bekleyen = l.pendingPayout || 0;
   const son = l.lastResult;
   const sonMetin = son
-    ? (son.userWon ? `🎉 Kazandın (+${tam(son.wonAmount)} ASTRA)` : (son.amorti > 0 ? `Amorti +${tam(son.amorti)} ASTRA` : 'Çıkmadı, biletlerin devretti'))
+    ? (son.userWon ? `🎉 Kazandın (+${astra(son.wonAmount)} ASTRA)` : (son.amorti > 0 ? `Amorti +${astra(son.amorti)} ASTRA` : 'Çıkmadı, biletlerin devretti'))
     : 'Henüz yok';
   const yerel = !(b.online && b.online.active);
 
@@ -178,8 +178,8 @@ function piyangoSekmesi(b) {
         + (yerel ? uyari('Tek başına oynama modunda diğer bilet sahipleri temsilidir. Gerçek oyuncularla ortak piyango çevrimiçi modda çalışır.') : '')
     }),
     izgara([
-      hucre('Piyango kasası', `${tam(l.pool)} ASTRA`),
-      hucre('Kazanırsan alacağın', `${tam(l.potentialPrize)} ASTRA`, 'iyi'),
+      hucre('Piyango kasası', `${astra(l.pool)} ASTRA`),
+      hucre('Kazanırsan alacağın', `${astra(l.potentialPrize)} ASTRA`, 'iyi'),
       hucre('Kazanma şansın', `%${sayi(l.chance * 100, 2)}`),
       hucre('Sonraki çekiliş', sure(sonraki - Date.now()))
     ]),
@@ -195,13 +195,13 @@ function piyangoSekmesi(b) {
           <input class="ek-girdi ek-girdi-dar" type="number" id="ek-bilet-adet" inputmode="numeric" min="1" max="${esc(Math.max(1, l.canBuy))}" value="${esc(Math.min(1, l.canBuy) || 1)}"${l.canBuy > 0 ? '' : ' disabled'}></label>
           ${dugme({ e: 'biletAl', ton: 'birincil', devreDisi: l.canBuy <= 0, metin: l.canBuy > 0 ? `🎟️ Bilet al (${esc(astra(kurallar.ticketPrice))} ASTRA/adet)` : '🚫 Şu an bilet alamazsın' })}</div>`
         + (l.canBuy > 0 ? '' : uyari('Bu haftalık alım sınırın doldu. Yeni hafta Pazartesi 00:01 (TSİ) başlar.', 'uyari'))
-        + katli('Bilet bedeli nereye gider?', not(`Bilet bedelinin %${esc(sayi(kurallar.amortiShare * 100, 0))}'i amorti kasasına (şu an ${esc(tam(l.amortiPool))} ASTRA), kalanı piyango kasasına gider. Amorti yalnız piyango kasası biterse kalan tüm biletlere eşit dağıtılır.`), { k: 'piyango-bedel' })
+        + katli('Bilet bedeli nereye gider?', not(`Bilet bedelinin %${esc(sayi(kurallar.amortiShare * 100, 0))}'i amorti kasasına (şu an ${esc(astra(l.amortiPool))} ASTRA), kalanı piyango kasasına gider. Amorti yalnız piyango kasası biterse kalan tüm biletlere eşit dağıtılır.`), { k: 'piyango-bedel' })
     }),
     kart({
       baslik: '👑 Kazancın',
       vurgu: bekleyen > 0 ? 'iyi' : '',
       rozet: etiket(bekleyen > 0 ? 'Çekilmeyi bekliyor' : 'Bekleyen kazanç yok', bekleyen > 0 ? 'iyi' : ''),
-      icerik: satir('Çekilecek kazanç', `${tam(bekleyen)} ASTRA`, bekleyen > 0 ? 'iyi' : '')
+      icerik: satir('Çekilecek kazanç', `${astra(bekleyen)} ASTRA`, bekleyen > 0 ? 'iyi' : '')
         + satir('Son çekiliş', sonMetin)
         + dugme({ e: 'talep', ton: 'birincil', devreDisi: bekleyen <= 0, genis: true, metin: bekleyen > 0 ? '🏆 Kazancımı cüzdana çek' : 'Çekilecek kazanç yok' })
     })
@@ -225,15 +225,15 @@ function kasaSekmesi(b) {
     kart({
       baslik: '🎪 Karnaval kasası',
       rozet: etiket(durum.open ? 'çark açık' : 'çark kapalı', durum.open ? 'iyi' : 'uyari'),
-      icerik: satir('Kasadaki ASTRA', `${tam(durum.balance)} ASTRA`)
-        + satir('Çarkın açık kalması için en az', `${tam(durum.minBalance)} ASTRA`)
+      icerik: satir('Kasadaki ASTRA', `${astra(durum.balance)} ASTRA`)
+        + satir('Çarkın açık kalması için en az', `${astra(durum.minBalance)} ASTRA`)
         + not(`Çarkın ASTRA bedelinin %${esc(sayi(b.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100, 0))}'i doğrudan bu kasaya girer; çark ve eşya ödülleri buradan ödenir. Kasa yetmezse ödül yoktan verilmez, çark kapanır.`)
     }),
     kart({
       baslik: '🎟️ Piyango kasaları',
-      icerik: satir('Piyango kasası', `${tam(l.pool)} ASTRA`)
-        + satir('Amorti kasası', `${tam(l.amortiPool)} ASTRA`)
-        + satir('Kazananı bekleyen ödül', `${tam(l.pendingPayout)} ASTRA`)
+      icerik: satir('Piyango kasası', `${astra(l.pool)} ASTRA`)
+        + satir('Amorti kasası', `${astra(l.amortiPool)} ASTRA`)
+        + satir('Kazananı bekleyen ödül', `${astra(l.pendingPayout)} ASTRA`)
     }),
     kart({ baslik: '🎁 Haftalık ücretsiz oyuncu payı', icerik: ucretsiz }),
     dugmeler(

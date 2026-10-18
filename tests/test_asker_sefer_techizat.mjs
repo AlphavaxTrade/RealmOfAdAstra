@@ -48,8 +48,10 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   assert.equal(bilgi.passiveWheatNeeded, 15, 'pasif: HP başına 0,30 buğday');
   assert.ok(yakin(bilgi.passiveAdaCost, 50 * PH.adaPerHp), 'pasif ASTRA bedeli yapılandırmadan');
   assert.equal(bilgi.wheatCost, undefined, 'buğdayla anında iyileştirme kalktı: hızlı bedelde buğday yok');
-  assert.ok(yakin(bilgi.adAstraCost, 50 * SF.ADA_PER_HP), 'hızlı iyileştirmenin ASTRA payı SIFAHANE ayarından');
-  assert.equal(gs.getHerbHealInfo(0).herbsNeeded, 50 / SF.HP_PER_HERB, 'ot bedeli: eksik can / HP_PER_HERB');
+  assert.equal(bilgi.adAstraCost, undefined, 'ASTRA payı artık getHerbHealInfo içinde');
+  const ot = gs.getHerbHealInfo(0);
+  assert.equal(ot.herbsNeeded, 50 / SF.HP_PER_HERB, 'ot bedeli: eksik can / HP_PER_HERB (teçhizatsız askerde savaş ölçeği = taban)');
+  assert.ok(yakin(ot.herbAdaCost, 50 * SF.ADA_PER_HP), 'ASTRA payı: eksik can × ADA_PER_HP');
 
   gs.state.inventory.wheat = 100;
   gs.state.adAstraBalance = 100;

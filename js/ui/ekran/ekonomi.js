@@ -1,7 +1,7 @@
 // Realm of AdAstra — Ekonomi panosu: oyunun parası nerede, ne kadar dönüyor. Yalnız gerçek değerler gösterilir
 // (hazine defteri, dünya kotası, pazar havuzları); tahmin ya da sabit sayı yok.
 import {
-  ekranKaydet, kap, kart, katli, satir, sekmeler, cubuk, cubukSatiri, not, izgara, hucre, etiket, simge, tam, sayi, esc
+  ekranKaydet, kap, kart, katli, satir, sekmeler, cubuk, cubukSatiri, not, izgara, hucre, etiket, simge, tam, astra, sayi, esc
 } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi } from './bilesik.js';
 
@@ -30,16 +30,16 @@ function genel(b) {
     }),
     kart({
       baslik: '🔥 ASTRA akışı',
-      icerik: satir('Oyunda harcanan toplam', `${tam(harcanan)} ASTRA`)
-        + satir('Kalıcı yakılan', `${tam(gs.totalBurned || 0)} ASTRA${pay(gs.totalBurned || 0)}`, 'uyari')
-        + satir('Yapımcı payı (telif)', `${tam(gs.creatorRoyaltyTotal || 0)} ASTRA${pay(gs.creatorRoyaltyTotal || 0)}`)
-        + satir('Temel gelir kasasına giren (bu hafta)', `${tam(gs.ubiWeekAccrued || 0)} ASTRA`)
-        + satir('Kasalara giren (ömür boyu)', `${tam(t.lifetimeDeposited)} ASTRA`)
-        + satir('Kasalardan çıkan (ömür boyu)', `${tam(t.lifetimeWithdrawn)} ASTRA`)
+      icerik: satir('Oyunda harcanan toplam', `${astra(harcanan)} ASTRA`)
+        + satir('Kalıcı yakılan', `${astra(gs.totalBurned || 0)} ASTRA${pay(gs.totalBurned || 0)}`, 'uyari')
+        + satir('Yapımcı payı (telif)', `${astra(gs.creatorRoyaltyTotal || 0)} ASTRA${pay(gs.creatorRoyaltyTotal || 0)}`)
+        + satir('Temel gelir kasasına giren (bu hafta)', `${astra(gs.ubiWeekAccrued || 0)} ASTRA`)
+        + satir('Kasalara giren (ömür boyu)', `${astra(t.lifetimeDeposited)} ASTRA`)
+        + satir('Kasalardan çıkan (ömür boyu)', `${astra(t.lifetimeWithdrawn)} ASTRA`)
     }),
     kart({
       baslik: '💎 Kasalar',
-      icerik: izgara(t.pools.map((p) => hucre(p.name, `${tam(p.balance)} ASTRA`, p.health < 0.25 ? 'kotu' : '')), { genis: true })
+      icerik: izgara(t.pools.map((p) => hucre(p.name, `${astra(p.balance)} ASTRA`, p.health < 0.25 ? 'kotu' : '')), { genis: true })
     }),
     katli('Yakılan hammaddeler (kalıcı)', izgara(b.GAME_CONFIG.RESOURCE_KEYS.map((k) => hucre(kaynakAdi(b, k), tam((gs.totalBurnedResources || {})[k] || 0))), {}), { k: 'yakim' })
   ].join('');
@@ -87,7 +87,7 @@ function fiyatlar(b) {
     }
     return `<div class="ek-hucre"><small>${esc(h.icon)} ${esc(h.name)}</small>
       <b>${esc(fiyatMetni(fiyat))} ASTRA</b>
-      <small class="${fark < 0 ? 'ek-kotu' : 'ek-iyi'}">açılışa göre ${fark >= 0 ? '+' : ''}${esc(sayi(fark, 1))}%</small>${konum}</div>`;
+      <small class="${fark < 0 ? 'ek-kotu' : 'ek-iyi'}">açılışa göre ${fark >= 0 ? '+' : ''}${esc(sayi(Math.abs(fark) < 0.05 ? 0 : fark, 1))}%</small>${konum}</div>`;
   });
   return not(`Fiyatı takas havuzları belirler: çok alınan pahalanır, çok satılan ucuzlar. Fiyat taban ve tavan koridoru içinde kalır. Havuzlardaki toplam ASTRA: <b>${esc(tam(amm.getTotalAdAstraLiquidity()))}</b>.`)
     + izgara(satirlar, { genis: true });

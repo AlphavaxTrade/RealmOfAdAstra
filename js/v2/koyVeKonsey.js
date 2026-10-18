@@ -285,35 +285,61 @@ export const gameStateV2 = {
     return { eaten: r2(eaten), grew: r2(grew), lost: r2(lost), villagers: Math.floor(v.villagers) };
   },
 
-  // ── Şifahane: HEMEN iyileştirmenin tek yolu. 1 ot = SIFAHANE.HP_PER_HERB can (yakılır) + can başına SIFAHANE.ADA_PER_HP ASTRA ──
+  // ── Şifahane: HEMEN iyileştirmenin tek yolu ──
+  // Bedel EKRANDA GÖRÜNEN can üzerinden hesaplanır (savaş ölçeği: teçhizat ve set bonusu dahil, getSoldierBattleStart): eksik can ÷
+  // SIFAHANE.HP_PER_HERB kadar şifalı ot (yakılır) + eksik can × ADA_PER_HP ASTRA. Güçlü teçhizatlı asker daha çok can taşıdığı için
+  // iyileştirmesi daha çok ot yakar. (Kayıtlı can taban ölçektedir, bkz. ordu.js; pasif iyileşme taban ölçekte kalır.)
   getHerbHealInfo(soldierIndex) {
     const info = this.getSoldierHealInfo(soldierIndex);
     if (!info) return null;
     const S = GAME_CONFIG.SIFAHANE || {};
-    const herbsNeeded = Math.ceil(info.missingHp / (S.HP_PER_HERB ?? 2));
-    const herbAdaCost = round3(info.adaCost);
-    return { ...info, herbsNeeded, herbAdaCost, herbsInStock: Math.floor(Number(this.state.inventory?.herb) || 0) };
+    const savas = this.getSoldierBattleStart(soldierIndex);
+    const eksikSavas = info.isFull ? 0 : Math.max(1, savas.maxHp - savas.hp);
+    const herbsNeeded = eksikSavas > 0 ? Math.ceil(eksikSavas / (S.HP_PER_HERB ?? 2)) : 0;
+    const herbAdaCost = round3(eksikSavas * (S.ADA_PER_HP ?? 0.01) * this.getAdaPriceMultiplier());
+    return {
+      ...info, battleHp: savas.hp, battleMaxHp: savas.maxHp, missingBattleHp: eksikSavas, herbsNeeded, herbAdaCost,
+      herbsInStock: Math.floor(Number(this.state.inventory?.herb) || 0)
+    };
   },
 
-  healSoldierWithHerb(soldierIndex) {
+  // kismi: eldeki ot tam iyileştirmeye yetmiyorsa eldeki kadarıyla kısmen iyileştirir (silo bir askerin tam bedelini tutamayacak kadar
+  // küçükken "hızlı iyileştir" böyle turlar halinde çalışır). Kısmi iyileşmede ASTRA payı da oranlanır.
+  healSoldierWithHerb(soldierIndex, { kismi = false } = {}) {
     const soldier = (this.state.soldierUnits || [])[soldierIndex];
     if (!soldier) return { success: false, message: 'Asker bulunamadı!' };
     const info = this.getHerbHealInfo(soldierIndex);
     if (!info || info.isFull) return { success: false, message: `${soldier.name} zaten tam can!` };
     const inv = this.state.inventory;
-    if ((Number(inv.herb) || 0) < info.herbsNeeded) return { success: false, message: `⚠️ Yetersiz şifalı ot! (${info.herbsNeeded} 🌿 gerekli, depoda ${info.herbsInStock})` };
-    if ((Number(this.state.adAstraBalance) || 0) < info.herbAdaCost) return { success: false, message: `⚠️ Yetersiz ASTRA! (${info.herbAdaCost} ASTRA gerekli)` };
-    inv.herb = (Number(inv.herb) || 0) - info.herbsNeeded;
-    this.burnResource('herb', info.herbsNeeded);
-    if (info.herbAdaCost > 0) {
-      this.state.adAstraBalance = round3((Number(this.state.adAstraBalance) || 0) - info.herbAdaCost);
-      this._onAdaSpent(info.herbAdaCost);
-      globalPool.recordTokenSpend(info.herbAdaCost);
+    const stok = Math.floor(Number(inv.herb) || 0);
+    let kullan = info.herbsNeeded;
+    let oran = 1;
+    if (stok < kullan) {
+      if (!kismi || stok < 1) return { success: false, message: `⚠️ Yetersiz şifalı ot! (${info.herbsNeeded} 🌿 gerekli, depoda ${info.herbsInStock})` };
+      kullan = stok;
+      oran = kullan / info.herbsNeeded;
     }
-    soldier.hp = soldier.maxHp || 100;
+    const ada = round3(info.herbAdaCost * oran);
+    if ((Number(this.state.adAstraBalance) || 0) < ada) return { success: false, message: `⚠️ Yetersiz ASTRA! (${ada} ASTRA gerekli)` };
+    inv.herb = (Number(inv.herb) || 0) - kullan;
+    this.burnResource('herb', kullan);
+    if (ada > 0) {
+      this.state.adAstraBalance = round3((Number(this.state.adAstraBalance) || 0) - ada);
+      this._onAdaSpent(ada);
+      globalPool.recordTokenSpend(ada);
+    }
+    const tabanEn = soldier.maxHp || 100;
+    if (oran >= 1) soldier.hp = tabanEn;
+    else soldier.hp = Math.min(tabanEn, (soldier.hp != null ? soldier.hp : tabanEn) + (tabanEn - (soldier.hp != null ? soldier.hp : tabanEn)) * oran);
     this._markFirst('herbHeal');
     this.saveState();
-    return { success: true, message: `🌿 ${soldier.name} Şifahane'de iyileşti! (-${info.herbsNeeded} 🌿 şifalı ot, -${info.herbAdaCost} ASTRA)`, herbsUsed: info.herbsNeeded, adaCost: info.herbAdaCost };
+    const kismen = oran < 1;
+    return {
+      success: true, partial: kismen, herbsUsed: kullan, adaCost: ada,
+      message: kismen
+        ? `🌿 ${soldier.name} kısmen iyileşti (-${kullan} 🌿 şifalı ot, -${ada} ASTRA)`
+        : `🌿 ${soldier.name} Şifahane'de iyileşti! (-${kullan} 🌿 şifalı ot, -${ada} ASTRA)`
+    };
   },
 
   healAllWithHerb() {

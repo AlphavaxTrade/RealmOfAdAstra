@@ -50,6 +50,7 @@ export const TIP_ACIKLAMALARI = {
   gorulen: 'Krallık Yolu için "ekranı gördü" anahtarı (sabit liste)',
   eser: 'Genesis Yolu: koleksiyon eserinin kimliği (yalnız oyunun 18 eseri, ör. artifact_01)',
   fightOpts: 'Seçenekler { payGateFee?: boolean }',
+  healOpts: 'Seçenekler { kismi?: boolean }: şifalı ot tam iyileştirmeye yetmiyorsa eldeki otla kısmen iyileştir',
   amounts: 'Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)'
 };
 

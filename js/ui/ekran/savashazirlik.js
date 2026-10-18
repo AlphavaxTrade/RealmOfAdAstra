@@ -279,7 +279,7 @@ const ekran = {
       const harc = !!(terms.nextNeedsFee && kapiHarciOde);
       if (harc) {
         const ucret = gs.getDungeonGateFee(m.level, asBoss(m));
-        if ((gs.state.adAstraBalance || 0) < ucret) { b.bildir(`Kapı harcı için ${tam(ucret)} ASTRA gerekiyor.`, 'error'); return false; }
+        if ((gs.state.adAstraBalance || 0) < ucret) { b.bildir(`Kapı harcı için ${astra(ucret)} ASTRA gerekiyor.`, 'error'); return false; }
       }
       sonSavasiYaz(m.level, secili);   // zindan ekranındaki "son savaşı tekrarla" için
       return savasiOyna(b, m, secili, harc);
@@ -357,7 +357,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
           odemeNotu,
           outcome.scrollGained ? `📜 ${outcome.scrollGained.name} düştü!` : '',
           `Savaşa katılan askerlerin +${m.rewardXp} asker XP kazandı.`,
-          outcome.fatihOdulu ? `👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA (orduna harcadığının zindanda geri dönmeyen kısmı)` : '',
+          outcome.fatihOdulu ? `👑 Fatih Ödülü: +${astra(outcome.fatihOdulu.odul)} ASTRA (orduna harcadığının zindanda geri dönmeyen kısmı)` : '',
         outcome.levelUps.length ? `🎉 ${outcome.levelUps.join(', ')}` : '',
           outcome.weaponsWorn.length ? `🛡️ Eşya aşınması: ${outcome.weaponsWorn.join(', ')}` : ''
         ].filter(Boolean).join(' ');
@@ -380,7 +380,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         if (outcome.fragmentsGained) satirlar.push(`🧩 +${outcome.fragmentsGained} teçhizat parçası`);
         if (outcome.boxGained) satirlar.push(`📦 +${outcome.boxGained} Pandora kutusu`);
         if (outcome.scrollGained) satirlar.push(`📜 ${outcome.scrollGained.name}`);
-        if (outcome.fatihOdulu) satirlar.push(`👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA`);
+        if (outcome.fatihOdulu) satirlar.push(`👑 Fatih Ödülü: +${astra(outcome.fatihOdulu.odul)} ASTRA`);
         outcome.levelUps.forEach((t) => satirlar.push(`🎉 ${t}`));
         if (outcome.weaponsWorn.length) satirlar.push(`🛡️ Eşya aşındı: ${outcome.weaponsWorn.join(', ')}`);
         satirlar.push(`⚡ -${staminaBedeli} stamina`);

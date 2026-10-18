@@ -85,16 +85,28 @@ export async function hizliIyilestir(b, sira = null) {
     if (!tamam) return { iyilesen: 0, hata: false };
   }
   let iyilesen = 0; let ot = 0; let ada = 0;
+  // Asker asker, tur tur: eksik ot alınır (silo en çok boş yeri kadar), eldeki otla iyileştirilir; silo bir askerin tam bedelini
+  // tutamayacak kadar küçükse kısmi iyileşmeyle birkaç turda tamamlanır. Her turda en az 1 ot harcanır, sonsuz döngü olmaz.
   for (const i of yaralilar) {
-    const adim = gs.getQuickBuyPlan(`heal:${i}`);
-    if (adim.items.length && !adim.ok) { b.bildir(`${iyilesen} asker iyileşti; devamı yapılamadı: ${adim.reason}`, 'warning'); return { iyilesen, hata: true }; }
-    for (const it of adim.items) {
-      const r = await gs.marketBuy(it.res, it.qty);
-      if (!r || !r.success) { b.bildir(`${iyilesen} asker iyileşti; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return { iyilesen, hata: true }; }
+    let tamamlandi = false;
+    for (let tur = 0; tur < 40; tur++) {
+      const bilgi = gs.getHerbHealInfo(i);
+      if (!bilgi || bilgi.isFull) { tamamlandi = true; break; }
+      if (bilgi.herbsInStock < bilgi.herbsNeeded) {
+        const oda = Math.max(0, Math.floor((gs.getWarehouseCapacity().herb || 0) - bilgi.herbsInStock));
+        const al = Math.min(bilgi.herbsNeeded - bilgi.herbsInStock, oda);
+        if (al > 0) {
+          const alim = await gs.marketBuy('herb', al);
+          if (!alim || !alim.success) { b.bildir(`${iyilesen} asker iyileşti; şifalı ot alınamadı: ${(alim && alim.message) || ''}`, 'error'); return { iyilesen, hata: true }; }
+        }
+      }
+      const r = await gs.healSoldierWithHerb(i, { kismi: true });
+      if (!r || !r.success) { b.bildir((r && r.message) || 'İyileştirilemedi.', 'error'); return { iyilesen, hata: true }; }
+      ot += r.herbsUsed || 0; ada += r.adaCost || 0;
+      if (!r.partial) { tamamlandi = true; break; }
     }
-    const r = await gs.healSoldierWithHerb(i);
-    if (!r || !r.success) { b.bildir((r && r.message) || 'İyileştirilemedi.', 'error'); return { iyilesen, hata: true }; }
-    iyilesen++; ot += r.herbsUsed || 0; ada += r.adaCost || 0;
+    if (!tamamlandi) { b.bildir(`${iyilesen} asker iyileşti; bir askerin iyileştirmesi tamamlanamadı (silo çok küçük olabilir).`, 'warning'); return { iyilesen, hata: true }; }
+    iyilesen++;
   }
   b.bildir(`🌿 ${iyilesen} asker anında iyileşti (-${tam(ot)} 🌿 şifalı ot, -${astra(ada)} ASTRA)`, 'success');
   return { iyilesen, hata: false };

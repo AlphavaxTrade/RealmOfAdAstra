@@ -21,7 +21,7 @@ function depoBolumu(dp) {
     baslik: '📦 Yük İskelesi: Hazırlık Deposu',
     vurgu: dp.open ? 'vurgu' : '',
     rozet: `<span class="ek-etiket">${dp.open ? `doluluk %${Math.round(dp.fill * 100)} · değer ${astra(dp.value)} ASTRA` : '🔒 Aşama 1\'de açılır'}</span>`,
-    icerik: not(`Universe'e götüreceğin hammaddeyi buraya koyarsın: silodan çıkar, pazara giremez. Sınır: her hammaddede ${dp.weeksCap} haftalık Üretim Hakkın; dünya toplamı ${tam(dp.worldCap)} ASTRA değeri (şu an ${astra(dp.worldTotal)}). Geri alırsan %${Math.round(dp.cancelFee * 100)} kesinti yakılır. Universe açılış günü depoyu Sirius Konseyi teslim alır.`)
+    icerik: not(`Universe'e götüreceğin hammaddeyi buraya koyarsın: silodan çıkar, pazara giremez. Sınır: her hammaddede ${dp.weeksCap} haftalık Üretim Hakkın; dünya toplamı ${astra(dp.worldCap)} ASTRA değeri (şu an ${astra(dp.worldTotal)}). Geri alırsan %${Math.round(dp.cancelFee * 100)} kesinti yakılır. Universe açılış günü depoyu Sirius Konseyi teslim alır.`)
       + (dp.open ? `<div class="ek-liste">${satirlar}</div>` : '')
   });
 }

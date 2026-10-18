@@ -73,7 +73,8 @@ export const kolezyumYontemleri = {
       return { success: false, message: '🔒 Bu asker gerçek rakiplere karşı maç arıyor. Önce sıradan çık.' };
     }
     if ((sampiyon.hp || 0) <= 15) {
-      return { success: false, message: `⚠️ ${sampiyon.name} ağır yaralı (Can: ${sampiyon.hp}/${sampiyon.maxHp}). Kolezyuma çıkmadan önce buğdayla iyileştirilmelidir!` };
+      const sv = this.getSoldierBattleStart(championIndex);   // ekranda görünen (savaş ölçeği) can
+      return { success: false, message: `⚠️ ${sampiyon.name} ağır yaralı (Can: ${sv.hp}/${sv.maxHp}). Kolezyuma çıkmadan önce şifalı otla iyileştirilmelidir!` };
     }
 
     const cfg = GAME_CONFIG.COLOSSEUM;
