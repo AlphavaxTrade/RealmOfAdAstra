@@ -305,14 +305,15 @@ export const SENARYOLAR = [
     ]
   },
   {
-    id: 'ordu-doyur', kategori: 'ordu', ad: 'Yaralı askeri doyurmak canı doldurur',
-    ne: 'Yaralı askere "hemen doyur" denince can tamamen dolmalı; buğday ve ASTRA harcanmalı.',
-    kur: (gs) => { temiz(gs); askerler(gs, 1); gs.state.soldierUnits[0].hp = 10; gs.state.soldierUnits[0].maxHp = 100; gs.setDevResource('wheat', gs.getWarehouseCapacity().wheat); gs.setDevAdAstra(1000); },
-    calistir: (gs) => gs.healSoldierInstantly(0),
+    id: 'ordu-doyur', kategori: 'ordu', ad: 'Yaralı askeri şifalı otla iyileştirmek canı doldurur',
+    ne: 'Yaralı asker şifalı otla iyileştirilince can tamamen dolmalı; şifalı ot ve ASTRA harcanmalı, buğday dokunulmamalı.',
+    kur: (gs) => { temiz(gs); askerler(gs, 1); gs.state.soldierUnits[0].hp = 10; gs.state.soldierUnits[0].maxHp = 100; gs.setDevResource('herb', gs.getWarehouseCapacity().herb); gs.setDevAdAstra(1000); },
+    calistir: (gs) => gs.healSoldierWithHerb(0),
     beklenen: [
       { ad: 'İyileştirme başarılı', tamam: (o, s, r) => r.success === true },
       { ad: 'Can tamamen doldu', tamam: (o, s) => s.askerCan === 100 },
-      { ad: 'Buğday harcandı', tamam: (o, s) => s.env.wheat < o.env.wheat },
+      { ad: 'Şifalı ot harcandı', tamam: (o, s) => s.env.herb < o.env.herb },
+      { ad: 'Buğday harcanmadı', tamam: (o, s) => s.env.wheat === o.env.wheat },
       { ad: 'ASTRA harcandı', tamam: (o, s) => s.astra < o.astra }
     ]
   },

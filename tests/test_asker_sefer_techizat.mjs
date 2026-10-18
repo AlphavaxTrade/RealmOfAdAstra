@@ -43,12 +43,13 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   gs.state.soldierUnits = [asker];
   const bilgi = gs.getSoldierHealInfo(0);
   const PH = GAME_CONFIG.SOLDIER_PASSIVE_HEAL;
-  const FH = GAME_CONFIG.SOLDIER_FAST_HEAL;
+  const SF = GAME_CONFIG.SIFAHANE;
   assert.equal(bilgi.missingHp, 50);
   assert.equal(bilgi.passiveWheatNeeded, 15, 'pasif: HP başına 0,30 buğday');
   assert.ok(yakin(bilgi.passiveAdaCost, 50 * PH.adaPerHp), 'pasif ASTRA bedeli yapılandırmadan');
-  assert.equal(bilgi.wheatCost, 150, 'hızlı doyurma: HP başına 3 buğday (pasifin 10 katı)');
-  assert.ok(yakin(bilgi.adAstraCost, 50 * FH.adAstraPerHp), 'hızlı ASTRA bedeli yapılandırmadan');
+  assert.equal(bilgi.wheatCost, undefined, 'buğdayla anında iyileştirme kalktı: hızlı bedelde buğday yok');
+  assert.ok(yakin(bilgi.adAstraCost, 50 * SF.ADA_PER_HP), 'hızlı iyileştirmenin ASTRA payı SIFAHANE ayarından');
+  assert.equal(gs.getHerbHealInfo(0).herbsNeeded, 50 / SF.HP_PER_HERB, 'ot bedeli: eksik can / HP_PER_HERB');
 
   gs.state.inventory.wheat = 100;
   gs.state.adAstraBalance = 100;
@@ -57,10 +58,14 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   assert.ok(asker.hp > once, 'bir saatlik pasif iyileşme can kazandırır');
 
   asker.hp = 50;
-  gs.state.inventory.wheat = 50000;
+  gs.state.inventory.wheat = 100;   // silo tavanının altında: kayıt buğdayı kırpmasın
+  gs.state.inventory.herb = 30;
   gs.state.adAstraBalance = 50000;
-  assert.equal(gs.healSoldierInstantly(0).success, true);
-  assert.equal(asker.hp, 100, 'hızlı doyurma tam cana getirir');
+  assert.equal(gs.healSoldierInstantly, undefined, 'buğdayla anında iyileştirme yöntemi kaldırıldı');
+  const bugdayOnce = gs.state.inventory.wheat;
+  assert.equal(gs.healSoldierWithHerb(0).success, true);
+  assert.equal(asker.hp, 100, 'şifalı otla iyileştirme tam cana getirir');
+  assert.equal(gs.state.inventory.wheat, bugdayOnce, 'buğday harcanmaz');
 }
 console.log('✅ asker değerleri ve iyileşme bedelleri');
 

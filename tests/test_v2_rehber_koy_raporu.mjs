@@ -43,6 +43,7 @@ const K = GAME_CONFIG.KOY;
 
   gs.state.soldierUnits = [{ id: 's1', name: 'Er', hp: 10, maxHp: 100, level: 1, equipment: {}, skills: ['shieldWall'] }];
   gs.state.adAstraBalance = 100;
+  gs.state.inventory.herb = 100;
   const h = gs.healSoldierWithHerb(0);
   assert.equal(h.success, true, h.message);
   gs.checkOnboardingProgress();

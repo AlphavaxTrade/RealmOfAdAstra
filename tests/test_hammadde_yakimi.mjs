@@ -79,23 +79,23 @@ console.log('✅ alet onarımı odun ve demir yakar');
 }
 console.log('✅ silo yükseltme hammaddeleri yakar');
 
-// 4) Askeri anında iyileştirme buğday yakar
+// 4) Askeri şifalı otla iyileştirme otu yakar (buğdayla anında iyileştirme kalktı)
 {
   const gs = yeni();
   const s = gs.state;
-  const once = arz('wheat');
+  const once = arz('herb');
   const asker = gs.createSoldierUnit(1);
   asker.hp = 10;
   asker.maxHp = 100;
   s.soldierUnits = [asker];
-  s.inventory.wheat = 5000;
+  s.inventory.herb = 500;
   s.adAstraBalance = 5000;
-  const bilgi = gs.getSoldierHealInfo(0);
-  assert.ok(bilgi.wheatNeeded > 0);
-  assert.equal(gs.instantHealSoldierUnit(0).success, true);
-  assert.equal(s.burnedResources.wheat, bilgi.wheatNeeded);
-  assert.equal(arz('wheat'), once - bilgi.wheatNeeded);
+  const bilgi = gs.getHerbHealInfo(0);
+  assert.ok(bilgi.herbsNeeded > 0);
+  assert.equal(gs.healSoldierWithHerb(0).success, true);
+  assert.equal(s.burnedResources.herb, bilgi.herbsNeeded);
+  assert.equal(arz('herb'), once - bilgi.herbsNeeded);
 }
-console.log('✅ asker iyileştirme buğday yakar');
+console.log('✅ asker iyileştirme şifalı otu yakar');
 
 console.log('\n4/4 hammadde yakımı bloğu geçti.');

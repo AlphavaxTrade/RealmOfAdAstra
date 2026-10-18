@@ -220,7 +220,7 @@
     <tr><td>⚡ Tüm seferleri topla ve başlat</td><td>Biten seferlerin ürününü alır ve boş kalan alanlarda yenilerini başlatır.</td></tr>
     <tr><td>⚡ Staminayı doldur</td><td>Eksik staminayı buğdayla tamamlar. Parantezde kaç buğday harcayacağı yazar.</td></tr>
     <tr><td>🔨 Tüm aletleri onar</td><td>Yıpranmış aletlerin hepsini tek seferde onarır.</td></tr>
-    <tr><td>🌾 Tüm orduyu doyur</td><td>Yaralı askerleri buğdayla iyileştirir.</td></tr>
+    <tr><td>🌿 Tüm orduyu otla iyileştir</td><td>Yaralı askerleri şifalı otla hemen iyileştirir; ot eksikse pazardan alır.</td></tr>
   </table></div>
   <p>Aşağıda <b>Genel durum</b> (seviye, ASTRA, stamina), <b>Seferler</b> (6 alanın durumu), <b>Üretim hakkın</b>, <b>Aletler</b>, <b>Ordu</b> ve <b>Silo</b> kartları bulunur.</p>
   <div class="kutu ozet-kutu" data-s="📌"><b>Kısaca</b><p>Her gün için en pratik rutin: Krallık merkezini aç → "Tüm seferleri topla ve başlat". Bitti.</p></div>
@@ -322,10 +322,11 @@
   <figure class="resim"><div class="cerceve"><img src="rehber/img/sifahane.webp" alt="Şifahane" loading="lazy"></div>
   <figcaption><b>Şifahane.</b> Bütün askerlerin canı tamsa "Bütün askerler tam can" yazar.</figcaption></figure>
   <ul>
-    <li><b>1 şifalı ot = 5 can.</b> Buğday harcanmaz.</li>
-    <li>ASTRA bedeli, anında iyileştirmenin ücretinin yarısıdır.</li>
-    <li>Şifalı ot yalnızca <b>şifalı ot bahçesi</b> seferlerinden gelir.</li>
-    <li>Buğdayla iyileştirmek istersen <b>Kışla</b>'dan yaparsın; o yolda şifalı ot gerekmez.</li>
+    <li><b>Hemen iyileştirmenin tek yolu şifalı ottur.</b> 1 şifalı ot 2 can iyileştirir; kullanılan ot yakılır. Buğday harcanmaz.</li>
+    <li>Üstüne can başına 0,01 ASTRA ödersin (100 can için 50 ot + 1 ASTRA).</li>
+    <li>Şifalı ot yalnızca <b>şifalı ot bahçesi</b> seferlerinden gelir. Otun yetmezse <b>"Eksik otu al ve iyileştir"</b> düğmesi pazardan alıp iyileştirir.</li>
+    <li>Beklemek istemezsen hiçbir şey yapma: askerler <b>24 saatte</b> kendiliğinden, az buğday ve çok az ASTRA ile tam cana kavuşur. Bir de pazardan alınan "Ordu İyileştirme Parşömeni" vardır.</li>
+    <li>Aynı "Hızlı iyileştir" düğmesi <b>Zindan</b>, <b>Kışla</b>, <b>Krallık merkezi</b> ve <b>Kolezyum</b> ekranlarında da vardır.</li>
   </ul>
 </section>
 
@@ -392,7 +393,7 @@
   <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Her gün ilk 5 girişi kullanmak, ASTRA kazancının büyük kısmını sağlar. Zindanın günlük ödemesi aynı zamanda <b>zindan kasasının bakiyesinin %0,36'sıyla</b> sınırlıdır (herkes için ortak); ayrıca kişisel günlük ve haftalık tavanların da vardır (kasa herkese yetsin diye).</p></div>
 
   <h3>Yaralanma</h3>
-  <p>Savaşta askerler yaralanabilir. Yaralı askerleri iyileştirmek için <a href="#sifahane">Şifahane</a> (şifalı ot) ya da Kışla (buğday) kullanılır. Ekranın üstündeki "🩹 0 yaralı" sayacı sana kaç yaralın olduğunu gösterir.</p>
+  <p>Savaşta askerler yaralanabilir. Yaralı askerleri hemen iyileştirmek için şifalı ot kullanılır (<a href="#sifahane">Şifahane</a>, Kışla ya da Zindan ekranındaki "Hızlı iyileştir"); beklersen 24 saatte kendiliğinden iyileşirler. Ekranın üstündeki "🩹 0 yaralı" sayacı sana kaç yaralın olduğunu gösterir.</p>
 
   <h3>Kütük</h3>
   <p>Sağ üstteki <b>📖 Kütük</b> düğmesi canavarların rehberidir: gördüğün canavarların özellikleri ve ne düşürdükleri orada yazar.</p>
@@ -412,7 +413,7 @@
   <figure class="resim"><div class="cerceve"><img src="rehber/img/kolezyum.webp" alt="Kolezyum" loading="lazy"></div>
   <figcaption><b>Kolezyum.</b> Üç sekme: Düello, Lig, Rakipler. Düello'da şampiyonunu seçip "Kolezyuma çık" dersin.</figcaption></figure>
   <ul>
-    <li><b>Şampiyon ölmez</b> ama yaralanabilir; yaralıyı buğdayla iyileştirirsin.</li>
+    <li><b>Şampiyon ölmez</b> ama yaralanabilir; yaralıyı şifalı otla iyileştirirsin.</li>
     <li>Her maç <b>10 ASTRA giriş ücreti</b> ve biraz <b>stamina</b> (örnek: 12 ⚡) harcar. Ücretin %70'i arena kasasına girer (ödüller oradan çıkar), kalanı yakım ve öteki kasalara dağılır. Anahtar gerekmez.</li>
     <li><b>Günde en çok 10 maç</b> yapabilirsin ve günlük ASTRA ödül tavanı vardır (örnek: 125 ASTRA).</li>
     <li>Rakibin puanı seninkinin ±100 puan çevresinde seçilir; böylece adil maçlar yaparsın.</li>
@@ -1485,10 +1486,9 @@
   <p>Aynı askerin üstünde 2 parça: +%5 saldırı ve can; 4 parça: +%12; 5 parça (tam takım): <b>+%25</b>.</p>
   <h3>İyileştirme bedeli (1 can başına)</h3>
 <div class="tablo-kap"><table>
-    <tr><th>Yöntem</th><th>Süre</th><th>Buğday</th><th>ASTRA</th><th>100 can için</th></tr>
+    <tr><th>Yöntem</th><th>Süre</th><th>Buğday / ot</th><th>ASTRA</th><th>100 can için</th></tr>
     <tr><td>Pasif (kendiliğinden)</td><td>24 saatte tam can</td><td>0,3</td><td>0,001</td><td>30 buğday + 0,1 ASTRA</td></tr>
-    <tr><td>Hızlı (anında)</td><td>Anında</td><td>3</td><td>0,01</td><td>300 buğday + 1 ASTRA</td></tr>
-    <tr><td>Şifahane (şifalı ot)</td><td>Anında</td><td>1 ot = 5 can</td><td>hızlı bedelin %50'i</td><td>Otla birlikte ASTRA yarıya iner</td></tr>
+    <tr><td>Şifahane (şifalı ot, hemen iyileştirmenin tek yolu)</td><td>Anında</td><td>1 ot = 2 can</td><td>0,01</td><td>50 ot + 1 ASTRA</td></tr>
   </table></div>
 </section>
 

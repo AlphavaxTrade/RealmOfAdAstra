@@ -113,7 +113,7 @@ export function haftalikOlcum(seviye) {
     for (const k of K) t[k] += Math.floor((kap[k] || 0) / 2) / 3;
   });
 
-  // 8) Asker iyileştirme: günde 600 can kaybı, şifalı otla (1 ot = 5 can) iyileştirilen pay %60, kalanı buğdayla
+  // 8) Asker iyileştirme: günde 600 can kaybı; hemen iyileştirilen pay %60 (yalnız şifalı otla, 1 ot = SIFAHANE.HP_PER_HERB can), kalanı kendiliğinden (buğdayla)
   kalem('asker iyileştirme', (t) => {
     const haftalikCan = 600 * 7;
     t.herb += (haftalikCan * 0.6) / (GAME_CONFIG.SIFAHANE.HP_PER_HERB ?? 5);

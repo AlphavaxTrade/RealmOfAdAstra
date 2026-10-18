@@ -30,7 +30,7 @@ const KATEGORI_ESLEME = {
   buyTavernaAutomationBot: 'bakim', startBotTrial: 'bakim', setBotSiloOption: 'bakim', setBotAutoRenew24h: 'bakim',
   buyTavernBuff: 'bakim',
   // Kışla (asker, nüfus)
-  buySoldierUnit: 'kisla', instantHealSoldierUnit: 'kisla', instantHealAllSoldiers: 'kisla',
+  buySoldierUnit: 'kisla',
   renameSoldierUnit: 'kisla', setSoldierRow: 'kisla', saveCombatPreset: 'kisla', applyCombatPreset: 'kisla',
   healSoldierWithHerb: 'kisla', healAllWithHerb: 'kisla', buildHouse: 'kisla',
   // zindan

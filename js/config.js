@@ -75,8 +75,12 @@ export const GAME_CONFIG = {
     LABOR_PER_VILLAGER_DAY: 1, PROD_BONUS_PER_10: 0.01, PROD_BONUS_MAX: 0.20, VILLAGER_PER_SOLDIER: 1,
     START_HOUSES: 1, START_VILLAGERS: 10
   },
-  // Şifahane (R5): şifalı ot iyileşmeyi hızlandırır
-  SIFAHANE: { HP_PER_HERB: 5, ADA_SHARE_WITH_HERB: 0.5 },
+  // Şifahane: HEMEN iyileştirmenin TEK yolu şifalı ottur (buğdayla anında iyileştirme 18 Ekim 2026'da kalktı; buğdayın başka çok
+  // kullanımı var, şifalı otun tekrarlanan tek harcaması burasıdır). 1 ot HP_PER_HERB can iyileştirir ve yakılır; ASTRA payı
+  // can başına ADA_PER_HP (× oyun içi fiyat çarpanı), harcama gibi dağıtılır. 5'ten 2'ye inmesi aynı can için 2,5 kat ot yakar:
+  // scripts/model/hammadde_kullanim.mjs'te şifalı ot talebi / tam üretim Sv.5'te 0,58 → 0,64, Sv.10'da 0,48 → 0,54 (hedef bant
+  // 0,45–0,95). Kendiliğinden (24 saat) iyileşme buğdayla kalır (SOLDIER_PASSIVE_HEAL).
+  SIFAHANE: { HP_PER_HERB: 2, ADA_PER_HP: 0.01 },
   // Demirhane geri dönüşümü (R4b): alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez
   RECYCLE_RETURN_RATE: 0.70,
   // Uzay Limanı hazırlık modu (R6): roket görevi, Hazırlık Deposu, hazırlık ilerlemesi
@@ -239,7 +243,7 @@ export const GAME_CONFIG = {
     // ── Köy: nüfus ve emek ──
     { id: 'first_house', section: 'koy', icon: '🏘️', title: 'İkinci evi yap', desc: 'Köy Evleri\'nde yeni bir ev kur; köylü sayın artar.', rewardAda: 15, show: 'koy' },
     { id: 'kasaba_20', section: 'koy', icon: '👨‍🌾', title: '20 köylüye ulaş', desc: 'Köylüler buğdayla beslenir ve zamanla çoğalır; evlerin kapasitesini doldur.', rewardAda: 15, show: 'koy' },
-    { id: 'first_herb_heal', section: 'koy', icon: '🌿', title: 'Şifahane\'de otla iyileştir', desc: 'Yaralı bir askeri şifalı otla iyileştir (buğday harcamadan).', rewardAda: 10.5, show: 'sifahane' },
+    { id: 'first_herb_heal', section: 'koy', icon: '🌿', title: 'Şifahane\'de otla iyileştir', desc: 'Yaralı bir askeri şifalı otla hemen iyileştir (otun yetmezse "Eksik otu al" düğmesi pazardan alır).', rewardAda: 10.5, show: 'sifahane' },
     { id: 'koy_gor', section: 'koy', icon: '🏡', title: 'Köy evleri panelini incele', desc: 'Kapasite, emek puanı ve üretim bonusunu orada görürsün.', rewardAda: 2, show: 'koy' },
     // ── Pazar: alım, satım ve yakım ──
     { id: 'market_buy', section: 'pazar', icon: '🛒', title: 'Pazardan bir şey al', desc: 'Pazar → Al / Sat bölümünden bir hammadde satın al; fiyatı havuzdaki arz belirler.', rewardAda: 8, show: 'pazar' },
@@ -432,14 +436,6 @@ export const GAME_CONFIG = {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
     wheatPerHp: 0.30,             // 24 saatte 1 HP başına 0.30 Buğday
     adaPerHp: 0.001               // 24 saatte 1 HP başına 0.001 ASTRA (v2 ölçekli)
-  },
-
-  // Hızlı Asker Doyurma (Instant / Fast Heal) Kuralı:
-  // 24 saatlik otomatik formülün 10 katı (Deflasyonist Zaman Satın Alma & Hazine Besleme):
-  // Her 1 HP için: 3.0 Buğday (0.30 * 10) + 1.0 ASTRA (0.10 * 10)
-  SOLDIER_FAST_HEAL: {
-    wheatPerHp: 3.0,             // 24 saatlik formülün 10 katı (3 Buğday / HP)
-    adAstraPerHp: 0.01           // 24 saatlik formülün 10 katı (v2 ölçekli)
   },
 
   // =========================================================================
@@ -1554,6 +1550,16 @@ export const GAME_CONFIG = {
         `Zindan ekranındaki ordu şeridinde yaralı asker varsa "🩹 Hızlı iyileştir" düğmesi çıkıyor: Kışla'ya ya da Şifahane'ye gitmeden bütün yaralıları anında iyileştirir. Buğday eksikse pazardan alınır, bedel onay penceresinde yazar.`,
         `Zindan savaşında aşınma artık yalnız silaha binmiyor: savaşa giren her askerin takılı eşyalarından (silah, miğfer, zırh, pantolon, çizme) rastgele biri 1 dayanıklılık kaybeder. Sağlam parça varken kırık parça seçilmez.`,
         `Demirhane > Eşyalarım > Toplu işlemler: eksik malzeme varsa "⚡ Eksikleri al ve geliştir" düğmesi çıkıyor. Eksikler pazardan sırayla alınıp bütün eşyalar (ya da seçtiğin tür ve seviye) tek onayla geliştiriliyor.`
+      ]
+    },
+    {
+      version: 'v1.57',
+      title: '🌿 Şifalı Ot ile İyileştirme',
+      date: '18 Ekim 2026',
+      changes: [
+        `Hemen iyileştirmenin tek yolu artık şifalı ot. Buğdayla anında iyileştirme kalktı (buğdayın zaten çok kullanımı var; şifalı otun sürekli harcandığı tek yer burası). 1 şifalı ot 2 can iyileştirir (eskiden 5), kullanılan ot yakılır; ASTRA payı can başına 0,01 ASTRA, yarı indirim yok. Böylece şifalı otun fiyatı sürekli yukarı basınç görür. Beklemek istemeyenler için askerler 24 saatte kendiliğinden (az buğdayla) iyileşmeye devam eder.`,
+        `"Hızlı iyileştir" düğmeleri şifalı ota bağlandı: Zindan ekranı, Kışla (asker sayfası, "Hepsini iyileştir", "Orduyu hazırla"), Şifahane, Krallık merkezi ve Kolezyum. Elindeki şifalı ot yetmezse eksik ot pazardan alınıp iyileştirme aynı tıkta yapılır; bedel onay penceresinde yazar. Şifahane ekranına "iyileştirmenin üç yolu" açıklaması eklendi.`,
+        `Can sayıları tutarlı: askerinin canı Kışla, Savaşa hazırlan ve Kolezyum ekranlarında artık teçhizat ve set bonusu dahil aynı sayıyla görünüyor (eskiden Kışla "125/125", Savaşa hazırlan "125 HP" derken en yüksek can 935 yazıyordu).`
       ]
     }
   ],

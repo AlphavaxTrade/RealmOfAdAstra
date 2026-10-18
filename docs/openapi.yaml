@@ -2596,11 +2596,6 @@ x-islemler:
       - int
   buySoldierUnit:
     argumanlar: []
-  instantHealSoldierUnit:
-    argumanlar:
-      - idx
-  instantHealAllSoldiers:
-    argumanlar: []
   renameSoldierUnit:
     argumanlar:
       - idx

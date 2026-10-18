@@ -1,6 +1,6 @@
 // Realm of AdAstra — Krallık merkezi: tek dokunuşla toplu işlemler ve krallığın genel durumu.
 import { ekranKaydet, kap, kart, katli, satir, cubuk, cubukSatiri, dugme, dugmeler, not, sure, tam, astra, esc, simge } from './cekirdek.js';
-import { kaynakSimgesi } from './bilesik.js';
+import { kaynakSimgesi, hizliIyilestir } from './bilesik.js';
 
 // Eylem sonucunu tek satır bildirime çevirir
 function seferToplamaBildirimi(b, r) {
@@ -40,7 +40,7 @@ const ekran = {
       dugme({ e: 'staminaDoldur', metin: `⚡ Staminayı doldur (${staminaDolu ? 'dolu' : `${tam(bugdayGerekli)} 🌾`})`, devreDisi: staminaDolu || bugday <= 0 }),
       staminaParsomen > 0 ? dugme({ e: 'parsomen', metin: `📜 Parşömenle +100 stamina (${staminaParsomen})`, veri: { parsomen: 'scroll_stamina' }, devreDisi: staminaDolu }) : '',
       dugme({ e: 'onar', metin: `🔨 Tüm aletleri onar (${onarim.count === 0 ? 'tam sağlam' : `${tam(onarim.totalWood)} 🌲 ${tam(onarim.totalIron)} ⛏️ ${astra(onarim.totalAda)} 🟣`})`, devreDisi: onarim.count === 0 }),
-      dugme({ e: 'iyilestir', metin: `🌾 Tüm orduyu doyur (${iyilestirme.count === 0 ? 'tam sağlıklı' : `${tam(iyilestirme.totalWheat)} 🌾 ${astra(iyilestirme.totalAda)} 🟣`})`, devreDisi: iyilestirme.count === 0 }),
+      dugme({ e: 'iyilestir', metin: `🌿 Tüm orduyu otla iyileştir (${iyilestirme.count === 0 ? 'tam sağlıklı' : `${tam(iyilestirme.totalHerbs)} 🌿 ${astra(iyilestirme.totalAda)} 🟣`})`, devreDisi: iyilestirme.count === 0 }),
       iyilesmeParsomen > 0 ? dugme({ e: 'parsomen', metin: `📜 Parşömenle orduyu iyileştir (${iyilesmeParsomen})`, veri: { parsomen: 'scroll_heal' }, devreDisi: iyilestirme.count === 0 }) : ''
     );
 
@@ -112,10 +112,8 @@ const ekran = {
       else if (r.hasDamagedTools && r.missingAda) b.bildir('⚠️ Hesapta yeterli ASTRA yok!', 'error');
       else b.bildir(r.message || 'Onarılacak alet yok.', 'info');
     },
-    iyilestir(b) {
-      const r = b.gameState.instantHealAllSoldiers();
-      if (r.healed > 0) b.bildir(`🌾 ${r.healed} asker doyuruldu ve tam cana ulaştı: -${tam(r.totalWheat)}🌾 -${astra(r.totalAda)}🟣`, 'success');
-      else b.bildir('İyileştirilecek yaralı asker yok.', 'info');
+    async iyilestir(b) {
+      await hizliIyilestir(b);   // eksik ot pazardan alınır
     },
     kotalar() { return { git: 'kotalar' }; },
     parsomen(b, el) {

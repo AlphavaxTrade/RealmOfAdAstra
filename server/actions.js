@@ -90,8 +90,6 @@ export const ACTIONS = {
   withdrawFromPrepDepot: A(['node', 'int']),
   // Ordu
   buySoldierUnit: A([]),
-  instantHealSoldierUnit: A(['idx']),
-  instantHealAllSoldiers: A([]),
   renameSoldierUnit: A(['idx', 'name']),
   setSoldierRow: A(['idx', 'row']),
   saveCombatPreset: A(['idx', 'name?']),

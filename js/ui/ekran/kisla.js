@@ -3,6 +3,7 @@
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
 import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
+import { hizliIyilestir } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
 import { PLAYER_SKILLS } from '../../combat.js';
 import * as K from '../kisla-kurallari.js';
@@ -128,7 +129,9 @@ function askerSayfasi(b, s, idx) {
   const a = askerler(b)[idx];
   const stats = gs.getSoldierFullStats(idx) || { totalAtk: 0, totalMaxHp: 0 };
   const heal = gs.getSoldierHealInfo(idx);
+  const sv = gs.getSoldierBattleStart(idx);   // savaş ölçeğinde can (teçhizat ve set dahil): "En yüksek can" ve savaş ekranlarıyla aynı sayı
   const ot = gs.getHerbHealInfo ? gs.getHerbHealInfo(idx) : null;
+  const otPlani = ot && !ot.isFull ? gs.getQuickBuyPlan(`heal:${idx}`) : null;
   const set = gs.getSoldierSetBonus(idx);
   const parsomen = Number((gs.state.inventory || {}).scroll_heal) || 0;
   const duzenleniyor = s.adDuzenle === idx;
@@ -142,14 +145,14 @@ function askerSayfasi(b, s, idx) {
     : `<h3 class="ek-sayfa-ad">${esc(a.name)} ${dugme({ e: 'adDuzenle', metin: '✏️', ton: 'hayalet', ipucu: 'Adını değiştir' })}</h3>`;
 
   const can = heal ? `<div class="ek-can">
-      <div class="ek-cubuk-etiket"><span>Can</span><b class="ek-ton-${K.canTonu(heal.hpPct)}">${sayi(heal.hp)} / ${sayi(heal.maxHp)}</b></div>
+      <div class="ek-cubuk-etiket"><span>Can</span><b class="ek-ton-${K.canTonu(heal.hpPct)}">${sayi(sv.hp)} / ${sayi(sv.maxHp)}</b></div>
       ${cubuk(heal.hpPct, { ton: K.canTonu(heal.hpPct) === 'kotu' ? 'kotu' : '' })}
       <small class="ek-kucuk">${heal.isFull ? 'Tam can'
     : heal.isPaused ? 'İyileşme durdu: buğday ya da ASTRA yetersiz'
       : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</small>
       ${heal.isFull ? '' : dugmeler(
-    dugme({ e: 'doyur', metin: `Hemen doyur · ${sayi(heal.wheatNeeded)} buğday + ${sayi(heal.adaCost)} ASTRA` }),
-    ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${sayi(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Şifahane kuralı: 1 şifalı ot = 5 can, ASTRA bedeli yarı, buğday harcanmaz' }) : '',
+    ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${sayi(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
+    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ~${sayi(Math.ceil(otPlani.total + otPlani.extraAda))} ASTRA`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
     parsomen > 0 ? dugme({ e: 'parsomen', metin: `Parşömen (${sayi(parsomen)})` }) : ''
   )}
     </div>` : '';
@@ -216,11 +219,11 @@ function orduSekmesi(b, s) {
         ? `⚔️ Asker hakkın dolu: zindanda ${hakBilgi.kat}. kattasın, hak = kat + 1 (${hakBilgi.hak}). Yeni hak için zindanda bir kat ilerle; o zamana kadar askerlerini seviyelendir, teçhizatla güçlendir ve bakımını yap.`
         : `Zindan asker hakkın: ${hakBilgi.hak} (${hakBilgi.kat}. kattasın, hak = kat + 1).`) : '')
       + dugmeler(
-        dugme({ e: 'hazirla', metin: 'Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları doyurur, boş yuvalara en iyi eşyaları takar' }),
+        dugme({ e: 'hazirla', metin: 'Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları şifalı otla iyileştirir (eksik otu pazardan alır), boş yuvalara en iyi eşyaları takar' }),
         dugme({ e: 'yeniAsker', metin: `Yeni asker · ${sayi(bedel)} ASTRA`, devreDisi: !alinabilir })
       )
       + katli('Diğer işlemler',
-        dugmeler(dugme({ e: 'doldur', metin: 'Boş yuvaları doldur' }), dugme({ e: 'hepsiniDoyur', metin: 'Hepsini doyur' }), dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet', ipucu: 'Bütün askerlerin eşyaları depoya döner' })),
+        dugmeler(dugme({ e: 'doldur', metin: 'Boş yuvaları doldur' }), dugme({ e: 'hepsiniIyilestir', metin: '🌿 Hepsini iyileştir', ipucu: 'Şifalı otla hemen iyileştirir; ot yetmezse pazardan alır' }), dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet', ipucu: 'Bütün askerlerin eşyaları depoya döner' })),
         { k: 'kisla-diger' })
   });
 
@@ -414,7 +417,7 @@ const ekran = {
     },
     async cikar(b, el, s) { bildirSonuc(b, await b.gameState.unequipSoldierToArmory(durum(s).secili, el.dataset.yuva)); },
     async onar(b, el, s) { bildirSonuc(b, await b.gameState.repairEquipment(el.dataset.yuva, durum(s).secili)); },
-    async doyur(b, el, s) { bildirSonuc(b, await b.gameState.instantHealSoldierUnit(durum(s).secili)); },
+    async otHizli(b, el, s) { await hizliIyilestir(b, durum(s).secili); },
     async otla(b, el, s) { bildirSonuc(b, await b.gameState.healSoldierWithHerb(durum(s).secili)); },
     async parsomen(b, el, s) {
       const a = askerler(b)[durum(s).secili];
@@ -435,12 +438,13 @@ const ekran = {
 
     async hazirla(b) {
       const gs = b.gameState;
-      const h = await gs.instantHealAllSoldiers();
+      const h = await hizliIyilestir(b);
       const e = await gs.autoEquipBest();
-      b.bildir([h && h.message, e && e.message].filter(Boolean).join(' · ') || 'Ordu hazır.', (h && h.success) || (e && e.success) ? 'success' : 'info');
+      if (e && e.message) b.bildir(e.message, e.success ? 'success' : 'info');
+      else if (!h.iyilesen) b.bildir('Ordu hazır.', 'info');
     },
     async doldur(b) { bildirSonuc(b, await b.gameState.autoEquipBest()); },
-    async hepsiniDoyur(b) { bildirSonuc(b, await b.gameState.instantHealAllSoldiers()); },
+    async hepsiniIyilestir(b) { await hizliIyilestir(b); },
     async yeniAsker(b) { bildirSonuc(b, await b.gameState.buySoldierUnit()); },
     async soyHepsi(b) {
       const tamam = await onay({ baslik: 'Hepsi soyulsun mu?', metin: 'Bütün askerlerin eşyaları depoya döner.', tamam: 'Soy', tehlikeli: true });

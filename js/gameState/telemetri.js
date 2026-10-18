@@ -17,7 +17,7 @@ const azalan = (once, sonra) => {
 // İşlem adı → izleme türü. Sarılan her yöntem oyunda var olmalı (yoksa başlangıçta hata verir: yeniden adlandırma sessizce izlemeyi kırmasın).
 export const IZLENEN_ISLEMLER = {
   craftEquipment: 'dovme', upgradeEquipment: 'yukselt', repairEquipment: 'onar', scrapAllLowTierEquipment: 'hurda',
-  buySoldierUnit: 'asker_al', healSoldierInstantly: 'iyilestir', levelUp: 'seviye',
+  buySoldierUnit: 'asker_al', healSoldierWithHerb: 'iyilestir', levelUp: 'seviye',
   contributeToDungeonGate: 'mod_katki', advanceDungeonMode: 'mod_gecis'
 };
 

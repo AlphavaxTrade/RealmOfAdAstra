@@ -4,7 +4,7 @@
 // Kurallar ve sayılar js/gameState/zindan.js'ten gelir; bu dosya yalnız gösterir ve tıklamayı yönlendirir.
 // Dış olaylar: 'enter-dungeon-view' (haritadan giriş), 'feature-locked', 'monster-defeated' {level} (zafer sonrası tazeler).
 import { esc, tam, astra } from '../ekran/cekirdek.js';
-import { onay } from '../v3/bilesenler.js';
+import { hizliIyilestir } from '../ekran/bilesik.js';
 import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, katCanavarlari, katDurumu, baslangicKati, kilitMesaji,
@@ -95,12 +95,12 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     const tekrar = son && son <= ilerleme()
       ? `<button type="button" class="zd-dugme zd-kucuk" data-e="tekrar" title="Aynı canavara aynı askerlerle yeniden hazırlan">↻ Son savaş (Sv.${son})</button>` : '';
     const asker = !o.asker ? '<button type="button" class="zd-dugme zd-kucuk" data-e="kisla">⚔️ Kışlaya git</button>' : '';
-    // Yaralı varsa Kışla/Şifahane'ye gitmeden buradan iyileştir: bedel = iyileştirme ASTRA'sı + eksik buğdayın pazar değeri
+    // Yaralı varsa Kışla/Şifahane'ye gitmeden buradan iyileştir: bedel = iyileştirme ASTRA'sı + eksik şifalı otun pazar değeri
     let iyilestir = '';
     if (o.asker && o.yarali) {
       const plan = gs.getQuickBuyPlan('heal');
       const ucret = gs.getAllHealCost().totalAda + (plan.total || 0);
-      iyilestir = `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir" title="Bütün yaralı askerleri anında iyileştirir; buğday eksikse pazardan alınır">🩹 Hızlı iyileştir · ~${tam(Math.ceil(ucret))} ASTRA</button>`;
+      iyilestir = `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir" title="Bütün yaralı askerleri şifalı otla anında iyileştirir; ot eksikse pazardan alınır">🌿 Hızlı iyileştir · ~${tam(Math.ceil(ucret))} ASTRA</button>`;
     }
     // Zindan modu rozeti: Normal'de de görünür; son boss yenilince ve bir üst mod varsa "geçiş hazır" vurgusu
     const mb = gs.getDungeonModeInfo();
@@ -380,27 +380,9 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
       ekranAc('savashazirlik', secili.length ? { canavar: m, secili, secimYapildi: true } : { canavar: m });
     },
     kisla() { ekranAc('kisla'); },
-    // Hızlı iyileştir: eksik buğday varsa onaydan sonra pazardan alınır, sonra bütün yaralılar iyileştirilir
+    // Hızlı iyileştir: hemen iyileştirmenin tek yolu şifalı ottur; eksik ot onaydan sonra pazardan alınır (ortak yardımcı: ekran/bilesik.js)
     async iyilestir() {
-      if (!gs.getAllHealCost().count) return;
-      const plan = gs.getQuickBuyPlan('heal');
-      if (plan.items.length) {
-        if (!plan.ok) { bildir(plan.reason || 'İyileştirme yapılamıyor.', 'error'); return; }
-        const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
-        const tamam = await onay({
-          baslik: 'Askerler iyileştirilsin mi?',
-          metin: `Eksik buğday pazardan alınır:\n${liste}\nİyileştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA\nToplam ~${tam(Math.ceil(plan.total + plan.extraAda))} ASTRA`,
-          tamam: 'Al ve iyileştir'
-        });
-        if (!tamam) return;
-        for (const it of plan.items) {
-          const r = await gs.marketBuy(it.res, it.qty);
-          if (!(r && r.success)) { bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return; }
-        }
-      }
-      const h = await gs.instantHealAllSoldiers();
-      if (h && h.healed > 0) bildir(`🩹 ${h.healed} asker anında iyileştirildi (-${tam(Math.ceil(h.totalWheat))} 🌾, -${tam(Math.ceil(h.totalAda))} 🟣 ASTRA)`, 'success');
-      else bildir((h && h.messages && h.messages[0]) || 'İyileştirilecek asker yok.', 'error');
+      await hizliIyilestir({ gameState: gs, bildir });
       ciz();
     },
     kutuk() { durum.kutuk = true; ciz(); },

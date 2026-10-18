@@ -95,32 +95,18 @@ export const topluYontemleri = {
     return toplam;
   },
 
-  // Yaralı askerleri sırayla anında iyileştirir; bir asker için kaynak yetmezse durur
-  instantHealAllSoldiers() {
-    const sonuc = { healed: 0, totalWheat: 0, totalAda: 0, messages: [] };
-    const sayi = (this.state.soldierUnits || []).length;
-    for (let i = 0; i < sayi; i++) {
-      const bilgi = this.getSoldierHealInfo(i);
-      if (!bilgi || !(bilgi.missingHp > 0)) continue;
-      const r = this.instantHealSoldierUnit(i);
-      if (!r.success) { sonuc.messages.push(r.message); break; }
-      sonuc.healed++;
-      sonuc.totalWheat += bilgi.wheatNeeded;
-      sonuc.totalAda += bilgi.adaCost;
-    }
-    return sonuc;
-  },
-
+  // Bütün yaralıları şifalı otla iyileştirmenin toplam bedeli (healAllWithHerb ile aynı hesap): ot, ASTRA ve yaralı sayısı
   getAllHealCost() {
-    const toplam = { totalWheat: 0, totalAda: 0, count: 0 };
+    const toplam = { totalHerbs: 0, totalAda: 0, count: 0 };
     const sayi = (this.state.soldierUnits || []).length;
     for (let i = 0; i < sayi; i++) {
-      const bilgi = this.getSoldierHealInfo(i);
+      const bilgi = this.getHerbHealInfo(i);
       if (!bilgi || !(bilgi.missingHp > 0)) continue;
-      toplam.totalWheat += bilgi.wheatNeeded;
-      toplam.totalAda += bilgi.adaCost;
+      toplam.totalHerbs += bilgi.herbsNeeded;
+      toplam.totalAda += bilgi.herbAdaCost;
       toplam.count++;
     }
+    toplam.totalAda = Math.round(toplam.totalAda * 1000) / 1000;
     return toplam;
   },
 

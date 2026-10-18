@@ -90,7 +90,7 @@ const DAY = 86400;
   ok('Her asker bir köylü ister; köylü bonusu üretime işler');
 }
 
-// 3) Şifahane: 1 ot = 5 can, ASTRA bedeli yarı, buğday yok
+// 3) Şifahane: hemen iyileştirmenin tek yolu; 1 ot = HP_PER_HERB can, ASTRA payı can başına ADA_PER_HP, buğday yok
 {
   const gs = fresh();
   gs.state.adAstraBalance = 1e6;
@@ -99,7 +99,7 @@ const DAY = 86400;
   s.maxHp = 100; s.hp = 50;
   const info = gs.getHerbHealInfo(0);
   assert.equal(info.herbsNeeded, Math.ceil(50 / S.HP_PER_HERB));
-  assert.ok(near(info.herbAdaCost, info.adaCost * S.ADA_SHARE_WITH_HERB, 1e-6));
+  assert.ok(near(info.herbAdaCost, 50 * S.ADA_PER_HP * gs.getAdaPriceMultiplier(), 1e-2), 'ASTRA payı can başına ADA_PER_HP × fiyat çarpanı');
   gs.state.inventory.herb = 3;
   assert.equal(gs.healSoldierWithHerb(0).success, false, 'Ot yetmezse olmaz');
   gs.state.inventory.herb = info.herbsNeeded;
@@ -109,7 +109,7 @@ const DAY = 86400;
   assert.equal(s.hp, 100);
   assert.equal(gs.state.inventory.herb, 0);
   assert.equal(gs.state.inventory.wheat, wheat0, 'Buğday harcanmaz');
-  assert.ok(near(ada0 - gs.state.adAstraBalance, info.herbAdaCost, 1e-6), 'ASTRA bedeli yarı');
+  assert.ok(near(ada0 - gs.state.adAstraBalance, info.herbAdaCost, 1e-6), 'ASTRA payı tam ödenir');
   ok('Şifahane: otla iyileştirme');
 }
 

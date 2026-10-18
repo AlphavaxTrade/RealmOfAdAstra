@@ -1,5 +1,5 @@
 /* global window, document */   // aşağıdaki page.evaluate(...) işlevleri tarayıcı içinde çalışır
-// Zindan ekranı "Hızlı iyileştir" tarayıcı denemesi (18 Ekim 2026): yaralı askerler, eksik buğday pazardan alınır, hepsi iyileşir.
+// Zindan ekranı "Hızlı iyileştir" tarayıcı denemesi (18 Ekim 2026): yaralı askerler, eksik şifalı ot pazardan alınır, hepsi iyileşir.
 // Kendi kendine yeter: ayrı bir deneme dünyası + sunucu (18089); kullanıcının dünyasına dokunmaz. Önce `npm run build`.
 //   node scripts/tarayici/zindan-iyilestir.mjs   Ortam: CHROME_YOLU, EKRAN_KLASORU
 import { createRequire } from 'node:module';
@@ -63,7 +63,7 @@ await kayitYaz((gs) => {
   gs.state.level = 10; gs.state.adAstraBalance = 50000; gs.state.warehouseLevel = 6;
   gs.buySoldierUnit(); gs.buySoldierUnit();
   gs.state.soldierUnits.forEach((a) => { a.hp = Math.round((a.maxHp || 100) * 0.3); });   // iki yaralı asker
-  gs.state.inventory.wheat = 0;                                                            // iyileştirmek için buğday yok
+  gs.state.inventory.herb = 0;                                                             // iyileştirmek için şifalı ot yok
 }, 1e6);
 
 const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -99,13 +99,13 @@ try {
   await dugme.click();
   await s.waitForSelector('[data-v3-tamam]', { timeout: 10000 });
   const metin = await s.evaluate(() => document.querySelector('.v3-onay').innerText);
-  kontrol('onay penceresi eksik buğdayı ve bedeli listeliyor', /Buğday/.test(metin) && /ASTRA/.test(metin), metin.split(String.fromCharCode(10)).join(' | '));
+  kontrol('onay penceresi eksik şifalı otu ve bedeli listeliyor', /Şifalı Ot/i.test(metin) && /ASTRA/.test(metin), metin.split(String.fromCharCode(10)).join(' | '));
   await s.screenshot({ path: path.join(EKRAN, 'zindan_iyilestir_2_onay.png') }).catch(() => {});
   await s.click('[data-v3-tamam]');
   await s.waitForFunction(() => window.gameState.getZindanOrduDurumu().yarali === 0, null, { timeout: 30000 });
   await bekle(1500);
   const bakiye1 = await s.evaluate(() => window.gameState.state.adAstraBalance);
-  kontrol('ASTRA harcandı (buğday alımı + iyileştirme)', bakiye1 < bakiye0, bakiye0 + ' -> ' + bakiye1);
+  kontrol('ASTRA harcandı (ot alımı + iyileştirme)', bakiye1 < bakiye0, bakiye0 + ' -> ' + bakiye1);
   kontrol('iyileşince düğme kayboldu', !(await s.$('#zindan-ekrani [data-e="iyilestir"]')));
   await s.reload({ waitUntil: 'load' });
   await s.waitForFunction(() => window.gameState && window.gameState.state, null, { timeout: 45000 });

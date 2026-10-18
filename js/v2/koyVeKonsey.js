@@ -285,13 +285,13 @@ export const gameStateV2 = {
     return { eaten: r2(eaten), grew: r2(grew), lost: r2(lost), villagers: Math.floor(v.villagers) };
   },
 
-  // ── Şifahane (R5): şifalı otla iyileştirme, 1 ot = 5 can, ASTRA bedeli yarı ──
+  // ── Şifahane: HEMEN iyileştirmenin tek yolu. 1 ot = SIFAHANE.HP_PER_HERB can (yakılır) + can başına SIFAHANE.ADA_PER_HP ASTRA ──
   getHerbHealInfo(soldierIndex) {
     const info = this.getSoldierHealInfo(soldierIndex);
     if (!info) return null;
     const S = GAME_CONFIG.SIFAHANE || {};
-    const herbsNeeded = Math.ceil(info.missingHp / (S.HP_PER_HERB ?? 5));
-    const herbAdaCost = round3(info.adaCost * (S.ADA_SHARE_WITH_HERB ?? 0.5));
+    const herbsNeeded = Math.ceil(info.missingHp / (S.HP_PER_HERB ?? 2));
+    const herbAdaCost = round3(info.adaCost);
     return { ...info, herbsNeeded, herbAdaCost, herbsInStock: Math.floor(Number(this.state.inventory?.herb) || 0) };
   },
 

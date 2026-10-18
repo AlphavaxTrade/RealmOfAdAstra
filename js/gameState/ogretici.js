@@ -90,7 +90,7 @@ export const OGRETICI_ISARETLERI = [
   ['equipSoldierSlot', 'equip'], ['equipSoldierFromDepot', 'equip'],
   ['saveCombatPreset', 'presetSave'], ['setSoldierRow', 'rowChange'],
   ['spinCarnivalWheel', 'wheelSpin'], ['buyLotteryTickets', 'lotteryBuy'],
-  ['stakeArmyForWorldBoss', 'bossJoin'], ['healSoldierInstantly', 'healSoldier'],
+  ['stakeArmyForWorldBoss', 'bossJoin'], ['healSoldierWithHerb', 'healSoldier'],
   ['addDungeonXpAndDrops', 'fragmentDrop', (r) => !!r && r.fragmentsGained > 0],
   ['addDungeonXpAndDrops', 'boxDrop', (r) => !!r && r.boxGained > 0]
 ];

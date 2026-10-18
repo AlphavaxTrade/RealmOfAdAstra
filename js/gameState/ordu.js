@@ -160,14 +160,14 @@ export const orduYontemleri = {
   },
 
   // ── İyileşme ───────────────────────────────────────────────────────────
-  // Bir askerin iyileşme bilgisi (HP, kalan süre, gereken buğday / ASTRA); arayüz buna dayanır.
-  // Pasif: 24 saatte tam can, 1 HP = 0,30 buğday + 0,10 ASTRA. Hızlı: 10 kat (1 HP = 3 buğday + 1 ASTRA).
+  // Bir askerin iyileşme bilgisi (HP, kalan süre, bedeller); arayüz buna dayanır.
+  // Pasif (kendiliğinden): 24 saatte tam can, 1 HP = 0,30 buğday + 0,001 ASTRA. Hemen iyileştirme yalnız şifalı otla
+  // (getHerbHealInfo, koyVeKonsey.js); buradaki adaCost onun ASTRA payıdır (SIFAHANE.ADA_PER_HP).
   getSoldierHealInfo(soldierIndex) {
     const asker = (this.state.soldierUnits || [])[soldierIndex];
     if (!asker) return null;
 
     const pasif = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
-    const hizli = GAME_CONFIG.SOLDIER_FAST_HEAL || {};
     const maxHp = asker.maxHp || 100;
     const hp = Math.min(maxHp, Math.max(0, asker.hp != null ? asker.hp : maxHp));
     const eksik = Math.max(0, maxHp - hp);
@@ -175,10 +175,8 @@ export const orduYontemleri = {
 
     const pasifBugday = pasif.wheatPerHp != null ? pasif.wheatPerHp : BUGDAY_YEDEK;
     const pasifAstra = (pasif.adaPerHp != null ? pasif.adaPerHp : ASTRA_YEDEK) * carpan;
-    const hizliBugday = hizli.wheatPerHp != null ? hizli.wheatPerHp : 3.0;
-    const hizliAstra = (hizli.adAstraPerHp != null ? hizli.adAstraPerHp : 1.0) * carpan;
-    const gerekenBugday = Math.round(eksik * hizliBugday * 100) / 100;
-    const gerekenAstra = Math.round(eksik * hizliAstra * 100) / 100;
+    const hizliAstra = ((GAME_CONFIG.SIFAHANE || {}).ADA_PER_HP ?? 0.01) * carpan;
+    const gerekenAstra = Math.round(eksik * hizliAstra * 1000) / 1000;
 
     const tamIyilesmeSn = pasif.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
     const stokBugday = Math.floor(this.state.inventory?.wheat || 0);
@@ -197,10 +195,7 @@ export const orduYontemleri = {
       passiveAdaRate: pasifAstra,
       passiveWheatNeeded: Math.round(eksik * pasifBugday * 100) / 100,
       passiveAdaCost: Math.round(eksik * pasifAstra * 100) / 100,
-      fastWheatRate: hizliBugday,
       fastAdaRate: hizliAstra,
-      wheatNeeded: gerekenBugday,
-      wheatCost: gerekenBugday,
       adaCost: gerekenAstra,
       adAstraCost: gerekenAstra,
       secondsRemaining: eksik > 0 ? Math.ceil((eksik / maxHp) * tamIyilesmeSn) : 0,
@@ -288,41 +283,6 @@ export const orduYontemleri = {
     if (degisti) this.requestSave();
     const engelli = this.isArmyPassiveHealBlocked();
     return { wheatRanOut: engelli, isPaused: engelli };
-  },
-
-  // Anında doyur ve iyileştir: kalan buğday ihtiyacı + hızlı iyileştirme bedeli (ASTRA) harcanıp can doldurulur
-  instantHealSoldierUnit(soldierIndex) {
-    const asker = (this.state.soldierUnits || [])[soldierIndex];
-    if (!asker) return { success: false, message: 'Asker bulunamadı!' };
-
-    const bilgi = this.getSoldierHealInfo(soldierIndex);
-    if (!bilgi || bilgi.isFull) return { success: false, message: `${asker.name} zaten tam can!` };
-
-    const envanter = this.state.inventory;
-    if ((envanter.wheat || 0) < bilgi.wheatNeeded) {
-      return { success: false, message: `⚠️ Yetersiz Buğday! (${bilgi.wheatNeeded} 🌾 gerekli, Depoda: ${bilgi.wheatInStock})` };
-    }
-    if ((this.state.adAstraBalance || 0) < bilgi.adaCost) {
-      return { success: false, message: `⚠️ Yetersiz ASTRA! (${bilgi.adaCost} 🟣 ASTRA gerekli)` };
-    }
-
-    envanter.wheat -= bilgi.wheatNeeded;
-    this.burnResource('wheat', bilgi.wheatNeeded);
-    this.state.adAstraBalance -= bilgi.adaCost;
-    this._onAdaSpent(bilgi.adaCost);
-    asker.hp = asker.maxHp || 100;
-    if (bilgi.adaCost > 0) globalPool.recordTokenSpend(bilgi.adaCost);
-
-    this.saveState();
-    const yakimYuzde = Math.round((GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05) * 100);
-    return {
-      success: true,
-      message: `⚡ ${asker.name} anında tam cana kavuştu! (-${bilgi.wheatNeeded} 🌾 Buğday, -${bilgi.adaCost} 🟣 ASTRA • 🔥 %${yakimYuzde} Yakıldı)`
-    };
-  },
-
-  healSoldierInstantly(soldierIndex) {
-    return this.instantHealSoldierUnit(soldierIndex);
   },
 
   // ── Kuşanma ────────────────────────────────────────────────────────────

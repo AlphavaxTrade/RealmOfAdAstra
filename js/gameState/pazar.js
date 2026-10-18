@@ -130,12 +130,18 @@ export const pazarYontemleri = {
       hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, stone: bedel.stoneCost, fragments: bedel.fragCost };
       ekAstra = Number(bedel.adaCost) || 0;
       kapasitesiz = true;
-    } else if (kind === 'heal') {
-      // Bütün yaralıları anında iyileştirmek: buğday + hızlı iyileştirme ASTRA'sı (Kışla/Zindan "Hızlı iyileştir")
-      const iyilestirme = this.getAllHealCost();
-      if (!iyilestirme.count) return { ok: false, items: [], reason: 'Yaralı asker yok.' };
-      hedef = { wheat: iyilestirme.totalWheat };
+    } else if (kind === 'heal' || String(kind).startsWith('heal:')) {
+      // Şifalı otla hemen iyileştirme (Kışla, Zindan, Şifahane "Hızlı iyileştir"): eksik ot pazardan alınır, ASTRA payı eklenir.
+      // 'heal' = bütün yaralılar, 'heal:<sıra>' = tek asker
+      const tek = kind === 'heal' ? null : Number(String(kind).slice(5));
+      const iyilestirme = tek == null ? this.getAllHealCost() : (() => {
+        const b = this.getHerbHealInfo(tek);
+        return b && b.missingHp > 0 ? { totalHerbs: b.herbsNeeded, totalAda: b.herbAdaCost, count: 1 } : { count: 0 };
+      })();
+      if (!iyilestirme.count) return { ok: false, items: [], reason: tek == null ? 'Yaralı asker yok.' : 'Asker zaten tam can.' };
+      hedef = { herb: iyilestirme.totalHerbs };
       ekAstra = Number(iyilestirme.totalAda) || 0;
+      kapasitesiz = tek == null;   // bütün yaralılar: asker asker iyileştirilir, ot hepsi birden siloda durmak zorunda değil
     } else {
       return { ok: false, items: [], reason: 'Geçersiz.' };
     }

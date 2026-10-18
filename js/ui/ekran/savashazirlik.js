@@ -131,7 +131,7 @@ function ordu(b, secenek, secili) {
         <button type="button" class="ek-asker-sec" data-e="sec" data-idx="${idx}" aria-pressed="${seciliMi}">
           <span class="ek-asker-isaret" aria-hidden="true">${seciliMi ? '✅' : '⬜'}</span>
           <span class="ek-simge is-kucuk"><img src="${esc(soldierPortrait(s, idx))}" alt="" draggable="false" data-fb="text:${esc(s.icon || '⚔️')}"></span>
-          <span class="ek-asker-ad"><b>#${idx + 1} ${esc(s.name)}</b><small>${esc(Math.floor(s.hp != null ? s.hp : (s.maxHp || 100)))} HP · ${esc(tam((f && f.totalAtk) || 20))} ATK · ${esc(yetenekler)}</small></span>
+          <span class="ek-asker-ad"><b>#${idx + 1} ${esc(s.name)}</b><small>${esc(tam(gs.getSoldierBattleStart(idx).hp))} / ${esc(tam(gs.getSoldierBattleStart(idx).maxHp))} HP · ${esc(tam((f && f.totalAtk) || 20))} ATK · ${esc(yetenekler)}</small></span>
         </button>
         <button type="button" class="ek-dugme" data-e="mevzi" data-idx="${idx}">${arka ? '🏹 Arka' : '🛡️ Ön'}</button>
       </div>`;

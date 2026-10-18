@@ -112,7 +112,7 @@ assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
   s.warehouseLevel = siloOnce;
 }
 
-// Hızlı iyileştirme planı (Zindan ekranı "Hızlı iyileştir"): yaralı yoksa plan yok; varsa eksik buğday pazardan alınır, sonra hepsi iyileşir
+// Hızlı iyileştirme planı (Zindan, Kışla, Şifahane "Hızlı iyileştir"): hemen iyileştirmenin tek yolu şifalı ot; eksik ot pazardan alınır, sonra iyileşir
 {
   s.soldierUnits = [];
   assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'asker yokken plan yok');
@@ -123,19 +123,28 @@ assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
   s.adAstraBalance = 1e6;
   assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'hepsi tam canken plan yok');
   s.soldierUnits.forEach((a) => { a.hp = Math.round((a.maxHp || 100) * 0.4); });
-  s.inventory.wheat = 0;
+  s.inventory.herb = 0;
+  s.inventory.wheat = 123;
   const maliyet = gs.getAllHealCost();
   assert.equal(maliyet.count, 2);
   const plan = gs.getQuickBuyPlan('heal');
   assert.equal(plan.ok, true, plan.reason);
   assert.equal(plan.items.length, 1);
-  assert.equal(plan.items[0].res, 'wheat');
-  assert.equal(plan.items[0].qty, Math.ceil(maliyet.totalWheat), 'eksik buğdayın tamamı alınır');
+  assert.equal(plan.items[0].res, 'herb', 'buğday değil şifalı ot alınır');
+  assert.equal(plan.items[0].qty, maliyet.totalHerbs, 'eksik otun tamamı alınır');
+  assert.equal(maliyet.totalHerbs, s.soldierUnits.reduce((t, a) => t + Math.ceil(Math.ceil((a.maxHp || 100) * 0.6) / GAME_CONFIG.SIFAHANE.HP_PER_HERB), 0), 'ot bedeli eksik can / HP_PER_HERB');
   assert.ok(Math.abs(plan.extraAda - maliyet.totalAda) < 1e-9, 'iyileştirme ASTRA bedeli plana yazılır');
-  assert.equal(gs.marketBuy('wheat', plan.items[0].qty).success, true);
-  const sonuc = gs.instantHealAllSoldiers();
-  assert.equal(sonuc.healed, 2, sonuc.messages.join(' | '));
+  assert.equal(gs.getQuickBuyPlan('heal:0').items[0].qty, Math.ceil(Math.ceil((s.soldierUnits[0].maxHp || 100) * 0.6) / GAME_CONFIG.SIFAHANE.HP_PER_HERB), 'tek asker planı');
+  assert.equal(gs.getQuickBuyPlan('heal:99').ok, false, 'olmayan asker');
+  // asker asker uygula: ot alınır, iyileştirilir
+  for (let i = 0; i < 2; i++) {
+    const adim = gs.getQuickBuyPlan(`heal:${i}`);
+    for (const it of adim.items) assert.equal(gs.marketBuy(it.res, it.qty).success, true, `${it.res} alındı`);
+    const r = gs.healSoldierWithHerb(i);
+    assert.equal(r.success, true, r.message);
+  }
   assert.ok(s.soldierUnits.every((a) => a.hp >= (a.maxHp || 100)), 'hepsi tam can');
+  assert.equal(s.inventory.wheat, 123, 'buğday harcanmadı');
   assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'iyileşince plan yok');
   s.soldierUnits = [];
 }

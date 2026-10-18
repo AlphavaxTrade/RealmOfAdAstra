@@ -5,6 +5,7 @@ import {
   tam, astra, sayi, esc, ac, yenile
 } from './cekirdek.js';
 import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazisi.js';
+import { hizliIyilestir } from './bilesik.js';
 
 const SEKMELER = [
   { id: 'duel', ad: 'Düello', simge: '⚔️' },
@@ -66,6 +67,7 @@ function duelloSekmesi(b, secenek) {
 
   const istat = gs.getSoldierFullStats(idx) || { totalAtk: 0, totalMaxHp: sampiyon.maxHp || 100 };
   const maxCan = sampiyon.maxHp || 100;
+  const savasCani = gs.getSoldierBattleStart(idx);   // savaş ölçeği (teçhizat dahil): Kışla ve Zindan ekranlarıyla aynı sayı
   const can = Math.floor(sampiyon.hp != null ? sampiyon.hp : maxCan);
   const yarali = can < maxCan;
   const arka = sampiyon.row === 'back';
@@ -73,6 +75,7 @@ function duelloSekmesi(b, secenek) {
   const agirYarali = can <= 15;
   const engel = agirYarali ? 'Şampiyon ağır yaralı, önce iyileştir' : giris.blockReason;
   const iyilesme = gs.getSoldierHealInfo(idx);
+  const otBilgisi = gs.getHerbHealInfo(idx) || {};
   const taktik = gs.getCombatPresets();
   const aktifTaktik = taktik.activePresetId || 1;
   const taktikAd = (taktik.presets && taktik.presets[aktifTaktik] && taktik.presets[aktifTaktik].name) || `Taktik ${aktifTaktik}`;
@@ -81,13 +84,13 @@ function duelloSekmesi(b, secenek) {
 
   const secim = `<label class="ek-alan" for="ek-sampiyon"><span>Şampiyon</span>
       <select class="ek-girdi" id="ek-sampiyon" data-e-degis="sampiyon">${liste.map((s, i) =>
-        `<option value="${i}"${i === idx ? ' selected' : ''}>${esc(s.name)} · Sv.${esc(s.level || 1)} · ❤️ ${esc(Math.floor(s.hp != null ? s.hp : (s.maxHp || 100)))}/${esc(s.maxHp || 100)}</option>`).join('')}</select></label>`;
+        `<option value="${i}"${i === idx ? ' selected' : ''}>${esc(s.name)} · Sv.${esc(s.level || 1)} · ❤️ ${esc(tam(gs.getSoldierBattleStart(i).hp))}/${esc(tam(gs.getSoldierBattleStart(i).maxHp))}</option>`).join('')}</select></label>`;
 
   return [
     kart({
       baslik: '⚔️ 1v1 Kolezyum düellosu',
       rozet: etiket(`💰 ${astra(giris.fee)} ASTRA / maç`),
-      icerik: not('Şampiyonunu seç ve Kolezyuma çık: kendi ligine uygun rakip bulunur, 1v1 savaş başlar. Şampiyon kolezyumda ölmez ama yaralanabilir; yaralıyı buğdayla iyileştirirsin.')
+      icerik: not('Şampiyonunu seç ve Kolezyuma çık: kendi ligine uygun rakip bulunur, 1v1 savaş başlar. Şampiyon kolezyumda ölmez ama yaralanabilir; yaralıyı şifalı otla iyileştirirsin.')
         + satir('Liginin kademesi', `${tier.name} · ${tam(istatistik.rating)} puan`, 'iyi')
     }),
     kart({
@@ -95,13 +98,13 @@ function duelloSekmesi(b, secenek) {
       icerik: secim
         + izgara([
           hucre('Toplam saldırı', `⚔️ ${tam(istat.totalAtk)}`),
-          hucre('Can', `❤️ ${can}/${maxCan}`, can <= 25 ? 'kotu' : ''),
+          hucre('Can', `❤️ ${tam(savasCani.hp)}/${tam(savasCani.maxHp)}`, can <= 25 ? 'kotu' : ''),
           hucre('Mevzi', arka ? '🏹 Arka saf' : '🛡️ Ön saf')
         ], { kolon: 2 })
         + dugme({ e: 'mevzi', metin: arka ? '🛡️ Ön safa al' : '🏹 Arka safa al' })
         + (yarali && iyilesme && !iyilesme.isFull
-          ? uyari(`Şampiyonun yaralı. Anında iyileştirme: ${esc(tam(iyilesme.wheatNeeded))} 🌾 buğday + ${esc(astra(iyilesme.adaCost))} ASTRA.`, 'uyari')
-            + dugme({ e: 'iyilestir', metin: '⚡ Anında iyileştir', devreDisi: iyilesme.wheatInStock < iyilesme.wheatNeeded || iyilesme.adaInBalance < iyilesme.adaCost })
+          ? uyari(`Şampiyonun yaralı. Anında iyileştirme: ${esc(tam(otBilgisi.herbsNeeded))} 🌿 şifalı ot + ${esc(astra(otBilgisi.herbAdaCost))} ASTRA${otBilgisi.herbsInStock < otBilgisi.herbsNeeded ? ' (eksik ot pazardan alınır)' : ''}.`, 'uyari')
+            + dugme({ e: 'iyilestir', metin: '⚡ Hızlı iyileştir', ton: 'iyi' })
           : '')
     }),
     kart({
@@ -319,9 +322,8 @@ const ekran = {
       if (r.success) b.bildir(r.message, 'success');
     },
 
-    iyilestir(b, el, secenek) {
-      const r = b.gameState.healSoldierInstantly(secenek.sampiyon);
-      b.bildir(r.message, r.success ? 'success' : 'error');
+    async iyilestir(b, el, secenek) {
+      await hizliIyilestir(b, secenek.sampiyon);   // şifalı otla; eksik ot pazardan alınır
     },
 
     async dovus(b, el, secenek) {
