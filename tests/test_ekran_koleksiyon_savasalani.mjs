@@ -69,6 +69,21 @@ const son = () => bildirimler.at(-1) || [];
   console.log('✅ Savaş alanı: kilitleme ekrana yansıyor');
 }
 
+// Savaş alanı: ekranda TOPLAM can (teçhizat dahil) görünür, yalnız hasara katılan çeyreği değil (19 Ekim 2026)
+{
+  const f = (gs.state.soldierUnits || []).map((_, i) => gs.getSoldierFullStats(i));
+  const toplamCan = f.reduce((t, x) => t + x.totalMaxHp, 0);
+  const toplamAtk = f.reduce((t, x) => t + x.totalAtk, 0);
+  const html = savasalani.govde(b, {});
+  const duz = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const tr = n => Number(n).toLocaleString('tr-TR');
+  assert.ok(duz.includes('Toplam can'), 'toplam can etiketi görünmeli');
+  assert.ok(duz.includes('❤️ ' + tr(toplamCan)), `toplam can (${toplamCan}) ekranda olmalı`);
+  assert.ok(duz.includes('💥 ' + tr(toplamAtk)), `toplam saldırı (${toplamAtk}) ekranda olmalı`);
+  assert.ok(!duz.includes('Can katkısı'), 'eski "can katkısı" başlığı kalmamalı');
+  console.log('✅ Savaş alanı: toplam can ve saldırı ekranda');
+}
+
 // Ödül alanı: ekranda bozuk değer yok, toplanabilir ödül geçerli sayı
 {
   const ekran = savasalani.govde(b, {});

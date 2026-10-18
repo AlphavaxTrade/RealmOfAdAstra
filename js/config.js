@@ -1229,7 +1229,7 @@ export const GAME_CONFIG = {
       title: '⚖️ Yeni Ekonomi Kuralları, Adım Adım Açılan Menüler & Hız',
       date: '30 Eylül 2026',
       changes: [
-        'Piyango: her bilet 100 ASTRA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; biletleri ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
+        'Piyango: her bilet 100 ASTRA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; elindeki bütün biletler ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
         'Çarkta 1 piyango bileti = 1 çevirme; yakılan biletin bedeli piyango ödül hesabından da düşer.',
         'Haftalık temel gelir (UBI): oyunda harcanan her ASTRA\'nın %6\'sı haftalık kasada birikir, Pazartesi 00:01 (TSİ) açılır ve 3. seviyeden itibaren seviyeye göre paylaşılır; çekilmeyen pay sonraki haftaya devreder.',
         'Haftalık kota her gün bir parça açılır (Pazartesi sabahı tek seferde bitmez). Pazar derinliği haftalık kotanın 80 katına çıkarıldı: fiyatın %90 düşmesi yıllar alır.',
@@ -1657,6 +1657,15 @@ export const GAME_CONFIG = {
         `Pandora kutusu ve koleksiyon eserleri de artık İlan Pazarı'nda satılabilir (Pazar > İlanlar). Anahtarla aynı toplu satış: kaç tane ve TANESİ kaç ASTRA yazarsın, alıcı istediği kadarını alır. Satış formunda anahtar, kutu ve elindeki her eser seçilebilir. Komisyon (%2) ve kilitli pay kuralları aynı. Kural: uyandırdığın (ya da uyandırmakta olduğun) eserin son kopyası satılamaz; Genesis yolun bozulmasın. Alıcıda eser keşfedilmiş sayılır; son kopyasını satan, eseri koleksiyonundan çıkarır (satılmazsa ya da ilan geri çekilirse geri döner).`,
         `İlanlar listesine süzgeç eklendi: tür düğmeleri (Anahtar, Pandora kutusu, Eser, Silah, Miğfer, Zırh, Pantolon, Bot; yanlarında kaç ilan olduğu yazar), ad araması (örn. "kılıç", "balçık") ve sıralama. Varsayılan sıra EN UCUZDAN PAHALIYA: en ucuz ilan en üstte durur ve "en ucuz" etiketi taşır, tek dokunuşla alırsın. İstersen en pahalıdan, en yeni ya da en eski sırasına geçebilirsin. Çok ilan olunca ilk 100'ü gösterilir; aramayı daraltabilirsin.`,
         `Hata düzeltildi: oyun kaydı yüklenirken koleksiyon eserlerinin kopya sayısı ve "uyandı" bilgisi siliniyordu (yalnız "keşfedildi" bilgisi korunuyordu). Artık ikisi de kayıtta kalıyor; Genesis yolunda uyandırdığın eserler sayfayı yenileyince kaybolmaz.`
+      ]
+    },
+    {
+      version: 'v1.67',
+      title: '🎟️ Piyango Kazancında Tüm Biletler Yanar, Savaş Alanında Toplam Can Görünür',
+      date: '19 Ekim 2026',
+      changes: [
+        `Piyango kazancını çektiğin an elindeki BÜTÜN biletler yanar (eskiden yalnız kazanan biletler sayılıyordu, çekimden sonra elinde kalan bilet yanmıyordu). Ödül, elindeki biletlere ödediğinin 2 katı olduğu için biletlerle ödül birlikte kapanır. Kazancın çekilmeyi beklerken yeni bilet alınamaz ("önce kazancını çek"), böylece yeni biletin parası çekimde boşa gitmez.`,
+        `Savaş Alanı ekranında "Can katkısı" sayısı toplam can sanılıyordu: 4 asker 4.240 canlıyken ekranda 1.060 yazıyordu, çünkü can hasara dörtte biriyle (1:0,25) katılır. Ekran artık önce toplam saldırı ve toplam canı (teçhizat ve set bonusu dahil, Kışla'daki sayılarla aynı) gösterir; altında hasarın nasıl hesaplandığı yazar: saldırı + can × 0,25, yetenek çeşitliliği çarpanıyla. Hasar hesabı değişmedi, yalnız gösterim.`
       ]
     }
   ],

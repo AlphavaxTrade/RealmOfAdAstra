@@ -174,7 +174,7 @@ function piyangoSekmesi(b) {
     kart({
       baslik: '🎟️ Haftalık Krallık Piyangosu',
       rozet: etiket('Çekiliş: Pazartesi 00:01 (TSİ)'),
-      icerik: not('Her hafta <b>tek kazanan</b> çıkar; kazanma şansın elindeki bilet sayısıyla orantılıdır. Kazanan, biletlerine ödediğinin <b>2 katını</b> kasadan alır. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder.')
+      icerik: not('Her hafta <b>tek kazanan</b> çıkar; kazanma şansın elindeki bilet sayısıyla orantılıdır. Kazanan, biletlerine ödediğinin <b>2 katını</b> kasadan alır ve ödülü çektiği an <b>elindeki bütün biletler yanar</b>. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder.')
         + (yerel ? uyari('Tek başına oynama modunda diğer bilet sahipleri temsilidir. Gerçek oyuncularla ortak piyango çevrimiçi modda çalışır.') : '')
     }),
     izgara([

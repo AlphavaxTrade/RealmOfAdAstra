@@ -230,7 +230,7 @@ export function olusturHaftalik(w) {
             if (amorti) gs.state.lotteryPendingPayout = (Number(gs.state.lotteryPendingPayout) || 0) + amorti.amount;
             gs.state.lastLotteryResult = { at: now, userWon: !!prize, wonAmount: prize ? prize.amount : 0, amorti: amorti ? amorti.amount : 0, poolDepleted: !!draw.poolDepleted, epochId: closedEpoch };
             gs.pushNotice(prize
-              ? `👑 Piyango sana çıktı! ${fmt(prize.amount)} ASTRA kazandın. Karnaval → Piyango'dan çek; kazanan biletlerin çekerken yanar.`
+              ? `👑 Piyango sana çıktı! ${fmt(prize.amount)} ASTRA kazandın. Karnaval → Piyango'dan çek; elindeki bütün biletler çekerken yanar.`
               : draw.poolDepleted
                 ? `🎲 Piyango kasası bitti: kalan biletlere amorti dağıtıldı${amorti ? ` (sana +${fmt(amorti.amount)} ASTRA)` : ''}. Biletler kapandı.`
                 : `🎲 Haftalık çekiliş yapıldı, bu hafta sana çıkmadı. ${before} biletin yanmadı, sonraki haftaya devretti.`,

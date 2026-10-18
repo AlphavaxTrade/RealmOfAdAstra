@@ -63,6 +63,10 @@ export const piyangoYontemleri = {
 
   buyLotteryTickets(ticketCount = 1) {
     const adet = Math.max(1, parseInt(ticketCount) || 1);
+    // Kazancı çekerken elindeki bütün biletler yanar; çekmeden alınan yeni biletin parası boşa gitmesin diye önce kazanç çekilir
+    if ((Number(this.state.lotteryPendingPayout) || 0) > 0) {
+      return { success: false, message: '🏆 Piyango kazancın çekilmeyi bekliyor. Önce kazancını çek (elindeki biletler çekerken yanar), sonra yeni bilet alabilirsin.' };
+    }
     const sinir = this.getLotteryLimits();
     if (this.state.lotteryWeekEpoch !== sinir.epochId) {
       this.state.lotteryWeekEpoch = sinir.epochId;
@@ -179,8 +183,8 @@ export const piyangoYontemleri = {
     let mesaj;
     if (kazandi) {
       mesaj = cekilis.poolDepleted
-        ? `👑 Piyango sana çıktı! Kasada kalan ${tr(kazanilan)} ASTRA'nın tamamı senin. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`
-        : `👑 Piyango sana çıktı! Biletlerine ödediğinin 2 katı: ${tr(kazanilan)} ASTRA. Karnaval → Piyango'dan çek; biletlerin çekerken yanar.`;
+        ? `👑 Piyango sana çıktı! Kasada kalan ${tr(kazanilan)} ASTRA'nın tamamı senin. Karnaval → Piyango'dan çek; elindeki bütün biletler çekerken yanar.`
+        : `👑 Piyango sana çıktı! Biletlerine ödediğinin 2 katı: ${tr(kazanilan)} ASTRA. Karnaval → Piyango'dan çek; elindeki bütün biletler çekerken yanar.`;
     } else if (cekilis.poolDepleted) {
       mesaj = `🎲 Piyango kasası bitti: kalan tüm biletlere amorti dağıtıldı${amortiTutari > 0 ? ` (sana +${tr(amortiTutari)} ASTRA)` : ''}. Biletler kapandı, piyango yeni satışlarla yeniden dolacak.`;
     } else {
@@ -214,11 +218,14 @@ export const piyangoYontemleri = {
   claimWinnerLotteryPayout() {
     const bekleyen = Number(this.state.lotteryPendingPayout) || 0;
     if (bekleyen <= 0) {
-      return { success: false, message: 'Çekilecek bir piyango kazancın yok. Çekiliş her Pazartesi 00:01 (TSİ) kendiliğinden yapılır; biletlerin yanmaz, kazanana kadar sonraki haftaya devreder.' };
+      return { success: false, message: 'Çekilecek bir piyango kazancın yok. Çekiliş her Pazartesi 00:01 (TSİ) kendiliğinden yapılır; biletlerin kazanmadıkça yanmaz, sonraki haftaya devreder.' };
     }
-    const yanan = this.state.lotteryLockedTickets || 0;
+    // Ödül, elindeki biletlere ödenenin 2 katıdır: ödül çekildiği an elindeki BÜTÜN biletler yanar (kazanan kilitli biletler + elde kalan her bilet)
+    const yanan = (this.state.lotteryLockedTickets || 0) + (this.state.lotteryTickets || 0);
     this.state.lotteryPendingPayout = 0;
-    this.state.lotteryLockedTickets = 0;   // kazanan biletler ödül çekilirken yanar
+    this.state.lotteryLockedTickets = 0;
+    this.state.lotteryTickets = 0;
+    this.state.lotteryTicketsPaid = 0;
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + bekleyen;
     this._onAdaEarned(bekleyen);
     this.saveState();
@@ -227,7 +234,7 @@ export const piyangoYontemleri = {
       payoutAda: bekleyen,
       burnedTickets: yanan,
       remainingPool: this.state.lotteryPool,
-      message: `🏆 Piyango kazancın (+${tr(bekleyen)} ASTRA) cüzdanına aktarıldı!${yanan > 0 ? ` Kazanan ${yanan} bilet yandı.` : ''}`
+      message: `🏆 Piyango kazancın (+${tr(bekleyen)} ASTRA) cüzdanına aktarıldı!${yanan > 0 ? ` Elindeki ${tr(yanan)} bilet yandı.` : ''}`
     };
   },
 

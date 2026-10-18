@@ -22,8 +22,11 @@ function guc(b) {
   return {
     boss, kilitli, asker, g,
     sayi: kilitli ? (boss.userStakedSoldiersCount || 0) : asker.length,
+    atk: kilitli ? g.atk : atk,                   // toplam saldırı ve toplam can: teçhizat ve set dahil (Kışla'daki sayılarla aynı)
+    hp: kilitli ? g.hp : hp,
     atkKatki: kilitli ? g.atkContribution : Math.floor(atk),
     hpKatki: kilitli ? g.hpContribution : Math.floor(hp * 0.25),
+    carpan: kilitli ? g.diversityMultiplier : cesit.diversityMultiplier,
     hasar,
     beklenen,
     oran: hasar > 0 ? beklenen / hasar : 0       // 1 hasarın tahmini ASTRA karşılığı (haftalık havuzdan)
@@ -60,10 +63,11 @@ const ekran = {
       rozet: v.kilitli ? etiket('✅ savaş için kilitli', 'iyi') : etiket('⚠️ ordu kilitli değil', 'uyari'),
       icerik: izgara([
         hucre(v.kilitli ? 'Kilitli asker' : 'Hazır asker', `⚔️ ${tam(v.sayi)}`),
-        hucre('Saldırı katkısı (1:1)', `💥 +${tam(v.atkKatki)}`),
-        hucre('Can katkısı (1:0,25)', `❤️ +${tam(v.hpKatki)}`),
+        hucre('Toplam saldırı (teçhizat dahil)', `💥 ${tam(v.atk)}`),
+        hucre('Toplam can (teçhizat dahil)', `❤️ ${tam(v.hp)}`),
         hucre('Hesaplanan hasar', `🎯 ${tam(v.hasar)}`, 'iyi')
       ])
+      + `<p class="ek-kucuk">Hasar = saldırı ${esc(tam(v.atkKatki))} (1:1) + can ${esc(tam(v.hp))} × 0,25 = ${esc(tam(v.hpKatki))} → toplam ${esc(tam(v.atkKatki + v.hpKatki))} × yetenek çeşitliliği ${esc(sayi(v.carpan, 2))}</p>`
       + satir(v.kilitli ? 'Kilitli ordunun Pazar kazancı' : 'Tahmini Pazar kazancı', `~${astra(v.beklenen)} ASTRA`, 'iyi')
       + `<p class="ek-kucuk">${esc(tam(v.hasar))} hasar × ${esc(sayi(v.oran, 3))} ASTRA</p>`
       + dugmeler(
