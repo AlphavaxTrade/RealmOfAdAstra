@@ -37,6 +37,12 @@
   .gb-resimler { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; }
   .gb-resimler img { max-width:220px; max-height:160px; border:1px solid #475569; border-radius:8px; cursor:zoom-in; background:#000; }
   .gb-resimler img.buyuk { max-width:100%; max-height:none; cursor:zoom-out; }
+  .dg-uyari { margin:4px 0; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#0f172a; }
+  .dg-uyari.kritik { border-color: var(--bad); } .dg-uyari.uyari { border-color: var(--warn); } .dg-uyari.bilgi { border-color:#475569; }
+  .dg-uyari b { margin-right:6px; } .dg-uyari small { display:block; color:var(--dim); }
+  .dg-kart { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin:8px 0; }
+  .dg-kart > div { background:#0f172a; border:1px solid var(--line); border-radius:8px; padding:8px; } .dg-kart .k { font-size:0.72rem; }
+  .dg-iyi { color: var(--ok); } .dg-kotu { color: var(--bad); } .dg-orta { color: var(--warn); }
   textarea { background:#0f172a; color:var(--text); border:1px solid #475569; border-radius:8px; padding:8px; width:100%; font:inherit; }
 </style>
 </head>
@@ -70,6 +76,24 @@
       </div>
       <div class="scroll"><table id="gbListe"></table></div>
       <div id="gbAyrinti" hidden></div>
+    </div>
+    <h3>📊 Denge İzleme (zindan, teçhizat, ordu, ekonomi, tempo)</h3>
+    <div class="card">
+      <div class="k">Canlıda oyuncular oynadıkça dengeyi haftalık/aylık izlemek için: neyi nerf'lemeli, neyi iyileştirmeli, hangi değer zayıf ya da abartı, yakımlar ve teçhizat harcaması ekonomiye ne katıyor? Veriler özet sayaçlardır (kişisel veri yok). Okuma betiği: <b>"bu haftanın denge raporuna bak"</b>.</div>
+      <div class="gb-sec">
+        <select id="dgPencere"><option value="hafta">Son 7 gün</option><option value="ay">Son 30 gün</option></select>
+        <button id="dgYenile">🔄 Raporu getir</button>
+        <button id="dgGoruntu">📸 Dağılım görüntüsünü şimdi al</button>
+        <span id="dgDurum" class="k"></span>
+      </div>
+      <div id="dgUyarilar"></div>
+      <div id="dgOzet" class="dg-kart"></div>
+      <h4>🗺️ Zindan: canavar başına gerçek sonuçlar</h4>
+      <div class="scroll"><table id="dgZindan"></table></div>
+      <h4>⚒️ Teçhizat, ordu ve seviye işlemleri</h4>
+      <div class="scroll"><table id="dgIslem"></table></div>
+      <h4>👥 Oyuncu dağılımları (son görüntü)</h4>
+      <div class="scroll"><table id="dgDagilim"></table></div>
     </div>
     <h3>🚪 Kapı kuralı (vatandaş sınırı, bekleme sırası, askı)</h3>
     <div class="card">

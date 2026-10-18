@@ -1,9 +1,10 @@
 // Realm of AdAstra sunucusu — rotalar: yönetici uçları (ADMIN_TOKEN gerekir)
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
 import { etkinCarpan } from '../economy.js';
+import { rapor as dengeRapor } from '../denge-rapor.js';
 
 export default function yonetimRotalari(ctx) {
-  const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody, telegram } = ctx;
+  const { db, E, world, accounts, promo, kapi, chain, cfg, clock, readBody, telegram, denge } = ctx;
   return {
     'GET /api/admin/status': () => {
       const e = world.econ();
@@ -71,6 +72,16 @@ export default function yonetimRotalari(ctx) {
     'POST /api/admin/promo/active': async (req) => { const { code, active } = await readBody(req); return promo.setActive(code, !!active); },
     'POST /api/admin/pause': async (req) => { const { paused } = await readBody(req); return world.setPaused(!!paused); },
     'POST /api/admin/payouts/run': async () => world.processPayouts({ force: true }),
+    // 📊 Denge İzleme (server/denge-rapor.js): haftalık ya da aylık rapor ve otomatik uyarılar; görüntüyü (dağılımlar) şimdi almak da yönetici işi
+    'GET /api/admin/denge': (req) => {
+      const pencere = new URL(req.url, 'http://x').searchParams.get('pencere') === 'ay' ? 'ay' : 'hafta';
+      return { ok: true, ...dengeRapor(db, { pencere, simdi: clock() }) };
+    },
+    'POST /api/admin/denge/goruntu': () => {
+      if (!denge) return [404, { error: 'Denge izleme kapalı' }];
+      const g = denge.gunlukGoruntu(() => db.q.playersAll.all().map(p => E.readPlayer(p.address)).filter(Boolean), { zorla: true });
+      return { ok: true, oyuncu: g ? g.oyuncu : 0 };
+    },
     // Telegram bildirimi çalışıyor mu: sahibine bir deneme mesajı gönderir (ayar sonrası bir kez bakmak için)
     'POST /api/admin/telegram/dene': async () => {
       if (!telegram || !telegram.enabled) return [409, { error: 'Telegram ayarlı değil: TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID gerekli.' }];

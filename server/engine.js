@@ -75,6 +75,11 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
   let current = null;              // şu an yüklü oyuncunun adresi
   let kasa = null;                 // Oyun Kasası (server/kasa.js): oyuncu yokken çalışan işler için
   const setKasa = k => { kasa = k; };
+  // 📊 Denge İzleme kancası (server/denge.js): oyun çekirdeği önemli işlemleri bildirir (js/gameState/telemetri.js); yüklü oyuncu bilinen
+  // (sistem hesabı hariç) işlemler kaydedilir. İzleme hiçbir zaman oyun işlemini bozmaz.
+  let telemetri = null;
+  const setTelemetri = f => { telemetri = f; };
+  gs.telemetriKancasi = (olay, veri) => { if (telemetri && current && current !== SYSTEM) telemetri(olay, veri, current); };
   let quietSave = false;           // mutatePlayer sırasında motorun kendi kaydı kapalı (son görülme değişmesin)
   gs.saveState = (orig => function () { if (current && !quietSave) return orig.call(this); })(gs.saveState);
 
@@ -281,5 +286,5 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     return out;
   }
 
-  return { setKasa, quoteCost, testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
+  return { setKasa, setTelemetri, quoteCost, testMode, lottery, setLottery, runAction: runActionFor, reloadWorld, GAME_CONFIG, gs, globalPool, treasury, ammMarket, levelWeight, withPlayer, act, worldSnapshot, readPlayer, mutatePlayer, ACTIONS };
 }

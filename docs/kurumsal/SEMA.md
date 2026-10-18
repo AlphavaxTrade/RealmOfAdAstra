@@ -3,7 +3,7 @@
 > Bu dosya **otomatik üretilir**: `node scripts/db/sema-belge.mjs` (güncelliği `tests/test_sema_belge.mjs` korur).
 > Şema değişikliği yalnız `server/gecis/` altına yeni numaralı geçiş eklenerek yapılır; uygulanmış geçişler değişmez (mühür).
 
-Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama, 009_geri_bildirim
+Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama, 009_geri_bildirim, 010_denge
 
 ## accounts
 
@@ -31,6 +31,42 @@ Hesaplar: e-posta (+ benzersiz email_key), parola özeti, doğrulama, bağlı/be
 | totp_reset_note | TEXT |  |  |  |
 
 İndeksler: `accounts_bekleyen_cuzdan`, `accounts_email_key`
+
+## denge_goruntu
+
+Denge İzleme: günde bir kez tüm oyuncu kayıtlarından çıkarılan dağılımlar (JSON; seviye, asker, teçhizat, zindan ilerlemesi, mod)
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| gun | TEXT |  |  | PK |
+| veri | TEXT | evet |  |  |
+
+## denge_gunluk
+
+Denge İzleme: gün + anahtar başına sayaç ve toplam (zindan savaşları, teçhizat/ordu/seviye harcamaları); ortalama = toplam / adet
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| gun | TEXT | evet |  | PK |
+| anahtar | TEXT | evet |  | PK |
+| adet | INTEGER | evet | 0 |  |
+| toplam | REAL | evet | 0 |  |
+
+İndeksler: `denge_gunluk_anahtar`
+
+## denge_ilk
+
+Denge İzleme: bir oyuncunun bir zindan canavarını bir modda ilk yendiği hesap günü (oyuncu tuzlu kısa özet; medyan hesabı için)
+
+| Sütun | Tür | Zorunlu | Varsayılan | Anahtar |
+|---|---|---|---|---|
+| oyuncu | TEXT | evet |  | PK |
+| mod | INTEGER | evet |  | PK |
+| seviye | INTEGER | evet |  | PK |
+| hesap_gunu | REAL | evet |  |  |
+| at | INTEGER | evet |  |  |
+
+İndeksler: `denge_ilk_canavar`
 
 ## deposits
 

@@ -1015,5 +1015,25 @@
       400,
       404
     ]
+  },
+  "GET /api/admin/denge": {
+    "etiket": "Yönetim",
+    "ozet": "Denge İzleme raporu: zindan, teçhizat/ordu işlemleri, ekonomi, tempo ve otomatik uyarılar",
+    "parametreler": [
+      {
+        "ad": "pencere",
+        "tur": "string",
+        "aciklama": "hafta (son 7 gün, varsayılan) ya da ay (son 30 gün); bir öncekiyle kıyaslanır"
+      }
+    ],
+    "yanit": "{ ok, pencere, gunSayisi, baslangic, bitis, zindan: [{ mod, seviye, giris, zafer, oran, ortAsker, ortAskerSeviye, ortTakimSeviye, ilkMedyanGun, hedefGun, ilkHedefOrani… }], islemler, ekonomi, tempo (son dağılım görüntüsü), oncekiTempo, uyarilar: [{ seviye: kritik|uyari|bilgi, konu, ileti, oneri }] }. Veriler özet sayaçlardır, kişisel veri içermez."
+  },
+  "POST /api/admin/denge/goruntu": {
+    "etiket": "Yönetim",
+    "ozet": "Denge İzleme dağılım görüntüsünü şimdi al (günde bir kez kendiliğinden alınır)",
+    "yanit": "{ ok, oyuncu }. Bugünün görüntüsü yenilenir.",
+    "kodlar": [
+      404
+    ]
   }
 }

@@ -33,6 +33,7 @@ import { ozetYontemleri } from './gameState/ozet.js';
 import { topluYontemleri } from './gameState/toplu.js';
 import { gunlukYontemleri } from './gameState/gunluk.js';
 import { zindanYontemleri } from './gameState/zindan.js';
+import { telemetriKur } from './gameState/telemetri.js';
 import { kolezyumYontemleri } from './gameState/kolezyum.js';
 import { dunyaBossuYontemleri } from './gameState/dunyaBossu.js';
 import { askerGelisimYontemleri } from './gameState/askerGelisim.js';
@@ -361,6 +362,7 @@ for (const karisim of [
   Object.assign(GameStateManager.prototype, karisim);
 }
 ogreticiIsaretleriKur(GameStateManager.prototype);
+telemetriKur(GameStateManager.prototype);   // Denge İzleme kancası (yalnız sunucuda tanımlıdır; tarayıcıda işlemi aynen çalıştırır)
 
 if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
 export const gameState = new GameStateManager();

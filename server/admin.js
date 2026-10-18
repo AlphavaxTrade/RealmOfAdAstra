@@ -41,6 +41,7 @@ async function load() {
   uncertainKasaView(s.kasaOpsBelirsiz || []);
   tfaPendingView(s.muhurSifirlamaBekleyen || []);
   gbYukle().catch(() => {});   // geri bildirim listesi; hata olursa panelin geri kalanı çalışmaya devam eder
+  dengeYukle().catch(() => {});   // denge raporu; veri yoksa ya da hata olursa panelin geri kalanı çalışmaya devam eder
   $('uniStage').value = String(s.universeStage ?? 0);
   $('uniNow').textContent = 'Şu an: aşama ' + (s.universeStage ?? 0);
   $('weekly').textContent = s.lastWeekly ? JSON.stringify(s.lastWeekly, null, 2) : 'Henüz yok';
@@ -275,6 +276,67 @@ $('tgDene').onclick = async () => { $('tgDurum').textContent = 'Gönderiliyor…
 $('gbYenile').onclick = () => gbYukle().catch(e => alert(e.message));
 $('gbDurum').onchange = () => gbYukle().catch(e => alert(e.message));
 $('gbAra').addEventListener('keydown', ev => { if (ev.key === 'Enter') gbYukle().catch(e => alert(e.message)); });
+// ── Denge İzleme ──────────────────────────────────────────────────────────
+// Sunucu raporu (server/denge-rapor.js): uyarılar, özet, zindan/işlem tabloları ve oyuncu dağılımları. Metinler textContent ile, sayılar dgSayi ile yazılır.
+const DG_TUR = { dovme: 'Dövme', yukselt: 'Yükseltme', onar: 'Tamir', hurda: 'Hurda', asker_al: 'Asker alımı', iyilestir: 'İyileştirme', seviye: 'Seviye atlama', mod_katki: 'Mod katkısı', mod_gecis: 'Mod geçişi' };
+const DG_HAM = { wood: 'odun', iron: 'demir', coal: 'kömür', stone: 'taş', wheat: 'buğday', herb: 'şifalı ot', fragments: 'parça' };
+const dgSayi = v => (v == null ? '—' : Number(v).toLocaleString('tr-TR', { maximumFractionDigits: 2 }));
+const dgYuzde = v => (v == null ? '—' : '%' + Math.round(v * 100));
+function dgTablo(el, baslik, satirlar) {
+  el.replaceChildren();
+  const tr0 = document.createElement('tr');
+  for (const b of baslik) { const th = document.createElement('th'); th.textContent = b; tr0.append(th); }
+  el.append(tr0);
+  for (const s of satirlar) {
+    const tr = document.createElement('tr');
+    for (const h of s) { const td = document.createElement('td'); if (h && typeof h === 'object') { td.textContent = h.t; if (h.c) td.className = h.c; } else td.textContent = h; tr.append(td); }
+    el.append(tr);
+  }
+  if (!satirlar.length) { const tr = document.createElement('tr'), td = document.createElement('td'); td.colSpan = baslik.length; td.className = 'k'; td.textContent = 'Henüz veri yok'; tr.append(td); el.append(tr); }
+}
+function dgKart(kutu, etiketMetni, deger, sinif) {
+  const d = document.createElement('div'), k = document.createElement('div'), v = document.createElement('div');
+  k.className = 'k'; k.textContent = etiketMetni; v.className = 'v ' + (sinif || ''); v.textContent = deger;
+  d.append(k, v); kutu.append(d);
+}
+async function dengeYukle(ekMesaj = '') {
+  const r = await api('GET', '/api/admin/denge?pencere=' + encodeURIComponent($('dgPencere').value));
+  $('dgDurum').textContent = (ekMesaj ? ekMesaj + ' · ' : '') + `${r.baslangic} → ${r.bitis} (${r.gunSayisi} gün)`;   // ekMesaj: işlemin sonucu rapor yenilenince silinmesin
+  const uy = $('dgUyarilar'); uy.replaceChildren();
+  for (const u of r.uyarilar || []) {
+    const d = document.createElement('div'); d.className = 'dg-uyari ' + u.seviye;
+    const b = document.createElement('b'); b.textContent = ({ kritik: '⛔', uyari: '⚠️', bilgi: 'ℹ️' })[u.seviye] + ' ' + u.konu;
+    const m = document.createElement('span'); m.textContent = u.ileti;
+    const o = document.createElement('small'); o.textContent = '→ ' + u.oneri;
+    d.append(b, m, o); uy.append(d);
+  }
+  if (!(r.uyarilar || []).length) { const d = document.createElement('div'); d.className = 'k'; d.textContent = '✅ Otomatik uyarı yok (yeterli veri yoksa kurallar çalışmaz: en az 20 savaş, 5 oyuncu).'; uy.append(d); }
+  const t = r.tempo || {}, e = r.ekonomi, oz = $('dgOzet'); oz.replaceChildren();
+  dgKart(oz, 'Oyuncu / aktif (7 gün)', `${dgSayi(t.oyuncu)} / ${dgSayi(t.aktif7)}`);
+  dgKart(oz, 'Ortalama hesap seviyesi', dgSayi(t.ortSeviye));
+  dgKart(oz, 'Ortalama asker / seviye', `${dgSayi(t.ortAsker)} / ${dgSayi(t.ortAskerSeviye)}`);
+  dgKart(oz, 'Zindan savaşı', dgSayi((r.zindan || []).reduce((a, z) => a + z.giris, 0)));
+  dgKart(oz, 'Zindandan kazanılan ASTRA', dgSayi(e.zindanKazanc));
+  dgKart(oz, 'İşlemlere harcanan ASTRA', dgSayi(e.harcanan));
+  dgKart(oz, 'Kazanç / harcama', e.kazancHarcamaOrani == null ? '—' : dgYuzde(e.kazancHarcamaOrani), e.kazancHarcamaOrani > 0.9 ? 'dg-kotu' : (e.kazancHarcamaOrani != null && e.kazancHarcamaOrani < 0.1 ? 'dg-orta' : 'dg-iyi'));
+  dgKart(oz, 'Tahmini ASTRA yakımı', dgSayi(e.tahminiYakim));
+  dgKart(oz, 'Yakılan hammadde (toplam)', dgSayi(e.yakilanHammaddeToplam));
+  dgKart(oz, 'Asker hakkı dolu oyuncu', t.oyuncu ? `${dgSayi(t.hakDolu)} / ${dgSayi(t.oyuncu)}` : '—');
+  dgTablo($('dgZindan'), ['Mod', 'Sv.', 'Canavar', 'Savaş', 'Kazanma', 'Ort. asker', 'Asker sv.', 'Takım sv.', 'Tur', 'Ödül (ASTRA)', 'İlk temizleme (medyan gün)', 'Hedef gün', 'Oran'],
+    (r.zindan || []).map(z => [z.modAd, z.seviye, z.ad, dgSayi(z.giris), { t: dgYuzde(z.oran), c: z.oran != null && z.giris >= 20 ? (z.oran >= 0.92 ? 'dg-orta' : (z.oran <= 0.25 ? 'dg-kotu' : 'dg-iyi')) : '' },
+      dgSayi(z.ortAsker), dgSayi(z.ortAskerSeviye), dgSayi(z.ortTakimSeviye), dgSayi(z.ortTur), dgSayi(z.toplamOdulAstra),
+      z.ilkOyuncu ? `${dgSayi(z.ilkMedyanGun)} (${z.ilkOyuncu} oyuncu)` : '—', dgSayi(z.hedefGun), { t: z.ilkHedefOrani == null ? '—' : '×' + dgSayi(z.ilkHedefOrani), c: z.ilkHedefOrani != null && z.ilkOyuncu >= 5 ? (z.ilkHedefOrani < 0.7 ? 'dg-kotu' : (z.ilkHedefOrani > 3 ? 'dg-orta' : 'dg-iyi')) : '' }]));
+  dgTablo($('dgIslem'), ['İşlem', 'Adet', 'Önceki dönem', 'Harcanan ASTRA', 'Ret', 'Yakılan hammadde'],
+    (r.islemler || []).map(x => [DG_TUR[x.tur] || x.tur, dgSayi(x.adet), dgSayi(x.oncekiAdet), dgSayi(x.astra), dgSayi(x.red), Object.entries(x.hammadde || {}).map(([k, v]) => `${dgSayi(v)} ${DG_HAM[k] || k}`).join(', ') || '—']));
+  const dag = [];
+  const dagSatir = (ad, nesne) => { if (nesne && Object.keys(nesne).length) dag.push([ad, Object.entries(nesne).map(([k, v]) => `${k}: ${dgSayi(v)}`).join('  ·  ')]); };
+  dagSatir('Hesap seviyesi', t.seviye); dagSatir('Asker sayısı', t.asker); dagSatir('Kuşanılan eşya seviyesi (sayı)', t.takimEsyaSeviye);
+  dagSatir('Zindan ilerlemesi (mod|canavar: oyuncu)', t.zindan); dagSatir('Mod', t.mod); dagSatir('Oyuncuların hammaddesi (toplam)', t.hammadde);
+  dgTablo($('dgDagilim'), ['Dağılım', 'Değerler'], dag);
+}
+$('dgYenile').onclick = () => dengeYukle().catch(e => { $('dgDurum').textContent = e.message; });
+$('dgPencere').onchange = () => dengeYukle().catch(e => { $('dgDurum').textContent = e.message; });
+$('dgGoruntu').onclick = async () => { try { const r = await api('POST', '/api/admin/denge/goruntu'); await dengeYukle(`Görüntü alındı (${r.oyuncu} oyuncu)`); } catch (e) { $('dgDurum').textContent = e.message; } };
 async function act(fn) { try { await fn(); await load(); } catch (e) { alert(e.message); } }
 $('enter').onclick = async () => { token = $('tok').value.trim(); try { await load(); sessionStorage.setItem('adm', token); } catch (e) { $('lerr').textContent = e.message; } };
 $('refresh').onclick = () => act(async () => {});

@@ -70,5 +70,17 @@
   {
     "sql": "SELECT at, type FROM events WHERE address = ? ORDER BY id DESC LIMIT 5",
     "neden": "\"Sorun bildir\" biletine eklenen oyuncu özeti: yalnız bilet gönderilirken (oyuncu başına günde en çok 20) çalışır, en yeniden geriye yürür ve 5 eşleşmede durur; events.address indeksi her olay yazısını yavaşlatırdı"
+  },
+  {
+    "sql": "SELECT mod, seviye, hesap_gunu FROM denge_ilk",
+    "neden": "Denge İzleme raporu (yönetici paneli, en çok haftada birkaç kez): bir oyuncunun bir canavarı ilk yendiği gün; tablo oyuncu × 72 canavar satırıyla sınırlı (vatandaş sınırı 100: en çok ~7.200 satır), medyan için hepsi okunur"
+  },
+  {
+    "sql": "SELECT address, created_at, last_seen, deposited_ada, withdrawn_ada, pending_withdraw, banned, gate FROM players ORDER BY last_seen DESC",
+    "neden": "yönetici paneli oyuncu listesi (başka oturumun eklediği uç, e57b01f): players tablosu vatandaş sınırıyla (100) küçük; yalnız yönetici"
+  },
+  {
+    "sql": "SELECT id, at, type, data FROM events WHERE address = ? ORDER BY id DESC LIMIT 50",
+    "neden": "yönetici paneli oyuncu ayrıntısı (başka oturumun eklediği uç, e57b01f): en yeniden geriye yürür ve 50 eşleşmede durur; yalnız yönetici, sık değil"
   }
 ]

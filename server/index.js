@@ -85,7 +85,7 @@ if (cfg.chainEnabled && !cfg.testMode && !/^0x[0-9a-fA-F]{40}$/.test(cfg.reserve
 const payments = createPayments({ db, engine, accounts, chain, kasa, cfg, log });
 const telegram = createTelegram({ cfg, log });   // 📲 sahibine Telegram bildirimi (TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)
 const geriBildirim = createGeriBildirim({ db, engine, kapi, telegram, cfg, log });   // 📮 "Sorun bildir" biletleri; sahibe Telegram'dan haber
-const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, sponsor, geriBildirim, telegram, chain, cfg, log });
+const app = createApp({ db, engine, world, accounts, payments, kasa, arena, kapi, pazar, sponsor, geriBildirim, telegram, denge: world.denge, chain, cfg, log });
 if (!telegram.enabled) log.warn('📲 Telegram bildirimi kapalı (TELEGRAM_BOT_TOKEN ve TELEGRAM_CHAT_ID yok): yeni geri bildirimler yalnız yönetici panelinde görünür.');
 if (!cfg.paymentsContract) log.warn(cfg.testMode ? '💳 Ödeme sözleşmesi yok: deneme modunda cüzdan ödemesi taklit edilir.' : '💳 PAYMENTS_CONTRACT yok: cüzdandan ödeme kapalı.');
 if (!cfg.smtpUrl) log.warn('📧 SMTP_URL yok: e-postalar gönderilmez, sunucu günlüğüne yazılır (deneme düzeni).');

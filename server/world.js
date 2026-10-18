@@ -21,6 +21,7 @@ import { olusturBoss } from './world/boss.js';
 import { olusturOrtakGelir } from './world/ortakGelir.js';
 import { olusturSicakCuzdan } from './world/sicakCuzdan.js';
 import { DAY } from './world/yardimci.js';
+import { createDenge } from './denge.js';
 
 export function createWorld({ db, engine, chain = null, arena = null, accounts = null, kasa = null, mailer = null, kapi = null, pazar = null, sponsor = null, cfg, clock = () => Date.now(), log = console }) {
   const E = engine;
@@ -31,6 +32,9 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
   const atomic = fn => { try { return db.tx(fn); } catch (err) { E.reloadWorld(); throw err; } };
 
   // Dünya işleri alan bazlı modüllerde (server/world/*); her biri öncekilerin ürettiklerine `w` üzerinden erişir
+  // 📊 Denge İzleme: çekirdeğin bildirimlerini yazar, günde bir kez dağılım görüntüsü alır (yönetici paneli "Denge İzleme"; server/denge.js)
+  const denge = createDenge({ db, engine: E, clock, log });
+  denge.baglan();
   const w = { db, E, chain, arena, accounts, kasa, mailer, kapi, pazar, sponsor, cfg, clock, log, econ, setEcon, creatorWallet, atomic };
   Object.assign(w, olusturOranlar(w));
   Object.assign(w, olusturPiyasa(w));
@@ -53,6 +57,7 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
     ticking = true;
     nabiz.sonBaslangic = clock();
     try {
+      denge.gunlukTik();   // günde bir kez (aynı gün tekrar taranmaz); hata dünya turunu bozmaz
       E.globalPool.checkEpochExpiration();
       const ep = E.globalPool.state.epochId;
       const done = db.kvGet('world:epochProcessed');
@@ -151,5 +156,5 @@ export function createWorld({ db, engine, chain = null, arena = null, accounts =
     return kasa.resolveOp(a);
   };
 
-  return { vanillaReset, resolveKasaOp, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, resolvePayout, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, akisSerileri, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
+  return { denge, vanillaReset, resolveKasaOp, setUniverseStage, universeStage, refreshUretim, syncRates, ratesStatus, currentRates, scanPartnerIncome, creditPartnerIncome, partnerIncomeStatus, checkHotWallet, hotWalletNeed, reconcilePayouts, resolvePayout, runWorldBoss, tick, tickDurumu, runWeekly, settleWeek, snapshotMarket, akisSerileri, scanDeposits, creditDeposits, processPayouts, requestWithdraw, cancelWithdraw, withdrawStatus, refreshLive, setPaused, econ, setEcon, currentCap };
 }

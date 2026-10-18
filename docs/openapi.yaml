@@ -1878,6 +1878,55 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/admin/denge:
+    get:
+      tags:
+        - Yönetim
+      summary: "Denge İzleme raporu: zindan, teçhizat/ordu işlemleri, ekonomi, tempo ve otomatik uyarılar"
+      operationId: get_api_admin_denge
+      security: *a3
+      parameters:
+        - name: pencere
+          in: query
+          required: false
+          description: hafta (son 7 gün, varsayılan) ya da ay (son 30 gün); bir öncekiyle kıyaslanır
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ ok, pencere, gunSayisi, baslangic, bitis, zindan: [{ mod, seviye, giris, zafer, oran, ortAsker, ortAskerSeviye, ortTakimSeviye, ilkMedyanGun, hedefGun, ilkHedefOrani… }], islemler, ekonomi, tempo (son dağılım görüntüsü), oncekiTempo, uyarilar: [{ seviye: kritik|uyari|bilgi, konu, ileti, oneri }] }. Veriler özet sayaçlardır, kişisel veri içermez."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/denge/goruntu:
+    post:
+      tags:
+        - Yönetim
+      summary: Denge İzleme dağılım görüntüsünü şimdi al (günde bir kez kendiliğinden alınır)
+      operationId: post_api_admin_denge_goruntu
+      security: *a3
+      responses:
+        "200":
+          description: "{ ok, oyuncu }. Bugünün görüntüsü yenilenir."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/admin/telegram/dene:
     post:
       tags:
@@ -2641,6 +2690,11 @@ x-islemler:
       - idxArr
       - fightOpts?
     rastgele: true
+  contributeToDungeonGate:
+    argumanlar:
+      - amounts
+  advanceDungeonMode:
+    argumanlar: []
   executeColosseum1v1Match:
     argumanlar:
       - idx

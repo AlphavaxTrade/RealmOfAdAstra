@@ -71,7 +71,7 @@ const userError = msg => Object.assign(new Error(msg), { userError: true });
 const PUBLIC_ROUTES = ['GET /api/health', 'GET /api/ready', 'GET /api/rates', 'POST /api/account/register', 'POST /api/account/login', 'POST /api/account/login2fa', 'POST /api/account/verify',
   'POST /api/account/resend', 'POST /api/account/forgot', 'POST /api/account/reset', 'POST /api/account/wallet/confirm', 'POST /api/account/2fa/reset-cancel'];
 
-export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, geriBildirim = null, telegram = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
+export function createApp({ db, engine, world, accounts, payments = null, kasa = null, arena = null, promo = null, kapi = null, pazar = null, sponsor = null, geriBildirim = null, telegram = null, denge = null, chain, cfg, clock = () => Date.now(), log = console, metrik = null }) {
   const E = engine;
   metrik = metrik || createMetrik();
   const SEC_HEADERS = String(cfg.publicUrl || '').startsWith('https://') ? { ...SEC_BASE, 'Strict-Transport-Security': HSTS } : SEC_BASE;
@@ -187,7 +187,7 @@ export function createApp({ db, engine, world, accounts, payments = null, kasa =
   }
 
   // Rotalar alan bazlı modüllerde (server/rotalar/*); bağımlılıklar tek nesneyle verilir
-  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, geriBildirim, telegram, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
+  const ctx = { db, E, world, accounts, payments, kasa, arena, promo, kapi, pazar, sponsor, geriBildirim, telegram, denge, chain, cfg, clock, log, readBody, safePlayer, playerPayload, pazarOp, vatandasDegil, newSession, clientIp };
   const routes = {
     ...genelRotalar(ctx), ...hesapRotalari(ctx), ...oyunRotalari(ctx), ...cuzdanRotalari(ctx),
     ...pvpRotalari(ctx), ...ilanRotalari(ctx), ...sponsorRotalari(ctx), ...geriBildirimRotalari(ctx), ...yonetimRotalari(ctx)
