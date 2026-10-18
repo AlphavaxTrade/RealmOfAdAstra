@@ -1,6 +1,6 @@
 // Realm of AdAstra — Şifahane ekranı: şifalı otla hemen iyileştirme (hemen iyileştirmenin tek yolu).
 import { ekranKaydet, kap, kart, katli, not, uyari, dugme, tam, astra, esc } from './cekirdek.js';
-import { hizliIyilestir, hizliIyilestirBedeli, iyilesmeKiyasi } from './bilesik.js';
+import { hizliIyilestir, planBedeli, iyilesmeKiyasi } from './bilesik.js';
 
 const ekran = {
   id: 'sifahane',
@@ -24,7 +24,7 @@ const ekran = {
         <div class="ek-oge-govde"><b>${esc(s.name)}</b><small>${esc(tam(bilgi.battleHp))} / ${esc(tam(bilgi.battleMaxHp))} can</small>
           ${iyilesmeKiyasi({ saniye: bilgi.secondsRemaining, kendiOt: bilgi.passiveHerbNeeded, kendiAda: bilgi.passiveAdaCost, hemenOt: bilgi.herbsNeeded, hemenAda: bilgi.herbAdaCost })}</div>
         ${plan && plan.items.length
-    ? dugme({ e: 'hizli', metin: `⚡ Eksik otu al ve iyileştir · ${hizliIyilestirBedeli(plan)}`, ton: 'iyi', veri: { asker: i }, devreDisi: !plan.ok })
+    ? dugme({ e: 'hizli', metin: `⚡ Eksik otu al ve iyileştir · ${planBedeli(plan)}`, ton: 'iyi', veri: { asker: i }, devreDisi: !plan.ok })
     : dugme({ e: 'iyilestir', metin: `🌿 İyileştir (${tam(bilgi.herbsNeeded)} ot + ${astra(bilgi.herbAdaCost)} ASTRA)`, ton: 'iyi', veri: { asker: i }, devreDisi: !yeter })}
       </div>`;
     }).join('');
@@ -32,7 +32,7 @@ const ekran = {
     const toplu = gs.getAllHealCost();
     const hepsiPlan = toplu.count > 0 ? gs.getQuickBuyPlan('heal') : null;
     const hepsiMetin = hepsiPlan && hepsiPlan.items.length
-      ? `⚡ Eksik otu al ve hepsini iyileştir · ${hizliIyilestirBedeli(hepsiPlan)}`
+      ? `⚡ Eksik otu al ve hepsini iyileştir · ${planBedeli(hepsiPlan)}`
       : `🌿 Hepsini iyileştir (${tam(toplu.totalHerbs)} ot + ${astra(toplu.totalAda)} ASTRA)`;
 
     const govde = yaralilar.length === 0

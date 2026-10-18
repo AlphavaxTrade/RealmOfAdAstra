@@ -11,7 +11,7 @@ globalThis.localStorage = {
 const { GameStateManager } = await import('../js/gameState.js');
 const g = new GameStateManager();
 g.state.adAstraBalance = 1e6;
-g.state.inventory.iron = 5000; g.state.inventory.wood = 5000;
+g.state.inventory.iron = 5000; g.state.inventory.wood = 5000; g.state.inventory.fragments = 50;
 
 const esya = (id, durability) => ({ id, slot: 'helmet', name: 'Deneme Miğferi', icon: '🪖', level: 2, baseAtk: 0, baseHp: 20, atkBonus: 0, hpBonus: 20, durability, maxDurability: 13 });
 g.state.equipment.helmet = esya('krallik', 3);       // krallık yuvasındaki eşya da hasarlı

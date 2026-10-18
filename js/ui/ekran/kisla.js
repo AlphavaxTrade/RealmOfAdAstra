@@ -3,7 +3,7 @@
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
 import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
-import { hizliIyilestir, hizliIyilestirBedeli, iyilesmeKiyasi } from './bilesik.js';
+import { hizliIyilestir, planBedeli, iyilesmeKiyasi, hizliOnar } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
 import { PLAYER_SKILLS } from '../../combat.js';
 import * as K from '../kisla-kurallari.js';
@@ -73,6 +73,22 @@ function orduSatirlari(b, s) {
     </button>`).join('');
 }
 
+// Onarım için eldeki kaynak yetiyor mu (odun, demir, kömür, parça, ASTRA)
+function onarimYeter(b, o) {
+  const env = b.gameState.state.inventory;
+  return (env.iron || 0) >= o.ironCost && (env.wood || 0) >= o.woodCost && (env.coal || 0) >= (o.coalCost || 0)
+    && (env.fragments || 0) >= (o.fragCost || 0) && b.gameState.state.adAstraBalance >= o.adaCost;
+}
+
+// Askerin üzerindeki eşya için "eksikleri al ve onar" düğmesi (eksik yoksa ya da plan çıkmıyorsa boş)
+function onarimHizli(b, idx, yuva) {
+  const gs = b.gameState;
+  const sira = gs.getAllArmoryEquipmentList().findIndex((g) => g.source === 'soldier' && g.soldierIndex === idx && g.slotKey === yuva);
+  if (sira < 0) return '';
+  const plan = gs.getQuickBuyPlan(`repair:${sira}`);
+  return plan.items.length ? dugme({ e: 'onarHizli', metin: `⚡ Eksikleri al · ${planBedeli(plan)}`, ton: 'iyi', veri: { yuva }, devreDisi: !plan.ok, ipucu: plan.ok ? 'Eksik malzemeyi pazardan alıp eşyayı onarır' : plan.reason }) : '';
+}
+
 function yuvaKutusu(b, s, a, idx, yuva) {
   const esya = (a.equipment || {})[yuva];
   const acik = s.secici === yuva;
@@ -96,7 +112,8 @@ function yuvaKutusu(b, s, a, idx, yuva) {
       <small class="ek-ton-${d.ton}">${d.cur}/${d.max} dayanıklılık</small>
     </button>
     <div class="ek-yuva-eylem">
-      ${onarim ? dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun + ${sayi(onarim.coalCost || 0)} kömür` }) : ''}
+      ${onarim ? dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun + ${sayi(onarim.coalCost || 0)} kömür + ${sayi(onarim.fragCost || 0)} parça` }) : ''}
+      ${onarim && !onarimYeter(b, onarim) ? onarimHizli(b, idx, yuva) : ''}
       ${dugme({ e: 'cikar', metin: 'Çıkar', ton: 'hayalet', veri: { yuva } })}
     </div></div>`;
 }
@@ -153,7 +170,7 @@ function askerSayfasi(b, s, idx) {
       ${heal.isFull || !ot ? '' : iyilesmeKiyasi({ saniye: heal.secondsRemaining, kendiOt: ot.passiveHerbNeeded, kendiAda: ot.passiveAdaCost, hemenOt: ot.herbsNeeded, hemenAda: ot.herbAdaCost })}
       ${heal.isFull ? '' : dugmeler(
     ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${astra(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
-    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ${hizliIyilestirBedeli(otPlani)}`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
+    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ${planBedeli(otPlani)}`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
     parsomen > 0 ? dugme({ e: 'parsomen', metin: `Parşömen (${sayi(parsomen)})` }) : ''
   )}
     </div>` : '';
@@ -258,6 +275,18 @@ function orduSekmesi(b, s) {
 }
 
 // ── Cephanelik sekmesi ───────────────────────────────────────────────────
+// Hasarlı her şeyi onarmak için malzeme eksikse tek tuşluk "eksikleri al ve hepsini onar"
+function onarimHepsiHizli(b) {
+  const gs = b.gameState;
+  const t = gs.getRepairAllCost();
+  if (!t.onarilacak.length) return '';
+  const env = gs.state.inventory;
+  const yeter = (env.iron || 0) >= t.demir && (env.wood || 0) >= t.odun && (env.coal || 0) >= t.komur && (env.fragments || 0) >= t.parca && gs.state.adAstraBalance >= t.ada;
+  if (yeter) return '';
+  const plan = gs.getQuickBuyPlan('repairall');
+  return plan.items.length ? dugme({ e: 'onarHepsiHizli', metin: `⚡ Eksikleri al ve hepsini onar · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, ipucu: plan.ok ? '' : plan.reason }) : '';
+}
+
 function esyaVeri(e) {
   return { kaynak: e.source, yuva: e.slotKey, depo: e.armoryIndex ?? '', asker: e.soldierIndex ?? '' };
 }
@@ -314,6 +343,7 @@ function cephanelikSekmesi(b, s) {
         + dugmeler(
           dugme({ e: 'doldur', metin: 'Boş yuvaları doldur', ton: 'birincil' }),
           dugme({ e: 'onarHepsi', metin: 'Hepsini onar' }),
+          onarimHepsiHizli(b),
           dugme({ e: 'erit', metin: 'Seviye 1 fazlalıkları erit', ipucu: 'Boştaki seviye 1 fazlalıklar parçaya çevrilir' }),
           dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet' })
         )
@@ -418,6 +448,7 @@ const ekran = {
     },
     async cikar(b, el, s) { bildirSonuc(b, await b.gameState.unequipSoldierToArmory(durum(s).secili, el.dataset.yuva)); },
     async onar(b, el, s) { bildirSonuc(b, await b.gameState.repairEquipment(el.dataset.yuva, durum(s).secili)); },
+    async onarHizli(b, el, s) { await hizliOnar(b, { source: 'soldier', slotKey: el.dataset.yuva, armoryIndex: null, soldierIndex: durum(s).secili }); },
     async otHizli(b, el, s) { await hizliIyilestir(b, durum(s).secili); },
     async otla(b, el, s) { bildirSonuc(b, await b.gameState.healSoldierWithHerb(durum(s).secili)); },
     async parsomen(b, el, s) {
@@ -454,6 +485,7 @@ const ekran = {
       return undefined;
     },
     async onarHepsi(b) { bildirSonuc(b, await b.gameState.repairAllEquipmentInKingdom()); },
+    async onarHepsiHizli(b) { await hizliOnar(b); },
     async erit(b) {
       const r = await b.gameState.scrapAllLowTierEquipment(1);
       if (r && r.success) return { git: 'hurda', secenek: { rapor: r } };

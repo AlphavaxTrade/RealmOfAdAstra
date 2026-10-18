@@ -569,7 +569,7 @@ ${formul([
   `<b>Dövme bedeli</b> = eşyanın "değer dakikası" × dakikalık üretim. Değer dakikası = ${n(C.EQUIPMENT_CRAFT_MINUTES.PER_ATK)} × saldırı + ${n(C.EQUIPMENT_CRAFT_MINUTES.PER_HP)} × can. Odun ve demir tam, kömür üçte biri; 1 teçhizat parçası; ayrıca bu hammaddelerin pazar değeri kadar ASTRA.`,
   `<b>Yükseltme (L → L+1)</b> = dövme bedelinin 1,18 <sup>L</sup> katı (odun, demir, kömür) + <b>bileme taşı</b>; parça: 2 <sup>L</sup> (1 → 2 → 4 → 8 …). En çok ${n(C.EQUIPMENT_MAX_LEVEL)}. seviye.`,
   '<b>Her yükseltmede güç</b> = temel × (1 + 0,35 × (seviye − 1)). Dayanıklılık 13; her zafer −1; yükseltme dayanıklılığı da tamamlar.',
-  `<b>Onarım</b> = eşyaya o ana kadar harcanan toplam hammaddenin %10'u × (eksik dayanıklılık ÷ 13) + pazar değeri kadar ASTRA.  <b>Geri dönüşüm:</b> hammaddelerin %${sayi(C.RECYCLE_RETURN_RATE * 100)}'i geri gelir, ASTRA geri gelmez.`
+  `<b>Onarım</b> = eşyaya o ana kadar harcanan toplam hammaddenin ve <b>teçhizat parçasının</b> %10'u × (eksik dayanıklılık ÷ 13; parça en az 1) + hammaddenin pazar değeri kadar ASTRA. Parça bedeli seviyeyle kabaca ikiye katlanır (seviye 5 eşya tam hasarda ~3, seviye 9 ~51 parça); malzeme eksikse Demirhane ve Kışla'da "eksikleri al ve onar" düğmesi vardır.  <b>Geri dönüşüm:</b> hammaddelerin %${sayi(C.RECYCLE_RETURN_RATE * 100)}'i geri gelir, ASTRA geri gelmez.`
 ])}
 ${tablo(['Yuva', 'Saldırı', 'Can', 'Odun', 'Demir', 'Kömür', 'Parça', 'ASTRA (dövme)'], yuvalar.map(([s, ad]) => { const d = gs.calculateEquipmentCraftCost(s); const t = C.EQUIPMENT_RECIPES[s]; return [ad, t.baseAtk, t.baseHp, sayi(d.wood), sayi(d.iron), sayi(d.coal), d.fragments, sayi(d.adaCost, 2)]; }))}
   <h3>Silahın yükseltme bedelleri (1 → 10)</h3>

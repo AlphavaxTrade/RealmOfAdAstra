@@ -29,14 +29,15 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   ok('hazine 8 kasaya bölünüşü: 27/14/12/15/18/4/5/5');
 }
 
-// 3) 200 M ASTRA tohum dağılımı (§E): kasalar 88 M (Universe rezervi 20 M dahil) + pazar havuzları 100 M + piyango 12 M
+// 3) 200 M ASTRA tohum dağılımı (§E): kasalar 91,82 M (Universe rezervi 20 M dahil) + pazar havuzları 96,18 M + piyango 12 M
+//    (parça havuzu 4 M → 180 bin ASTRA küçüldü, çıkan 3,82 M geri alım ve karnaval kasalarına eklendi; toplam 200 M)
 {
-  assert.equal(sum(G.TREASURY_SEED), 88000000, 'hazine kasaları tohumu (Universe rezervi dahil) 88 M');
+  assert.equal(sum(G.TREASURY_SEED), 91820000, 'hazine kasaları tohumu (Universe rezervi dahil) 91,82 M');
   assert.equal(G.TREASURY_SEED.universe, 20000000, 'Universe Tohum Rezervi kilitli 20 M');
-  assert.equal(sum(G.AMM_SEED_ASTRA), 100000000, 'pazar havuzları tohumu 100 M');
+  assert.equal(sum(G.AMM_SEED_ASTRA), 96180000, 'pazar havuzları tohumu 96,18 M');
   assert.equal(G.CARNIVAL.LOTTERY.SEED_POOL_ADA, 12000000, 'piyango tohumu 12 M (R3: eskiden 20 M)');
   assert.equal(sum(G.TREASURY_SEED) + sum(G.AMM_SEED_ASTRA) + G.CARNIVAL.LOTTERY.SEED_POOL_ADA, 200000000, 'toplam tohum 200 M');
-  ok('200 M ASTRA tohum dağılımı: kasalar 88 M + pazar 100 M + piyango 12 M');
+  ok('200 M ASTRA tohum dağılımı: kasalar 91,82 M + pazar 96,18 M + piyango 12 M');
 }
 
 // 4) Kilitli bakiye (§6, 30 Eylül kararı): %20 serbest, harcamada %20 ek açılır, haftada taban %1 (+%1,4 aktif gün)

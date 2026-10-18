@@ -3,8 +3,9 @@
 //
 // Kurallar: 1 ATK = EQUIPMENT_CRAFT_MINUTES.PER_ATK dakikalık taban üretim (odun + demir; kömür ve taş üçte biri kadar dakika)
 // + pazar değeri kadar ASTRA + 1 parça. Dövme: odun, demir, kömür. Yükseltme: odun, demir, kömür (ocak) ve taş (bileme), hepsi
-// x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13 (savaşa giren her askerin rastgele bir eşyası her savaşta -1); sıfırlanınca onarım (odun, demir, kömür), kümülatif
-// hammaddenin %10'u ve pazar değeri, kısmi hasarda oranlanır. Geri dönüşüm hepsinin %70'ini verir (taş yalnız yükseltmelerde harcanır).
+// x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13 (savaşa giren her askerin rastgele bir eşyası her savaşta -1); sıfırlanınca onarım (odun, demir, kömür
+// ve PARÇA), eşyaya bugüne kadar harcananın %10'u ve pazar değeri, kısmi hasarda oranlanır (18 Ekim 2026'dan beri parça da: parça havuzu
+// küçük, fiyatı kullanımla yükselir, bkz. AMM_SEED_ASTRA). Geri dönüşüm hepsinin %70'ini verir (taş yalnız yükseltmelerde harcanır).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
@@ -14,6 +15,7 @@ const YUVA_ADLARI = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı
 const YUVA_SIMGELERI = { weapon: '🗡️', helmet: '🪖', armor: '🛡️', legs: '👖', boots: '👢' };
 const EKIPMAN_DAYANIKLILIK = 13;   // yeni dövülen ya da yükseltilen eşyanın dayanıklılığı
 const YUKSELTME_ARTISI = 1.18;
+const ONARIM_ORANI = 0.10;        // onarım = eşyaya bugüne kadar harcanan her kalemin (odun, demir, kömür, parça) %10'u × hasar oranı
 const DUSUK_SEVIYE_ESIGI = 1;
 
 const sirasiVar = (v) => v !== null && v !== undefined && v !== '';
@@ -98,7 +100,8 @@ export const techizatYontemleri = {
     }
     return {
       baseWood: taban.wood, baseIron: taban.iron, baseCoal: taban.coal, baseStone: taban.stone,
-      totalWood: Math.round(odun), totalIron: Math.round(demir), totalCoal: Math.round(komur), totalStone: Math.round(tas)
+      totalWood: Math.round(odun), totalIron: Math.round(demir), totalCoal: Math.round(komur), totalStone: Math.round(tas),
+      totalFragments: Math.pow(2, seviye) - 1   // dövme 1 + yükseltmeler 2, 4, 8, ... (calculateEquipmentUpgradeCost: 2^seviye)
     };
   },
 
@@ -325,11 +328,12 @@ export const techizatYontemleri = {
 
     const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
     const hasarOrani = eksik / enFazla;
-    const woodCost = Math.max(1, Math.round(kumulatif.totalWood * 0.10 * hasarOrani));
-    const ironCost = Math.max(1, Math.round(kumulatif.totalIron * 0.10 * hasarOrani));
-    const coalCost = kumulatif.totalCoal > 0 ? Math.max(1, Math.round(kumulatif.totalCoal * 0.10 * hasarOrani)) : 0;   // ocakta tavlama
+    const woodCost = Math.max(1, Math.round(kumulatif.totalWood * ONARIM_ORANI * hasarOrani));
+    const ironCost = Math.max(1, Math.round(kumulatif.totalIron * ONARIM_ORANI * hasarOrani));
+    const coalCost = kumulatif.totalCoal > 0 ? Math.max(1, Math.round(kumulatif.totalCoal * ONARIM_ORANI * hasarOrani)) : 0;   // ocakta tavlama
+    const fragCost = Math.max(1, Math.round(kumulatif.totalFragments * ONARIM_ORANI * hasarOrani));                              // teçhizat parçası
     const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost }).totalAda;
-    return { missingDurability: eksik, ironCost, woodCost, coalCost, fragCost: 0, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
+    return { missingDurability: eksik, ironCost, woodCost, coalCost, fragCost, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
   },
 
   repairEquipment(itemOrSlot, soldierIndex = null) {
@@ -370,22 +374,26 @@ export const techizatYontemleri = {
     };
   },
 
-  // Krallıktaki, cephanelikteki ve askerlerdeki bütün hasarlı eşyaları tek seferde onarır
-  repairAllEquipmentInKingdom() {
-    let demir = 0;
-    let odun = 0;
-    let komur = 0;
-    let ada = 0;
-    const onarilacak = [];
+  // Krallıktaki, cephanelikteki ve askerlerdeki bütün hasarlı eşyaların toplam onarım bedeli (repairAllEquipmentInKingdom ile aynı hesap)
+  getRepairAllCost() {
+    const toplam = { demir: 0, odun: 0, komur: 0, parca: 0, ada: 0, onarilacak: [] };
     for (const kayit of this.getAllArmoryEquipmentList()) {
       const bedel = this.calculateEquipmentRepairCost(kayit.item);
       if (!(bedel && bedel.missingDurability > 0)) continue;
-      demir += bedel.ironCost;
-      odun += bedel.woodCost;
-      komur += bedel.coalCost || 0;
-      ada += bedel.adaCost;
-      onarilacak.push(kayit.item);
+      toplam.demir += bedel.ironCost;
+      toplam.odun += bedel.woodCost;
+      toplam.komur += bedel.coalCost || 0;
+      toplam.parca += bedel.fragCost || 0;
+      toplam.ada += bedel.adaCost;
+      toplam.onarilacak.push(kayit.item);
     }
+    toplam.ada = Math.round(toplam.ada * 1000) / 1000;
+    return toplam;
+  },
+
+  // Krallıktaki, cephanelikteki ve askerlerdeki bütün hasarlı eşyaları tek seferde onarır
+  repairAllEquipmentInKingdom() {
+    const { demir, odun, komur, parca, ada, onarilacak } = this.getRepairAllCost();
     if (onarilacak.length === 0) {
       return { success: false, message: `Tüm silah ve zırhlar zaten ${EKIPMAN_DAYANIKLILIK}/${EKIPMAN_DAYANIKLILIK} maksimum dayanıklılıkta!` };
     }
@@ -394,12 +402,17 @@ export const techizatYontemleri = {
     if ((envanter.iron || 0) < demir) return { success: false, message: `Yetersiz Demir! (${demir} Demir gerekli)` };
     if ((envanter.wood || 0) < odun) return { success: false, message: `Yetersiz Odun! (${odun} Odun gerekli)` };
     if ((envanter.coal || 0) < komur) return { success: false, message: `Yetersiz Kömür! (${komur} Kömür gerekli)` };
+    if ((envanter.fragments || 0) < parca) return { success: false, message: `Yetersiz Teçhizat Parçası! (${parca} Teçhizat Parçası gerekli)` };
     if ((this.state.adAstraBalance || 0) < ada) return { success: false, message: `Yetersiz ASTRA! (${ada} ASTRA gerekli)` };
 
     envanter.iron -= demir;
     envanter.wood -= odun;
     envanter.coal = (envanter.coal || 0) - komur;
     this.burnResources({ wood: odun, iron: demir, coal: komur });
+    if (parca > 0) {
+      envanter.fragments = (envanter.fragments || 0) - parca;
+      this.burnItem('fragments', parca);
+    }
     this.state.adAstraBalance -= ada;
     this._onAdaSpent(ada);
     this._orduHarcamasiYaz(ada);
@@ -409,7 +422,7 @@ export const techizatYontemleri = {
     return {
       success: true,
       repairedCount: onarilacak.length,
-      message: `🔨 Krallıktaki ${onarilacak.length} parça teçhizat tek seferde onarıldı! (-${odun} Odun, -${demir} Demir${komur > 0 ? `, -${komur} Kömür` : ''}, -${ada} ASTRA)`
+      message: `🔨 Krallıktaki ${onarilacak.length} parça teçhizat tek seferde onarıldı! (-${odun} Odun, -${demir} Demir${komur > 0 ? `, -${komur} Kömür` : ''}${parca > 0 ? `, -${parca} Parça` : ''}, -${ada} ASTRA)`
     };
   },
 

@@ -85,8 +85,8 @@ export const pazarYontemleri = {
 
   /**
    * ⚡ Hızlı al planı: seviye atlama ('levelup'), silo yükseltme ('warehouse'), teçhizat dövme
-   * ('craft:<yuva>') ya da cephanelikteki bir eşyanın geliştirilmesi ('upgrade:<eşya sırası>', sıra
-   * getAllArmoryEquipmentList() içindeki konumdur) için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
+   * ('craft:<yuva>') ya da cephanelikteki bir eşyanın geliştirilmesi ('upgrade:<eşya sırası>') ve onarımı ('repair:<eşya sırası>',
+   * 'repairall'; sıra getAllArmoryEquipmentList() içindeki konumdur) için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
    * ASTRA bedeline (%3 payla) yetiyor, silo bu miktarı alıyor ve XP tamam.
    */
   getQuickBuyPlan(kind) {
@@ -129,6 +129,21 @@ export const pazarYontemleri = {
       if (!bedel.count) return { ok: false, items: [], reason: 'Geliştirilecek uygun teçhizat bulunamadı.' };
       hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, stone: bedel.stoneCost, fragments: bedel.fragCost };
       ekAstra = Number(bedel.adaCost) || 0;
+      kapasitesiz = true;
+    } else if (String(kind).startsWith('repair:')) {
+      // repair:<getAllArmoryEquipmentList sırası> → tek eşyanın onarımı (odun, demir, kömür, parça + ASTRA)
+      const kayit = this.getAllArmoryEquipmentList()[Number(String(kind).slice(7))];
+      if (!kayit || !kayit.item) return { ok: false, items: [], reason: 'Eşya bulunamadı.' };
+      const bedel = this.calculateEquipmentRepairCost(kayit.item);
+      if (!bedel || !(bedel.missingDurability > 0)) return { ok: false, items: [], reason: 'Eşya zaten sağlam.' };
+      hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, fragments: bedel.fragCost };
+      ekAstra = Number(bedel.adaCost) || 0;
+    } else if (kind === 'repairall') {
+      // Bütün hasarlı eşyalar: onarım sırayla yapılır, toplam bedelin hepsi aynı anda siloda durmak zorunda değil
+      const b = this.getRepairAllCost();
+      if (!b.onarilacak.length) return { ok: false, items: [], reason: 'Onarılacak eşya yok.' };
+      hedef = { iron: b.demir, wood: b.odun, coal: b.komur, fragments: b.parca };
+      ekAstra = Number(b.ada) || 0;
       kapasitesiz = true;
     } else if (kind === 'heal' || String(kind).startsWith('heal:')) {
       // Şifalı otla hemen iyileştirme (Kışla, Zindan, Şifahane "Hızlı iyileştir"): eksik ot pazardan alınır, ASTRA payı eklenir.

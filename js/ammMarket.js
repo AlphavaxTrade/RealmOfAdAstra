@@ -167,6 +167,21 @@ export class AMMMarketEngine {
     this.notifyPriceChange();
   }
 
+  // Parça havuzunu (fragments) güncel tohum derinliğine küçültür; FİYAT korunur (mal ve ASTRA aynı oranda azalır). Havuz zaten o derinlikteyse
+  // hiçbir şey yapmaz (tekrar çalıştırmak zararsız). Döner: havuzdan çıkan ASTRA (çağıran, hazineye aktarır; ASTRA kaybolmaz).
+  // 18 Ekim 2026: parça onarımda da harcanıyor; havuz eskiden 4 M ASTRA / ~8,9 M parçaydı, kullanım fiyatı oynatamıyordu.
+  parcaHavuzunuKucult() {
+    const h = this.pools.fragments;
+    const hedef = Number((GAME_CONFIG.AMM_SEED_ASTRA || {}).fragments) || 0;
+    if (!h || !(hedef > 0) || !(h.adAstraReserve > hedef * 1.05) || !(h.resourceReserve > 0)) return 0;
+    const fiyat = h.adAstraReserve / h.resourceReserve;
+    const fazla = h.adAstraReserve - hedef;
+    h.adAstraReserve = hedef;
+    h.resourceReserve = hedef / fiyat;
+    this.savePools();
+    return fazla;
+  }
+
   // Havuzları ve sayaçları açılış tohumuna döndürür
   resetPools() {
     if (typeof localStorage !== 'undefined') {

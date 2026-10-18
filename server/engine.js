@@ -10,6 +10,7 @@
 import { runAction, ACTIONS } from './actions.js';
 import { etkinCarpan } from './economy.js';
 import { guvenliRastgeleKur } from './rastgele.js';
+import { parcaHavuzuGecisi } from './parca-havuzu.js';
 
 const BACKUP_SUFFIX = '__yedek';
 
@@ -59,6 +60,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
 
   // KARAR 7: haftalık ödeme bütçesi ilk açılışta bir kez kurulur (sonra her hafta hesaplaşmanın sonunda yenilenir)
   if (!Object.keys(treasury.state.weekBudget || {}).length) treasury.openWeekBudgets();
+  parcaHavuzuGecisi({ db, ammMarket, treasury });   // parça havuzu küçültme: bir kez (bayraklı)
 
   // Sunucuda "güvenilir saat" sunucunun kendi saatidir
   globalPool.serverTimeOffset = 0;

@@ -4,7 +4,7 @@
 // Kurallar ve sayılar js/gameState/zindan.js'ten gelir; bu dosya yalnız gösterir ve tıklamayı yönlendirir.
 // Dış olaylar: 'enter-dungeon-view' (haritadan giriş), 'feature-locked', 'monster-defeated' {level} (zafer sonrası tazeler).
 import { esc, tam, astra } from '../ekran/cekirdek.js';
-import { hizliIyilestir, hizliIyilestirBedeli } from '../ekran/bilesik.js';
+import { hizliIyilestir, planBedeli } from '../ekran/bilesik.js';
 import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, katCanavarlari, katDurumu, baslangicKati, kilitMesaji,
@@ -99,7 +99,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     let iyilestir = '';
     if (o.asker && o.yarali) {
       const plan = gs.getQuickBuyPlan('heal');
-      iyilestir = `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir" title="Bütün yaralı askerleri şifalı otla anında iyileştirir; ot eksikse pazardan alınır">🌿 Hızlı iyileştir · ${hizliIyilestirBedeli(plan)}</button>`;
+      iyilestir = `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir" title="Bütün yaralı askerleri şifalı otla anında iyileştirir; ot eksikse pazardan alınır">🌿 Hızlı iyileştir · ${planBedeli(plan)}</button>`;
     }
     // Zindan modu rozeti: Normal'de de görünür; son boss yenilince ve bir üst mod varsa "geçiş hazır" vurgusu
     const mb = gs.getDungeonModeInfo();

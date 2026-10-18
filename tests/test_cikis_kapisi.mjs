@@ -114,7 +114,7 @@ E.globalPool.state.creatorRoyaltyTotal = 500; E.globalPool.saveState();   // öd
 
 // 5) Oyun İçi Fiyat Endeksi (makro plan B1): dağıtım tasarımın üstüne çıkınca bedel çarpanı yükselir
 {
-  const tas = 7700;
+  const tas = 8082;
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [], tasarimKisi: tas, onceki: 2 }), 2, 'veri yoksa önceki değer');
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [tas * 10], tasarimKisi: tas, onceki: 1 }), 1.25, 'yükselişte haftada en çok %25');
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [0], tasarimKisi: tas, onceki: 1 }), 0.95, 'düşüşte haftada en çok %5');
@@ -123,7 +123,7 @@ E.globalPool.state.creatorRoyaltyTotal = 500; E.globalPool.saveState();   // öd
   assert.equal(etkinCarpan({ priceMultiplier: 1.8, oyunEndeksi: 1.1 }), 1.8, 'fiyat düşünce dolar tabanı');
   assert.equal(etkinCarpan({}), 1);
   const tasarim = Object.keys(E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES).reduce((s, id) => s + E.GAME_CONFIG.TREASURY_SEED[id] * E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES[id], 0) / E.GAME_CONFIG.KAPI.START_LIMIT;
-  assert.equal(tasarim, tas, 'tasarım payı: tohum kasaların haftalık oranıyla 100 vatandaşa ~7.700 ASTRA');
+  assert.equal(tasarim, tas, 'tasarım payı: tohum kasaların haftalık oranıyla 100 vatandaşa ~8.082 ASTRA (karnaval kasası parça havuzu artığıyla 4,91 M)');
 
   // Dünya: bol dağıtım haftası → endeks %25 artar, oyuncunun bedel çarpanı en büyüğü(fiyat çarpanı, endeks) olur
   const once = Number(world.econ().oyunEndeksi) || 1;

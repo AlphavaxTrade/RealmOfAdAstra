@@ -3,7 +3,7 @@ import {
   ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, not, bos, izgara, simge, etiket, tam, astra, esc
 } from './cekirdek.js';
 import { equipImg } from '../art.js';
-import { maliyetSatiri } from './bilesik.js';
+import { maliyetSatiri, planBedeli, hizliOnar } from './bilesik.js';
 import { onay } from '../v3/bilesenler.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
@@ -44,7 +44,7 @@ function dovmeKarti(b, yuva) {
   } else {
     const plan = gs.getQuickBuyPlan('craft:' + yuva);
     if (plan.ok) {
-      dugme_ = dugme({ e: 'hizliDov', metin: `⚡ Eksikleri al ve döv · ~${tam(Math.ceil(plan.total))} ASTRA`, ton: 'iyi', veri: { yuva }, genis: true });
+      dugme_ = dugme({ e: 'hizliDov', metin: `⚡ Eksikleri al ve döv · ${astra(plan.total)} ASTRA`, ton: 'iyi', veri: { yuva }, genis: true });
     } else {
       const neden = plan.capBlocked ? 'Silon bu tarif için yetersiz: önce siloyu yükselt.' : (plan.reason || 'Eksik hammadde var.');
       dugme_ = dugme({ e: 'hizliDov', metin: `⚠️ ${esc(neden)}`, devreDisi: true, genis: true });
@@ -76,6 +76,17 @@ function esyaKarti(b, g, sira) {
   const onarimBedeli = hasarli ? gs.calculateEquipmentRepairCost(esya) : null;
   const geriDonusum = gs.getRecycleValue ? gs.getRecycleValue(esya) : null;
   const veri = { sira };
+  // Onarım için kaynak (odun, demir, kömür, parça, ASTRA) yetmiyorsa "eksikleri al ve onar"
+  let hizliOnarma = '';
+  if (onarimBedeli) {
+    const env = gs.state.inventory;
+    const yeterOnarim = (env.iron || 0) >= onarimBedeli.ironCost && (env.wood || 0) >= onarimBedeli.woodCost && (env.coal || 0) >= (onarimBedeli.coalCost || 0)
+      && (env.fragments || 0) >= onarimBedeli.fragCost && gs.state.adAstraBalance >= onarimBedeli.adaCost;
+    if (!yeterOnarim) {
+      const plan = gs.getQuickBuyPlan('repair:' + sira);
+      if (plan.items.length) hizliOnarma = dugme({ e: 'hizliOnar', metin: `⚡ Eksikleri al ve onar · ~${planBedeli(plan)}`, ton: 'iyi', veri, devreDisi: !plan.ok, genis: true });
+    }
+  }
   // Geliştirme için kaynak yetmiyorsa dövmedeki gibi "eksikleri al ve geliştir" (pazardan alım planı yapılabiliyorsa)
   let hizliGelistirme = '';
   if (gelistirmeBedeli) {
@@ -84,7 +95,7 @@ function esyaKarti(b, g, sira) {
       && (env.stone || 0) >= (gelistirmeBedeli.stoneCost || 0) && (env.fragments || 0) >= gelistirmeBedeli.fragCost && gs.state.adAstraBalance >= gelistirmeBedeli.adaCost;
     if (!yeter) {
       const plan = gs.getQuickBuyPlan('upgrade:' + sira);
-      if (plan.ok) hizliGelistirme = dugme({ e: 'hizliGelistir', metin: `⚡ Eksikleri al ve geliştir · ~${tam(Math.ceil(plan.total))} ASTRA`, ton: 'iyi', veri, genis: true });
+      if (plan.ok) hizliGelistirme = dugme({ e: 'hizliGelistir', metin: `⚡ Eksikleri al ve geliştir · ${astra(plan.total)} ASTRA`, ton: 'iyi', veri, genis: true });
     }
   }
 
@@ -104,7 +115,8 @@ function esyaKarti(b, g, sira) {
           <small class="${guncel <= 4 ? 'ek-kotu' : ''}">🛡️ Dayanıklılık ${tam(guncel)}/${tam(enFazla)} · 📍 ${esc(g.locationLabel)}</small>
         </div></div>
       ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
-      ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
+      ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${tam(onarimBedeli.fragCost || 0)}🧩 · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
+      ${hizliOnarma}
       ${hizliGelistirme}
       ${dugmeler(
         !enYuksek ? dugme({ e: 'gelistir', metin: '⬆️ Geliştir', ton: 'birincil', veri }) : etiket('🏆 en yüksek seviye', 'vurgu'),
@@ -132,6 +144,17 @@ function dovSekmesi(b) {
     ${izgara(YUVALAR.map((y) => dovmeKarti(b, y)), { genis: true })}`;
 }
 
+// Hasarlı eşyaların toplam onarım bedeli (odun, demir, kömür, parça, ASTRA) ve eksik varsa tek tuşluk "eksikleri al ve hepsini onar"
+function onarimOzeti(gs, hasarlilar) {
+  if (!hasarlilar.length) return '';
+  const t = gs.getRepairAllCost();
+  const env = gs.state.inventory;
+  const yeter = (env.iron || 0) >= t.demir && (env.wood || 0) >= t.odun && (env.coal || 0) >= t.komur && (env.fragments || 0) >= t.parca && gs.state.adAstraBalance >= t.ada;
+  const plan = !yeter ? gs.getQuickBuyPlan('repairall') : null;
+  return `<p class="ek-kucuk">🔧 Hepsini onarmanın bedeli: ${tam(t.demir)}⛏️ · ${tam(t.odun)}🌲 · ${tam(t.komur)}⚫ · ${tam(t.parca)}🧩 · ${astra(t.ada)}🟣</p>`
+    + (plan && plan.items.length ? dugme({ e: 'hizliOnarHepsi', metin: `⚡ Eksikleri al ve hepsini onar · ~${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true }) : '');
+}
+
 function esyalarSekmesi(b, secenek) {
   const gs = b.gameState;
   const tumu = gs.getAllArmoryEquipmentList();
@@ -157,7 +180,7 @@ function esyalarSekmesi(b, secenek) {
   const topluDugme = (yuva, seviye, genis) => {
     const plan = tumu.length ? gs.getQuickBuyPlan(`upgradeset:${yuva}:${seviye}`) : null;
     if (!plan || !plan.items.length) return '';
-    return dugme({ e: 'hizliToplu', metin: `⚡ Eksikleri al ve geliştir · ~${tam(Math.ceil(plan.total + plan.extraAda))} ASTRA`, ton: 'iyi', devreDisi: !plan.ok, veri: { yuva, seviye }, genis });
+    return dugme({ e: 'hizliToplu', metin: `⚡ Eksikleri al ve geliştir · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, veri: { yuva, seviye }, genis });
   };
   const ozelGrup = `<div class="ek-alan-satiri">
       <select class="ek-girdi" data-e-degis="grupYuva">${YUVALAR.map((y) => `<option value="${y}"${y === secenek.grupYuva ? ' selected' : ''}>${YUVA_KISA[y]}</option>`).join('')}</select>
@@ -173,7 +196,7 @@ function esyalarSekmesi(b, secenek) {
     secenek.satis != null ? satisFormu(b, secenek, tumu) : '',
     suzgec,
     kart({
-      icerik: siralama + dugmeler(
+      icerik: siralama + onarimOzeti(gs, hasarlilar) + dugmeler(
         dugme({ e: 'onarHepsi', metin: `🔨 Kırılan her şeyi onar (${hasarlilar.length})`, devreDisi: hasarlilar.length === 0 }),
         dugme({ e: 'giydir', metin: '⚡ En iyileri askerlerime giydir', ton: 'iyi', devreDisi: tumu.length === 0 })
       )
@@ -218,10 +241,10 @@ const ekran = {
       const yuva = el.dataset.yuva;
       const plan = gs.getQuickBuyPlan('craft:' + yuva);
       if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return; }
-      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
       const tamam = await onay({
         baslik: 'Eksikler alınıp eşya dövülsün mü?',
-        metin: `${liste}\nAlım ~${tam(Math.ceil(plan.total))} ASTRA + dövme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+        metin: `${liste}\nAlım ${astra(plan.total)} ASTRA + dövme bedeli ${astra(plan.extraAda)} ASTRA`,
         tamam: 'Al ve döv'
       });
       if (!tamam) return;
@@ -239,10 +262,10 @@ const ekran = {
       if (!g) return false;
       const plan = gs.getQuickBuyPlan('upgrade:' + sira);
       if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
-      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
       const tamam = await onay({
         baslik: 'Eksikler alınıp eşya geliştirilsin mi?',
-        metin: `${liste}\nAlım ~${tam(Math.ceil(plan.total))} ASTRA + geliştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+        metin: `${liste}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
         tamam: 'Al ve geliştir'
       });
       if (!tamam) return false;
@@ -263,10 +286,10 @@ const ekran = {
       const kume = `${el.dataset.yuva}:${el.dataset.seviye}`;
       const plan = gs.getQuickBuyPlan('upgradeset:' + kume);
       if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
-      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
       const tamam = await onay({
         baslik: 'Eksikler alınıp eşyalar geliştirilsin mi?',
-        metin: `${liste}\nAlım ~${tam(Math.ceil(plan.total))} ASTRA + geliştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+        metin: `${liste}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
         tamam: 'Al ve geliştir'
       });
       if (!tamam) return false;
@@ -292,6 +315,13 @@ const ekran = {
     },
 
     onarHepsi(b) { sonuc(b, b.gameState.repairAllEquipmentInKingdom()); },
+    async hizliOnar(b, el) {
+      const g = b.gameState.getAllArmoryEquipmentList()[Number(el.dataset.sira)];
+      if (!g) return false;
+      await hizliOnar(b, ref(g));
+      return undefined;
+    },
+    async hizliOnarHepsi(b) { await hizliOnar(b); },
     giydir(b) { sonuc(b, b.gameState.autoEquipBest(), 'success', 'info'); },
     hepsiniGelistir(b) { sonuc(b, b.gameState.upgradeAllEquipmentInKingdom(), 'success', 'warning'); },
     cantayaTopla(b) { sonuc(b, b.gameState.unequipAllSoldiers(), 'success', 'info'); },

@@ -379,14 +379,14 @@ export const GAME_CONFIG = {
     coal:      { minPriceAda: 0.009,  maxPriceAda: 0.045,  defaultPriceAda: 0.018 },
     iron:      { minPriceAda: 0.02,   maxPriceAda: 0.10,   defaultPriceAda: 0.04 },
     herb:      { minPriceAda: 0.04,   maxPriceAda: 0.20,   defaultPriceAda: 0.08 },
-    fragments: { minPriceAda: 0.225,  maxPriceAda: 1.125,  defaultPriceAda: 0.45 },
+    fragments: { minPriceAda: 0.225,  maxPriceAda: 4.5,    defaultPriceAda: 0.45 },   // tavan 10 kat: küçük havuzda kullanım fiyatı gerçekten yükseltir (18 Ekim 2026)
     boxes:     { minPriceAda: 50,     maxPriceAda: 250,    defaultPriceAda: 100 },
     keys:      { minPriceAda: 5,      maxPriceAda: 25,     defaultPriceAda: 10 },
     scroll_heal:    { minPriceAda: 0.15, maxPriceAda: 0.75, defaultPriceAda: 0.30 },
     scroll_stamina: { minPriceAda: 0.30, maxPriceAda: 1.50, defaultPriceAda: 0.60 }
   },
   // v2 (R3/R4b): pazar havuzlarının ASTRA tohumu — 200 M'den 100 M: 6 hammadde 90 M (değer ağırlıklı), tüketilenler 10 M
-  AMM_SEED_ASTRA: { raw: 90000000, fragments: 4000000, keys: 2000000, boxes: 2000000, scroll_heal: 1000000, scroll_stamina: 1000000 },
+  AMM_SEED_ASTRA: { raw: 90000000, fragments: 180000, keys: 2000000, boxes: 2000000, scroll_heal: 1000000, scroll_stamina: 1000000 },
   // Tek işlemde havuzdaki malın en çok bu oranı alınıp satılabilir (bugün %50 idi)
   AMM_SINGLE_TRADE_SHARE: 0.05,
   // Geri alım (R4): fiyat açılışın (1 − TRIGGER_DROP) altına inince kasanın haftada WEEKLY_RATE'i ile al-yak
@@ -805,16 +805,17 @@ export const GAME_CONFIG = {
     konsey: 'Sirius Konseyi Kasası',
     universe: 'Universe Tohum Rezervi (kilitli)'
   },
-  // v2 (R3): tohumlar 200 M ASTRA'dan (pazar 100 M ayrı: AMM_SEED_ASTRA)
-  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 7000000, quest: 8000000, carnival: 3000000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  // v2 (R3): tohumlar 200 M ASTRA'dan (pazar ayrı: AMM_SEED_ASTRA). 18 Ekim 2026: parça havuzu 4 M'den 180 bin ASTRA'ya küçüldü; çıkan 3,82 M ASTRA
+  // yarı yarıya geri alım ve karnaval kasalarına eklendi (ammBuyback 7 M → 8,91 M, carnival 3 M → 4,91 M); toplam 200 M değişmez.
+  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 8910000, quest: 8000000, carnival: 4910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
   // Hedef rezerv = ~12 aylık ödeme (annualPayout, yukarıda); sağlık = bakiye / hedef. Haftalık oranla sürekli ödeme
   // yapan 5 kasa (dungeon/arena/worldBoss/ammBuyback/quest) formülle hesaplanır; sürekli haftalık oranı olmayan
   // (karnaval: çevirme başına kendini finanse eder; fatih: yalnız 18. boss ilk zaferinde; konsey/universe: kilitli/
   // proje bazlı) kasalarda hedef = tohum (değişmedi).
   TREASURY_TARGET_RESERVE: {
-    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(7000000, 0.03), worldBoss: annualPayout(6000000, 0.03),
+    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(8910000, 0.03), worldBoss: annualPayout(6000000, 0.03),
     arena: annualPayout(4000000, 0.02), quest: annualPayout(8000000, 0.015),
-    carnival: 3000000, fatih: 20000000, konsey: 10000000, universe: 20000000
+    carnival: 4910000, fatih: 20000000, konsey: 10000000, universe: 20000000
   },
   // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3. Her alanın gerçek kullanım yeri:
   //  • dungeon: bilgi amaçlı (gerçek tavan DUNGEON.DAILY_BUDGET_RATE × 7, aynı sayı: 0,0036×7≈0,025)
@@ -1615,6 +1616,16 @@ export const GAME_CONFIG = {
         `Kendiliğinden iyileşme de artık şifalı otla: askerler yine 24 saatte tam cana kavuşur, ama bu sırada ekrandaki her can için 0,1 şifalı ot ve 0,002 ASTRA harcanır (hemen iyileştirmenin tam beşte biri; buğday artık harcanmaz). Ot ya da ASTRA biterse iyileşme eldekinin yettiği kadar sürüp durur. Kışla'da askerin sayfasında ve Şifahane'de "Kendiliğinden" ile "Hemen" seçeneklerinin ne harcayacağı yan yana ve canlı yazılıyor.`,
         `Düzeltme: "Eksik otu al ve iyileştir" düğmesindeki tutar Kışla'da 5,51 ASTRA, Şifahane'de 6 ASTRA görünüyordu (aynı sayı, farklı yuvarlama). Artık Kışla, Şifahane ve Zindan aynı yazıyla aynı tutarı gösteriyor.`,
         `Antrenman girişi kaldırıldı: günlük harçsız girişlerin bitince zindana girmenin tek yolu kapı harcı. Harç ödenmezse giriş yok (stamina düşmez, giriş sayılmaz); harçlı giriş her zaman ödüllüdür. Kasanın günlük ödeme bütçesi dolduysa yeni giriş ertesi güne kalır. Savaşa hazırlık ekranındaki kapı harcı kutusu kalktı: harç, savaşa başlarken düğmede yazan tutarla ödenir.`
+      ]
+    },
+    {
+      version: 'v1.63',
+      title: '🧩 Onarım Artık Teçhizat Parçası İstiyor',
+      date: '18 Ekim 2026',
+      changes: [
+        `Eşya onarımı artık teçhizat parçası da ister: eşyaya o güne kadar harcanan parçanın %10'u × hasar oranı (en az 1). Parça bedeli seviyeyle kabaca ikiye katlanır: seviye 5 eşya tam hasarda yaklaşık 3, seviye 9 yaklaşık 51 parça. Hem tek eşya hem "Kırılan her şeyi onar" parça yakar; Demirhane'de hasarlı eşyaların toplam bedeli (parça dahil) yazıyor.`,
+        `Yeni: "⚡ Eksikleri al ve onar" (Demirhane'de her eşyada ve toplu olarak, Kışla'da askerin üzerindeki eşyada ve Cephanelik'te). Eksik odun, demir, kömür ve parça pazardan alınır, eşyalar tek tek onarılır; alım ve onarım bedeli onay ekranında yazar.`,
+        `Parça havuzu küçüldü ve parça fiyatı artık kullanımla yükselecek: havuz 4 milyon ASTRA'dan 180 bin ASTRA'ya indi (fiyat aynı kaldı, 0,45 civarı), fiyat tavanı 1,125'ten 4,5 ASTRA'ya çıktı. Çıkan ASTRA kaybolmadı: yarısı Karnaval ödül havuzuna, yarısı pazar geri alım kasasına girdi. Parça yakıldıkça havuzdaki mal azaldığı için fiyat zamanla yükselir; zindandan düşen parça da ona göre değer kazanır.`
       ]
     }
   ],

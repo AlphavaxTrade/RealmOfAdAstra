@@ -43,10 +43,10 @@ export async function hizliAl(b, kind) {
   const gs = b.gameState;
   const plan = gs.getQuickBuyPlan(kind);
   if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { alinan: 0, hata: true }; }
-  const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+  const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
   const tamam = await onay({
     baslik: 'Eksikler pazardan alınsın mı?',
-    metin: `${liste}\nToplam ~${tam(Math.ceil(plan.total))} ASTRA`,
+    metin: `${liste}\nToplam ${astra(plan.total)} ASTRA`,
     tamam: 'Satın al'
   });
   if (!tamam) return { alinan: 0, hata: false };
@@ -63,7 +63,51 @@ export async function hizliAl(b, kind) {
 
 // "Eksik otu al ve iyileştir" düğmesinin toplam bedeli: pazardan ot alımı + iyileştirme ASTRA'sı. Kışla, Şifahane ve Zindan AYNI yazıyı kullanır
 // (eskiden biri tam sayıya yuvarlıyor, öbürü kuruşlu yazıyordu: 6 ASTRA ile 5,51 ASTRA).
-export const hizliIyilestirBedeli = (plan) => `${astra((Number(plan.total) || 0) + (Number(plan.extraAda) || 0))} ASTRA`;
+export const planBedeli = (plan) => `${astra((Number(plan.total) || 0) + (Number(plan.extraAda) || 0))} ASTRA`;
+
+// Eşyanın konum kaydı (sunucu modunda eşya nesnesi yerine konum gider): getAllArmoryEquipmentList() satırından
+export const esyaKonumu = (g) => ({ source: g.source, slotKey: g.slotKey, armoryIndex: g.armoryIndex ?? null, soldierIndex: g.soldierIndex ?? null });
+const ayniKonum = (a, c) => a.source === c.source && a.slotKey === c.slotKey && a.armoryIndex === c.armoryIndex && a.soldierIndex === c.soldierIndex;
+
+// Onarım için "Eksikleri al ve onar": konum verilirse o eşya, verilmezse hasarlı bütün eşyalar. Eşyalar tek tek, sırayla onarılır; her birinin
+// eksiği (odun, demir, kömür, parça) o an pazardan alınır, silo hepsini birden tutmak zorunda kalmaz. Döndürür: { onarilan, hata }
+export async function hizliOnar(b, konum = null) {
+  const gs = b.gameState;
+  const liste = () => gs.getAllArmoryEquipmentList();
+  const sira = (k) => liste().findIndex((g) => ayniKonum(esyaKonumu(g), k));
+  const hasarli = (g) => (g.item.durability ?? 13) < (g.item.maxDurability || 13);
+  const hedefler = konum ? [konum] : liste().filter(hasarli).map(esyaKonumu);
+  if (!hedefler.length) { b.bildir('Onarılacak eşya yok.', 'info'); return { onarilan: 0, hata: false }; }
+  const plan = gs.getQuickBuyPlan(konum ? `repair:${sira(konum)}` : 'repairall');
+  if (plan.items.length) {
+    if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { onarilan: 0, hata: true }; }
+    const satirlar = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+    const tamam = await onay({
+      baslik: 'Eksikler alınıp onarım yapılsın mı?',
+      metin: `${satirlar}\nAlım ${astra(plan.total)} ASTRA + onarım bedeli ${astra(plan.extraAda)} ASTRA`,
+      tamam: 'Al ve onar'
+    });
+    if (!tamam) return { onarilan: 0, hata: false };
+  }
+  let onarilan = 0;
+  for (const k of hedefler) {
+    const s = sira(k);
+    if (s < 0) continue;
+    const adim = gs.getQuickBuyPlan(`repair:${s}`);
+    if (adim.items.length) {
+      if (!adim.ok) { b.bildir(`${onarilan} eşya onarıldı; devamı yapılamadı: ${adim.reason}`, 'warning'); return { onarilan, hata: true }; }
+      for (const it of adim.items) {
+        const r = await gs.marketBuy(it.res, it.qty);
+        if (!r || !r.success) { b.bildir(`${onarilan} eşya onarıldı; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return { onarilan, hata: true }; }
+      }
+    }
+    const r = await gs.repairEquipment(k);
+    if (!r || !r.success) { b.bildir(`${onarilan} eşya onarıldı; devamı yapılamadı: ${(r && r.message) || ''}`, 'error'); return { onarilan, hata: true }; }
+    onarilan++;
+  }
+  b.bildir(`🔨 ${onarilan} eşya, eksikleri alınarak onarıldı.`, 'success');
+  return { onarilan, hata: false };
+}
 
 // Kendiliğinden iyileşme ile hemen iyileştirmenin ne harcayacağı yan yana (canlı: ekran yenilendikçe kalan eksiğe göre güncellenir).
 // k: { saniye, kendiOt, kendiAda, hemenOt, hemenAda }. Ot sayıları yukarı yuvarlanır (kısmi ot harcanmaz, hemen iyileştirmede).
@@ -89,10 +133,10 @@ export async function hizliIyilestir(b, sira = null) {
   const plan = gs.getQuickBuyPlan(sira == null ? 'heal' : `heal:${sira}`);
   if (plan.items.length) {
     if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { iyilesen: 0, hata: true }; }
-    const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+    const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
     const tamam = await onay({
       baslik: 'Eksik ot alınıp askerler iyileştirilsin mi?',
-      metin: `${liste}\nOt alımı ~${tam(Math.ceil(plan.total))} ASTRA + iyileştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+      metin: `${liste}\nOt alımı ${astra(plan.total)} ASTRA + iyileştirme bedeli ${astra(plan.extraAda)} ASTRA`,
       tamam: 'Al ve iyileştir'
     });
     if (!tamam) return { iyilesen: 0, hata: false };
