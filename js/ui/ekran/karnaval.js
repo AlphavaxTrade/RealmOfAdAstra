@@ -184,8 +184,8 @@ function piyangoSekmesi(b) {
       hucre('Sonraki çekiliş', sure(sonraki - Date.now()))
     ]),
     kart({
-      baslik: '🛡️ Haftalık bilet sınırın',
-      icerik: cubukSatiri('Bu hafta aldığın', `${tam(l.boughtThisWeek)} / ${tam(l.maxPerWeek)}`, l.maxPerWeek > 0 ? (l.boughtThisWeek / l.maxPerWeek) * 100 : 0, { ton: l.canBuy > 0 ? '' : 'dolu' })
+      baslik: '🛡️ Günlük bilet sınırın',
+      icerik: cubukSatiri('Bugün aldığın', `${tam(l.boughtToday)} / ${tam(l.maxPerDay)}`, l.maxPerDay > 0 ? (l.boughtToday / l.maxPerDay) * 100 : 0, { ton: l.canBuy > 0 ? '' : 'dolu' })
         + satir('Elindeki bilet (devredenler dahil)', `${tam(l.myTickets)} bilet / toplam ${tam(l.totalTickets)}`)
         + satir('Bu biletler için ödediğin', `${astra(l.paid)} ASTRA`)
     }),

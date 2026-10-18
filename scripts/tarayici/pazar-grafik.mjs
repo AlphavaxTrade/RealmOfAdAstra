@@ -114,6 +114,13 @@ try {
   await s.click('[data-e="kaynakSec"][data-kaynak="iron"]');
   await bekle(1500);
   kontrol('başka eşyaya geçince grafik yine çiziliyor', !!(await s.$('.ek-fgrafik, .ek-bos')));
+  // İlanlar: süzgeç düğmeleri taşmaz, hepsi görünür (alt satıra sarar)
+  await s.click('[data-e="bolum"][data-sekme="ilan"]');
+  await s.waitForSelector('.ek-sekmeler.is-sarar', { timeout: 15000 });
+  await bekle(800);
+  const sarmaMasaustu = await s.evaluate(() => [...document.querySelectorAll('.ek-sekmeler.is-sarar')].map((e) => e.scrollWidth <= e.clientWidth + 1));
+  kontrol('ilan süzgeç düğmeleri masaüstünde taşmıyor', sarmaMasaustu.length > 0 && sarmaMasaustu.every(Boolean), JSON.stringify(sarmaMasaustu));
+  await s.screenshot({ path: path.join(EKRAN, 'ilan_suzgec_masaustu.png') }).catch(() => {});
   await o.baglam.close();
   const m = await oyunSayfasi({ mobil: true });
   await m.sayfa.keyboard.press('Escape'); await bekle(300); await m.sayfa.keyboard.press('5'); await bekle(1500);
@@ -132,6 +139,13 @@ try {
   await dokun('touchEnd', 0.6); await bekle(1600);
   kontrol('parmak kalkınca ipucu kısa süre sonra kayboluyor', await m.sayfa.evaluate(() => document.querySelector('.ek-fgrafik-ipucu').hidden));
   await m.sayfa.screenshot({ path: path.join(EKRAN, 'grafik_2_telefon.png') }).catch(() => {});
+  await m.sayfa.click('[data-e="bolum"][data-sekme="ilan"]');
+  await m.sayfa.waitForSelector('.ek-sekmeler.is-sarar', { timeout: 15000 });
+  await bekle(800);
+  const sarmaTelefon = await m.sayfa.evaluate(() => [...document.querySelectorAll('.ek-sekmeler.is-sarar')].map((e) => e.scrollWidth <= e.clientWidth + 1));
+  kontrol('ilan süzgeç düğmeleri telefonda taşmıyor', sarmaTelefon.length > 0 && sarmaTelefon.every(Boolean), JSON.stringify(sarmaTelefon));
+  kontrol('telefonda ilan ekranı yatay taşma yapmıyor', !(await tasma(m.sayfa)));
+  await m.sayfa.screenshot({ path: path.join(EKRAN, 'ilan_suzgec_telefon.png') }).catch(() => {});
   await m.baglam.close();
   kontrol('konsolda sayfa hatası yok', hatalar.length === 0, hatalar.slice(0, 3).join(' | '));
 } catch (e) {

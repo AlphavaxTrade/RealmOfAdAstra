@@ -110,6 +110,7 @@ const ekran = {
       sinirSatiri('💀', 'Zindan: harçsız ödüllü giriş', zindan.freeUsed, zindan.freeTotal, {
         not: zindan.nextNeedsFee ? 'Sonraki girişler harçlı' : (zindan.nextWeaponWear ? 'Her askerin birkaç eşyası girişte birer aşınır (kat ve moda göre artar)' : 'Sıradaki girişte eşyalar aşınmaz')
       }),
+      sinirSatiri('🎟️', 'Piyango: bugün aldığın bilet', piyango.boughtToday, piyango.maxPerDay),
       sinirSatiri('🏟️', 'Kolezyum maçı', sayaclar.arenaMatches || 0, kolezyumSiniri),
       sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
         birim: ' ASTRA', not: `Kasa günde en fazla bakiyesinin %${sayi(((b.GAME_CONFIG.DUNGEON || {}).DAILY_BUDGET_RATE ?? 0.0036) * 100, 2)}'ini öder`
@@ -118,7 +119,6 @@ const ekran = {
     ].join('');
 
     const haftalik = [
-      sinirSatiri('🎟️', 'Piyango: bu hafta aldığın bilet', piyango.boughtThisWeek, piyango.maxPerWeek),
       satir('🎫 Elindeki bilet (devredenler dahil)', `${tam(piyango.myTickets)} bilet`),
       satir('🏛️ Haftalık temel gelir (UBI)', (gs.state.level || 1) < ubiAlt ? `${ubiAlt}. seviyede açılır` : (ubiAlindi ? 'Bu hafta alındı' : 'Bu hafta alınabilir'), ubiAlindi ? 'iyi' : '')
     ].join('');

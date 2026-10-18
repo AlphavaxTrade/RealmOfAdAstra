@@ -917,9 +917,9 @@ export const GAME_CONFIG = {
     LOTTERY: {
       TICKET_COST_ADA: 1,          // v2 ölçekli
       SEED_POOL_ADA: 12000000,     // v2 (R3): 12 M ASTRA tohum (eskiden 20 M; model 2 yılda hiç erimedi)
-      // Balina koruması: bir hesap bir haftada en fazla bu kadar bilet satın alabilir.
-      // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder.
-      MAX_TICKETS_PER_ACCOUNT: 100,  // haftalık alım sınırı (10.000 ASTRA)
+      // Balina koruması: bir hesap bir günde (Türkiye saatiyle gece yarısı yenilenir) en fazla bu kadar bilet satın alabilir.
+      // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder. (19 Ekim 2026: haftalık 100'dü, günlük 100 oldu.)
+      MAX_TICKETS_PER_DAY: 100,      // günlük alım sınırı
       WINNER_MULTIPLIER: 2.0,        // Kazanan, biletlerine ödediğinin 2 katını alır
       AMORTI_SHARE: 0.02,            // Bilet bedelinin %2'si amorti kasasına
       // Devreden bilet yaşlanması (EK-08, ayrıntı js/economy/lottery.js): kazanamayan her çekilişte ödenen değerin %5'i düşer,
@@ -1229,7 +1229,7 @@ export const GAME_CONFIG = {
       title: '⚖️ Yeni Ekonomi Kuralları, Adım Adım Açılan Menüler & Hız',
       date: '30 Eylül 2026',
       changes: [
-        'Piyango: her bilet 100 ASTRA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; elindeki bütün biletler ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
+        'Piyango: her bilet 100 ASTRA, haftalık bilet sınırı var. Her hafta tek kazanan çıkar ve biletlerine ödediğinin 2 katını alır; biletleri ödülü çekerken yanar. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder. Kasa biterse amorti kasası kalan tüm biletlere eşit dağıtılır.',
         'Çarkta 1 piyango bileti = 1 çevirme; yakılan biletin bedeli piyango ödül hesabından da düşer.',
         'Haftalık temel gelir (UBI): oyunda harcanan her ASTRA\'nın %6\'sı haftalık kasada birikir, Pazartesi 00:01 (TSİ) açılır ve 3. seviyeden itibaren seviyeye göre paylaşılır; çekilmeyen pay sonraki haftaya devreder.',
         'Haftalık kota her gün bir parça açılır (Pazartesi sabahı tek seferde bitmez). Pazar derinliği haftalık kotanın 80 katına çıkarıldı: fiyatın %90 düşmesi yıllar alır.',
@@ -1675,6 +1675,15 @@ export const GAME_CONFIG = {
       changes: [
         `Pazar > Al / Sat ekranında seçtiğin eşyanın (buğday, odun, taş, kömür, demir, şifalı ot, teçhizat parçası) altında artık coin grafiği gibi bir fiyat grafiği var. 24 saat, 7 gün ve 30 gün arasında geçebilirsin; grafikle birlikte açılış, en yüksek, en düşük, şimdiki fiyat ve yüzde değişim yazar. Yeşil yükselişi, kırmızı düşüşü gösterir. Grafiğin üzerinde fareyle gezinince (telefonda parmağını sürükleyince, klavyede sağ-sol ok tuşlarıyla) o andaki fiyat, zaman ve açılışa göre değişim bir balonda görünür.`,
         `Fiyatlar artık kaydediliyor: her eşyanın fiyatı en az 5 dakikada bir (büyük sıçramalar hemen) not edilir; 2 günden eski kayıtlar saatliğe sıkıştırılır, 30 günden eskiler silinir. Grafik bugünden başlar: geçmiş ilk güncellemeden önce tutulmadığı için ilk saatlerde çizgi kısa görünür, zamanla dolar. Çevrimiçi oyunda herkes aynı ortak pazarın geçmişini görür.`
+      ]
+    },
+    {
+      version: 'v1.69',
+      title: '🎟️ Piyango Bileti Günlük 100, İlan Süzgeci Taşmıyor',
+      date: '19 Ekim 2026',
+      changes: [
+        `Piyango bilet alım sınırı artık GÜNLÜK: bir hesap günde en fazla 100 bilet alabilir (eskiden haftada 100'dü). Gün, Türkiye saatiyle gece yarısı yenilenir. Kazanmayan biletler yine yanmaz, kazanana kadar sonraki haftalara devreder. Kalan hakkını Karnaval > Piyango ekranında ve Kotalar'ın günlük bölümünde görebilirsin.`,
+        `Pazar > İlanlar'daki tür düğmeleri (Anahtar, Pandora kutusu, Eser, Silah, Miğfer, Zırh, Pantolon, Bot) artık ekrandan taşmaz: sığmayanlar alt satıra geçer. Eskiden satır yana kayıyordu ama fareyle kaydırılamadığı için sağdaki düğmelere ulaşılamıyordu. Al / Sat ekranındaki eşya seçme düğmeleri de aynı şekilde düzeltildi.`
       ]
     }
   ],

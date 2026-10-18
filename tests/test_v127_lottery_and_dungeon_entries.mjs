@@ -24,24 +24,33 @@ const fresh = () => {
   return new GameStateManager();
 };
 const nextWeek = () => { globalPool.state.epochId = (globalPool.state.epochId || 1) + 1; };
+// Gün Türkiye saatiyle gece yarısı yenilenir (getDailyCounters tarihe bakar): tarihi geçmişe çekmek yeni gün demektir
+const nextDay = gs => { gs.getDailyCounters().date = '2000-01-01'; };
 let passed = 0;
 const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 
 const L = GAME_CONFIG.CARNIVAL.LOTTERY;
-const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
+const DAY = L.MAX_TICKETS_PER_DAY;
 
-// 1) Haftalık alım sınırı: tek seferde de parça parça da aşılamaz
+// 1) Günlük alım sınırı: tek seferde de parça parça da aşılamaz; gece yarısı yenilenir
 {
   const gs = fresh();
   gs.state.adAstraBalance = 10_000_000;
-  assert.equal(gs.buyLotteryTickets(WEEK + 1).success, false, 'Sınırın üstü tek seferde alınamamalı');
-  assert.equal(gs.buyLotteryTickets(WEEK - 1).success, true);
+  assert.equal(gs.buyLotteryTickets(DAY + 1).success, false, 'Sınırın üstü tek seferde alınamamalı');
+  assert.equal(gs.buyLotteryTickets(DAY - 1).success, true);
   assert.equal(gs.buyLotteryTickets(1).success, true);
   const r = gs.buyLotteryTickets(1);
-  assert.equal(r.success, false, 'Haftalık sınır dolunca alım reddedilmeli');
-  assert.match(r.message, /haftada en fazla/);
+  assert.equal(r.success, false, 'Günlük sınır dolunca alım reddedilmeli');
+  assert.match(r.message, /günde en fazla/);
   assert.equal(gs.getLotteryStatus().canBuy, 0);
-  ok(`Piyango: hesap başı haftalık ${WEEK} bilet sınırı`);
+  assert.equal(gs.getLotteryStatus().boughtToday, DAY);
+  nextWeek();
+  assert.equal(gs.getLotteryStatus().canBuy, 0, 'yeni hafta tek başına sınırı açmaz: sınır günlüktür');
+  nextDay(gs);
+  assert.equal(gs.getLotteryStatus().canBuy, DAY, 'yeni gün sınır yeniden açılır');
+  assert.equal(gs.buyLotteryTickets(DAY).success, true, 'ertesi gün yine günlük sınır kadar alınabilir');
+  assert.equal(gs.getLotteryStatus().myTickets, DAY * 2);
+  ok(`Piyango: hesap başı günlük ${DAY} bilet sınırı, gece yarısı yenilenir`);
 }
 
 // 2) Kazanmayan biletler yanmaz ve sayı sınırı olmadan sonraki haftalara devreder
@@ -49,13 +58,13 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
   const gs = fresh();
   gs.state.adAstraBalance = 100_000_000;
   for (let w = 0; w < 10; w++) {
-    assert.equal(gs.buyLotteryTickets(WEEK).success, true, `${w + 1}. hafta ${WEEK} bilet alınabilmeli`);
-    nextWeek();
+    assert.equal(gs.buyLotteryTickets(DAY).success, true, `${w + 1}. gün ${DAY} bilet alınabilmeli`);
+    nextDay(gs); nextWeek();
   }
   const st = gs.getLotteryStatus();
-  assert.equal(st.myTickets, WEEK * 10, 'Biletler haftalar boyunca birikmeli, elde tutma sınırı olmamalı');
-  assert.equal(st.paid, WEEK * 10 * L.TICKET_COST_ADA);
-  assert.equal(st.canBuy, WEEK, 'Yeni haftada yine yalnız haftalık sınır geçerli');
+  assert.equal(st.myTickets, DAY * 10, 'Biletler haftalar boyunca birikmeli, elde tutma sınırı olmamalı');
+  assert.equal(st.paid, DAY * 10 * L.TICKET_COST_ADA);
+  assert.equal(st.canBuy, DAY, 'Yeni günde yine yalnız günlük sınır geçerli');
   ok('Piyango: kazanmayan biletler yanmaz, sınırsız devreder');
 }
 
@@ -239,7 +248,7 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
 {
   const gs = fresh();
   const html = kotalarEkrani.govde({ gameState: gs, globalPool, GAME_CONFIG });
-  for (const s of ['Üretim hakkın', 'Sirius kapasitesi', GAME_CONFIG.RESOURCE_META.wood.name, 'Zindan: harçsız ödüllü giriş', 'Piyango: bu hafta aldığın bilet', 'Kolezyum maçı']) {
+  for (const s of ['Üretim hakkın', 'Sirius kapasitesi', GAME_CONFIG.RESOURCE_META.wood.name, 'Zindan: harçsız ödüllü giriş', 'Piyango: bugün aldığın bilet', 'Kolezyum maçı']) {
     assert.ok(html.includes(s), `Ekranda "${s}" olmalı`);
   }
   assert.ok(!/NaN|undefined|Infinity/.test(html), 'Ekranda NaN/undefined/Infinity olmamalı');

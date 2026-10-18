@@ -77,7 +77,7 @@ function alSatBolumu(b, s) {
     const aktif = k === secili;
     return `<button type="button" class="ek-sekme${aktif ? ' is-aktif' : ''}" role="tab" aria-selected="${aktif}" data-e="kaynakSec" data-kaynak="${esc(k)}">${esc(b.ammMarket.pools[k].name)}</button>`;
   }).join('');
-  return `<div class="ek-sekmeler" role="tablist">${cipler}</div>${islemKarti(b, secili)}${fiyatGrafigi(b, s, secili)}`;
+  return `<div class="ek-sekmeler is-sarar" role="tablist">${cipler}</div>${islemKarti(b, secili)}${fiyatGrafigi(b, s, secili)}`;
 }
 
 // ── Fiyat grafiği (19 Ekim 2026): tek oyunculuda geçmiş tarayıcıdaki pazardan, çevrimiçinde sunucudan (GET /api/pazar/gecmis) gelir ──
@@ -202,7 +202,7 @@ function ilanBolumu(b, s) {
   // Süzgeç çubuğu: tür düğmeleri (adetli), ad araması, sıralama
   const f = ilanFiltresi(s);
   const sayilar = d.sayilar || {};
-  const turler = sekmeler(ILAN_TURLERI.map(([id, ad, simge]) => ({ id, ad: `${ad}${sayilar[id] ? ` (${sayilar[id]})` : (id === 'hepsi' ? '' : ' (0)')}`, simge })), f.tur, 'ilanTur');
+  const turler = sekmeler(ILAN_TURLERI.map(([id, ad, simge]) => ({ id, ad: `${ad}${sayilar[id] ? ` (${sayilar[id]})` : (id === 'hepsi' ? '' : ' (0)')}`, simge })), f.tur, 'ilanTur', { sarar: true });
   const siraSecenekleri = ILAN_SIRALARI.map(([id, ad]) => `<option value="${id}"${f.sira === id ? ' selected' : ''}>${esc(ad)}</option>`).join('');
   const suzgec = `${turler}
       <div class="ek-alan-satiri">

@@ -27,17 +27,16 @@ export const piyangoYontemleri = {
     return this.state.lotterySimHolders;
   },
 
-  // Haftalık bilet alım sınırı: yeni hafta (dönem) başlayınca sayaç sıfırdan sayılır
+  // Günlük bilet alım sınırı (19 Ekim 2026; eskiden haftalıktı): gün Türkiye saatiyle gece yarısı yenilenir (getDailyCounters, güvenilir saat)
   getLotteryLimits() {
-    const epochId = donemKimligi();
-    const maxPerWeek = piyangoAyari().MAX_TICKETS_PER_ACCOUNT || 100;
-    const boughtThisWeek = this.state.lotteryWeekEpoch === epochId ? (this.state.lotteryBoughtThisWeek || 0) : 0;
-    const weekLeft = Math.max(0, maxPerWeek - boughtThisWeek);
-    return { epochId, maxPerWeek, boughtThisWeek, weekLeft, canBuy: weekLeft };
+    const maxPerDay = piyangoAyari().MAX_TICKETS_PER_DAY || 100;
+    const boughtToday = this.getDailyCounters().lotteryBought || 0;
+    const dayLeft = Math.max(0, maxPerDay - boughtToday);
+    return { maxPerDay, boughtToday, dayLeft, canBuy: dayLeft };
   },
 
   getLotteryStatus() {
-    const { maxPerWeek, boughtThisWeek, weekLeft, canBuy } = this.getLotteryLimits();
+    const { maxPerDay, boughtToday, dayLeft, canBuy } = this.getLotteryLimits();
     const rules = this.getLotteryRules();
     const myTickets = this.state.lotteryTickets || 0;
     const others = this.getLotterySimHolders().reduce((s, h) => s + (h.tickets || 0), 0);
@@ -49,9 +48,9 @@ export const piyangoYontemleri = {
       potentialPrize: paid * rules.winnerMultiplier,
       totalTickets,
       chance: winChance(myTickets, totalTickets),
-      boughtThisWeek,
-      maxPerWeek,
-      weekLeft,
+      boughtToday,
+      maxPerDay,
+      dayLeft,
       canBuy,
       pool: this.state.lotteryPool || 0,
       amortiPool: this.state.lotteryAmortiPool || 0,
@@ -68,15 +67,11 @@ export const piyangoYontemleri = {
       return { success: false, message: '🏆 Piyango kazancın çekilmeyi bekliyor. Önce kazancını çek (elindeki biletler çekerken yanar), sonra yeni bilet alabilirsin.' };
     }
     const sinir = this.getLotteryLimits();
-    if (this.state.lotteryWeekEpoch !== sinir.epochId) {
-      this.state.lotteryWeekEpoch = sinir.epochId;
-      this.state.lotteryBoughtThisWeek = 0;
-    }
-    const alinan = sinir.boughtThisWeek;
-    if (adet > sinir.weekLeft) {
+    const alinan = sinir.boughtToday;
+    if (adet > sinir.dayLeft) {
       return {
         success: false,
-        message: `🚫 Bir hesap haftada en fazla ${sinir.maxPerWeek} bilet alabilir. Bu hafta aldığın: ${alinan}, alabileceğin: ${sinir.weekLeft}.`
+        message: `🚫 Bir hesap günde en fazla ${sinir.maxPerDay} bilet alabilir (gün Türkiye saatiyle gece yarısı yenilenir). Bugün aldığın: ${alinan}, alabileceğin: ${sinir.dayLeft}.`
       };
     }
 
@@ -91,7 +86,7 @@ export const piyangoYontemleri = {
     this._onAdaSpent(cost);
     this.state.lotteryTickets = (this.state.lotteryTickets || 0) + adet;
     this.state.lotteryTicketsPaid += cost;
-    this.state.lotteryBoughtThisWeek = alinan + adet;
+    this.getDailyCounters().lotteryBought = alinan + adet;
     this.state.lotteryAmortiPool = (this.state.lotteryAmortiPool || 0) + toAmorti;
     this.state.lotteryPool = (this.state.lotteryPool || 0) + toPool;
     this.saveState();

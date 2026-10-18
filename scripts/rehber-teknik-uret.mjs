@@ -138,7 +138,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
   ['Dünya bossu', 'Haftalık', `Pazar 18:00 (TSİ) tek savaş; havuz boss kasasının ${yuzde(C.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE, 0)}'ü`, 'Küresel (herkes)'],
   ['Çark: hammaddeyle çevirme', 'Günlük', `${n(C.CARNIVAL.WHEEL_RESOURCE_DAILY_LIMIT)} çevirme (ASTRA ile çevirmenin günlük sınırı yok)`, 'Sana özel'],
   ['Çark: kasa şartı', 'Anlık', `Karnaval kasasında en az ${n(C.CARNIVAL.WHEEL_MIN_CARNIVAL_BALANCE)} ASTRA yoksa çark kapanır`, 'Küresel (herkes)'],
-  ['Piyango bileti', 'Haftalık', `Hesap başına en çok ${n(C.CARNIVAL.LOTTERY.MAX_TICKETS_PER_ACCOUNT)} bilet`, 'Sana özel'],
+  ['Piyango bileti', 'Günlük', `Hesap başına en çok ${n(C.CARNIVAL.LOTTERY.MAX_TICKETS_PER_DAY)} bilet`, 'Sana özel'],
   ['Pazar: tek işlem', 'İşlem başı', `Havuzdaki malın en çok ${yuzde(C.AMM_SINGLE_TRADE_SHARE, 0)}'i`, 'Herkes'],
   ['Pazar: fiyat koridoru', 'Sürekli', 'Fiyat açılışın 0,5 katının altına inemez, 2,5 katının üstüne çıkamaz', 'Herkes'],
   ['İlan pazarı', 'Sürekli', `En çok ${n(C.ILAN_PAZARI.MAX_LISTINGS)} açık ilan; ilan ${n(C.ILAN_PAZARI.DAYS)} gün durur; komisyon ${yuzde(C.ILAN_PAZARI.FEE, 0)}`, 'Sana özel'],
@@ -681,7 +681,7 @@ ${formul([
 ${tablo(['Ödül', 'Şans', 'Değeri (ASTRA)'], cark.slice().sort((a, b) => b.valAda - a.valAda).map((r) => [r.name, r.pity ? `${n(C.CARNIVAL.WHEEL_PITY.STREAK)} boş çevirmeden sonra` : `%${sayi(r.weight / cWeight * 100, 2)}`, sayi(r.valAda, 2)]))}
   <h3>🎟️ Haftalık piyango</h3>
 ${formul([
-  `<b>Bilet:</b> ${n(C.CARNIVAL.LOTTERY.TICKET_COST_ADA)} ASTRA. Bedelin %${sayi((1 - C.CARNIVAL.LOTTERY.AMORTI_SHARE) * 100)}'i piyango kasasına, %${sayi(C.CARNIVAL.LOTTERY.AMORTI_SHARE * 100)}'si amorti kasasına. Hesap başına haftada en çok ${n(C.CARNIVAL.LOTTERY.MAX_TICKETS_PER_ACCOUNT)} bilet.`,
+  `<b>Bilet:</b> ${n(C.CARNIVAL.LOTTERY.TICKET_COST_ADA)} ASTRA. Bedelin %${sayi((1 - C.CARNIVAL.LOTTERY.AMORTI_SHARE) * 100)}'i piyango kasasına, %${sayi(C.CARNIVAL.LOTTERY.AMORTI_SHARE * 100)}'si amorti kasasına. Hesap başına günde en çok ${n(C.CARNIVAL.LOTTERY.MAX_TICKETS_PER_DAY)} bilet.`,
   `<b>Çekiliş:</b> haftada TEK kazanan (Pazartesi 00:01). Şansın = senin biletlerin ÷ toplam bilet. Kazanan, biletlerine ödediğinin <b>${n(C.CARNIVAL.LOTTERY.WINNER_MULTIPLIER)} katını</b> alır; biletleri yanar.`,
   `<b>Kazanamayanların biletleri</b> yanmaz, sonraki haftaya devreder; ama her çekilişte ödenen değerleri %${sayi(C.CARNIVAL.LOTTERY.CARRY_AGING_RATE * 100)} düşer (en çok yarıya kadar).`,
   '<b>Kasa bitince:</b> kazanan kasada kalanı alır, amorti kasası kalan biletlere bölünür ve biletler kapanır; piyango sıfırdan dolar.'

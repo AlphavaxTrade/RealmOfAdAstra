@@ -81,6 +81,7 @@
 /* 6. SEKME --------------------------------------------------------------- */
 .ek-sekmeler { display: flex; gap: 6px; overflow-x: auto; padding: 2px 0 4px; scrollbar-width: none; }
 .ek-sekmeler::-webkit-scrollbar { display: none; }
+.ek-sekmeler.is-sarar { flex-wrap: wrap; overflow-x: visible; }
 .ek-sekme { all: unset; box-sizing: border-box; flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: var(--v3-tap, 44px); padding: 6px 14px; border-radius: 22px; cursor: pointer; font: 800 calc(13.5px * var(--v3-yazi-olcek, 1))/1 var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); background: var(--v3-yuzey-2, #151a26); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); -webkit-tap-highlight-color: transparent; }
 .ek-sekme.is-aktif { color: #1a1405; background: var(--v3-vurgu, #e7b94c); border-color: var(--v3-vurgu, #e7b94c); }
 .ek-sekme:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }

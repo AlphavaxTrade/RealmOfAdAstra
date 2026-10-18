@@ -352,8 +352,9 @@ export function bos(simge, baslik, metin = '') {
   return `<div class="ek-bos"><span aria-hidden="true">${esc(simge)}</span><b>${esc(baslik)}</b>${metin ? `<small>${esc(metin)}</small>` : ''}</div>`;
 }
 
-export function sekmeler(liste, aktifId, eylem) {
-  return `<div class="ek-sekmeler" role="tablist">${liste.map((s) =>
+// sarar: çok düğmeli satırda (süzgeç gibi) düğmeler alt satıra geçer; yana kaydırma yok (fareyle kaydırılamıyordu, sağdaki düğmelere ulaşılmıyordu)
+export function sekmeler(liste, aktifId, eylem, { sarar = false } = {}) {
+  return `<div class="ek-sekmeler${sarar ? ' is-sarar' : ''}" role="tablist">${liste.map((s) =>
     `<button type="button" role="tab" aria-selected="${s.id === aktifId}" class="ek-sekme${s.id === aktifId ? ' is-aktif' : ''}" data-e="${esc(eylem)}" data-sekme="${esc(s.id)}">${s.simge ? `<span aria-hidden="true">${esc(s.simge)}</span>` : ''}<span>${esc(s.ad)}</span></button>`
   ).join('')}</div>`;
 }
