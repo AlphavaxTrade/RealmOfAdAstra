@@ -1510,7 +1510,8 @@ export const GAME_CONFIG = {
       date: '18 Ekim 2026',
       changes: [
         `Krallık haritası baştan boyandı: bütün bölgeler (madenler, orman, kale, kolezyum, karnaval, silolar, kışla, uzay limanı...) aynı yerlerinde duruyor, ama harita artık gün batımı ışığında, daha sıcak renklerle ve daha zengin dokularla görünüyor.`,
-        `Haritadaki dokunma noktaları ve bölge isimleri değişmedi; her şey önceki gibi çalışır.`
+        `Haritadaki dokunma noktaları ve bölge isimleri değişmedi; her şey önceki gibi çalışır.`,
+        `Açılış (yükleme) ekranı da yenilendi: yeni harita görseli ve gökyüzünde Realm of AdAstra yazılı roketli logo.`
       ]
     },
     {
