@@ -23,3 +23,4 @@ import './surum.js';
 import './cevrimdisi.js';
 import './hurda.js';
 import './kisla.js';
+import './geribildirim.js';

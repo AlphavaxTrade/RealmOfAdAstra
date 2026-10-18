@@ -12,6 +12,7 @@
   "test_gecis.mjs",
   "test_geri_bildirim.mjs",
   "test_geri_bildirim_api.mjs",
+  "test_geri_bildirim_oku.mjs",
   "test_admin_sayfa_kimlikleri.mjs",
   "test_oturum_ozet.mjs",
   "test_saklama.mjs",

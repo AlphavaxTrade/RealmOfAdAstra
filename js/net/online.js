@@ -1242,6 +1242,12 @@ async function startPayment(name, args) {
 }
 
 // ── Kolezyum: gerçek rakipler ───────────────────────────────────────────
+// ── Sorun bildir (geri bildirim / bilet; server/geri-bildirim.js). apiYavasla KULLANILMAZ: hız sınırı yanıtı oyuncuya olduğu gibi gösterilir.
+export const geriBildirim = {
+  gonder: (govde) => api('POST', '/api/feedback', govde),
+  benim: () => api('GET', '/api/feedback/mine')
+};
+
 export const pvp = {
   status: () => api('GET', '/api/pvp/status'),
   match: id => api('GET', '/api/pvp/match?id=' + encodeURIComponent(id)),

@@ -135,6 +135,10 @@ html.v3 #v3-tabbar button.active::before { content: ''; position: absolute; top:
 html.v3 .v3-hud-grup { display: contents; }
 html.v3 #v3-daha { display: none !important; }
 html.v3 .v3-etiket-menu { display: none; }
+/* Sorun bildir düğmesi: telefonda (360-699 px) üst çubukta yer yok (taşardı); orada "Ben" menüsünden ve "⋯ Daha" menüsünden açılır */
+html.v3 #v3-sorun { display: none !important; }
+@media (min-width: 700px) { html.v3 #v3-sorun { display: inline-flex !important; } }
+html.v3 .v3-hud-grup.acik #v3-sorun { display: inline-flex !important; }
 @media (max-width: 359px) {
   html.v3 #v3-hud { gap: 6px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
   html.v3 #v3-daha { display: inline-flex !important; flex: none; margin-left: 0; }

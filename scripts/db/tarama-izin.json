@@ -66,5 +66,9 @@
   {
     "sql": "SELECT id, email, totp_reset_at, totp_reset_note FROM accounts WHERE totp_reset_at IS NOT NULL ORDER BY totp_reset_at",
     "neden": "yönetici panelinin durum ekranı (elle yenileme) bekleyen Muhafız Mührü sıfırlamalarını listeler; tablo hesap sayısı kadar küçüktür ve sorgu sıcak yol değildir. İndeks yazma maliyetine değmez"
+  },
+  {
+    "sql": "SELECT at, type FROM events WHERE address = ? ORDER BY id DESC LIMIT 5",
+    "neden": "\"Sorun bildir\" biletine eklenen oyuncu özeti: yalnız bilet gönderilirken (oyuncu başına günde en çok 20) çalışır, en yeniden geriye yürür ve 5 eşleşmede durur; events.address indeksi her olay yazısını yavaşlatırdı"
   }
 ]

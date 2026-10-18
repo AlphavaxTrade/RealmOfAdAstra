@@ -17,7 +17,7 @@ const kur = (ekstra = {}) => {
   const db = openDb(':memory:');
   const postalar = [];
   const mailer = { send: async m => { postalar.push(m); return { dev: true }; } };
-  const engine = { readPlayer: () => ({ level: 7, village: { villagers: 31 }, soldiers: [{ level: 3 }, { level: 5 }, {}] }) };
+  const engine = { readPlayer: () => ({ level: 7, village: { villagers: 31 }, soldierUnits: [{ level: 3 }, { level: 5 }, {}], warehouseLevel: 2, adAstraBalance: 12.3456, lockedAda: 80, botActiveUntil: 0 }) };
   const gb = createGeriBildirim({ db, engine, mailer, cfg: { adminEmail: 'sahip@ornek.com' }, clock, log: sessiz, ...ekstra });
   return { db, gb, postalar };
 };
@@ -72,6 +72,7 @@ const gecerli = (ekle = {}) => ({ konu: 'hata', mesaj: 'Zindanda canavar yenilin
   assert.equal(r.baglam.sayfa, '#/zindan'); assert.equal(r.baglam.ekran, '390x844');
   assert.equal(r.oyuncuOzeti.seviye, 7); assert.equal(r.oyuncuOzeti.koylu, 31); assert.equal(r.oyuncuOzeti.asker, 3);
   assert.deepEqual(r.oyuncuOzeti.askerSeviyeleri, [3, 5, 1]);
+  assert.equal(r.oyuncuOzeti.siloSeviyesi, 2); assert.equal(r.oyuncuOzeti.serbestAstra, 12.35); assert.equal(r.oyuncuOzeti.kilitliAstra, 80); assert.equal(r.oyuncuOzeti.botAcik, false);
   assert.equal(gb.ayrinti(no, { ekleri: false }).ekler.length, 0);
   assert.equal(gb.ekOku(no, 1), JPG); assert.equal(gb.ekOku(no, 9), null);
   assert.throws(() => gb.ayrinti('RB-9999'), e => e.kod === 404);

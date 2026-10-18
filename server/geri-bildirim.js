@@ -82,10 +82,15 @@ export function createGeriBildirim({ db, engine = null, kapi = null, mailer = nu
     try {
       const s = engine?.readPlayer ? engine.readPlayer(player) : null;
       if (s) {
-        o.seviye = Number(s.level) || null;
-        o.koylu = Number(s.village?.villagers) || null;
-        o.asker = Array.isArray(s.soldiers) ? s.soldiers.length : null;
-        o.askerSeviyeleri = Array.isArray(s.soldiers) ? s.soldiers.slice(0, 12).map(a => a?.level || 1) : null;
+        const sayi = v => (Number.isFinite(Number(v)) ? Math.round(Number(v) * 100) / 100 : null);
+        o.seviye = sayi(s.level);
+        o.koylu = sayi(s.village?.villagers);
+        o.siloSeviyesi = sayi(s.warehouseLevel);
+        o.asker = Array.isArray(s.soldierUnits) ? s.soldierUnits.length : null;
+        o.askerSeviyeleri = Array.isArray(s.soldierUnits) ? s.soldierUnits.slice(0, 18).map(a => a?.level || 1) : null;
+        o.serbestAstra = sayi(s.adAstraBalance);
+        o.kilitliAstra = sayi(s.lockedAda);
+        o.botAcik = Number(s.botActiveUntil) > clock();
       }
     } catch (e) { log.warn?.('geri bildirim: oyuncu özeti okunamadı', e.message); }
     try { if (kapi?.statusOf) { const k = kapi.statusOf(player); o.kapi = k?.status || k?.gate || null; } } catch { /* özet isteğe bağlı */ }

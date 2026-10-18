@@ -20,7 +20,7 @@ const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 const EKRAN_KIMLIGI = {
   merkez: 'merkez', silo: 'silo', taverna: 'taverna', demirhane: 'demirhane', sifahane: 'sifahane', koy: 'koy',
   konsey: 'konsey', uzay: 'uzay', kolezyum: 'kolezyum', savasalani: 'savasalani', pazar: 'pazar', karnaval: 'karnaval',
-  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum', kisla: 'kisla'
+  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum', kisla: 'kisla', sorunbildir: 'geribildirim'
 };
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.
@@ -80,6 +80,9 @@ export function kurV3Kabuk(api) {
       </button>
       <button type="button" id="v3-rehber" class="v3-hap v3-ikon" aria-label="Oyun rehberi (yeni sekmede açılır)" title="Oyun rehberi">
         <span aria-hidden="true">📖</span><span class="v3-etiket-menu" aria-hidden="true">Oyun rehberi</span>
+      </button>
+      <button type="button" id="v3-sorun" class="v3-hap v3-ikon" aria-label="Sorun bildir" title="Sorun bildir">
+        <span aria-hidden="true">📮</span><span class="v3-etiket-menu" aria-hidden="true">Sorun bildir</span>
       </button>
     </div>`;
 
@@ -267,6 +270,7 @@ export function kurV3Kabuk(api) {
   $('v3-bot').addEventListener('click', () => { tepsiAc(false); api.ekranAc('taverna'); });
   $('v3-zil').addEventListener('click', () => { tepsiAc(false); api.toggleNotif(); });
   $('v3-rehber').addEventListener('click', () => { tepsiAc(false); rehberAc(); });
+  $('v3-sorun').addEventListener('click', () => { tepsiAc(false); api.ekranAc('geribildirim'); });
   $('v3-kaynak-dugme').addEventListener('click', () => tepsiAc(tepsi.hidden));
   tepsi.addEventListener('click', (e) => {
     const k = e.target.closest('[data-v3-kaynak]');

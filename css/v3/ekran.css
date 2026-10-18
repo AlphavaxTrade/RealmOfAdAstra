@@ -265,3 +265,28 @@ html.v3-azalt .ek-cark-ibre { transition: none; }
 .ek-tasi { display: flex; flex-wrap: wrap; gap: 8px; }
 .ek-tasi .ek-girdi { flex: 1 1 100%; }
 .ek-tasi > .ek-dugme { flex: 1 1 120px; }
+
+/* 13. SORUN BİLDİR (geri bildirim / bilet) ---------------------------------- */
+.ek-konular { display: flex; flex-wrap: wrap; gap: 8px; }
+.ek-konu { all: unset; box-sizing: border-box; min-height: var(--v3-tap, 44px); padding: 8px 14px; border-radius: 12px; cursor: pointer; font: 700 calc(14px * var(--v3-yazi-olcek, 1))/1.25 var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi-guclu, rgba(255,255,255,.13)); display: inline-flex; align-items: center; }
+.ek-konu.is-aktif { color: #1a1405; background: var(--v3-vurgu, #e7b94c); border-color: var(--v3-vurgu, #e7b94c); }
+.ek-konu:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }
+.ek-metin { width: 100%; resize: vertical; min-height: 110px; }
+.ek-resimler { display: flex; flex-wrap: wrap; gap: 8px; }
+.ek-resimler:empty { display: none; }
+.ek-resim { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; border: 1px solid var(--v3-cizgi-guclu, rgba(255,255,255,.13)); background: #000; }
+.ek-resim img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ek-resim-sil { all: unset; position: absolute; top: 3px; right: 3px; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font: 800 calc(13px * var(--v3-yazi-olcek, 1))/1 var(--font-ui); color: #fff; background: rgba(0,0,0,.7); }
+.ek-resim-sil:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); }
+.ek-dosya { position: relative; overflow: hidden; align-self: flex-start; }
+.ek-dosya.is-pasif { opacity: .5; cursor: not-allowed; }
+.ek-dosya-girdi { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.ek-bilet-buyuk { margin: 0; font-size: calc(18px * var(--v3-yazi-olcek, 1)); color: var(--v3-yazi, #eceef4); }
+.ek-bilet-buyuk b { color: var(--v3-vurgu-acik, #f6d98c); letter-spacing: .03em; }
+.ek-biletler { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--v3-gap-2, 8px); }
+.ek-bilet { padding: 10px 12px; border-radius: 10px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
+.ek-bilet-ust { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ek-bilet-no { color: var(--v3-vurgu-acik, #f6d98c); font-size: calc(14px * var(--v3-yazi-olcek, 1)); }
+.ek-bilet-metin { margin: 6px 0 0; font-size: calc(13.5px * var(--v3-yazi-olcek, 1)); line-height: 1.45; color: var(--v3-yazi-2, #a9b1c4); word-break: break-word; }
+.ek-bilet-cevap { margin-top: 8px; padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--v3-iyi, #43d19a); background: rgba(67,209,154,.08); }
+.ek-bilet-cevap p { margin: 4px 0 0; font-size: calc(13.5px * var(--v3-yazi-olcek, 1)); line-height: 1.45; color: var(--v3-yazi, #eceef4); white-space: pre-wrap; word-break: break-word; }

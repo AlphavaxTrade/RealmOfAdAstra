@@ -11,7 +11,7 @@ import { SavasArenasi, canavarResmi } from './ui/arena.js';
 import { consumeStorageEvents, CORRUPT_SUFFIX } from './storage.js';
 import { treasury } from './treasury.js';
 import { resImg } from './ui/art.js';
-import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
+import { startOnline, openWalletPanel, online, pvp, pazar, sponsor, geriBildirim, isLoggedIn, requireLogin, devVanillaReset } from './net/online.js';
 import { ac as ekranAc, baglamKur as ekranBaglamKur, canliTik as ekranCanliTik } from './ui/ekran/index.js';
 import { kurPencere } from './ui/pencere.js';
 import { kurToast } from './ui/toast.js';
@@ -140,6 +140,7 @@ ekranBaglamKur({
   get pazar() { return pazar; },
   get sponsor() { return sponsor; },
   get pvp() { return pvp; },
+  get geriBildirim() { return geriBildirim; },
   girisli: () => isLoggedIn(),
   girisIste: () => requireLogin(),
   bildir,
