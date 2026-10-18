@@ -1666,6 +1666,70 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/admin/players:
+    get:
+      tags:
+        - Yönetim
+      summary: "Oyuncu listesi (salt okunur): arama + kapı durumu süzgeci"
+      operationId: get_api_admin_players
+      security: *a3
+      parameters:
+        - name: ara
+          in: query
+          required: false
+          description: Oyuncu kimliği ya da e-posta parçası
+          schema:
+            type: string
+        - name: kapi
+          in: query
+          required: false
+          description: citizen, waiting, suspended ya da new; boşsa hepsi
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ ok, toplam, sayi: { citizen, waiting, suspended, new, yasakli }, rows } — en son görülen önce, en çok 300 satır. Parola, 2 adımlı doğrulama sırrı ve yedek kod HİÇ dönmez."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
+  /api/admin/players/detail:
+    get:
+      tags:
+        - Yönetim
+      summary: "Tek oyuncu (salt okunur): satır, hesap özeti, son yatırım / ödeme / olaylar"
+      operationId: get_api_admin_players_detail
+      security: *a3
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Oyuncu kimliği
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "{ ok, oyuncu, hesap, yatirimlar, odemeler, olaylar }. Hesap özetinde yalnız e-posta, cüzdan ve doğrulama durumu bulunur."
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/admin/promo:
     get:
       tags:

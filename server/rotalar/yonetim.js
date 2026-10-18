@@ -37,6 +37,35 @@ export default function yonetimRotalari(ctx) {
         events: db.q.eventsRecent.all(50)
       };
     },
+    // Oyuncu listesi (salt okunur): adres / e-posta ile arama, kapı durumu süzgeci, en son görülen önce. Gizli alan (parola, TOTP, yedek kod) HİÇ dönmez.
+    'GET /api/admin/players': (req) => {
+      const s = new URL(req.url, 'http://x').searchParams;
+      const ara = String(s.get('ara') || '').trim().toLowerCase().slice(0, 120), kapiDurum = String(s.get('kapi') || '');
+      const emailOf = a => { try { const m = accounts ? accounts.me(a) : null; return m ? m.email : null; } catch { return null; } };
+      const hepsi = db.raw.prepare('SELECT address, created_at, last_seen, deposited_ada, withdrawn_ada, pending_withdraw, banned, gate FROM players ORDER BY last_seen DESC').all();
+      const sayi = { citizen: 0, waiting: 0, suspended: 0, new: 0, yasakli: 0 };
+      const satirlar = [];
+      for (const p of hepsi) {
+        if (p.banned) sayi.yasakli++; else if (sayi[p.gate] != null) sayi[p.gate]++;
+        const email = emailOf(p.address);
+        if (kapiDurum && p.gate !== kapiDurum) continue;
+        if (ara && !p.address.toLowerCase().includes(ara) && !(email || '').toLowerCase().includes(ara)) continue;
+        satirlar.push({ playerId: p.address, email, createdAt: p.created_at, lastSeen: p.last_seen, depositedAda: p.deposited_ada, withdrawnAda: p.withdrawn_ada, pendingWithdraw: p.pending_withdraw, banned: !!p.banned, gate: p.gate });
+      }
+      return { ok: true, toplam: hepsi.length, sayi, rows: satirlar.slice(0, 300) };
+    },
+    // Tek oyuncu (salt okunur): satır, hesap özeti (e-posta, cüzdan, 2 adımlı doğrulama açık mı), son yatırım / ödeme / olaylar
+    'GET /api/admin/players/detail': (req) => {
+      const id = String(new URL(req.url, 'http://x').searchParams.get('id') || '').trim().slice(0, 120);
+      if (!id) return [400, { error: 'Oyuncu kimliği gerekli.' }];
+      const p = db.q.playerGet.get(id);
+      if (!p) return [404, { error: 'Oyuncu bulunamadı.' }];
+      let hesap = null;
+      try { hesap = accounts ? accounts.me(id) : null; } catch { hesap = null; }
+      const olaylar = db.raw.prepare('SELECT id, at, type, data FROM events WHERE address = ? ORDER BY id DESC LIMIT 50').all(id);
+      return { ok: true, oyuncu: { playerId: p.address, createdAt: p.created_at, lastSeen: p.last_seen, depositedAda: p.deposited_ada, withdrawnAda: p.withdrawn_ada, pendingWithdraw: p.pending_withdraw, banned: !!p.banned, gate: p.gate, gateAt: p.gate_at || null },
+        hesap, yatirimlar: db.q.depositsOf.all(id), odemeler: db.q.payoutsOf.all(id), olaylar };
+    },
     'GET /api/admin/promo': () => ({ codes: promo.list() }),
     'POST /api/admin/promo/create': async (req) => promo.create(await readBody(req)),
     'POST /api/admin/promo/active': async (req) => { const { code, active } = await readBody(req); return promo.setActive(code, !!active); },

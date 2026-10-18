@@ -981,5 +981,39 @@
       409,
       503
     ]
+  },
+  "GET /api/admin/players": {
+    "etiket": "Yönetim",
+    "ozet": "Oyuncu listesi (salt okunur): arama + kapı durumu süzgeci",
+    "parametreler": [
+      {
+        "ad": "ara",
+        "tur": "string",
+        "aciklama": "Oyuncu kimliği ya da e-posta parçası"
+      },
+      {
+        "ad": "kapi",
+        "tur": "string",
+        "aciklama": "citizen, waiting, suspended ya da new; boşsa hepsi"
+      }
+    ],
+    "yanit": "{ ok, toplam, sayi: { citizen, waiting, suspended, new, yasakli }, rows } — en son görülen önce, en çok 300 satır. Parola, 2 adımlı doğrulama sırrı ve yedek kod HİÇ dönmez."
+  },
+  "GET /api/admin/players/detail": {
+    "etiket": "Yönetim",
+    "ozet": "Tek oyuncu (salt okunur): satır, hesap özeti, son yatırım / ödeme / olaylar",
+    "parametreler": [
+      {
+        "ad": "id",
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "Oyuncu kimliği"
+      }
+    ],
+    "yanit": "{ ok, oyuncu, hesap, yatirimlar, odemeler, olaylar }. Hesap özetinde yalnız e-posta, cüzdan ve doğrulama durumu bulunur.",
+    "kodlar": [
+      400,
+      404
+    ]
   }
 }
