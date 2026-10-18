@@ -136,6 +136,29 @@ export const orduYontemleri = {
     };
   },
 
+  // ── Savaş canı (18 Ekim 2026) ──────────────────────────────────────────
+  // Askerin kayıtlı canı (asker.hp) TABAN azami cana göre tutulur (iyileşme, Şifahane ve Kışla böyle gösterir); savaşta ise azami can
+  // teçhizat ve set çarpanıyla büyür (totalMaxHp). Eskiden savaş kayıtlı canı olduğu gibi alıyordu: tam sağlıklı, 100/100 bir asker
+  // 313 azami canlı bir çubukta 100'le başlıyor (ve teçhizatın can bonusu hiç işe yaramıyordu). Artık oran korunur: tam sağlıklı asker
+  // teçhizatlı toplam canla başlar, yarım sağlıklı asker yarısıyla; savaştan sonra oran tabana geri çevrilir.
+  getSoldierBattleStart(soldierIndex) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    const f = asker ? this.getSoldierFullStats(soldierIndex) : null;
+    if (!f) return { hp: 100, maxHp: 100 };
+    const taban = asker.maxHp || 100;
+    const oran = Math.min(1, Math.max(0, (asker.hp != null ? asker.hp : taban) / taban));
+    return { hp: Math.max(1, Math.round(f.totalMaxHp * oran)), maxHp: f.totalMaxHp };
+  },
+
+  // Savaş sonu canını (toplam ölçek) kayıtlı tabana çevirip yazar; asker savaşta ölmez, en az 1 canla kalır
+  setSoldierHpFromBattle(soldierIndex, savasCani) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    const f = asker ? this.getSoldierFullStats(soldierIndex) : null;
+    if (!f) return;
+    const taban = asker.maxHp || 100;
+    asker.hp = Math.min(taban, Math.max(1, Math.round((Number(savasCani) || 0) / f.totalMaxHp * taban)));
+  },
+
   // ── İyileşme ───────────────────────────────────────────────────────────
   // Bir askerin iyileşme bilgisi (HP, kalan süre, gereken buğday / ASTRA); arayüz buna dayanır.
   // Pasif: 24 saatte tam can, 1 HP = 0,30 buğday + 0,10 ASTRA. Hızlı: 10 kat (1 HP = 3 buğday + 1 ASTRA).

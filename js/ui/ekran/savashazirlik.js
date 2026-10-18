@@ -291,7 +291,7 @@ const ekran = {
 async function savasiOyna(b, m, secili, odeHarc) {
   const gs = b.gameState;
   const liste = askerler(b);
-  const hpOnce = secili.map((idx) => (liste[idx] ? liste[idx].hp : null));
+  const hpOnce = secili.map((idx) => (liste[idx] ? gs.getSoldierBattleStart(idx).hp : null));   // savaş ölçeğinde başlangıç canı
   const canavarCanOnce = gs.getMonsterCurrentHp(m.level, m.hp);
 
   const fight = await gs.fightDungeon(m.level, secili, { payGateFee: odeHarc });

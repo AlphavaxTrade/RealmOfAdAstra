@@ -1347,6 +1347,15 @@ export const GAME_CONFIG = {
         `Karşılığında zindandan kazandığın ASTRA ×1,5 / ×2,25 / ×3,5 olur; parça, kutu, eser ve parşömen düşme şansı da artar. Deneyim (XP) ödülü değişmez.`,
         `Her mod asker hakkını 6 artırır: Zor 8-13, Uzman 14-19, Cehennem 20-25. Bir savaşa en çok 25 asker götürebilirsin. Askerlerin ve teçhizatın modlar arasında korunur.`
       ]
+    },
+    {
+      version: 'v1.39',
+      title: '❤️ Savaş Canı Düzeltmesi',
+      date: '18 Ekim 2026',
+      changes: [
+        `Zindan savaşına girerken askerin canı, teçhizatın verdiği can eklenmeden başlıyordu (çubuk 313 gösterirken savaş 100 ile başlıyordu). Düzeldi: tam sağlıklı asker teçhizatıyla birlikte tam canla savaşa girer, yaralı asker aynı oranda başlar. Kolezyum'da da aynı düzeltme yapıldı.`,
+        `Askerler bu yüzden daha dayanıklı oldu; zindanın bütün modlarındaki canavarlar buna göre yeniden dengelendi (canavarlar daha çok can ve saldırıya sahip). Normal modu en hızlı oyuncunun ~120 günde bitirmesi hedefi aynı.`
+      ]
     }
   ],
 

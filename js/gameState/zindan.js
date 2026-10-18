@@ -176,7 +176,7 @@ export const zindanYontemleri = {
     const askerler = this.state.soldierUnits || [];
     const muttefikler = Array.isArray(sim.allies) ? sim.allies : [];
     for (const u of muttefikler) {
-      if (askerler[u.sourceIndex]) askerler[u.sourceIndex].hp = Math.max(1, Math.round(u.hp));
+      if (askerler[u.sourceIndex]) this.setSoldierHpFromBattle(u.sourceIndex, u.hp);   // savaş ölçeğinden kayıtlı tabana (ordu.js)
     }
     const asinan = entry.weaponWear ? this.applyDungeonWeaponWear(muttefikler.map((u) => u.sourceIndex)) : [];
     const boss = buyukBossMu(monster, monster.level);
@@ -427,9 +427,8 @@ export const zindanYontemleri = {
   getZindanOrduDurumu() {
     const askerler = this.state.soldierUnits || [];
     let yarali = 0;
-    askerler.forEach((a, i) => {
-      const f = this.getSoldierFullStats(i);
-      const enFazla = f ? f.totalMaxHp : (a.maxHp || 0);
+    askerler.forEach((a) => {
+      const enFazla = a.maxHp || 0;   // kayıtlı can taban ölçeğinde tutulur (ordu.js getSoldierBattleStart)
       if (a.hp != null && enFazla > 0 && a.hp < enFazla - 0.5) yarali++;
     });
     const gun = this.getDungeonDayStatus();

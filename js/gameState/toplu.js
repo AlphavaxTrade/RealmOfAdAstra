@@ -199,7 +199,7 @@ export const topluYontemleri = {
         icon: asker.icon || '⚔️',
         level: asker.level || 1,
         maxHp: istat.totalMaxHp,
-        hp: Math.min(asker.hp != null ? asker.hp : istat.totalMaxHp, istat.totalMaxHp),
+        hp: this.getSoldierBattleStart(idx).hp,   // kayıtlı can oranı toplam cana uygulanır (ordu.js getSoldierBattleStart)
         atk: istat.totalAtk,
         skills: Array.isArray(asker.skills) && asker.skills.length ? asker.skills : ['shieldWall', 'armorBreaker'],
         row: asker.row === 'back' ? 'back' : 'front',

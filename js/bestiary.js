@@ -17,33 +17,33 @@ import { DEFAULT_BOSS_PHASES } from './combat.js';
 export const DUNGEON_LEVELS = [
   // ── 1. KAT: Kristal Mağarası ─────────────────────────────────────────
   { level: 1,  floor: 1, name: 'Bataklık Balçığı',          icon: '🟢', avatar: 'assets/monster_swamp_slime.jpg',   hp: 200,   atk: 30,   rewardXp: 40,   color: 0x22c55e, abilities: [] },
-  { level: 2,  floor: 1, name: 'Mağara Goblini',            icon: '👺', avatar: 'assets/monster_cave_goblin.jpg',   hp: 600,   atk: 80,   rewardXp: 80,   color: 0x06b6d4, abilities: ['swoop'] },
-  { level: 3,  floor: 1, name: 'Gölge Kurdu',               icon: '🐺', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 900,   atk: 115,  rewardXp: 130,  color: 0xf59e0b, abilities: ['swoop'], isFloorGuard: true },
+  { level: 2,  floor: 1, name: 'Mağara Goblini',            icon: '👺', avatar: 'assets/monster_cave_goblin.jpg',   hp: 950,   atk: 125,   rewardXp: 80,   color: 0x06b6d4, abilities: ['swoop'] },
+  { level: 3,  floor: 1, name: 'Gölge Kurdu',               icon: '🐺', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 1500,   atk: 190,  rewardXp: 130,  color: 0xf59e0b, abilities: ['swoop'], isFloorGuard: true },
 
   // ── 2. KAT: Kemik Mahzeni ─────────────────────────────────────────────
-  { level: 4,  floor: 2, name: 'Kemik Mahzeni İskeletleri', icon: '💀', avatar: 'assets/monster_skeleton.jpg',      hp: 1900,  atk: 230,  rewardXp: 200,  color: 0x22c55e, abilities: ['sunder'] },
-  { level: 5,  floor: 2, name: 'Lanetli Kemik Büyücüsü',    icon: '🧙‍♂️', avatar: 'assets/monster_skeleton.jpg',      hp: 2750,  atk: 305,  rewardXp: 260,  color: 0x06b6d4, abilities: ['terrify'] },
-  { level: 6,  floor: 2, name: 'Kemik Taht Muhafızı',       icon: '🗡️', avatar: 'assets/monster_skeleton.jpg',      hp: 2850,  atk: 305,  rewardXp: 320,  color: 0xf59e0b, abilities: ['cleave', 'regenerate'], isFloorGuard: true },
+  { level: 4,  floor: 2, name: 'Kemik Mahzeni İskeletleri', icon: '💀', avatar: 'assets/monster_skeleton.jpg',      hp: 2750,  atk: 335,  rewardXp: 200,  color: 0x22c55e, abilities: ['sunder'] },
+  { level: 5,  floor: 2, name: 'Lanetli Kemik Büyücüsü',    icon: '🧙‍♂️', avatar: 'assets/monster_skeleton.jpg',      hp: 3700,  atk: 410,  rewardXp: 260,  color: 0x06b6d4, abilities: ['terrify'] },
+  { level: 6,  floor: 2, name: 'Kemik Taht Muhafızı',       icon: '🗡️', avatar: 'assets/monster_skeleton.jpg',      hp: 4150,  atk: 445,  rewardXp: 320,  color: 0xf59e0b, abilities: ['cleave', 'regenerate'], isFloorGuard: true },
 
   // ── 3. KAT: Kadim Tapınak — ARA BOSS ──────────────────────────────────
-  { level: 7,  floor: 3, name: 'Karanlık Tarikatçı',        icon: '🧙‍♂️', avatar: 'assets/monster_stone_goliath.jpg', hp: 4500,  atk: 450,  rewardXp: 400,  color: 0x22c55e, abilities: ['terrify'] },
-  { level: 8,  floor: 3, name: 'Cehennem Tazısı',           icon: '🐺', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 4500,  atk: 450,  rewardXp: 480,  color: 0x06b6d4, abilities: ['swoop', 'cleave'] },
-  { level: 9,  floor: 3, name: 'Kadim Taş Golyat',          icon: '🗿', avatar: 'assets/monster_stone_goliath.jpg', hp: 5850,  atk: 425,  rewardXp: 1800, color: 0xef4444, abilities: ['cleave', 'sunder', 'regenerate'], isBoss: true, bossLabel: 'ARA BOSS', bossPhases: DEFAULT_BOSS_PHASES[9] },
+  { level: 7,  floor: 3, name: 'Karanlık Tarikatçı',        icon: '🧙‍♂️', avatar: 'assets/monster_stone_goliath.jpg', hp: 6450,  atk: 645,  rewardXp: 400,  color: 0x22c55e, abilities: ['terrify'] },
+  { level: 8,  floor: 3, name: 'Cehennem Tazısı',           icon: '🐺', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 6450,  atk: 645,  rewardXp: 480,  color: 0x06b6d4, abilities: ['swoop', 'cleave'] },
+  { level: 9,  floor: 3, name: 'Kadim Taş Golyat',          icon: '🗿', avatar: 'assets/monster_stone_goliath.jpg', hp: 8400,  atk: 635,  rewardXp: 1800, color: 0xef4444, abilities: ['cleave', 'sunder', 'regenerate'], isBoss: true, bossLabel: 'ARA BOSS', bossPhases: DEFAULT_BOSS_PHASES[9] },
 
   // ── 4. KAT: Lanetli Firavun Mezarı ────────────────────────────────────
-  { level: 10, floor: 4, name: 'Sargılı Mumyalar',          icon: '🧟', avatar: 'assets/monster_skeleton.jpg',      hp: 7600,  atk: 665,  rewardXp: 560,  color: 0x22c55e, abilities: ['sunder'] },
-  { level: 11, floor: 4, name: 'Gölge Hayaletler',          icon: '👻', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 8000,  atk: 675,  rewardXp: 640,  color: 0x06b6d4, abilities: ['swoop', 'terrify'] },
-  { level: 12, floor: 4, name: 'Lanetli Firavun',           icon: '👑', avatar: 'assets/monster_stone_goliath.jpg', hp: 9050,  atk: 735,  rewardXp: 720,  color: 0xf59e0b, abilities: ['cleave', 'regenerate', 'terrify'], isFloorGuard: true },
+  { level: 10, floor: 4, name: 'Sargılı Mumyalar',          icon: '🧟', avatar: 'assets/monster_skeleton.jpg',      hp: 11100,  atk: 970,  rewardXp: 560,  color: 0x22c55e, abilities: ['sunder'] },
+  { level: 11, floor: 4, name: 'Gölge Hayaletler',          icon: '👻', avatar: 'assets/monster_shadow_wolf.jpg',   hp: 11900,  atk: 1005,  rewardXp: 640,  color: 0x06b6d4, abilities: ['swoop', 'terrify'] },
+  { level: 12, floor: 4, name: 'Lanetli Firavun',           icon: '👑', avatar: 'assets/monster_stone_goliath.jpg', hp: 12550,  atk: 1020,  rewardXp: 720,  color: 0xf59e0b, abilities: ['cleave', 'regenerate', 'terrify'], isFloorGuard: true },
 
   // ── 5. KAT: Kaynayan Lav Çukuru ──────────────────────────────────────
-  { level: 13, floor: 5, name: 'Ateş İblisleri',            icon: '😈', avatar: 'assets/monster_fire_demon.jpg',    hp: 9650,  atk: 760,  rewardXp: 800,  color: 0x22c55e, abilities: ['cleave'] },
-  { level: 14, floor: 5, name: 'Lav Elementalleri',         icon: '🌋', avatar: 'assets/monster_fire_demon.jpg',    hp: 10600, atk: 805,  rewardXp: 880,  color: 0x06b6d4, abilities: ['cleave', 'regenerate'] },
-  { level: 15, floor: 5, name: 'Obsidyen Berserker',        icon: '⚔️', avatar: 'assets/monster_fire_demon.jpg',    hp: 10750, atk: 805,  rewardXp: 960,  color: 0xf59e0b, abilities: ['cleave', 'sunder'], isFloorGuard: true },
+  { level: 13, floor: 5, name: 'Ateş İblisleri',            icon: '😈', avatar: 'assets/monster_fire_demon.jpg',    hp: 13500,  atk: 1065,  rewardXp: 800,  color: 0x22c55e, abilities: ['cleave'] },
+  { level: 14, floor: 5, name: 'Lav Elementalleri',         icon: '🌋', avatar: 'assets/monster_fire_demon.jpg',    hp: 15450, atk: 1175,  rewardXp: 880,  color: 0x06b6d4, abilities: ['cleave', 'regenerate'] },
+  { level: 15, floor: 5, name: 'Obsidyen Berserker',        icon: '⚔️', avatar: 'assets/monster_fire_demon.jpg',    hp: 15700, atk: 1175,  rewardXp: 960,  color: 0xf59e0b, abilities: ['cleave', 'sunder'], isFloorGuard: true },
 
   // ── 6. KAT: Kıyamet Mabedi — FİNAL ───────────────────────────────────
-  { level: 16, floor: 6, name: 'Kıyamet Şövalyesi',         icon: '🛡️', avatar: 'assets/monster_fire_demon.jpg',    hp: 14100, atk: 1010, rewardXp: 1100, color: 0x22c55e, abilities: ['cleave', 'sunder'] },
-  { level: 17, floor: 6, name: 'Kadim Gölge Lordu',         icon: '👁️', avatar: 'assets/monster_dragon_ignis.jpg',  hp: 15450, atk: 1035, rewardXp: 1300, color: 0x06b6d4, abilities: ['terrify', 'swoop', 'cleave'] },
-  { level: 18, floor: 6, name: 'Kıyamet Ejderhası IGNIS',   icon: '🐉', avatar: 'assets/monster_dragon_ignis.jpg',  hp: 23200, atk: 650,  rewardXp: 6000, color: 0xef4444, abilities: ['cleave', 'sunder', 'swoop', 'regenerate'], isBoss: true, bossLabel: 'BÜYÜK BOSS', bossPhases: DEFAULT_BOSS_PHASES[18] }
+  { level: 16, floor: 6, name: 'Kıyamet Şövalyesi',         icon: '🛡️', avatar: 'assets/monster_fire_demon.jpg',    hp: 18750, atk: 1340, rewardXp: 1100, color: 0x22c55e, abilities: ['cleave', 'sunder'] },
+  { level: 17, floor: 6, name: 'Kadim Gölge Lordu',         icon: '👁️', avatar: 'assets/monster_dragon_ignis.jpg',  hp: 21600, atk: 1450, rewardXp: 1300, color: 0x06b6d4, abilities: ['terrify', 'swoop', 'cleave'] },
+  { level: 18, floor: 6, name: 'Kıyamet Ejderhası IGNIS',   icon: '🐉', avatar: 'assets/monster_dragon_ignis.jpg',  hp: 32400, atk: 805,  rewardXp: 6000, color: 0xef4444, abilities: ['cleave', 'sunder', 'swoop', 'regenerate'], isBoss: true, bossLabel: 'BÜYÜK BOSS', bossPhases: DEFAULT_BOSS_PHASES[18] }
 ];
 
 // ── Zindan modları (js/config.js ZINDAN_MODLARI) ─────────────────────────────────────────────────────────
@@ -52,28 +52,28 @@ export const DUNGEON_LEVELS = [
 // takvimindeki günde yenebilmesi hedeflenir (Zor 140-300. gün, Uzman 320-500, Cehennem 530-800). Normal mod tablosu yukarıdadır.
 export const MOD_CANAVARLARI = {
   1: {   // Zor
-    1: { hp: 23500, atk: 1075 }, 2: { hp: 26000, atk: 930 }, 3: { hp: 28550, atk: 865 },
-    4: { hp: 31250, atk: 1015 }, 5: { hp: 34000, atk: 1355 }, 6: { hp: 36750, atk: 760 },
-    7: { hp: 39550, atk: 1385 }, 8: { hp: 42300, atk: 835 }, 9: { hp: 55000, atk: 645 },
-    10: { hp: 47650, atk: 1170 }, 11: { hp: 50100, atk: 1185 }, 12: { hp: 52450, atk: 1125 },
-    13: { hp: 54550, atk: 920 }, 14: { hp: 56450, atk: 1020 }, 15: { hp: 58100, atk: 1035 },
-    16: { hp: 59450, atk: 1300 }, 17: { hp: 60500, atk: 1400 }, 18: { hp: 78650, atk: 990 }
+    1: { hp: 49100, atk: 1040 }, 2: { hp: 52600, atk: 930 }, 3: { hp: 56300, atk: 835 },
+    4: { hp: 60100, atk: 1055 }, 5: { hp: 64000, atk: 1260 }, 6: { hp: 68000, atk: 710 },
+    7: { hp: 72150, atk: 1385 }, 8: { hp: 76350, atk: 880 }, 9: { hp: 84000, atk: 600 },
+    10: { hp: 84950, atk: 1210 }, 11: { hp: 89350, atk: 1275 }, 12: { hp: 93750, atk: 975 },
+    13: { hp: 98150, atk: 935 }, 14: { hp: 102600, atk: 945 }, 15: { hp: 106950, atk: 1115 },
+    16: { hp: 111300, atk: 1210 }, 17: { hp: 115550, atk: 1300 }, 18: { hp: 127100, atk: 795 }
   },
   2: {   // Uzman
-    1: { hp: 106150, atk: 1250 }, 2: { hp: 109300, atk: 1120 }, 3: { hp: 112450, atk: 1080 },
-    4: { hp: 115600, atk: 1265 }, 5: { hp: 118750, atk: 1565 }, 6: { hp: 121900, atk: 880 },
-    7: { hp: 125050, atk: 1685 }, 8: { hp: 128150, atk: 1035 }, 9: { hp: 153800, atk: 630 },
-    10: { hp: 134350, atk: 1420 }, 11: { hp: 137400, atk: 1540 }, 12: { hp: 140450, atk: 1260 },
-    13: { hp: 143450, atk: 1185 }, 14: { hp: 146350, atk: 1200 }, 15: { hp: 149250, atk: 1310 },
-    16: { hp: 152100, atk: 1405 }, 17: { hp: 154900, atk: 1640 }, 18: { hp: 185900, atk: 1065 }
+    1: { hp: 162000, atk: 1250 }, 2: { hp: 163600, atk: 1080 }, 3: { hp: 165550, atk: 1120 },
+    4: { hp: 167850, atk: 1355 }, 5: { hp: 170500, atk: 1625 }, 6: { hp: 121600, atk: 1430 },
+    7: { hp: 176950, atk: 1945 }, 8: { hp: 180750, atk: 1110 }, 9: { hp: 153650, atk: 855 },
+    10: { hp: 189800, atk: 1525 }, 11: { hp: 195000, atk: 1655 }, 12: { hp: 200800, atk: 760 },
+    13: { hp: 207100, atk: 1185 }, 14: { hp: 214050, atk: 560 }, 15: { hp: 221700, atk: 1405 },
+    16: { hp: 230000, atk: 1405 }, 17: { hp: 239100, atk: 1530 }, 18: { hp: 215200, atk: 1065 }
   },
   3: {   // Cehennem
-    1: { hp: 234850, atk: 1460 }, 2: { hp: 235550, atk: 1355 }, 3: { hp: 236700, atk: 1355 },
-    4: { hp: 238200, atk: 1565 }, 5: { hp: 240150, atk: 1835 }, 6: { hp: 242500, atk: 720 },
-    7: { hp: 245300, atk: 1970 }, 8: { hp: 248550, atk: 1340 }, 9: { hp: 223700, atk: 1130 },
-    10: { hp: 256500, atk: 1765 }, 11: { hp: 261250, atk: 1850 }, 12: { hp: 266500, atk: 1355 },
-    13: { hp: 272350, atk: 1385 }, 14: { hp: 278800, atk: 1050 }, 15: { hp: 285900, atk: 1525 },
-    16: { hp: 293650, atk: 1655 }, 17: { hp: 302150, atk: 1775 }, 18: { hp: 302150, atk: 1245 }
+    1: { hp: 288200, atk: 1460 }, 2: { hp: 288200, atk: 1355 }, 3: { hp: 288300, atk: 1265 },
+    4: { hp: 289350, atk: 1685 }, 5: { hp: 291150, atk: 1970 }, 6: { hp: 212000, atk: 1700 },
+    7: { hp: 297050, atk: 2275 }, 8: { hp: 301200, atk: 1495 }, 9: { hp: 256050, atk: 790 },
+    10: { hp: 312000, atk: 2040 }, 11: { hp: 318800, atk: 2060 }, 12: { hp: 326500, atk: 495 },
+    13: { hp: 335300, atk: 1490 }, 14: { hp: 297650, atk: 1250 }, 15: { hp: 356250, atk: 1640 },
+    16: { hp: 368650, atk: 1775 }, 17: { hp: 382400, atk: 1775 }, 18: { hp: 344150, atk: 1080 }
   }
 };
 

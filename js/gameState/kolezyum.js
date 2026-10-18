@@ -96,7 +96,7 @@ export const kolezyumYontemleri = {
       name: sampiyon.name,
       icon: sampiyon.icon || '⚔️',
       maxHp: oyuncuMaxHp,
-      hp: sampiyon.hp || oyuncuMaxHp,
+      hp: this.getSoldierBattleStart(championIndex).hp,   // kayıtlı can oranı toplam cana uygulanır
       atk: oyuncuAtk,
       skills: sampiyon.skills || ['shieldWall'],
       row: sampiyon.row || 'front'
@@ -118,8 +118,9 @@ export const kolezyumYontemleri = {
     const zafer = !!(savas.victory || savas.winner === 'ally');
 
     // Asker kolezyumda ölmez: en az 1 canla kalır
-    sampiyon.hp = Math.max(1, muttefik.hp);
-    const alinanHasar = oyuncuMaxHp - sampiyon.hp;
+    const savasSonuCani = Math.max(1, muttefik.hp);
+    this.setSoldierHpFromBattle(championIndex, savasSonuCani);
+    const alinanHasar = oyuncuMaxHp - savasSonuCani;
 
     if (!this.state.colosseumStats) {
       this.state.colosseumStats = { wins: 0, losses: 0, score: 0, rank: 11, rating: cfg.STARTING_RATING };
