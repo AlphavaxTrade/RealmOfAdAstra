@@ -40,6 +40,49 @@ s.adAstraBalance = 1e6;
 assert.equal(gs.getQuickBuyPlan('olmayan').ok, false);
 assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
 
+// Geliştirme planı (Demirhane "Eksikleri al ve geliştir"): eşyanın bedelindeki her eksik (demir, odun, kömür, taş, parça) pazardan alınır
+{
+  const liste = gs.getAllArmoryEquipmentList();
+  assert.ok(liste.length >= 1, 'önkoşul: dövülen eşya listede');
+  const esya = liste[0].item;
+  const bedel = gs.calculateEquipmentUpgradeCost(esya);
+  assert.equal(bedel.isMaxLevel, false);
+  s.adAstraBalance = 1e6;
+  for (const k of ['iron', 'wood', 'coal', 'stone', 'fragments']) s.inventory[k] = 0;
+  const plan = gs.getQuickBuyPlan('upgrade:0');
+  const kalem = Object.fromEntries(plan.items.map((i) => [i.res, i.qty]));
+  assert.equal(kalem.iron, bedel.ironCost, 'plan demiri alır');
+  assert.equal(kalem.wood, bedel.woodCost, 'plan oduncu alır');
+  assert.equal(kalem.fragments, bedel.fragCost, 'plan parçayı alır');
+  if (bedel.coalCost > 0) assert.equal(kalem.coal, bedel.coalCost, 'plan kömürü alır');
+  if (bedel.stoneCost > 0) assert.equal(kalem.stone, bedel.stoneCost, 'plan taşı alır');
+  assert.equal(plan.extraAda, bedel.adaCost, 'geliştirmenin kendi ASTRA bedeli plana yazılır');
+  assert.equal(plan.ok, true, plan.reason);
+
+  // Eksikler alınır ve eşya gerçekten geliştirilir (konumla, sıra değişse de aynı eşya)
+  for (const i of plan.items) assert.equal(gs.marketBuy(i.res, i.qty).success, true, `${i.res} alındı`);
+  const seviye0 = esya.level || 1;
+  const r = gs.upgradeAnyEquipment({ source: liste[0].source, slotKey: liste[0].slotKey, armoryIndex: liste[0].armoryIndex ?? null, soldierIndex: liste[0].soldierIndex ?? null });
+  assert.equal(r.success, true, r.message);
+  assert.equal(esya.level, seviye0 + 1, 'planla alınan malzemeyle geliştirildi');
+
+  // ASTRA yetmiyorsa plan kapalıdır ve nedeni söyler; geçersiz sıra ve en yüksek seviye
+  for (const k of ['iron', 'wood', 'coal', 'stone', 'fragments']) s.inventory[k] = 0;
+  s.adAstraBalance = 0;
+  const siloOnce = s.warehouseLevel;
+  s.warehouseLevel = 18;   // siloya sığmama nedeni araya girmesin
+  const yoksul = gs.getQuickBuyPlan('upgrade:0');
+  assert.equal(yoksul.ok, false);
+  assert.match(yoksul.reason, /ASTRA/);
+  s.adAstraBalance = 1e6;
+  assert.equal(gs.getQuickBuyPlan('upgrade:999').ok, false, 'olmayan eşya');
+  esya.level = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+  const enUst = gs.getQuickBuyPlan('upgrade:0');
+  assert.equal(enUst.ok, false);
+  assert.match(enUst.reason, /en yüksek/);
+  s.warehouseLevel = siloOnce;
+}
+
 // Silo planı: hem yükseltme bedeli hem %80 dolu şartı karşılanır
 {
   for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 0;

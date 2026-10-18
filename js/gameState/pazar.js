@@ -84,8 +84,9 @@ export const pazarYontemleri = {
   },
 
   /**
-   * ⚡ Hızlı al planı: seviye atlama ('levelup'), silo yükseltme ('warehouse') ya da teçhizat dövme
-   * ('craft:<yuva>') için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
+   * ⚡ Hızlı al planı: seviye atlama ('levelup'), silo yükseltme ('warehouse'), teçhizat dövme
+   * ('craft:<yuva>') ya da cephanelikteki bir eşyanın geliştirilmesi ('upgrade:<eşya sırası>', sıra
+   * getAllArmoryEquipmentList() içindeki konumdur) için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
    * ASTRA bedeline (%3 payla) yetiyor, silo bu miktarı alıyor ve XP tamam.
    */
   getQuickBuyPlan(kind) {
@@ -112,6 +113,13 @@ export const pazarYontemleri = {
       if (!(GAME_CONFIG.EQUIPMENT_RECIPES || {})[yuva]) return { ok: false, items: [], reason: 'Geçersiz tarif.' };
       const bedel = this.calculateEquipmentCraftCost(yuva);
       hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, fragments: bedel.fragCost };
+      ekAstra = Number(bedel.adaCost) || 0;
+    } else if (String(kind).startsWith('upgrade:')) {
+      const kayit = this.getAllArmoryEquipmentList()[Number(String(kind).slice(8))];
+      if (!kayit || !kayit.item) return { ok: false, items: [], reason: 'Eşya bulunamadı.' };
+      const bedel = this.calculateEquipmentUpgradeCost(kayit.item);
+      if (!bedel || bedel.isMaxLevel) return { ok: false, items: [], reason: 'Eşya zaten en yüksek seviyede.' };
+      hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, stone: bedel.stoneCost, fragments: bedel.fragCost };
       ekAstra = Number(bedel.adaCost) || 0;
     } else {
       return { ok: false, items: [], reason: 'Geçersiz.' };

@@ -76,6 +76,17 @@ function esyaKarti(b, g, sira) {
   const onarimBedeli = hasarli ? gs.calculateEquipmentRepairCost(esya) : null;
   const geriDonusum = gs.getRecycleValue ? gs.getRecycleValue(esya) : null;
   const veri = { sira };
+  // Geliştirme için kaynak yetmiyorsa dövmedeki gibi "eksikleri al ve geliştir" (pazardan alım planı yapılabiliyorsa)
+  let hizliGelistirme = '';
+  if (gelistirmeBedeli) {
+    const env = gs.state.inventory;
+    const yeter = (env.iron || 0) >= gelistirmeBedeli.ironCost && (env.wood || 0) >= gelistirmeBedeli.woodCost && (env.coal || 0) >= (gelistirmeBedeli.coalCost || 0)
+      && (env.stone || 0) >= (gelistirmeBedeli.stoneCost || 0) && (env.fragments || 0) >= gelistirmeBedeli.fragCost && gs.state.adAstraBalance >= gelistirmeBedeli.adaCost;
+    if (!yeter) {
+      const plan = gs.getQuickBuyPlan('upgrade:' + sira);
+      if (plan.ok) hizliGelistirme = dugme({ e: 'hizliGelistir', metin: `⚡ Eksikleri al ve geliştir · ~${tam(Math.ceil(plan.total))} ASTRA`, ton: 'iyi', veri, genis: true });
+    }
+  }
 
   const ozellik = [esya.atkBonus > 0 ? `⚔️ +${tam(esya.atkBonus)} saldırı` : '', esya.hpBonus > 0 ? `❤️ +${tam(esya.hpBonus)} can` : ''].filter(Boolean).join(' · ');
   const ikinci = [];
@@ -94,6 +105,7 @@ function esyaKarti(b, g, sira) {
         </div></div>
       ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
       ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
+      ${hizliGelistirme}
       ${dugmeler(
         !enYuksek ? dugme({ e: 'gelistir', metin: '⬆️ Geliştir', ton: 'birincil', veri }) : etiket('🏆 en yüksek seviye', 'vurgu'),
         hasarli ? dugme({ e: 'onar', metin: '🔧 Onar', veri }) : '',
@@ -212,6 +224,29 @@ const ekran = {
         if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return; }
       }
       sonuc(b, await gs.craftEquipment(yuva));
+    },
+
+    async hizliGelistir(b, el) {
+      const gs = b.gameState;
+      const sira = Number(el.dataset.sira);
+      const g = gs.getAllArmoryEquipmentList()[sira];
+      if (!g) return false;
+      const plan = gs.getQuickBuyPlan('upgrade:' + sira);
+      if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const tamam = await onay({
+        baslik: 'Eksikler alınıp eşya geliştirilsin mi?',
+        metin: `${liste}\nAlım ~${tam(Math.ceil(plan.total))} ASTRA + geliştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+        tamam: 'Al ve geliştir'
+      });
+      if (!tamam) return false;
+      const konum = ref(g);   // konumla: alımlar sırasında liste sırası değişse de aynı eşya geliştirilir
+      for (const it of plan.items) {
+        const r = await gs.marketBuy(it.res, it.qty);
+        if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return false; }
+      }
+      sonuc(b, await gs.upgradeAnyEquipment(konum));
+      return undefined;
     },
 
     onarHepsi(b) { sonuc(b, b.gameState.repairAllEquipmentInKingdom()); },

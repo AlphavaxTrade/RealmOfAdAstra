@@ -1535,6 +1535,15 @@ export const GAME_CONFIG = {
         `Anahtar artık yalnız kilitli Pandora kutusunu açar, oyundaki en değerli ikinci şeydir. Her zaferde %25 anahtar düşmesi kaldırıldı; Kolezyum haftalık sıralamasında 1. olan 1 anahtar kazanır (arena kasası pazardan gerçek fiyatla satın alıp verir). Anahtar ayrıca çarktan çok nadir çıkar ya da pazardan alınır.`,
         `"Arena Anahtarı" adı her yerde "Anahtar" oldu.`
       ]
+    },
+    {
+      version: 'v1.55',
+      title: '⚒️ Demirhane ve Telefon Ekranı',
+      date: '18 Ekim 2026',
+      changes: [
+        `Demirhane'de eşya geliştirirken de dövmedeki gibi "Eksikleri al ve geliştir" düğmesi var: geliştirmek için demir, odun, kömür, taş ya da teçhizat parçası yetmiyorsa eksikler pazardan tek onayla alınır ve eşya hemen geliştirilir. Tahmini ASTRA bedeli düğmenin üstünde yazar.`,
+        `Telefonda haritanın altındaki iki şerit (Kralın Danışmanı ve Krallık Yolu) inceltildi, harita daha çok görünüyor. Danışman kartına ✕ eklendi: kapattığın öneri bu oturumda geri gelmez, öneri değişince kart yeniden görünür.`
+      ]
     }
   ],
 
