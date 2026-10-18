@@ -109,7 +109,7 @@
 .ek-etiket.is-vurgu { color: var(--v3-vurgu-acik, #f6d98c); border-color: rgba(231,185,76,.45); }
 
 /* Oyun görselleri (piksel sanatı) her yerde keskin ve kırpılmadan gösterilir */
-.art-ico { image-rendering: pixelated; object-fit: contain; }
+.art-ico { width: 1.5em; height: 1.5em; vertical-align: -0.4em; image-rendering: pixelated; object-fit: contain; }
 
 /* Ambar satırı (silo): simge, ad, miktar ve altında doluluk çubuğu */
 .ek-ambarlar { display: flex; flex-direction: column; gap: 12px; }

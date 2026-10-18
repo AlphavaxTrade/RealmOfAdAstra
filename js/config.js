@@ -1542,7 +1542,8 @@ export const GAME_CONFIG = {
       date: '18 Ekim 2026',
       changes: [
         `Demirhane'de eşya geliştirirken de dövmedeki gibi "Eksikleri al ve geliştir" düğmesi var: geliştirmek için demir, odun, kömür, taş ya da teçhizat parçası yetmiyorsa eksikler pazardan tek onayla alınır ve eşya hemen geliştirilir. Tahmini ASTRA bedeli düğmenin üstünde yazar.`,
-        `Telefonda haritanın altındaki iki şerit (Kralın Danışmanı ve Krallık Yolu) inceltildi, harita daha çok görünüyor. Danışman kartına ✕ eklendi: kapattığın öneri bu oturumda geri gelmez, öneri değişince kart yeniden görünür.`
+        `Telefonda haritanın altındaki iki şerit (Kralın Danışmanı ve Krallık Yolu) inceltildi, harita daha çok görünüyor. Danışman kartına ✕ eklendi: kapattığın öneri bu oturumda geri gelmez, öneri değişince kart yeniden görünür.`,
+        `Karakter menüsünde seviye atlama bedelini gösteren satırlarda hammadde resimleri devasa görünüyordu; artık satırla aynı boyutta küçük simge olarak çıkıyor.`
       ]
     }
   ],
