@@ -73,11 +73,10 @@ const ekran = {
     const dayanikliYuzde = Math.round((dayanikli / bolge.aletEnFazla) * 100);
     const onarim = gs.calculateRepairCost(bolge.aletKimligi) || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
     const sefer = durum.activeExpeditions[bolge.key];
-    const hizli = gs.isBuffActive('speed_' + bolge.key);
     const saat = gs.getExpeditionDurationHours();
     const dakika = gs.getExpeditionDurationMinutes();
     const dakikaHizi = gs.getResourceRatePerMinute(bolge.key);
-    const tahmin = Math.floor(dakikaHizi * dakika * (hizli ? 1.5 : 1));
+    const tahmin = Math.floor(dakikaHizi * dakika);
     const stamina = gs.getExpeditionStaminaCost();
     const staminaAz = durum.stamina < stamina;
     const hak = gs.getUretimHakki ? gs.getUretimHakki(bolge.key) : null;
@@ -110,7 +109,7 @@ const ekran = {
     return kap([
       kart({
         baslik: `${esc(bolge.simge)} ${esc(bolge.ad)} seferi`,
-        rozet: `<span class="ek-etiket${hizli ? ' is-vurgu' : ''}">${sayi(saat, 1)} saat (${tam(dakika)} dk)${hizli ? ' ⚡ 1,5x hızlı' : ''}</span>`,
+        rozet: `<span class="ek-etiket">${sayi(saat, 1)} saat (${tam(dakika)} dk)</span>`,
         icerik: bilgiler + aletSatiri + eylem
       }),
       kart({

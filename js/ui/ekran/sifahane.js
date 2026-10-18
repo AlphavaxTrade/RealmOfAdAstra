@@ -1,6 +1,6 @@
 // Realm of AdAstra — Şifahane ekranı: şifalı otla hemen iyileştirme (hemen iyileştirmenin tek yolu).
 import { ekranKaydet, kap, kart, katli, not, uyari, dugme, tam, astra, esc } from './cekirdek.js';
-import { hizliIyilestir } from './bilesik.js';
+import { hizliIyilestir, hizliIyilestirBedeli, iyilesmeKiyasi } from './bilesik.js';
 
 const ekran = {
   id: 'sifahane',
@@ -10,6 +10,7 @@ const ekran = {
   govde(b) {
     const gs = b.gameState;
     const S = b.GAME_CONFIG.SIFAHANE || {};
+    const P = b.GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
     const ot = Math.floor(gs.state.inventory.herb || 0);
     const bakiye = gs.state.adAstraBalance || 0;
     const yaralilar = (gs.state.soldierUnits || [])
@@ -20,9 +21,10 @@ const ekran = {
       const yeter = ot >= bilgi.herbsNeeded && bakiye >= bilgi.herbAdaCost;
       const plan = !yeter && ot < bilgi.herbsNeeded ? gs.getQuickBuyPlan(`heal:${i}`) : null;
       return `<div class="ek-oge">
-        <div class="ek-oge-govde"><b>${esc(s.name)}</b><small>${esc(tam(bilgi.battleHp))} / ${esc(tam(bilgi.battleMaxHp))} can</small></div>
+        <div class="ek-oge-govde"><b>${esc(s.name)}</b><small>${esc(tam(bilgi.battleHp))} / ${esc(tam(bilgi.battleMaxHp))} can</small>
+          ${iyilesmeKiyasi({ saniye: bilgi.secondsRemaining, kendiOt: bilgi.passiveHerbNeeded, kendiAda: bilgi.passiveAdaCost, hemenOt: bilgi.herbsNeeded, hemenAda: bilgi.herbAdaCost })}</div>
         ${plan && plan.items.length
-    ? dugme({ e: 'hizli', metin: `⚡ Eksik otu al ve iyileştir · ~${tam(Math.ceil(plan.total + plan.extraAda))} ASTRA`, ton: 'iyi', veri: { asker: i }, devreDisi: !plan.ok })
+    ? dugme({ e: 'hizli', metin: `⚡ Eksik otu al ve iyileştir · ${hizliIyilestirBedeli(plan)}`, ton: 'iyi', veri: { asker: i }, devreDisi: !plan.ok })
     : dugme({ e: 'iyilestir', metin: `🌿 İyileştir (${tam(bilgi.herbsNeeded)} ot + ${astra(bilgi.herbAdaCost)} ASTRA)`, ton: 'iyi', veri: { asker: i }, devreDisi: !yeter })}
       </div>`;
     }).join('');
@@ -30,15 +32,15 @@ const ekran = {
     const toplu = gs.getAllHealCost();
     const hepsiPlan = toplu.count > 0 ? gs.getQuickBuyPlan('heal') : null;
     const hepsiMetin = hepsiPlan && hepsiPlan.items.length
-      ? `⚡ Eksik otu al ve hepsini iyileştir · ~${tam(Math.ceil(hepsiPlan.total + hepsiPlan.extraAda))} ASTRA`
+      ? `⚡ Eksik otu al ve hepsini iyileştir · ${hizliIyilestirBedeli(hepsiPlan)}`
       : `🌿 Hepsini iyileştir (${tam(toplu.totalHerbs)} ot + ${astra(toplu.totalAda)} ASTRA)`;
 
     const govde = yaralilar.length === 0
       ? uyari('Bütün askerler tam can.', 'iyi')
-      : `<div class="ek-liste">${satirlar}</div>${dugme({ e: 'hepsi', metin: hepsiMetin, ton: 'iyi', genis: true, devreDisi: !!hepsiPlan && hepsiPlan.items.length > 0 && !hepsiPlan.ok })}`;
+      : `<div class="ek-liste">${satirlar}</div>${yaralilar.length > 1 ? iyilesmeKiyasi({ saniye: toplu.passiveSeconds, kendiOt: toplu.passiveHerbs, kendiAda: toplu.passiveAda, hemenOt: toplu.totalHerbs, hemenAda: toplu.totalAda }) : ''}${dugme({ e: 'hepsi', metin: hepsiMetin, ton: 'iyi', genis: true, devreDisi: !!hepsiPlan && hepsiPlan.items.length > 0 && !hepsiPlan.ok })}`;
 
     const yollar = katli('İyileştirmenin üç yolu: hangisi neden var?',
-      not(`<b>1) Kendiliğinden:</b> hiçbir şey yapmazsan asker 24 saatte tam cana kavuşur; can başına az buğday ve çok az ASTRA harcanır. En ucuzu, ama beklersin.`)
+      not(`<b>1) Kendiliğinden:</b> hiçbir şey yapmazsan asker 24 saatte tam cana kavuşur; bu sırada ekrandaki can başına ${esc(P.herbPerHp ?? 0.1)} şifalı ot ve ${esc(P.adaPerHp ?? 0.002)} ASTRA harcanır (hemen iyileştirmenin beşte biri). En ucuzu, ama beklersin; ot ya da ASTRA biterse iyileşme durur.`)
       + not(`<b>2) Şifalı otla (burası):</b> hemen iyileştirmenin <b>tek</b> yolu. 1 şifalı ot ${esc(S.HP_PER_HERB ?? 2)} can iyileştirir, kullanılan ot yakılır; üstüne can başına ${esc(S.ADA_PER_HP ?? 0.01)} ASTRA ödersin. Şifalı otun bu ekrandan başka sürekli harcandığı yer yok; yakım burada kurulur ki ot ucuzlayıp değerini yitirmesin.`)
       + not(`<b>3) Parşömenle:</b> "Ordu İyileştirme Parşömeni" zindandan düşer ya da pazardan alınır; bir askere ${esc(S.PARSOMEN_CAN ?? 4)} can verir (2 şifalı otun karşılığı), ot ve ASTRA harcamaz. Pazar fiyatıyla ota göre pahalıdır, o yüzden büyük iyileştirmeler için ot daha ucuza gelir.`),
     { k: 'yollar' });

@@ -1,5 +1,5 @@
 // Realm of AdAstra — birden çok ekranın kullandığı birleşik parçalar (hızlı al kartı, kaynak simgesi, maliyet satırı).
-import { esc, dugme, kart, uyari, tam, astra } from './cekirdek.js';
+import { esc, dugme, kart, uyari, tam, astra, sure } from './cekirdek.js';
 import { resImg } from '../art.js';
 import { onay } from '../v3/bilesenler.js';
 
@@ -59,6 +59,19 @@ export async function hizliAl(b, kind) {
   }
   if (alinan) b.bildir(`⚡ ${alinan} hammadde pazardan alındı.`, 'success');
   return { alinan, hata: false };
+}
+
+// "Eksik otu al ve iyileştir" düğmesinin toplam bedeli: pazardan ot alımı + iyileştirme ASTRA'sı. Kışla, Şifahane ve Zindan AYNI yazıyı kullanır
+// (eskiden biri tam sayıya yuvarlıyor, öbürü kuruşlu yazıyordu: 6 ASTRA ile 5,51 ASTRA).
+export const hizliIyilestirBedeli = (plan) => `${astra((Number(plan.total) || 0) + (Number(plan.extraAda) || 0))} ASTRA`;
+
+// Kendiliğinden iyileşme ile hemen iyileştirmenin ne harcayacağı yan yana (canlı: ekran yenilendikçe kalan eksiğe göre güncellenir).
+// k: { saniye, kendiOt, kendiAda, hemenOt, hemenAda }. Ot sayıları yukarı yuvarlanır (kısmi ot harcanmaz, hemen iyileştirmede).
+export function iyilesmeKiyasi(k) {
+  const ot = (n) => tam(Math.ceil(Number(n) || 0));
+  return `<div class="ek-kucuk ek-kiyas">
+    <div>⏳ <b>Kendiliğinden</b> (${esc(sure((k.saniye || 0) * 1000))}): ~${esc(ot(k.kendiOt))} 🌿 şifalı ot + ${esc(astra(k.kendiAda))} ASTRA</div>
+    <div>⚡ <b>Hemen</b>: ${esc(ot(k.hemenOt))} 🌿 şifalı ot + ${esc(astra(k.hemenAda))} ASTRA</div></div>`;
 }
 
 // Şifalı otla "Hızlı iyileştir" (Kışla, Şifahane, Zindan, Krallık merkezi, Kolezyum): hemen iyileştirmenin tek yolu şifalı ottur.

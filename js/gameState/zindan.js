@@ -98,8 +98,9 @@ export const zindanYontemleri = {
       staminaCost: staminaBedeli,
       staminaOk: simdiki >= staminaBedeli,
       staminaShortfall: Math.max(0, staminaBedeli - simdiki),
-      // Günlük ödeme tavanı dolmuşsa harç alınmaz: ödül yok, giriş antrenmandır
-      fee: gun.nextNeedsFee && gun.budgetLeft > 0 ? this.getDungeonGateFee(level, isBoss) : 0
+      // Günlük ödeme tavanı dolmuşsa harç alınmaz ve harçlı giriş yapılamaz (antrenman girişi yoktur): fee 0 + budgetBlocked
+      fee: gun.nextNeedsFee && gun.budgetLeft > 0 ? this.getDungeonGateFee(level, isBoss) : 0,
+      budgetBlocked: !!gun.nextNeedsFee && !(gun.budgetLeft > 0)
     };
   },
 
@@ -107,7 +108,15 @@ export const zindanYontemleri = {
   beginDungeonEntry(level, isBoss = false, { payGateFee = false, soldierCount = 1 } = {}) {
     const kosul = this.getDungeonEntryTerms(level, isBoss, soldierCount);
     const sayac = this.state.dailyCounters;
-    const harcOdenecek = kosul.nextNeedsFee && payGateFee && kosul.fee > 0;
+    // Antrenman girişi YOKTUR (18 Ekim 2026): günlük harçsız haklar bitince girmenin tek yolu kapı harcıdır; ödenmezse ya da kasanın günlük
+    // ödeme bütçesi dolmuşsa giriş reddedilir (stamina düşmez, giriş sayılmaz).
+    if (kosul.nextNeedsFee && kosul.budgetBlocked) {
+      return { success: false, rewarded: false, fee: 0, budgetBlocked: true, message: '🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz. Haklar ve bütçe her gece 00:00\'da (TSİ) yenilenir.' };
+    }
+    if (kosul.nextNeedsFee && !payGateFee) {
+      return { success: false, rewarded: false, fee: kosul.fee, needsFee: true, message: `Günlük harçsız girişlerin bitti: girmek için kapı harcı (${kosul.fee} ASTRA) ödemelisin.` };
+    }
+    const harcOdenecek = kosul.nextNeedsFee;
     if (harcOdenecek && (this.state.adAstraBalance || 0) < kosul.fee) {
       return { success: false, rewarded: false, fee: kosul.fee, message: `Kapı harcı için ${kosul.fee} ASTRA gerekli.` };
     }
@@ -125,7 +134,7 @@ export const zindanYontemleri = {
         message: `🎟️ Ödüllü giriş (${sayac.dungeonRuns}/${kosul.freeTotal})${kosul.nextWeaponWear ? '' : ' · eşyaların aşınmaz'}`
       };
     }
-    if (harcOdenecek) {
+    {
       this.state.adAstraBalance -= kosul.fee;
       this._onAdaSpent(kosul.fee);
       // Harcın oranı kadarı doğrudan zindan kasasına, kalanı her harcama gibi dağıtılır (oran RealmRates'ten; varsayılan %100)
@@ -136,8 +145,6 @@ export const zindanYontemleri = {
       this.saveState();
       return { ...ortak, rewarded: true, fee: kosul.fee, message: `🚪 Kapı harcı ödendi (-${kosul.fee} ASTRA, zindan kasasına)` };
     }
-    this.saveState();
-    return { ...ortak, rewarded: false, fee: 0, message: '🏋️ Antrenman girişi: yalnızca deneyim kazanılır' };
   },
 
   // ── 3. Savaş ─────────────────────────────────────────────────────────────
@@ -184,7 +191,7 @@ export const zindanYontemleri = {
 
     if (sonuc.victory) {
       this.clearMonsterHp(monster.level);
-      const ganimet = this.addDungeonXpAndDrops(monster.level, boss, { rewarded: entry.rewarded });
+      const ganimet = this.addDungeonXpAndDrops(monster.level, boss);
       sonuc.adaReward = ganimet.adAstraGained || 0;
       this._zindanKazanciYaz(sonuc.adaReward);   // Fatih Ödülü hesabında yol boyu geri kazanım
       if (monster.level === UST_SEVIYE) sonuc.fatihOdulu = this._fatihOduluVer();   // ilk 18. kat zaferinde ödenir (hesap başına bir kez: yüksek modlarda yeniden ödenmez)
@@ -264,8 +271,8 @@ export const zindanYontemleri = {
 
   // ── 4. Ganimet ───────────────────────────────────────────────────────────
   // Zindan canavarı yenildiğinde deneyim, ASTRA (zindan kasasından) ve şansa bağlı ganimet dağıtır.
-  // rewarded=false: antrenman girişi, yalnızca deneyim. Zar atma sırası (parça, kutu, eser, parşömen) sabittir.
-  addDungeonXpAndDrops(level, isBoss = false, { rewarded = true } = {}) {
+  // Her giriş ödüllüdür (antrenman girişi 18 Ekim 2026'da kaldırıldı). Zar atma sırası (parça, kutu, eser, parşömen) sabittir.
+  addDungeonXpAndDrops(level, isBoss = false) {
     const seviye = seviyeSinirla(level);
     const taban = this.getDungeonBaseReward(seviye, isBoss);
     const buyukBoss = taban.isMajorBoss;
@@ -274,10 +281,6 @@ export const zindanYontemleri = {
     const dusme = modAyar(this.state.dungeonMode).dusmeCarpani;   // mod çarpanı: parça, kutu, eser ve parşömen şansı (üst sınırlar korunur)
 
     this.addXp(taban.xp);
-    if (!rewarded) {
-      this.saveState();
-      return { success: true, trainingOnly: true, xpGained: taban.xp, adAstraGained: 0, fragmentsGained: 0, boxGained: 0, artifactDiscovered: null, scrollGained: null };
-    }
 
     // Kasa bir günde en fazla bakiyesinin %1'ini öder; çekilen tam miktar oyuncuya gider (yuvarlama yok)
     const gun = this.getDungeonDayStatus();

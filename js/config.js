@@ -79,7 +79,7 @@ export const GAME_CONFIG = {
   // kullanımı var, şifalı otun tekrarlanan tek harcaması burasıdır). 1 ot HP_PER_HERB can iyileştirir ve yakılır; ASTRA payı
   // can başına ADA_PER_HP (× oyun içi fiyat çarpanı), harcama gibi dağıtılır. 5'ten 2'ye inmesi aynı can için 2,5 kat ot yakar:
   // scripts/model/hammadde_kullanim.mjs'te şifalı ot talebi / tam üretim Sv.5'te 0,58 → 0,64, Sv.10'da 0,48 → 0,54 (hedef bant
-  // 0,45–0,95). Kendiliğinden (24 saat) iyileşme buğdayla kalır (SOLDIER_PASSIVE_HEAL).
+  // 0,45–0,95). Kendiliğinden (24 saat) iyileşme de şifalı otladır ama beş kat ucuzdur (SOLDIER_PASSIVE_HEAL).
   // PARSOMEN_CAN: Ordu İyileştirme Parşömeninin ekrandaki (savaş ölçeği) can iyileştirmesi = 2 şifalı otun karşılığı, ASTRA harcamadan.
   // Pazar fiyatı (0,30) bu iyileştirmeyi ota göre pahalı yapar; amaç hemen iyileştirmenin ana yolunun şifalı ot (yakım) kalması.
   SIFAHANE: { HP_PER_HERB: 2, ADA_PER_HP: 0.01, PARSOMEN_CAN: 4 },
@@ -431,13 +431,14 @@ export const GAME_CONFIG = {
   SOLDIER_HP_PER_LEVEL: 25,           // Her seviye atlayışta +25 HP
   SOLDIER_ATK_PER_LEVEL: 6,           // Her seviye atlayışta +6 ATK
 
-  // 24 Saatlik Otomatik Asker Doyurma (Pasif İyileşme) Kuralı:
-  // 24 saat (1440 dk / 86400 sn) içinde asker kendi kendini otomatik iyileştirirken:
-  // Her 1 HP için: 0.30 Buğday + 0.10 ASTRA tüketilir. Yetersiz bakiye veya buğdayda iyileşme durdurulur.
+  // 24 Saatlik Kendiliğinden (Pasif) İyileşme Kuralı (18 Ekim 2026'dan beri şifalı otla, buğdayla değil):
+  // 24 saat (86400 sn) içinde asker kendi kendini iyileştirirken EKRANDA GÖRÜNEN her can için herbPerHp şifalı ot (yakılır) + adaPerHp
+  // ASTRA harcanır. Hemen iyileştirme (SIFAHANE) 1 can için 1/HP_PER_HERB = 0,5 ot + 0,01 ASTRA: bekleyen beş kat az öder.
+  // Ot ya da ASTRA biterse iyileşme eldekinin yettiği kadar sürer, sonra durur.
   SOLDIER_PASSIVE_HEAL: {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
-    wheatPerHp: 0.30,             // 24 saatte 1 HP başına 0.30 Buğday
-    adaPerHp: 0.001               // 24 saatte 1 HP başına 0.001 ASTRA (v2 ölçekli)
+    herbPerHp: 0.1,               // ekrandaki 1 can için 0,1 şifalı ot (hemen iyileştirmenin beşte biri)
+    adaPerHp: 0.002               // ekrandaki 1 can için 0,002 ASTRA (hemen iyileştirmenin beşte biri)
   },
 
   // =========================================================================
@@ -670,7 +671,7 @@ export const GAME_CONFIG = {
     //  • Her girişte stamina harcanır.
     //  • 1. giriş: eşyalar aşınmaz.
     //  • 2.–5. giriş: harçsız ödüllü giriş; her askerin rastgele bir eşyası aşınır.
-    //  • 6. girişten itibaren: kapı harcı ödenirse ödüllü, ödenmezse yalnız deneyim veren antrenman.
+    //  • 6. girişten itibaren: yalnız kapı harcı ödenerek girilir (ödüllü); harç ödenmezse giriş yoktur (antrenman girişi 18 Ekim 2026'da kaldırıldı).
     DAILY_RUNS: 5,                    // harçsız ödüllü giriş sayısı
     FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde eşyalar aşınmaz
     // Eşya aşınma algoritması (18 Ekim 2026): savaşa giren HER askerin takılı eşyalarından, savaş başına ortalama
@@ -1604,6 +1605,16 @@ export const GAME_CONFIG = {
       date: '18 Ekim 2026',
       changes: [
         `Ordu İyileştirme Parşömeni artık bir askere ekrandaki canla 4 can veriyor (2 şifalı otun karşılığı). Eskiden aynı parşömen, 8 kat ucuza gelen bir iyileştirme yolu açıyordu ve şifalı otun yakılma amacını zayıflatıyordu; şimdi büyük iyileştirmelerde şifalı ot daha ucuz, parşömen ise ot ve ASTRA harcamadan tek dokunuşluk küçük bir destek. Elindeki parşömenler silinmez.`
+      ]
+    },
+    {
+      version: 'v1.62',
+      title: '🌿 Kendiliğinden İyileşme Şifalı Otla, Antrenman Girişi Kalktı',
+      date: '18 Ekim 2026',
+      changes: [
+        `Kendiliğinden iyileşme de artık şifalı otla: askerler yine 24 saatte tam cana kavuşur, ama bu sırada ekrandaki her can için 0,1 şifalı ot ve 0,002 ASTRA harcanır (hemen iyileştirmenin tam beşte biri; buğday artık harcanmaz). Ot ya da ASTRA biterse iyileşme eldekinin yettiği kadar sürüp durur. Kışla'da askerin sayfasında ve Şifahane'de "Kendiliğinden" ile "Hemen" seçeneklerinin ne harcayacağı yan yana ve canlı yazılıyor.`,
+        `Düzeltme: "Eksik otu al ve iyileştir" düğmesindeki tutar Kışla'da 5,51 ASTRA, Şifahane'de 6 ASTRA görünüyordu (aynı sayı, farklı yuvarlama). Artık Kışla, Şifahane ve Zindan aynı yazıyla aynı tutarı gösteriyor.`,
+        `Antrenman girişi kaldırıldı: günlük harçsız girişlerin bitince zindana girmenin tek yolu kapı harcı. Harç ödenmezse giriş yok (stamina düşmez, giriş sayılmaz); harçlı giriş her zaman ödüllüdür. Kasanın günlük ödeme bütçesi dolduysa yeni giriş ertesi güne kalır. Savaşa hazırlık ekranındaki kapı harcı kutusu kalktı: harç, savaşa başlarken düğmede yazan tutarla ödenir.`
       ]
     }
   ],

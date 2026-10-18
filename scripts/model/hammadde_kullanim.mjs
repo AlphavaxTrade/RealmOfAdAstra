@@ -113,11 +113,11 @@ export function haftalikOlcum(seviye) {
     for (const k of K) t[k] += Math.floor((kap[k] || 0) / 2) / 3;
   });
 
-  // 8) Asker iyileştirme: günde 600 can kaybı; hemen iyileştirilen pay %60 (yalnız şifalı otla, 1 ot = SIFAHANE.HP_PER_HERB can), kalanı kendiliğinden (buğdayla)
+  // 8) Asker iyileştirme: günde 600 can kaybı; hemen iyileştirilen pay %60 (şifalı otla, 1 ot = SIFAHANE.HP_PER_HERB can), kalanı kendiliğinden (yine şifalı otla, can başına SOLDIER_PASSIVE_HEAL.herbPerHp ot)
   kalem('asker iyileştirme', (t) => {
     const haftalikCan = 600 * 7;
     t.herb += (haftalikCan * 0.6) / (GAME_CONFIG.SIFAHANE.HP_PER_HERB ?? 5);
-    t.wheat += haftalikCan * 0.4 * (GAME_CONFIG.SOLDIER_PASSIVE_HEAL.wheatPerHp ?? 0.3);
+    t.herb += haftalikCan * 0.4 * (GAME_CONFIG.SOLDIER_PASSIVE_HEAL.herbPerHp ?? 0.1);
   });
 
   // 9) Konsey: ortak kasa payı (çıkarılanın %5'i) + gönüllü katkı (haftalık hakkın %15'i)

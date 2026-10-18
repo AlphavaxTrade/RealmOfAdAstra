@@ -47,11 +47,11 @@ try {
     const sim = createKasa({ db, accounts, cfg: { ...base, testMode: true }, log: { warn() {} } });
     E.setKasa(sim);
     assert.ok(sim.enabled && sim.simulated);
-    // Yaralı asker, buğday var; kazanılmış bakiye 3 ASTRA; kasada 1000 ASTRA
+    // Yaralı asker, şifalı ot var; kazanılmış bakiye 3 ASTRA; kasada 1000 ASTRA
     E.withPlayer(pid, gs => {
       gs.state.adAstraBalance = 20000; gs.buySoldierUnit();
       gs.state.adAstraBalance = 0.03; gs.state.lockedAda = 0;   // v2 ölçeği: iyileşme 0,001 ASTRA/HP
-      gs.state.inventory.wheat = 5000;
+      gs.state.inventory.herb = 5000;
       gs.state.soldierUnits[0].hp = 10;
     });
     sim.simulateDeposit(pid, 1000, 0);

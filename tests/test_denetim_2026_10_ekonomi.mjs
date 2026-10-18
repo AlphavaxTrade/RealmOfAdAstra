@@ -207,13 +207,15 @@ const asker = (gs, n = 1, seviye = 8) => {
   let toplam = 0;
   for (let i = 0; i < 12; i++) { const g = gs.addDungeonXpAndDrops(9, true, { rewarded: true }); toplam += g.adAstraGained; }
   assert.ok(Math.abs(toplam - taban) < 0.01, `günlük toplam tavanı aşmamalı: ${toplam} / ${taban}`);
-  // tavan dolduktan sonra harç alınmaz (ödül yok), giriş antrenmandır
+  // tavan dolduktan sonra harç alınmaz ve harçlı giriş de yapılamaz (antrenman girişi yok)
   gs.getDailyCounters().dungeonRuns = 5;                 // harçsız haklar bitti
   const kosul = gs.getDungeonEntryTerms(9, true, 1);
   assert.equal(kosul.nextNeedsFee, true);
   assert.equal(kosul.fee, 0, 'ödeme tavanı doluyken harç alınmaz');
+  assert.equal(kosul.budgetBlocked, true, 'bütçe dolu: giriş engelli');
   const giris = gs.beginDungeonEntry(9, true, { payGateFee: true, soldierCount: 1 });
-  assert.equal(giris.rewarded, false);
+  assert.equal(giris.success, false, 'ödeme bütçesi doluyken yeni giriş yok');
+  assert.equal(giris.budgetBlocked, true);
   ok(`EK-05: harcanan = 0 iken günlük zindan geliri ${toplam.toFixed(1)} (40 giriş eski: ~777); dolunca harç alınmıyor`);
 }
 {

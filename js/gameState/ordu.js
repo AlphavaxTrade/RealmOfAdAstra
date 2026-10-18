@@ -7,8 +7,8 @@ import { askerHakki, katOf } from '../economy/ordu-hakki.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const SET_ESIKLERI = [5, 4, 2];   // kaç parça takılıysa hangi set bonusu (en yüksek eşik önce)
-const BUGDAY_YEDEK = 0.30;        // pasif iyileşmede 1 HP için buğday
-const ASTRA_YEDEK = 0.10;         // pasif iyileşmede 1 HP için ASTRA
+const OT_YEDEK = 0.10;            // pasif iyileşmede ekrandaki 1 can için şifalı ot
+const ASTRA_YEDEK = 0.002;        // pasif iyileşmede ekrandaki 1 can için ASTRA
 const TAM_IYILESME_SN = 86400;    // pasif iyileşme: tam can 24 saat
 
 // Kırılmamış (dayanıklılığı bitmemiş) eşya mı
@@ -161,8 +161,9 @@ export const orduYontemleri = {
 
   // ── İyileşme ───────────────────────────────────────────────────────────
   // Bir askerin iyileşme bilgisi (HP, kalan süre, bedeller); arayüz buna dayanır.
-  // Pasif (kendiliğinden): 24 saatte tam can, 1 HP = 0,30 buğday + 0,001 ASTRA. Hemen iyileştirme yalnız şifalı otla
-  // (getHerbHealInfo, koyVeKonsey.js). Buradaki can TABAN ölçektedir (kayıtlı can); ekranda görünen savaş ölçeği getSoldierBattleStart'tadır.
+  // Pasif (kendiliğinden): 24 saatte tam can; bedel EKRANDA GÖRÜNEN can üzerinden, şifalı otla (SOLDIER_PASSIVE_HEAL.herbPerHp ot + adaPerHp
+  // ASTRA, her can için). Hemen iyileştirme (getHerbHealInfo, koyVeKonsey.js) aynı ölçekte ama beş kat pahalı: bekleyen az öder.
+  // Kayıtlı can (asker.hp) TABAN ölçektedir; ekranda görünen savaş ölçeği getSoldierBattleStart'tadır.
   getSoldierHealInfo(soldierIndex) {
     const asker = (this.state.soldierUnits || [])[soldierIndex];
     if (!asker) return null;
@@ -172,14 +173,16 @@ export const orduYontemleri = {
     const hp = Math.min(maxHp, Math.max(0, asker.hp != null ? asker.hp : maxHp));
     const eksik = Math.max(0, maxHp - hp);
     const carpan = this.getAdaPriceMultiplier();
+    const savas = this.getSoldierBattleStart(soldierIndex);
+    const eksikSavas = eksik > 0 ? Math.max(1, savas.maxHp - savas.hp) : 0;
 
-    const pasifBugday = pasif.wheatPerHp != null ? pasif.wheatPerHp : BUGDAY_YEDEK;
+    const pasifOt = pasif.herbPerHp != null ? pasif.herbPerHp : OT_YEDEK;
     const pasifAstra = (pasif.adaPerHp != null ? pasif.adaPerHp : ASTRA_YEDEK) * carpan;
 
     const tamIyilesmeSn = pasif.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
-    const stokBugday = Math.floor(this.state.inventory?.wheat || 0);
+    const stokOt = Number(this.state.inventory?.herb) || 0;
     const bakiye = Number(this.state.adAstraBalance) || 0;   // ASTRA tam sayıya yuvarlanmaz
-    const duraklatildi = eksik > 0 && (stokBugday < pasifBugday || bakiye < pasifAstra);
+    const duraklatildi = eksik > 0 && (stokOt < pasifOt || bakiye < pasifAstra);
 
     return {
       hp: Math.floor(hp),
@@ -188,81 +191,68 @@ export const orduYontemleri = {
       hpPct: Math.floor((hp / maxHp) * 100),
       isFull: eksik <= 0,
       isPaused: duraklatildi,
-      pauseMessage: duraklatildi ? 'Hesabınızda yeteri kadar ASTRA veya Buğday yok! Askerlerin iyileşmesi durduruldu.' : null,
-      passiveWheatRate: pasifBugday,
+      pauseMessage: duraklatildi ? 'Hesabınızda yeteri kadar şifalı ot veya ASTRA yok! Askerlerin kendiliğinden iyileşmesi durduruldu.' : null,
+      passiveHerbRate: pasifOt,
       passiveAdaRate: pasifAstra,
-      passiveWheatNeeded: Math.round(eksik * pasifBugday * 100) / 100,
-      passiveAdaCost: Math.round(eksik * pasifAstra * 100) / 100,
+      passiveHerbNeeded: Math.round(eksikSavas * pasifOt * 100) / 100,
+      passiveAdaCost: Math.round(eksikSavas * pasifAstra * 1000) / 1000,
       secondsRemaining: eksik > 0 ? Math.ceil((eksik / maxHp) * tamIyilesmeSn) : 0,
-      wheatInStock: stokBugday,
+      herbInStock: Math.floor(stokOt),
       adaInBalance: bakiye
     };
   },
 
-  // Yaralı asker var ama buğday ya da ASTRA yetmediği için iyileşme duruyor mu?
+  // Yaralı asker var ama şifalı ot ya da ASTRA yetmediği için iyileşme duruyor mu?
   isArmyPassiveHealBlocked() {
     if (!(this.state.soldierUnits || []).some(yarali)) return false;
-    const bugday = this.state.inventory?.wheat || 0;
-    const astra = this.state.adAstraBalance || 0;
-    return bugday <= 0 || astra <= 0 || bugday < BUGDAY_YEDEK || astra < ASTRA_YEDEK;
+    const pasif = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
+    const ot = Number(this.state.inventory?.herb) || 0;
+    const astra = Number(this.state.adAstraBalance) || 0;
+    return ot < (pasif.herbPerHp ?? OT_YEDEK) || astra < (pasif.adaPerHp ?? ASTRA_YEDEK);
   },
 
-  // Pasif iyileşme: her asker zamanla dolar; harcanan buğday yakılır, ASTRA hazineye dağıtılır.
-  // Buğday ya da ASTRA yetmiyorsa süreç durur.
+  // Pasif iyileşme: her asker zamanla dolar; harcanan şifalı ot yakılır, ASTRA hazineye dağıtılır. Bedel ekrandaki can başınadır
+  // (1 can = herbPerHp ot + adaPerHp ASTRA). Ot ya da ASTRA yarıda biterse eldekinin yettiği kadar iyileşilir, sonra süreç durur.
   processSoldierPassiveHealing(deltaSeconds) {
-    if (!deltaSeconds || deltaSeconds <= 0) return { wheatRanOut: false, isPaused: false };
+    if (!deltaSeconds || deltaSeconds <= 0) return { herbRanOut: false, isPaused: false };
 
     const cfg = GAME_CONFIG.SOLDIER_PASSIVE_HEAL || {};
     const tamIyilesmeSn = cfg.FULL_HEAL_SECONDS || TAM_IYILESME_SN;
-    const bugdayHp = cfg.wheatPerHp != null ? cfg.wheatPerHp : BUGDAY_YEDEK;
-    const astraHp = cfg.adaPerHp != null ? cfg.adaPerHp : ASTRA_YEDEK;
+    const otHp = cfg.herbPerHp != null ? cfg.herbPerHp : OT_YEDEK;
+    const astraHp = (cfg.adaPerHp != null ? cfg.adaPerHp : ASTRA_YEDEK) * this.getAdaPriceMultiplier();
     const asker = this.state.soldierUnits || [];
-
-    if ((this.state.inventory?.wheat || 0) <= 0 || (this.state.adAstraBalance || 0) <= 0) {
-      const yaraliVar = asker.some(yarali);
-      if (yaraliVar) {
-        this.state.isPassiveHealPaused = true;
-        this.state.passiveHealPauseReason = 'insufficient_resources';
-      }
-      return { wheatRanOut: true, adaRanOut: true, isPaused: yaraliVar };
-    }
+    if (!asker.some(yarali)) return { herbRanOut: false, isPaused: false };
 
     let degisti = false;
-    let yaraliVar = false;
     let harcananAstra = 0;
 
-    for (const s of asker) {
+    asker.forEach((s, i) => {
       const maxHp = s.maxHp || 100;
       const mevcutHp = s.hp != null ? s.hp : maxHp;
-      if (mevcutHp >= maxHp) continue;
-      yaraliVar = true;
+      if (mevcutHp >= maxHp) return;
 
-      const kazanilan = Math.min(maxHp - mevcutHp, (maxHp / tamIyilesmeSn) * deltaSeconds);
-      const bugdayBedeli = kazanilan * bugdayHp;
-      const astraBedeli = kazanilan * astraHp;
-      const bugday = this.state.inventory?.wheat || 0;
-      const bakiye = this.state.adAstraBalance || 0;
+      const kazanilan = Math.min(maxHp - mevcutHp, (maxHp / tamIyilesmeSn) * deltaSeconds);   // taban ölçek
+      const olcek = this.getSoldierBattleStart(i).maxHp / maxHp;                              // taban → ekrandaki can
+      const ekranKazanc = kazanilan * olcek;
+      const ot = Number(this.state.inventory?.herb) || 0;
+      const bakiye = Number(this.state.adAstraBalance) || 0;
+      const yeterOran = Math.min(1, otHp > 0 ? ot / (ekranKazanc * otHp) : 1, astraHp > 0 ? bakiye / (ekranKazanc * astraHp) : 1);
+      if (!(yeterOran > 0) || !(kazanilan > 0)) { this.state.isPassiveHealPaused = true; this.state.passiveHealPauseReason = 'insufficient_resources'; return; }
 
-      if (bugdayBedeli > bugday || astraBedeli > bakiye) {
-        this.state.isPassiveHealPaused = true;
-        this.state.passiveHealPauseReason = 'insufficient_resources';
-        continue;
-      }
-      if (!(kazanilan > 0)) continue;
-
-      // Saniyelik adımlarda kazanç 0,01'in altında kalabilir: 0,01'e yuvarlamak canı sabit bırakıp bedeli yine kesiyordu (hayalet yakım);
-      // can, buğday ve ASTRA aynı hassasiyette (1e-6) tutulur
-      this.state.inventory.wheat = Math.max(0, Math.round((bugday - bugdayBedeli) * 1e6) / 1e6);
-      this.burnResource('wheat', bugdayBedeli);
-      // 0,001 ASTRA/HP: kuruşa yuvarlamak bedeli siliyordu, bu yüzden 6 ondalık
+      const gercek = kazanilan * yeterOran;
+      const otBedeli = gercek * olcek * otHp;
+      const astraBedeli = gercek * olcek * astraHp;
+      // Çok küçük adımlarda yuvarlama canı sabit bırakıp bedeli yine kesiyordu (hayalet yakım): can, ot ve ASTRA aynı hassasiyette (1e-6)
+      this.state.inventory.herb = Math.max(0, Math.round((ot - otBedeli) * 1e6) / 1e6);
+      this.burnResource('herb', otBedeli);
       this.state.adAstraBalance = Math.max(0, Math.round((bakiye - astraBedeli) * 1e6) / 1e6);
       this._onAdaSpent(bakiye - this.state.adAstraBalance);
       harcananAstra += bakiye - this.state.adAstraBalance;
-      s.hp = Math.min(maxHp, Math.round((mevcutHp + kazanilan) * 1e6) / 1e6);
+      s.hp = Math.min(maxHp, Math.round((mevcutHp + gercek) * 1e6) / 1e6);
       degisti = true;
-    }
+    });
 
-    if (yaraliVar && !this.isArmyPassiveHealBlocked()) this.state.isPassiveHealPaused = false;
+    if (!this.isArmyPassiveHealBlocked()) this.state.isPassiveHealPaused = false;
 
     // İyileşmede harcanan ASTRA her harcama gibi dağıtılır; küçük tutarlar birikir (her karede yazmamak için)
     if (harcananAstra > 0) {
@@ -277,7 +267,7 @@ export const orduYontemleri = {
 
     if (degisti) this.requestSave();
     const engelli = this.isArmyPassiveHealBlocked();
-    return { wheatRanOut: engelli, isPaused: engelli };
+    return { herbRanOut: engelli, isPaused: engelli };
   },
 
   // ── Kuşanma ────────────────────────────────────────────────────────────

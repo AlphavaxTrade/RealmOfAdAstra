@@ -205,9 +205,7 @@ export const seferYontemleri = {
 
     const dakika = this.getExpeditionDurationMinutes();
     const saat = this.getExpeditionDurationHours();
-    let saniye = this.getExpeditionDurationSeconds();
-    // Taverna 1,5x hız güçlendirmesi
-    if (this.isBuffActive(`speed_${nodeId}`)) saniye = Math.floor(saniye / 1.5);
+    const saniye = this.getExpeditionDurationSeconds();
 
     const simdi = this._now();
     this.state.stamina -= staminaBedeli;

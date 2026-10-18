@@ -32,9 +32,9 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(healInfo.secondsRemaining, 43200, 'Kalan süre 43200 saniye (12 saat) olmalı');
   });
 
-  it('Hesapta yeterli Buğday ve ASTRA varken pasif iyileşme normal çalışmalı', () => {
+  it('Hesapta yeterli şifalı ot ve ASTRA varken pasif iyileşme normal çalışmalı', () => {
     gs.state.soldierUnits[0].hp = 50;
-    gs.state.inventory.wheat = 100;
+    gs.state.inventory.herb = 100;
     gs.state.adAstraBalance = 100;
 
     const prevHp = gs.state.soldierUnits[0].hp;
@@ -45,27 +45,27 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(gs.isArmyPassiveHealBlocked(), false, 'Ordu iyileşmesi bloke olmamalı');
   });
 
-  it('Hesapta Buğday YOKSA (0 Buğday) iyileşme süreci DERHAL durdurulmalı ve can artmamalı', () => {
+  it('Hesapta şifalı ot YOKSA (0 ot) iyileşme süreci DERHAL durdurulmalı ve can artmamalı', () => {
     gs.state.soldierUnits[0].hp = 50;
-    gs.state.inventory.wheat = 0; // Buğday bitti!
+    gs.state.inventory.herb = 0; // Şifalı ot bitti!
     gs.state.adAstraBalance = 100;
 
     const prevHp = gs.state.soldierUnits[0].hp;
     const res = gs.processSoldierPassiveHealing(3600); // 1 saat geçse bile
 
-    assert.strictEqual(res.isPaused, true, 'Buğday yokken iyileşme süreci durdurulmalı');
-    assert.strictEqual(gs.state.soldierUnits[0].hp, prevHp, 'Buğday yokken kesinlikle can artmamalı');
+    assert.strictEqual(res.isPaused, true, 'Şifalı ot yokken iyileşme süreci durdurulmalı');
+    assert.strictEqual(gs.state.soldierUnits[0].hp, prevHp, 'Şifalı ot yokken kesinlikle can artmamalı');
     assert.strictEqual(gs.isArmyPassiveHealBlocked(), true, 'Ordu iyileşmesi bloke olarak işaretlenmeli');
 
     const healInfo = gs.getSoldierHealInfo(0);
     assert.strictEqual(healInfo.isPaused, true, 'Asker heal info isPaused true olmalı');
-    assert.ok(healInfo.pauseMessage.toLowerCase().includes('yeteri kadar astra veya buğday yok'), 'Net uyarı mesajı bulunmalı');
-    assert.ok(healInfo.pauseMessage.toLowerCase().includes('askerlerin iyileşmesi durduruldu'), 'Durduruldu mesajı içermeli');
+    assert.ok(healInfo.pauseMessage.toLowerCase().includes('yeteri kadar şifalı ot veya astra yok'), 'Net uyarı mesajı bulunmalı');
+    assert.ok(healInfo.pauseMessage.toLowerCase().includes('iyileşmesi durduruldu'), 'Durduruldu mesajı içermeli');
   });
 
   it('Hesapta ASTRA YOKSA (0 ASTRA) iyileşme süreci DERHAL durdurulmalı ve can artmamalı', () => {
     gs.state.soldierUnits[0].hp = 50;
-    gs.state.inventory.wheat = 100;
+    gs.state.inventory.herb = 100;
     gs.state.adAstraBalance = 0; // ASTRA bitti!
 
     const prevHp = gs.state.soldierUnits[0].hp;
@@ -79,9 +79,9 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(healInfo.isPaused, true, 'Asker heal info isPaused true olmalı');
   });
 
-  it('Buğday ve ASTRA tekrar temin edildiğinde iyileşme otomatik olarak devam etmeli', () => {
+  it('Şifalı ot ve ASTRA tekrar temin edildiğinde iyileşme otomatik olarak devam etmeli', () => {
     gs.state.soldierUnits[0].hp = 50;
-    gs.state.inventory.wheat = 50;
+    gs.state.inventory.herb = 50;
     gs.state.adAstraBalance = 50;
 
     const prevHp = gs.state.soldierUnits[0].hp;
@@ -90,5 +90,21 @@ describe('24 Saatlik Pasif İyileşme ve Kaynak Yetersizliğinde Durdurma & Uyar
     assert.strictEqual(res.isPaused, false, 'Kaynaklar gelince iyileşme devam etmeli');
     assert.ok(gs.state.soldierUnits[0].hp > prevHp, 'Can tekrar artmaya başlamalı');
     assert.strictEqual(gs.isArmyPassiveHealBlocked(), false, 'Bloke durumu kalkmalı');
+  });
+
+  it('Ot yarıda biterse eldeki otun yettiği kadar iyileşir, ot ekrandaki can başına harcanır ve yakılır', () => {
+    const asker = gs.state.soldierUnits[0];
+    asker.hp = 20; asker.maxHp = 100;
+    gs.state.adAstraBalance = 100;
+    const P = GAME_CONFIG.SOLDIER_PASSIVE_HEAL;
+    const olcek = gs.getSoldierBattleStart(0).maxHp / 100;
+    gs.state.inventory.herb = 2;   // 3600 sn'de ~4,2 taban can = ~4,2 ekran can iyileşir (0,42 ot); az ot için bunu zorlamak üzere 1 saat yerine 10 saat
+    const yakilan0 = Object.values(gs.state.burnedResources || {}).length ? (gs.state.burnedResources.herb || 0) : 0;
+    gs.processSoldierPassiveHealing(10 * 3600);
+    const kazanc = asker.hp - 20;
+    assert.ok(kazanc > 0, 'kısmen iyileşmeli');
+    const harcanan = 2 - gs.state.inventory.herb;
+    assert.ok(Math.abs(harcanan - kazanc * olcek * P.herbPerHp) < 1e-4, `ot ekrandaki can başına harcanmalı: ${harcanan} vs ${kazanc * olcek * P.herbPerHp}`);
+    assert.ok(((gs.state.burnedResources || {}).herb || 0) - yakilan0 > 0, 'harcanan ot yakılmalı');
   });
 });

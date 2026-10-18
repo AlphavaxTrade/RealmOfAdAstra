@@ -97,16 +97,22 @@ export const topluYontemleri = {
 
   // Bütün yaralıları şifalı otla iyileştirmenin toplam bedeli (healAllWithHerb ile aynı hesap): ot, ASTRA ve yaralı sayısı
   getAllHealCost() {
-    const toplam = { totalHerbs: 0, totalAda: 0, count: 0 };
+    // passiveHerbs / passiveAda / passiveSeconds: aynı yaralıların KENDİLİĞİNDEN iyileşmesinin bedeli (şifalı ot + ASTRA) ve en uzun süresi
+    const toplam = { totalHerbs: 0, totalAda: 0, count: 0, passiveHerbs: 0, passiveAda: 0, passiveSeconds: 0 };
     const sayi = (this.state.soldierUnits || []).length;
     for (let i = 0; i < sayi; i++) {
       const bilgi = this.getHerbHealInfo(i);
       if (!bilgi || !(bilgi.missingHp > 0)) continue;
       toplam.totalHerbs += bilgi.herbsNeeded;
       toplam.totalAda += bilgi.herbAdaCost;
+      toplam.passiveHerbs += bilgi.passiveHerbNeeded;
+      toplam.passiveAda += bilgi.passiveAdaCost;
+      toplam.passiveSeconds = Math.max(toplam.passiveSeconds, bilgi.secondsRemaining || 0);
       toplam.count++;
     }
     toplam.totalAda = Math.round(toplam.totalAda * 1000) / 1000;
+    toplam.passiveAda = Math.round(toplam.passiveAda * 1000) / 1000;
+    toplam.passiveHerbs = Math.round(toplam.passiveHerbs * 100) / 100;
     return toplam;
   },
 

@@ -193,10 +193,10 @@
  {
   "adim": "gun 1",
   "oyuncu": [
-   "71827d6e739fe980",
-   "a22612b7815d2933"
+   "63e30506a649276c",
+   "c7932f8fcd99c2a6"
   ],
-  "dunya": "61735dde91b57538",
+  "dunya": "25d497df88a4e4bc",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
@@ -206,10 +206,10 @@
  {
   "adim": "gun 2",
   "oyuncu": [
-   "3520c064d7bc6643",
-   "175aa5221fd8e5a9"
+   "7423c6abcc4c918a",
+   "8b0d8750dac10c25"
   ],
-  "dunya": "687a347ab642110d",
+  "dunya": "0549e6984d57d0ed",
   "sonuc": [
    "claimAllHarvests:RED",
    "claimWeeklyUbi:RED",
@@ -219,10 +219,10 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "e74116d3a7f4784d",
-   "5bd7f48efc1ef1e6"
+   "b3e2d73ff8d09016",
+   "affb326c544fd615"
   ],
-  "dunya": "08f021ed5c0ea462",
+  "dunya": "feb177db39b95e62",
   "sonuc": [
    "claimAllHarvests:RED",
    "claimWeeklyUbi:ok",
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "85ddfcb38a3fc11d",
-   "7621ecf264071dc8",
+   "3b12e4d720f253fe",
+   "211a68e32f7b57e0",
    "ad938a4ed3096b27"
   ],
-  "dunya": "680a2ad387f6ef2f",
+  "dunya": "d0a6254843358ab5",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,11 +245,11 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "9d8245de1e439fd4",
-   "6808a4a1a76b4a9f",
+   "11b744e16ed0d4f9",
+   "026f9a466828a19b",
    "ad938a4ed3096b27"
   ],
-  "dunya": "cd96d407ff4ebedf",
+  "dunya": "6548300f4e8ae5de",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",

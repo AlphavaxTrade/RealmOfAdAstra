@@ -115,7 +115,7 @@ try {
   const P = '0x' + '1'.repeat(40);
   E.withPlayer(P, gs => {
     gs.state.adAstraBalance = 1000;
-    gs.state.inventory.wheat = 10000;
+    gs.state.inventory.herb = 10000;
     gs.state.soldierUnits = [gs.createSoldierUnit(1)];
     gs.state.soldierUnits[0].maxHp = 100;
     gs.state.soldierUnits[0].hp = 10;

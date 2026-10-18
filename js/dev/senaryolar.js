@@ -366,7 +366,7 @@ export const SENARYOLAR = [
   },
   {
     id: 'zindan-harc-ve-antrenman', kategori: 'zindan', ad: 'Günlük ödüllü haklar bitince kapı harcı istenir',
-    ne: 'Ödüllü haklar dolunca kapı harcı (ödülün %20\'si) istenir; harç ödenmezse giriş "antrenman" olur (ödülsüz, ASTRA harcanmaz); ödenirse harç zindan kasasına gider.',
+    ne: 'Ödüllü haklar dolunca kapı harcı (ödülün %20\'si) istenir; harç ödenmezse giriş yapılamaz (antrenman girişi yoktur, ASTRA harcanmaz); ödenirse giriş ödüllüdür ve harç zindan kasasına gider.',
     kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.setDungeonProgress(1); gs.setDevAdAstra(1000); const c = gs.getDailyCounters(); c.dungeonRuns = GAME_CONFIG.DUNGEON.DAILY_RUNS; c.dungeonEntries = GAME_CONFIG.DUNGEON.DAILY_RUNS; },
     calistir: (gs) => {
       const terimler = gs.getDungeonEntryTerms(1);
@@ -381,8 +381,8 @@ export const SENARYOLAR = [
     beklenen: [
       { ad: 'Ödüllü haklar bitti: harç isteniyor', tamam: (o, s, r) => r.terimler.nextNeedsFee === true },
       { ad: 'Harç = ödülün %20\'si (en az 0,01)', tamam: (o, s, r) => Math.abs(r.terimler.fee - r.beklenenHarc) < 1e-9 && r.terimler.fee > 0 },
-      { ad: 'Harçsız giriş antrenman: ödülsüz', tamam: (o, s, r) => r.antrenman.success === true && r.antrenman.entry.rewarded === false },
-      { ad: 'Antrenman ASTRA harcamadı', tamam: (o, s, r) => r.arada.astra === r.once.astra },
+      { ad: 'Harçsız giriş reddedildi (antrenman girişi yok)', tamam: (o, s, r) => r.antrenman.success === false },
+      { ad: 'Reddedilen giriş ASTRA harcamadı', tamam: (o, s, r) => r.arada.astra === r.once.astra },
       { ad: 'Harçlı giriş ödüllü', tamam: (o, s, r) => r.odemeli.success === true && r.odemeli.entry.rewarded === true },
       { ad: 'Harç tam tutarıyla ASTRA\'dan düştü', tamam: (o, s, r) => Math.abs((r.arada.astra - s.astra) - r.beklenenHarc) < 1e-6 },
       { ad: 'Harç zindan kasasına gitti', tamam: (o, s, r) => s.zindanKasasi - r.arada.zindanKasasi >= r.beklenenHarc - 1e-6 }

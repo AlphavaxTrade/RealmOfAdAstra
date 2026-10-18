@@ -35,7 +35,7 @@ function girisBasamaklari(dun) {
   for (let n = 1; n <= bedava; n++) {
     parcalar.push(etiket(`${n}. giriş · ${n === 1 ? 'aşınma yok' : 'silah −1'}`, kullanilan >= n ? 'iyi' : (kullanilan + 1 === n ? 'vurgu' : '')));
   }
-  parcalar.push(etiket(`${bedava + 1}+ · harçlı ya da antrenman`, kullanilan >= bedava ? 'vurgu' : ''));
+  parcalar.push(etiket(`${bedava + 1}+ · kapı harçlı`, kullanilan >= bedava ? 'vurgu' : ''));
   return `<div class="ek-etiketler">${parcalar.join('')}</div>`;
 }
 

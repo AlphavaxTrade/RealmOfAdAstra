@@ -3,7 +3,7 @@
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
 import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
-import { hizliIyilestir } from './bilesik.js';
+import { hizliIyilestir, hizliIyilestirBedeli, iyilesmeKiyasi } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
 import { PLAYER_SKILLS } from '../../combat.js';
 import * as K from '../kisla-kurallari.js';
@@ -148,11 +148,12 @@ function askerSayfasi(b, s, idx) {
       <div class="ek-cubuk-etiket"><span>Can</span><b class="ek-ton-${K.canTonu(heal.hpPct)}">${sayi(sv.hp)} / ${sayi(sv.maxHp)}</b></div>
       ${cubuk(heal.hpPct, { ton: K.canTonu(heal.hpPct) === 'kotu' ? 'kotu' : '' })}
       <small class="ek-kucuk">${heal.isFull ? 'Tam can'
-    : heal.isPaused ? 'İyileşme durdu: buğday ya da ASTRA yetersiz'
+    : heal.isPaused ? 'Kendiliğinden iyileşme durdu: şifalı ot ya da ASTRA yetersiz'
       : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</small>
+      ${heal.isFull || !ot ? '' : iyilesmeKiyasi({ saniye: heal.secondsRemaining, kendiOt: ot.passiveHerbNeeded, kendiAda: ot.passiveAdaCost, hemenOt: ot.herbsNeeded, hemenAda: ot.herbAdaCost })}
       ${heal.isFull ? '' : dugmeler(
     ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${astra(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
-    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ~${astra(otPlani.total + otPlani.extraAda)} ASTRA`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
+    otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ${hizliIyilestirBedeli(otPlani)}`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
     parsomen > 0 ? dugme({ e: 'parsomen', metin: `Parşömen (${sayi(parsomen)})` }) : ''
   )}
     </div>` : '';
@@ -247,7 +248,7 @@ function orduSekmesi(b, s) {
   const aramaBolumu = katli(`Ara, süz, sırala${n.yarali ? ` · ${n.yarali} yaralı` : ''}`, arama, { k: 'kisla-arama', acik: aramaAcik });
 
   return [
-    durduruldu ? uyari('Buğday ya da ASTRA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Ambara buğday ekle ve hesabında ASTRA bulundur.', 'uyari') : '',
+    durduruldu ? uyari('Şifalı ot ya da ASTRA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Şifalı ot topla (ya da pazardan al) ve hesabında ASTRA bulundur.', 'uyari') : '',
     ozet, taktikKarti,
     `<div class="ek-kisla-bolme">
       <section class="ek-kart ek-ordu" aria-label="Asker listesi">${aramaBolumu}<div class="ek-ordu-liste" id="kisla-liste">${orduSatirlari(b, s)}</div></section>

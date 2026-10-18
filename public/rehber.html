@@ -322,10 +322,10 @@
   <figure class="resim"><div class="cerceve"><img src="rehber/img/sifahane.webp" alt="Şifahane" loading="lazy"></div>
   <figcaption><b>Şifahane.</b> Bütün askerlerin canı tamsa "Bütün askerler tam can" yazar.</figcaption></figure>
   <ul>
-    <li><b>Hemen iyileştirmenin tek yolu şifalı ottur.</b> 1 şifalı ot 2 can iyileştirir; kullanılan ot yakılır. Buğday harcanmaz. Hesap, ekranda gördüğün can sayısıyla yapılır (teçhizat dahil): güçlü teçhizatlı asker daha çok can taşıdığı için daha çok ot yakar.</li>
+    <li><b>Hemen iyileştirmenin tek yolu şifalı ottur.</b> 1 şifalı ot 2 can iyileştirir; kullanılan ot yakılır. Hesap, ekranda gördüğün can sayısıyla yapılır (teçhizat dahil): güçlü teçhizatlı asker daha çok can taşıdığı için daha çok ot yakar.</li>
     <li>Üstüne can başına 0,01 ASTRA ödersin (100 can için 50 ot + 1 ASTRA). Siloya sığmayan büyük bedeller parça parça alınıp tur tur iyileştirilir.</li>
     <li>Şifalı ot yalnızca <b>şifalı ot bahçesi</b> seferlerinden gelir. Otun yetmezse <b>"Eksik otu al ve iyileştir"</b> düğmesi pazardan alıp iyileştirir.</li>
-    <li>Beklemek istemezsen hiçbir şey yapma: askerler <b>24 saatte</b> kendiliğinden, az buğday ve çok az ASTRA ile tam cana kavuşur. Bir de "Ordu İyileştirme Parşömeni" vardır: bir askere 4 can verir (2 şifalı otun karşılığı); büyük iyileştirmede şifalı ot daha ucuzdur.</li>
+    <li>Beklemek istemezsen hiçbir şey yapma: askerler <b>24 saatte</b> kendiliğinden tam cana kavuşur; bu sırada ekrandaki can başına 0,1 şifalı ot ve 0,002 ASTRA harcanır (hemen iyileştirmenin beşte biri). Ot ya da ASTRA biterse iyileşme durur. Kışla ve Şifahane, kendiliğinden ile hemen iyileştirmenin ne harcayacağını yan yana canlı gösterir. Bir de "Ordu İyileştirme Parşömeni" vardır: bir askere 4 can verir (2 şifalı otun karşılığı); büyük iyileştirmede şifalı ot daha ucuzdur.</li>
     <li>Aynı "Hızlı iyileştir" düğmesi <b>Zindan</b>, <b>Kışla</b>, <b>Krallık merkezi</b> ve <b>Kolezyum</b> ekranlarında da vardır.</li>
   </ul>
 </section>
@@ -389,7 +389,7 @@
   </table></div>
 
   <h3>Günlük ödüllü giriş</h3>
-  <p>Her gün <b>5 ödüllü giriş</b> hakkın var ("5/5 ödüllü giriş"). Girişlerin ilki eşyalarını yıpratmaz; sonraki girişlerde savaşa giren her askerin takılı eşyalarından <b>rastgele bazıları</b> (silah, miğfer, zırh, pantolon, çizme) birer dayanıklılık kaybeder. Kaç eşyanın aşındığı <b>kata ve zindan moduna göre artar</b>: Normal modda 1. katta askerin 1 eşyası, 6. katta 2 eşyası; Zor, Uzman ve Cehennem modlarında daha fazlası; büyük bosslarda yarım eşya daha. Aynı eşya bir savaşta bir kez aşınır. 6. girişten sonrası harçlı ya da antrenman niteliğindedir. Günlük sınırlarını <b>Kotalarım</b> ekranından izlersin.</p>
+  <p>Her gün <b>5 ödüllü giriş</b> hakkın var ("5/5 ödüllü giriş"). Girişlerin ilki eşyalarını yıpratmaz; sonraki girişlerde savaşa giren her askerin takılı eşyalarından <b>rastgele bazıları</b> (silah, miğfer, zırh, pantolon, çizme) birer dayanıklılık kaybeder. Kaç eşyanın aşındığı <b>kata ve zindan moduna göre artar</b>: Normal modda 1. katta askerin 1 eşyası, 6. katta 2 eşyası; Zor, Uzman ve Cehennem modlarında daha fazlası; büyük bosslarda yarım eşya daha. Aynı eşya bir savaşta bir kez aşınır. 6. girişten sonra girmek için <b>kapı harcı</b> ödersin (harçlı giriş de ödüllüdür); harç ödemeden giriş yoktur, "antrenman girişi" diye bir şey de yoktur. Kasanın o günkü ödeme bütçesi dolmuşsa yeni giriş ertesi güne kalır. Günlük sınırlarını <b>Kotalarım</b> ekranından izlersin.</p>
   <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Her gün ilk 5 girişi kullanmak, ASTRA kazancının büyük kısmını sağlar. Zindanın günlük ödemesi aynı zamanda <b>zindan kasasının bakiyesinin %0,36'sıyla</b> sınırlıdır (herkes için ortak); ayrıca kişisel günlük ve haftalık tavanların da vardır (kasa herkese yetsin diye).</p></div>
 
   <h3>Yaralanma</h3>
@@ -1487,7 +1487,7 @@
   <h3>İyileştirme bedeli (1 can başına)</h3>
 <div class="tablo-kap"><table>
     <tr><th>Yöntem</th><th>Süre</th><th>Buğday / ot</th><th>ASTRA</th><th>100 can için</th></tr>
-    <tr><td>Pasif (kendiliğinden)</td><td>24 saatte tam can</td><td>0,3</td><td>0,001</td><td>30 buğday + 0,1 ASTRA</td></tr>
+    <tr><td>Pasif (kendiliğinden, şifalı otla)</td><td>24 saatte tam can</td><td>0,1 ot</td><td>0,002</td><td>10 ot + 0,2 ASTRA</td></tr>
     <tr><td>Şifahane (şifalı ot, hemen iyileştirmenin tek yolu)</td><td>Anında</td><td>1 ot = 2 can</td><td>0,01</td><td>50 ot + 1 ASTRA</td></tr>
   </table></div>
 </section>

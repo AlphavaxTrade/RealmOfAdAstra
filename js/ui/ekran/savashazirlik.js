@@ -12,8 +12,6 @@ import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazis
 
 const TAKTIK_SIMGE = { 1: '🛡️', 2: '⚔️', 3: '🏹' };
 
-// Kapı harcı seçimi oturum boyunca korunur
-let kapiHarciOde = false;
 
 const asBoss = (m) => !!(m.isBoss || m.level === 9 || m.level === 18);
 const askerler = (b) => b.gameState.state.soldierUnits || [];
@@ -70,16 +68,17 @@ function girisKarti(b, m, terms) {
   const taban = gs.getDungeonBaseReward(m.level, asBoss(m));
 
   const kurallar = terms.nextNeedsFee
-    ? not('Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, eşyalar aşınır.')
+    ? not('Günlük harçsız girişlerin bitti: sonraki girişler kapı harcıyla yapılır (savaşa girerken ödenir). Harçlı giriş de ödüllüdür. Stamina harcanır, eşyalar aşınır. Harç ödemeden giriş yoktur. Haklar her gece 00:00\'da (TSİ) yenilenir.')
     : not(`${terms.nextWeaponWear ? `Savaşa giren her askerin takılı eşyalarından rastgele ortalama ${sayi(gs.getDungeonWearPerSoldier(m.level), 1)} tanesi 1'er aşınır (kat ve zindan moduyla artar).` : 'Günün ilk girişi: eşyaların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.`);
 
   return kart({
     baslik: `🎟️ Bugünkü ${esc(terms.nextEntryNumber)}. girişin`,
-    rozet: etiket(terms.nextNeedsFee ? 'Harçlı / antrenman' : 'Ödüllü', terms.nextNeedsFee ? 'uyari' : 'iyi'),
+    rozet: etiket(terms.nextNeedsFee ? 'Kapı harçlı' : 'Ödüllü', terms.nextNeedsFee ? 'uyari' : 'iyi'),
     icerik: cubukSatiri('Bugünkü ödüllü girişler', `${terms.freeUsed} / ${terms.freeTotal}`, terms.freeTotal > 0 ? (terms.freeUsed / terms.freeTotal) * 100 : 0, { ton: terms.nextNeedsFee ? 'dolu' : '' })
       + (terms.nextNeedsFee
-        ? `<button type="button" class="ek-secenek${kapiHarciOde ? ' is-secili' : ''}" data-e="harc" aria-pressed="${kapiHarciOde}">
-            <b>${kapiHarciOde ? '✅' : '⬜'} Kapı harcı öde: ${esc(astra(ucret))} ASTRA</b><small>Ödülüyle gir. ${esc(kasayaNot)}</small></button>`
+        ? (terms.budgetBlocked
+          ? uyari('🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
+          : `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Savaşa girerken ödenir, ödülle girersin. ${esc(kasayaNot)}</small></p>`)
         : '')
       + gunlukOdemeNotu(terms, taban.ada)
       + katli('Giriş kuralları', kurallar, { k: 'zindan-giris' })
@@ -170,12 +169,14 @@ const ekran = {
     const kilitli = gs.isArmyStakedInWorldBoss();
     const yok = askerler(b).length === 0;
     const staminaYetersiz = !terms.staminaOk && secili.length > 0;
-    const baslamaOlmaz = yok || kilitli || secili.length === 0 || staminaYetersiz;
-    let baslaYazi = '⚔️ Savaşa başla';
+    const harcYok = !!terms.nextNeedsFee && !!terms.budgetBlocked;
+    const baslamaOlmaz = yok || kilitli || secili.length === 0 || staminaYetersiz || harcYok;
+    let baslaYazi = terms.nextNeedsFee && terms.fee > 0 ? `🚪 Harç öde (${astra(terms.fee)} ASTRA) ve savaşa başla` : '⚔️ Savaşa başla';
     if (kilitli) baslaYazi = '🔒 Ordu kilitli';
     else if (yok) baslaYazi = '⚔️ Asker yok';
     else if (secili.length === 0) baslaYazi = '⚔️ Asker seçin';
     else if (staminaYetersiz) baslaYazi = `⚡ Yetersiz stamina (${Math.floor(gs.state.stamina || 0)}/${terms.staminaCost} ⚡)`;
+    else if (harcYok) baslaYazi = '🏦 Bugünkü ödeme bütçesi doldu';
 
     const parsomen = gs.state.inventory.scroll_heal || 0;
     return kap([
@@ -197,10 +198,6 @@ const ekran = {
 
     vazgec() {
       return { kapat: true };
-    },
-
-    harc() {
-      kapiHarciOde = !kapiHarciOde;
     },
 
     sec(b, el, secenek) {
@@ -276,7 +273,8 @@ const ekran = {
         b.bildir(`⚠️ Yetersiz stamina! ${secili.length} asker için ${terms.staminaCost} ⚡ gerekiyor (mevcut: ${Math.floor(gs.state.stamina || 0)} ⚡).`, 'error');
         return undefined;
       }
-      const harc = !!(terms.nextNeedsFee && kapiHarciOde);
+      if (terms.budgetBlocked) { b.bildir('🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz.', 'error'); return false; }
+      const harc = !!terms.nextNeedsFee;   // günlük harçsız haklar bitince kapı harcı savaşa girerken ödenir (antrenman girişi yok)
       if (harc) {
         const ucret = gs.getDungeonGateFee(m.level, asBoss(m));
         if ((gs.state.adAstraBalance || 0) < ucret) { b.bildir(`Kapı harcı için ${astra(ucret)} ASTRA gerekiyor.`, 'error'); return false; }
@@ -325,17 +323,15 @@ async function savasiOyna(b, m, secili, odeHarc) {
   const serbestOran = (b.GAME_CONFIG.LOCKED_BALANCE || {}).FREE_SHARE;   // kazancın serbest kısmı; kalanı kilitli (QA-14)
   const taban = gs.getDungeonBaseReward(m.level, boss);
   const onizlemeAstra =Math.min(taban.ada, gs.getDungeonDayStatus().budgetLeft);
-  const ganimet = entry.rewarded
-    ? [
-      `🟣 ${kazancYazisi(onizlemeAstra, serbestOran)}`,
-      `✨ +${m.rewardXp || (m.level * 15)} Asker XP`,
-      `🧩 Teçhizat Parçası (${gs.getFragmentDropRate(gs.state.level)}% şans)`,
-      `📦 Pandora Kutusu (${gs.getBoxDropRate(gs.state.level)}% şans)`
-    ]
-    : ['🏋️ Antrenman girişi: ASTRA ve ganimet yok', `✨ +${m.rewardXp || (m.level * 15)} Asker XP · +${tam(taban.xp)} hesap XP`];
+  const ganimet = [
+    `🟣 ${kazancYazisi(onizlemeAstra, serbestOran)}`,
+    `✨ +${m.rewardXp || (m.level * 15)} Asker XP`,
+    `🧩 Teçhizat Parçası (${gs.getFragmentDropRate(gs.state.level)}% şans)`,
+    `📦 Pandora Kutusu (${gs.getBoxDropRate(gs.state.level)}% şans)`
+  ];
 
   // Savaş başında işlendi: günlük kalan ödeme payı şimdi, sonuçtan sonraki değeridir (kural gameState.getDungeonDayStatus)
-  const odemeNotu = outcome.victory && entry.rewarded ? odemeSinirNotu({
+  const odemeNotu = outcome.victory ? odemeSinirNotu({
     haftalikDoldu: !!(outcome.budgetFull || outcome.personCapped),
     azaldi: !!outcome.budgetCapped,
     gunlukKalan: gs.getDungeonDayStatus().budgetLeft,
@@ -344,7 +340,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
   const basladi = b.arenaBaslat({
     mode: 'dungeon',
     context: `Kat ${m.level} · Seviye ${m.level} — <strong>${esc(m.name)}</strong> ${boss ? '(Zindan Bossu)' : ''}`,
-    rank: `${entry.rewarded ? (entry.fee > 0 ? 'Kapı harcıyla ödüllü' : 'Ödüllü giriş') : 'Antrenman'} · Stamina: -${staminaBedeli} ⚡`,
+    rank: `${entry.fee > 0 ? 'Kapı harcıyla ödüllü' : 'Ödüllü giriş'} · Stamina: -${staminaBedeli} ⚡`,
     replay: sim,
     allies: muttefikler,
     enemies: [dusman],
@@ -363,9 +359,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         ].filter(Boolean).join(' ');
         if (b.bildirimEkle) b.bildirimEkle('🏆', duyuru);
         if (outcome.weaponsWorn.length) b.bildir(`🛡️ Eşyaların dayanıklılığı -1 azaldı: ${outcome.weaponsWorn.join(', ')}`, 'info');
-        b.bildir(entry.rewarded
-          ? `🏆 Zafer! ${m.name} mağlup edildi! (${kazancYazisi(outcome.adaReward, serbestOran)})`
-          : `🏋️ Antrenman zaferi: ${m.name} yenildi (yalnızca deneyim)`, 'success');
+        b.bildir(`🏆 Zafer! ${m.name} mağlup edildi! (${kazancYazisi(outcome.adaReward, serbestOran)})`, 'success');
         window.dispatchEvent(new CustomEvent('monster-defeated', { detail: { level: m.level } }));   // zindan haritası levhaları tazeler
       } else {
         b.bildir(`💀 Bozgun! Ordun ${m.name} karşısında geri çekildi. Kalan can: ${outcome.remainingEnemyHp}/${m.hp}`, 'error');
@@ -374,7 +368,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
 
       const satirlar = [];
       if (outcome.victory) {
-        satirlar.push(entry.rewarded ? `🟣 ${kazancYazisi(outcome.adaReward || 0, serbestOran)}` : '🏋️ Antrenman girişi: ASTRA yok');
+        satirlar.push(`🟣 ${kazancYazisi(outcome.adaReward || 0, serbestOran)}`);
         satirlar.push(`✨ +${m.rewardXp} asker XP`);
         if (outcome.xpGained) satirlar.push(`🧙 +${tam(outcome.xpGained)} hesap XP`);
         if (outcome.fragmentsGained) satirlar.push(`🧩 +${outcome.fragmentsGained} teçhizat parçası`);

@@ -581,7 +581,7 @@ ${tablo(['Yuva', 'Odun', 'Demir', 'Kömür', 'Taş', 'Parça', 'ASTRA'], yuvalar
   <p>Aynı askerin üstünde 2 parça: +%5 saldırı ve can; 4 parça: +%12; 5 parça (tam takım): <b>+%25</b>.</p>
   <h3>İyileştirme bedeli (1 can başına)</h3>
 ${tablo(['Yöntem', 'Süre', 'Buğday / ot', 'ASTRA', '100 can için'], [
-  ['Pasif (kendiliğinden)', '24 saatte tam can', sayi(C.SOLDIER_PASSIVE_HEAL.wheatPerHp, 2), sayi(C.SOLDIER_PASSIVE_HEAL.adaPerHp, 4), `${sayi(C.SOLDIER_PASSIVE_HEAL.wheatPerHp * 100)} buğday + ${sayi(C.SOLDIER_PASSIVE_HEAL.adaPerHp * 100, 2)} ASTRA`],
+  ['Pasif (kendiliğinden, şifalı otla)', '24 saatte tam can', `${sayi(C.SOLDIER_PASSIVE_HEAL.herbPerHp, 2)} ot`, sayi(C.SOLDIER_PASSIVE_HEAL.adaPerHp, 4), `${sayi(C.SOLDIER_PASSIVE_HEAL.herbPerHp * 100)} ot + ${sayi(C.SOLDIER_PASSIVE_HEAL.adaPerHp * 100, 2)} ASTRA`],
   ['Şifahane (şifalı ot, hemen iyileştirmenin tek yolu)', 'Anında', `1 ot = ${n(C.SIFAHANE.HP_PER_HERB)} can`, sayi(C.SIFAHANE.ADA_PER_HP, 3), `${sayi(100 / C.SIFAHANE.HP_PER_HERB)} ot + ${sayi(C.SIFAHANE.ADA_PER_HP * 100, 2)} ASTRA`]
 ])}`);
 
