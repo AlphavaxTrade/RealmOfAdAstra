@@ -1320,6 +1320,136 @@ export const GAME_CONFIG = {
     },
     {
       version: 'v1.36',
+      title: '🌄 AdAstra Vadisi: Yeni Oyun Çekirdeği',
+      date: '7 Ekim 2026',
+      changes: [
+        `Oyun altı hammaddeye (odun, demir, kömür, taş, buğday, şifalı ot) ve 200 milyon ASTRA ölçeğine geçti. Üretim Hakkı ve AdAstra Vadisi haritası eklendi.`,
+        `Köy Evleri: köylüler beslenir ve çoğalır, her askerin bir köylüsü olur, ev yapabilirsin. Şifahane: şifalı otla iyileştirme (1 ot = 5 can). Demirhane'de eşya geri dönüşümü (harcananın %70'i geri gelir).`,
+        `Roket görevi (seviye 3 ve parçalar) ve Genesis gezegen hakkı.`,
+        `Sirius Konseyi: Otorite inşaatı ve ortak projeler (köprü seferleri -%2, ambar silo +%5, şifa bahçesi ot +%5). Konseye verdiğin hammadde yakılır ve sana katkı puanı yazar.`
+      ]
+    },
+    {
+      version: 'v1.37',
+      title: '🚪 Vatandaşlık Kapısı, İlan Pazarı ve Hazırlık Deposu',
+      date: '7 Ekim 2026',
+      changes: [
+        `Vatandaşlık kapısı: sınırlı sayıda vatandaş alınır. Sırada bekleyenler oyunu gezebilir ama işlem yapamaz; yer açılınca sıradakine davet gider. Uzun süre oynamayan vatandaş önce uyarılır (14 gün), sonra askıya alınır (30 gün).`,
+        `İlan pazarı: teçhizatını 7 günlüğüne satışa koyabilir (en çok 10 ilan), başkasının ilanını alabilirsin. %2 komisyon alınır, yarısı yakılır.`,
+        `Yük İskelesi Hazırlık Deposu: Universe'e hazırlık yüzdesi depo doluluğundan hesaplanır. Geri alırken %10 kesinti yakılır.`,
+        `Krallık Yolu rehber görevleri yeni binaları kapsıyor; "Sen yokken olanlar" raporu eklendi.`
+      ]
+    },
+    {
+      version: 'v1.38',
+      title: '🛡️ Hesap Güvenliği',
+      date: '8 Ekim 2026',
+      changes: [
+        `Parolalar çok daha güçlü bir yöntemle saklanıyor, oturum anahtarları özet olarak tutuluyor. Yönetici işlemleri ve yetkisiz denemeler kayıt altına alındı.`,
+        `Piyango çekilişi ve PvP tohumu sunucuda güvenli rastgelelikle yapılıyor. Bildirim kutusu ve savaş kaydındaki adlar kötü niyetli yazıya karşı korundu.`,
+        `Veritabanı yedekleri otomatik alınıyor ve bütünlükleri doğrulanıyor. 30 dakikalık yük testinde hata çıkmadı.`
+      ]
+    },
+    {
+      version: 'v1.39',
+      title: '🏛️ Ekonomi Kararları',
+      date: '8-9 Ekim 2026',
+      changes: [
+        `İlk dönemde 100 vatandaş. Sırada bekleyen "hazır adaylar" (3 basit onay adımını tamamlayanlar) önce davet alır; davet 72 saat geçerlidir ve oyundaki ilk gerçek hareketle kabul edilir.`,
+        `Savunma Duvarı projesi artık gerçek etki taşır: tamamlanınca Dünya Bossu savaşından erken çekilme cezası %18'den %12'ye düşer.`,
+        `Konsey'de herkese açık "gelir motoru" panosu, Hesabım'da "ASTRA nereden alınır" bilgi kutusu, hazinede "dağıtılan ve çekilebilen" göstergesi.`,
+        `Çekim ücretinin yarısı yakılır, yarısı temel gelire gider. Temel gelir tek talepte en çok %5 olur. Zindan ödülü artık yuvarlanmaz (1 ASTRA'nın altındaki ödül sıfıra inmiyordu).`,
+        `Haftalık ödeme bütçeleri: zindan, Kolezyum, boss, görev ve karnaval kendi bütçesinden öder. Bütçe dolunca "Bu haftaki ödeme payı doldu" mesajı gösterilir.`,
+        `Sponsorluk: bir oyuncu başkasını sponsor edebilir. Sponsorlu oyuncu parayı çekemez, yalnız oyunda harcar; çektiği net tutarın %30'u sponsora gider. Trade sitesinden gelen gelir de diğer harcamalar gibi dağıtılır.`
+      ]
+    },
+    {
+      version: 'v1.40',
+      title: '📱 Yeni Arayüz (v3)',
+      date: '9 Ekim 2026',
+      changes: [
+        `Tek satırlık üst çubuk, 5 sekmeli alt çubuk, tek panel sistemi ve "Şimdi" kartı. Ayarlar, bağlantı bandı ve sade zindan başlığı.`,
+        `Yeni oyuncu turu: gerçek dokunuşları bekleyen adım adım yönlendirme. Ben menüsünden tekrar izleyebilirsin.`,
+        `Pazar üç bölüme ayrıldı ve tek kaynak kartı kullanıyor. Yoğun paneller katlanıyor, terimler sözlüğü eklendi.`,
+        `Kışla sadeleşti: iki ana düğme önde, diğer işlemler katlı, dokunma hedefleri 44 px. Kotalar (önce kişisel), Karnaval (daha küçük çark, katlı ödül tablosu), Hazine ve Demirhane de sadeleşti.`
+      ]
+    },
+    {
+      version: 'v1.41',
+      title: '✨ Ekranlar Yenilendi ve Krallık Yolu',
+      date: '11 Ekim 2026',
+      changes: [
+        `Demirhane, Kolezyum, Hazine, Kotalar ve Karnaval yenilendi; zindan savaş öncesi penceresi sadeleşti. Silo ve Krallık merkezi altı hammaddenin hepsini gösteriyor. Savaş alanı kendi ekranını açıyor.`,
+        `Zindan sahnesindeki levhalarda Türkçe etiketler (seviye, canavar, kilitli, yenildi, savaşa gir).`,
+        `Krallık Yolu: 47 görev, 10 bölüm, bölüm bonusları ve final unvanı. Hesap başına en çok 994 ASTRA, görev kasasından ve yalnız doğrulanmış e-posta hesabına verilir.`,
+        `Ctrl+K ile "Ara ve git" paleti ve kısayollar, bildirim merkezi, kapı şeridi. Pazar ve Hazine'deki uydurma veriler (sahte satıcılar, uydurma "yakılan" sayıları) kaldırıldı; artık gerçek defterden okunuyor.`
+      ]
+    },
+    {
+      version: 'v1.42',
+      title: '🔧 Oyun Motoru Baştan Yazıldı',
+      date: '11 Ekim 2026',
+      changes: [
+        `Savaş motoru, ekonomi çekirdeği, oyuncu durumu, ordu, Dünya Bossu, Kolezyum, Karnaval, piyango ve promo kodu baştan yazıldı. Kurallar aynı kaldı: binlerce rastgele işlem eski kodla birebir karşılaştırıldı.`,
+        `Bu sırada bulunan hatalar düzeltildi: dayanıklılığı 100 ve altı aletler her yüklemede bedava yenileniyordu. Kısmi toplamada alet aşınması atlanıyor ve XP şişiyordu. Haftalık ödeme payı dolunca görev ödülü kayboluyordu. Yükseltilmiş eşyanın geri dönüşümü ödenmemiş kömür veriyordu.`,
+        `Saniyelik pasif iyileşmede can artmadan bedel kesiliyordu; düzeldi. İlan pazarında sahte konumla yoktan hammadde alınabiliyordu; kapandı. Bekleme sırasındaki hesaplar ödeme teklifi, promo kodu ve Kolezyum sırasına giremiyor.`,
+        `Telefonda ağ zaman aşımı, çift dokunma, bozuk kayıt ve engellenmiş depolama gibi durumlar daha sağlam karşılanıyor.`
+      ]
+    },
+    {
+      version: 'v1.43',
+      title: '🧰 Adalet Düzeltmeleri',
+      date: '12 Ekim 2026',
+      changes: [
+        `İlan pazarında alıcı önce serbest bakiyesinden öder; kilitli ödeme satıcıda kilitli kalır (kilit aklama kapandı).`,
+        `Kolezyum zafer ödülü maç başı 25 ASTRA tabana ayarlandı (eskiden kasa tohumunda ~800'e çıkabiliyordu). Bot ücreti kişisel Üretim Hakkı'na göre hesaplanır.`,
+        `Ön hesap ele geçirme kapandı: e-posta doğrulama bağlantısı artık şifreyi yeniden belirletir.`
+      ]
+    },
+    {
+      version: 'v1.44',
+      title: '💀 Yeni Zindan Ekranı ve Hammadde Dengesi',
+      date: '13 Ekim 2026',
+      changes: [
+        `Zindan ekranı baştan yazıldı: kat ve oda görünümü, yeni resimler, Kütük (canavar resimleriyle), ordu şeridi ve "Aynı savaşı tekrarla".`,
+        `Seviye atlama bedeli altı hammaddenin hepsini kapsıyor (kömür, taş ve şifalı ot artık gerçekten harcanıyor). Teçhizat yükseltme kömür ve taş, onarım kömür ister. Konseyin ortak stoğu kendiliğinden yapıya aktarılır, çelik payı kömürdür.`,
+        `Fatih Ödülü: 18. katı ilk kez geçince, ordun için harcadığının zindanda geri dönmeyen kısmı ödül olarak gelir.`,
+        `Çarkta sık gelen "bedelin geri" dilimleri yeni hammaddelere dağıtıldı. Dünya Bossu haftalık havuzu kasanın %3'ü olarak gösterilir. Yazı boyutu ayarı artık metni gerçekten büyütüyor. Eski risk duyurusu kaldırıldı.`
+      ]
+    },
+    {
+      version: 'v1.45',
+      title: '🔒 Denetim Turu',
+      date: '13-14 Ekim 2026',
+      changes: [
+        `Seviye bedeli silo kapasitesini aşmıyor. Zindanda günlük ve haftalık kişi ödeme tavanı, Kolezyum puanı ve ödül tavanı eklendi; hammadde dengesi izleniyor.`,
+        `Sahte hesaplara karşı: e-posta benzersizliği (etiketli ve gmail noktalı adresler aynı sayılır) ve IP kotası (aynı ağdan 24 saatte 3 hesap; fazlası sırada bekler).`,
+        `Giriş, doğrulama ve ödeme pencereleri ekran okuyuculara uygun; dar ekranda üst çubuk menüsü, açılış perdesi, ağ hatası mesajları, güvenli alan ve 429 yeniden deneme.`,
+        `İki adımlı doğrulama: yedek kodlar daha güvenli saklanıyor ve Hesabım'dan yenilenebiliyor. Muhafız Mührü sıfırlama (telefon ve yedek kod kaybı için 48 saat bekleme, e-postadan iptal bağlantısı). Kalıcı bildirimler.`
+      ]
+    },
+    {
+      version: 'v1.46',
+      title: '📖 Oyun Rehberi ve Yayın',
+      date: '14-15 Ekim 2026',
+      changes: [
+        `Oyun artık roa.alphavaxtrade.com adresinde, deneme modunda yayında (sahte ASTRA, gerçek para yok).`,
+        `Resimli ve örnekli oyuncu rehberi: 29 bölüm; sonradan "Teknik başvuru" bölümleriyle 47 bölüme çıktı (tüm limitler, seviye ve silo bedelleri, kota, çekim ve kasa formülleri; sayılar doğrudan oyun motorundan üretilir). Üst çubukta rehber düğmesi, Ben menüsünde ve Ctrl+K paletinde giriş var.`,
+        `Rehberde çark, piyango, Kolezyum ligi, geri alım ve cephanelik bölümleri; sefer süresi ilk seviyede 18 dakika, silo dolunca ürün seferde bekler (kaybolmaz) gibi açıklamalar düzeltildi.`
+      ]
+    },
+    {
+      version: 'v1.47',
+      title: '⚖️ Akış Dengesi ve Genesis Yolu',
+      date: '15 Ekim 2026',
+      changes: [
+        `Asker seviyesi artık hesap seviyeni geçemez; fazla deneyim birikir ve hesabın seviyesi atlayınca kullanılır.`,
+        `Oyundan çıkış (çekim) trade alımının yarısını geçemez. Oyuna tasarımın üstünde ASTRA girerse sabit ASTRA bedelleri de büyür (oyun içi fiyat endeksi).`,
+        `Genesis yolu: seviye 30, 180 günlük hesap, Krallık Yolu, Fatih, son 4 haftanın her birinde Altın katkı, 18 eserin uyandırılması ve 250 $ değerinde mühür (yarısı yakılır) gerekir. Genesis NFT sözleşmesi (Sezon 1) hazırlandı.`
+      ]
+    },
+    {
+      version: 'v1.48',
       title: '📮 Sorun Bildir',
       date: '18 Ekim 2026',
       changes: [
@@ -1327,7 +1457,7 @@ export const GAME_CONFIG = {
       ]
     },
     {
-      version: 'v1.37',
+      version: 'v1.49',
       title: '⚔️ Ordu ve Zindan Dengesi',
       date: '18 Ekim 2026',
       changes: [
@@ -1338,7 +1468,7 @@ export const GAME_CONFIG = {
       ]
     },
     {
-      version: 'v1.38',
+      version: 'v1.50',
       title: '🔥 Zindan Modları',
       date: '18 Ekim 2026',
       changes: [
@@ -1349,7 +1479,7 @@ export const GAME_CONFIG = {
       ]
     },
     {
-      version: 'v1.39',
+      version: 'v1.51',
       title: '❤️ Savaş Canı Düzeltmesi',
       date: '18 Ekim 2026',
       changes: [
