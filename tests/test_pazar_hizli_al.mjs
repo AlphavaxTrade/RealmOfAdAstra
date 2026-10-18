@@ -83,6 +83,63 @@ assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
   s.warehouseLevel = siloOnce;
 }
 
+// Toplu geliştirme planı (Demirhane "Eksikleri al ve geliştir", hepsi / tür / tür+seviye): kümenin toplam bedeli, silo kapasitesine bakılmadan hesaplanır
+{
+  const siloOnce = s.warehouseLevel;
+  s.warehouseLevel = 18; s.adAstraBalance = 1e7;
+  for (const k of ['iron', 'wood', 'coal', 'stone', 'fragments']) s.inventory[k] = 5000;
+  assert.equal(gs.craftEquipment('helmet').success, true);
+  assert.equal(gs.craftEquipment('armor').success, true);
+  const kume = gs.getUpgradeSetItems(null, null);
+  assert.ok(kume.length >= 2, 'önkoşul: en az iki geliştirilebilir eşya');
+  assert.ok(kume.every((k) => (k.item.level || 1) < (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10)), 'en yüksek seviyedekiler kümeye girmez');
+  const toplam = gs.getUpgradeSetCost(null, null);
+  assert.equal(toplam.count, kume.length);
+  assert.equal(toplam.ironCost, kume.reduce((t, k) => t + gs.calculateEquipmentUpgradeCost(k.item).ironCost, 0), 'toplam demir her eşyanın bedelinin toplamı');
+  assert.equal(gs.getUpgradeSetItems('helmet', null).length, kume.filter((k) => k.item.slot === 'helmet').length, 'tür süzgeci');
+  assert.equal(gs.getUpgradeSetItems(null, 999).length, 0, 'olmayan seviye');
+
+  for (const k of ['iron', 'wood', 'coal', 'stone', 'fragments']) s.inventory[k] = 0;
+  const plan = gs.getQuickBuyPlan('upgradeset:all:-');
+  assert.equal(plan.ok, true, plan.reason);
+  const kalem = Object.fromEntries(plan.items.map((i) => [i.res, i.qty]));
+  assert.equal(kalem.iron, toplam.ironCost, 'plan toplam demiri alır');
+  assert.equal(kalem.wood, toplam.woodCost);
+  assert.equal(plan.capBlocked, false, 'toplam bedel siloya sığmasa da tahmin kırpılmaz');
+  assert.ok(Math.abs(plan.extraAda - toplam.adaCost) < 1e-9, 'geliştirme ASTRA bedeli plana yazılır');
+  assert.equal(gs.getQuickBuyPlan('upgradeset:helmet:-').ok, true);
+  assert.equal(gs.getQuickBuyPlan('upgradeset:all:99').ok, false, 'uygun eşya yoksa plan yok');
+  s.warehouseLevel = siloOnce;
+}
+
+// Hızlı iyileştirme planı (Zindan ekranı "Hızlı iyileştir"): yaralı yoksa plan yok; varsa eksik buğday pazardan alınır, sonra hepsi iyileşir
+{
+  s.soldierUnits = [];
+  assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'asker yokken plan yok');
+  assert.match(gs.getQuickBuyPlan('heal').reason, /Yaralı/);
+  s.adAstraBalance = 1e6;
+  gs.buySoldierUnit();
+  gs.buySoldierUnit();
+  s.adAstraBalance = 1e6;
+  assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'hepsi tam canken plan yok');
+  s.soldierUnits.forEach((a) => { a.hp = Math.round((a.maxHp || 100) * 0.4); });
+  s.inventory.wheat = 0;
+  const maliyet = gs.getAllHealCost();
+  assert.equal(maliyet.count, 2);
+  const plan = gs.getQuickBuyPlan('heal');
+  assert.equal(plan.ok, true, plan.reason);
+  assert.equal(plan.items.length, 1);
+  assert.equal(plan.items[0].res, 'wheat');
+  assert.equal(plan.items[0].qty, Math.ceil(maliyet.totalWheat), 'eksik buğdayın tamamı alınır');
+  assert.ok(Math.abs(plan.extraAda - maliyet.totalAda) < 1e-9, 'iyileştirme ASTRA bedeli plana yazılır');
+  assert.equal(gs.marketBuy('wheat', plan.items[0].qty).success, true);
+  const sonuc = gs.instantHealAllSoldiers();
+  assert.equal(sonuc.healed, 2, sonuc.messages.join(' | '));
+  assert.ok(s.soldierUnits.every((a) => a.hp >= (a.maxHp || 100)), 'hepsi tam can');
+  assert.equal(gs.getQuickBuyPlan('heal').ok, false, 'iyileşince plan yok');
+  s.soldierUnits = [];
+}
+
 // Silo planı: hem yükseltme bedeli hem %80 dolu şartı karşılanır
 {
   for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 0;

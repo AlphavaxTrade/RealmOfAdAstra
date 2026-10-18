@@ -64,8 +64,7 @@ async function kayitYaz(fn, kasa) {
 await kayitYaz((gs) => {
   gs.state.level = 10; gs.state.adAstraBalance = 50000; gs.state.warehouseLevel = 6;
   for (const k of ['iron', 'wood', 'coal', 'stone']) gs.state.inventory[k] = 900;
-  gs.state.inventory.fragments = 5;
-  gs.craftEquipment('weapon');
+  for (const y of ['weapon', 'helmet', 'armor']) { gs.state.inventory.fragments = 5; for (const k of ['iron', 'wood', 'coal', 'stone']) gs.state.inventory[k] = 900; gs.craftEquipment(y); }
   for (const k of ['iron', 'wood', 'coal', 'stone', 'fragments']) gs.state.inventory[k] = 0;   // geliştirme için hiçbir şey yok
 }, 1e6);
 
@@ -115,6 +114,22 @@ try {
   await bekle(1500);
   const yenilenmis = await s.evaluate(() => window.gameState.getAllArmoryEquipmentList()[0].item.level || 1);
   kontrol('sayfa yenilenince seviye korunuyor', yenilenmis === seviye1, String(yenilenmis));
+  // Toplu: "Eksikleri al ve geliştir" (Toplu işlemler) kalan eşyaların hepsini sırayla geliştirir
+  await paletle(s, 'demirhane');
+  await s.click('[data-e="sekme"][data-sekme="esyalar"]'); await bekle(600);
+  await s.evaluate(() => { const d = document.querySelector('details[data-k="toplu"]'); if (d) d.open = true; });
+  const seviyeler0 = await s.evaluate(() => window.gameState.getAllArmoryEquipmentList().map((g) => g.item.level || 1));
+  const topluDugme = await s.$('[data-e="hizliToplu"][data-yuva="all"]');
+  kontrol('Toplu işlemlerde "Eksikleri al ve geliştir" düğmesi var', !!topluDugme, seviyeler0.join(','));
+  if (topluDugme) {
+    await s.screenshot({ path: path.join(EKRAN, 'demirhane_4_toplu.png') }).catch(() => {});
+    await topluDugme.click();
+    await s.waitForSelector('[data-v3-tamam]', { timeout: 10000 });
+    await s.click('[data-v3-tamam]');
+    await s.waitForFunction((onceki) => window.gameState.getAllArmoryEquipmentList().every((g, i) => (g.item.level || 1) >= onceki[i] + 1), seviyeler0, { timeout: 60000 });
+    const seviyeler1 = await s.evaluate(() => window.gameState.getAllArmoryEquipmentList().map((g) => g.item.level || 1));
+    kontrol('toplu geliştirmede her eşya bir seviye yükseldi', seviyeler1.every((v, i) => v === seviyeler0[i] + 1), seviyeler0.join(',') + ' → ' + seviyeler1.join(','));
+  }
   await o.baglam.close();
   const m = await oyunSayfasi({ mobil: true });
   await paletle(m.sayfa, 'demirhane');

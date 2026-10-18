@@ -670,11 +670,11 @@ export const GAME_CONFIG = {
   DUNGEON: {
     // v1.27 günlük giriş kuralları (Türkiye saatiyle gece yarısı yenilenir):
     //  • Her girişte stamina harcanır.
-    //  • 1. giriş: silahlar aşınmaz.
-    //  • 2.–5. giriş: harçsız ödüllü giriş; silahlar aşınır.
+    //  • 1. giriş: eşyalar aşınmaz.
+    //  • 2.–5. giriş: harçsız ödüllü giriş; her askerin rastgele bir eşyası aşınır.
     //  • 6. girişten itibaren: kapı harcı ödenirse ödüllü, ödenmezse yalnız deneyim veren antrenman.
     DAILY_RUNS: 5,                    // harçsız ödüllü giriş sayısı
-    FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde silahlar aşınmaz
+    FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde eşyalar aşınmaz
     // Harç, o katın temel ASTRA ödülünün bu oranı kadardır ve %100'ü zindan kasasına gider.
     GATE_FEE_RATE: 0.20,
     // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ASTRA öder → kasa matematiksel olarak boşalamaz.
@@ -1238,7 +1238,7 @@ export const GAME_CONFIG = {
       changes: [
         'Piyango: bir hesap haftada en fazla 100 bilet alabilir. Kazanmayan biletler yanmaz, sayı sınırı olmadan kazanana kadar sonraki haftalara devreder.',
         'Piyango ekranı gerçek kurallarla yenilendi: haftalık alımın, elindeki bilet, kazanırsan alacağın tutar, şansın ve sonraki çekilişe kalan süre.',
-        'Zindan: her girişte stamina harcanır. Günün 1. girişinde silahlar aşınmaz. 2.–5. giriş harçsız ödüllüdür ve savaşa giren her askerin silahı 1 aşınır. 6. girişten itibaren kapı harcı ödenir, ödenmezse antrenman girişi olur.',
+        'Zindan: her girişte stamina harcanır. Günün 1. girişinde eşyalar aşınmaz. 2.–5. giriş harçsız ödüllüdür ve savaşa giren her askerin takılı eşyalarından rastgele biri 1 aşınır. 6. girişten itibaren kapı harcı ödenir, ödenmezse antrenman girişi olur.',
         'Yeni "Kota ve Sınırlar" paneli (üst bar 📊, yan panel veya K tuşu): dünya kotasının gün gün açılışı, şu an çıkarılabilecek miktar, zindan / kolezyum / piyango sınırların ve geri sayımlar.',
         'Kolezyum: günlük maç hakkı, anahtar ve stamina bedeli maçtan önce gösterilir; eksik olan kırmızıyla işaretlenir.',
         'Arayüz: bildirimler sağ alta alındı, mobilde bakiye kısaltıldı (1,97 Mn), dar ekranda üst menü taşmıyor, İngilizce etiketler Türkçeleştirildi, kışlada yanlış sayı yazısı düzeltildi.',
@@ -1544,6 +1544,16 @@ export const GAME_CONFIG = {
         `Demirhane'de eşya geliştirirken de dövmedeki gibi "Eksikleri al ve geliştir" düğmesi var: geliştirmek için demir, odun, kömür, taş ya da teçhizat parçası yetmiyorsa eksikler pazardan tek onayla alınır ve eşya hemen geliştirilir. Tahmini ASTRA bedeli düğmenin üstünde yazar.`,
         `Telefonda haritanın altındaki iki şerit (Kralın Danışmanı ve Krallık Yolu) inceltildi, harita daha çok görünüyor. Danışman kartına ✕ eklendi: kapattığın öneri bu oturumda geri gelmez, öneri değişince kart yeniden görünür.`,
         `Karakter menüsünde seviye atlama bedelini gösteren satırlarda hammadde resimleri devasa görünüyordu; artık satırla aynı boyutta küçük simge olarak çıkıyor.`
+      ]
+    },
+    {
+      version: 'v1.56',
+      title: '🩹 Zindanda Hızlı İyileştirme ve Eşya Aşınması',
+      date: '18 Ekim 2026',
+      changes: [
+        `Zindan ekranındaki ordu şeridinde yaralı asker varsa "🩹 Hızlı iyileştir" düğmesi çıkıyor: Kışla'ya ya da Şifahane'ye gitmeden bütün yaralıları anında iyileştirir. Buğday eksikse pazardan alınır, bedel onay penceresinde yazar.`,
+        `Zindan savaşında aşınma artık yalnız silaha binmiyor: savaşa giren her askerin takılı eşyalarından (silah, miğfer, zırh, pantolon, çizme) rastgele biri 1 dayanıklılık kaybeder. Sağlam parça varken kırık parça seçilmez.`,
+        `Demirhane > Eşyalarım > Toplu işlemler: eksik malzeme varsa "⚡ Eksikleri al ve geliştir" düğmesi çıkıyor. Eksikler pazardan sırayla alınıp bütün eşyalar (ya da seçtiğin tür ve seviye) tek onayla geliştiriliyor.`
       ]
     }
   ],

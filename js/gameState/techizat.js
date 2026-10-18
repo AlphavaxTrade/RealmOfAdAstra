@@ -3,7 +3,7 @@
 //
 // Kurallar: 1 ATK = EQUIPMENT_CRAFT_MINUTES.PER_ATK dakikalık taban üretim (odun + demir; kömür ve taş üçte biri kadar dakika)
 // + pazar değeri kadar ASTRA + 1 parça. Dövme: odun, demir, kömür. Yükseltme: odun, demir, kömür (ocak) ve taş (bileme), hepsi
-// x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13 (her zafer -1); sıfırlanınca onarım (odun, demir, kömür), kümülatif
+// x1,18, parça 2 katı (1 → 2 → 4 → 8 → 16). Dayanıklılık 13 (savaşa giren her askerin rastgele bir eşyası her savaşta -1); sıfırlanınca onarım (odun, demir, kömür), kümülatif
 // hammaddenin %10'u ve pazar değeri, kısmi hasarda oranlanır. Geri dönüşüm hepsinin %70'ini verir (taş yalnız yükseltmelerde harcanır).
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
@@ -282,6 +282,31 @@ export const techizatYontemleri = {
     if (yukseltilen === 0 && mesajlar.length > 0) return { success: false, message: mesajlar[0] };
     if (yukseltilen === 0) return { success: false, message: 'Geliştirilecek uygun teçhizat bulunamadı!' };
     return { success: true, upgradedCount: yukseltilen, message: `✨ ${yukseltilen} adet teçhizat başarıyla bir sonraki seviyeye yükseltildi!` };
+  },
+
+  // upgradeEquipmentByTypeAndLevel ile aynı seçimin (yuva + seviye) tek seferlik toplam yükseltme bedeli; "eksikleri al ve geliştir" planı bunu kullanır
+  // Toplu geliştirmeye girecek eşyalar (yuva + seviye süzgeci; en yüksek seviyedekiler girmez)
+  getUpgradeSetItems(targetSlot = null, targetLevel = null) {
+    const enUst = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+    return this.getAllArmoryEquipmentList().filter((kayit) => {
+      const esya = kayit.item;
+      if (!esya) return false;
+      const yuvaUyar = !targetSlot || targetSlot === 'all' || esya.slot === targetSlot;
+      const seviyeUyar = targetLevel == null || esya.level === targetLevel;
+      return yuvaUyar && seviyeUyar && (esya.level || 1) < enUst;
+    });
+  },
+
+  getUpgradeSetCost(targetSlot = null, targetLevel = null) {
+    const toplam = { count: 0, ironCost: 0, woodCost: 0, coalCost: 0, stoneCost: 0, fragCost: 0, adaCost: 0 };
+    for (const kayit of this.getUpgradeSetItems(targetSlot, targetLevel)) {
+      const esya = kayit.item;
+      const bedel = this.calculateEquipmentUpgradeCost(esya);
+      if (!bedel || bedel.isMaxLevel) continue;
+      toplam.count++;
+      for (const k of ['ironCost', 'woodCost', 'coalCost', 'stoneCost', 'fragCost', 'adaCost']) toplam[k] += Number(bedel[k]) || 0;
+    }
+    return toplam;
   },
 
   upgradeAllEquipmentInKingdom() {

@@ -70,8 +70,8 @@ function girisKarti(b, m, terms) {
   const taban = gs.getDungeonBaseReward(m.level, asBoss(m));
 
   const kurallar = terms.nextNeedsFee
-    ? not('Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, silahlar aşınır.')
-    : not(`${terms.nextWeaponWear ? 'Savaşa giren her askerin silahı 1 aşınır.' : 'Günün ilk girişi: silahların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.`);
+    ? not('Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, eşyalar aşınır.')
+    : not(`${terms.nextWeaponWear ? 'Savaşa giren her askerin takılı eşyalarından rastgele biri 1 aşınır.' : 'Günün ilk girişi: eşyaların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.`);
 
   return kart({
     baslik: `🎟️ Bugünkü ${esc(terms.nextEntryNumber)}. girişin`,
@@ -359,10 +359,10 @@ async function savasiOyna(b, m, secili, odeHarc) {
           `Savaşa katılan askerlerin +${m.rewardXp} asker XP kazandı.`,
           outcome.fatihOdulu ? `👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA (orduna harcadığının zindanda geri dönmeyen kısmı)` : '',
         outcome.levelUps.length ? `🎉 ${outcome.levelUps.join(', ')}` : '',
-          outcome.weaponsWorn.length ? `⚔️ Silah aşınması: ${outcome.weaponsWorn.join(', ')}` : ''
+          outcome.weaponsWorn.length ? `🛡️ Eşya aşınması: ${outcome.weaponsWorn.join(', ')}` : ''
         ].filter(Boolean).join(' ');
         if (b.bildirimEkle) b.bildirimEkle('🏆', duyuru);
-        if (outcome.weaponsWorn.length) b.bildir(`⚔️ Silahların dayanıklılığı -1 azaldı: ${outcome.weaponsWorn.join(', ')}`, 'info');
+        if (outcome.weaponsWorn.length) b.bildir(`🛡️ Eşyaların dayanıklılığı -1 azaldı: ${outcome.weaponsWorn.join(', ')}`, 'info');
         b.bildir(entry.rewarded
           ? `🏆 Zafer! ${m.name} mağlup edildi! (${kazancYazisi(outcome.adaReward, serbestOran)})`
           : `🏋️ Antrenman zaferi: ${m.name} yenildi (yalnızca deneyim)`, 'success');
@@ -382,7 +382,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         if (outcome.scrollGained) satirlar.push(`📜 ${outcome.scrollGained.name}`);
         if (outcome.fatihOdulu) satirlar.push(`👑 Fatih Ödülü: +${tam(outcome.fatihOdulu.odul)} ASTRA`);
         outcome.levelUps.forEach((t) => satirlar.push(`🎉 ${t}`));
-        if (outcome.weaponsWorn.length) satirlar.push(`⚔️ Silah aşındı: ${outcome.weaponsWorn.join(', ')}`);
+        if (outcome.weaponsWorn.length) satirlar.push(`🛡️ Eşya aşındı: ${outcome.weaponsWorn.join(', ')}`);
         satirlar.push(`⚡ -${staminaBedeli} stamina`);
         return {
           altBaslik: `${m.name} yenildi`,

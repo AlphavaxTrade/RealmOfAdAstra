@@ -122,7 +122,7 @@ export const zindanYontemleri = {
       this.saveState();
       return {
         ...ortak, rewarded: true, fee: 0,
-        message: `🎟️ Ödüllü giriş (${sayac.dungeonRuns}/${kosul.freeTotal})${kosul.nextWeaponWear ? '' : ' · silahların aşınmaz'}`
+        message: `🎟️ Ödüllü giriş (${sayac.dungeonRuns}/${kosul.freeTotal})${kosul.nextWeaponWear ? '' : ' · eşyaların aşınmaz'}`
       };
     }
     if (harcOdenecek) {
@@ -213,19 +213,32 @@ export const zindanYontemleri = {
     return sonuc;
   },
 
-  // Savaş bitince silahların dayanıklılığını 1 düşürür (günün ilk girişinde çağrılmaz)
+  // Savaş bitince savaşa giren her askerin TAKILI eşyalarından RASTGELE birinin dayanıklılığını 1 düşürür (günün ilk girişinde
+  // çağrılmaz). Eskiden yalnız silah aşınırdı; artık silah, miğfer, zırh, pantolon ve çizme aynı şansla seçilir. Sağlam parça
+  // varken kırık parça seçilmez (kırığı aşındırmak boş iş olurdu). Hiç eşyası olmayan asker için eski kural: krallık kılıcı.
   applyDungeonWeaponWear(selectedIndices = []) {
     const askerler = this.state.soldierUnits || [];
     const asinan = [];
     for (const idx of selectedIndices) {
       const asker = askerler[idx];
       if (!asker) continue;
-      const kendi = asker.equipment && asker.equipment.weapon;
-      const silah = kendi || (this.state.equipment && this.state.equipment.weapon);
-      if (!silah) continue;
-      const enFazla = silah.maxDurability || 13;
-      silah.durability = Math.max(0, (silah.durability != null ? silah.durability : enFazla) - 1);
-      asinan.push(`${kendi ? `${asker.name} silahı` : 'Krallık Kılıcı'} (${silah.durability}/${enFazla})`);
+      const takili = ['weapon', 'helmet', 'armor', 'legs', 'boots']
+        .map((yuva) => ({ yuva, esya: asker.equipment && asker.equipment[yuva] }))
+        .filter((x) => x.esya);
+      if (!takili.length) {
+        const kilic = this.state.equipment && this.state.equipment.weapon;
+        if (!kilic) continue;
+        const enFazlaK = kilic.maxDurability || 13;
+        kilic.durability = Math.max(0, (kilic.durability != null ? kilic.durability : enFazlaK) - 1);
+        asinan.push(`Krallık Kılıcı (${kilic.durability}/${enFazlaK})`);
+        continue;
+      }
+      const saglam = takili.filter((x) => x.esya.durability == null || x.esya.durability > 0);
+      const adaylar = saglam.length ? saglam : takili;
+      const { esya } = adaylar[Math.min(adaylar.length - 1, Math.floor(Math.random() * adaylar.length))];
+      const enFazla = esya.maxDurability || 13;
+      esya.durability = Math.max(0, (esya.durability != null ? esya.durability : enFazla) - 1);
+      asinan.push(`${asker.name} · ${esya.name || 'eşya'} (${esya.durability}/${enFazla})`);
     }
     return asinan;
   },

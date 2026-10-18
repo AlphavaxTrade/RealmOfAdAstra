@@ -151,6 +151,34 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
   ok('Zindan: silah aşınması yalnız savaşa giren askere uygulanır');
 }
 
+// 7b) Aşınma rastgele bir eşyaya düşer: beş yuvanın hepsi şansı bulur, her seferinde yalnız biri 1 azalır, kırık parça sağlam varken seçilmez
+{
+  const gs = fresh();
+  const yuvalar = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+  const yeniTakim = () => Object.fromEntries(yuvalar.map((y) => [y, { name: y, durability: 13, maxDurability: 13 }]));
+  gs.state.soldierUnits = [{ name: 'A', equipment: yeniTakim() }];
+  const secilen = Object.fromEntries(yuvalar.map((y) => [y, 0]));
+  for (let i = 0; i < 300; i++) {
+    gs.state.soldierUnits[0].equipment = yeniTakim();
+    const worn = gs.applyDungeonWeaponWear([0]);
+    assert.equal(worn.length, 1, 'asker başına tek satır');
+    const dusen = yuvalar.filter((y) => gs.state.soldierUnits[0].equipment[y].durability === 12);
+    assert.equal(dusen.length, 1, 'tam bir eşya 1 azalır');
+    secilen[dusen[0]]++;
+  }
+  for (const y of yuvalar) assert.ok(secilen[y] > 20, `${y} yuvası da aşınabiliyor (${secilen[y]}/300)`);
+  gs.state.soldierUnits[0].equipment = yeniTakim();
+  for (const y of yuvalar.slice(1)) gs.state.soldierUnits[0].equipment[y].durability = 0;
+  gs.applyDungeonWeaponWear([0]);
+  assert.equal(gs.state.soldierUnits[0].equipment.weapon.durability, 12, 'tek sağlam parça o olduğundan o aşınır');
+  assert.ok(yuvalar.slice(1).every((y) => gs.state.soldierUnits[0].equipment[y].durability === 0), 'kırıklar 0 kalır');
+  gs.state.soldierUnits = [{ name: 'Çıplak', equipment: {} }];
+  gs.state.equipment = { weapon: { durability: 13, maxDurability: 13 } };
+  assert.match(gs.applyDungeonWeaponWear([0])[0], /Krallık Kılıcı/);
+  assert.equal(gs.state.equipment.weapon.durability, 12, 'eşyasız askerde eski kural: krallık kılıcı');
+  ok('Zindan: aşınma takılı eşyalardan rastgele birine düşer');
+}
+
 // 8) Eski kayıt: toplam giriş sayacı yoksa ödüllü + harçlı girişlerden türetilir
 {
   const gs = fresh();

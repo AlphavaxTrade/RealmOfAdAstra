@@ -153,11 +153,17 @@ function esyalarSekmesi(b, secenek) {
     const n = tumu.filter((e) => e.item.slot === y && (e.item.level || 1) === s).length;
     return n > 0 ? dugme({ e: 'grup', metin: `⚡ Seviye ${s} ${YUVA_ADLARI[y]} (${n})`, veri: { yuva: y, seviye: s } }) : '';
   }).join('');
+  // "Eksikleri al ve geliştir": eksik kaynak varsa tüm küme için tek tuş (eşyalar sırayla yükseltilir, eksik her seferinde alınır)
+  const topluDugme = (yuva, seviye, genis) => {
+    const plan = tumu.length ? gs.getQuickBuyPlan(`upgradeset:${yuva}:${seviye}`) : null;
+    if (!plan || !plan.items.length) return '';
+    return dugme({ e: 'hizliToplu', metin: `⚡ Eksikleri al ve geliştir · ~${tam(Math.ceil(plan.total + plan.extraAda))} ASTRA`, ton: 'iyi', devreDisi: !plan.ok, veri: { yuva, seviye }, genis });
+  };
   const ozelGrup = `<div class="ek-alan-satiri">
       <select class="ek-girdi" data-e-degis="grupYuva">${YUVALAR.map((y) => `<option value="${y}"${y === secenek.grupYuva ? ' selected' : ''}>${YUVA_KISA[y]}</option>`).join('')}</select>
       <select class="ek-girdi" data-e-degis="grupSeviye">${Array.from({ length: EN_FAZLA_SEVIYE }, (_, i) => i + 1).map((s) => `<option value="${s}"${s === secenek.grupSeviye ? ' selected' : ''}>Seviye ${s}</option>`).join('')}</select>
       ${dugme({ e: 'ozelGrup', metin: '⚡ Bu grubu geliştir', ton: 'birincil', devreDisi: tumu.length === 0 })}
-    </div>`;
+    </div>${topluDugme(secenek.grupYuva, secenek.grupSeviye, true)}`;
 
   const kartlar = liste.length === 0
     ? bos('🎒', 'Bu kategoride eşyan yok', '"Yeni eşya dök" sekmesinden ordun için yeni eşya üretebilirsin.')
@@ -175,7 +181,7 @@ function esyalarSekmesi(b, secenek) {
     katli('Toplu işlemler', dugmeler(
       dugme({ e: 'hepsiniGelistir', metin: '⚡ Hepsini toplu geliştir', devreDisi: tumu.length === 0 }),
       dugme({ e: 'cantayaTopla', metin: '🔄 Tümünü çantaya topla' })
-    ), { k: 'toplu' }),
+    ) + topluDugme('all', '-', true), { k: 'toplu' }),
     katli('Tür ve seviyeye göre geliştir', `${hizliGruplar ? `<div class="ek-dugmeler">${hizliGruplar}</div>` : ''}${ozelGrup}`, { k: 'grup' }),
     kartlar
   ].join('');
@@ -246,6 +252,42 @@ const ekran = {
         if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return false; }
       }
       sonuc(b, await gs.upgradeAnyEquipment(konum));
+      return undefined;
+    },
+
+    // Toplu "eksikleri al ve geliştir": eşyalar tek tek, sırayla; her birinin eksiği alınır (silo hepsini birden tutmak zorunda kalmaz), sonra yükseltilir.
+    async hizliToplu(b, el) {
+      const gs = b.gameState;
+      const yuva = el.dataset.yuva === 'all' ? null : el.dataset.yuva;
+      const seviye = el.dataset.seviye === '-' ? null : Number(el.dataset.seviye);
+      const kume = `${el.dataset.yuva}:${el.dataset.seviye}`;
+      const plan = gs.getQuickBuyPlan('upgradeset:' + kume);
+      if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const tamam = await onay({
+        baslik: 'Eksikler alınıp eşyalar geliştirilsin mi?',
+        metin: `${liste}\nAlım ~${tam(Math.ceil(plan.total))} ASTRA + geliştirme bedeli ~${tam(Math.ceil(plan.extraAda))} ASTRA`,
+        tamam: 'Al ve geliştir'
+      });
+      if (!tamam) return false;
+      const konumlar = gs.getUpgradeSetItems(yuva, seviye).map(ref);   // konumla: alımlar sırasında liste sırası değişse de aynı eşyalar geliştirilir
+      const ayni = (a, c) => a.source === c.source && a.slotKey === c.slotKey && a.armoryIndex === c.armoryIndex && a.soldierIndex === c.soldierIndex;
+      let yukseltilen = 0;
+      for (const konum of konumlar) {
+        const sira = gs.getAllArmoryEquipmentList().findIndex((g) => ayni(ref(g), konum));
+        const adim = gs.getQuickBuyPlan('upgrade:' + sira);
+        if (adim.items.length) {
+          if (!adim.ok) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${adim.reason}`, 'warning'); return false; }
+          for (const it of adim.items) {
+            const r = await gs.marketBuy(it.res, it.qty);
+            if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return false; }
+          }
+        }
+        const r = await gs.upgradeAnyEquipment(konum);
+        if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${(r && r.message) || ''}`, 'error'); return false; }
+        yukseltilen++;
+      }
+      b.bildir(`✨ ${yukseltilen} adet teçhizat eksikleri alınarak bir sonraki seviyeye yükseltildi!`, 'success');
       return undefined;
     },
 

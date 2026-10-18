@@ -95,6 +95,7 @@ export const pazarYontemleri = {
     let hedef;
     let ekAstra = 0;
     let xpEksik = false;
+    let kapasitesiz = false;   // toplu geliştirme: eşyalar sırayla yükseltilir, toplam bedelin hepsi aynı anda siloda durmak zorunda değil
 
     if (kind === 'levelup') {
       const gerek = this.getNextLevelRequirement();
@@ -121,6 +122,20 @@ export const pazarYontemleri = {
       if (!bedel || bedel.isMaxLevel) return { ok: false, items: [], reason: 'Eşya zaten en yüksek seviyede.' };
       hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, stone: bedel.stoneCost, fragments: bedel.fragCost };
       ekAstra = Number(bedel.adaCost) || 0;
+    } else if (String(kind).startsWith('upgradeset:')) {
+      // upgradeset:<yuva|all>:<seviye|-> → Demirhane toplu geliştirme (hepsi, tür ya da tür + seviye)
+      const [yuva, seviye] = String(kind).slice(11).split(':');
+      const bedel = this.getUpgradeSetCost(yuva === 'all' ? null : yuva, seviye && seviye !== '-' ? Number(seviye) : null);
+      if (!bedel.count) return { ok: false, items: [], reason: 'Geliştirilecek uygun teçhizat bulunamadı.' };
+      hedef = { iron: bedel.ironCost, wood: bedel.woodCost, coal: bedel.coalCost, stone: bedel.stoneCost, fragments: bedel.fragCost };
+      ekAstra = Number(bedel.adaCost) || 0;
+      kapasitesiz = true;
+    } else if (kind === 'heal') {
+      // Bütün yaralıları anında iyileştirmek: buğday + hızlı iyileştirme ASTRA'sı (Kışla/Zindan "Hızlı iyileştir")
+      const iyilestirme = this.getAllHealCost();
+      if (!iyilestirme.count) return { ok: false, items: [], reason: 'Yaralı asker yok.' };
+      hedef = { wheat: iyilestirme.totalWheat };
+      ekAstra = Number(iyilestirme.totalAda) || 0;
     } else {
       return { ok: false, items: [], reason: 'Geçersiz.' };
     }
@@ -132,7 +147,7 @@ export const pazarYontemleri = {
       const elde = Math.floor(Number(depo[kaynak]) || 0);
       let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde));
       const bosYer = kapasite[kaynak] != null ? Math.max(0, Math.floor(kapasite[kaynak] - elde)) : gerekli;
-      if (gerekli > bosYer) { gerekli = bosYer; siloYetmiyor = true; }
+      if (!kapasitesiz && gerekli > bosYer) { gerekli = bosYer; siloYetmiyor = true; }
       if (gerekli <= 0) continue;
       const bedel = ammMarket.getEstimatedCostForBuy(kaynak, gerekli);
       if (!isFinite(bedel)) return { ok: false, items: [], reason: 'Pazarda yeterli hammadde yok.' };
