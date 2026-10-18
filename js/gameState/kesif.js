@@ -1,4 +1,4 @@
-// Realm of AdAstra — GameStateManager yöntemleri: koleksiyon eserleri, Pandora kutusu, Genesis NFT, Arena anahtarı
+// Realm of AdAstra — GameStateManager yöntemleri: koleksiyon eserleri, Pandora kutusu, Genesis NFT, anahtar
 // (zindan ganimetinin dağıtımı js/gameState/zindan.js içindedir)
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { GAME_CONFIG } from '../config.js';
@@ -35,7 +35,7 @@ export const kesifYontemleri = {
     if ((this.state.arenaKeys || 0) <= 0) {
       return {
         success: false,
-        message: '🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar yalnızca Kolezyum haftalık derecesinden, Şans Çarkından veya AMM Pazarından temin edilebilir).'
+        message: '🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar Kolezyum haftalık 1.liğinden, Şans Çarkından veya AMM Pazarından temin edilebilir).'
       };
     }
 
@@ -83,7 +83,7 @@ export const kesifYontemleri = {
 
   // Genesis NFT basma artık Genesis Yolu'nda: js/gameState/genesis.js mintGenesisNft (şartlar, uyandırma, dolar sabit mühür)
 
-  // Kolezyum girişleri için Arena anahtarı ekler
+  // Pandora kutusu açmak için anahtar ekler (geliştirici)
   addArenaKey(count = 1) {
     this.state.arenaKeys = (this.state.arenaKeys || 0) + count;
     this.saveState();

@@ -86,7 +86,7 @@ const KATEGORILER = {
   bakim: async (P, rng) => (await e(P, 'repairAllTools')) || (bakiye(P) >= 50 && rng() < 0.3 && ((await e(P, 'craftEquipment', [rnd(rng, SLOTLAR)])) || (await e(P, 'autoEquipBest')))),
   kisla: async P => (bakiye(P) >= 55 && (await e(P, 'buySoldierUnit'))) || (askerSayisi(P) > 0 && (await e(P, 'setSoldierRow', [0, 'front']))),
   zindan: async P => askerSayisi(P) > 0 && e(P, 'fightDungeon', [1, [0]]),
-  kolezyum: async P => askerSayisi(P) > 0 && (Number(P.durum.arenaKeys) || 0) > 0 && e(P, 'executeColosseum1v1Match', [0]),
+  kolezyum: async P => askerSayisi(P) > 0 && bakiye(P) >= 15 && e(P, 'executeColosseum1v1Match', [0]),
   boss: async (P, rng) => askerSayisi(P) > 0 && rng() < 0.5 && e(P, 'stakeArmyForWorldBoss'),
   pazar: async (P, rng) => (await sat(P, rng)) || (bakiye(P) >= 20 && (await e(P, 'marketBuy', ['wheat', 5]))),
   konsey: async P => konseyKatki(P),

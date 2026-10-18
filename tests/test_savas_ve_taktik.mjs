@@ -87,7 +87,7 @@ console.log('✅ savaş simülasyonu ve boss fazları');
   }
 
   gs.state.soldierUnits = [{ id: 'g', name: 'Gladyatör', level: 15, hp: 250, maxHp: 250, baseAtk: 45, skills: ['shieldWall', 'shockwave'], row: 'front' }];
-  gs.state.arenaKeys = 5;
+  gs.state.adAstraBalance = 1e5;   // giriş ücreti ASTRA
   const mac = gs.executeColosseum1v1Match(0);
   assert.equal(typeof mac.isVictory, 'boolean');
   assert.ok(mac.combatLog.length > 0);
@@ -101,7 +101,7 @@ console.log('✅ savaş simülasyonu ve boss fazları');
   for (const lig of GAME_CONFIG.COLOSSEUM.LEAGUES) {
     const g2 = new GameStateManager();
     g2.state.soldierUnits = [{ ...guclu }];
-    g2.state.arenaKeys = 5;
+    g2.state.adAstraBalance = 1e5;
     g2.state.colosseumStats = { wins: 0, losses: 0, score: 0, rank: 11, rating: lig.minRating };
     g2.getDailyCounters().arenaAda = 0;   // günlük ödül tavanı (13 Ekim 2026 EK-06) ligleri birbirinin sayacına bağlamasın
     const m = g2.executeColosseum1v1Match(0);

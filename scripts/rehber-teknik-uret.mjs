@@ -132,7 +132,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
   ['Zindan: ödüllü giriş', 'Günlük', `${n(C.DUNGEON.DAILY_RUNS)} giriş (ilk giriş silahı aşındırmaz). 6. girişten sonra kapı harcı: katın ödülünün ${yuzde(C.DUNGEON.GATE_FEE_RATE, 0)}'si`, 'Sana özel'],
   ['Zindan: kişisel ASTRA tavanı', 'Günlük', `En az 5 ödüllü girişin değeri; ya da orduya harcadığın × ${n(C.DUNGEON.RETURN_SHARE)} ÷ ${n(C.DUNGEON.PAYBACK_DAYS)} (hangisi büyükse)`, 'Sana özel'],
   ['Zindan kasası günlük bütçesi', 'Günlük', `Kasanın ${yuzde(C.DUNGEON.DAILY_BUDGET_RATE, 2)}'sı`, 'Küresel (herkes)'],
-  ['Kolezyum: maç', 'Günlük', `${n(C.COLOSSEUM.DAILY_MATCH_CAP)} maç; her maça ${n(C.COLOSSEUM.ENTRY_KEY_COST)} anahtar ve ${n(C.COLOSSEUM.ENTRY_STAMINA_COST)} stamina`, 'Sana özel'],
+  ['Kolezyum: maç', 'Günlük', `${n(C.COLOSSEUM.DAILY_MATCH_CAP)} maç; her maça ${n(C.COLOSSEUM.ENTRY_FEE_ASTRA)} ASTRA ve ${n(C.COLOSSEUM.ENTRY_STAMINA_COST)} stamina`, 'Sana özel'],
   ['Kolezyum: ödül', 'Günlük', `En çok ${n(C.COLOSSEUM.DAILY_REWARD_CAP_ASTRA)} ASTRA`, 'Sana özel'],
   ['Kolezyum: gerçek rakip sıralaması', 'Haftalık', `İlk 10 oyuncu; kolezyum kasasının ${yuzde(PVP_RULES.weeklyPoolShare, 0)}'si paylaşılır`, 'Küresel (herkes)'],
   ['Dünya bossu', 'Haftalık', `Pazar 18:00 (TSİ) tek savaş; havuz boss kasasının ${yuzde(C.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE, 0)}'ü`, 'Küresel (herkes)'],
@@ -661,8 +661,8 @@ ${tablo(['Mod', 'ASTRA ödül çarpanı', 'Eşya düşme çarpanı', 'Asker hakk
   <h3>🏟️ Kolezyum</h3>
 ${formul([
   `<b>Maç ödülü</b> = en küçüğü( ${n(C.COLOSSEUM.WIN_REWARD_ASTRA)} × lig çarpanı ,  kolezyum kasasının %${sayi(C.COLOSSEUM.WIN_REWARD_POOL_SHARE * 100, 2)}'si ). Günlük ödül tavanı ${n(C.COLOSSEUM.DAILY_REWARD_CAP_ASTRA)} ASTRA.`,
-  `<b>Giriş:</b> ${n(C.COLOSSEUM.ENTRY_KEY_COST)} anahtar + ${n(C.COLOSSEUM.ENTRY_STAMINA_COST)} stamina; günde en çok ${n(C.COLOSSEUM.DAILY_MATCH_CAP)} maç. Rakip puanı seninkinin ±${n(C.COLOSSEUM.RATING_SPREAD)} civarındadır; puan değişimi ELO (K = ${n(C.COLOSSEUM.K_FACTOR)}), başlangıç ${n(C.COLOSSEUM.STARTING_RATING)}.`,
-  `<b>Gerçek rakiplerle sıralama:</b> 1v1 zaferi 1 puan, 3v3 zaferi 3 puan. Haftalık ilk 10 oyuncu, kolezyum kasasının %${sayi(PVP_RULES.weeklyPoolShare * 100)}'sini şu paylarla alır: ${PVP_RULES.topWeights.map((w, i) => `${i + 1}. %${w}`).join(', ')}.`
+  `<b>Giriş:</b> ${n(C.COLOSSEUM.ENTRY_FEE_ASTRA)} ASTRA ücret (%${sayi(C.COLOSSEUM.ENTRY_ARENA_SHARE * 100)}'i arena kasasına girer, kalanı yakım ve öteki kasalara dağılır) + ${n(C.COLOSSEUM.ENTRY_STAMINA_COST)} stamina; günde en çok ${n(C.COLOSSEUM.DAILY_MATCH_CAP)} maç. Rakip puanı seninkinin ±${n(C.COLOSSEUM.RATING_SPREAD)} civarındadır; puan değişimi ELO (K = ${n(C.COLOSSEUM.K_FACTOR)}), başlangıç ${n(C.COLOSSEUM.STARTING_RATING)}.`,
+  `<b>Gerçek rakiplerle sıralama:</b> 1v1 zaferi 1 puan, 3v3 zaferi 3 puan. Haftalık ilk 10 oyuncu, kolezyum kasasının %${sayi(PVP_RULES.weeklyPoolShare * 100)}'sini şu paylarla alır: ${PVP_RULES.topWeights.map((w, i) => `${i + 1}. %${w}`).join(', ')}. Haftalık <b>1. olan ayrıca 1 anahtar</b> kazanır (kasa pazardan satın alıp verir).`
 ])}
 ${tablo(['Lig', 'En az puan', 'Maç ödül çarpanı', 'Maç ödülü (taban)'], liglar.map((l) => [l.name, sayi(l.minRating), `×${n(l.rewardMult)}`, astra(C.COLOSSEUM.WIN_REWARD_ASTRA * l.rewardMult, 1)]))}
   <h3>🌋 Dünya bossu</h3>

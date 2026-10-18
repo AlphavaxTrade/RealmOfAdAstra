@@ -1,12 +1,12 @@
 // Realm of AdAstra sunucusu — Kolezyum: gerçek oyunculara karşı maç (eşleşme, maç, haftalık sıralama)
 // ============================================================================
 // Kurallar js/economy/pvp.js. Akış:
-//  • "Maç ara": takım görüntüsü alınır, giriş bedeli (anahtar + stamina + günlük hak) ödenir.
+//  • "Maç ara": takım görüntüsü alınır, giriş bedeli (ASTRA ücreti + stamina + günlük hak) ödenir; ücret maç bulunana kadar emanette bekler.
 //    Aynı türde (1v1 / 3v3) sırada bekleyen başka bir oyuncu varsa maç HEMEN oynanır; yoksa oyuncu sıraya girer
 //    ve askerleri kilitlenir (zindan, bot maçı, dünya bossu kullanamaz).
 //  • Bekleyen oyuncu çevrimdışı olabilir: maç onun kilitli takımıyla oynanır, sonucu bildirim olarak alır.
 //  • Süre dolarsa kalan canı (yüzde) daha yüksek olan kazanır.
-//  • Haftalık hesaplaşmada ilk 10'a Kolezyum kasasından ödül; sıralama sıfırlanır.
+//  • Haftalık hesaplaşmada ilk 10'a Kolezyum kasasından ödül, 1. olana ayrıca 1 anahtar (pazardan kasa parasıyla alınır); sıralama sıfırlanır.
 // ============================================================================
 import { simulateBattle } from '../js/combat.js';
 import { rastgele, tamsayi } from './rastgele.js';
@@ -58,10 +58,11 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       const oi2 = q.findIndex(x => x.address !== me);
       if (oi2 < 0) {
         q.push({ address: me, name, units: team.units, at: clock() });
-        gs.state.pvpQueue = { mode, indices: team.indices, at: clock() };
+        gs.state.pvpQueue = { mode, indices: team.indices, at: clock(), fee: paid.fee };
         return { success: true, queued: true, message: `⏳ Sıraya girdin (${mode}). İlk gelen rakiple maçın otomatik oynanacak; sonucu bildirim olarak alacaksın. Askerlerin maça kadar kilitli.` };
       }
       opp = q.splice(oi2, 1)[0];
+      gs.settleColosseumFee(paid.fee);                  // maç bulundu: emanetteki ücret dağıtılır
       const allies = clone(team.units).map((u, i) => ({ ...u, uid: 'a' + i }));
       const enemies = clone(opp.units).map((u, i) => ({ ...u, uid: 'b' + i, sourceIndex: -1 }));
       const seed = tamsayi(0x100000000);   // maç tohumu tahmin edilemesin (kriptografik)
@@ -93,6 +94,7 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       if (opp && match && opp.address !== '0xbot') {
         const theyWon = match.result === 'b';
         E.mutatePlayer(opp.address, gs => {
+          gs.settleColosseumFee(Number(gs.state.pvpQueue && gs.state.pvpQueue.fee) || 0);   // bekleyenin emanetteki ücreti dağıtılır
           gs.state.pvpQueue = null;
           remember(gs, {
             id: match.id, mode, at: match.at, opponent: match.a.name, result: theyWon ? 'win' : match.result ? 'loss' : 'draw',
@@ -118,7 +120,7 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
       A.queues[q.mode] = (A.queues[q.mode] || []).filter(x => x.address !== me);
       gs.refundPvpEntry();
       gs.state.pvpQueue = null;
-      return { success: true, message: '↩️ Sıradan çıktın; anahtarın ve staminan iade edildi.' };
+      return { success: true, message: '↩️ Sıradan çıktın; giriş ücretin ve staminan iade edildi.' };
     });
     if (out.result && out.result.success) put(A);
     return out;
@@ -154,6 +156,24 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
   // (eskiden havuz doğrudan düşülüyordu, %2 tek çekim tavanı ve kasa sağlığı küçültmesi atlanıyordu); tavan devreye
   // girip bütçe küçülürse herkesin payı AYNI oranda küçülür (1. ile 10.nun arasındaki oran bozulmaz). Kesirli
   // bölüşümde (floor) kalan ufak artık son ödüllü sıraya eklenir: kasadan çıkan ile oyunculara dağıtılan tam eşit.
+  // Haftalık 1.'ye 1 anahtar: havadan basılmaz, arena kasası pazardan gerçek fiyatla satın alıp verir (kasa/pazar yetmezse verilmez)
+  function birinciyeAnahtar(id) {
+    const T = E.treasury, M = E.ammMarket;
+    const tahmin = M.getEstimatedCostForBuy('keys', 1);
+    if (!isFinite(tahmin) || tahmin <= 0) return false;
+    const cekim = T.withdraw('arena', tahmin);
+    const odenen = cekim.granted || 0;
+    if (odenen < tahmin - 1e-9) { if (odenen > 0) T.depositTo('arena', odenen); return false; }
+    const alim = M.executeBuyAmount('keys', 1);
+    if (!alim || !alim.success) { T.depositTo('arena', odenen); return false; }
+    if (odenen > alim.cost) T.depositTo('arena', odenen - alim.cost);
+    E.mutatePlayer(id, gs => {
+      gs.state.arenaKeys = (gs.state.arenaKeys || 0) + 1;
+      gs.pushNotice('🔑 Kolezyum haftalık sıralamasında 1. olduğun için +1 Anahtar kazandın (Pandora kutusu açar).', 'success');
+    });
+    return true;
+  }
+
   function settleWeek(closedEpoch) {
     const A = get();
     const T = E.treasury;
@@ -173,7 +193,9 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
         gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${granted.toLocaleString('tr-TR')} ASTRA (${r.points} puan).`, 'success');
       });
     });
-    A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount })) };
+    const birinci = rewards.find(r => r.rank === 1);
+    const anahtarVerildi = !!birinci && birinciyeAnahtar(birinci.id);
+    A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount, ...(r.rank === 1 && anahtarVerildi ? { key: 1 } : {}) })) };
     A.table = {};
     put(A);
     return { players: rewards.length, total };

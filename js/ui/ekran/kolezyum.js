@@ -86,7 +86,7 @@ function duelloSekmesi(b, secenek) {
   return [
     kart({
       baslik: '⚔️ 1v1 Kolezyum düellosu',
-      rozet: etiket(`🔑 ${giris.keys} anahtar`),
+      rozet: etiket(`💰 ${astra(giris.fee)} ASTRA / maç`),
       icerik: not('Şampiyonunu seç ve Kolezyuma çık: kendi ligine uygun rakip bulunur, 1v1 savaş başlar. Şampiyon kolezyumda ölmez ama yaralanabilir; yaralıyı buğdayla iyileştirirsin.')
         + satir('Liginin kademesi', `${tier.name} · ${tam(istatistik.rating)} puan`, 'iyi')
     }),
@@ -107,7 +107,7 @@ function duelloSekmesi(b, secenek) {
     kart({
       baslik: 'Giriş bedeli',
       icerik: satir('Bugünkü maç', `${giris.used} / ${giris.cap}`, giris.used >= giris.cap ? 'kotu' : '')
-        + satir('Anahtar bedeli', `${giris.keyCost} (sende ${giris.keys})`, giris.keys < giris.keyCost ? 'kotu' : '')
+        + satir('Giriş ücreti', `${astra(giris.fee)} ASTRA (sende ${astra(giris.balance)})`, giris.balance < giris.fee ? 'kotu' : '')
         + satir('Stamina bedeli', `${giris.staminaCost} ⚡ (sende ${giris.stamina})`, giris.stamina < giris.staminaCost ? 'kotu' : '')
         + odulTavaniSatirlari(b, giris, tier)
         + dugme({ e: 'dovus', ton: 'iyi', genis: true, devreDisi: !!engel, metin: engel ? `🔒 ${esc(engel)}` : '⚔️ Kolezyuma çık (1v1)' })
@@ -193,7 +193,7 @@ function pvpSekmesi(b, secenek) {
       <b>${esc(s.icon || '⚔️')} ${esc(s.name)}</b><small>Sv.${esc(s.level || 1)} · ⚔️ ${esc(tam(f.totalAtk))} · ❤️ ${esc(tam(f.totalMaxHp))}</small></button>`;
   }).join('');
 
-  const kurallar = `Askerini seç, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <b>1 puan</b>, 3v3 zaferi <b>3 puan</b>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${esc(Math.round(((st.rules && st.rules.weeklyPoolShare) || 0) * 100))}'unu paylaşır. Maç askerinin canını azaltmaz. Giriş: anahtar + stamina (sıradan çıkarsan iade edilir).`;
+  const kurallar = `Askerini seç, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <b>1 puan</b>, 3v3 zaferi <b>3 puan</b>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${esc(Math.round(((st.rules && st.rules.weeklyPoolShare) || 0) * 100))}'unu paylaşır. Haftalık 1. olan ayrıca <b>1 anahtar</b> kazanır. Maç askerinin canını azaltmaz. Giriş: ASTRA ücreti + stamina (sıradan çıkarsan iade edilir).`;
 
   const sira = sirada
     ? kart({
@@ -341,7 +341,7 @@ const ekran = {
       const dolu = b.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE;
       const serbestOran = (b.GAME_CONFIG.LOCKED_BALANCE || {}).FREE_SHARE;   // kazancın serbest kısmı; kalanı kilitli (QA-14)
       const eloSatiri = `⭐ ${r.ratingDelta >= 0 ? '+' : ''}${r.ratingDelta} ELO (yeni puan ${r.newRating})`;
-      const odulSatiri = r.rewardKeys > 0 ? '🔑 +1 Arena Anahtarı' : '🏆 Haftalık lig puanı +3';
+      const odulSatiri = '🏆 Haftalık lig puanı +3';
       // Ödeme sınırı notu: haftalık kişi payı doldu (budgetFull / personCapped) ya da bugünkü ödül tavanı doldu (kalan oyundan okunur)
       const gun = gunlukOdul(b, gs.getColosseumEntryStatus());
       const odemeNotu = r.isVictory ? odemeSinirNotu({

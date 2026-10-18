@@ -163,8 +163,8 @@ export const ozetYontemleri = {
         health: treasury.getPoolHealth('arena'),
         inflow: Math.round(treasury.state?.inflow?.arena || 0),
         outflow: Math.round(treasury.state?.outflow?.arena || 0),
-        description: 'Arena anahtarı kullanan şampiyonların 1v1 düelloları ve haftalık sıralama ödülleri bu fondan çekilir.',
-        howToEarn: 'Arena anahtarı kuşan, Kolezyuma çık ve şampiyonları devir.',
+        description: 'Kolezyumda dövüşen şampiyonların 1v1 düelloları ve haftalık sıralama ödülleri bu fondan çekilir; giriş ücretlerinin büyük kısmı buraya girer.',
+        howToEarn: 'Giriş ücretini öde, Kolezyuma çık ve şampiyonları devir.',
         actionType: 'colosseum',
         actionText: '🏟️ Kolezyuma Git'
       },

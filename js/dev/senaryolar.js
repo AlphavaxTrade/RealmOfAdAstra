@@ -401,48 +401,48 @@ export const SENARYOLAR = [
   },
   // ------------------------------------------------------------------ KOLEZYUM (maçın sonucu şansa bağlı; giriş bedeli ve sınırlar sınanır)
   {
-    id: 'kolezyum-anahtar-yok', kategori: 'kolezyum', ad: 'Arena anahtarı yoksa maça çıkılmaz',
-    ne: 'Anahtar yokken maç reddedilmeli; stamina ve günlük hak harcanmamalı.',
-    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 0; },
+    id: 'kolezyum-astra-yok', kategori: 'kolezyum', ad: 'Giriş ücreti için ASTRA yoksa maça çıkılmaz',
+    ne: 'ASTRA yokken maç reddedilmeli; stamina ve günlük hak harcanmamalı.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.adAstraBalance = 0; },
     calistir: (gs) => gs.executeColosseum1v1Match(0),
     beklenen: [
       { ad: 'Maç reddedildi', tamam: (o, s, r) => r.success === false },
-      { ad: 'Mesaj anahtar istiyor', tamam: (o, s, r) => /Anahtar/i.test(r.message) },
+      { ad: 'Mesaj giriş ücreti istiyor', tamam: (o, s, r) => /giriş ücreti/i.test(r.message) },
       { ad: 'Stamina ve günlük hak harcanmadı', tamam: (o, s) => s.stamina === o.stamina && s.arenaMac === o.arenaMac }
     ]
   },
   {
     id: 'kolezyum-yarali', kategori: 'kolezyum', ad: 'Ağır yaralı asker arenaya çıkamaz',
-    ne: 'Canı çok düşük askerle maç reddedilmeli; anahtar harcanmamalı.',
-    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; gs.state.soldierUnits[0].hp = 5; },
+    ne: 'Canı çok düşük askerle maç reddedilmeli; ASTRA harcanmamalı.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.soldierUnits[0].hp = 5; },
     calistir: (gs) => gs.executeColosseum1v1Match(0),
     beklenen: [
       { ad: 'Maç reddedildi', tamam: (o, s, r) => r.success === false },
       { ad: 'Mesaj yaralı olduğunu söylüyor', tamam: (o, s, r) => /yaralı/i.test(r.message) },
-      { ad: 'Anahtar harcanmadı', tamam: (o, s) => s.arenaAnahtar === o.arenaAnahtar }
+      { ad: 'ASTRA harcanmadı', tamam: (o, s) => s.astra === o.astra }
     ]
   },
   {
     id: 'kolezyum-gunluk-sinir', kategori: 'kolezyum', ad: 'Günlük maç hakkı dolunca maç yapılmaz',
     ne: 'Günlük sınır dolunca maç reddedilmeli.',
-    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; gs.getDailyCounters().arenaMatches = GAME_CONFIG.COLOSSEUM.DAILY_MATCH_CAP; },
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.getDailyCounters().arenaMatches = GAME_CONFIG.COLOSSEUM.DAILY_MATCH_CAP; },
     calistir: (gs) => ({ sonuc: gs.executeColosseum1v1Match(0), durum: gs.getColosseumEntryStatus() }),
     beklenen: [
       { ad: 'Maç reddedildi', tamam: (o, s, r) => r.sonuc.success === false },
       { ad: 'Mesaj günlük hakkın dolduğunu söylüyor', tamam: (o, s, r) => /Günlük/i.test(r.sonuc.message) },
       { ad: 'Giriş durumu da engel nedenini gösteriyor', tamam: (o, s, r) => /Günlük/i.test(r.durum.blockReason) },
-      { ad: 'Anahtar harcanmadı', tamam: (o, s) => s.arenaAnahtar === o.arenaAnahtar }
+      { ad: 'ASTRA harcanmadı', tamam: (o, s) => s.astra === o.astra }
     ]
   },
   {
-    id: 'kolezyum-mac-bedeli', kategori: 'kolezyum', ad: 'Maç anahtar, stamina ve günlük hak harcar',
-    ne: 'Koşullar tamamsa maç yapılır; sonucu şansa bağlı olsa da bedeli kesindir: 1 anahtar (zaferde bazen geri verilir), 12 stamina, 1 günlük hak.',
-    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); gs.state.arenaKeys = 5; },
-    calistir: (gs) => ({ once: gs.getColosseumEntryStatus(), sonuc: gs.executeColosseum1v1Match(0) }),
+    id: 'kolezyum-mac-bedeli', kategori: 'kolezyum', ad: 'Maç ASTRA ücreti, stamina ve günlük hak harcar',
+    ne: 'Koşullar tamamsa maç yapılır; sonucu şansa bağlı olsa da bedeli kesindir: giriş ücreti (ASTRA), 12 stamina, 1 günlük hak. Zaferde ödül ASTRA eklenir.',
+    kur: (gs) => { temiz(gs); gunlukSifirla(gs); askerler(gs, 1); },
+    calistir: (gs) => ({ once: gs.getColosseumEntryStatus(), ucret: gs.getColosseumEntryFee(), sonuc: gs.executeColosseum1v1Match(0) }),
     beklenen: [
       { ad: 'Koşullar tamamken giriş engeli yok', tamam: (o, s, r) => r.once.blockReason === '' },
       { ad: 'Maç yapıldı', tamam: (o, s, r) => r.sonuc.success === true },
-      { ad: 'Giriş bedeli 1 anahtar (zaferde geri verilen anahtar kadar eksik harcanır)', tamam: (o, s, r) => o.arenaAnahtar - s.arenaAnahtar === GAME_CONFIG.COLOSSEUM.ENTRY_KEY_COST - (r.sonuc.rewardKeys || 0) },
+      { ad: 'Giriş ücreti kadar ASTRA düştü (zaferde ödül eklenir)', tamam: (o, s, r) => Math.abs((o.astra - s.astra) - (r.ucret - (r.sonuc.rewardAda || 0))) < 1e-6 },
       { ad: 'Stamina bedeli kadar düştü', tamam: (o, s) => o.stamina - s.stamina >= GAME_CONFIG.COLOSSEUM.ENTRY_STAMINA_COST },
       { ad: 'Günlük hak 1 arttı', tamam: (o, s) => s.arenaMac === o.arenaMac + 1 }
     ]

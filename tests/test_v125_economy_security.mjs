@@ -79,15 +79,19 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   gs.state.adAstraBalance = 1e6;
   gs.buySoldierUnit();
   gs.state.soldierUnits[0].level = 60; gs.state.soldierUnits[0].maxHp = 5000; gs.state.soldierUnits[0].hp = 5000; gs.state.soldierUnits[0].baseAtk = 900;
-  gs.state.arenaKeys = 5; gs.state.stamina = 500;
+  gs.state.stamina = 500;
   const arenaBefore = treasury.getPool('arena');
   const adaBefore = gs.state.adAstraBalance;
+  const ucret = gs.getColosseumEntryFee();
+  const pay = GAME_CONFIG.COLOSSEUM.ENTRY_ARENA_SHARE;
   const res = gs.executeColosseum1v1Match(0);
-  const won = gs.state.adAstraBalance - adaBefore;
+  const won = gs.state.adAstraBalance - adaBefore + ucret;   // ücret düştükten sonra kazanılan ödül
+  // Giriş ücretinin arena payı kasaya girer; ödül kasadan çekilir (kasa değişimi = ücret payı + dağılımdan gelen küçük pay − ödül)
   if (res && res.isVictory !== false && won > 0) {
-    assert.ok(Math.abs((arenaBefore - treasury.getPool('arena')) - won) < 1e-6, 'Kazanılan ASTRA arena kasasından düşmeli');
+    const fark = treasury.getPool('arena') - arenaBefore;
+    assert.ok(fark >= ucret * pay - won - 1e-6 && fark <= ucret - won + 1e-6, 'Kazanılan ASTRA arena kasasından düşmeli, ücretin arena payı kasaya girmeli');
   }
-  assert.ok(treasury.getPool('arena') <= arenaBefore, 'Arena kasası artmamalı');
+  assert.ok(treasury.getPool('arena') <= arenaBefore + ucret + 1e-6, 'Arena kasası ücretten fazla artmamalı');
   ok('Kolezyum: ödül arena kasasından çekiliyor');
 }
 

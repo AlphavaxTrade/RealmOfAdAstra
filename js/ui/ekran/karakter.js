@@ -146,7 +146,7 @@ function esyaKarti(b) {
   const bilet = `<div class="ek-oge-etiketler">
       <span class="ek-oge-etiket">🎟️ Piyango/çark bileti <b>${esc(tam(s.lotteryTickets || 0))}</b></span>
       <span class="ek-oge-etiket">🎟️ Çark amorti parçası <b>${esc(tam(s.wheelTicketShards || 0))}/10</b></span>
-      <span class="ek-oge-etiket">🔑 Arena anahtarı <b>${esc(tam(s.arenaKeys || 0))}</b></span></div>`;
+      <span class="ek-oge-etiket">🔑 Anahtar <b>${esc(tam(s.arenaKeys || 0))}</b></span></div>`;
   return katli('📜 Parşömenler, biletler ve anahtarlar', `<div class="ek-liste">${parsomenler}</div>${bilet}`, { k: 'esya' });
 }
 

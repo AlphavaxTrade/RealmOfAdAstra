@@ -727,10 +727,15 @@ export const GAME_CONFIG = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 🏟️ KOLEZYUM — anahtar tüketilir, ELO eşleşmesi, beş lig (F-02 / F-20)
+  // 🏟️ KOLEZYUM — giriş ücreti ASTRA, ELO eşleşmesi, beş lig (F-02 / F-20)
   // ═══════════════════════════════════════════════════════════════════════
   COLOSSEUM: {
-    ENTRY_KEY_COST: 1,
+    // Giriş ücreti ASTRA (18 Ekim 2026): anahtar artık giriş için değil, yalnız kilitli Pandora kutusunu açmak için kullanılır; haftalık
+    // sıralamada 1. olan ayrıca 1 anahtar kazanır (server/arena.js settleWeek). Eskiden her maç 1 anahtar (pazarda ~10 ASTRA) harcatıyor ve
+    // her zaferde %25 anahtar veriyordu. Ücretin ENTRY_ARENA_SHARE'i doğrudan arena kasasına girer (ödüller buradan çıkar), kalanı her harcama
+    // gibi dağıtılır (yakım, yapımcı payı, temel gelir, öteki kasalar). Ücret oyun içi fiyat çarpanıyla ölçeklenir.
+    ENTRY_FEE_ASTRA: 10,
+    ENTRY_ARENA_SHARE: 0.7,
     ENTRY_STAMINA_COST: 12,
     DAILY_MATCH_CAP: 10,
     STARTING_RATING: 1000,
@@ -1518,6 +1523,16 @@ export const GAME_CONFIG = {
         `Çarkın hiçbir ödülü havadan çıkmaz: hammadde, parça, anahtar ve stamina için Karnaval kasası pazardan gerçek fiyatla satın alır (stamina için buğday alıp yakar), pazarda yoksa ödülün ASTRA karşılığı ödenir.`,
         `Yeni Şans Sayacı: art arda 8 çevirmede bedelini geri alamazsan sonraki çevirme garantili 3 ASTRA nakittir. Sayaç çark ekranında görünür.`,
         `Çevirme bedelinin Karnaval kasasına giren payı %80'den %85'e çıktı (kasa uzun vadede büyüsün, oyunun ömrü uzasın). Ortalama dönüş yaklaşık %72 (Şans Sayacı hariç); oran tablosu ve rehber güncellendi.`
+      ]
+    },
+    {
+      version: 'v1.54',
+      title: '🏟️ Kolezyum Girişi ve Anahtar',
+      date: '18 Ekim 2026',
+      changes: [
+        `Kolezyuma artık anahtarla değil ASTRA ödeyerek girilir: maç başına 10 ASTRA (+ stamina). Ücretin %70'i arena kasasına girer (ödüller oradan çıkar), kalanı yakım ve öteki kasalara dağılır. Gerçek rakip sırasında ücret maç bulunana kadar emanette bekler; sıradan çıkarsan tamamen iade edilir.`,
+        `Anahtar artık yalnız kilitli Pandora kutusunu açar, oyundaki en değerli ikinci şeydir. Her zaferde %25 anahtar düşmesi kaldırıldı; Kolezyum haftalık sıralamasında 1. olan 1 anahtar kazanır (arena kasası pazardan gerçek fiyatla satın alıp verir). Anahtar ayrıca çarktan çok nadir çıkar ya da pazardan alınır.`,
+        `"Arena Anahtarı" adı her yerde "Anahtar" oldu.`
       ]
     }
   ],

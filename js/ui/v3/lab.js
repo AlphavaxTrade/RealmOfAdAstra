@@ -98,7 +98,7 @@ export function kurLab(api) {
       <section class="v3-lab-bolum"><h3>🧙 Karakter</h3><div class="v3-lab-dugmeler">${d('stamina', 'Stamina doldur')}</div>
         <div class="v3-lab-satir"><input id="lab-seviye" type="number" min="1" max="100" value="10" aria-label="Seviye"><button type="button" data-lab="seviye">Seviye yap</button></div></section>
       <section class="v3-lab-bolum"><h3>⚔️ Ordu ve aletler</h3><div class="v3-lab-dugmeler">${d('iyilestir', 'Askerleri iyileştir')}${d('onar', 'Hepsini onar')}${d('asker18', '+18 asker', 'Bakiye gerekirse otomatik eklenir')}</div></section>
-      <section class="v3-lab-bolum"><h3>🧭 Seferler, anahtar ve koleksiyon</h3><div class="v3-lab-dugmeler">${d('sefer-bitir', 'Aktif seferleri bitir')}${d('sefer-topla', 'Biten seferleri topla')}${d('anahtar:5', '+5 Arena anahtarı')}${d('sandik:3', '+3 Pandora kutusu')}${d('eserler', '18 koleksiyon eserini aç')}</div></section>
+      <section class="v3-lab-bolum"><h3>🧭 Seferler, anahtar ve koleksiyon</h3><div class="v3-lab-dugmeler">${d('sefer-bitir', 'Aktif seferleri bitir')}${d('sefer-topla', 'Biten seferleri topla')}${d('anahtar:5', '+5 Anahtar')}${d('sandik:3', '+3 Pandora kutusu')}${d('eserler', '18 koleksiyon eserini aç')}</div></section>
       <section class="v3-lab-bolum"><h3>🏛️ Sirius Konseyi projeleri</h3><div class="v3-lab-dugmeler">${d('konsey:1', 'Sıradaki projeyi bitir', 'Normalde her proje 6 M birim + 50.000 emek ister')}${d('konsey:10', 'Hepsini bitir')}${d('konsey-sifirla', 'Projeleri başa al', 'Dünya geneli etkiler')}</div></section>
       <section class="v3-lab-bolum"><h3>💀 Zindan</h3><div class="v3-lab-satir"><input id="lab-zindan" type="number" min="1" max="18" value="2" aria-label="Zindan katı"><button type="button" data-lab="zindan">Kata ilerlet</button></div></section>
       <section class="v3-lab-bolum"><h3>💾 Kayıt noktaları</h3>${kayitHtml}</section>
@@ -160,7 +160,7 @@ export function kurLab(api) {
       case 'asker18': { gs.addDevAdAstra(1e7); let n = 0; for (let i = 0; i < 18; i++) if (gs.buySoldierUnit().success) n += 1; logla('Asker eklendi', `+${n}`); api.bildir(`⚔️ Orduya +${n} asker katıldı.`, 'success'); break; }
       case 'sefer-bitir': gs.completeAllExpeditionsNow(); logla('Seferler bitirildi'); break;
       case 'sefer-topla': { const t = gs.claimAllCompletedExpeditions(); logla('Seferler toplandı', `${(t || []).length} sefer`); break; }
-      case 'anahtar': gs.addArenaKey(num || 1); logla('Arena anahtarı', `+${num || 1}`); break;
+      case 'anahtar': gs.addArenaKey(num || 1); logla('Anahtar', `+${num || 1}`); break;
       case 'sandik': gs.state.lockedBoxes = (gs.state.lockedBoxes || 0) + (num || 1); gs.saveState(); logla('Pandora kutusu', `+${num || 1}`); break;
       case 'eserler': gs.unlockAllDevArtifacts(); logla('Koleksiyon eserleri açıldı'); break;
       case 'konsey': { const r = gs.devFinishCouncilProjects(num || 1); logla('Konsey projeleri', (r && r.message) || ''); api.bildir((r && r.message) || 'Konsey projeleri güncellendi.', r && r.finished > 0 ? 'success' : 'error'); break; }

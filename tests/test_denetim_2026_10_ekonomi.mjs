@@ -262,7 +262,7 @@ const asker = (gs, n = 1, seviye = 8) => {
 {
   const gs = yeni();
   asker(gs, 1, 12);
-  gs.state.arenaKeys = 1000; gs.state.stamina = 1e6; gs.state.maxStamina = 1e6;
+  gs.state.adAstraBalance = 1e6; gs.state.stamina = 1e6; gs.state.maxStamina = 1e6;   // giriş ücreti ASTRA'dır (anahtar değil)
   gs.state.adaPriceMultiplier = 0.5;                     // bedel çarpanı: ödül bundan ETKİLENMEMELİ
   const sonuclar = [];
   for (let i = 0; i < 10; i++) {

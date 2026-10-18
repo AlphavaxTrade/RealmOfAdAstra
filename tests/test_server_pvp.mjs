@@ -39,9 +39,16 @@ for (const addr of [A, B, C]) {
 }
 
 // 1) A sıraya girer, askeri kilitlenir
+const FEE = E.readPlayer(A).adAstraBalance;   // ücret düşmeden önceki bakiye (aşağıda farkı ölçülür)
+const havuz0 = E.treasury.getPool('arena');
+const ucret = E.withPlayer(A, gs => gs.getColosseumEntryFee()).result;
+assert.equal(ucret, E.GAME_CONFIG.COLOSSEUM.ENTRY_FEE_ASTRA * E.withPlayer(A, gs => gs.adaPrice(1)).result, 'ücret ayardaki tutar × fiyat çarpanı');
 const q1 = arena.queue(A, '1v1', [0]);
 assert.ok(q1.result.success && q1.result.queued, q1.result.message);
-assert.equal(q1.state.arenaKeys, 4, 'Giriş bedeli: 1 anahtar');
+assert.equal(q1.state.arenaKeys, 5, 'Giriş anahtar harcamaz');
+assert.ok(Math.abs(FEE - q1.state.adAstraBalance - ucret) < 1e-6, 'Giriş bedeli: ASTRA ücreti bakiyeden düştü (emanette)');
+assert.equal(E.treasury.getPool('arena'), havuz0, 'Maç bulunana kadar ücret emanette: arena kasasına girmedi');
+assert.equal(q1.state.pvpQueue.fee, ucret, 'ücret sıra kaydında');
 assert.deepEqual(q1.state.pvpQueue.indices, [0]);
 const locked = E.act(A, 'fightDungeon', [1, [0]]);
 assert.equal(locked.result.success, false, 'Sıradaki asker zindana giremez');
@@ -52,6 +59,7 @@ ok('Sıraya girme: bedel alınıyor, asker kilitleniyor, hatalı seçim reddedil
 // 2) B gelir, maç hemen oynanır
 const q2 = arena.queue(B, '1v1', [0]);
 assert.ok(q2.result.success && q2.result.matched, q2.result.message);
+assert.ok(E.treasury.getPool('arena') >= havuz0 + 2 * ucret * E.GAME_CONFIG.COLOSSEUM.ENTRY_ARENA_SHARE - 1e-6, 'Maç bulununca iki ücretin arena payı arena kasasına girdi');
 assert.ok(q2.result.sim && Array.isArray(q2.result.sim.rounds), 'Savaş kaydı döner');
 const aAfter = E.readPlayer(A);
 assert.equal(aAfter.pvpQueue, null, 'A\'nın kilidi açıldı');
@@ -81,11 +89,13 @@ ok('Eşleşme: maç sunucuda oynanıyor, puan, bildirim, neden ve tekrar izleme'
 }
 
 // 3) Sıradan çıkınca iade
-const keysBefore = E.readPlayer(C).arenaKeys;
+const bakiyeC = E.readPlayer(C).adAstraBalance, staminaC = Math.floor(E.readPlayer(C).stamina), havuzC = E.treasury.getPool('arena');
 assert.ok(arena.queue(C, '1v1', [0]).result.queued);
 const lv = arena.leave(C);
 assert.ok(lv.result.success);
-assert.equal(lv.state.arenaKeys, keysBefore, 'Anahtar iade edildi');
+assert.ok(Math.abs(lv.state.adAstraBalance - bakiyeC) < 1e-6, 'Giriş ücreti iade edildi');
+assert.equal(E.treasury.getPool('arena'), havuzC, 'Sıradan çıkan oyuncunun ücreti arena kasasına geçmedi');
+assert.ok(Math.floor(lv.state.stamina) >= staminaC - 1, 'Stamina iade edildi');
 assert.equal(lv.state.pvpQueue, null);
 assert.equal(arena.status(A).waiting['1v1'], 0, 'Sıra boş');
 ok('Sıradan çıkış: bedel iade, kilit açılıyor');
@@ -97,12 +107,17 @@ if (pts === 0 && q2.result.result !== 'win') {
 const winnerAddr = q2.result.result === 'win' ? B : q2.result.result === 'loss' ? A : null;
 const arenaPool = E.treasury.getPool('arena');
 const balBefore = winnerAddr ? E.readPlayer(winnerAddr).adAstraBalance : 0;
+const keysBeforeWeek = winnerAddr ? E.readPlayer(winnerAddr).arenaKeys : 0;
+const anahtarFiyati = E.ammMarket.getEstimatedCostForBuy('keys', 1);
 const summary = world.settleWeek(E.globalPool.state.epochId, null);
 if (winnerAddr) {
   assert.equal(summary.pvp.players, 1);
   const expect = Math.floor(arenaPool * PVP_RULES.weeklyPoolShare * 0.25);
   assert.ok(Math.abs(E.readPlayer(winnerAddr).adAstraBalance - balBefore - expect) < 1, 'Birinciye kasanın %30 × %25\'i');
-  assert.ok(Math.abs(E.treasury.getPool('arena') - (arenaPool - expect)) < 1, 'Ödül Kolezyum kasasından çıktı');
+  // Birinciye ayrıca 1 anahtar: arena kasası pazardan gerçek fiyatla satın alıp verir (havadan basılmaz)
+  assert.equal(E.readPlayer(winnerAddr).arenaKeys, keysBeforeWeek + 1, 'Haftalık 1.ye 1 anahtar verildi');
+  assert.ok(Math.abs(E.treasury.getPool('arena') - (arenaPool - expect - anahtarFiyati)) < 1, 'Ödül ve anahtar bedeli Kolezyum kasasından çıktı');
+  assert.equal(arena.status(winnerAddr).lastWeek.rewards[0].key, 1, 'Geçen hafta kaydında anahtar işaretli');
 }
 assert.equal(arena.status(A).top.length, 0, 'Sıralama yeni haftada sıfırlandı');
 ok('Haftalık sıralama ödülü ve sıfırlama');

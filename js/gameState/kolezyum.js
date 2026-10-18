@@ -3,6 +3,7 @@
 // ayrı çalışır: server/arena.js + js/economy/pvp.js.
 import { GAME_CONFIG } from '../config.js';
 import { treasury } from '../treasury.js';
+import { globalPool } from '../globalPool.js';
 import { createUnit, simulateBattle } from '../combat.js';
 import { getDungeonEntry } from '../bestiary.js';
 import { PVP_RULES } from '../economy/pvp.js';
@@ -18,20 +19,37 @@ const RAKIP_TABLOSU = {
 };
 
 export const kolezyumYontemleri = {
+  // Giriş ücreti (ASTRA, oyun içi fiyat çarpanıyla)
+  getColosseumEntryFee() {
+    return this.adaPrice(GAME_CONFIG.COLOSSEUM.ENTRY_FEE_ASTRA || 0);
+  },
+
+  // Ücreti dağıtır: arena payı doğrudan arena kasasına (ödüller buradan çıkar), kalanı her harcama gibi (yakım, yapımcı payı, temel
+  // gelir, öteki kasalar). Bakiyeden düşme çağıranın işidir (Gerçek rakip sırasında ücret maç bulunana kadar emanette bekler).
+  settleColosseumFee(ucret) {
+    const miktar = Number(ucret) || 0;
+    if (miktar <= 0) return;
+    const pay = Math.max(0, Math.min(1, GAME_CONFIG.COLOSSEUM.ENTRY_ARENA_SHARE ?? 0.7));
+    this._onAdaSpent(miktar);
+    if (pay > 0 && treasury.depositTo) treasury.depositTo('arena', miktar * pay);
+    globalPool.recordTokenSpend(miktar * (1 - pay));
+  },
+
   // Giriş koşulları (ekranda maç öncesi gösterilir; kurallar executeColosseum1v1Match ile aynı)
   getColosseumEntryStatus() {
     const cfg = GAME_CONFIG.COLOSSEUM;
     const kullanilan = this.getDailyCounters().arenaMatches || 0;
-    const anahtar = this.state.arenaKeys || 0;
+    const ucret = this.getColosseumEntryFee();
+    const bakiye = this.state.adAstraBalance || 0;
     const stamina = Math.floor(this.state.stamina || 0);
 
     let engel = '';
     if (kullanilan >= cfg.DAILY_MATCH_CAP) engel = `Günlük maç hakkın doldu (${cfg.DAILY_MATCH_CAP}/${cfg.DAILY_MATCH_CAP})`;
-    else if (anahtar < cfg.ENTRY_KEY_COST) engel = `${cfg.ENTRY_KEY_COST} Arena Anahtarı gerekli`;
+    else if (bakiye < ucret) engel = `${Math.round(ucret * 100) / 100} ASTRA giriş ücreti gerekli`;
     else if (stamina < cfg.ENTRY_STAMINA_COST) engel = `${cfg.ENTRY_STAMINA_COST} ⚡ stamina gerekli`;
     return {
       used: kullanilan, cap: cfg.DAILY_MATCH_CAP,
-      keys: anahtar, keyCost: cfg.ENTRY_KEY_COST,
+      fee: ucret, balance: bakiye,
       stamina, staminaCost: cfg.ENTRY_STAMINA_COST,
       // Günlük ASTRA ödül tavanı (kişi başı): arayüz "bugünkü tavan X / Y" göstersin (denetim 2. tur)
       rewardCap: cfg.DAILY_REWARD_CAP_ASTRA ?? null,
@@ -63,15 +81,16 @@ export const kolezyumYontemleri = {
     if (sayaclar.arenaMatches >= cfg.DAILY_MATCH_CAP) {
       return { success: false, message: `⏳ Günlük arena hakkın doldu (${cfg.DAILY_MATCH_CAP}/${cfg.DAILY_MATCH_CAP}). Yarın tekrar gel.` };
     }
-    if ((this.state.arenaKeys || 0) < cfg.ENTRY_KEY_COST) {
-      return { success: false, message: `🔑 Arenaya çıkmak için ${cfg.ENTRY_KEY_COST} Arena Anahtarı gerekir! (Zindan boss'larından veya pazardan edinebilirsin.)` };
+    const ucret = this.getColosseumEntryFee();
+    if ((this.state.adAstraBalance || 0) < ucret) {
+      return { success: false, message: `💰 Arenaya çıkmak için ${Math.round(ucret * 100) / 100} ASTRA giriş ücreti gerekir!` };
     }
     if ((this.state.stamina || 0) < cfg.ENTRY_STAMINA_COST) {
       return { success: false, message: `⚡ Yetersiz stamina! (${cfg.ENTRY_STAMINA_COST} gerekli)` };
     }
 
-    this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
-    this.burnItem('keys', cfg.ENTRY_KEY_COST);
+    this.state.adAstraBalance -= ucret;
+    this.settleColosseumFee(ucret);
     this.state.stamina -= cfg.ENTRY_STAMINA_COST;
     sayaclar.arenaMatches += 1;
 
@@ -136,7 +155,6 @@ export const kolezyumYontemleri = {
     let odul = 0;
     let butceDoldu = false;
     let kisiKisti = false;
-    let odulAnahtar = 0;
     if (zafer) {
       stats.wins += 1;
       stats.score += 3;
@@ -156,11 +174,6 @@ export const kolezyumYontemleri = {
       this.state.adAstraBalance = (this.state.adAstraBalance || 0) + odul;
       this._onAdaEarned(odul);
       stats.totalAdaWon = (stats.totalAdaWon || 0) + odul;
-
-      if (Math.random() < 0.25) {
-        odulAnahtar = 1;
-        this.state.arenaKeys = (this.state.arenaKeys || 0) + 1;
-      }
     } else {
       stats.losses += 1;
       stats.score = Math.max(0, stats.score - 1);
@@ -188,7 +201,6 @@ export const kolezyumYontemleri = {
       rewardAda: odul,
       budgetFull: butceDoldu,
       personCapped: kisiKisti,
-      rewardKeys: odulAnahtar,
       ratingDelta: puanFarki,
       newRating: stats.rating,
       combatLog: savas.log.map(l => l.text || `${l.actor} -> ${l.target} (${l.amount || ''} hasar)`).filter(Boolean),
@@ -216,23 +228,28 @@ export const kolezyumYontemleri = {
     return { success: true, mode, indices: sira, units: JSON.parse(JSON.stringify(birimler)), name: cleanName(askerler[sira[0]].name) || 'Asker' };
   },
 
-  // Giriş bedeli: hazır rakip maçıyla aynı (anahtar + stamina + günlük hak)
+  // Giriş bedeli: hazır rakip maçıyla aynı (ASTRA ücreti + stamina + günlük hak). Ücret bakiyeden düşer ama maç bulunana kadar EMANETTE
+  // bekler (dağıtım settleColosseumFee ile maç bulununca yapılır); sıradan çıkılırsa tamamı iade edilir.
   payPvpEntry() {
     const durum = this.getColosseumEntryStatus();
     if (durum.blockReason) return { success: false, message: '⛔ ' + durum.blockReason };
     const cfg = GAME_CONFIG.COLOSSEUM;
-    this.state.arenaKeys -= cfg.ENTRY_KEY_COST;
-    this.burnItem('keys', cfg.ENTRY_KEY_COST);
+    this.state.adAstraBalance -= durum.fee;
     this.state.stamina -= cfg.ENTRY_STAMINA_COST;
     this.getDailyCounters().arenaMatches += 1;
-    return { success: true };
+    return { success: true, fee: durum.fee };
   },
 
-  // Sıradan çıkınca bedel iade edilir
+  // Sıradan çıkınca bedel iade edilir (sıraya ücretle girmiş oyuncuya ASTRA; eski kayıtta anahtarla girmiş olana 1 anahtar)
   refundPvpEntry() {
     const cfg = GAME_CONFIG.COLOSSEUM;
-    this.state.arenaKeys = (this.state.arenaKeys || 0) + cfg.ENTRY_KEY_COST;
-    this.burnItem('keys', -cfg.ENTRY_KEY_COST);
+    const kuyruk = this.state.pvpQueue;
+    if (kuyruk && kuyruk.fee != null) {
+      this.state.adAstraBalance = (this.state.adAstraBalance || 0) + (Number(kuyruk.fee) || 0);
+    } else {
+      this.state.arenaKeys = (this.state.arenaKeys || 0) + 1;
+      this.burnItem('keys', -1);
+    }
     this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + cfg.ENTRY_STAMINA_COST);
     const sayac = this.getDailyCounters();
     sayac.arenaMatches = Math.max(0, (sayac.arenaMatches || 0) - 1);

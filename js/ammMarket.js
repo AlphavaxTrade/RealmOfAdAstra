@@ -82,7 +82,7 @@ function varsayilanHavuzlar() {
   }
   havuzlar.fragments = havuzKur('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' });
   havuzlar.boxes = havuzKur('boxes', { name: 'Pandora Kutusu', icon: '📦' });
-  havuzlar.keys = havuzKur('keys', { name: 'Arena Anahtarı', icon: '🔑' });
+  havuzlar.keys = havuzKur('keys', { name: 'Anahtar', icon: '🔑' });
   havuzlar.scroll_heal = havuzKur('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' });
   havuzlar.scroll_stamina = havuzKur('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' });
   return havuzlar;

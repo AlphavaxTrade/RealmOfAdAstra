@@ -75,7 +75,7 @@ assert.deepEqual(basarisiz, [], 'başarısız senaryolar:\n' + basarisiz.join('\
   assert.equal(bozuk('zindan-stamina-yok', (gs) => { gs.deductDungeonStamina = () => ({ success: true }); }).gecti, false, 'zindan stamina kontrolü kalkarsa senaryo kırmızı olmalı');
   assert.equal(bozuk('zindan-kat-kilidi', (gs) => { gs.setDungeonProgress = () => { gs.state.dungeonProgress = 18; }; }).gecti, false, 'kat kilidi kalkarsa senaryo kırmızı olmalı');
   assert.equal(bozuk('zindan-harc-ve-antrenman', (gs) => { gs.getDungeonGateFee = () => 5; }).gecti, false, 'harç kuralı bozulursa senaryo kırmızı olmalı');
-  assert.equal(bozuk('kolezyum-anahtar-yok', (gs) => { const o = gs.executeColosseum1v1Match.bind(gs); gs.executeColosseum1v1Match = (i) => { gs.state.arenaKeys = 5; return o(i); }; }).gecti, false, 'anahtar şartı kalkarsa senaryo kırmızı olmalı');
+  assert.equal(bozuk('kolezyum-astra-yok', (gs) => { const o = gs.executeColosseum1v1Match.bind(gs); gs.executeColosseum1v1Match = (i) => { gs.state.adAstraBalance = 1e7; return o(i); }; }).gecti, false, 'ASTRA şartı kalkarsa senaryo kırmızı olmalı');
   assert.equal(bozuk('ordu-koylu-siniri', (gs) => { gs.getVillageInfo = () => ({ soldierCap: 99, villagers: 99 }); }).gecti, false, 'köylü sınırı bozulursa senaryo kırmızı olmalı');
   console.log('✅ kural bozulunca ilgili senaryolar kırmızı olur (10 kontrol deneyi)');
 }
