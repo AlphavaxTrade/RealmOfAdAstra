@@ -41,7 +41,8 @@ const gs = new GameStateManager();
     const fiyat = p[k].adAstraReserve / p[k].resourceReserve;
     assert.ok(Math.abs(fiyat - GAME_CONFIG.AMM_CORRIDORS[k].defaultPriceAda) < 0.01, `${k} havuzu koridor fiyatında`);
   }
-  for (const k of ['fragments', 'boxes', 'keys']) assert.ok(p[k].adAstraReserve > 0, `${k} havuzu fonlu`);
+  assert.ok(p.fragments.adAstraReserve > 0, 'parça havuzu fonlu');
+  assert.ok(!p.boxes && !p.keys, 'Pandora kutusu ve Anahtar havuzları kaldırıldı');
 
   const tohum = GAME_CONFIG.TREASURY_SEED;
   for (const [kasa, miktar] of Object.entries(tohum)) assert.equal(treasury.state.pools[kasa], miktar, `${kasa} kasası tohumda`);

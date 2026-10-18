@@ -35,7 +35,7 @@ export const kesifYontemleri = {
     if ((this.state.arenaKeys || 0) <= 0) {
       return {
         success: false,
-        message: '🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar Kolezyum haftalık 1.liğinden, Şans Çarkından veya AMM Pazarından temin edilebilir).'
+        message: '🔑 Pandora Kutusu açmak için en az 1 Anahtar gerekir! (Anahtarlar Kolezyum haftalık ilk üçünden gelir; oyuncular birbirine İlan Pazarında satar).'
       };
     }
 

@@ -9,7 +9,7 @@ test('🛡️ AMM 6 Varlıklı Dinamik Buyback & Burn Motoru Testleri', async (t
 
   await t.test('1. Genesis Referans Fiyatları ve %75 Hammadde Ağırlık Dağılımı Doğrulaması', () => {
     // v2: Genesis fiyatları koridor varsayılanları (×0,01 ölçek)
-    for (const k of ['wheat', 'iron', 'wood', 'fragments', 'keys', 'boxes']) {
+    for (const k of ['wheat', 'iron', 'wood', 'fragments']) {
       assert.equal(GENESIS_PRICES[k], GAME_CONFIG.AMM_CORRIDORS[k].defaultPriceAda, `${k} Genesis fiyatı koridor varsayılanı olmalı`);
     }
 

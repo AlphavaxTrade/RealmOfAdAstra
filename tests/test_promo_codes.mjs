@@ -45,7 +45,7 @@ try {
   // Yönetici kod üretir
   assert.equal((await call('POST', '/api/admin/promo/create', { code: 'X1', reward: { ada: 1 } })).status, 401, 'Yönetici olmayan kod üretemez');
   assert.equal((await admin('POST', '/api/admin/promo/create', { code: 'BOS-KOD', reward: {} })).status, 400, 'Boş ödül olmaz');
-  const c1 = await admin('POST', '/api/admin/promo/create', { code: 'hosgeldin-2026', reward: { ada: 500, wood: 200, keys: 2 }, maxUses: 2, expiresDays: 7, note: 'açılış' });
+  const c1 = await admin('POST', '/api/admin/promo/create', { code: 'hosgeldin-2026', reward: { ada: 500, wood: 200, fragments: 2 }, maxUses: 2, expiresDays: 7, note: 'açılış' });
   assert.equal(c1.status, 200, JSON.stringify(c1.body));
   assert.equal(c1.body.code, 'HOSGELDIN-2026', 'Kod büyük harfe çevrilir');
   assert.equal((await admin('POST', '/api/admin/promo/create', { code: 'hoşgeldin', reward: { ada: 1 } })).status, 400, 'Türkçe harfli kod reddedilir');
@@ -63,9 +63,9 @@ try {
   assert.equal(s1.adAstraBalance - (s0.adAstraBalance || 0), 500, '500 ASTRA geldi');
   assert.ok((s1.lockedAda || 0) >= 500, 'ADA kilitli geldi');
   assert.equal(s1.inventory.wood - (s0.inventory.wood || 0), 200, '200 odun geldi');
-  assert.equal((s1.arenaKeys || 0) - (s0.arenaKeys || 0), 2, '2 anahtar geldi');
+  assert.equal((s1.inventory.fragments || 0) - (s0.inventory.fragments || 0), 2, '2 parça geldi');
   assert.ok(q0 - quest() > 500, `Bedel görev kasasından çıktı (${Math.round(q0 - quest())} ASTRA)`);
-  ok('Kod oyunda kullanılıyor: kilitli ASTRA + pazardan alınan odun ve anahtar, bedeli görev kasasından');
+  ok('Kod oyunda kullanılıyor: kilitli ASTRA + pazardan alınan odun ve parça, bedeli görev kasasından');
 
   assert.equal((await call('POST', '/api/promo/redeem', { code: 'HOSGELDIN-2026' }, a.token)).status, 400, 'Aynı hesap ikinci kez kullanamaz');
   const b = await signup('banu@example.com');

@@ -62,7 +62,7 @@ function ornekler(E) {
     slot: SLOTS,
     slotRef: [...SLOTS, { source: 'armory', armoryIndex: 0 }, { source: 'armory', armoryIndex: 1 }, { source: 'soldier', soldierIndex: 0, slotKey: 'weapon' }],
     node: NODES,
-    res: [...NODES, 'fragments', 'boxes', 'keys'],
+    res: [...NODES, 'fragments'],
     idxArr: [[0], [0, 1], [0, 1, 2], [1], [2, 3]],
     ref: [
       { source: 'armory', armoryIndex: 0 }, { source: 'armory', armoryIndex: 1 },

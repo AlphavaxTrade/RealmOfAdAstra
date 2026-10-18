@@ -17,7 +17,7 @@ const SCROLLS = ['scroll_heal', 'scroll_stamina', 'scroll_teleport', 'scroll_rep
 // v2: alanlar ve hammaddeler config'ten (6 kaynak)
 const NODES = GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 const WHEEL_PAY = ['ada', 'ticket', ...NODES];
-const RESOURCE_KEYS = [...NODES, 'fragments', 'boxes', 'keys'];
+const RESOURCE_KEYS = [...NODES, 'fragments'];
 
 const T = {
   int: v => Number.isInteger(v) && Math.abs(v) <= 1e9,

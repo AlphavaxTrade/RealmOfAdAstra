@@ -305,15 +305,6 @@ export const karnavalYontemleri = {
           }
         }
       }
-    } else if (odul.type === 'key' || odul.id === 'box_key') {
-      const adet = (odul.amount || 1) * c;
-      const eski = ammMarket.getPrice('keys') || 1000.0;
-      geriAlimUygula({
-        anahtar: 'keys', adet, eskiFiyat: eski, basamak: 1,
-        yedekDeger: (odul.valAda || Math.round((odul.amount || 1) * eski)) * c,
-        etiket: `${adet} Anahtar`, ad: 'Anahtar', simge: '🔑',
-        teslim: (n) => { this.state.arenaKeys = (this.state.arenaKeys || 0) + n; }
-      });
     } else if (odul.type === 'bot_free') {
       this.buyTavernaAutomationBot(true, odul.hours || 24);
     } else if (odul.type === 'scroll') {

@@ -6,14 +6,14 @@
    "f68217a1266c6bcb",
    "f68217a1266c6bcb"
   ],
-  "dunya": "2a1b2c91754c2696"
+  "dunya": "008b2f59171eb357"
  },
  {
   "adim": "seferler basladi",
   "oyuncu": [
    "79aa40a4ef28400a"
   ],
-  "dunya": "2a1b2c91754c2696",
+  "dunya": "008b2f59171eb357",
   "sonuc": [
    "startExpedition:ok",
    "startExpedition:ok",
@@ -28,7 +28,7 @@
   "oyuncu": [
    "a616b017e6b6f79b"
   ],
-  "dunya": "a34f60e548d216cf",
+  "dunya": "62dae7b44f7fd6f6",
   "sonuc": [
    "claimAllHarvests:ok"
   ]
@@ -38,7 +38,7 @@
   "oyuncu": [
    "6a175b90d75249de"
   ],
-  "dunya": "a34f60e548d216cf",
+  "dunya": "62dae7b44f7fd6f6",
   "sonuc": [
    "repairAllTools:RED"
   ]
@@ -48,7 +48,7 @@
   "oyuncu": [
    "c1095b987bcffac5"
   ],
-  "dunya": "7ff275bca34e5209",
+  "dunya": "c69e02dfebbb78b8",
   "sonuc": [
    "buySoldierUnit:ok",
    "buySoldierUnit:ok",
@@ -61,7 +61,7 @@
   "oyuncu": [
    "a955b4a1d59ed38f"
   ],
-  "dunya": "a125a13467cbe29c",
+  "dunya": "15017bb809a0f5c5",
   "sonuc": [
    "craftEquipment:ok",
    "craftEquipment:RED",
@@ -78,7 +78,7 @@
   "oyuncu": [
    "7ebc3aac0385ddc2"
   ],
-  "dunya": "44184a0a2b80f7f0",
+  "dunya": "4e7ba796946d0006",
   "sonuc": [
    "upgradeWarehouse:ok",
    "levelUp:RED"
@@ -89,7 +89,7 @@
   "oyuncu": [
    "f2058db00d2988c7"
   ],
-  "dunya": "d8672de3bf2fb5ba",
+  "dunya": "ae8b9d1b31dbd854",
   "sonuc": [
    "marketSell:ok",
    "marketBuy:ok",
@@ -101,7 +101,7 @@
   "oyuncu": [
    "cbaebb8802bba43e"
   ],
-  "dunya": "f254ffb0e7278428",
+  "dunya": "7e8c884a5219f177",
   "sonuc": [
    "buyTavernaAutomationBot:ok",
    "setBotSiloOption:ok"
@@ -112,7 +112,7 @@
   "oyuncu": [
    "dcb35c12329cffac"
   ],
-  "dunya": "d5d6c4c00677483c",
+  "dunya": "7bebe14827c255fc",
   "sonuc": [
    "claimAllCompletedExpeditions:ok"
   ]
@@ -122,7 +122,7 @@
   "oyuncu": [
    "b197cae3f862e437"
   ],
-  "dunya": "a39f3ba6560ea33d",
+  "dunya": "7d4e0fb22333a211",
   "sonuc": [
    "fightDungeon:ok",
    "fightDungeon:ok",
@@ -134,7 +134,7 @@
   "oyuncu": [
    "9c8395b22c4f48d5"
   ],
-  "dunya": "d0ca321892411004",
+  "dunya": "d3e2b6d53d89e11d",
   "sonuc": [
    "spinCarnivalWheel:ok",
    "spinCarnivalWheel:ok",
@@ -148,7 +148,7 @@
    "287b35800d42c279",
    "2f1a95a2000e49aa"
   ],
-  "dunya": "c7e435712c89484d",
+  "dunya": "c92aca23ca0432db",
   "sonuc": [
    "buyLotteryTickets:ok",
    "buyLotteryTickets:ok"
@@ -159,7 +159,7 @@
   "oyuncu": [
    "8d1902a448a751ed"
   ],
-  "dunya": "347b4d6b475f39cd",
+  "dunya": "9bcfa71cd5b21ffb",
   "sonuc": [
    "buySoldierUnit:ok",
    "startExpedition:ok",
@@ -171,7 +171,7 @@
   "oyuncu": [
    "0810a14eca0b6cf3"
   ],
-  "dunya": "28b2833b04669ea6",
+  "dunya": "15e291d511f2d81b",
   "sonuc": [
    "buySoldierUnit:ok",
    "levelUp:RED"
@@ -183,7 +183,7 @@
    "ed0245b9cb40ab02",
    "ad938a4ed3096b27"
   ],
-  "dunya": "de723a766fa85ede",
+  "dunya": "d504845d69cde0bd",
   "sonuc": {
    "sira": true,
    "eslesti": true,
@@ -196,7 +196,7 @@
    "63e30506a649276c",
    "c7932f8fcd99c2a6"
   ],
-  "dunya": "a8f6254e4c561135",
+  "dunya": "5357bdcdd4ff7e27",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
@@ -209,7 +209,7 @@
    "7423c6abcc4c918a",
    "8b0d8750dac10c25"
   ],
-  "dunya": "a2501282bb18e9ea",
+  "dunya": "ddc6938d49f3bcca",
   "sonuc": [
    "claimAllHarvests:RED",
    "claimWeeklyUbi:RED",
@@ -222,7 +222,7 @@
    "b3e2d73ff8d09016",
    "affb326c544fd615"
   ],
-  "dunya": "2b68d37603779fa6",
+  "dunya": "c3abee9e2ecec36e",
   "sonuc": [
    "claimAllHarvests:RED",
    "claimWeeklyUbi:ok",
@@ -233,10 +233,10 @@
   "adim": "haftalik hesaplasma",
   "oyuncu": [
    "3b12e4d720f253fe",
-   "211a68e32f7b57e0",
+   "a6f31b6a11612895",
    "ad938a4ed3096b27"
   ],
-  "dunya": "ac54d795db43d181",
+  "dunya": "d7abeec9f30d2135",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -249,7 +249,7 @@
    "026f9a466828a19b",
    "ad938a4ed3096b27"
   ],
-  "dunya": "b1393dc7ad44356f",
+  "dunya": "1f465cd2cbedc607",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",

@@ -1,4 +1,4 @@
-// Realm of AdAstra — Meydan Pazarı ekranı: al-sat (takas havuzu), teçhizat ilanları ve hazine geri alım / yakım panosu.
+// Realm of AdAstra — Meydan Pazarı ekranı: al-sat (takas havuzu), teçhizat ve Anahtar ilanları ve hazine geri alım / yakım panosu.
 import {
   ekranKaydet, kap, kart, katli, satir, sekmeler, dugme, uyari, not, bos, cubuk, simge, etiket, tam, astra, sayi, esc, yenile
 } from './cekirdek.js';
@@ -6,7 +6,7 @@ import { resImg } from '../art.js';
 import { onay } from '../v3/bilesenler.js';
 import { terim } from '../v3/sozluk.js';
 
-const ALINIR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments', 'boxes', 'keys'];
+const ALINIR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments'];
 const BOLUMLER = [{ id: 'alsat', ad: 'Al / Sat', simge: '💱' }, { id: 'ilan', ad: 'İlanlar', simge: '🏷️' }, { id: 'yakim', ad: 'Yakım', simge: '🔥' }];
 
 function durum(s) {
@@ -15,10 +15,8 @@ function durum(s) {
   return s;
 }
 
-// Oyuncunun elindeki miktar (kutu ve anahtar ayrı alanlarda tutulur)
+// Oyuncunun elindeki miktar
 function eldeki(gs, key) {
-  if (key === 'boxes') return gs.state.lockedBoxes || 0;
-  if (key === 'keys') return gs.state.arenaKeys || 0;
   return Number(gs.state.inventory[key]) || 0;
 }
 
@@ -81,8 +79,28 @@ function alSatBolumu(b, s) {
   return `<div class="ek-sekmeler" role="tablist">${cipler}</div>${islemKarti(b, secili)}`;
 }
 
+// Anahtar ilanı: toplu (adet + birim fiyat). Alıcı istediği adedi yazar, bedel = birim fiyat × adet.
+function anahtarIlanSatiri(b, l, benim, simdi) {
+  const it = l.item || {};
+  const kalanSaat = Math.max(0, Math.round((l.expires - simdi) / 3600000));
+  const kalan = kalanSaat >= 48 ? `${Math.floor(kalanSaat / 24)} gün` : `${kalanSaat} sa`;
+  const adet = Number(it.qty) || 0;
+  return `<div class="ek-oge">
+      <div class="ek-oge-govde"><b>🔑 Anahtar · ${esc(tam(adet))} adet</b>
+        <small>Tanesi ${esc(astra(l.price))} ASTRA · hepsi ${esc(astra(l.price * adet))} ASTRA</small>
+        <small>${benim ? 'senin ilanın' : `satıcı ${esc(String(l.seller).slice(0, 10))}…`} · kalan ${esc(kalan)}</small></div>
+      <div class="ek-dugmeler">
+        ${benim
+    ? dugme({ e: 'ilanCek', metin: '↩️ Geri çek', veri: { id: l.id } })
+    : `<input type="number" min="1" max="${esc(adet)}" value="${esc(adet)}" class="ek-girdi ek-girdi-dar" data-anahtar-adet="${esc(l.id)}" inputmode="numeric" aria-label="Alınacak anahtar adedi">
+          ${dugme({ e: 'ilanAnahtarAl', metin: '🛒 Satın al', ton: 'iyi', veri: { id: l.id, fiyat: l.price, kalan: adet } })}`}
+      </div>
+    </div>`;
+}
+
 function ilanSatiri(b, l, benim, simdi) {
   const it = l.item || {};
+  if (it.kind === 'key') return anahtarIlanSatiri(b, l, benim, simdi);
   const kalanSaat = Math.max(0, Math.round((l.expires - simdi) / 3600000));
   const kalan = kalanSaat >= 48 ? `${Math.floor(kalanSaat / 24)} gün` : `${kalanSaat} sa`;
   return `<div class="ek-oge">
@@ -101,15 +119,23 @@ function ilanBolumu(b, s) {
   if (!b.online || !b.online.active) {
     return kart({ baslik: '🏷️ İlan Pazarı', icerik: uyari('Oyuncular arası teçhizat satışı yalnız çevrimiçi sunucuda çalışır (bilgisayardaki deneme modunda kapalı).') });
   }
-  const aciklama = not('Cephanelik\'teki bir eşyayı Demirhane > "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Alıcı önce serbest ASTRA\'sından öder (yetmezse kalanı kilitliden); satıcıya gelen paranın en az %80\'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya sana döner.');
+  const aciklama = not('Cephanelik\'teki bir eşyayı Demirhane > "Pazara koy" ile ilana verirsin; eşya ilanda bekler. Anahtarı da buradan (adet + birim fiyat) satarsın: Anahtar takas havuzunda yok, yalnız oyuncular arasında el değiştirir. Alıcı önce serbest ASTRA\'sından öder (yetmezse kalanı kilitliden); satıcıya gelen paranın en az %80\'i kilitli gelir. Komisyonun yarısı yakılır, yarısı kasalara gider. 7 günde satılmazsa eşya (ya da anahtar) sana döner.');
   const d = s.ilanVeri;
   if (!d) return kart({ baslik: '🏷️ İlan Pazarı: oyuncudan oyuncuya teçhizat', rozet: etiket('komisyon %2 · 7 gün · 10 ilan'), icerik: `${aciklama}<div class="v3-iskelet" aria-busy="true"><i></i><i></i><i></i></div>` });
+  const anahtarim = Math.floor(Number(b.gameState.state.arenaKeys) || 0);
+  const anahtarFormu = `<div class="ek-alt-baslik">🔑 Anahtar sat (elinde ${esc(tam(anahtarim))})</div>
+      <div class="ek-alan-satiri">
+        <input type="number" min="1" id="anahtar-adet" class="ek-girdi" value="${anahtarim > 0 ? 1 : 0}" inputmode="numeric" aria-label="Satılacak anahtar adedi" placeholder="adet">
+        <input type="number" min="0.01" step="any" id="anahtar-fiyat" class="ek-girdi" value="10" inputmode="decimal" aria-label="Tanesi kaç ASTRA" placeholder="birim fiyat (ASTRA)">
+        ${dugme({ e: 'ilanAnahtarSat', metin: '🏷️ İlana ver', ton: 'birincil', devreDisi: anahtarim <= 0 })}
+      </div>`;
   const benim = (d.mine || []).map((l) => ilanSatiri(b, l, true, d.now)).join('');
   const digerleri = (d.listings || []).filter((l) => !l.mine).map((l) => ilanSatiri(b, l, false, d.now)).join('');
   return kart({
-    baslik: '🏷️ İlan Pazarı: oyuncudan oyuncuya teçhizat',
+    baslik: '🏷️ İlan Pazarı: oyuncudan oyuncuya teçhizat ve anahtar',
     rozet: etiket('komisyon %2 · 7 gün · 10 ilan'),
     icerik: `${aciklama}
+      ${anahtarFormu}
       <div class="ek-alt-baslik">Senin ilanların (${(d.mine || []).length}/${d.maxListings})</div>
       ${benim ? `<div class="ek-liste">${benim}</div>` : '<p class="ek-kucuk">İlanın yok. Demirhane\'de bir eşyanın yanındaki "Pazara koy" düğmesini kullan.</p>'}
       <div class="ek-alt-baslik">Satıştakiler (${(d.listings || []).filter((l) => !l.mine).length})</div>
@@ -291,6 +317,43 @@ const ekran = {
       if (!tamam) return false;
       try {
         const r = await b.pazar.buy(Number(el.dataset.id));
+        b.bildir(r.message, r.success ? 'success' : 'error');
+      } catch (err) { b.bildir(`Satın alınamadı: ${err.message}`, 'error'); }
+      secenek.ilanVeri = null;
+      return undefined;
+    },
+    async ilanAnahtarSat(b, el, secenek) {
+      const kok = el.closest('.ek');
+      const adet = Math.floor(Number(kok.querySelector('#anahtar-adet').value));
+      const fiyat = Number(String(kok.querySelector('#anahtar-fiyat').value).replace(',', '.'));
+      if (!(adet >= 1)) { b.bildir('Satılacak anahtar adedini yaz.', 'error'); return false; }
+      if (!(fiyat > 0)) { b.bildir('Tanesi için geçerli bir fiyat yaz.', 'error'); return false; }
+      const tamam = await onay({
+        baslik: `${tam(adet)} anahtar ilana konsun mu?`,
+        metin: `Tanesi ${astra(fiyat)} ASTRA, hepsi ${astra(fiyat * adet)} ASTRA. Satılınca %2 komisyon düşer. 7 günde satılmazsa anahtarlar sana döner; istediğin an geri çekebilirsin.`,
+        tamam: 'İlana ver'
+      });
+      if (!tamam) return false;
+      try {
+        const r = await b.pazar.sellKey(adet, fiyat);
+        b.bildir(r.message, r.success ? 'success' : 'error');
+      } catch (err) { b.bildir(`İlan verilemedi: ${err.message}`, 'error'); }
+      secenek.ilanVeri = null;
+      return undefined;
+    },
+    async ilanAnahtarAl(b, el, secenek) {
+      const girdi = el.closest('.ek').querySelector(`[data-anahtar-adet="${el.dataset.id}"]`);
+      const adet = Math.floor(Number(girdi && girdi.value));
+      const kalan = Number(el.dataset.kalan) || 0;
+      if (!(adet >= 1) || adet > kalan) { b.bildir(`Alınacak adedi 1 ile ${tam(kalan)} arasında yaz.`, 'error'); return false; }
+      const toplam = Number(el.dataset.fiyat) * adet;
+      const tamam = await onay({
+        baslik: `${tam(adet)} anahtar satın alınsın mı?`,
+        metin: `${astra(toplam)} ASTRA (tanesi ${astra(Number(el.dataset.fiyat))}). Önce serbest ASTRA'n kullanılır; yetmezse kalanı kilitliden düşer.`, tamam: 'Satın al'
+      });
+      if (!tamam) return false;
+      try {
+        const r = await b.pazar.buy(Number(el.dataset.id), adet);
         b.bildir(r.message, r.success ? 'success' : 'error');
       } catch (err) { b.bildir(`Satın alınamadı: ${err.message}`, 'error'); }
       secenek.ilanVeri = null;

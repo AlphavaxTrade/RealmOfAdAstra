@@ -102,7 +102,7 @@ const ekran = {
     async kutuAc(b, el, secenek) {
       const s = b.gameState.state;
       if ((s.lockedBoxes || 0) <= 0) { b.bildir('Açılacak Pandora kutun yok!', 'error'); return false; }
-      if ((s.arenaKeys || 0) <= 0) { b.bildir('🔑 Pandora kutusu açmak için en az 1 anahtar gerekir. (Anahtarlar Kolezyum derecesinden, Şans Çarkından ya da pazardan gelir.)', 'error'); return false; }
+      if ((s.arenaKeys || 0) <= 0) { b.bildir('🔑 Pandora kutusu açmak için en az 1 anahtar gerekir. (Anahtarlar Kolezyum haftalık ilk üçünden gelir; İlan Pazarından da alabilirsin.)', 'error'); return false; }
       const r = await b.gameState.unboxMysteryBox();
       if (r.success) {
         b.gameState.saveState();

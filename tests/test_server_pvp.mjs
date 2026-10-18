@@ -108,15 +108,14 @@ const winnerAddr = q2.result.result === 'win' ? B : q2.result.result === 'loss' 
 const arenaPool = E.treasury.getPool('arena');
 const balBefore = winnerAddr ? E.readPlayer(winnerAddr).adAstraBalance : 0;
 const keysBeforeWeek = winnerAddr ? E.readPlayer(winnerAddr).arenaKeys : 0;
-const anahtarFiyati = E.ammMarket.getEstimatedCostForBuy('keys', 1);
 const summary = world.settleWeek(E.globalPool.state.epochId, null);
 if (winnerAddr) {
   assert.equal(summary.pvp.players, 1);
   const expect = Math.floor(arenaPool * PVP_RULES.weeklyPoolShare * 0.25);
   assert.ok(Math.abs(E.readPlayer(winnerAddr).adAstraBalance - balBefore - expect) < 1, 'Birinciye kasanın %30 × %25\'i');
-  // Birinciye ayrıca 1 anahtar: arena kasası pazardan gerçek fiyatla satın alıp verir (havadan basılmaz)
+  // İlk 3'e birer anahtar (COLOSSEUM.HAFTALIK_ANAHTAR): havadan basılır, arena kasasından para çıkmaz (pazar havuzu yok)
   assert.equal(E.readPlayer(winnerAddr).arenaKeys, keysBeforeWeek + 1, 'Haftalık 1.ye 1 anahtar verildi');
-  assert.ok(Math.abs(E.treasury.getPool('arena') - (arenaPool - expect - anahtarFiyati)) < 1, 'Ödül ve anahtar bedeli Kolezyum kasasından çıktı');
+  assert.ok(Math.abs(E.treasury.getPool('arena') - (arenaPool - expect)) < 1, 'Yalnız ASTRA ödülü Kolezyum kasasından çıktı; anahtar kasadan ödenmedi');
   assert.equal(arena.status(winnerAddr).lastWeek.rewards[0].key, 1, 'Geçen hafta kaydında anahtar işaretli');
 }
 assert.equal(arena.status(A).top.length, 0, 'Sıralama yeni haftada sıfırlandı');

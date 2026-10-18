@@ -153,7 +153,7 @@ function carkSekmesi(b, secenek) {
         + dugme({ e: 'cheer', metin: cheerYapildi ? '✅ Bugün katıldın' : '🎪 Coşkuya katıl (+10 ⚡)', devreDisi: cheerYapildi, genis: true })
     }),
     katli('📋 Çarkın ödülleri ve şansları', izgara(odulTablosu, { genis: true })
-      + not('Hammadde, parça, anahtar ve stamina ödülleri Karnaval kasasının parasıyla pazardan satın alınıp sana verilir (stamina için kasa buğday alıp yakar); pazarda bulunamazsa ödülün ASTRA karşılığı ödenir. Çarpanlı çevirmede her ödül aynı oranda büyür.'), { k: 'cark-odul' })
+      + not('Hammadde, parça ve stamina ödülleri Karnaval kasasının parasıyla pazardan satın alınıp sana verilir (stamina için kasa buğday alıp yakar); pazarda bulunamazsa ödülün ASTRA karşılığı ödenir. Çarpanlı çevirmede her ödül aynı oranda büyür.'), { k: 'cark-odul' })
   ].join('');
 }
 

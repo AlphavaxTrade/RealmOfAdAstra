@@ -487,6 +487,27 @@
       404
     ]
   },
+  "POST /api/pazar/sell-key": {
+    "etiket": "İlan pazarı",
+    "ozet": "Anahtarı toplu ilana koy: adet + birim fiyat (yalnız vatandaşlar)",
+    "govde": {
+      "qty": {
+        "tur": "integer",
+        "zorunlu": true,
+        "aciklama": "Satılacak anahtar adedi"
+      },
+      "price": {
+        "tur": "number",
+        "zorunlu": true,
+        "aciklama": "Tanesinin fiyatı (ASTRA)"
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
   "POST /api/pazar/cancel": {
     "etiket": "İlan pazarı",
     "ozet": "İlanı geri çek",
@@ -509,6 +530,11 @@
       "id": {
         "tur": "integer",
         "zorunlu": true
+      },
+      "qty": {
+        "tur": "integer",
+        "zorunlu": false,
+        "aciklama": "Yalnız Anahtar ilanında: alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
       }
     },
     "yanit": "{ result, player, world, ... }",

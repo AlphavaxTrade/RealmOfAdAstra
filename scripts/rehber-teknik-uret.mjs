@@ -493,14 +493,14 @@ const pazar = bolum('t-pazar', '🏪', 'Pazar: fiyat nasıl oluşur?', 'Pazarda 
   <h3>Başlangıç havuzları ve koridor</h3>
 ${tablo(['Mal', 'Açılış fiyatı', 'Taban', 'Tavan', 'Havuz: ASTRA', 'Havuz: mal', 'Tek işlem sınırı'], [
   ...K6.map((k) => [AD(k), sayi(ACILIS[k], 4), sayi(C.AMM_CORRIDORS[k].minPriceAda, 4), sayi(C.AMM_CORRIDORS[k].maxPriceAda, 4), sayi(havuz(k).adAstraReserve), sayi(havuz(k).resourceReserve), sayi(havuz(k).resourceReserve * C.AMM_SINGLE_TRADE_SHARE)]),
-  ...['fragments', 'boxes', 'keys', 'scroll_heal', 'scroll_stamina'].map((k) => [havuz(k).icon + ' ' + havuz(k).name, sayi(C.AMM_CORRIDORS[k].defaultPriceAda, 3), sayi(C.AMM_CORRIDORS[k].minPriceAda, 3), sayi(C.AMM_CORRIDORS[k].maxPriceAda, 3), sayi(havuz(k).adAstraReserve), sayi(havuz(k).resourceReserve), sayi(havuz(k).resourceReserve * C.AMM_SINGLE_TRADE_SHARE)])
+  ...['fragments', 'scroll_heal', 'scroll_stamina'].map((k) => [havuz(k).icon + ' ' + havuz(k).name, sayi(C.AMM_CORRIDORS[k].defaultPriceAda, 3), sayi(C.AMM_CORRIDORS[k].minPriceAda, 3), sayi(C.AMM_CORRIDORS[k].maxPriceAda, 3), sayi(havuz(k).adAstraReserve), sayi(havuz(k).resourceReserve), sayi(havuz(k).resourceReserve * C.AMM_SINGLE_TRADE_SHARE)])
 ])}
   ${ornek(`<p><b>1.000 odun sat.</b> Havuz ${sayi(w1000.resourceReserve)} odun ve ${sayi(w1000.adAstraReserve)} ASTRA tutuyor (fiyat ${sayi(w1000.adAstraReserve / w1000.resourceReserve, 4)}). ${sayi(satNet)} odun havuza girer, ${sayi(1000 - satNet)} odun yanar. Brüt ASTRA: ${sayi(satBrut, 3)}; komisyon (%2): ${sayi(satKom, 3)}; <b>eline geçen ${sayi(satBrut - satKom, 3)} ASTRA</b> (ortalama ${sayi((satBrut - satKom) / 1000, 4)}/odun, fiyat farkı küçük çünkü havuz büyük).</p>
   <p><b>1.000 odun al.</b> Brüt ${sayi(alBrut)} odun çıkar, ${sayi(alBrut - 1000)} odun yanar. Havuza ${sayi(alNet, 3)} ASTRA girer + %2 komisyon ${sayi(alKom, 3)} → <b>toplam ${sayi(alNet + alKom, 3)} ASTRA</b>.</p>`)}
   <h3>Geri alım (fiyat düşünce destek)</h3>
   <ul>
     <li>Bir malın fiyatı açılışın <b>%${sayi(C.AMM_BUYBACK.TRIGGER_DROP * 100)}'ünden fazla</b> düşerse, Pazar Geri Alım Kasası <b>haftada kendi bakiyesinin %${sayi(C.AMM_BUYBACK.WEEKLY_RATE * 100)}'üne kadar</b> o malı alıp yakar.</li>
-    <li>Öncelik: hammaddeler %75 (üretim değerine göre), parça %10, anahtar %8, kutu %7.</li>
+    <li>Öncelik: hammaddeler %75 (üretim değerine göre), teçhizat parçası %25.</li>
     <li>Bu kasa oyuncuya ödeme yapmaz; yalnız fiyatı savunur.</li>
   </ul>
   <h3>Komisyon nereye gider?</h3>

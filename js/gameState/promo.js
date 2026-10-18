@@ -4,13 +4,13 @@ import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { RES_KEYS, kaynakAdi } from './ortak.js';
 
-const EK_KALEMLER = ['fragments', 'keys', 'boxes', 'scroll_heal', 'scroll_stamina'];
+const EK_KALEMLER = ['fragments', 'scroll_heal', 'scroll_stamina'];   // Anahtar ve Pandora kutusu pazarda yok: promo koduyla da verilmez (18 Ekim 2026)
 
 export const promoYontemleri = {
   // Kullanıcı kararı (6 Ekim 2026): her kodun ne vereceğini yönetici seçer. Yoktan bir şey basılmaz: ASTRA görev
   // kasasından gelir ve KİLİTLİ verilir (oyunda harcandıkça açılır); hammadde ve eşyalar görev kasasının parasıyla
   // pazardan satın alınıp verilir. Kasa yetmezse ya da pazarda yeterli mal yoksa hiçbir şey verilmez.
-  // odul: { ada, <hammadde anahtarları>, fragments, keys, boxes, scroll_heal, scroll_stamina } (tam sayılar)
+  // odul: { ada, <hammadde anahtarları>, fragments, scroll_heal, scroll_stamina } (tam sayılar)
   applyPromoReward(odul = {}) {
     const ada = Math.max(0, Math.floor(Number(odul.ada) || 0));
     const kalemler = [...RES_KEYS(), ...EK_KALEMLER]
@@ -37,8 +37,6 @@ export const promoYontemleri = {
       if (!alim || !alim.success) return { success: false, failedMidway: true, message: (alim && alim.message) || 'Pazardan alınamadı.' };
       harcanan += alim.cost;
       if (RES_KEYS().includes(k)) this.storeResourceOrSell(k, v, 'Promo kodu');
-      else if (k === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + v;
-      else if (k === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + v;
       else this.state.inventory[k] = (Number(this.state.inventory[k]) || 0) + v;
       verilen.push(`${v.toLocaleString('tr-TR')} ${kaynakAdi(k)}`);
     }

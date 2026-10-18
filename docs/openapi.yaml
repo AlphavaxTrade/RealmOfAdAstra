@@ -1249,6 +1249,48 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/pazar/sell-key:
+    post:
+      tags:
+        - İlan pazarı
+      summary: "Anahtarı toplu ilana koy: adet + birim fiyat (yalnız vatandaşlar)"
+      operationId: post_api_pazar_sell_key
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qty:
+                  type: integer
+                  description: Satılacak anahtar adedi
+                price:
+                  type: number
+                  description: Tanesinin fiyatı (ASTRA)
+              required:
+                - qty
+                - price
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/pazar/cancel:
     post:
       tags:
@@ -1302,6 +1344,9 @@ paths:
               properties:
                 id:
                   type: integer
+                qty:
+                  type: integer
+                  description: "Yalnız Anahtar ilanında: alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
               required:
                 - id
       responses:

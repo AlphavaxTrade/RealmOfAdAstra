@@ -27,13 +27,13 @@ export const GENESIS_PRICES = Object.fromEntries(
   Object.entries(koridorlar()).map(([k, c]) => [k, c.defaultPriceAda])
 );
 
-// Geri alım öncelik ağırlıkları: hammaddeler üretim değerine göre %75, parça/anahtar/kutu %25
+// Geri alım öncelik ağırlıkları: hammaddeler üretim değerine göre %75, teçhizat parçası %25
 const uretimDegeri = k => ((GAME_CONFIG.BASE_PRODUCTION || {})[k] || 1) * ((koridorlar()[k] || {}).defaultPriceAda || 1);
 export const BUYBACK_ASSET_WEIGHTS = (() => {
   const toplam = HAMMADDELER.reduce((t, k) => t + uretimDegeri(k), 0) || 1;
   const w = {};
   for (const k of HAMMADDELER) w[k] = 0.75 * uretimDegeri(k) / toplam;
-  w.fragments = 0.10; w.keys = 0.08; w.boxes = 0.07;
+  w.fragments = 0.25;
   return w;
 })();
 
@@ -42,7 +42,7 @@ export const BUYBACK_ASSET_WEIGHTS = (() => {
 // ─────────────────────────────────────────────────────────────────────────
 // Tohumu tanımsız varlıklar için eski derinlik kuralı: haftalık arzın fiyatı ~%7 oynatacağı derinlik
 const HEDEF_FIYAT_ETKISI = 0.07;
-const HAFTALIK_ARZ_YEDEK = { fragments: 9000, boxes: 15, keys: 50, scroll_heal: 1500, scroll_stamina: 1000 };
+const HAFTALIK_ARZ_YEDEK = { fragments: 9000, scroll_heal: 1500, scroll_stamina: 1000 };
 
 function haftalikArz(key) {
   const kota = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[key];
@@ -81,8 +81,6 @@ function varsayilanHavuzlar() {
     havuzlar[k] = havuzKur(k, { name: (META[k] || {}).name || k, icon: (META[k] || {}).icon || '' });
   }
   havuzlar.fragments = havuzKur('fragments', { name: 'Teçhizat Parçaları', icon: '🧩' });
-  havuzlar.boxes = havuzKur('boxes', { name: 'Pandora Kutusu', icon: '📦' });
-  havuzlar.keys = havuzKur('keys', { name: 'Anahtar', icon: '🔑' });
   havuzlar.scroll_heal = havuzKur('scroll_heal', { name: 'Ordu İyileştirme Parşömeni', icon: '📜' });
   havuzlar.scroll_stamina = havuzKur('scroll_stamina', { name: '100 Stamina Doldurma Parşömeni', icon: '⚡' });
   return havuzlar;
@@ -165,6 +163,21 @@ export class AMMMarketEngine {
     writeJSON(this.storageKey, this.pools);
     writeJSON(this.storageKey + '_fees', this.feeStats);
     this.notifyPriceChange();
+  }
+
+  // Kaldırılan havuzların (Pandora kutusu 'boxes' ve Anahtar 'keys', 18 Ekim 2026) KAYITLI ASTRA'sını okur: pazar kaydında hâlâ duruyorsa
+  // ASTRA'sı döner (çağıran hazineye aktarır; ASTRA kaybolmaz), kayıt temizlenir. Kayıt yoksa ya da zaten temizse 0. loadPools bu anahtarları
+  // artık yüklemez; savePools ilk yazışta kaydı siler, bu yüzden bu yöntem sunucu açılışında HİÇBİR kayıttan önce çağrılmalı.
+  kaldirilanHavuzAstrasi() {
+    if (typeof localStorage === 'undefined') return 0;
+    const { data } = readJSON(this.storageKey);
+    if (!data) return 0;
+    let toplam = 0;
+    for (const k of ['boxes', 'keys']) {
+      const h = data[k];
+      if (h && Number(h.adAstraReserve) > 0) toplam += Number(h.adAstraReserve);
+    }
+    return toplam;
   }
 
   // Parça havuzunu (fragments) güncel tohum derinliğine küçültür; FİYAT korunur (mal ve ASTRA aynı oranda azalır). Havuz zaten o derinlikteyse
@@ -427,7 +440,7 @@ export class AMMMarketEngine {
     let toplamSkor = 0;
     let enYuksekAciliyet = 0;
     const detay = [];
-    for (const key of [...HAMMADDELER, 'fragments', 'keys', 'boxes']) {
+    for (const key of [...HAMMADDELER, 'fragments']) {
       const h = this.pools[key];
       if (!h) continue;
       const guncel = this.getPrice(key);

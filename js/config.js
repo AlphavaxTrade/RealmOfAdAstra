@@ -380,13 +380,11 @@ export const GAME_CONFIG = {
     iron:      { minPriceAda: 0.02,   maxPriceAda: 0.10,   defaultPriceAda: 0.04 },
     herb:      { minPriceAda: 0.04,   maxPriceAda: 0.20,   defaultPriceAda: 0.08 },
     fragments: { minPriceAda: 0.225,  maxPriceAda: 4.5,    defaultPriceAda: 0.45 },   // tavan 10 kat: küçük havuzda kullanım fiyatı gerçekten yükseltir (18 Ekim 2026)
-    boxes:     { minPriceAda: 50,     maxPriceAda: 250,    defaultPriceAda: 100 },
-    keys:      { minPriceAda: 5,      maxPriceAda: 25,     defaultPriceAda: 10 },
     scroll_heal:    { minPriceAda: 0.15, maxPriceAda: 0.75, defaultPriceAda: 0.30 },
     scroll_stamina: { minPriceAda: 0.30, maxPriceAda: 1.50, defaultPriceAda: 0.60 }
   },
   // v2 (R3/R4b): pazar havuzlarının ASTRA tohumu — 200 M'den 100 M: 6 hammadde 90 M (değer ağırlıklı), tüketilenler 10 M
-  AMM_SEED_ASTRA: { raw: 90000000, fragments: 180000, keys: 2000000, boxes: 2000000, scroll_heal: 1000000, scroll_stamina: 1000000 },
+  AMM_SEED_ASTRA: { raw: 90000000, fragments: 180000, scroll_heal: 1000000, scroll_stamina: 1000000 },   // Pandora kutusu ve Anahtar havuzları 18 Ekim 2026'da kaldırıldı
   // Tek işlemde havuzdaki malın en çok bu oranı alınıp satılabilir (bugün %50 idi)
   AMM_SINGLE_TRADE_SHARE: 0.05,
   // Geri alım (R4): fiyat açılışın (1 − TRIGGER_DROP) altına inince kasanın haftada WEEKLY_RATE'i ile al-yak
@@ -740,6 +738,10 @@ export const GAME_CONFIG = {
     // sıralamada 1. olan ayrıca 1 anahtar kazanır (server/arena.js settleWeek). Eskiden her maç 1 anahtar (pazarda ~10 ASTRA) harcatıyor ve
     // her zaferde %25 anahtar veriyordu. Ücretin ENTRY_ARENA_SHARE'i doğrudan arena kasasına girer (ödüller buradan çıkar), kalanı her harcama
     // gibi dağıtılır (yakım, yapımcı payı, temel gelir, öteki kasalar). Ücret oyun içi fiyat çarpanıyla ölçeklenir.
+    // Haftalık Anahtar ödülü (18 Ekim 2026): sıralamada ilk 3'e birer Anahtar (sırayla 1., 2., 3.). Anahtar yalnız buradan çıkar; çarktan ve
+    // pazar havuzundan kalktı. Oyuncular birbirine yalnız İlan Pazarı'nda, adet + birim fiyatla satar (server/pazar.js). Anahtar havadan basılır:
+    // karşılığı bir kasa harcaması yok; değeri oyuncuların ilan fiyatıdır.
+    HAFTALIK_ANAHTAR: [1, 1, 1],
     ENTRY_FEE_ASTRA: 10,
     ENTRY_ARENA_SHARE: 0.7,
     ENTRY_STAMINA_COST: 12,
@@ -805,17 +807,18 @@ export const GAME_CONFIG = {
     konsey: 'Sirius Konseyi Kasası',
     universe: 'Universe Tohum Rezervi (kilitli)'
   },
-  // v2 (R3): tohumlar 200 M ASTRA'dan (pazar ayrı: AMM_SEED_ASTRA). 18 Ekim 2026: parça havuzu 4 M'den 180 bin ASTRA'ya küçüldü; çıkan 3,82 M ASTRA
-  // yarı yarıya geri alım ve karnaval kasalarına eklendi (ammBuyback 7 M → 8,91 M, carnival 3 M → 4,91 M); toplam 200 M değişmez.
-  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 8910000, quest: 8000000, carnival: 4910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  // v2 (R3): tohumlar 200 M ASTRA'dan (pazar ayrı: AMM_SEED_ASTRA). 18 Ekim 2026: parça havuzu 4 M'den 180 bin ASTRA'ya küçüldü (çıkan 3,82 M) ve
+  // Pandora kutusu ile Anahtar havuzları (2 M + 2 M) kaldırıldı; çıkan toplam 7,82 M ASTRA yarı yarıya geri alım ve karnaval kasalarına eklendi
+  // (ammBuyback 7 M → 10,91 M, carnival 3 M → 6,91 M); toplam 200 M değişmez.
+  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 10910000, quest: 8000000, carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
   // Hedef rezerv = ~12 aylık ödeme (annualPayout, yukarıda); sağlık = bakiye / hedef. Haftalık oranla sürekli ödeme
   // yapan 5 kasa (dungeon/arena/worldBoss/ammBuyback/quest) formülle hesaplanır; sürekli haftalık oranı olmayan
   // (karnaval: çevirme başına kendini finanse eder; fatih: yalnız 18. boss ilk zaferinde; konsey/universe: kilitli/
   // proje bazlı) kasalarda hedef = tohum (değişmedi).
   TREASURY_TARGET_RESERVE: {
-    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(8910000, 0.03), worldBoss: annualPayout(6000000, 0.03),
+    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(10910000, 0.03), worldBoss: annualPayout(6000000, 0.03),
     arena: annualPayout(4000000, 0.02), quest: annualPayout(8000000, 0.015),
-    carnival: 4910000, fatih: 20000000, konsey: 10000000, universe: 20000000
+    carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000
   },
   // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3. Her alanın gerçek kullanım yeri:
   //  • dungeon: bilgi amaçlı (gerçek tavan DUNGEON.DAILY_BUDGET_RATE × 7, aynı sayı: 0,0036×7≈0,025)
@@ -896,7 +899,7 @@ export const GAME_CONFIG = {
       // Hammadde ödülleri (pazardan alınır, yani hammaddeye talep yaratır): sık gelen "bedelin geri" dilimleri (1 ASTRA) taş, kömür
       // ve şifalı otun; nadir 10 ASTRA'lık büyük dilimler odun, demir ve buğdayın.
       { id: 'raw_1000_wood', name: '10 ASTRA Değerinde Odun',         icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 10,   valAda: 10,   weight: 16 },
-      { id: 'ada_50',        name: '0,5 ASTRA Teselli Ödülü',         icon: '🟣', type: 'ada',      amount: 0.5,                    valAda: 0.5,  weight: 1253 },
+      { id: 'ada_50',        name: '0,5 ASTRA Teselli Ödülü',         icon: '🟣', type: 'ada',      amount: 0.5,                    valAda: 0.5,  weight: 1254 },
       { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 4.5,  weight: 27 },
       { id: 'raw_100_coal',  name: 'Bedelin Geri: 1 ASTRA Değerinde Kömür',     icon: '⚫', type: 'amm_raw', key: 'coal',  adaVal: 1, valAda: 1, weight: 515 },
       { id: 'ada_1000',      name: '👑 10 ASTRA İKRAMİYE (10×)',       icon: '👑', type: 'ada',      amount: 10,                     valAda: 10,   weight: 76 },
@@ -905,7 +908,6 @@ export const GAME_CONFIG = {
       { id: 'ada_500',       name: '5 ASTRA Nakit Ödül (5×)',         icon: '🟣', type: 'ada',      amount: 5,                      valAda: 5,    weight: 41 },
       { id: 'raw_100_herb',  name: 'Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot', icon: '🌿', type: 'amm_raw', key: 'herb',  adaVal: 1, valAda: 1, weight: 515 },
       { id: 'ada_2500',      name: '25 ASTRA Nakit Ödül (25×)',       icon: '🟣', type: 'ada',      amount: 25,                     valAda: 25,   weight: 8 },
-      { id: 'box_key',       name: '1 Anahtar (Pandora Kutusu açar)', icon: '🔑', type: 'key',      amount: 1,                      valAda: 10,   weight: 1 },
       { id: 'raw_1000_wheat',name: '10 ASTRA Değerinde Buğday',       icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 10,   valAda: 10,   weight: 16 },
       { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 460,  weight: 2 },
       // Şans Sayacı ödülü: ağırlığı 0, yalnız sayaç dolunca verilir
@@ -1626,6 +1628,16 @@ export const GAME_CONFIG = {
         `Eşya onarımı artık teçhizat parçası da ister: eşyaya o güne kadar harcanan parçanın %10'u × hasar oranı (en az 1). Parça bedeli seviyeyle kabaca ikiye katlanır: seviye 5 eşya tam hasarda yaklaşık 3, seviye 9 yaklaşık 51 parça. Hem tek eşya hem "Kırılan her şeyi onar" parça yakar; Demirhane'de hasarlı eşyaların toplam bedeli (parça dahil) yazıyor.`,
         `Yeni: "⚡ Eksikleri al ve onar" (Demirhane'de her eşyada ve toplu olarak, Kışla'da askerin üzerindeki eşyada ve Cephanelik'te). Eksik odun, demir, kömür ve parça pazardan alınır, eşyalar tek tek onarılır; alım ve onarım bedeli onay ekranında yazar.`,
         `Parça havuzu küçüldü ve parça fiyatı artık kullanımla yükselecek: havuz 4 milyon ASTRA'dan 180 bin ASTRA'ya indi (fiyat aynı kaldı, 0,45 civarı), fiyat tavanı 1,125'ten 4,5 ASTRA'ya çıktı. Çıkan ASTRA kaybolmadı: yarısı Karnaval ödül havuzuna, yarısı pazar geri alım kasasına girdi. Parça yakıldıkça havuzdaki mal azaldığı için fiyat zamanla yükselir; zindandan düşen parça da ona göre değer kazanır.`
+      ]
+    },
+    {
+      version: 'v1.64',
+      title: '🔑 Anahtar Yalnız Oyuncular Arasında, Pandora Kutusu Satılmaz',
+      date: '19 Ekim 2026',
+      changes: [
+        `Pandora kutusu ve Anahtar takas havuzundan kalktı: kutu artık hiçbir yerde alınıp satılmaz (yalnız zindandan düşer); anahtar yalnız oyuncudan oyuncuya satılır. Pazar > İlanlar sekmesinde "Anahtar sat" formu var: kaç anahtar ve TANESİ kaç ASTRA yazarsın, ilan 7 gün açık kalır. Alıcı ilandan istediği kadar anahtar alabilir (örneğin 8 anahtarlık ilandan 3'ünü); kalan adetle ilan açık kalır. Komisyon ve kilitli pay kuralları teçhizat ilanlarıyla aynı. İstediğin an ilanı geri çekebilirsin, satılmayan anahtarlar sana döner.`,
+        `Anahtar kaynağı değişti: Kolezyum haftalık sıralamasında artık ilk 3 oyuncunun her biri 1 anahtar kazanır (eskiden yalnız 1.). Anahtar havadan çıkıyor, arena kasasından ASTRA ödenmiyor; değeri oyuncuların ilan fiyatı belirler. Şans Çarkından da anahtar çıkmıyor (çarkta 17 dilim + Şans Sayacı kaldı, 0,5 ASTRA teselli ödülü bu payı aldı; toplam şans aynı).`,
+        `Kaldırılan iki havuzdaki ASTRA kaybolmadı: yarısı Karnaval ödül havuzuna, yarısı pazar geri alım kasasına girdi. Eldeki kutu ve anahtarlar korunur; mevcut kutuyu elindeki anahtarla yine açarsın.`
       ]
     }
   ],

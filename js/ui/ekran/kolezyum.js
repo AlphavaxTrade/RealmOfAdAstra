@@ -196,7 +196,7 @@ function pvpSekmesi(b, secenek) {
       <b>${esc(s.icon || '⚔️')} ${esc(s.name)}</b><small>Sv.${esc(s.level || 1)} · ⚔️ ${esc(tam(f.totalAtk))} · ❤️ ${esc(tam(f.totalMaxHp))}</small></button>`;
   }).join('');
 
-  const kurallar = `Askerini seç, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <b>1 puan</b>, 3v3 zaferi <b>3 puan</b>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${esc(Math.round(((st.rules && st.rules.weeklyPoolShare) || 0) * 100))}'unu paylaşır. Haftalık 1. olan ayrıca <b>1 anahtar</b> kazanır. Maç askerinin canını azaltmaz. Giriş: ASTRA ücreti + stamina (sıradan çıkarsan iade edilir).`;
+  const kurallar = `Askerini seç, "Maç ara"ya bas: sırada bekleyen ilk oyuncuyla maçın sunucuda oynanır (rakibin çevrimiçi olması gerekmez). 1v1 zaferi <b>1 puan</b>, 3v3 zaferi <b>3 puan</b>. Her Pazartesi 00:01'de ilk 10, Kolezyum kasasının %${esc(Math.round(((st.rules && st.rules.weeklyPoolShare) || 0) * 100))}'unu paylaşır. Haftalık ilk 3 oyuncu ayrıca birer <b>anahtar</b> kazanır. Maç askerinin canını azaltmaz. Giriş: ASTRA ücreti + stamina (sıradan çıkarsan iade edilir).`;
 
   const sira = sirada
     ? kart({

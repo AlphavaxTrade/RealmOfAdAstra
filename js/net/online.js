@@ -1283,8 +1283,9 @@ export const sponsor = {
 export const pazar = {
   list: () => api('GET', '/api/pazar'),
   async sell(ref, price) { const r = await api('POST', '/api/pazar/sell', { ref, price }); apply(r); return r.result; },
+  async sellKey(qty, price) { const r = await api('POST', '/api/pazar/sell-key', { qty, price }); apply(r); return r.result; },
   async cancel(id) { const r = await api('POST', '/api/pazar/cancel', { id }); apply(r); return r.result; },
-  async buy(id) { const r = await api('POST', '/api/pazar/buy', { id }); apply(r); return r.result; }
+  async buy(id, qty = null) { const r = await api('POST', '/api/pazar/buy', qty == null ? { id } : { id, qty }); apply(r); return r.result; }
 };
 
 // ── Başlat ──────────────────────────────────────────────────────────────

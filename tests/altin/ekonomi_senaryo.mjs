@@ -50,7 +50,7 @@ function kararli(x) {
 }
 const ozet = x => crypto.createHash('sha256').update(JSON.stringify(kararli(x))).digest('hex').slice(0, 16);
 
-const HAVUZ_ANAHTARLARI = ['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'fragments', 'boxes', 'keys', 'scroll_heal', 'scroll_stamina', 'yok_boyle_bir_sey'];
+const HAVUZ_ANAHTARLARI = ['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'fragments', 'scroll_heal', 'scroll_stamina', 'yok_boyle_bir_sey'];
 const KASALAR = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey', 'universe', 'olmayan'];
 
 // Her adımın sonunda üç modülün tam durumu
@@ -91,7 +91,7 @@ export function islemler(r, adet) {
     else if (p < 0.63) liste.push({ ad: 'geriAlimCek', miktar: rastgeleMiktar(r, 80000) });
     else if (p < 0.68) liste.push({ ad: 'hasat', anahtar: sec(['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'yok']), miktar: rastgeleMiktar(r, 30000) });
     else if (p < 0.72) liste.push({ ad: 'hammaddeYakimi', anahtar: sec(['wood', 'iron', 'wheat', 'stone', 'coal', 'herb']), miktar: rastgeleMiktar(r, 5000) });
-    else if (p < 0.74) liste.push({ ad: 'esyaYakimi', tur: sec(['fragments', 'keys', 'boxes', '']), miktar: rastgeleMiktar(r, 300) });
+    else if (p < 0.74) liste.push({ ad: 'esyaYakimi', tur: sec(['fragments', '']), miktar: rastgeleMiktar(r, 300) });
     else if (p < 0.77) liste.push({ ad: 'ubi', seviye: 1 + Math.floor(r() * 60), epoch: r() < 0.3 ? -1 : 0 });
     else if (p < 0.80) liste.push({ ad: 'sat', anahtar, miktar: rastgeleMiktar(r, 400) });
     else if (p < 0.83) liste.push({ ad: 'otonomGeriAlim' });
@@ -107,7 +107,7 @@ export function islemler(r, adet) {
     else if (p < 0.984) liste.push({ ad: 'yenidenYukle' });
     else if (p < 0.99) liste.push({ ad: 'sorgular' });
     else if (p < 0.994) liste.push({ ad: 'sifirla', ne: sec(['hazine', 'pazar', 'epoch', 'vanilla']) });
-    else if (p < 0.9985) liste.push({ ad: 'havuzDusur', anahtar: sec(['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'fragments', 'keys', 'boxes']), carpan: 0.4 + r() * 0.5 });
+    else if (p < 0.9985) liste.push({ ad: 'havuzDusur', anahtar: sec(['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'fragments']), carpan: 0.4 + r() * 0.5 });
     else liste.push({ ad: 'simulasyon' });
   }
   return liste;

@@ -131,13 +131,6 @@ console.log('✅ parşömenler');
     assert.equal(gs.state.inventory.wood, odun + hammadde.buybackInfo.amount);
     assert.ok(hammadde.buybackInfo.newPrice > fiyat, 'fiyat yükselir');
 
-    // anahtar ödülü
-    const anahtar = gs.state.arenaKeys || 0;
-    const anahtarFiyat = ammMarket.getPrice('keys');
-    dilimle({ id: 'box_key', name: '1 Pandora Kutusu Anahtarı', icon: '🔑', type: 'key', amount: 1, valAda: 1000 });
-    const k = gs.spinCarnivalWheel('ada');
-    assert.equal(gs.state.arenaKeys, anahtar + 1);
-    assert.ok(k.buybackInfo.newPrice > anahtarFiyat);
   } finally {
     GAME_CONFIG.CARNIVAL.WHEEL_REWARDS = gercekDilimler;
   }
@@ -209,10 +202,9 @@ console.log('✅ piyango');
   assert.equal(s.lockedBoxes, 1);
   assert.equal(s.arenaKeys, 0);
   const C = GAME_CONFIG.AMM_CORRIDORS;
-  for (const k of ['boxes', 'keys']) {
-    const f = ammMarket.getPrice(k);
-    assert.ok(f >= C[k].minPriceAda && f <= C[k].maxPriceAda, `${k} fiyatı koridor içinde: ${f}`);
-  }
+  assert.ok(!ammMarket.pools.boxes && !ammMarket.pools.keys, 'Pandora kutusu ve Anahtar takas havuzları kaldırıldı');
+  assert.ok(!C.boxes && !C.keys, 'koridorları da yok');
+  assert.ok(ammMarket.getPrice('fragments') >= C.fragments.minPriceAda && ammMarket.getPrice('fragments') <= C.fragments.maxPriceAda, 'parça fiyatı koridor içinde');
 
   assert.equal(GAME_CONFIG.AMM_FEE_RATE, 0.02);
   assert.ok(ammMarket.pools.scroll_heal && ammMarket.pools.scroll_stamina, 'iki parşömen havuzu var');

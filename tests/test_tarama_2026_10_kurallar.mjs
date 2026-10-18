@@ -142,7 +142,7 @@ console.log("✅ geri dönüşüm harcanan kömür ve taşın %70'ini veriyor");
   const gs = yeni();
   const s = gs.state;
   s.adAstraBalance = 1e6;
-  for (const k of ['boxes', 'keys', 'fragments']) {
+  for (const k of ['fragments']) {
     const al = gs.marketBuy(k, 0.01);
     assert.equal(al.success, false, `${k}: kesirli alım reddedilir`);
     assert.match(al.message, /tam sayı/);

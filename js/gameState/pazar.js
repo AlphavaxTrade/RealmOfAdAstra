@@ -10,16 +10,13 @@ const ASTRA_PAYI = 1.03;
 
 const tr = (n) => Number(n).toLocaleString('tr-TR');
 
-// Sandık, anahtar ve teçhizat parçası bölünemez: kesirli miktar alınıp satılamaz (0,01 kutu + 0,01 anahtarla Pandora açılabiliyordu)
-const TAM_SAYILI = ['boxes', 'keys', 'fragments'];
+// Teçhizat parçası bölünemez: kesirli miktar alınıp satılamaz. (Pandora kutusu ve Anahtar artık takas havuzunda yok: 18 Ekim 2026)
+const TAM_SAYILI = ['fragments'];
 const tamSayiHatasi = (anahtar, miktar) => (TAM_SAYILI.includes(anahtar) && !Number.isInteger(miktar)
   ? { success: false, message: 'Bu varlık bölünemez: tam sayı gir.' } : null);
 
 export const pazarYontemleri = {
-  // Sandık ve anahtar da pazarda satılır; onlar envanterde değil kendi sayaçlarında durur
   _pazarStoku(anahtar) {
-    if (anahtar === 'boxes') return this.state.lockedBoxes || 0;
-    if (anahtar === 'keys') return this.state.arenaKeys || 0;
     return Number(this.state.inventory[anahtar]) || 0;
   },
 
@@ -36,9 +33,7 @@ export const pazarYontemleri = {
     const sonuc = ammMarket.executeSell(resKey, miktar);
     if (!sonuc.success) return sonuc;
 
-    if (resKey === 'boxes') this.state.lockedBoxes -= miktar;
-    else if (resKey === 'keys') this.state.arenaKeys -= miktar;
-    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - miktar;
+    this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) - miktar;
 
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) + sonuc.adAstraReceived;
     this._onAdaEarned(sonuc.adAstraReceived, RES_KEYS().includes(resKey) ? { saleOf: resKey } : undefined);
@@ -71,9 +66,7 @@ export const pazarYontemleri = {
 
     this.state.adAstraBalance = (this.state.adAstraBalance || 0) - sonuc.cost;
     this._onAdaSpent(sonuc.cost, { boughtResource: resKey, sinkPart: this.pazarSistemPayi(sonuc) });
-    if (resKey === 'boxes') this.state.lockedBoxes = (this.state.lockedBoxes || 0) + sonuc.resourceReceived;
-    else if (resKey === 'keys') this.state.arenaKeys = (this.state.arenaKeys || 0) + sonuc.resourceReceived;
-    else this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + sonuc.resourceReceived;
+    this.state.inventory[resKey] = (Number(this.state.inventory[resKey]) || 0) + sonuc.resourceReceived;
     // Elle alınan kaynağı bot bir süre satmaz (botSilo._botKaynakSat)
     if (RES_KEYS().includes(resKey)) this.state.elleAlim = { ...(this.state.elleAlim || {}), [resKey]: this._now() };
     this.saveState();

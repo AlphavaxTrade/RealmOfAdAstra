@@ -24,7 +24,7 @@ const PAY = K.WHEEL_CARNIVAL_SHARE;
 
 // Dilim dağılımı: 19 dilim (18 gerçek + Şans Sayacı), toplam ağırlık 10.000, nadir ödüllerin üst sınırı, yasak ödül türleri
 {
-  assert.equal(dilimler.length, 19, 'çarkta 19 dilim (18 + Şans Sayacı)');
+  assert.equal(dilimler.length, 18, 'çarkta 18 dilim (17 + Şans Sayacı; anahtar dilimi kalktı)');
   assert.equal(toplam, 10000, 'toplam ağırlık 10.000');
   assert.equal(new Set(dilimler.map((r) => r.id)).size, dilimler.length, 'dilim kimlikleri benzersiz');
   assert.equal(dilimler.filter((r) => r.pity).length, 1, 'tek Şans Sayacı dilimi');
@@ -34,7 +34,7 @@ const PAY = K.WHEEL_CARNIVAL_SHARE;
   const oran = (f) => dilimler.filter(f).reduce((s, r) => s + r.weight, 0) / toplam;
   assert.ok(oran((r) => r.type === 'bot_free') < 0.01, '24 saatlik bot oranı %1 altında');
   assert.ok(oran((r) => r.key === 'fragments') < 0.01, 'teçhizat parçası toplamı %1 altında');
-  assert.ok(oran((r) => r.type === 'key') < 0.001, 'anahtar oranı %0,1 altında');
+  assert.equal(oran((r) => r.type === 'key'), 0, 'çarkta anahtar yok (yalnız Kolezyum haftalık ilk üçünden)');
   assert.ok(!dilimler.some((r) => (r.key && r.key.startsWith('scroll_')) || r.type === 'scroll'), 'çarkta parşömen yok (zindana taşındı)');
   const izinli = new Set(['ada', 'resource', 'amm_raw', 'key', 'stamina_buy', 'lottery_ticket', 'ticket_shard', 'bot_free']);
   for (const r of dilimler) assert.ok(izinli.has(r.type), `${r.id}: tür çarkta izinli (şifa, sefer tamamlama, zindan girişi, coin kuponu gibi ekonomiyi bozan ödül yok)`);

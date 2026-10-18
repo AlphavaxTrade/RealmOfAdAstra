@@ -156,22 +156,16 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
   // (eskiden havuz doğrudan düşülüyordu, %2 tek çekim tavanı ve kasa sağlığı küçültmesi atlanıyordu); tavan devreye
   // girip bütçe küçülürse herkesin payı AYNI oranda küçülür (1. ile 10.nun arasındaki oran bozulmaz). Kesirli
   // bölüşümde (floor) kalan ufak artık son ödüllü sıraya eklenir: kasadan çıkan ile oyunculara dağıtılan tam eşit.
-  // Haftalık 1.'ye 1 anahtar: havadan basılmaz, arena kasası pazardan gerçek fiyatla satın alıp verir (kasa/pazar yetmezse verilmez)
-  function birinciyeAnahtar(id) {
-    const T = E.treasury, M = E.ammMarket;
-    const tahmin = M.getEstimatedCostForBuy('keys', 1);
-    if (!isFinite(tahmin) || tahmin <= 0) return false;
-    const cekim = T.withdraw('arena', tahmin);
-    const odenen = cekim.granted || 0;
-    if (odenen < tahmin - 1e-9) { if (odenen > 0) T.depositTo('arena', odenen); return false; }
-    const alim = M.executeBuyAmount('keys', 1);
-    if (!alim || !alim.success) { T.depositTo('arena', odenen); return false; }
-    if (odenen > alim.cost) T.depositTo('arena', odenen - alim.cost);
+  // Haftalık ilk 3'e Anahtar (COLOSSEUM.HAFTALIK_ANAHTAR, sırayla 1., 2., 3.): Anahtar yalnız buradan çıkar. Havadan basılır (pazar havuzu yok);
+  // değeri oyuncuların İlan Pazarı'ndaki fiyatıdır. Verilen adet döner (0 = verilmedi).
+  function anahtarVer(id, sira) {
+    const adet = Math.max(0, Math.floor(Number((E.GAME_CONFIG.COLOSSEUM.HAFTALIK_ANAHTAR || [])[sira - 1]) || 0));
+    if (!adet) return 0;
     E.mutatePlayer(id, gs => {
-      gs.state.arenaKeys = (gs.state.arenaKeys || 0) + 1;
-      gs.pushNotice('🔑 Kolezyum haftalık sıralamasında 1. olduğun için +1 Anahtar kazandın (Pandora kutusu açar).', 'success');
+      gs.state.arenaKeys = (gs.state.arenaKeys || 0) + adet;
+      gs.pushNotice(`🔑 Kolezyum haftalık sıralamasında ${sira}. olduğun için +${adet} Anahtar kazandın (Pandora kutusu açar; İlan Pazarı'nda satabilirsin).`, 'success');
     });
-    return true;
+    return adet;
   }
 
   function settleWeek(closedEpoch) {
@@ -193,9 +187,9 @@ export function createArena({ db, engine, clock = () => Date.now(), botWhenEmpty
         gs.pushNotice(`🏆 Kolezyum haftalık sıralaması: ${r.rank}. oldun! +${granted.toLocaleString('tr-TR')} ASTRA (${r.points} puan).`, 'success');
       });
     });
-    const birinci = rewards.find(r => r.rank === 1);
-    const anahtarVerildi = !!birinci && birinciyeAnahtar(birinci.id);
-    A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount, ...(r.rank === 1 && anahtarVerildi ? { key: 1 } : {}) })) };
+    const anahtarlar = new Map();
+    for (const r of rewards) if (r.rank >= 1 && r.rank <= 3) { const n = anahtarVer(r.id, r.rank); if (n) anahtarlar.set(r.rank, n); }
+    A.lastWeek = { epoch: closedEpoch, rewards: rewards.map(r => ({ rank: r.rank, name: r.name, points: r.points, amount: r.amount, ...(anahtarlar.has(r.rank) ? { key: anahtarlar.get(r.rank) } : {}) })) };
     A.table = {};
     put(A);
     return { players: rewards.length, total };
