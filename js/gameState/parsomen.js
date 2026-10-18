@@ -21,13 +21,16 @@ export const parsomenYontemleri = {
       if (!hedef) hedef = askerler.find(s => (s.hp || 0) < (s.maxHp || 100));
       if (!hedef) return { success: false, message: 'Ordudaki tüm AdAstra Şampiyonlarının canı zaten tam dolu!' };
 
-      hedef.hp = Math.min(hedef.maxHp || 100, (hedef.hp || 0) + 10);
+      const tabanEn = hedef.maxHp || 100;
+      hedef.hp = Math.min(tabanEn, (hedef.hp || 0) + 10);   // 10 TABAN can: azami canın ~%7-10'u (ekrandaki savaş canı bununla orantılı artar)
       env.scroll_heal -= 1;
       this.burnItem('scroll_heal', 1);
       this.saveState();
+      const sira = askerler.indexOf(hedef);
+      const savas = (this.state.soldierUnits && sira >= 0) ? this.getSoldierBattleStart(sira) : { hp: hedef.hp, maxHp: tabanEn };
       return {
         success: true,
-        message: `📜 Ordu İyileştirme Parşömeni kullanıldı! ${hedef.name} +10 Can kazandı (${hedef.hp}/${hedef.maxHp || 100} HP).`
+        message: `📜 Ordu İyileştirme Parşömeni kullanıldı! ${hedef.name} canının yaklaşık %${Math.round((10 / tabanEn) * 100)}'i kadar iyileşti (${savas.hp}/${savas.maxHp} can).`
       };
     }
 

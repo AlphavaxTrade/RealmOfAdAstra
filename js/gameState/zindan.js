@@ -323,7 +323,7 @@ export const zindanYontemleri = {
       this.state.inventory[tur] = (this.state.inventory[tur] || 0) + 1;
       parsomen = {
         type: tur,
-        name: iyilestirme ? 'Ordu İyileştirme Parşömeni (+10 HP)' : '100 Stamina Doldurma Parşömeni',
+        name: iyilestirme ? 'Ordu İyileştirme Parşömeni' : '100 Stamina Doldurma Parşömeni',
         icon: iyilestirme ? '📜' : '⚡',
         image: iyilestirme ? 'assets/scroll_heal.jpg' : 'assets/scroll_stamina.jpg'
       };
