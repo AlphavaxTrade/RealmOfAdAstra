@@ -1486,6 +1486,15 @@ export const GAME_CONFIG = {
         `Zindan savaşına girerken askerin canı, teçhizatın verdiği can eklenmeden başlıyordu (çubuk 313 gösterirken savaş 100 ile başlıyordu). Düzeldi: tam sağlıklı asker teçhizatıyla birlikte tam canla savaşa girer, yaralı asker aynı oranda başlar. Kolezyum'da da aynı düzeltme yapıldı.`,
         `Askerler bu yüzden daha dayanıklı oldu; zindanın bütün modlarındaki canavarlar buna göre yeniden dengelendi (canavarlar daha çok can ve saldırıya sahip). Normal modu en hızlı oyuncunun ~120 günde bitirmesi hedefi aynı.`
       ]
+    },
+    {
+      version: 'v1.52',
+      title: '🗺️ Krallık Haritası Yenilendi',
+      date: '18 Ekim 2026',
+      changes: [
+        `Krallık haritası baştan boyandı: bütün bölgeler (madenler, orman, kale, kolezyum, karnaval, silolar, kışla, uzay limanı...) aynı yerlerinde duruyor, ama harita artık gün batımı ışığında, daha sıcak renklerle ve daha zengin dokularla görünüyor.`,
+        `Haritadaki dokunma noktaları ve bölge isimleri değişmedi; her şey önceki gibi çalışır.`
+      ]
     }
   ],
 

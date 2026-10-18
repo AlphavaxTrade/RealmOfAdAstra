@@ -22,7 +22,7 @@ export class GrandTownScene extends Phaser.Scene {
   preload() {
     // Harita resmi 560 KB'tır (webp; eski jpg 949 KB'tı, denetim QA-17). Eskiden "?v=Date.now()" her açılışta yeniden indiriyordu:
     // sabit sürüm eki tarayıcı önbelleğinin (sunucuda 1 gün) çalışmasını sağlar. Resim değişince bu sürüm yazısı değiştirilir.
-    this.load.image('grand_town_map', 'assets/adastra_vadisi.webp?v=20261013');
+    this.load.image('grand_town_map', 'assets/adastra_vadisi.webp?v=20261018');
     this.load.on('progress', (deger) => { if (window.__updateLoadingBar) window.__updateLoadingBar(30 + deger * 60); });
     this.load.on('loaderror', (dosya) => console.error('[Phaser] Yüklenemedi:', dosya.key, dosya.src));
   }
