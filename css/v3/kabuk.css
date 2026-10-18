@@ -237,6 +237,23 @@ html.v3 .v3-simdi-govde b { font: 800 calc(13.5px * var(--v3-yazi-olcek, 1))/1.2
 html.v3 .v3-simdi-govde span { font: 500 calc(12px * var(--v3-yazi-olcek, 1))/1.35 var(--font-ui); color: var(--v3-yazi-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 html.v3 .v3-simdi .v3-birincil { flex: none; padding: 0 12px; }
 html.v3 #v3-dock .guide-widget { position: static !important; left: auto !important; right: auto !important; bottom: auto !important; width: auto !important; max-width: none !important; }
+/* Telefon: haritanın üstünü kapatan iki şerit (Danışman kartı ve Krallık Yolu) inceltilir; harita görünür kalsın.
+   Danışmanın metni tek satır, Krallık Yolu başlık ve alt yazı yan yana tek ince satır olur (dokunma alanları korunur). */
+@media (max-width: 640px) {
+  html.v3 #v3-dock { gap: 6px; }
+  html.v3 .v3-simdi:not([hidden]) { padding: 6px 10px; gap: 8px; }
+  html.v3 .v3-simdi-simge { font-size: calc(20px * var(--v3-yazi-olcek, 1)); }
+  html.v3 .v3-simdi-govde { gap: 1px; }
+  html.v3 .v3-simdi-govde b { font-size: calc(12.5px * var(--v3-yazi-olcek, 1)); }
+  html.v3 .v3-simdi-govde span { font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); -webkit-line-clamp: 1; }
+  html.v3 .v3-simdi .v3-birincil { padding: 0 10px; font-size: calc(12.5px * var(--v3-yazi-olcek, 1)); }
+  html.v3 #v3-dock .guide-head { padding: 5px 10px; gap: 8px; }
+  html.v3 #v3-dock .guide-icon { width: 24px; height: 24px; font-size: calc(13px * var(--v3-yazi-olcek, 1)); border-radius: 8px; }
+  html.v3 #v3-dock .guide-head-text { flex-direction: row; align-items: baseline; gap: 8px; }
+  html.v3 #v3-dock .guide-title { font-size: calc(12.5px * var(--v3-yazi-olcek, 1)); white-space: nowrap; }
+  html.v3 #v3-dock .guide-sub { font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); min-width: 0; }
+  html.v3 #v3-dock .guide-count { padding: 1px 7px; font-size: calc(11px * var(--v3-yazi-olcek, 1)); }
+}
 
 /* 8. YAN PANEL (seferler ve üretim hakkı) -------------------------------- */
 /* 9. ERİŞİLEBİLİRLİK ----------------------------------------------------- */
