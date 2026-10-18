@@ -107,6 +107,7 @@ export function kurV3Kabuk(api) {
       <span id="v3-simdi-simge" class="v3-simdi-simge" aria-hidden="true">🧙</span>
       <span class="v3-simdi-govde"><b id="v3-simdi-baslik"></b><span id="v3-simdi-metin"></span></span>
       <button type="button" id="v3-simdi-dugme" class="v3-birincil"></button>
+      <button type="button" id="v3-simdi-kapat" class="v3-simdi-kapat" aria-label="Öneriyi kapat" title="Öneriyi kapat">✕</button>
     </section>`;
   const rehber = $('guide-widget');
   if (rehber) dock.appendChild(rehber);
@@ -285,6 +286,15 @@ export function kurV3Kabuk(api) {
     if (grup.classList.contains('acik')) grupAc(false, true);
   });
   $('v3-simdi-dugme').addEventListener('click', () => api.danismanEylemi($('v3-simdi').dataset.eylem || ''));
+  // Danışmanın önerisini oyuncu kapatabilir (küçük ekranda haritayı örter): aynı öneri (başlık + eylem) oturum boyunca bir daha gösterilmez,
+  // öneri değişince kart yeniden görünür. Krallık Yolu şeridi etkilenmez.
+  let kapatilanOneri = (() => { try { return sessionStorage.getItem('v3_simdi_kapali') || ''; } catch { return ''; } })();
+  $('v3-simdi-kapat').addEventListener('click', () => {
+    const k = $('v3-simdi');
+    kapatilanOneri = k.dataset.oneri || '';
+    try { sessionStorage.setItem('v3_simdi_kapali', kapatilanOneri); } catch { /* oturum verisi engelliyse yalnız bu sayfa açıkken kapalı kalır */ }
+    k.hidden = true;
+  });
 
   // Risk/duyuru: oturumda bir kez, kapatılabilir tek satır
   const kapali = (() => { try { return sessionStorage.getItem('v3_uyari_kapali') === '1'; } catch { return false; } })();
@@ -342,8 +352,10 @@ export function kurV3Kabuk(api) {
     // Şimdi ne yapmalı: kralın danışmanının önerisi
     const kart = $('v3-simdi');
     const d = v.danisman;
-    if (d && d.baslik && d.metin) {
+    const oneri = d ? `${d.baslik}|${d.eylem || ''}` : '';
+    if (d && d.baslik && d.metin && oneri !== kapatilanOneri) {
       kart.hidden = false;
+      kart.dataset.oneri = oneri;
       yaz($('v3-simdi-simge'), d.simge);
       yaz($('v3-simdi-baslik'), d.baslik);
       yaz($('v3-simdi-metin'), d.metin.replace(/[*][*]/g, ''));
