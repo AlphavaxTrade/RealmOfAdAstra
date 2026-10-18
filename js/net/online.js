@@ -1281,8 +1281,15 @@ export const sponsor = {
 };
 
 export const pazar = {
-  list: () => api('GET', '/api/pazar'),
+  // süzgeç: { tur, ara, sira ('ucuz' | 'pahali' | 'yeni' | 'eski'), limit }
+  list: (f = {}) => {
+    const p = new URLSearchParams();
+    for (const k of ['tur', 'ara', 'sira', 'limit']) if (f[k] != null && f[k] !== '') p.set(k, String(f[k]));
+    const s = p.toString();
+    return api('GET', '/api/pazar' + (s ? '?' + s : ''));
+  },
   async sell(ref, price) { const r = await api('POST', '/api/pazar/sell', { ref, price }); apply(r); return r.result; },
+  async sellBulk(kind, qty, price, id = null) { const r = await api('POST', '/api/pazar/sell-bulk', id ? { kind, qty, price, id } : { kind, qty, price }); apply(r); return r.result; },
   async sellKey(qty, price) { const r = await api('POST', '/api/pazar/sell-key', { qty, price }); apply(r); return r.result; },
   async cancel(id) { const r = await api('POST', '/api/pazar/cancel', { id }); apply(r); return r.result; },
   async buy(id, qty = null) { const r = await api('POST', '/api/pazar/buy', qty == null ? { id } : { id, qty }); apply(r); return r.result; }

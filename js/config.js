@@ -1648,6 +1648,16 @@ export const GAME_CONFIG = {
         `Malzemen yetmediğinde artık şu yerlerde de tek dokunuşla "⚡ Eksikleri al ve ...": Köy evleri (ev yap), Uzay Limanı (roketi yap), hammadde bölgelerinde alet tamiri (odun + demir) ve Zindan modunda geçiş için gereken hammaddenin katkısı. Eksik malzeme pazardan alınır, bedel (alım + işin kendi ASTRA'sı) onay ekranında yazar. Geçiş katkısında silo hepsini birden tutamıyorsa al-yak-tekrar şeklinde tur tur ilerler.`,
         `Silo ekranında artık Teçhizat parçası satırı da var (doluluk / kapasite). Parçanın silo sınırı vardı ama ekranda görünmüyordu; pazardan çok parça almaya çalışınca "Silo kapasitesi aşılamaz" uyarısı neden geldiğini göstermiyordu. Parça kapasitesi silo seviyesiyle büyür.`
       ]
+    },
+    {
+      version: 'v1.66',
+      title: '🏷️ İlan Pazarında Kutu ve Eser Satışı, Süzgeç ve En Ucuzdan Sıralama',
+      date: '19 Ekim 2026',
+      changes: [
+        `Pandora kutusu ve koleksiyon eserleri de artık İlan Pazarı'nda satılabilir (Pazar > İlanlar). Anahtarla aynı toplu satış: kaç tane ve TANESİ kaç ASTRA yazarsın, alıcı istediği kadarını alır. Satış formunda anahtar, kutu ve elindeki her eser seçilebilir. Komisyon (%2) ve kilitli pay kuralları aynı. Kural: uyandırdığın (ya da uyandırmakta olduğun) eserin son kopyası satılamaz; Genesis yolun bozulmasın. Alıcıda eser keşfedilmiş sayılır; son kopyasını satan, eseri koleksiyonundan çıkarır (satılmazsa ya da ilan geri çekilirse geri döner).`,
+        `İlanlar listesine süzgeç eklendi: tür düğmeleri (Anahtar, Pandora kutusu, Eser, Silah, Miğfer, Zırh, Pantolon, Bot; yanlarında kaç ilan olduğu yazar), ad araması (örn. "kılıç", "balçık") ve sıralama. Varsayılan sıra EN UCUZDAN PAHALIYA: en ucuz ilan en üstte durur ve "en ucuz" etiketi taşır, tek dokunuşla alırsın. İstersen en pahalıdan, en yeni ya da en eski sırasına geçebilirsin. Çok ilan olunca ilk 100'ü gösterilir; aramayı daraltabilirsin.`,
+        `Hata düzeltildi: oyun kaydı yüklenirken koleksiyon eserlerinin kopya sayısı ve "uyandı" bilgisi siliniyordu (yalnız "keşfedildi" bilgisi korunuyordu). Artık ikisi de kayıtta kalıyor; Genesis yolunda uyandırdığın eserler sayfayı yenileyince kaybolmaz.`
+      ]
     }
   ],
 

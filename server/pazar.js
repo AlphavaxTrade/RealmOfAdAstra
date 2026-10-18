@@ -1,4 +1,4 @@
-// Realm of AdAstra — İlan pazarı (teçhizat ve Anahtar), KARARLAR_KESIN.md bölüm D
+// Realm of AdAstra — İlan pazarı (teçhizat, Anahtar, Pandora kutusu ve koleksiyon eseri), KARARLAR_KESIN.md bölüm D
 // ============================================================================
 // Oyuncular arası teçhizat satışı. Kurallar: komisyon %2 (yarısı yakılır, yarısı hazine kasalarına), ilan 7 gün
 // (süresi dolan eşya sahibine döner), oyuncu başına en çok 10 açık ilan, alıcı önce SERBEST ASTRA'sından öder (yetmezse
@@ -6,7 +6,11 @@
 // Eşya ilan verilince oyuncunun kaydından çıkar (ilanda bekler); satılınca alıcının Cephanelik envanterine girer.
 // ANAHTAR (18 Ekim 2026): takas havuzundan kalktı, oyuncular birbirine yalnız burada satar, TOPLU: adet + BİRİM fiyat. İlan kaydında item =
 // { kind: 'key', qty: kalan adet }, price = birim fiyat. Alıcı istediği kadarını alır (kısmi alım: ilan kalan adetle açık kalır); komisyon ve
-// kilitli pay kuralları teçhizatla aynıdır. Pandora kutusu hiçbir yerde satılmaz.
+// kilitli pay kuralları teçhizatla aynıdır.
+// PANDORA KUTUSU ve KOLEKSİYON ESERİ (19 Ekim 2026): anahtarla aynı toplu ilan: item = { kind: 'box', qty } ve { kind: 'artifact', id, qty }.
+// Eser kuralı: bir eserin kopyası satılabilir; ama Genesis için uyandırılmış (ya da uyanmakta olan) eserin SON kopyası satılamaz.
+// Alıcıya kopya eklenir ve eser onun için keşfedilmiş sayılır; satıcı son kopyayı satarsa eser onun koleksiyonundan düşer.
+// Liste: tür / ad süzgeci ve fiyat sıralaması sunucuda yapılır (varsayılan en ucuzdan pahalıya; en ucuz ilan en üstte).
 // ============================================================================
 const round3 = x => Math.round((Number(x) || 0) * 1000) / 1000;
 const DAY = 86400000;
@@ -55,19 +59,82 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     return item;
   }
   const giveItem = (gs, item) => { if (!Array.isArray(gs.state.armoryInventory)) gs.state.armoryInventory = []; gs.state.armoryInventory.push(item); };
-  const anahtarMi = item => !!item && item.kind === 'key';
-  const summary = item => (anahtarMi(item)
-    ? { kind: 'key', name: 'Anahtar', icon: '🔑', qty: Number(item.qty) || 0 }
-    : { id: item.id, name: item.name, icon: item.icon, slot: item.slot, level: item.level, atkBonus: item.atkBonus, hpBonus: item.hpBonus, durability: item.durability, maxDurability: item.maxDurability });
+  // Toplu (adetli) ilan türleri: anahtar, Pandora kutusu, koleksiyon eseri
+  const TOPLU = ['key', 'box', 'artifact'];
+  const anahtarMi = item => !!item && TOPLU.includes(item.kind);      // adı eski: "toplu ilan mı"
+  const eserCfg = id => (E.GAME_CONFIG.COLLECTION_ARTIFACTS || []).find(c => c.id === id) || null;
+  const eserAdet = a => (a && a.discovered ? Math.max(1, Math.floor(Number(a.count) || 0)) : 0);
+  const eserKilitli = (gs, a) => !!(a && (a.uyandi || (gs.state.genesisUyandirma && gs.state.genesisUyandirma.id === a.id)));
+  const satilabilirEser = (gs, a) => Math.max(0, eserAdet(a) - (eserKilitli(gs, a) ? 1 : 0));
+  const summary = item => {
+    if (item.kind === 'key') return { kind: 'key', name: 'Anahtar', icon: '🔑', qty: Number(item.qty) || 0 };
+    if (item.kind === 'box') return { kind: 'box', name: 'Pandora Kutusu', icon: '📦', qty: Number(item.qty) || 0 };
+    if (item.kind === 'artifact') { const c = eserCfg(item.id) || {}; return { kind: 'artifact', id: item.id, name: c.name || 'Eser', icon: c.icon || '🏺', rarity: c.rarity || 'common', qty: Number(item.qty) || 0 }; }
+    return { id: item.id, name: item.name, icon: item.icon, slot: item.slot, level: item.level, atkBonus: item.atkBonus, hpBonus: item.hpBonus, durability: item.durability, maxDurability: item.maxDurability };
+  };
   const row = (r, me) => ({ id: r.id, seller: r.seller, mine: r.seller === me, item: summary(JSON.parse(r.item)), price: r.price, createdAt: r.created_at, expires: r.expires, status: r.status, buyer: r.buyer || null, closedAt: r.closed_at || null });
-  const adAnahtar = item => (anahtarMi(item) ? `${item.qty} Anahtar` : (item.name || 'Eşya'));
-  // İlandaki eşyayı (ya da anahtarı) sahibine geri verir (geri çekme ve süre dolumu)
-  const iadeEt = (gs, item) => { if (anahtarMi(item)) gs.state.arenaKeys = (Number(gs.state.arenaKeys) || 0) + (Number(item.qty) || 0); else giveItem(gs, item); };
+  const adAnahtar = item => (anahtarMi(item) ? `${item.qty} ${summary(item).name}` : (item.name || 'Eşya'));
+  // Eseri oyuncunun koleksiyonunda bulur (yoksa boş kayıt ekler)
+  const eserKaydi = (gs, id) => {
+    if (!Array.isArray(gs.state.collectionArtifacts)) gs.state.collectionArtifacts = [];
+    let a = gs.state.collectionArtifacts.find(x => x.id === id);
+    if (!a) { a = { id, discovered: false, discoveredAt: null }; gs.state.collectionArtifacts.push(a); }
+    return a;
+  };
+  // İlandaki eşyayı (anahtar, kutu, eser kopyası) sahibine geri verir (geri çekme, süre dolumu, alıcıya teslim)
+  const iadeEt = (gs, item) => {
+    const n = Number(item.qty) || 0;
+    if (item.kind === 'key') gs.state.arenaKeys = (Number(gs.state.arenaKeys) || 0) + n;
+    else if (item.kind === 'box') gs.state.lockedBoxes = (Number(gs.state.lockedBoxes) || 0) + n;
+    else if (item.kind === 'artifact') {
+      const a = eserKaydi(gs, item.id);
+      a.count = eserAdet(a) + n;
+      a.discovered = true;
+      if (!a.discoveredAt) a.discoveredAt = clock();
+    } else giveItem(gs, item);
+  };
+  // Satıcının kaydından toplu ilan için adet düşer (yetmezse kullanıcı hatası)
+  function topluAl(gs, kind, adet, eserId) {
+    if (kind === 'key') {
+      const elde = Math.floor(Number(gs.state.arenaKeys) || 0);
+      if (elde < adet) throw userError(`Yetersiz anahtar: ${adet} istedin, ${elde} var.`);
+      gs.state.arenaKeys = elde - adet;
+    } else if (kind === 'box') {
+      const elde = Math.floor(Number(gs.state.lockedBoxes) || 0);
+      if (elde < adet) throw userError(`Yetersiz Pandora kutusu: ${adet} istedin, ${elde} var.`);
+      gs.state.lockedBoxes = elde - adet;
+    } else if (kind === 'artifact') {
+      const c = eserCfg(eserId);
+      if (!c) throw userError('Eser bulunamadı.');
+      const a = (gs.state.collectionArtifacts || []).find(x => x.id === eserId);
+      const elde = eserAdet(a), satilabilir = satilabilirEser(gs, a);
+      if (satilabilir < adet) {
+        throw userError(elde > satilabilir
+          ? `${c.name}: uyandırdığın eserin son kopyası satılamaz (satılabilir ${satilabilir}, istenen ${adet}).`
+          : `Yetersiz eser: ${adet} istedin, ${elde} kopyan var.`);
+      }
+      a.count = elde - adet;
+      if (a.count <= 0) { a.count = 0; a.discovered = false; a.discoveredAt = null; }
+    } else throw userError('Bu tür ilana konamaz.');
+  }
 
-  function list(me) {
+  // İlan türü süzgeç anahtarı: 'key' | 'box' | 'artifact' | yuva adı (weapon, helmet, armor, legs, boots)
+  const turOf = it => it.kind || it.slot || 'diger';
+  const kucuk = s => String(s || '').toLocaleLowerCase('tr-TR');
+  const SIRALAR = { ucuz: (a, b) => a.price - b.price || a.id - b.id, pahali: (a, b) => b.price - a.price || a.id - b.id, yeni: (a, b) => b.id - a.id, eski: (a, b) => a.id - b.id };
+  // filtre: { tur, ara, sira, limit }. sayilar: süzgeçten bağımsız, başkalarının açık ilanları türe göre (düğme rozetleri için)
+  function list(me, filtre = {}) {
     const now = clock();
+    const hepsi = q.active.all().filter(r => r.expires > now).map(r => row(r, me));
+    const sayilar = { hepsi: 0 };
+    for (const r of hepsi) { if (r.mine) continue; sayilar.hepsi++; const t = turOf(r.item); sayilar[t] = (sayilar[t] || 0) + 1; }
+    const tur = filtre.tur && filtre.tur !== 'hepsi' ? String(filtre.tur) : null;
+    const ara = kucuk(filtre.ara).trim();
+    const siraAd = Object.hasOwn(SIRALAR, filtre.sira) ? filtre.sira : 'ucuz';
+    const limit = Math.min(200, Math.max(1, Math.floor(Number(filtre.limit)) || 100));
+    const suzulen = hepsi.filter(r => (!tur || turOf(r.item) === tur) && (!ara || kucuk(r.item.name).includes(ara))).sort(SIRALAR[siraAd]);
     return { fee: P().FEE, days: P().DAYS, maxListings: P().MAX_LISTINGS, sellerLockedShare: P().SELLER_LOCKED_SHARE, now,
-      listings: q.active.all().filter(r => r.expires > now).map(r => row(r, me)),
+      listings: suzulen.slice(0, limit), toplam: suzulen.length, sayilar, filtre: { tur: tur || 'hepsi', ara, sira: siraAd },
       mine: q.mine.all(me).map(r => row(r, me)),
       history: q.history.all(me, me).map(r => row(r, me)) };
   }
@@ -89,28 +156,26 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     });
   }
 
-  // Anahtar ilanı: adet + BİRİM fiyat (toplu satış). Anahtarlar oyuncunun kaydından çıkar, ilanda bekler.
-  function sellKey(me, qty, unitPrice) {
+  // Toplu ilan (anahtar, Pandora kutusu, koleksiyon eseri): adet + BİRİM fiyat. Oyuncunun kaydından düşer, ilanda bekler.
+  function sellBulk(me, kind, qty, unitPrice, eserId = null) {
     const p = P();
+    if (!TOPLU.includes(kind)) throw userError('Bu tür ilana konamaz.');
     const adet = Math.floor(Number(qty));
     const pr = round3(unitPrice);
-    if (!Number.isFinite(adet) || adet < 1) throw userError('Satılacak anahtar adedi en az 1 olmalı.');
+    if (!Number.isFinite(adet) || adet < 1) throw userError('Satılacak adet en az 1 olmalı.');
     if (!(pr >= p.MIN_PRICE) || pr > p.MAX_PRICE) throw userError(`Birim fiyat ${p.MIN_PRICE} ile ${p.MAX_PRICE.toLocaleString('tr-TR')} ASTRA arasında olmalı.`);
     if (q.countMine.get(me).n >= p.MAX_LISTINGS) throw userError(`En çok ${p.MAX_LISTINGS} açık ilanın olabilir.`);
     return atomic(() => {
-      const out = E.withPlayer(me, gs => {
-        const elde = Math.floor(Number(gs.state.arenaKeys) || 0);
-        if (elde < adet) throw userError(`Yetersiz anahtar: ${adet} istedin, ${elde} var.`);
-        gs.state.arenaKeys = elde - adet;
-        return { success: true };
-      });
+      const out = E.withPlayer(me, gs => { topluAl(gs, kind, adet, eserId); return { success: true }; });
       const now = clock();
-      const info = q.add.run(me, JSON.stringify({ kind: 'key', qty: adet }), pr, now, now + p.DAYS * DAY);
-      db.event('listing-new', me, { id: Number(info.lastInsertRowid), price: pr, item: 'key', qty: adet });
+      const item = kind === 'artifact' ? { kind, id: eserId, qty: adet } : { kind, qty: adet };
+      const info = q.add.run(me, JSON.stringify(item), pr, now, now + p.DAYS * DAY);
+      db.event('listing-new', me, { id: Number(info.lastInsertRowid), price: pr, item: kind, qty: adet, ...(eserId ? { eser: eserId } : {}) });
       const r = q.get.get(Number(info.lastInsertRowid));
-      return { result: { success: true, message: `🏷️ ${adet} Anahtar, tanesi ${pr} ASTRA'ya ilana kondu (${p.DAYS} gün). Satılınca %${Math.round(p.FEE * 100)} komisyon düşer.`, listing: row(r, me) }, state: out.state };
+      return { result: { success: true, message: `🏷️ ${adet} ${summary(item).name}, tanesi ${pr} ASTRA'ya ilana kondu (${p.DAYS} gün). Satılınca %${Math.round(p.FEE * 100)} komisyon düşer.`, listing: row(r, me) }, state: out.state };
     });
   }
+  const sellKey = (me, qty, unitPrice) => sellBulk(me, 'key', qty, unitPrice);
 
   // İlanı geri çek: eşya (ya da kalan anahtarlar) sahibine döner
   function cancel(me, id) {
@@ -140,12 +205,12 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     if (anahtarMi(ilanItem)) {
       const kalan = Math.floor(Number(ilanItem.qty) || 0);
       alinan = qty == null || qty === '' ? kalan : Math.floor(Number(qty));
-      if (!Number.isFinite(alinan) || alinan < 1) throw userError('Alınacak anahtar adedi en az 1 olmalı.');
-      if (alinan > kalan) throw userError(`İlanda yalnız ${kalan} anahtar kaldı.`);
+      if (!Number.isFinite(alinan) || alinan < 1) throw userError('Alınacak adet en az 1 olmalı.');
+      if (alinan > kalan) throw userError(`İlanda yalnız ${kalan} adet kaldı.`);
     }
     const price = round3(alinan == null ? r.price : r.price * alinan), fee = round3(price * p.FEE), burn = round3(fee * p.FEE_BURN_SHARE), toTreasury = round3(fee - burn), proceeds = round3(price - fee);
     return atomic(() => {
-      const item = anahtarMi(ilanItem) ? { kind: 'key', qty: alinan } : ilanItem;
+      const item = anahtarMi(ilanItem) ? { ...ilanItem, qty: alinan } : ilanItem;
       let fromLocked = 0;                                                   // fiyatın kilitli bakiyeden ödenen kısmı
       const out = E.withPlayer(me, gs => {
         const bal = Number(gs.state.adAstraBalance) || 0;
@@ -175,7 +240,7 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
       if (burn > 0) { E.globalPool.state.totalBurned = (Number(E.globalPool.state.totalBurned) || 0) + burn; if (typeof E.globalPool.saveState === 'function') E.globalPool.saveState(); E.treasury.recordBurn(burn); }
       if (toTreasury > 0) E.treasury.deposit(toTreasury);
       const kalanAdet = anahtarMi(ilanItem) ? (Number(ilanItem.qty) || 0) - alinan : 0;
-      if (kalanAdet > 0) q.setItem.run(JSON.stringify({ kind: 'key', qty: kalanAdet }), r.id);   // kısmi alım: ilan kalan adetle açık
+      if (kalanAdet > 0) q.setItem.run(JSON.stringify({ ...ilanItem, qty: kalanAdet }), r.id);   // kısmi alım: ilan kalan adetle açık
       else q.close.run('sold', me, clock(), r.id);
       db.event('listing-sold', r.seller, { id: r.id, buyer: me, price, fee, ...(alinan != null ? { qty: alinan } : {}) });
       return { result: { success: true, message: anahtarMi(item) ? `🛒 ${adAnahtar(item)} ${price} ASTRA'ya alındı.` : `🛒 ${item.name || 'Eşya'} ${price} ASTRA'ya alındı; Cephaneliğine kondu.`, price, fee }, state: out.state };
@@ -201,5 +266,5 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
     return n;
   }
 
-  return { list, sell, sellKey, cancel, buy, expire, takeItem };
+  return { list, sell, sellKey, sellBulk, cancel, buy, expire, takeItem };
 }

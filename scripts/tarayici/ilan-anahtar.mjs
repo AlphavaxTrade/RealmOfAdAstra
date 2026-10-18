@@ -61,7 +61,7 @@ async function kayitYaz(fn, kasa) {
   try { veritabani.close(); } catch { /* */ }
   await sunucuBaslat();
 }
-await kayitYaz((gs) => { gs.state.level = 10; gs.state.adAstraBalance = 100; gs.state.arenaKeys = 5; }, 1e6);
+await kayitYaz((gs) => { gs.state.level = 10; gs.state.adAstraBalance = 100; gs.state.arenaKeys = 5; gs.state.lockedBoxes = 2; }, 1e6);
 
 const tarayici = await chromium.launch({ executablePath: process.env.CHROME_YOLU || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const hatalar = [];
@@ -83,16 +83,23 @@ try {
   const s = o.sayfa;
   await paletle(s, 'pazar');
   await s.click('[data-e="bolum"][data-sekme="ilan"]');
-  await s.waitForSelector('#anahtar-adet', { timeout: 15000 });
+  await s.waitForSelector('#toplu-adet', { timeout: 15000 });
   await bekle(500);
   await s.screenshot({ path: path.join(EKRAN, 'ilan_1.png') }).catch(() => {});
   const takas = await s.evaluate(() => window.ammMarket ? Object.keys(window.ammMarket.pools) : []);
   kontrol('takas havuzunda Anahtar ve Pandora kutusu yok', !takas.includes('keys') && !takas.includes('boxes'), takas.join(','));
-  const form = await s.evaluate(() => document.body.innerText);
-  kontrol('Anahtar sat formu ve eldeki adet görünüyor', form.toLocaleLowerCase('tr').includes('anahtar sat (elinde 5)'), form.toLocaleLowerCase('tr').slice(form.toLocaleLowerCase('tr').indexOf('anahtar sat'), form.toLocaleLowerCase('tr').indexOf('anahtar sat') + 40));
-  await s.fill('#anahtar-adet', '3');
-  await s.fill('#anahtar-fiyat', '7');
-  await s.click('[data-e="ilanAnahtarSat"]');
+  const secenekler = await s.evaluate(() => Array.from(document.querySelectorAll('#toplu-tur option')).map((o) => o.textContent));
+  kontrol('satış formunda anahtar ve Pandora kutusu seçenekleri eldeki adetle görünüyor', secenekler.some((x) => /Anahtar \(elinde 5\)/.test(x)) && secenekler.some((x) => /Pandora kutusu \(elinde 2\)/.test(x)), secenekler.join(' | '));
+  const turDugmeleri = await s.evaluate(() => Array.from(document.querySelectorAll('[data-e="ilanTur"]')).map((e) => e.textContent.trim()));
+  kontrol('süzgeç: tür düğmeleri (Hepsi, Anahtar, Pandora kutusu, Eser, 5 teçhizat türü) var', turDugmeleri.length === 9 && /Pandora kutusu/.test(turDugmeleri.join()), turDugmeleri.join(' | '));
+  kontrol('süzgeç: ad araması ve sıralama (varsayılan en ucuzdan) var', await s.evaluate(() => !!document.querySelector('#ilan-ara') && document.querySelector('#ilan-sira').value === 'ucuz'));
+  await s.click('[data-e="ilanTur"][data-sekme="artifact"]');
+  await bekle(800);
+  kontrol('Eser düğmesi seçilince düğme aktif oluyor ve liste yeniden yükleniyor', await s.evaluate(() => document.querySelector('[data-e="ilanTur"][data-sekme="artifact"]').getAttribute('aria-selected') === 'true'));
+  await s.click('[data-e="ilanTur"][data-sekme="hepsi"]'); await bekle(800);
+  await s.fill('#toplu-adet', '3');
+  await s.fill('#toplu-fiyat', '7');
+  await s.click('[data-e="ilanTopluSat"]');
   await s.waitForSelector('[data-v3-tamam]', { timeout: 10000 });
   const onay = await s.evaluate(() => document.querySelector('.v3-onay').innerText);
   kontrol('onay penceresi adet, birim ve toplam fiyatı yazıyor', onay.includes('3 anahtar') && onay.includes('7') && onay.includes('21'), onay.split(String.fromCharCode(10)).join(' | '));
@@ -119,7 +126,7 @@ try {
   const m = await oyunSayfasi({ mobil: true });
   await paletle(m.sayfa, 'pazar');
   await m.sayfa.click('[data-e="bolum"][data-sekme="ilan"]');
-  await m.sayfa.waitForSelector('#anahtar-adet', { timeout: 15000 }); await bekle(500);
+  await m.sayfa.waitForSelector('#toplu-adet', { timeout: 15000 }); await bekle(500);
   await m.sayfa.screenshot({ path: path.join(EKRAN, 'ilan_3_telefon.png') }).catch(() => {});
   kontrol('telefon genişliğinde İlanlar yatay taşmıyor', !(await tasma(m.sayfa)));
   await m.baglam.close();

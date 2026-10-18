@@ -506,7 +506,7 @@ ${tablo(['Mal', 'Açılış fiyatı', 'Taban', 'Tavan', 'Havuz: ASTRA', 'Havuz: 
   <h3>Komisyon nereye gider?</h3>
   <p>%${sayi(C.AMM_FEE_RATE * 100)} komisyon her harcama gibi bölünür: %${sayi(C.TOKEN_BURN_RATE * 100)} yakım, %${sayi(C.CREATOR_ROYALTY_RATE * 100)} yapımcı, %${sayi(C.UBI_POOL_RATE * 100)} temel gelir, %${sayi(hazinePay * 100)} kasalar. Hammadde yakımı ise ASTRA değil <b>hammaddenin kendisi</b> silinir ve o hammaddenin haftalık dünya kapasitesini de düşürür.</p>
   <h3>Oyuncular arası ilan pazarı</h3>
-  <p>Teçhizat için ayrıdır: satıcı fiyatı kendisi koyar (${n(C.ILAN_PAZARI.MIN_PRICE)} – 1.000.000.000 ASTRA); komisyon %${sayi(C.ILAN_PAZARI.FEE * 100)} (yarısı yakılır, yarısı kasalara); ilan ${n(C.ILAN_PAZARI.DAYS)} gün durur; satıcıya gelen paranın en az %${sayi(C.ILAN_PAZARI.SELLER_LOCKED_SHARE * 100)}'i kilitli gelir.</p>`);
+  <p>Teçhizat, anahtar, Pandora kutusu ve koleksiyon eseri için ayrıdır: satıcı fiyatı kendisi koyar (${n(C.ILAN_PAZARI.MIN_PRICE)} – 1.000.000.000 ASTRA); komisyon %${sayi(C.ILAN_PAZARI.FEE * 100)} (yarısı yakılır, yarısı kasalara); ilan ${n(C.ILAN_PAZARI.DAYS)} gün durur; satıcıya gelen paranın en az %${sayi(C.ILAN_PAZARI.SELLER_LOCKED_SHARE * 100)}'i kilitli gelir. Anahtar, kutu ve eser toplu satılır (adet + tanesinin fiyatı); alıcı istediği kadarını alır. Uyandırdığın eserin son kopyası satılamaz. Listeyi tür düğmeleriyle, ad aramasıyla süzebilir ve fiyata göre sıralayabilirsin; varsayılan sıra en ucuzdan pahalıya, en ucuz ilan en üsttedir.</p>`);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // 11) KASALAR (bütçe ve kişi tavanı)

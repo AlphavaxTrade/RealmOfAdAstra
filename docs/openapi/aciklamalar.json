@@ -461,8 +461,8 @@
   },
   "GET /api/pazar": {
     "etiket": "İlan pazarı",
-    "ozet": "Açık ilanlar ve benim ilanlarım",
-    "yanit": "İlan pazarı kapalıysa 404.",
+    "ozet": "Açık ilanlar (türe ve ada göre süzülür, fiyata göre sıralanır) ve benim ilanlarım",
+    "yanit": "Sorgu: ?tur=hepsi|key|box|artifact|weapon|helmet|armor|legs|boots &ara=ad &sira=ucuz|pahali|yeni|eski &limit=1-200 (varsayılan en ucuzdan pahalıya, 100 ilan). Yanıtta listings, toplam, sayilar (türe göre adet). İlan pazarı kapalıysa 404.",
     "kodlar": [
       404
     ]
@@ -508,6 +508,37 @@
       404
     ]
   },
+  "POST /api/pazar/sell-bulk": {
+    "etiket": "İlan pazarı",
+    "ozet": "Anahtar, Pandora kutusu ya da koleksiyon eserini toplu ilana koy: adet + birim fiyat (yalnız vatandaşlar)",
+    "govde": {
+      "kind": {
+        "tur": "string",
+        "zorunlu": true,
+        "aciklama": "key | box | artifact"
+      },
+      "qty": {
+        "tur": "integer",
+        "zorunlu": true,
+        "aciklama": "Satılacak adet"
+      },
+      "price": {
+        "tur": "number",
+        "zorunlu": true,
+        "aciklama": "Tanesinin fiyatı (ASTRA)"
+      },
+      "id": {
+        "tur": "string",
+        "zorunlu": false,
+        "aciklama": "Yalnız eserde: eser kimliği (artifact_01 ...). Uyandırılmış eserin son kopyası satılamaz"
+      }
+    },
+    "yanit": "{ result, player, world, ... }",
+    "kodlar": [
+      403,
+      404
+    ]
+  },
   "POST /api/pazar/cancel": {
     "etiket": "İlan pazarı",
     "ozet": "İlanı geri çek",
@@ -534,7 +565,7 @@
       "qty": {
         "tur": "integer",
         "zorunlu": false,
-        "aciklama": "Yalnız Anahtar ilanında: alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
+        "aciklama": "Yalnız toplu ilanda (anahtar, kutu, eser): alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
       }
     },
     "yanit": "{ result, player, world, ... }",

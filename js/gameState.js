@@ -242,11 +242,11 @@ export class GameStateManager {
     const harita = new Map((Array.isArray(kayitli) ? kayitli : []).map(a => [a.id, a]));
     return GAME_CONFIG.COLLECTION_ARTIFACTS.map(cfg => {
       const eski = harita.get(cfg.id);
-      return {
-        id: cfg.id,
-        discovered: eski ? !!eski.discovered : false,
-        discoveredAt: eski ? (eski.discoveredAt || null) : null
-      };
+      // count (kaç kopya), uyandi / uyandiAt (Genesis uyandırması) eskiden burada düşüyordu: kayıt her yüklenince silinirdi (19 Ekim 2026)
+      const kayit = { id: cfg.id, discovered: eski ? !!eski.discovered : false, discoveredAt: eski ? (eski.discoveredAt || null) : null };
+      if (eski && Number(eski.count) > 0) kayit.count = Math.floor(Number(eski.count));
+      if (eski && eski.uyandi) { kayit.uyandi = true; kayit.uyandiAt = Number(eski.uyandiAt) || null; }
+      return kayit;
     });
   }
 

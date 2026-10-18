@@ -1190,12 +1190,12 @@ paths:
     get:
       tags:
         - İlan pazarı
-      summary: Açık ilanlar ve benim ilanlarım
+      summary: Açık ilanlar (türe ve ada göre süzülür, fiyata göre sıralanır) ve benim ilanlarım
       operationId: get_api_pazar
       security: *a2
       responses:
         "200":
-          description: İlan pazarı kapalıysa 404.
+          description: "Sorgu: ?tur=hepsi|key|box|artifact|weapon|helmet|armor|legs|boots &ara=ad &sira=ucuz|pahali|yeni|eski &limit=1-200 (varsayılan en ucuzdan pahalıya, 100 ilan). Yanıtta listings, toplam, sayilar (türe göre adet). İlan pazarı kapalıysa 404."
           content:
             application/json:
               schema:
@@ -1291,6 +1291,55 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/pazar/sell-bulk:
+    post:
+      tags:
+        - İlan pazarı
+      summary: "Anahtar, Pandora kutusu ya da koleksiyon eserini toplu ilana koy: adet + birim fiyat (yalnız vatandaşlar)"
+      operationId: post_api_pazar_sell_bulk
+      security: *a2
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind:
+                  type: string
+                  description: key | box | artifact
+                qty:
+                  type: integer
+                  description: Satılacak adet
+                price:
+                  type: number
+                  description: Tanesinin fiyatı (ASTRA)
+                id:
+                  type: string
+                  description: "Yalnız eserde: eser kimliği (artifact_01 ...). Uyandırılmış eserin son kopyası satılamaz"
+              required:
+                - kind
+                - qty
+                - price
+      responses:
+        "200":
+          description: "{ result, player, world, ... }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/Hata400"
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "403":
+          $ref: "#/components/responses/Hata403"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/pazar/cancel:
     post:
       tags:
@@ -1346,7 +1395,7 @@ paths:
                   type: integer
                 qty:
                   type: integer
-                  description: "Yalnız Anahtar ilanında: alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
+                  description: "Yalnız toplu ilanda (anahtar, kutu, eser): alınacak adet (verilmezse kalanın hepsi); kalan adetle ilan açık kalır"
               required:
                 - id
       responses:
