@@ -254,6 +254,7 @@ body.modal-open .realm-tooltip {
 
 .royal-scroll-banner-wrap {
   width: 100%;
+  aspect-ratio: 16 / 9;
   max-height: 380px;
   overflow: hidden;
   border-radius: 12px;
