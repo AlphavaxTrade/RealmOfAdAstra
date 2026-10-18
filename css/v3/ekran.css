@@ -290,3 +290,6 @@ html.v3-azalt .ek-cark-ibre { transition: none; }
 .ek-bilet-metin { margin: 6px 0 0; font-size: calc(13.5px * var(--v3-yazi-olcek, 1)); line-height: 1.45; color: var(--v3-yazi-2, #a9b1c4); word-break: break-word; }
 .ek-bilet-cevap { margin-top: 8px; padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--v3-iyi, #43d19a); background: rgba(67,209,154,.08); }
 .ek-bilet-cevap p { margin: 4px 0 0; font-size: calc(13.5px * var(--v3-yazi-olcek, 1)); line-height: 1.45; color: var(--v3-yazi, #eceef4); white-space: pre-wrap; word-break: break-word; }
+
+/* 14. ZİNDAN MODU (geçiş katkısı) ------------------------------------------ */
+.ek-satir-alt { display: flex; align-items: center; justify-content: space-between; gap: var(--v3-gap-2, 8px); flex-wrap: wrap; margin-top: -2px; }

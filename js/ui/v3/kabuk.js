@@ -20,7 +20,7 @@ const KAYNAKLAR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 const EKRAN_KIMLIGI = {
   merkez: 'merkez', silo: 'silo', taverna: 'taverna', demirhane: 'demirhane', sifahane: 'sifahane', koy: 'koy',
   konsey: 'konsey', uzay: 'uzay', kolezyum: 'kolezyum', savasalani: 'savasalani', pazar: 'pazar', karnaval: 'karnaval',
-  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum', kisla: 'kisla', sorunbildir: 'geribildirim'
+  koleksiyon: 'koleksiyon', ekonomi: 'ekonomi', profil: 'karakter', kotalar: 'kotalar', hazine: 'hazine', surum: 'surum', kisla: 'kisla', sorunbildir: 'geribildirim', zindanmod: 'zindanmod'
 };
 
 // Bir öğeye dokununca ne olacağı (hub öğesi anahtarı → işlev). api: app.js'in verdiği açıcılar.

@@ -9,24 +9,32 @@ import { globalPool } from '../globalPool.js';
 import { simulateBattle } from '../combat.js';
 import { getDungeonEntry } from '../bestiary.js';
 import { round3 } from './ortak.js';
+import { ammMarket } from '../ammMarket.js';
+import { askerHakki } from '../economy/ordu-hakki.js';
 
 const UST_SEVIYE = 18;
-const EN_COK_ASKER = 18;            // sunucu tek savaşa en çok bu kadar asker kabul eder (server/actions.js)
+const EN_COK_ASKER = 25;            // sunucu tek savaşa en çok bu kadar asker kabul eder (server/actions.js idxArr); Cehennem modunda hak 25'e çıkar
 const HEDEF_KAZANMA_SANSI = 80;     // "yeterli asker" ölçütü (%)
 const OZET_ONBELLEK_SINIRI = 48;
 
 const buyukBossMu = (kayit, seviye) => !!(kayit.isBoss || seviye === 9 || seviye === 18);
 const seviyeSinirla = (v) => Math.max(1, Math.min(UST_SEVIYE, Math.floor(Number(v) || 1)));
 
+// Zindan modu (js/config.js ZINDAN_MODLARI): 0 Normal, 1 Zor, 2 Uzman, 3 Cehennem. Bozuk/eksik değer Normal sayılır.
+const modTablosu = () => GAME_CONFIG.ZINDAN_MODLARI || [];
+const modSinirla = (v) => Math.max(0, Math.min(modTablosu().length - 1, Math.floor(Number(v) || 0)));
+const modAyar = (mod) => modTablosu()[modSinirla(mod)] || { odulCarpani: 1, dusmeCarpani: 1, gecis: null };
+
 export const zindanYontemleri = {
   // ── 1. Ödül ve kapı harcı ────────────────────────────────────────────────
   // Ödüller ASTRA olarak sabit (fiyat çarpanı yalnız bedellere); küçük ölçekte tam sayıya yuvarlanmaz
-  getDungeonBaseReward(level, isBoss = false) {
+  // mod: zindan modu (varsayılan: oyuncunun şu anki modu). ASTRA ödülü mod çarpanıyla büyür; XP büyümez (hesap seviyesi tempo eğrisi bozulmasın)
+  getDungeonBaseReward(level, isBoss = false, mod = this.state.dungeonMode) {
     const seviye = seviyeSinirla(level);
     const buyuk = isBoss || seviye === 9 || seviye === 18;
     const { REWARD_ADA_PER_LEVEL, REWARD_XP_PER_LEVEL, MAJOR_BOSS_REWARD_MULT } = GAME_CONFIG.DUNGEON;
     const carpan = buyuk ? MAJOR_BOSS_REWARD_MULT : 1;
-    return { ada: round3(REWARD_ADA_PER_LEVEL * seviye * carpan), xp: Math.floor(REWARD_XP_PER_LEVEL * seviye * carpan), isMajorBoss: buyuk };
+    return { ada: round3(REWARD_ADA_PER_LEVEL * seviye * carpan * modAyar(mod).odulCarpani), xp: Math.floor(REWARD_XP_PER_LEVEL * seviye * carpan), isMajorBoss: buyuk };
   },
 
   getDungeonGateFee(level, isBoss = false) {
@@ -151,7 +159,7 @@ export const zindanYontemleri = {
       return { success: false, message: '🔒 Seçtiğin askerlerden biri Kolezyumda maç arıyor. Önce sıradan çık ya da başka asker seç.' };
     }
 
-    const canavar = getDungeonEntry(seviye);
+    const canavar = getDungeonEntry(seviye, modSinirla(this.state.dungeonMode));
     const entry = this.beginDungeonEntry(seviye, buyukBossMu(canavar, seviye), { payGateFee: !!payGateFee, soldierCount: sira.length });
     if (!entry.success) return { ...entry, success: false };
 
@@ -179,7 +187,7 @@ export const zindanYontemleri = {
       const ganimet = this.addDungeonXpAndDrops(monster.level, boss, { rewarded: entry.rewarded });
       sonuc.adaReward = ganimet.adAstraGained || 0;
       this._zindanKazanciYaz(sonuc.adaReward);   // Fatih Ödülü hesabında yol boyu geri kazanım
-      if (monster.level === UST_SEVIYE) sonuc.fatihOdulu = this._fatihOduluVer();   // ilk 18. kat zaferinde ödenir
+      if (monster.level === UST_SEVIYE) sonuc.fatihOdulu = this._fatihOduluVer();   // ilk 18. kat zaferinde ödenir (hesap başına bir kez: yüksek modlarda yeniden ödenmez)
       sonuc.budgetFull = !!ganimet.budgetFull;
       sonuc.personCapped = !!ganimet.personCapped;
       sonuc.budgetCapped = !!ganimet.budgetCapped;
@@ -231,6 +239,7 @@ export const zindanYontemleri = {
     const buyukBoss = taban.isMajorBoss;
     // Yalnız kat 3 (Sv.9) ve kat 6 (Sv.18) bosslarında düşme şansları çarpılır
     const bossCarpani = buyukBoss ? (GAME_CONFIG.BOSS_DROP_MULTIPLIER || 2.0) : 1.0;
+    const dusme = modAyar(this.state.dungeonMode).dusmeCarpani;   // mod çarpanı: parça, kutu, eser ve parşömen şansı (üst sınırlar korunur)
 
     this.addXp(taban.xp);
     if (!rewarded) {
@@ -258,25 +267,25 @@ export const zindanYontemleri = {
     const hesapSeviyesi = this.state.level || 1;
 
     let parca = 0;
-    if (Math.random() < Math.min(0.95, this.getFragmentDropRate(hesapSeviyesi) * bossCarpani)) {
+    if (Math.random() < Math.min(0.95, this.getFragmentDropRate(hesapSeviyesi) * bossCarpani * dusme)) {
       parca = buyukBoss ? 3 + Math.floor(Math.random() * 4) : 1 + Math.floor(Math.random() * 2);
       this.state.inventory.fragments = (this.state.inventory.fragments || 0) + parca;
     }
 
     let kutu = 0;
-    if (Math.random() < Math.min(0.5, this.getBoxDropRate(hesapSeviyesi) * bossCarpani)) {
+    if (Math.random() < Math.min(0.5, this.getBoxDropRate(hesapSeviyesi) * bossCarpani * dusme)) {
       kutu = 1;
       this.state.lockedBoxes = (this.state.lockedBoxes || 0) + 1;
     }
 
     let eser = null;
-    if (buyukBoss && Math.random() < Math.min(1, GAME_CONFIG.ARTIFACT_BASE_RATE * seviye * 6)) {
+    if (buyukBoss && Math.random() < Math.min(1, GAME_CONFIG.ARTIFACT_BASE_RATE * seviye * 6 * dusme)) {
       eser = this.discoverArtifact(seviye);
     }
 
     // Parşömen: boss %40, normal canavar %7; %60 iyileştirme, %40 stamina
     let parsomen = null;
-    if (Math.random() < (buyukBoss ? 0.40 : 0.07)) {
+    if (Math.random() < Math.min(0.95, (buyukBoss ? 0.40 : 0.07) * dusme)) {
       const iyilestirme = Math.random() < 0.60;
       const tur = iyilestirme ? 'scroll_heal' : 'scroll_stamina';
       this.state.inventory[tur] = (this.state.inventory[tur] || 0) + 1;
@@ -312,6 +321,90 @@ export const zindanYontemleri = {
     if (!this.state.dungeonMonsterCurrentHp) return;
     delete this.state.dungeonMonsterCurrentHp[floorLevel];
     this.saveState();
+  },
+
+  // ── 6b. Zindan modları (js/config.js ZINDAN_MODLARI): Normal → Zor → Uzman → Cehennem ────────────────────
+  // Mod geçişi için verilen hammadde katkıları. Hedef mod kayıtlıdır: eski katkı yeni moda sızmaz. Katkı yakılır (burnResources).
+  _dungeonGate() {
+    const s = this.state;
+    const hedef = modSinirla(s.dungeonMode) + 1;
+    if (!s.dungeonGate || typeof s.dungeonGate !== 'object' || s.dungeonGate.hedef !== hedef || typeof s.dungeonGate.verilen !== 'object') s.dungeonGate = { hedef, verilen: {} };
+    return s.dungeonGate;
+  },
+
+  // Oyuncunun modu, çarpanları ve bir üst moda geçiş durumu (salt okunur; arayüz gösterir). bitti: bu modun son canavarı (Sv.18) yenildi.
+  getDungeonModeInfo() {
+    const mod = modSinirla(this.state.dungeonMode), tablo = modTablosu();
+    const simdiki = tablo[mod] || modAyar(0), sonraki = tablo[mod + 1] || null;
+    const bitti = (this.state.dungeonProgress || 1) > UST_SEVIYE;
+    const bilgi = { mod, id: simdiki.id, ad: simdiki.ad, simge: simdiki.simge, odulCarpani: simdiki.odulCarpani, dusmeCarpani: simdiki.dusmeCarpani, enYuksekMod: !sonraki, bitti, gecis: null };
+    if (!sonraki || !sonraki.gecis) return bilgi;
+    const g = this._dungeonGate(), gec = sonraki.gecis;
+    const gerek = {}, verilen = {}, kalan = {};
+    for (const [k, n] of Object.entries(gec.hammadde)) {
+      gerek[k] = n;
+      verilen[k] = Math.min(n, Math.max(0, Math.floor(Number(g.verilen[k]) || 0)));
+      kalan[k] = n - verilen[k];
+    }
+    const astra = this.adaPrice(gec.astra);
+    const hammaddeTamam = Object.values(kalan).every((v) => v <= 0);
+    const astraYeter = (this.state.adAstraBalance || 0) >= astra;
+    bilgi.gecis = {
+      hedefMod: mod + 1, hedefAd: sonraki.ad, hedefSimge: sonraki.simge, hedefOdulCarpani: sonraki.odulCarpani, hedefDusmeCarpani: sonraki.dusmeCarpani,
+      gerek, verilen, kalan, astra, hammaddeTamam, astraYeter, yapilabilir: bitti && hammaddeTamam && astraYeter,
+      yeniAskerHakki: askerHakki({ ilerleme: 1, mod: mod + 1 })
+    };
+    return bilgi;
+  },
+
+  // Bir üst moda geçiş için hammadde katkısı: envanterden düşer ve YAKILIR; bu hammaddenin kalan ihtiyacını aşamaz. Son boss yenilmeden verilmez.
+  contributeToDungeonGate(amounts) {
+    const bilgi = this.getDungeonModeInfo();
+    if (!bilgi.gecis) return { success: false, message: '⚫ Zaten en yüksek moddasın.' };
+    if (!bilgi.bitti) return { success: false, message: `🔒 ${bilgi.gecis.hedefAd} moda geçiş için önce ${bilgi.ad} modun son canavarını (Sv.${UST_SEVIYE}) yenmelisin.` };
+    const env = this.state.inventory || {};
+    const kabul = {};
+    for (const [k, n] of Object.entries(amounts || {})) {
+      if (!Object.hasOwn(bilgi.gecis.gerek, k)) continue;
+      const q = Math.min(Math.max(0, Math.floor(Number(n) || 0)), Math.floor(Number(env[k]) || 0), bilgi.gecis.kalan[k]);
+      if (q > 0) kabul[k] = q;
+    }
+    if (!Object.keys(kabul).length) return { success: false, message: 'Verilecek hammadde yok ya da bu hammaddelerin katkısı tamamlandı.' };
+    const g = this._dungeonGate();
+    for (const [k, q] of Object.entries(kabul)) { env[k] = (Number(env[k]) || 0) - q; g.verilen[k] = (Number(g.verilen[k]) || 0) + q; }
+    this.burnResources(kabul);
+    const deger = ammMarket.calculateResourcesAdAstraValue(kabul).totalAda;
+    if (deger > 0 && this._addContribution) this._addContribution(round3(deger));
+    this.saveState();
+    const parca = Object.entries(kabul).map(([k, q]) => `${q} ${k}`).join(', ');
+    return { success: true, given: kabul, message: `🔥 ${bilgi.gecis.hedefAd} moda geçiş için yakıldı: ${parca}.` };
+  },
+
+  // Bir üst moda geç: zindan sıfırlanır (ilerleme 1), canavarlar güçlenir, ödül ve düşme çarpanı artar, asker hakkı birikir.
+  // Önkoşul: son boss (Sv.18) bu modda yenildi + hammadde katkıları tamam + ASTRA yeter. ASTRA oyunun harcama bölüşümüne girer.
+  advanceDungeonMode() {
+    const bilgi = this.getDungeonModeInfo();
+    const gec = bilgi.gecis;
+    if (!gec) return { success: false, message: '⚫ Zaten en yüksek moddasın.' };
+    if (!bilgi.bitti) return { success: false, message: `🔒 Önce ${bilgi.ad} modun son canavarını (Sv.${UST_SEVIYE}) yenmelisin.` };
+    if (!gec.hammaddeTamam) {
+      const eksik = Object.entries(gec.kalan).filter(([, v]) => v > 0).map(([k, v]) => `${v} ${k}`).join(', ');
+      return { success: false, message: `🔥 Hammadde katkısı tamamlanmadı. Eksik: ${eksik}.` };
+    }
+    if (!gec.astraYeter) return { success: false, message: `Geçiş için ${gec.astra} ASTRA gerekli.` };
+    this.state.adAstraBalance -= gec.astra;
+    this._onAdaSpent(gec.astra);
+    globalPool.recordTokenSpend(gec.astra);
+    this.state.dungeonMode = gec.hedefMod;
+    this.state.dungeonProgress = 1;
+    this.state.dungeonMonsterCurrentHp = {};
+    this.state.dungeonGate = { hedef: gec.hedefMod + 1, verilen: {} };
+    if (this._zindanOzetOnbellek) this._zindanOzetOnbellek.clear();
+    this.saveState();
+    return {
+      success: true, mod: gec.hedefMod, hak: gec.yeniAskerHakki,
+      message: `${gec.hedefSimge} ${gec.hedefAd} moda geçtin! Zindan baştan başlıyor, canavarlar çok daha güçlü. ASTRA ödülü ×${String(gec.hedefOdulCarpani).replace('.', ',')}, eşya düşme şansı ×${String(gec.hedefDusmeCarpani).replace('.', ',')}; asker hakkın ${gec.yeniAskerHakki}'e çıktı.`
+    };
   },
 
   // ── 6. Harita için salt okunur özetler (oyun durumunu değiştirmez) ────────
@@ -358,7 +451,7 @@ export const zindanYontemleri = {
   // Sonuç, ordu ve canavar canı değişmedikçe önbellekten gelir (aynı ekranda sayı oynamasın).
   getZindanOdaOzeti(level) {
     const seviye = seviyeSinirla(level);
-    const canavar = getDungeonEntry(seviye);
+    const canavar = getDungeonEntry(seviye, modSinirla(this.state.dungeonMode));
     const ilerleme = this.state.dungeonProgress || 1;
     const durum = ilerleme < seviye ? 'kilitli' : (ilerleme > seviye ? 'yenildi' : 'siradaki');
     const kalanCan = this.getMonsterCurrentHp(seviye, canavar.hp);

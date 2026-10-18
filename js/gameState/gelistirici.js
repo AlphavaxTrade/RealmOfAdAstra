@@ -252,6 +252,8 @@ export const gelistiriciYontemleri = {
     this.state = {
       ...this.loadState(),
       dungeonProgress: 1,
+      dungeonMode: 0,   // zindan modu: 0 Normal, 1 Zor, 2 Uzman, 3 Cehennem (js/config.js ZINDAN_MODLARI)
+      dungeonGate: null,   // bir üst moda geçiş için verilen hammadde katkıları { hedef, verilen }
       botRenewCount: 0,
       tavernaBotActive: false,
       adaPriceMultiplierEpoch: donem,

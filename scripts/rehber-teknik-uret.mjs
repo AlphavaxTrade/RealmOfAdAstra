@@ -150,7 +150,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
 ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
   ['Silo seviyesi', 'Kalıcı', `${n(C.WAREHOUSE.baseLevels)} seviye; ikinci oyun (Universe) açılana kadar en çok ${n(C.WAREHOUSE.universeGateLevel)}`, 'Sana özel'],
   ['Köy evi', 'Kalıcı', `En çok ${n(C.KOY.MAX_HOUSES)} ev ve ev sayısı hesap seviyeni geçemez; ev başına ${n(C.KOY.VILLAGERS_PER_HOUSE)} köylü`, 'Sana özel'],
-  ['Asker sayısı', 'Kalıcı', 'Her asker 1 köylü ister (200 köylüye kadar); zindan asker hakkı = geçtiğin kat + 1 (Normal modda 2-7); tek zindan savaşına en çok 18 asker', 'Sana özel'],
+  ['Asker sayısı', 'Kalıcı', 'Her asker 1 köylü ister (200 köylüye kadar); zindan asker hakkı = geçtiğin kat + 1 (Normal modda 2-7); tek zindan savaşına en çok 25 asker', 'Sana özel'],
   ['Vatandaş sayısı (kapı)', 'Sürekli', `Başlangıç sınırı ${n(C.KAPI.START_LIMIT)}; aynı internet adresinden günde en çok ${n(C.KAPI.IP_DAILY_ADMIT)} yeni vatandaş; kayıt harcı ${n(C.KAPI.REGISTRATION_FEE_ADA)} ASTRA`, 'Küresel (herkes)'],
   ['Kasa sözleşmesi: tek ödeme', 'İşlem başı', 'Kasadaki paranın en çok %2\'si (kontratta sahibin bile üst sınırı %10)', 'Küresel (herkes)'],
   ['Kasa sözleşmesi: günlük toplam', 'Kayan 24 saat', 'Kasadaki paranın en çok %5\'i (kontratta sahibin bile üst sınırı %30)', 'Küresel (herkes)']
@@ -647,10 +647,13 @@ ${formul([
   `<b>Günlük giriş:</b> ${n(C.DUNGEON.DAILY_RUNS)} ödüllü giriş; sonrası kapı harcıyla (ödülün %${sayi(C.DUNGEON.GATE_FEE_RATE * 100)}'si, tamamı zindan kasasına) ödüllü, ödenmezse yalnız deneyim.`,
   `<b>Kişisel günlük tavan</b> = en büyüğü( ${n(C.DUNGEON.DAILY_RUNS)} × ulaştığın en değerli katın ödülü ,  orduya harcadığın ASTRA × ${n(C.DUNGEON.RETURN_SHARE)} ÷ ${n(C.DUNGEON.PAYBACK_DAYS)} ).`,
   `<b>Asker hakkı:</b> yeni asker alımı <b>geçtiğin kat + 1</b> ile sınırlıdır (Normal modda 1. kat 2 asker … 6. kat 7 asker). Hakkın üstündeki var olan asker silinmez; yalnız yeni alım kapanır. Teçhizat döngüsü (dövme, geliştirme, aşınma, tamir) bu yüzden zorunludur.`,
+  `<b>Zindan modları:</b> Normal modda son canavar (Sv.18) yenilince hammadde katkısı (yakılır) ve ASTRA ile bir üst moda geçilir; zindan baştan başlar, canavarlar güçlenir. Ödül çarpanı yalnız ASTRA'ya uygulanır (deneyim aynı kalır); kasa bütçesi ve günlük kişi tavanı değişmez, çarpan yalnız tavana kadar etkilidir. Tablo aşağıda.`,
   `<b>Her giriş stamina ister:</b> asker başına ${n(C.DUNGEON_STAMINA_COST_PER_SOLDIER.BASE_PER_SOLDIER)} + canavar seviyesi (tablo aşağıda).`,
   `<b>Fatih Ödülü:</b> 18. kat bossunu ilk kez yenince, orduya harcadığın − zindandan kazandığın fark (en çok 18 askerin toplam fiyatı kadar) Fatih kasasından bir defaya mahsus ödenir.`
 ])}
 ${tablo(['Seviye', 'Canavar', 'Can', 'Saldırı', 'Ödül (ASTRA)', 'Kapı harcı', 'Stamina/asker', 'Asker XP'], DUNGEON_LEVELS.map(zindanSatiri))}
+  <h4>Zindan modları</h4>
+${tablo(['Mod', 'ASTRA ödül çarpanı', 'Eşya düşme çarpanı', 'Asker hakkı', 'Geçiş bedeli (bir önceki moddan)'], C.ZINDAN_MODLARI.map((m, i) => [`${m.simge} ${m.ad}`, `×${n(m.odulCarpani)}`, `×${n(m.dusmeCarpani)}`, `${n(i * 6 + 2)}-${n(i * 6 + 7)}`, m.gecis ? `${Object.entries(m.gecis.hammadde).map(([k, v]) => `${sayi(v)} ${({ wood: 'odun', iron: 'demir', coal: 'kömür', stone: 'taş', wheat: 'buğday', herb: 'şifalı ot' })[k] || k}`).join(', ')} + ${astra(m.gecis.astra, 0)}` : 'yok (başlangıç)']))}
   ${ornek(`<p>Bir oyuncu orduya <b>${sayi(10000)} ASTRA</b> harcadı ve 12. kata kadar açtı. Kişisel günlük tavan = en büyüğü(5 × ${sayi(gs.getDungeonBaseReward(12).ada, 1)} = ${sayi(5 * gs.getDungeonBaseReward(12).ada, 1)}, 10.000 × ${n(C.DUNGEON.RETURN_SHARE)} ÷ ${n(C.DUNGEON.PAYBACK_DAYS)} = ${sayi(10000 * C.DUNGEON.RETURN_SHARE / C.DUNGEON.PAYBACK_DAYS, 1)}) = <b>${sayi(Math.max(5 * gs.getDungeonBaseReward(12).ada, 10000 * C.DUNGEON.RETURN_SHARE / C.DUNGEON.PAYBACK_DAYS), 1)} ASTRA/gün</b>.</p>`)}
   <h3>🏟️ Kolezyum</h3>
 ${formul([

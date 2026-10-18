@@ -17,8 +17,8 @@ let kapiHarciOde = false;
 
 const asBoss = (m) => !!(m.isBoss || m.level === 9 || m.level === 18);
 const askerler = (b) => b.gameState.state.soldierUnits || [];
-// Sunucu tek savaşa en çok 18 asker kabul eder (server/actions.js idxArr); daha fazlası seçilirse işlem reddedilirdi
-const EN_COK_ASKER = 18;
+// Sunucu tek savaşa en çok 25 asker kabul eder (server/actions.js idxArr; Cehennem modunda asker hakkı 25'e çıkar); daha fazlası seçilirse işlem reddedilirdi
+const EN_COK_ASKER = 25;
 
 // Seçili asker sırası: var olmayanlar atılır, boşsa herkes seçilir
 function seciliAskerler(b, secenek) {

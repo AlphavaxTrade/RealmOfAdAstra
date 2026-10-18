@@ -26,7 +26,7 @@ export const KATLAR = [
 
 // ── Kat / oda durumları (ilerleme = oyuncunun açık olan en yüksek seviyesi) ──
 export const katSeviyeleri = (kat) => Array.from({ length: ODA_SAYISI }, (_, i) => (kat - 1) * ODA_SAYISI + i + 1);
-export const katCanavarlari = (kat) => getFloorMonsters(kat);
+export const katCanavarlari = (kat, mod = 0) => getFloorMonsters(kat, mod);
 export const bossKatiMi = (kat) => BOSS_KATLARI.includes(kat);
 
 // Oyuncu açıldığında hangi kattan başlasın: şu an savaştığı kat (hepsi bitmişse sonuncu)

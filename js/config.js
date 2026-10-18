@@ -697,6 +697,35 @@ export const GAME_CONFIG = {
     PAYBACK_DAYS: 93
   },
 
+  // ═════════════════════════════════════════════════════════════════
+  // 🗺️ ZİNDAN MODLARI (kullanıcı kararı 18 Ekim 2026; Diablo'daki zorluk modları gibi)
+  // ═════════════════════════════════════════════════════════════════
+  // Normal modda 6 katın hepsi ve son boss (Sv.18) bitince oyuncu bir üst moda geçer: zindan baştan başlar (ilerleme 1), canavarlar çok daha
+  // güçlüdür (js/bestiary.js MOD_CANAVARLARI, scripts/model/zindan_mod.mjs'ten), ASTRA ödülü ve eşya/parça düşme şansı çarpanla artar, asker
+  // hakkı 6 kat büyür (js/economy/ordu-hakki.js: Zor 8-13, Uzman 14-19, Cehennem 20-25). Hak ve geçilen modlar KALICIDIR.
+  //   odulCarpani : zindan ASTRA ödülü (kasa bütçesi ve günlük kişi tavanı değişmeden uygulanır: çarpan yalnız tavana kadar etkilidir)
+  //   dusmeCarpani: parça, kutu, eser ve parşömen düşme şansı (üst sınırlar korunur)
+  //   XP ÇARPANI YOK: hesap seviyesi (ve asker seviye sınırı) oyunun tempo eğrisine bağlıdır (HEDEF_GUN); XP artarsa takvim bozulur.
+  //   gecis       : bir üst moda geçiş bedeli. hammadde KATKI ile ödenir (günlerce biriktirilir; silo sınırına takılmaz, yakılır),
+  //                 ASTRA son adımda (fiyat çarpanıyla ölçeklenir, oyunun harcama bölüşümüne girer). Tek mod geçişi ~5-19 günlük üretimdir.
+  // Sayılar ilk tahmindir: canlıda Denge İzleme ekranına göre ayarlanır.
+  ZINDAN_MODLARI: [
+    { id: 'normal', ad: 'Normal', simge: '🟢', odulCarpani: 1, dusmeCarpani: 1, gecis: null },
+    { id: 'zor', ad: 'Zor', simge: '🟠', odulCarpani: 1.5, dusmeCarpani: 1.25, gecis: { hammadde: { wood: 40000, iron: 28000, coal: 30000, stone: 40000 }, astra: 1200 } },
+    { id: 'uzman', ad: 'Uzman', simge: '🔴', odulCarpani: 2.25, dusmeCarpani: 1.5, gecis: { hammadde: { wood: 80000, iron: 56000, coal: 60000, stone: 80000, wheat: 60000 }, astra: 5000 } },
+    { id: 'cehennem', ad: 'Cehennem', simge: '⚫', odulCarpani: 3.5, dusmeCarpani: 2, gecis: { hammadde: { wood: 150000, iron: 105000, coal: 110000, stone: 150000, wheat: 120000, herb: 15000 }, astra: 15000 } }
+  ],
+
+  // Denge İzleme (yönetici paneli, server/denge-rapor.js) için: modelin (scripts/model/zindan_{tempo,ayarla,mod}.mjs) her canavar için hedefi =
+  // "en hızlı oyuncunun o canavarı en erken yenebileceği HESAP GÜNÜ" (alt sınır). Gerçek ilk temizleme günü bunun 1,5-3 katı beklenir;
+  // medyan hedefin ALTINA düşerse model yanlış demektir. Mod → { canavar seviyesi: gün }.
+  ZINDAN_HEDEF_GUN: {
+    0: { 1: 0, 2: 1, 3: 2.5, 4: 5, 5: 7, 6: 10, 7: 14, 8: 20, 9: 30, 10: 42, 11: 52, 12: 62, 13: 75, 14: 86, 15: 98, 16: 108, 17: 114, 18: 120 },
+    1: { 1: 140, 2: 141.3, 3: 143.3, 4: 146.7, 5: 149.3, 6: 153.3, 7: 158.7, 8: 166.7, 9: 180, 10: 196, 11: 209.3, 12: 222.7, 13: 240, 14: 254.7, 15: 270.7, 16: 284, 17: 292, 18: 300 },
+    2: { 1: 320, 2: 321.5, 3: 323.8, 4: 327.5, 5: 330.5, 6: 335, 7: 341, 8: 350, 9: 365, 10: 383, 11: 398, 12: 413, 13: 432.5, 14: 449, 15: 467, 16: 482, 17: 491, 18: 500 },
+    3: { 1: 530, 2: 532.3, 3: 535.6, 4: 541.3, 5: 545.8, 6: 552.5, 7: 561.5, 8: 575, 9: 597.5, 10: 624.5, 11: 647, 12: 669.5, 13: 698.8, 14: 723.5, 15: 750.5, 16: 773, 17: 786.5, 18: 800 }
+  },
+
   // ═══════════════════════════════════════════════════════════════════════
   // 🏟️ KOLEZYUM — anahtar tüketilir, ELO eşleşmesi, beş lig (F-02 / F-20)
   // ═══════════════════════════════════════════════════════════════════════
@@ -1288,6 +1317,36 @@ export const GAME_CONFIG = {
       title: '👑 Yeni Ad: Realm of AdAstra',
       date: '6 Ekim 2026',
       changes: [`Oyunun adı her yerde "Realm of AdAstra" oldu: oyun ekranı, e-postalar, cüzdan bağlama mesajı ve yönetici paneli.`]
+    },
+    {
+      version: 'v1.36',
+      title: '📮 Sorun Bildir',
+      date: '18 Ekim 2026',
+      changes: [
+        `Oyunda bir sorunla karşılaşırsan Daha menüsündeki "Sorun bildir" ile bize yazabilir, birden fazla ekran görüntüsü ekleyebilirsin. Her bildirime bir bilet numarası (RB-1001 gibi) verilir; durumunu ve cevabımızı aynı ekrandan görürsün.`
+      ]
+    },
+    {
+      version: 'v1.37',
+      title: '⚔️ Ordu ve Zindan Dengesi',
+      date: '18 Ekim 2026',
+      changes: [
+        `Asker hakkı artık zindanda geçtiğin kata bağlı: 1. katta 2 asker, her yeni katta 1 fazlası, 6. katta 7 asker. Sahip olduğun askerler hiçbir zaman silinmez.`,
+        `Bu yüzden teçhizat önemli oldu: dövmek, geliştirmek, giymek ve bakımını yapmak (hammadde ve ASTRA harcar) zindanı geçmenin yolu. Askerin seviyesi hâlâ hesap seviyeni geçemez.`,
+        `Zindandaki 18 canavar ve iki büyük patron baştan dengelendi: en hızlı oyuncu Normal modu yaklaşık 120 günde bitirir, patronlar tam takım ve doğru asker sayısıyla yenilebilir.`,
+        `Kışla ekranında asker hakkın ve sıradaki hakkı nasıl açacağın görünür.`
+      ]
+    },
+    {
+      version: 'v1.38',
+      title: '🔥 Zindan Modları',
+      date: '18 Ekim 2026',
+      changes: [
+        `Normal modda 6 katı ve son canavarı (Kıyamet Ejderhası) bitirince zindan Zor, sonra Uzman, sonra Cehennem moduyla baştan açılabilir. Savaş sekmesindeki "Zindan modu" ekranından geçersin.`,
+        `Geçiş için büyük miktarda hammadde (silo sınırına takılmamak için günlere yayarak verirsin, yakılır) ve ASTRA verilir. Zindan 1. kattan başlar, canavarlar çok daha güçlüdür.`,
+        `Karşılığında zindandan kazandığın ASTRA ×1,5 / ×2,25 / ×3,5 olur; parça, kutu, eser ve parşömen düşme şansı da artar. Deneyim (XP) ödülü değişmez.`,
+        `Her mod asker hakkını 6 artırır: Zor 8-13, Uzman 14-19, Cehennem 20-25. Bir savaşa en çok 25 asker götürebilirsin. Askerlerin ve teçhizatın modlar arasında korunur.`
+      ]
     }
   ],
 

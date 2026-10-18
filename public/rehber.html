@@ -358,7 +358,7 @@
   <p><b>Cephanelik</b> toplu işlemler sunar: <i>Boş yuvaları doldur</i> (boş ekipman yuvalarına eşya yerleştirir), <i>Hepsini onar</i>, <i>Seviye 1 fazlalıkları erit</i> ve <i>Hepsini soy</i> (askerlerden eşyaları çıkarır). Üstteki filtrelerle silah, miğfer, zırh, dizlik ve çizmeyi ayrı ayrı görürsün.</p>
   <h3>Yeni asker almak</h3>
   <p>"Yeni asker" düğmesinin üzerinde ASTRA bedeli yazar; her yeni asker bir öncekinden daha pahalıdır (1. asker 50, 18. asker 18.000 ASTRA; tam tablo <a href="#t-savas">Teknik başvuru</a>'dadır). Asker sayısını üç şey sınırlar: <b>ASTRA bedeli</b>, <b>köylü sayın</b> (her asker bir köylü sayılır; bkz. <a href="#koy">Köy evleri</a>) ve <b>zindan asker hakkın</b>. Hakkın, zindanda ilerledikçe artar: <b>geçtiğin kat + 1</b>. Normal modda 1. katta 2, 2. katta 3, …, 6. katta 7 asker taşıyabilirsin. Hakkın dolunca yeni asker alamazsın; o zaman askerlerini seviyelendirir, teçhizatla güçlendirir ve bakımını yaparsın. Var olan askerlerin hiçbir zaman silinmez.</p>
-  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>30 köylün varsa en çok 30 asker alabilirsin; 31. asker için önce köy evi yapıp köylülerin çoğalmasını beklersin. Tek bir zindan savaşına en çok 18 asker götürürsün.</p></div>
+  <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>30 köylün varsa en çok 30 asker alabilirsin; 31. asker için önce köy evi yapıp köylülerin çoğalmasını beklersin. Tek bir zindan savaşına en çok 25 asker götürürsün.</p></div>
   <div class="kutu ipucu" data-s="💡"><b>Gelişim</b><p>Askerler savaşlarda deneyim kazanıp seviye atlar: her seviyede +6 saldırı ve +25 can. <b>Asker seviyesi hesap seviyeni geçemez:</b> fazla XP kaybolmaz, birikir ve hesabın seviye atlayınca askerler de atlar. Teçhizat (silah, zırh…) ayrıca güç verir.</p></div>
 </section>
 
@@ -399,6 +399,11 @@
 
   <h3>Fatih ödülü</h3>
   <p>Zindanın 18. katındaki son canavar <b>Fatih</b> sayılır. Onu yenmek, zindanın en büyük ödülünü (Fatih Kasası) açar. Ayrıntıları <i>Hazine ve gelir</i> ekranında görürsün.</p>
+
+  <h3>Zindan modları: Normal, Zor, Uzman, Cehennem</h3>
+  <p>Normal modda 6 katın hepsini ve son canavarı (Kıyamet Ejderhası) yenince zindan bitmez: bir üst moda geçebilirsin. Geçince zindan <b>baştan başlar</b>, canavarlar <b>çok daha güçlü</b> olur; karşılığında zindandan kazandığın <b>ASTRA ödülü ve eşya düşme şansı artar</b>, <b>asker hakkın</b> da yükselir (Normal 2-7, Zor 8-13, Uzman 14-19, Cehennem 20-25 asker). Askerlerin, teçhizatın ve ilerlemen korunur; yalnız zindan sıfırlanır.</p>
+  <p>Geçiş için <b>ciddi miktarda hammadde ve ASTRA</b> verirsin: hammadde <b>katkı</b> olarak günlere yayarak verilir (silo sınırına takılmazsın) ve <b>yakılır</b>; ASTRA son adımda ödenir. Geçişin durumunu ve bedelini <b>Zindan modu</b> ekranında (Savaş sekmesi ya da zindan ekranındaki mod düğmesi) görürsün.</p>
+  <div class="kutu ipucu" data-s="💡"><b>Hazırlan</b><p>Daha yüksek modda daha güçlü canavarlarla savaşmak için askerlerinin seviyesini artır, teçhizatını geliştir ve bakımını yap. Deneyim (XP) ödülü mod çarpanından etkilenmez: hesap seviyen hep aynı tempoda yükselir.</p></div>
 </section>
 
 <section class="bolum" id="kolezyum" data-grup="Savaş" data-ikon="🏟️">
@@ -831,7 +836,7 @@
     <tr><th>Limit</th><th>Süre</th><th>Değer</th><th>Kimin için?</th></tr>
     <tr><td>Silo seviyesi</td><td>Kalıcı</td><td>18 seviye; ikinci oyun (Universe) açılana kadar en çok 12</td><td>Sana özel</td></tr>
     <tr><td>Köy evi</td><td>Kalıcı</td><td>En çok 20 ev ve ev sayısı hesap seviyeni geçemez; ev başına 10 köylü</td><td>Sana özel</td></tr>
-    <tr><td>Asker sayısı</td><td>Kalıcı</td><td>Her asker 1 köylü ister (200 köylüye kadar); zindan asker hakkı = geçtiğin kat + 1 (Normal modda 2-7); tek zindan savaşına en çok 18 asker</td><td>Sana özel</td></tr>
+    <tr><td>Asker sayısı</td><td>Kalıcı</td><td>Her asker 1 köylü ister (200 köylüye kadar); zindan asker hakkı = geçtiğin kat + 1 (Normal modda 2-7); tek zindan savaşına en çok 25 asker</td><td>Sana özel</td></tr>
     <tr><td>Vatandaş sayısı (kapı)</td><td>Sürekli</td><td>Başlangıç sınırı 100; aynı internet adresinden günde en çok 3 yeni vatandaş; kayıt harcı 1 ASTRA</td><td>Küresel (herkes)</td></tr>
     <tr><td>Kasa sözleşmesi: tek ödeme</td><td>İşlem başı</td><td>Kasadaki paranın en çok %2'si (kontratta sahibin bile üst sınırı %10)</td><td>Küresel (herkes)</td></tr>
     <tr><td>Kasa sözleşmesi: günlük toplam</td><td>Kayan 24 saat</td><td>Kasadaki paranın en çok %5'i (kontratta sahibin bile üst sınırı %30)</td><td>Küresel (herkes)</td></tr>
@@ -1530,7 +1535,7 @@
   <div class="bolum-baslik"><div class="no">💰</div><div><small>Teknik başvuru</small><h2>Kazanç kaynakları: zindan, kolezyum, boss, çark, piyango</h2></div></div>
   <p class="ozet">ASTRA kazandıran bütün yollar, her birinin sınırı ve ödülün hangi kasadan çıktığı.</p>
   <h3>🗺️ Zindan</h3>
-<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Zafer ödülü</b> = 0,9 ASTRA × canavar seviyesi (9. ve 18. seviyede ×3). Ödül zindan kasasından çıkar ve %20'i serbest, kalanı kilitli gelir.</p><p><b>Günlük giriş:</b> 5 ödüllü giriş; sonrası kapı harcıyla (ödülün %20'si, tamamı zindan kasasına) ödüllü, ödenmezse yalnız deneyim.</p><p><b>Kişisel günlük tavan</b> = en büyüğü( 5 × ulaştığın en değerli katın ödülü ,  orduya harcadığın ASTRA × 0,7 ÷ 93 ).</p><p><b>Asker hakkı:</b> yeni asker alımı <b>geçtiğin kat + 1</b> ile sınırlıdır (Normal modda 1. kat 2 asker … 6. kat 7 asker). Hakkın üstündeki var olan asker silinmez; yalnız yeni alım kapanır. Teçhizat döngüsü (dövme, geliştirme, aşınma, tamir) bu yüzden zorunludur.</p><p><b>Her giriş stamina ister:</b> asker başına 5 + canavar seviyesi (tablo aşağıda).</p><p><b>Fatih Ödülü:</b> 18. kat bossunu ilk kez yenince, orduya harcadığın − zindandan kazandığın fark (en çok 18 askerin toplam fiyatı kadar) Fatih kasasından bir defaya mahsus ödenir.</p></div>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Zafer ödülü</b> = 0,9 ASTRA × canavar seviyesi (9. ve 18. seviyede ×3). Ödül zindan kasasından çıkar ve %20'i serbest, kalanı kilitli gelir.</p><p><b>Günlük giriş:</b> 5 ödüllü giriş; sonrası kapı harcıyla (ödülün %20'si, tamamı zindan kasasına) ödüllü, ödenmezse yalnız deneyim.</p><p><b>Kişisel günlük tavan</b> = en büyüğü( 5 × ulaştığın en değerli katın ödülü ,  orduya harcadığın ASTRA × 0,7 ÷ 93 ).</p><p><b>Asker hakkı:</b> yeni asker alımı <b>geçtiğin kat + 1</b> ile sınırlıdır (Normal modda 1. kat 2 asker … 6. kat 7 asker). Hakkın üstündeki var olan asker silinmez; yalnız yeni alım kapanır. Teçhizat döngüsü (dövme, geliştirme, aşınma, tamir) bu yüzden zorunludur.</p><p><b>Zindan modları:</b> Normal modda son canavar (Sv.18) yenilince hammadde katkısı (yakılır) ve ASTRA ile bir üst moda geçilir; zindan baştan başlar, canavarlar güçlenir. Ödül çarpanı yalnız ASTRA'ya uygulanır (deneyim aynı kalır); kasa bütçesi ve günlük kişi tavanı değişmez, çarpan yalnız tavana kadar etkilidir. Tablo aşağıda.</p><p><b>Her giriş stamina ister:</b> asker başına 5 + canavar seviyesi (tablo aşağıda).</p><p><b>Fatih Ödülü:</b> 18. kat bossunu ilk kez yenince, orduya harcadığın − zindandan kazandığın fark (en çok 18 askerin toplam fiyatı kadar) Fatih kasasından bir defaya mahsus ödenir.</p></div>
 <div class="tablo-kap"><table>
     <tr><th>Seviye</th><th>Canavar</th><th>Can</th><th>Saldırı</th><th>Ödül (ASTRA)</th><th>Kapı harcı</th><th>Stamina/asker</th><th>Asker XP</th></tr>
     <tr><td><b>Sv.1</b> (Kat 1)</td><td>🟢 Bataklık Balçığı</td><td>200</td><td>30</td><td>0,9</td><td>0,18</td><td>6</td><td>40</td></tr>
@@ -1551,6 +1556,14 @@
     <tr><td><b>Sv.16</b> (Kat 6)</td><td>🛡️ Kıyamet Şövalyesi</td><td>14.100</td><td>1.010</td><td>14,4</td><td>2,88</td><td>21</td><td>1.100</td></tr>
     <tr><td><b>Sv.17</b> (Kat 6)</td><td>👁️ Kadim Gölge Lordu</td><td>15.450</td><td>1.035</td><td>15,3</td><td>3,06</td><td>22</td><td>1.300</td></tr>
     <tr><td><b>Sv.18</b> (Kat 6)</td><td>🐉 Kıyamet Ejderhası IGNIS</td><td>23.200</td><td>650</td><td>48,6</td><td>9,72</td><td>23</td><td>6.000</td></tr>
+  </table></div>
+  <h4>Zindan modları</h4>
+<div class="tablo-kap"><table>
+    <tr><th>Mod</th><th>ASTRA ödül çarpanı</th><th>Eşya düşme çarpanı</th><th>Asker hakkı</th><th>Geçiş bedeli (bir önceki moddan)</th></tr>
+    <tr><td>🟢 Normal</td><td>×1</td><td>×1</td><td>2-7</td><td>yok (başlangıç)</td></tr>
+    <tr><td>🟠 Zor</td><td>×1,5</td><td>×1,25</td><td>8-13</td><td>40.000 odun, 28.000 demir, 30.000 kömür, 40.000 taş + 1.200 ASTRA</td></tr>
+    <tr><td>🔴 Uzman</td><td>×2,25</td><td>×1,5</td><td>14-19</td><td>80.000 odun, 56.000 demir, 60.000 kömür, 80.000 taş, 60.000 buğday + 5.000 ASTRA</td></tr>
+    <tr><td>⚫ Cehennem</td><td>×3,5</td><td>×2</td><td>20-25</td><td>150.000 odun, 105.000 demir, 110.000 kömür, 150.000 taş, 120.000 buğday, 15.000 şifalı ot + 15.000 ASTRA</td></tr>
   </table></div>
   <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir oyuncu orduya <b>10.000 ASTRA</b> harcadı ve 12. kata kadar açtı. Kişisel günlük tavan = en büyüğü(5 × 10,8 = 54, 10.000 × 0,7 ÷ 93 = 75,3) = <b>75,3 ASTRA/gün</b>.</p></div>
   <h3>🏟️ Kolezyum</h3>

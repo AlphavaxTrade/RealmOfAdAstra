@@ -29,7 +29,7 @@ const T = {
   slot: v => SLOT_KEYS.includes(v),
   node: v => NODES.includes(v),
   res: v => RESOURCE_KEYS.includes(v),
-  idxArr: v => Array.isArray(v) && v.length >= 1 && v.length <= 18 && v.every(x => Number.isInteger(x) && x >= 0 && x < 64),
+  idxArr: v => Array.isArray(v) && v.length >= 1 && v.length <= 25 && v.every(x => Number.isInteger(x) && x >= 0 && x < 64),
   slotRef: v => T.slot(v) || T.ref(v),
   // Eşya konumu (eşyanın kendisi değil): { source, slotKey, armoryIndex, soldierIndex, itemId }
   ref: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 5 &&
@@ -126,6 +126,9 @@ export const ACTIONS = {
   marketBuy: A(['res', 'qty']),
   // Savaş
   fightDungeon: A(['int', 'idxArr', 'fightOpts?'], { random: true }),
+  // Zindan modları: bir üst moda geçiş (hammadde katkısı yakılır, sonra ASTRA ile geçilir)
+  contributeToDungeonGate: A(['amounts']),
+  advanceDungeonMode: A([]),
   executeColosseum1v1Match: A(['idx'], { random: true }),
   stakeArmyForWorldBoss: A([]),
   emergencyUnstakeWorldBossArmy: A([]),

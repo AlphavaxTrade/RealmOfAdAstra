@@ -1,6 +1,6 @@
 // Realm of AdAstra — Canavar Kütüğü: 18 canavarın bilgi kartları. Yenilen ya da savaşılan canavarın ayrıntısı açılır,
 // henüz karşılaşılmamış olanlar "???" görünür. Salt gösterim: oyun durumuna dokunmaz.
-import { DUNGEON_LEVELS } from '../../bestiary.js';
+import { DUNGEON_LEVELS, getDungeonEntry } from '../../bestiary.js';
 import { esc, tam } from '../ekran/cekirdek.js';
 import { KATLAR, yetenekBilgisi } from './plan.js';
 
@@ -29,10 +29,11 @@ export const HIKAYE = {
 const kontrolAd = (kayit) => (kayit.isBoss || kayit.level === 9 || kayit.level === 18 ? ' · Boss' : '');
 
 // ilerleme: oyuncunun açık seviyesi. Seviye <= ilerleme: ayrıntı açık (yenildi ya da şu an savaşılıyor)
-export function kutukHtml(ilerleme) {
+export function kutukHtml(ilerleme, mod = 0) {
   const gorulen = DUNGEON_LEVELS.filter((m) => m.level <= ilerleme).length;
   const katlar = KATLAR.map((k) => {
-    const liste = DUNGEON_LEVELS.filter((m) => m.floor === k.kat).map((m) => {
+    const liste = DUNGEON_LEVELS.filter((m) => m.floor === k.kat).map((taban) => {
+      const m = getDungeonEntry(taban.level, mod);   // can ve saldırı oyuncunun modundan
       const acik = m.level <= ilerleme;
       if (!acik) {
         return `<li class="zd-kutuk-kart is-kapali"><span class="zd-kutuk-simge" aria-hidden="true">❓</span>

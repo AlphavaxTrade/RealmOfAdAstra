@@ -28,14 +28,15 @@ export function takimGunu(n, t) {
   return { gun: Math.round(gun * 10) / 10, darbogaz };
 }
 
-export const SEVIYELER = Array.from({ length: 40 }, (_, i) => i + 1);   // asker seviyesi 1..40 (hesap seviyesi 40 ≈ 226. gün)
+export const SEVIYELER = Array.from({ length: 40 }, (_, i) => i + 1);   // asker seviyesi 1..40 (hesap seviyesi 40 ≈ 226. gün); zindan modları için enYuksekSeviye ile 81'e kadar
 // bir canavar için en erken gün: tüm (asker seviyesi, takım seviyesi) çiftleri arasında en küçük max(seviye günü, takım günü).
 // Her asker seviyesinde gereken en az takım seviyesi ikili aramayla bulunur (takım seviyesi arttıkça kazanma şansı azalmaz).
-export function enErkenGun(canavar, n, { ornek = 40 } = {}) {
+export function enErkenGun(canavar, n, { ornek = 40, enYuksekSeviye = 40 } = {}) {
   const enYuksek = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
   const yener = (s, t) => kazanmaSansi(ordu(n, s, t), canavar, n, ornek) >= ESIK;
   let en = null;
-  for (const s of SEVIYELER) {
+  const seviyeler = enYuksekSeviye === 40 ? SEVIYELER : Array.from({ length: enYuksekSeviye }, (_, i) => i + 1);
+  for (const s of seviyeler) {
     const sg = seviyeGunu(s);
     if (en && sg >= en.gun) break;                       // daha yüksek seviye zaten daha geç
     if (!yener(s, enYuksek)) continue;                   // bu asker seviyesinde en yüksek takım bile yetmiyor
@@ -46,7 +47,7 @@ export function enErkenGun(canavar, n, { ornek = 40 } = {}) {
     const gun = Math.max(sg, ust ? tg.gun : 0);
     if (!en || gun < en.gun) en = { gun, askerSeviyesi: s, takim: ust, darbogaz: ust ? tg.darbogaz : '-' };
   }
-  return en;   // null: hiçbir (seviye ≤ 40, takım ≤ 10) çifti yetmiyor
+  return en;   // null: hiçbir (seviye ≤ enYuksekSeviye, takım ≤ 10) çifti yetmiyor
 }
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {

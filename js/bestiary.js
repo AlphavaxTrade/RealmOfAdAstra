@@ -46,11 +46,45 @@ export const DUNGEON_LEVELS = [
   { level: 18, floor: 6, name: 'Kıyamet Ejderhası IGNIS',   icon: '🐉', avatar: 'assets/monster_dragon_ignis.jpg',  hp: 23200, atk: 650,  rewardXp: 6000, color: 0xef4444, abilities: ['cleave', 'sunder', 'swoop', 'regenerate'], isBoss: true, bossLabel: 'BÜYÜK BOSS', bossPhases: DEFAULT_BOSS_PHASES[18] }
 ];
 
-export function getDungeonEntry(level) {
-  return DUNGEON_LEVELS.find(e => e.level === level) || DUNGEON_LEVELS[0];
+// ── Zindan modları (js/config.js ZINDAN_MODLARI) ─────────────────────────────────────────────────────────
+// Zor (1), Uzman (2), Cehennem (3) modlarında aynı 18 canavar çok daha güçlüdür; adları, yetenekleri ve ödül XP'si aynıdır, yalnız
+// can (hp) ve saldırı (atk) değişir. Tablo scripts/model/zindan_mod.mjs ile hesaplanır: en hızlı oyuncunun her canavarı modun
+// takvimindeki günde yenebilmesi hedeflenir (Zor 140-300. gün, Uzman 320-500, Cehennem 530-800). Normal mod tablosu yukarıdadır.
+export const MOD_CANAVARLARI = {
+  1: {   // Zor
+    1: { hp: 23500, atk: 1075 }, 2: { hp: 26000, atk: 930 }, 3: { hp: 28550, atk: 865 },
+    4: { hp: 31250, atk: 1015 }, 5: { hp: 34000, atk: 1355 }, 6: { hp: 36750, atk: 760 },
+    7: { hp: 39550, atk: 1385 }, 8: { hp: 42300, atk: 835 }, 9: { hp: 55000, atk: 645 },
+    10: { hp: 47650, atk: 1170 }, 11: { hp: 50100, atk: 1185 }, 12: { hp: 52450, atk: 1125 },
+    13: { hp: 54550, atk: 920 }, 14: { hp: 56450, atk: 1020 }, 15: { hp: 58100, atk: 1035 },
+    16: { hp: 59450, atk: 1300 }, 17: { hp: 60500, atk: 1400 }, 18: { hp: 78650, atk: 990 }
+  },
+  2: {   // Uzman
+    1: { hp: 106150, atk: 1250 }, 2: { hp: 109300, atk: 1120 }, 3: { hp: 112450, atk: 1080 },
+    4: { hp: 115600, atk: 1265 }, 5: { hp: 118750, atk: 1565 }, 6: { hp: 121900, atk: 880 },
+    7: { hp: 125050, atk: 1685 }, 8: { hp: 128150, atk: 1035 }, 9: { hp: 153800, atk: 630 },
+    10: { hp: 134350, atk: 1420 }, 11: { hp: 137400, atk: 1540 }, 12: { hp: 140450, atk: 1260 },
+    13: { hp: 143450, atk: 1185 }, 14: { hp: 146350, atk: 1200 }, 15: { hp: 149250, atk: 1310 },
+    16: { hp: 152100, atk: 1405 }, 17: { hp: 154900, atk: 1640 }, 18: { hp: 185900, atk: 1065 }
+  },
+  3: {   // Cehennem
+    1: { hp: 234850, atk: 1460 }, 2: { hp: 235550, atk: 1355 }, 3: { hp: 236700, atk: 1355 },
+    4: { hp: 238200, atk: 1565 }, 5: { hp: 240150, atk: 1835 }, 6: { hp: 242500, atk: 720 },
+    7: { hp: 245300, atk: 1970 }, 8: { hp: 248550, atk: 1340 }, 9: { hp: 223700, atk: 1130 },
+    10: { hp: 256500, atk: 1765 }, 11: { hp: 261250, atk: 1850 }, 12: { hp: 266500, atk: 1355 },
+    13: { hp: 272350, atk: 1385 }, 14: { hp: 278800, atk: 1050 }, 15: { hp: 285900, atk: 1525 },
+    16: { hp: 293650, atk: 1655 }, 17: { hp: 302150, atk: 1775 }, 18: { hp: 302150, atk: 1245 }
+  }
+};
+
+// Bir zindan seviyesinin (1-18) kaydı; mod verilirse can ve saldırı o modun tablosundan gelir (Normal: mod 0, yukarıdaki tablo)
+export function getDungeonEntry(level, mod = 0) {
+  const e = DUNGEON_LEVELS.find(x => x.level === level) || DUNGEON_LEVELS[0];
+  const m = MOD_CANAVARLARI[mod] && MOD_CANAVARLARI[mod][e.level];
+  return m ? { ...e, hp: m.hp, atk: m.atk, mod } : e;
 }
 
-// Bir kattaki 3 canavar (harita sahnesi için)
-export function getFloorMonsters(floor) {
-  return DUNGEON_LEVELS.filter(e => e.floor === floor);
+// Bir kattaki 3 canavar (harita sahnesi için); mod verilirse o modun değerleriyle
+export function getFloorMonsters(floor, mod = 0) {
+  return DUNGEON_LEVELS.filter(e => e.floor === floor).map(e => getDungeonEntry(e.level, mod));
 }

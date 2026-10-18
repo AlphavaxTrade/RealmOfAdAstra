@@ -22,6 +22,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
   let aralik = null;
 
   const ilerleme = () => gs.state.dungeonProgress || 1;
+  const mod = () => gs.state.dungeonMode || 0;   // zindan modu: 0 Normal, 1 Zor, 2 Uzman, 3 Cehennem (js/config.js ZINDAN_MODLARI)
   const acikMi = () => !!kok && !kok.hidden;
 
   // ── Kapı kuralı: kilitliyse nedeni söylenir ve açılmaz ──
@@ -46,7 +47,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
   }
 
   function odaOzetleri(kat) {
-    return katCanavarlari(kat).map((m) => gs.getZindanOdaOzeti(m.level));
+    return katCanavarlari(kat, mod()).map((m) => gs.getZindanOdaOzeti(m.level));
   }
 
   // ── Üst çubuk: geri, kat sekmeleri, ganimet şansı ──
@@ -93,9 +94,13 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     const tekrar = son && son <= ilerleme()
       ? `<button type="button" class="zd-dugme zd-kucuk" data-e="tekrar" title="Aynı canavara aynı askerlerle yeniden hazırlan">↻ Son savaş (Sv.${son})</button>` : '';
     const asker = !o.asker ? '<button type="button" class="zd-dugme zd-kucuk" data-e="kisla">⚔️ Kışlaya git</button>' : '';
+    // Zindan modu rozeti: Normal'de de görünür; son boss yenilince ve bir üst mod varsa "geçiş hazır" vurgusu
+    const mb = gs.getDungeonModeInfo();
+    const gecisHazir = mb.bitti && !mb.enYuksekMod;
+    const modDugme = `<button type="button" class="zd-dugme zd-kucuk${gecisHazir ? ' zd-ana' : ''}" data-e="mod" title="Zindan modu: canavar gücü, ödül çarpanı, asker hakkı ve bir üst moda geçiş">${mb.simge} ${esc(mb.ad)}${gecisHazir ? ` · ${esc(mb.gecis.hedefAd)} moda geç` : ''}</button>`;
     return `<div class="zd-serit" role="status" aria-label="Ordu durumu">
       <div class="zd-serit-bilgi">${parcalar.join('')}</div>
-      <div class="zd-serit-dugme">${asker}${tekrar}<button type="button" class="zd-dugme zd-kucuk" data-e="kutuk">📖 Kütük</button></div>
+      <div class="zd-serit-dugme">${asker}${tekrar}${modDugme}<button type="button" class="zd-dugme zd-kucuk" data-e="kutuk">📖 Kütük</button></div>
     </div>`;
   }
 
@@ -220,7 +225,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
 
   // ── Katmanlar: kütük penceresi ve kat tamamlama ──
   function kutukPenceresi() {
-    const k = kutukHtml(ilerleme());
+    const k = kutukHtml(ilerleme(), mod());
     return `<div class="zd-katman" data-e="kutuk-kapat-arka">
       <div class="zd-pano" role="dialog" aria-modal="true" aria-label="Canavar Kütüğü">
         <header><h2>📖 Canavar Kütüğü <small>${k.gorulen}/${k.toplam} tanıdık</small></h2>
@@ -310,15 +315,16 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
   // ── Tıklamalar ──
   function savasaHazirlan(seviye) {
     if (seviye > ilerleme()) {
-      const m = katCanavarlari(durum.kat).find((x) => x.level === seviye);
+      const m = katCanavarlari(durum.kat, mod()).find((x) => x.level === seviye);
       bildir(kilitMesaji(ilerleme(), m), 'error');
       return;
     }
-    const m = katCanavarlari(durum.kat).find((x) => x.level === seviye);
+    const m = katCanavarlari(durum.kat, mod()).find((x) => x.level === seviye);
     ekranAc('savashazirlik', { canavar: m });
   }
 
   const eylemler = {
+    mod() { ekranAc('zindanmod'); },
     geri() {
       if (durum.kutuk) { durum.kutuk = false; ciz(); return; }
       if (durum.oda != null) { durum.oda = null; ciz(); basaDon(); return; }
@@ -346,7 +352,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     },
     savas(el) {
       const sira = parseInt(el.dataset.oda, 10);
-      const m = katCanavarlari(durum.kat)[sira];
+      const m = katCanavarlari(durum.kat, mod())[sira];
       if (m) savasaHazirlan(m.level);
     },
     gecit() {
@@ -360,7 +366,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     tekrar() {
       const seviye = gs.state.lastBattle && gs.state.lastBattle.monsterLevel;
       if (!seviye || seviye > ilerleme()) return;
-      const m = katCanavarlari(Math.ceil(seviye / ODA_SAYISI)).find((x) => x.level === seviye);
+      const m = katCanavarlari(Math.ceil(seviye / ODA_SAYISI), mod()).find((x) => x.level === seviye);
       if (!m) return;
       const secili = sonSavas.level === seviye ? [...sonSavas.secili] : [];
       ekranAc('savashazirlik', secili.length ? { canavar: m, secili, secimYapildi: true } : { canavar: m });

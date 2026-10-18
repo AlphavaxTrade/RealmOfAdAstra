@@ -25,6 +25,7 @@ export const HUB = {
   savas: { baslik: ['⚔️', 'Savaş'], ogeler: [
     { k: 'kisla', s: '⚔️', ad: 'Kışla', ac: 'Ordun, askerlerin ve teçhizatları', kilit: 'barracks' },
     { k: 'zindan', s: '💀', ad: 'Zindan', ac: 'Katlara in, canavarlarla savaş', kilit: 'dungeon' },
+    { k: 'zindanmod', s: '🗺️', ad: 'Zindan modu', ac: 'Normal, Zor, Uzman, Cehennem: geçiş, ödül çarpanı, asker hakkı', kilit: 'dungeon' },
     { k: 'kolezyum', s: '🏟️', ad: 'Kolezyum', ac: 'Oyunculara karşı düello ve haftalık lig', kilit: 'colosseum' },
     { k: 'savasalani', s: '🚩', ad: 'Savaş alanı', ac: 'Haftalık dünya bossu', kilit: 'battlefield' }
   ] },
