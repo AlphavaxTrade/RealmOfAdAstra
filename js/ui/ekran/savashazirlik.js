@@ -71,7 +71,7 @@ function girisKarti(b, m, terms) {
 
   const kurallar = terms.nextNeedsFee
     ? not('Harç ödemezsen antrenman girişi olur: askerlerin ve hesabın deneyim kazanır, ASTRA ve ganimet düşmez. Stamina harcanır, eşyalar aşınır.')
-    : not(`${terms.nextWeaponWear ? 'Savaşa giren her askerin takılı eşyalarından rastgele biri 1 aşınır.' : 'Günün ilk girişi: eşyaların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.`);
+    : not(`${terms.nextWeaponWear ? `Savaşa giren her askerin takılı eşyalarından rastgele ortalama ${sayi(gs.getDungeonWearPerSoldier(m.level), 1)} tanesi 1'er aşınır (kat ve zindan moduyla artar).` : 'Günün ilk girişi: eşyaların aşınmaz.'} Stamina harcanır. Harçsız ödüllü giriş: ${terms.freeLeft} / ${terms.freeTotal} kaldı. Haklar her gece 00:00'da (TSİ) yenilenir.`);
 
   return kart({
     baslik: `🎟️ Bugünkü ${esc(terms.nextEntryNumber)}. girişin`,

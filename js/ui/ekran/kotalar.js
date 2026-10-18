@@ -108,7 +108,7 @@ const ekran = {
 
     const gunluk = [
       sinirSatiri('💀', 'Zindan: harçsız ödüllü giriş', zindan.freeUsed, zindan.freeTotal, {
-        not: zindan.nextNeedsFee ? 'Sonraki girişler harçlı' : (zindan.nextWeaponWear ? 'Her askerin rastgele bir eşyası girişte 1 aşınır' : 'Sıradaki girişte eşyalar aşınmaz')
+        not: zindan.nextNeedsFee ? 'Sonraki girişler harçlı' : (zindan.nextWeaponWear ? 'Her askerin birkaç eşyası girişte birer aşınır (kat ve moda göre artar)' : 'Sıradaki girişte eşyalar aşınmaz')
       }),
       sinirSatiri('🏟️', 'Kolezyum maçı', sayaclar.arenaMatches || 0, kolezyumSiniri),
       sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {

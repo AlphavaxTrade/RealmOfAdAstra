@@ -179,6 +179,44 @@ const WEEK = L.MAX_TICKETS_PER_ACCOUNT;
   ok('Zindan: aşınma takılı eşyalardan rastgele birine düşer');
 }
 
+// 7c) Aşınma algoritması: kat, zindan modu ve büyük boss ortalama aşınan eşya sayısını artırır; aynı eşya bir savaşta bir kez aşınır
+{
+  const gs = fresh();
+  const E = (seviye, mod) => gs.getDungeonWearPerSoldier(seviye, mod);
+  assert.equal(E(null, 0), 1, 'seviye verilmezse eski kural: asker başına 1');
+  assert.equal(E(1, 0), 1, 'Normal kat 1');
+  assert.equal(E(18, 0), 2.5, 'Normal kat 6, boss (+0,5)');
+  assert.equal(E(17, 0), 2, 'Normal kat 6, boss değil');
+  assert.equal(E(1, 1), 1.6, 'Zor kat 1');
+  assert.equal(E(1, 3), 2.8, 'Cehennem kat 1');
+  assert.equal(E(18, 3), 4.3, 'Cehennem kat 6 boss');
+  assert.ok(E(9, 0) > E(8, 0) && E(8, 0) > E(2, 0), 'kat ve boss arttıkça artar');
+  for (const mod of [0, 1, 2, 3]) for (let s = 1; s <= 18; s++) assert.ok(E(s, mod) <= 5, 'en çok 5 yuva');
+  assert.ok(E(5, 2) > E(5, 1) && E(5, 1) > E(5, 0), 'mod yükseldikçe artar');
+
+  const yuvalar = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
+  const takim = () => Object.fromEntries(yuvalar.map((y) => [y, { name: y, durability: 13, maxDurability: 13 }]));
+  const dene = (seviye, mod, tur = 4000) => {
+    let toplam = 0;
+    for (let i = 0; i < tur; i++) {
+      gs.state.soldierUnits = [{ name: 'A', equipment: takim() }];
+      const worn = gs.applyDungeonWeaponWear([0], { level: seviye, mod });
+      const kayip = yuvalar.filter((y) => gs.state.soldierUnits[0].equipment[y].durability === 12).length;
+      assert.equal(kayip, worn.length, 'aynı eşya iki kez aşınmaz (her aşınan eşya tam 1 kaybeder)');
+      toplam += worn.length;
+    }
+    return toplam / tur;
+  };
+  const yakin = (a, b, pay) => Math.abs(a - b) <= pay;
+  assert.ok(yakin(dene(1, 0), 1, 0.001), 'Normal kat 1: tam 1 eşya');
+  assert.ok(yakin(dene(17, 0), 2, 0.001), 'Normal kat 6: tam 2 eşya');
+  assert.ok(yakin(dene(4, 1), E(4, 1), 0.06), `Zor kat 2 ortalaması ≈ ${E(4, 1)}`);
+  assert.ok(yakin(dene(18, 3), 4.3, 0.06), 'Cehennem kat 6 boss ortalaması ≈ 4,3');
+  gs.state.soldierUnits = [{ name: 'B', equipment: { weapon: { name: 'w', durability: 13, maxDurability: 13 }, boots: { name: 'b', durability: 13, maxDurability: 13 } } }];
+  assert.equal(gs.applyDungeonWeaponWear([0], { level: 18, mod: 3 }).length, 2, 'takılı eşyadan fazlası aşınmaz');
+  ok('Zindan: aşınma sayısı kat, mod ve boss ile artar, tekrarsız seçilir');
+}
+
 // 8) Eski kayıt: toplam giriş sayacı yoksa ödüllü + harçlı girişlerden türetilir
 {
   const gs = fresh();

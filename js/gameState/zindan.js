@@ -178,7 +178,7 @@ export const zindanYontemleri = {
     for (const u of muttefikler) {
       if (askerler[u.sourceIndex]) this.setSoldierHpFromBattle(u.sourceIndex, u.hp);   // savaş ölçeğinden kayıtlı tabana (ordu.js)
     }
-    const asinan = entry.weaponWear ? this.applyDungeonWeaponWear(muttefikler.map((u) => u.sourceIndex)) : [];
+    const asinan = entry.weaponWear ? this.applyDungeonWeaponWear(muttefikler.map((u) => u.sourceIndex), { level: monster.level, mod: this.state.dungeonMode }) : [];
     const boss = buyukBossMu(monster, monster.level);
     const sonuc = { victory: !!sim.victory, weaponsWorn: asinan, adaReward: 0, scrollGained: null, levelUps: [], remainingEnemyHp: 0 };
 
@@ -213,10 +213,23 @@ export const zindanYontemleri = {
     return sonuc;
   },
 
-  // Savaş bitince savaşa giren her askerin TAKILI eşyalarından RASTGELE birinin dayanıklılığını 1 düşürür (günün ilk girişinde
-  // çağrılmaz). Eskiden yalnız silah aşınırdı; artık silah, miğfer, zırh, pantolon ve çizme aynı şansla seçilir. Sağlam parça
-  // varken kırık parça seçilmez (kırığı aşındırmak boş iş olurdu). Hiç eşyası olmayan asker için eski kural: krallık kılıcı.
-  applyDungeonWeaponWear(selectedIndices = []) {
+  // Bir savaşta HER askerin ortalama kaç eşyası aşınır (config DUNGEON.ASINMA): kat ve zindan moduyla artar, büyük bosslarda +BOSS_EKI.
+  // Kesirli değer, uygulanırken zarla tam sayıya çevrilir. level verilmezse yalnız TABAN (eski kural: asker başına 1).
+  getDungeonWearPerSoldier(level = null, mod = this.state.dungeonMode) {
+    const c = (GAME_CONFIG.DUNGEON || {}).ASINMA || { TABAN: 1, KAT_BASINA: 0, MOD_BASINA: 0, BOSS_EKI: 0, EN_FAZLA: 5 };
+    if (level == null) return c.TABAN;
+    const seviye = seviyeSinirla(level);
+    const kat = Math.ceil(seviye / 3);
+    const deger = c.TABAN + c.KAT_BASINA * (kat - 1) + c.MOD_BASINA * modSinirla(mod) + (buyukBossMu({}, seviye) ? c.BOSS_EKI : 0);
+    return Math.round(Math.min(c.EN_FAZLA, deger) * 1000) / 1000;
+  },
+
+  // Savaş bitince savaşa giren her askerin TAKILI eşyalarından RASTGELE bazılarının dayanıklılığını 1'er düşürür (günün ilk
+  // girişinde çağrılmaz). Kaç eşya: getDungeonWearPerSoldier (kat ve moda göre). Silah, miğfer, zırh, pantolon ve çizme aynı şansla
+  // seçilir, aynı eşya bir savaşta bir kez aşınır; sağlam parça varken kırık parça seçilmez. Hiç eşyası olmayan asker için eski
+  // kural: krallık kılıcı. { level, mod } verilmezse asker başına 1 eşya.
+  applyDungeonWeaponWear(selectedIndices = [], { level = null, mod = this.state.dungeonMode } = {}) {
+    const beklenen = this.getDungeonWearPerSoldier(level, mod);
     const askerler = this.state.soldierUnits || [];
     const asinan = [];
     for (const idx of selectedIndices) {
@@ -234,11 +247,17 @@ export const zindanYontemleri = {
         continue;
       }
       const saglam = takili.filter((x) => x.esya.durability == null || x.esya.durability > 0);
-      const adaylar = saglam.length ? saglam : takili;
-      const { esya } = adaylar[Math.min(adaylar.length - 1, Math.floor(Math.random() * adaylar.length))];
-      const enFazla = esya.maxDurability || 13;
-      esya.durability = Math.max(0, (esya.durability != null ? esya.durability : enFazla) - 1);
-      asinan.push(`${asker.name} · ${esya.name || 'eşya'} (${esya.durability}/${enFazla})`);
+      const adaylar = [...(saglam.length ? saglam : takili)];
+      // kaç eşya: tam kısım kesin, kesirli kısım zarla; aday sayısını aşamaz
+      const tamKisim = Math.floor(beklenen);
+      const adet = Math.min(adaylar.length, tamKisim + (Math.random() < beklenen - tamKisim ? 1 : 0));
+      for (let n = 0; n < adet; n++) {
+        const secilen = adaylar.splice(Math.min(adaylar.length - 1, Math.floor(Math.random() * adaylar.length)), 1)[0];
+        const esya = secilen.esya;
+        const enFazla = esya.maxDurability || 13;
+        esya.durability = Math.max(0, (esya.durability != null ? esya.durability : enFazla) - 1);
+        asinan.push(`${asker.name} · ${esya.name || 'eşya'} (${esya.durability}/${enFazla})`);
+      }
     }
     return asinan;
   },

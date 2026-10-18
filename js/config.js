@@ -671,6 +671,13 @@ export const GAME_CONFIG = {
     //  • 6. girişten itibaren: kapı harcı ödenirse ödüllü, ödenmezse yalnız deneyim veren antrenman.
     DAILY_RUNS: 5,                    // harçsız ödüllü giriş sayısı
     FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde eşyalar aşınmaz
+    // Eşya aşınma algoritması (18 Ekim 2026): savaşa giren HER askerin takılı eşyalarından, savaş başına ortalama
+    //   E = TABAN + KAT_BASINA × (kat − 1) + MOD_BASINA × (zindan modu) + (büyük boss ise BOSS_EKI)   (en çok EN_FAZLA)
+    // eşya 1'er dayanıklılık kaybeder (E'nin kesirli kısmı zarla: 2,4 = hep 2, %40 ihtimalle 3). Eşyalar rastgele seçilir, aynı
+    // eşya aynı savaşta iki kez aşınmaz, sağlam parça varken kırık parça seçilmez. Kat = ceil(canavar seviyesi / 3).
+    // Normal 1,0–2,0 · Zor 1,6–2,6 · Uzman 2,2–3,2 · Cehennem 2,8–3,8 (boss +0,5). Ölçüm: tek parçanın 1 dayanıklılık noktası, parça
+    // Sv.5'te ~1,5, Sv.10'da ~5 ASTRA değerindedir; ödül çarpanı da modla birlikte ×1,5 / ×2,25 / ×3,5 artar, bu yüzden artış ölçülüdür.
+    ASINMA: { TABAN: 1, KAT_BASINA: 0.2, MOD_BASINA: 0.6, BOSS_EKI: 0.5, EN_FAZLA: 5 },
     // Harç, o katın temel ASTRA ödülünün bu oranı kadardır ve %100'ü zindan kasasına gider.
     GATE_FEE_RATE: 0.20,
     // Zindan kasası bir günde en fazla bakiyesinin bu oranı kadar ASTRA öder → kasa matematiksel olarak boşalamaz.
@@ -1560,6 +1567,14 @@ export const GAME_CONFIG = {
         `Hemen iyileştirmenin tek yolu artık şifalı ot. Buğdayla anında iyileştirme kalktı (buğdayın zaten çok kullanımı var; şifalı otun sürekli harcandığı tek yer burası). 1 şifalı ot 2 can iyileştirir (eskiden 5), kullanılan ot yakılır; ASTRA payı can başına 0,01 ASTRA, yarı indirim yok. Böylece şifalı otun fiyatı sürekli yukarı basınç görür. Beklemek istemeyenler için askerler 24 saatte kendiliğinden (az buğdayla) iyileşmeye devam eder.`,
         `"Hızlı iyileştir" düğmeleri şifalı ota bağlandı: Zindan ekranı, Kışla (asker sayfası, "Hepsini iyileştir", "Orduyu hazırla"), Şifahane, Krallık merkezi ve Kolezyum. Elindeki şifalı ot yetmezse eksik ot pazardan alınıp iyileştirme aynı tıkta yapılır; bedel onay penceresinde yazar. Şifahane ekranına "iyileştirmenin üç yolu" açıklaması eklendi.`,
         `Can sayıları tutarlı: askerinin canı Kışla, Savaşa hazırlan ve Kolezyum ekranlarında artık teçhizat ve set bonusu dahil aynı sayıyla görünüyor (eskiden Kışla "125/125", Savaşa hazırlan "125 HP" derken en yüksek can 935 yazıyordu).`
+      ]
+    },
+    {
+      version: 'v1.58',
+      title: '🛡️ Zindanda Derinleştikçe Artan Aşınma',
+      date: '18 Ekim 2026',
+      changes: [
+        `Zindan savaşlarında aşınan eşya sayısı artık kata, zindan moduna ve büyük bosslara göre artıyor. Savaşa giren her askerin takılı eşyalarından rastgele seçilen birkaç tanesi birer dayanıklılık kaybeder; aynı eşya bir savaşta iki kez aşınmaz. Ortalama aşınan eşya: Normal 1,0 (1. kat) - 2,0 (6. kat), Zor 1,6 - 2,6, Uzman 2,2 - 3,2, Cehennem 2,8 - 3,8; büyük bosslarda +0,5. Savaşa hazırlan ekranı o canavar için sayıyı gösterir.`
       ]
     }
   ],
