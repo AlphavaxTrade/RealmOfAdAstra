@@ -37,7 +37,7 @@ export const RATE_COUNT = RATE_KEYS.length;
 // Oyunun bugünkü oranları (sözleşme kurulmadan ya da oyun sunucusuna bağlanmadan gösterilen değerler).
 // js/config.js ile aynı olmalı: tests/test_rates_contract.mjs denetler.
 // v2 (7 Ekim 2026): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
-export const DEFAULT_RATES = [500, 300, 600, 8600, 2700, 1400, 1200, 1500, 1800, 400, 500, 500, 8000, 10000, 200, 200, 200, 300, 600, 5000, 150];
+export const DEFAULT_RATES = [500, 300, 600, 8600, 2700, 1400, 1200, 1500, 1800, 400, 500, 500, 8500, 10000, 200, 200, 200, 300, 600, 5000, 150];
 export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey'];
 export const RATE_CHANGE_DELAY_SEC = 24 * 3600;
 
@@ -57,7 +57,7 @@ export function ratesFromConfig(cfg, weekly = WEEKLY_DEFAULTS) {
     dungeon: bps(A.dungeon), arena: bps(A.arena), worldBoss: bps(A.worldBoss),
     ammBuyback: bps(A.ammBuyback), quest: bps(A.quest), carnival: bps(A.carnival),
     fatih: bps(A.fatih), konsey: bps(A.konsey),
-    wheelCarnival: bps(cfg.CARNIVAL?.WHEEL_CARNIVAL_SHARE ?? 0.8),
+    wheelCarnival: bps(cfg.CARNIVAL?.WHEEL_CARNIVAL_SHARE ?? 0.85),
     dungeonGate: bps(cfg.DUNGEON_GATE_POOL_SHARE ?? 1),
     lotteryAmorti: bps(cfg.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02),
     marketFee: bps(cfg.AMM_FEE_RATE ?? 0.02),

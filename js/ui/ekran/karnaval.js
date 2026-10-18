@@ -24,24 +24,28 @@ const dilimler = (b) => b.GAME_CONFIG.CARNIVAL.WHEEL_REWARDS;
 
 // Dilimin çark üstündeki kısa adı; ASTRA tutarı oyuncunun güncel fiyat çarpanıyla gösterilir
 function kisaAd(b, r) {
+  if (r.pity) return `Şans ${astra(b.gameState.adaPrice(r.amount || 0))}`;
   if (r.type === 'ada') return `${astra(b.gameState.adaPrice(r.amount || 0))} ASTRA`;
   if (r.key === 'fragments') return `${r.amount} Parça`;
   if (r.type === 'amm_raw') return `${kaynakAdi(b, r.key)} ${tam(r.adaVal)} ASTRA`;
   if (r.type === 'key') return 'Anahtar';
   if (r.type === 'bot_free') return `${r.hours || 24}s Bot`;
   if (r.type === 'ticket_shard') return 'Bilet Parçası';
-  if (r.type === 'analysis_code') return 'Analiz Kuponu';
+  if (r.type === 'lottery_ticket') return 'Piyango Bileti';
+  if (r.type === 'stamina_buy') return `${tam(r.adaVal)} ASTRA Stamina`;
   return String(r.name || '').slice(0, 12);
 }
 
 const cizilecekler = (b) => dilimler(b).map((r) => ({ icon: r.icon, etiket: kisaAd(b, r) }));
 
 // ── Çark sekmesi ─────────────────────────────────────────────────────────
-function odemeDugmeleri(b) {
+function odemeDugmeleri(b, carpan) {
   const gs = b.gameState;
   const s = gs.state;
-  const bedel = gs.getWheelCostAda();
-  const durum = gs.isCarnivalWheelOpen();
+  const tekBedel = gs.getWheelCostAda();
+  const bedel = tekBedel * carpan;
+  const durum = gs.isCarnivalWheelOpen(carpan);
+  const carpanlar = b.GAME_CONFIG.CARNIVAL.WHEEL_MULTIPLIERS || [1];
   const bilet = s.lotteryTickets || 0;
   const hak = gs.getWheelResourceSpinsLeft();
   const hakSinir = b.GAME_CONFIG.CARNIVAL.WHEEL_RESOURCE_DAILY_LIMIT ?? 3;
@@ -51,14 +55,19 @@ function odemeDugmeleri(b) {
     const gereken = Math.ceil(bedel / fiyat);
     const yeter = (s.inventory[k] || 0) >= gereken;
     return dugme({
-      e: 'cevir', veri: { odeme: k }, devreDisi: !durum.open || hak <= 0 || !yeter,
+      e: 'cevir', veri: { odeme: k }, devreDisi: carpan > 1 || !durum.open || hak <= 0 || !yeter,
       metin: `<span class="ek-simge is-kucuk" aria-hidden="true">${kaynakSimgesi(b, k)}</span><span>${esc(tam(gereken))} ${esc(kaynakAdi(b, k))}</span>`
     });
   }).join('');
+  const carpanSecici = carpanlar.length > 1
+    ? `<p class="ek-kucuk">Çarpan: zaman kazanmak için bedel ve ödemeler aynı oranda büyür (yalnız ASTRA ile).</p>`
+      + dugmeler(...carpanlar.map((n) => dugme({ e: 'carpan', veri: { carpan: n }, ton: n === carpan ? 'birincil' : 'hayalet', metin: `×${esc(n)} · ${esc(astra(tekBedel * n))} ASTRA` })))
+    : '';
 
   return kart({
-    icerik: dugme({ e: 'cevir', veri: { odeme: 'ada' }, ton: 'birincil', genis: true, devreDisi: !durum.open || s.adAstraBalance < bedel, metin: `🟣 ${esc(astra(bedel))} ASTRA ile çevir` })
-      + dugme({ e: 'cevir', veri: { odeme: 'ticket' }, genis: true, devreDisi: !durum.open || bilet < 1, metin: `🎟️ 1 bilet ile çevir (${esc(tam(bilet))} biletin var)` })
+    icerik: carpanSecici
+      + dugme({ e: 'cevir', veri: { odeme: 'ada' }, ton: 'birincil', genis: true, devreDisi: !durum.open || s.adAstraBalance < bedel, metin: `🟣 ${esc(astra(bedel))} ASTRA ile çevir${carpan > 1 ? ` (×${esc(carpan)})` : ''}` })
+      + dugme({ e: 'cevir', veri: { odeme: 'ticket' }, genis: true, devreDisi: carpan > 1 || !durum.open || bilet < 1, metin: `🎟️ 1 bilet ile çevir (${esc(tam(bilet))} biletin var)` })
       + katli(`Hammaddeyle çevir (bugün kalan ${esc(hak)}/${esc(hakSinir)})`,
         `<div class="ek-dugmeler">${hammadde}</div><p class="ek-kucuk">Ödediğin hammaddenin yarısı yakılır, yarısı pazarda satılıp Karnaval kasasına girer.</p>`,
         { k: 'cark-hammadde' })
@@ -81,15 +90,17 @@ function sonucKarti(b, sonuc) {
     const y = sonuc.yakim;
     satirlar.push(satir('Ödediğin hammadde', `${tam(y.amount)} ${y.resourceNameTr} yakıldı${y.soldQty > 0 ? `, ${tam(y.soldQty)} satıldı` : ''}`, 'uyari'));
   }
-  if (sonuc.parcaBirikti) satirlar.push(uyari('3 bilet parçası birikti: +1 piyango bileti kazandın (çarkta bilet olarak da kullanılabilir).', 'iyi'));
-  if (sonuc.kod) satirlar.push(uyari(`Kuponun: <b>${esc(sonuc.kod)}</b>. Trade sitesiyle bağlantı kurulunca kullanılabilecek; şu an sitede geçerli değil.`));
+  if (sonuc.parcaBirikti) satirlar.push(uyari(`${esc(tam(sonuc.yeniBilet * 3))} bilet parçası birikti: +${esc(tam(sonuc.yeniBilet))} piyango bileti kazandın (çarkta bilet olarak da kullanılabilir).`, 'iyi'));
+  if (sonuc.stamina > 0) satirlar.push(satir('Kazandığın stamina', `+${tam(sonuc.stamina)} ⚡`, 'iyi'));
+  if (sonuc.tur === 'lottery_ticket') satirlar.push(uyari(`${esc(tam(sonuc.carpan))} piyango bileti envanterine eklendi (çarkta bilet olarak da kullanılabilir).`, 'iyi'));
+  if (sonuc.pityTetik) satirlar.push(uyari('Şans Sayacı doldu: bu çevirme garantili nakit ödüldü. Sayaç sıfırlandı.', 'iyi'));
   if (sonuc.tur === 'ticket_shard' && !sonuc.parcaBirikti) satirlar.push(satir('Bilet parçası', `${sonuc.parca}/3`));
   if (sonuc.tur === 'bot_free') satirlar.push(uyari('Ücretsiz otomasyon botun çalışmaya başladı (Taverna).', 'iyi'));
 
   return kart({
     vurgu: 'iyi',
     icerik: `<div class="ek-sonuc"><span class="ek-sonuc-simge">${odulSimgesi(sonuc.odul)}</span>
-      <div><b class="ek-sonuc-baslik">Çarktan kazandın!</b><span class="ek-kucuk">${esc(sonuc.ad)}</span></div></div>${satirlar.join('')}`
+      <div><b class="ek-sonuc-baslik">Çarktan kazandın!${sonuc.carpan > 1 ? ` (×${esc(sonuc.carpan)})` : ''}</b><span class="ek-kucuk">${esc(sonuc.ad)}</span></div></div>${satirlar.join('')}`
   });
 }
 
@@ -100,7 +111,8 @@ function carkSekmesi(b, secenek) {
   const ist = cark.donusIstatistigi(dilimler(b), K.WHEEL_COST_ADA);
   const parca = gs.state.wheelTicketShards || 0;
   const toplamAgirlik = dilimler(b).reduce((s, r) => s + (r.weight || 0), 0) || 1;
-  const kodlar = gs.state.redeemCodes || [];
+  const sayac = gs.getWheelPityInfo();
+  const carpan = (K.WHEEL_MULTIPLIERS || [1]).includes(secenek.carpan) ? secenek.carpan : 1;
   const cheerYapildi = !!gs.getDailyCounters().carnivalCheer;
 
   const sahne = `<div class="ek-cark-sahne">
@@ -118,34 +130,30 @@ function carkSekmesi(b, secenek) {
 
   const odulTablosu = dilimler(b).map((r) => {
     const sans = (r.weight / toplamAgirlik) * 100;
-    return `<div class="ek-hucre ek-odul"><span class="ek-odul-simge">${odulSimgesi(r)}</span><b>${esc(r.name)}</b><small>Şans: %${esc(sayi(sans, sans < 10 ? 2 : 1))}</small></div>`;
+    const sansMetni = r.pity ? `${sayac.limit} boş çevirmeden sonra garanti` : `Şans: %${sayi(sans, sans < 10 ? 2 : 1)}`;
+    return `<div class="ek-hucre ek-odul"><span class="ek-odul-simge">${odulSimgesi(r)}</span><b>${esc(r.name)}</b><small>${esc(sansMetni)}</small></div>`;
   });
 
   return [
     kart({
       baslik: `🎡 ${esc(dilimler(b).length)} ödüllü Krallık Çarkı`,
       rozet: etiket(`Ortalama dönüş ~%${ist.donus}`, ist.donus >= 100 ? 'uyari' : 'vurgu'),
-      icerik: not(`${esc(astra(gs.getWheelCostAda()))} ASTRA, eş değer hammadde ya da 1 piyango bileti ile çevirebilirsin. Ödüller Karnaval kasasından ödenir; çevirmelerin yaklaşık %${esc(ist.geri)}'inde en az bedelini geri alırsın.`)
+      icerik: not(`${esc(astra(gs.getWheelCostAda()))} ASTRA, eş değer hammadde ya da 1 piyango bileti ile çevirebilirsin (×2 ve ×10 çarpanı yalnız ASTRA ile). Ödüller Karnaval kasasından ödenir; çevirmelerin yaklaşık %${esc(ist.geri)}'inde en az bedelini geri alırsın. Verilen oran, Şans Sayacı hariç ortalamadır; sayaç dolunca garantili ödül ortalamayı biraz yükseltir.`)
         + satir('Bilet parçaların', `${parca}/3`)
+        + cubukSatiri('🍀 Şans Sayacı (bedelini geri almayan çevirme)', `${sayac.streak}/${sayac.limit}`, (sayac.streak / sayac.limit) * 100, { ton: sayac.streak >= sayac.limit - 1 ? 'dolu' : '' })
+        + not(`Art arda ${esc(sayac.limit)} çevirmede bedelini (en az 1 ASTRA değeri ya da piyango bileti) geri alamazsan sonraki çevirme garantili nakittir.`)
     }),
     sahne,
     sonucKarti(b, secenek.sonuc),
     durum.open ? '' : uyari(`Karnaval kasası yenileniyor (${esc(tam(durum.balance))} / ${esc(tam(durum.minBalance))} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.`, 'uyari'),
-    odemeDugmeleri(b),
+    odemeDugmeleri(b, carpan),
     kart({
       baslik: '🎪 Karnaval coşkusu',
       icerik: not('Günde bir kez karnavala katılıp +10 ⚡ stamina kazanırsın.')
         + dugme({ e: 'cheer', metin: cheerYapildi ? '✅ Bugün katıldın' : '🎪 Coşkuya katıl (+10 ⚡)', devreDisi: cheerYapildi, genis: true })
     }),
     katli('📋 Çarkın ödülleri ve şansları', izgara(odulTablosu, { genis: true })
-      + not('Hammadde, parça ve anahtar ödülleri Karnaval kasasının parasıyla pazardan satın alınıp sana verilir; pazarda bulunamazsa ödülün ASTRA karşılığı ödenir.'), { k: 'cark-odul' }),
-    kodlar.length
-      ? kart({
-        baslik: '🎫 Kazandığın coin analiz kuponları',
-        icerik: kodlar.map((c) => satir(c.code, c.status === 'pending_integration' ? 'site bağlantısı bekleniyor' : 'kullanılabilir', 'uyari')).join('')
-          + not('Kuponlar trade sitesiyle bağlantı kurulunca kullanılabilecek; şu an sitede geçerli değildir.')
-      })
-      : ''
+      + not('Hammadde, parça, anahtar ve stamina ödülleri Karnaval kasasının parasıyla pazardan satın alınıp sana verilir (stamina için kasa buğday alıp yakar); pazarda bulunamazsa ödülün ASTRA karşılığı ödenir. Çarpanlı çevirmede her ödül aynı oranda büyür.'), { k: 'cark-odul' })
   ].join('');
 }
 
@@ -219,7 +227,7 @@ function kasaSekmesi(b) {
       rozet: etiket(durum.open ? 'çark açık' : 'çark kapalı', durum.open ? 'iyi' : 'uyari'),
       icerik: satir('Kasadaki ASTRA', `${tam(durum.balance)} ASTRA`)
         + satir('Çarkın açık kalması için en az', `${tam(durum.minBalance)} ASTRA`)
-        + not('Çarkın ASTRA bedelinin %80\'i doğrudan bu kasaya girer; çark ve eşya ödülleri buradan ödenir. Kasa yetmezse ödül yoktan verilmez, çark kapanır.')
+        + not(`Çarkın ASTRA bedelinin %${esc(sayi(b.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100, 0))}'i doğrudan bu kasaya girer; çark ve eşya ödülleri buradan ödenir. Kasa yetmezse ödül yoktan verilmez, çark kapanır.`)
     }),
     kart({
       baslik: '🎟️ Piyango kasaları',
@@ -265,14 +273,21 @@ const ekran = {
       return undefined;
     },
 
+    carpan(b, el, secenek) {
+      if (secenek.donuyor) return false;
+      secenek.carpan = Number(el.dataset.carpan) || 1;
+      return undefined;
+    },
+
     async cevir(b, el, secenek) {
       if (secenek.donuyor) return false;
       const odeme = el.dataset.odeme;
+      const carpan = odeme === 'ada' ? (secenek.carpan || 1) : 1;
       secenek.donuyor = true;
       secenek.sonuc = null;
       let r;
       try {
-        r = await b.gameState.spinCarnivalWheel(odeme);
+        r = await b.gameState.spinCarnivalWheel(odeme, carpan);
       } catch (e) {
         secenek.donuyor = false;
         throw e;
@@ -304,7 +319,8 @@ const ekran = {
       secenek.sonuc = {
         odul: r.reward, ad: r.reward.name, tur: r.reward.type,
         astra: g.astra || 0, yedek: !!g.yedek, geriAlim: r.buybackInfo || null, yakim: r.burnedInfo || null,
-        siloSatilan: g.siloSatilan || 0, siloAstra: g.siloAstra || 0, parcaBirikti: !!g.parcaBirikti, kod: g.kod || null,
+        siloSatilan: g.siloSatilan || 0, siloAstra: g.siloAstra || 0, parcaBirikti: !!g.parcaBirikti, yeniBilet: g.yeniBilet || 0, stamina: g.stamina || 0,
+        carpan: r.multiplier || 1, pityTetik: !!(r.pity && r.pity.triggered),
         parca: b.gameState.state.wheelTicketShards || 0
       };
       if (r.burnedInfo) b.bildir(`🔥 ${tam(r.burnedInfo.amount)} ${r.burnedInfo.resourceNameTr} yakıldı ve sistemden silindi.`, 'warning');

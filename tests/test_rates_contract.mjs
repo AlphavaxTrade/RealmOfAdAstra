@@ -34,8 +34,8 @@ try {
   assert.deepEqual(initial, DEFAULT_RATES, 'Panelde gösterilen başlangıç oranları oyunun ayarlarıyla aynı');
   const n0 = toNamed(initial);
   assert.deepEqual([n0.burn, n0.creator, n0.ubi, n0.pools], [500, 300, 600, 8600]);
-  assert.deepEqual([n0.wheelCarnival, n0.dungeonGate, n0.lotteryAmorti, n0.marketFee, n0.withdrawFee, n0.withdrawFeeUbi], [8000, 10000, 200, 200, 300, 5000]);
-  ok('Başlangıç oranları oyunun bugünkü ayarlarıyla aynı (%5/%3/%6/%86, çark %80, harç %100, piyango %2, pazar %2, çekim %3)');
+  assert.deepEqual([n0.wheelCarnival, n0.dungeonGate, n0.lotteryAmorti, n0.marketFee, n0.withdrawFee, n0.withdrawFeeUbi], [8500, 10000, 200, 200, 300, 5000]);
+  ok('Başlangıç oranları oyunun bugünkü ayarlarıyla aynı (%5/%3/%6/%86, çark %85, harç %100, piyango %2, pazar %2, çekim %3)');
 
   // ── Sözleşme ──
   const rates = await (await new ethers.ContractFactory(c.RealmRates.abi, c.RealmRates.bytecode, owner).deploy(initial)).waitForDeployment();

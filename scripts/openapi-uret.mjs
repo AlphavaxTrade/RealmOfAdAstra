@@ -44,6 +44,7 @@ export const TIP_ACIKLAMALARI = {
   scroll: 'Parşömen: scroll_heal, scroll_stamina, scroll_teleport, scroll_repair',
   row: 'Savaş sırası: front ya da back',
   wheelPay: 'Çark ödeme türü: ada, ticket ya da bir hammadde',
+  wheelMult: 'Çark çarpanı: 1, 2 ya da 10 (yalnız ASTRA ile çevirmede; bedel ve ödeme aynı oranda artar)',
   quest: 'Rehber görevi kimliği',
   section: 'Krallık Yolu bölüm kimliği (10 bölümden biri ya da final)',
   gorulen: 'Krallık Yolu için "ekranı gördü" anahtarı (sabit liste)',

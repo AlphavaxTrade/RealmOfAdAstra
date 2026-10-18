@@ -46,7 +46,10 @@ E.withPlayer(P, () => null);
   const ammBefore = E.ammMarket.pools.wheat.adAstraReserve;
   const carnBefore = E.treasury.getPool('carnival');
   const rnd = Math.random;
-  Math.random = () => 0.99;                       // ödül: çark bileti parçası (pazara dokunmaz)
+  const dil = E.GAME_CONFIG.CARNIVAL.WHEEL_REWARDS, top = dil.reduce((s, d) => s + d.weight, 0);
+  const si = dil.findIndex(d => d.type === 'ticket_shard');
+  const bas = dil.slice(0, si).reduce((s, d) => s + d.weight, 0);
+  Math.random = () => (bas + dil[si].weight / 2) / top;   // ödül: çark bileti parçası (pazara dokunmaz)
   let r;
   try { r = E.act(P, 'spinCarnivalWheel', ['wheat']); } finally { Math.random = rnd; }
   assert.ok(r.result.success, 'Çark gerçekten çevrildi: ' + r.result.message);
@@ -117,20 +120,24 @@ E.withPlayer(P, () => null);
   ok('Ücretsiz oyuncu payı: şartlar, katkıyla hızlı büyüyen pay, sadakat serisi, kilitli pay (yan hesaplar ~%29 alır)');
 }
 
-// 6) Çark: ASTRA bedelinin %80'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
+// 6) Çark: ASTRA bedelinin %85'i Karnaval kasasına, bilet parası kasaya geçer, hammaddeyle günde 3 hak
 {
   E.mutatePlayer(P, gs => { gs.state.adAstraBalance = 1e6; gs.state.inventory.wood = 1e6; gs.state.warehouseLevel = 18; });
   const rnd = Math.random;
-  Math.random = () => 0.99;                       // ödül: bilet parçası (kasaya maliyetsiz)
+  const dil = E.GAME_CONFIG.CARNIVAL.WHEEL_REWARDS, top = dil.reduce((s, d) => s + d.weight, 0);
+  const si = dil.findIndex(d => d.type === 'ticket_shard');
+  const bas = dil.slice(0, si).reduce((s, d) => s + d.weight, 0);
+  Math.random = () => (bas + dil[si].weight / 2) / top;   // ödül: bilet parçası (kasaya maliyetsiz)
   try {
     const c0 = E.treasury.getPool('carnival');
     // v2: 1 ASTRA × bedel çarpanı (en büyüğü(fiyat çarpanı, oyun içi endeks); yukarıdaki hesaplaşma endeksi değiştirmiş olabilir)
     const carpanli = base => E.withPlayer(P, gs => gs.adaPrice(base)).result;
     const cost = carpanli(E.GAME_CONFIG.CARNIVAL.WHEEL_COST_ADA);
     const carnShare = E.GAME_CONFIG.TREASURY_ALLOCATION.carnival;
+    const pay = E.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE;
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
     const gain = E.treasury.getPool('carnival') - c0;
-    assert.ok(Math.abs(gain - (cost * 0.8 + cost * 0.2 * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %80 + kalanın karnaval payı girdi (${gain})`);
+    assert.ok(Math.abs(gain - (cost * pay + cost * (1 - pay) * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %85 + kalanın karnaval payı girdi (${gain})`);
     // Bilet: satın alınmış biletin piyango kasasındaki 98 ASTRA'sı Karnaval kasasına
     assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
     const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');
@@ -144,7 +151,7 @@ E.withPlayer(P, () => null);
     assert.equal(okN, 3 - (E.readPlayer(P).dailyCounters.wheelResourceSpins - okN), 'Hammaddeyle günde en çok 3 çevirme');
     assert.ok(!last.success && /günlük sınır/.test(last.message), 'Dördüncü çevirme reddedildi');
   } finally { Math.random = rnd; }
-  ok('Çark: ASTRA bedelinin %80\'i Karnaval kasasına, bilet parası kasaya, hammaddeyle günde 3 çevirme');
+  ok('Çark: ASTRA bedelinin %85\'i Karnaval kasasına, bilet parası kasaya, hammaddeyle günde 3 çevirme');
 }
 
 // 5) Sunucu açılış kilitleri: deneme modu gerçek anahtarla ya da deneme kayıt dosyası gerçek sunucuda açılmaz

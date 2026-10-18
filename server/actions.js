@@ -45,6 +45,7 @@ const T = {
   scroll: v => SCROLLS.includes(v),
   row: v => v === 'front' || v === 'back',
   wheelPay: v => WHEEL_PAY.includes(v),
+  wheelMult: v => (GAME_CONFIG.CARNIVAL.WHEEL_MULTIPLIERS || [1]).includes(v),
   quest: v => typeof v === 'string' && (GAME_CONFIG.ONBOARDING_QUESTS || []).some(q => q.id === v),
   // Krallık Yolu: bölüm kimliği (10 bölüm + final) ve "ekranı gördü" anahtarı (sabit liste)
   section: v => typeof v === 'string' && ((GAME_CONFIG.ONBOARDING_SECTIONS || []).some(b => b.id === v) || v === (GAME_CONFIG.ONBOARDING_FINAL || {}).id),
@@ -134,7 +135,7 @@ export const ACTIONS = {
   emergencyUnstakeWorldBossArmy: A([]),
   claimWorldBossReward: A([]),
   // Karnaval, kutular, parşömenler
-  spinCarnivalWheel: A(['wheelPay'], { random: true }),
+  spinCarnivalWheel: A(['wheelPay', 'wheelMult?'], { random: true }),
   unboxMysteryBox: A([], { random: true }),
   useScroll: A(['scroll', 'str?']),
   carnivalCheer: A([]),

@@ -637,8 +637,11 @@ const zindanSatiri = (d) => {
 };
 const cark = C.CARNIVAL.WHEEL_REWARDS;
 const cWeight = cark.reduce((s, r) => s + r.weight, 0);
-const cEV = cark.reduce((s, r) => s + r.weight * r.valAda, 0) / cWeight;
-const cEVbotsuz = cark.filter((r) => r.type !== 'bot_free').reduce((s, r) => s + r.weight * r.valAda, 0) / cWeight;
+// Bilet parçası (3 = 1 çevirme) ve piyango bileti bedava çevirmedir: ödemeleri o çevirmenin ödülünden gelir (Şans Sayacı hariç)
+const cBedava = cark.reduce((s, r) => s + (r.type === 'ticket_shard' ? r.weight / cWeight / 3 : (r.type === 'lottery_ticket' ? r.weight / cWeight : 0)), 0);
+const cNakitEV = (f) => cark.filter((r) => r.type !== 'ticket_shard' && r.type !== 'lottery_ticket' && f(r)).reduce((s, r) => s + r.weight * r.valAda, 0) / cWeight / (1 - cBedava);
+const cEV = cNakitEV(() => true);
+const cEVbotsuz = cNakitEV((r) => r.type !== 'bot_free');
 const liglar = C.COLOSSEUM.LEAGUES.slice().reverse();
 const kazanc = bolum('t-kazanc', '💰', 'Kazanç kaynakları: zindan, kolezyum, boss, çark, piyango', 'ASTRA kazandıran bütün yollar, her birinin sınırı ve ödülün hangi kasadan çıktığı.',
 `  <h3>🗺️ Zindan</h3>
@@ -670,8 +673,13 @@ ${formul([
   `<b>Erken çekilme cezası:</b> tahmini kazancının %${sayi(C.WORLD_BOSS.EARLY_UNSTAKE_PENALTY * 100)}'i (Savunma Duvarı projesi bitince %12).`
 ])}
   <h3>🎡 Şans çarkı</h3>
-  <p>Bir çevirme <b>${n(C.CARNIVAL.WHEEL_COST_ADA)} ASTRA</b>'dır (ya da dengi hammadde ya da bilet). Ortalama geri dönüş: <b>%${sayi(cEVbotsuz / C.CARNIVAL.WHEEL_COST_ADA * 100, 1)}</b> (24 saatlik bot ikramiyesi sayılmadan), bot dahil <b>%${sayi(cEV / C.CARNIVAL.WHEEL_COST_ADA * 100, 1)}</b>. Amorti bilet parçaları (3 parça = 1 bedava çevirme) hesaba katılmıştır. ASTRA ile çevirme bedelinin %${sayi(C.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100)}'i karnaval kasasına girer; ödüller oradan çıkar.</p>
-${tablo(['Ödül', 'Şans', 'Değeri (ASTRA)'], cark.slice().sort((a, b) => b.valAda - a.valAda).map((r) => [r.name, `%${sayi(r.weight / cWeight * 100, 2)}`, sayi(r.valAda, 2)]))}
+  <p>Bir çevirme <b>${n(C.CARNIVAL.WHEEL_COST_ADA)} ASTRA</b>'dır (ya da dengi hammadde ya da bilet). Ortalama geri dönüş: <b>%${sayi(cEVbotsuz / C.CARNIVAL.WHEEL_COST_ADA * 100, 1)}</b> (24 saatlik bot ikramiyesi sayılmadan), bot dahil <b>%${sayi(cEV / C.CARNIVAL.WHEEL_COST_ADA * 100, 1)}</b>; bunlar Şans Sayacı hariçtir, sayaç doldukça garantili ödül ortalamayı biraz yükseltir. Amorti bilet parçaları (3 parça = 1 bedava çevirme) ve piyango biletleri (1 bedava çevirme) hesaba katılmıştır. ASTRA ile çevirme bedelinin %${sayi(C.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100)}'i karnaval kasasına girer; ödüller oradan çıkar.</p>
+${formul([
+  `<b>Çarpanlı çevirme:</b> ASTRA ile ${C.CARNIVAL.WHEEL_MULTIPLIERS.map((x) => '×' + x).join(', ')} çevirebilirsin; bedel de ödeme de aynı oranda büyür (zaman kazanmak içindir). ×10, on kez ×1 çevirmekle aynı şansı verir. Hammadde ve biletle çevirmede çarpan yoktur.`,
+  `<b>Şans Sayacı:</b> art arda ${n(C.CARNIVAL.WHEEL_PITY.STREAK)} çevirmede bedelini (en az ${n(C.CARNIVAL.WHEEL_COST_ADA)} ASTRA değeri ya da piyango bileti) geri almazsan sonraki çevirme garantili nakit ödüldür (çarpanla büyür).`,
+  `<b>Ödüllerin kaynağı:</b> hammadde, teçhizat parçası, anahtar ve stamina ödülleri karnaval kasasının parasıyla pazardan satın alınıp verilir; stamina için kasa buğdayı alıp yakar. Hiçbir ödül havadan çıkmaz.`
+])}
+${tablo(['Ödül', 'Şans', 'Değeri (ASTRA)'], cark.slice().sort((a, b) => b.valAda - a.valAda).map((r) => [r.name, r.pity ? `${n(C.CARNIVAL.WHEEL_PITY.STREAK)} boş çevirmeden sonra` : `%${sayi(r.weight / cWeight * 100, 2)}`, sayi(r.valAda, 2)]))}
   <h3>🎟️ Haftalık piyango</h3>
 ${formul([
   `<b>Bilet:</b> ${n(C.CARNIVAL.LOTTERY.TICKET_COST_ADA)} ASTRA. Bedelin %${sayi((1 - C.CARNIVAL.LOTTERY.AMORTI_SHARE) * 100)}'i piyango kasasına, %${sayi(C.CARNIVAL.LOTTERY.AMORTI_SHARE * 100)}'si amorti kasasına. Hesap başına haftada en çok ${n(C.CARNIVAL.LOTTERY.MAX_TICKETS_PER_ACCOUNT)} bilet.`,

@@ -173,6 +173,7 @@ export class GameStateManager {
       offlineReport: kayit.offlineReport || null,
       lastSeenAt: kayit.lastSeenAt || 0,
       wheelTicketShards: kayit.wheelTicketShards || 0,
+      wheelPity: kayit.wheelPity || 0,
       botSiloAutoUpgrade: kayit.botSiloAutoUpgrade !== undefined ? kayit.botSiloAutoUpgrade : true,
       botAutoRenew24h: kayit.botAutoRenew24h !== undefined ? kayit.botAutoRenew24h : false,
       botActiveUntil: kayit.botActiveUntil || 0,

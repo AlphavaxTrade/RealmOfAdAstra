@@ -856,36 +856,48 @@ export const GAME_CONFIG = {
     WHEEL_COST_ADA: 1, // 1 ASTRA veya dengi hammadde veya 1 Piyango Bileti (v2 ölçekli)
     // Karnaval kasasında en az bu kadar ASTRA yoksa çark geçici olarak kapanır (ödüller asla yoktan ödenmez)
     WHEEL_MIN_CARNIVAL_BALANCE: 200,
-    // Kullanıcı kararı (4 Ekim 2026): ASTRA ile çevrilen çarkın bedelinin %80'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
-    // kasadan ödenir; eskiden yalnız %3,4'ü giriyordu ve kasa her çevirmede ~50 ASTRA eriyordu). Kalan %20 her harcama gibi
-    // dağıtılır (yakım, yapımcı payı, temel gelir, hazine kasaları).
-    WHEEL_CARNIVAL_SHARE: 0.80,
+    // Kullanıcı kararı (18 Ekim 2026): ASTRA ile çevrilen çarkın bedelinin %85'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
+    // kasadan ödenir; kasa uzun vadede büyür ve oyunun ömrünü uzatır). Kalan %15 her harcama gibi dağıtılır (yakım, yapımcı
+    // payı, temel gelir, hazine kasaları). 4 Ekim'de %80'di; eskiden yalnız %3,4'ü giriyordu.
+    WHEEL_CARNIVAL_SHARE: 0.85,
     // Hammadde oyunda bedava toplandığı için hammaddeyle çevirme günde en çok bu kadar (kasa bu yoldan erimesin)
     WHEEL_RESOURCE_DAILY_LIMIT: 3,
-    // 15 ödül (4 Ekim 2026 çalışması). Oyuncuya ortalama dönüş ~%81 (bot dahil ~%91; 3 bilet parçası = 1 bedava çevirme
-    // hesaba katılarak). Çevirmelerin ~%31'inde en az bedel geri alınır, ~%10'unda kârla çıkılır; en büyük ödül 50×.
-    // Kurallar korunur: bot < %1, teçhizat parçası < %1, anahtar < %0,1, coin analiz kuponu < %1, parşömen yok.
+    // Çarpanlı çevirme (zaman kazanmak isteyenler için): bedel ve ödeme aynı oranda artar; yalnız ASTRA ile çevrilir.
+    // Beklenen dönüş çarpandan bağımsızdır: x10, 10 kez x1 çevirmekle aynı şansı verir (anahtar ve bot dahil).
+    WHEEL_MULTIPLIERS: [1, 2, 10],
+    // Şans Sayacı (kötü talih koruması): art arda STREAK çevirmede bedelini (>= 1 ASTRA değeri ya da piyango bileti) geri almayan
+    // oyuncunun sonraki çevirmesi, dilimlerdeki 'pity' dilimi (garanti nakit) olur. Sayaç çarpandan bağımsız çevirme başına işler;
+    // garanti ödülün tutarı çarpanla büyür. Maliyeti ödeme oranının içindedir (tests/test_cark_dilimleri.mjs bu sınırı korur).
+    WHEEL_PITY: { STREAK: 8 },
+    // 19 dilim (18 Ekim 2026 yeniden kurulumu; ağırlıklar toplamı 10.000, 'pity' dilimi 0: yalnız sayaç doldurur). Ortalama ASTRA
+    // dönüşü ~%73-75 (bilet parçası/bilet bedava çevirme olarak hesaba katılır), kasa çevirme başına ~+0,10 ASTRA kazanır.
+    // Ödülün hiçbiri havadan çıkmaz: hammadde, parça, anahtar ve stamina için kasa pazardan gerçek fiyatla alır (stamina dilimi
+    // buğdayı pazardan alıp yakar, yani oyuncunun buğdayla doldurması gibi; pazarda alınamazsa ASTRA karşılığı ödenir).
+    // Şifa, sefer tamamlama, zindan girişi gibi oyunun harcama kalemlerini (şifalı ot, buğday, zaman) ucuzlatan ödüller bilerek yok.
+    // Kurallar korunur: bot < %1, teçhizat parçası < %1, anahtar < %0,1, parşömen yok.
     WHEEL_REWARDS: [
-      { id: 'ada_5000',      name: '💎 50 ASTRA BÜYÜK İKRAMİYE',       icon: '💎', type: 'ada',      amount: 50,                     valAda: 50,   weight: 6 },
-      { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 4.5,  weight: 20 },
-      // Hammadde ödülleri (pazardan alınır, yani hammaddeye talep yaratır): sık gelen "bedelin geri" dilimleri (1 ASTRA) YENİ üç
-      // hammaddenindir (taş, kömür, şifalı ot: 13 Ekim 2026 hammadde kullanım planı); nadir 10 ASTRA'lık büyük dilimler odun,
-      // demir ve buğdaydır. Dilim sayısı (15), ağırlıklar ve ASTRA değerleri aynı: dönüş oranı değişmez.
-      { id: 'raw_1000_wood', name: '10 ASTRA Değerinde Odun',         icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 10,   valAda: 10,   weight: 30 },
-      { id: 'raw_1000_iron', name: '10 ASTRA Değerinde Demir',        icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 10,   valAda: 10,   weight: 30 },
-      { id: 'raw_1000_wheat',name: '10 ASTRA Değerinde Buğday',       icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 10,   valAda: 10,   weight: 30 },
-      { id: 'raw_100_stone', name: 'Bedelin Geri: 1 ASTRA Değerinde Taş',       icon: '🪨', type: 'amm_raw', key: 'stone', adaVal: 1, valAda: 1, weight: 700 },
-      { id: 'raw_100_coal',  name: 'Bedelin Geri: 1 ASTRA Değerinde Kömür',     icon: '⚫', type: 'amm_raw', key: 'coal',  adaVal: 1, valAda: 1, weight: 700 },
-      { id: 'raw_100_herb',  name: 'Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot', icon: '🌿', type: 'amm_raw', key: 'herb',  adaVal: 1, valAda: 1, weight: 700 },
+      { id: 'ada_5000',      name: '💎 50 ASTRA BÜYÜK İKRAMİYE',       icon: '💎', type: 'ada',      amount: 50,                     valAda: 50,   weight: 3 },
+      { id: 'lottery_ticket', name: '🎟️ Piyango Bileti (1 çark hakkı)', icon: '🎟️', type: 'lottery_ticket', amount: 1,              valAda: 0,    weight: 403 },
+      { id: 'raw_100_stone', name: 'Bedelin Geri: 1 ASTRA Değerinde Taş',       icon: '🪨', type: 'amm_raw', key: 'stone', adaVal: 1, valAda: 1, weight: 515 },
+      { id: 'ada_200',       name: '2 ASTRA Nakit Ödül (2×)',         icon: '🟣', type: 'ada',      amount: 2,                      valAda: 2,    weight: 230 },
+      { id: 'stamina_1',     name: '⚡ 1 ASTRA Değerinde Stamina',     icon: '⚡', type: 'stamina_buy', adaVal: 1,                   valAda: 1,    weight: 1052 },
+      // Hammadde ödülleri (pazardan alınır, yani hammaddeye talep yaratır): sık gelen "bedelin geri" dilimleri (1 ASTRA) taş, kömür
+      // ve şifalı otun; nadir 10 ASTRA'lık büyük dilimler odun, demir ve buğdayın.
+      { id: 'raw_1000_wood', name: '10 ASTRA Değerinde Odun',         icon: '🌲', type: 'amm_raw',  key: 'wood',      adaVal: 10,   valAda: 10,   weight: 16 },
+      { id: 'ada_50',        name: '0,5 ASTRA Teselli Ödülü',         icon: '🟣', type: 'ada',      amount: 0.5,                    valAda: 0.5,  weight: 1253 },
+      { id: 'frag_10',       name: '10 Teçhizat Parçası',             icon: '🧩', type: 'resource', key: 'fragments', amount: 10,   valAda: 4.5,  weight: 27 },
+      { id: 'raw_100_coal',  name: 'Bedelin Geri: 1 ASTRA Değerinde Kömür',     icon: '⚫', type: 'amm_raw', key: 'coal',  adaVal: 1, valAda: 1, weight: 515 },
+      { id: 'ada_1000',      name: '👑 10 ASTRA İKRAMİYE (10×)',       icon: '👑', type: 'ada',      amount: 10,                     valAda: 10,   weight: 76 },
+      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 0.333, weight: 5311 },
+      { id: 'raw_1000_iron', name: '10 ASTRA Değerinde Demir',        icon: '⛏️', type: 'amm_raw',  key: 'iron',      adaVal: 10,   valAda: 10,   weight: 16 },
+      { id: 'ada_500',       name: '5 ASTRA Nakit Ödül (5×)',         icon: '🟣', type: 'ada',      amount: 5,                      valAda: 5,    weight: 41 },
+      { id: 'raw_100_herb',  name: 'Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot', icon: '🌿', type: 'amm_raw', key: 'herb',  adaVal: 1, valAda: 1, weight: 515 },
+      { id: 'ada_2500',      name: '25 ASTRA Nakit Ödül (25×)',       icon: '🟣', type: 'ada',      amount: 25,                     valAda: 25,   weight: 8 },
+      { id: 'box_key',       name: '1 Anahtar (Pandora Kutusu açar)', icon: '🔑', type: 'key',      amount: 1,                      valAda: 10,   weight: 1 },
+      { id: 'raw_1000_wheat',name: '10 ASTRA Değerinde Buğday',       icon: '🌾', type: 'amm_raw',  key: 'wheat',     adaVal: 10,   valAda: 10,   weight: 16 },
       { id: 'free_bot_24h',  name: '🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)', icon: '🤖', type: 'bot_free', hours: 24,       valAda: 460,  weight: 2 },
-      { id: 'ada_200',       name: '2 ASTRA Nakit Ödül (2×)',         icon: '🟣', type: 'ada',      amount: 2,                      valAda: 2,    weight: 800 },
-      { id: 'ada_1000',      name: '👑 10 ASTRA İKRAMİYE (10×)',       icon: '👑', type: 'ada',      amount: 10,                     valAda: 10,   weight: 50 },
-      { id: 'ada_50',        name: '0,5 ASTRA Teselli Ödülü',         icon: '🟣', type: 'ada',      amount: 0.5,                    valAda: 0.5,  weight: 2900 },
-      { id: 'box_key',       name: '1 Pandora Kutusu Anahtarı',       icon: '🔑', type: 'key',      amount: 1,                      valAda: 10,   weight: 8 },
-      { id: 'wheel_ticket_shard', name: 'Amorti Çark Bileti (3 Adet = 1 Çevirme)', icon: '🎟️', type: 'ticket_shard', amount: 1,  valAda: 0.333, weight: 3974 },
-      // v1.25: Kupon kodu kaydedilir; trade sitesi (AlphavaxTrade) bu kodları henüz tanımadığı için ekranda
-      // "site bağlantısı kurulunca kullanılabilir" diye açıkça belirtilir (eskiden geçerli bir kodmuş gibi gösteriliyordu).
-      { id: 'coin_analysis_code', name: 'AlphAvax Vercel App Özel Coin Analiz Bileti', icon: '🎫', type: 'analysis_code', amount: 1, valAda: 0, weight: 50 }
+      // Şans Sayacı ödülü: ağırlığı 0, yalnız sayaç dolunca verilir
+      { id: 'sans_sayaci',   name: '🍀 Şans Sayacı: 3 ASTRA Garanti', icon: '🍀', type: 'ada',      amount: 3,                      valAda: 3,    weight: 0, pity: true }
     ],
     // Haftalık Piyango Sistemi
     LOTTERY: {
@@ -1494,6 +1506,18 @@ export const GAME_CONFIG = {
       changes: [
         `Krallık haritası baştan boyandı: bütün bölgeler (madenler, orman, kale, kolezyum, karnaval, silolar, kışla, uzay limanı...) aynı yerlerinde duruyor, ama harita artık gün batımı ışığında, daha sıcak renklerle ve daha zengin dokularla görünüyor.`,
         `Haritadaki dokunma noktaları ve bölge isimleri değişmedi; her şey önceki gibi çalışır.`
+      ]
+    },
+    {
+      version: 'v1.53',
+      title: '🎡 Şans Çarkı Yenilendi',
+      date: '18 Ekim 2026',
+      changes: [
+        `Çarka çarpan geldi: zaman kazanmak istersen 1 ASTRA yerine ×2 (2 ASTRA) ya da ×10 (10 ASTRA) ile çevirebilirsin. Ödemeler de aynı oranda büyür; ×10, on kez ×1 çevirmekle aynı şansı verir. Çarpan yalnız ASTRA ile çevirmede geçerli.`,
+        `Ödül tablosu baştan kuruldu: nakit, hammadde, teçhizat parçası, çok nadir anahtar ve bot yanında artık 1 ASTRA değerinde stamina ve piyango bileti (1 bedava çark hakkı) de çıkıyor. Coin Analiz Bileti dilimi kaldırıldı.`,
+        `Çarkın hiçbir ödülü havadan çıkmaz: hammadde, parça, anahtar ve stamina için Karnaval kasası pazardan gerçek fiyatla satın alır (stamina için buğday alıp yakar), pazarda yoksa ödülün ASTRA karşılığı ödenir.`,
+        `Yeni Şans Sayacı: art arda 8 çevirmede bedelini geri alamazsan sonraki çevirme garantili 3 ASTRA nakittir. Sayaç çark ekranında görünür.`,
+        `Çevirme bedelinin Karnaval kasasına giren payı %80'den %85'e çıktı (kasa uzun vadede büyüsün, oyunun ömrü uzasın). Ortalama dönüş yaklaşık %72 (Şans Sayacı hariç); oran tablosu ve rehber güncellendi.`
       ]
     }
   ],

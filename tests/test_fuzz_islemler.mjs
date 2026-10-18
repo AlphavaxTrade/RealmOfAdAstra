@@ -42,6 +42,7 @@ const GECERLI = {
   scroll: ['scroll_heal', 'scroll_stamina', 'scroll_teleport', 'scroll_repair'],
   row: ['front', 'back'],
   wheelPay: ['ada', 'ticket', ...NODES],
+  wheelMult: GAME_CONFIG.CARNIVAL.WHEEL_MULTIPLIERS,
   quest: (GAME_CONFIG.ONBOARDING_QUESTS || []).map(q => q.id),
   section: [...(GAME_CONFIG.ONBOARDING_SECTIONS || []).map(b => b.id), (GAME_CONFIG.ONBOARDING_FINAL || {}).id],
   gorulen: ['merkez', 'bolge', 'kota', 'koy', 'hazine', 'ekonomi', 'profil', 'zindanOnizleme', 'ilan', 'yakim', 'lig', 'havuzlar', 'tur'],

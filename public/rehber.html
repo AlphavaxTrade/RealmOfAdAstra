@@ -509,12 +509,15 @@
 
   <h3>🎡 Çark</h3>
   <ul>
-    <li><b>15 ödüllü</b> bir çark; ortalama dönüş yaklaşık <b>%83</b>'tür (çok nadir 24 saatlik bot ikramiyesi dahil %93; yani uzun vadede verdiğinin yaklaşık %83'ünü geri alırsın; çark bir kazanç yolu değil, eğlencedir).</li>
+    <li><b>18 ödüllü</b> bir çark (bir de Şans Sayacı dilimi); ortalama dönüş yaklaşık <b>%72</b>'dir (çok nadir 24 saatlik bot ikramiyesi dahil %83; yani uzun vadede verdiğinin yaklaşık %72'sini geri alırsın; çark bir kazanç yolu değil, eğlencedir). Bu oran Şans Sayacı hariçtir; sayaç dolunca verilen garantili ödül ortalamayı biraz yükseltir.</li>
     <li>Çevirme yolları: <b>1 ASTRA</b>, <b>eş değer hammadde</b> (günde 3 kez) ya da <b>1 piyango bileti</b>.</li>
+    <li><b>Çarpanlı çevirme:</b> zaman kazanmak istersen ASTRA ile <b>×2 (2 ASTRA)</b> ya da <b>×10 (10 ASTRA)</b> çevirebilirsin. Ödemeler de aynı oranda büyür; ×10, on kez ×1 çevirmekle aynı şansı verir. Hammadde ve biletle çevirmede çarpan yoktur.</li>
+    <li>Ödüller: ASTRA nakit (0,5 ile 50 arası), taş, kömür, şifalı ot, odun, demir, buğday, teçhizat parçası, <b>1 ASTRA değerinde stamina</b>, <b>piyango bileti</b> (1 bedava çevirme), bilet parçası, çok nadir <b>anahtar</b> ve 24 saatlik bot. Hammadde, parça, anahtar ve stamina ödülleri <b>havadan çıkmaz</b>: Karnaval kasası pazardan gerçek fiyatla satın alıp sana verir (stamina için buğday alıp yakar).</li>
     <li>Biriktirdiğin <b>bilet parçaları</b> (3 parça = 1 bilet) da çark çevirmek için kullanılır.</li>
-    <li>Çevirmelerin yaklaşık %31'inde en az bedelini geri alırsın.</li>
+    <li>Çevirmelerin yaklaşık %34'ünde en az bedelini (1 ASTRA değeri ya da piyango bileti) geri alırsın.</li>
+    <li><b>🍀 Şans Sayacı:</b> art arda 8 çevirmede bedelini geri alamazsan sonraki çevirme <b>garantili 3 ASTRA</b> nakittir (çarpanla büyür). Sayaç çark ekranında "x/8" olarak görünür.</li>
   </ul>
-  <p>Çarkın ASTRA bedelinin <b>%80'i</b> doğrudan Karnaval kasasına girer; çark ve eşya ödülleri buradan ödenir. Kasa <b>en az 200 ASTRA</b> altına inerse ödül yoktan verilmez, <b>çark kapanır</b>.</p>
+  <p>Çarkın ASTRA bedelinin <b>%85'i</b> doğrudan Karnaval kasasına girer; çark ve eşya ödülleri buradan ödenir. Kasa <b>en az 200 ASTRA</b> altına inerse ödül yoktan verilmez, <b>çark kapanır</b>.</p>
   <h3>🎟️ Piyango</h3>
   <figure class="resim"><div class="cerceve"><img src="rehber/img/piyango.webp" alt="Piyango sekmesi" loading="lazy"></div>
   <figcaption><b>Piyango.</b> Kasadaki ödül, kazanma şansın, sonraki çekilişe kalan süre ve bilet alma kutusu.</figcaption></figure>
@@ -887,7 +890,7 @@
   <p>Toplam: <b>200.000.000 ASTRA</b>.</p>
   <div class="kutu ornek" data-s="🧮"><b>Örnek</b><p>Bir askere 205,12 ASTRA ödedin. <b>10,26</b> yanar, <b>6,15</b> yapımcıya gider, <b>12,31</b> temel gelir kasasına girer, kalan <b>176,4</b> sekiz kasaya dağılır (zindan kasasına 47,63 gibi).</p></div>
   <div class="kutu dikkat" data-s="⚠️"><b>İki istisna</b>
-  <p><b>Zindan kapı harcı</b> yüzde yüz zindan kasasına gider. <b>Çarkın ASTRA ile çevirme bedelinin %80'i</b> doğrudan karnaval kasasına, kalan %20'i normal bölüşüme girer. Piyango biletlerinin %98'si piyango kasasına, %2'si amorti kasasına gider.</p></div>
+  <p><b>Zindan kapı harcı</b> yüzde yüz zindan kasasına gider. <b>Çarkın ASTRA ile çevirme bedelinin %85'i</b> doğrudan karnaval kasasına, kalan %15'i normal bölüşüme girer. Piyango biletlerinin %98'si piyango kasasına, %2'si amorti kasasına gider.</p></div>
 </section>
 
 <section class="bolum" id="t-uretim" data-grup="Teknik başvuru" data-ikon="⛏️">
@@ -1579,24 +1582,29 @@
   <h3>🌋 Dünya bossu</h3>
 <div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Zamanı:</b> her Pazar 18:00 (TSİ); tek otomatik savaş. Ordunu Pazar'dan önce "kilitlersin".</p><p><b>Hasar</b> = (toplam saldırı × 1,0 + toplam can × 0,25) × <b>beceri çeşitliliği çarpanı</b>. Çeşitlilik: ilk rolden sonraki her farklı rol için +%6, en çok +%50 (Tank, AoE, Şifacı, Anti-Tank, Kontrol, Berserker, Hayatta Kalma).</p><p><b>Haftalık havuz</b> = boss kasasının %3'ü.  <b>Ödülün</b> = havuz × (senin hasarın ÷ geçen haftanın toplam krallık hasarı ya da boss canı 1.000.000; hangisi büyükse).</p><p><b>Erken çekilme cezası:</b> tahmini kazancının %18'i (Savunma Duvarı projesi bitince %12).</p></div>
   <h3>🎡 Şans çarkı</h3>
-  <p>Bir çevirme <b>1 ASTRA</b>'dır (ya da dengi hammadde ya da bilet). Ortalama geri dönüş: <b>%83,4</b> (24 saatlik bot ikramiyesi sayılmadan), bot dahil <b>%92,6</b>. Amorti bilet parçaları (3 parça = 1 bedava çevirme) hesaba katılmıştır. ASTRA ile çevirme bedelinin %80'i karnaval kasasına girer; ödüller oradan çıkar.</p>
+  <p>Bir çevirme <b>1 ASTRA</b>'dır (ya da dengi hammadde ya da bilet). Ortalama geri dönüş: <b>%71,7</b> (24 saatlik bot ikramiyesi sayılmadan), bot dahil <b>%83,4</b>; bunlar Şans Sayacı hariçtir, sayaç doldukça garantili ödül ortalamayı biraz yükseltir. Amorti bilet parçaları (3 parça = 1 bedava çevirme) ve piyango biletleri (1 bedava çevirme) hesaba katılmıştır. ASTRA ile çevirme bedelinin %85'i karnaval kasasına girer; ödüller oradan çıkar.</p>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Çarpanlı çevirme:</b> ASTRA ile ×1, ×2, ×10 çevirebilirsin; bedel de ödeme de aynı oranda büyür (zaman kazanmak içindir). ×10, on kez ×1 çevirmekle aynı şansı verir. Hammadde ve biletle çevirmede çarpan yoktur.</p><p><b>Şans Sayacı:</b> art arda 8 çevirmede bedelini (en az 1 ASTRA değeri ya da piyango bileti) geri almazsan sonraki çevirme garantili nakit ödüldür (çarpanla büyür).</p><p><b>Ödüllerin kaynağı:</b> hammadde, teçhizat parçası, anahtar ve stamina ödülleri karnaval kasasının parasıyla pazardan satın alınıp verilir; stamina için kasa buğdayı alıp yakar. Hiçbir ödül havadan çıkmaz.</p></div>
 <div class="tablo-kap"><table>
     <tr><th>Ödül</th><th>Şans</th><th>Değeri (ASTRA)</th></tr>
     <tr><td>🏆 24 Saatlik Otomasyon Botu (Nadir İkramiye)</td><td>%0,02</td><td>460</td></tr>
-    <tr><td>💎 50 ASTRA BÜYÜK İKRAMİYE</td><td>%0,06</td><td>50</td></tr>
-    <tr><td>10 ASTRA Değerinde Odun</td><td>%0,3</td><td>10</td></tr>
-    <tr><td>10 ASTRA Değerinde Demir</td><td>%0,3</td><td>10</td></tr>
-    <tr><td>10 ASTRA Değerinde Buğday</td><td>%0,3</td><td>10</td></tr>
-    <tr><td>👑 10 ASTRA İKRAMİYE (10×)</td><td>%0,5</td><td>10</td></tr>
-    <tr><td>1 Pandora Kutusu Anahtarı</td><td>%0,08</td><td>10</td></tr>
-    <tr><td>10 Teçhizat Parçası</td><td>%0,2</td><td>4,5</td></tr>
-    <tr><td>2 ASTRA Nakit Ödül (2×)</td><td>%8</td><td>2</td></tr>
-    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Taş</td><td>%7</td><td>1</td></tr>
-    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Kömür</td><td>%7</td><td>1</td></tr>
-    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot</td><td>%7</td><td>1</td></tr>
-    <tr><td>0,5 ASTRA Teselli Ödülü</td><td>%29</td><td>0,5</td></tr>
-    <tr><td>Amorti Çark Bileti (3 Adet = 1 Çevirme)</td><td>%39,74</td><td>0,33</td></tr>
-    <tr><td>AlphAvax Vercel App Özel Coin Analiz Bileti</td><td>%0,5</td><td>0</td></tr>
+    <tr><td>💎 50 ASTRA BÜYÜK İKRAMİYE</td><td>%0,03</td><td>50</td></tr>
+    <tr><td>25 ASTRA Nakit Ödül (25×)</td><td>%0,08</td><td>25</td></tr>
+    <tr><td>10 ASTRA Değerinde Odun</td><td>%0,16</td><td>10</td></tr>
+    <tr><td>👑 10 ASTRA İKRAMİYE (10×)</td><td>%0,76</td><td>10</td></tr>
+    <tr><td>10 ASTRA Değerinde Demir</td><td>%0,16</td><td>10</td></tr>
+    <tr><td>1 Anahtar (Pandora Kutusu açar)</td><td>%0,01</td><td>10</td></tr>
+    <tr><td>10 ASTRA Değerinde Buğday</td><td>%0,16</td><td>10</td></tr>
+    <tr><td>5 ASTRA Nakit Ödül (5×)</td><td>%0,41</td><td>5</td></tr>
+    <tr><td>10 Teçhizat Parçası</td><td>%0,27</td><td>4,5</td></tr>
+    <tr><td>🍀 Şans Sayacı: 3 ASTRA Garanti</td><td>8 boş çevirmeden sonra</td><td>3</td></tr>
+    <tr><td>2 ASTRA Nakit Ödül (2×)</td><td>%2,3</td><td>2</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Taş</td><td>%5,15</td><td>1</td></tr>
+    <tr><td>⚡ 1 ASTRA Değerinde Stamina</td><td>%10,52</td><td>1</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Kömür</td><td>%5,15</td><td>1</td></tr>
+    <tr><td>Bedelin Geri: 1 ASTRA Değerinde Şifalı Ot</td><td>%5,15</td><td>1</td></tr>
+    <tr><td>0,5 ASTRA Teselli Ödülü</td><td>%12,53</td><td>0,5</td></tr>
+    <tr><td>Amorti Çark Bileti (3 Adet = 1 Çevirme)</td><td>%53,11</td><td>0,33</td></tr>
+    <tr><td>🎟️ Piyango Bileti (1 çark hakkı)</td><td>%4,03</td><td>0</td></tr>
   </table></div>
   <h3>🎟️ Haftalık piyango</h3>
 <div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Bilet:</b> 1 ASTRA. Bedelin %98'i piyango kasasına, %2'si amorti kasasına. Hesap başına haftada en çok 100 bilet.</p><p><b>Çekiliş:</b> haftada TEK kazanan (Pazartesi 00:01). Şansın = senin biletlerin ÷ toplam bilet. Kazanan, biletlerine ödediğinin <b>2 katını</b> alır; biletleri yanar.</p><p><b>Kazanamayanların biletleri</b> yanmaz, sonraki haftaya devreder; ama her çekilişte ödenen değerleri %5 düşer (en çok yarıya kadar).</p><p><b>Kasa bitince:</b> kazanan kasada kalanı alır, amorti kasası kalan biletlere bölünür ve biletler kapanır; piyango sıfırdan dolar.</p></div>

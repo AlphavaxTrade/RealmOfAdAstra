@@ -218,7 +218,7 @@ const yeni = () => {
   const dilimler = GAME_CONFIG.CARNIVAL.WHEEL_REWARDS.filter((d) => d.type === 'amm_raw');
   const sik = dilimler.filter((d) => d.weight >= 500).map((d) => d.key).sort();
   assert.deepEqual(sik, ['coal', 'herb', 'stone'], 'sık gelen hammadde dilimleri yeni üç hammadde');
-  assert.equal(GAME_CONFIG.CARNIVAL.WHEEL_REWARDS.length, 15, '15 dilim korunur');
+  assert.equal(GAME_CONFIG.CARNIVAL.WHEEL_REWARDS.length, 19, '19 dilim (18 + Şans Sayacı)');
   ok('çark: yeni hammaddeler sık gelen dilimlerde, dilim sayısı aynı');
 }
 

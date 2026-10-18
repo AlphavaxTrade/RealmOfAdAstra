@@ -49,7 +49,7 @@ export function rewardArtSrc(r) {
   if (r.type === 'ada') return 'assets/ui/rw_ada.webp';
   if (r.type === 'bot_free') return 'assets/ui/bot.webp';
   if (r.type === 'ticket_shard') return 'assets/ui/rw_ticket.webp';
-  if (r.type === 'analysis_code') return 'assets/ui/rw_coupon.webp';
+  if (r.type === 'lottery_ticket') return 'assets/ui/rw_ticket.webp';
   if (r.type === 'key') return RES_ART.keys;
   if (r.key && RES_ART[r.key]) return RES_ART[r.key];
   return null;

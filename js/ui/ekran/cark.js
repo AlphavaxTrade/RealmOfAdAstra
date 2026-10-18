@@ -173,13 +173,14 @@ export function don({ tuvalKimligi, ibreKimligi, baslangic, hedef, sure = DONUS_
 // bedel: ödül tablosundaki değerlerin ölçüldüğü çevirme bedeli (config WHEEL_COST_ADA).
 export function donusIstatistigi(dilimler, bedel) {
   const toplam = dilimler.reduce((s, r) => s + (r.weight || 0), 0) || 1;
-  const parcaSansi = dilimler.filter((r) => r.type === 'ticket_shard').reduce((s, r) => s + r.weight / toplam, 0);
+  // Bilet parçası (3 = 1 çevirme) ve piyango bileti bedava çevirmedir: ödemeleri o çevirmenin ödülünden gelir
+  const bedava = dilimler.reduce((s, r) => s + (r.type === 'ticket_shard' ? r.weight / toplam / 3 : (r.type === 'lottery_ticket' ? r.weight / toplam : 0)), 0);
   const beklenen = dilimler
-    .filter((r) => r.type !== 'ticket_shard' && r.type !== 'bot_free')
+    .filter((r) => r.type !== 'ticket_shard' && r.type !== 'lottery_ticket' && r.type !== 'bot_free')
     .reduce((s, r) => s + (r.weight / toplam) * (r.valAda || 0), 0);
-  const donus = beklenen / (1 - parcaSansi / 3) / (bedel || 1) * 100;
+  const donus = beklenen / (1 - bedava) / (bedel || 1) * 100;
   const geri = dilimler
-    .filter((r) => (r.valAda || 0) >= (bedel || 1) && r.type !== 'bot_free')
+    .filter((r) => ((r.valAda || 0) >= (bedel || 1) && r.type !== 'bot_free') || r.type === 'lottery_ticket')
     .reduce((s, r) => s + r.weight / toplam, 0) * 100;
   return { donus: Math.round(donus), geri: Math.round(geri) };
 }

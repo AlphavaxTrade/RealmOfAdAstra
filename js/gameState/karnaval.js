@@ -1,8 +1,8 @@
 // Realm of AdAstra — GameStateManager yöntemleri: Karnaval (şans çarkı, coşku, ücretsiz oyuncu payı bilgisi)
 // Piyango js/gameState/piyango.js içindedir. Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 //
-// Çarkın parası: ASTRA ile çevrilen bedelin %80'i doğrudan Karnaval kasasına girer, ödüller o kasadan ödenir.
-// Eşya ödülleri (parça, hammadde, anahtar) kasanın parasıyla pazardan satın alınıp verilir; pazar yetmezse ödülün
+// Çarkın parası: ASTRA ile çevrilen bedelin %85'i doğrudan Karnaval kasasına girer, ödüller o kasadan ödenir.
+// Eşya ödülleri (parça, hammadde, anahtar, stamina için buğday) kasanın parasıyla pazardan satın alınıp verilir; pazar yetmezse ödülün
 // ASTRA karşılığı kasadan ödenir. Kasada yeterli para yoksa çark kapalıdır: hiçbir ödül yoktan ödenmez.
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
@@ -31,9 +31,9 @@ export const karnavalYontemleri = {
     return odenen;
   },
 
-  // Kasa en büyük ödülü karşılayamıyorsa çark geçici olarak kapalıdır
-  isCarnivalWheelOpen() {
-    const asgari = karnavalAyari().WHEEL_MIN_CARNIVAL_BALANCE || 5000;
+  // Kasa en büyük ödülü karşılayamıyorsa çark geçici olarak kapalıdır (çarpanlı çevirmede en büyük ödül de çarpanla büyür)
+  isCarnivalWheelOpen(carpan = 1) {
+    const asgari = (karnavalAyari().WHEEL_MIN_CARNIVAL_BALANCE || 5000) * carpan;
     const bakiye = (treasury && treasury.getPool) ? treasury.getPool('carnival') : 0;
     return { open: bakiye >= asgari, balance: bakiye, minBalance: asgari };
   },
@@ -72,6 +72,12 @@ export const karnavalYontemleri = {
     };
   },
 
+  // Şans Sayacı: art arda bedelini geri almayan çevirme sayısı (sınıra gelince sonraki çevirme garantili ödüldür)
+  getWheelPityInfo() {
+    const sinir = karnavalAyari().WHEEL_PITY?.STREAK ?? 8;
+    return { streak: Math.min(Number(this.state.wheelPity) || 0, sinir), limit: sinir };
+  },
+
   // Çark bedeli (ASTRA fiyat çarpanıyla)
   getWheelCostAda() {
     return this.adaPrice(karnavalAyari().WHEEL_COST_ADA || 100);
@@ -80,7 +86,7 @@ export const karnavalYontemleri = {
   // Dilim ağırlıklarıyla tek ödül seçer
   _carkOduluSec() {
     const dilimler = karnavalAyari().WHEEL_REWARDS;
-    const toplam = dilimler.reduce((s, r) => s + (r.weight || 1), 0);
+    const toplam = dilimler.reduce((s, r) => s + (r.weight ?? 0), 0);   // ağırlığı 0 olan dilimi (Şans Sayacı) zar seçemez
     let zar = Math.random() * toplam;
     for (const r of dilimler) {
       if (zar < r.weight) return r;
@@ -126,13 +132,23 @@ export const karnavalYontemleri = {
     };
   },
 
-  // paymentMethod: 'ada' | 'ticket' | hammadde anahtarı
-  spinCarnivalWheel(paymentMethod = 'ada') {
+  // Çarktan kazanılan bedava piyango biletleri (ödenen tutar 0 sayılır). lotteryTicketsPaid henüz yoksa mevcut biletlerin
+  // bedeliyle başlatılır; aksi hâlde piyango "bilet × bilet fiyatı" ile hesaplar ve ücretsiz bilet de ödenmiş sayılıp 2 katı alırdı.
+  _carkBedavaBilet(adet) {
+    if (this.state.lotteryTicketsPaid == null) this.state.lotteryTicketsPaid = (this.state.lotteryTickets || 0) * this.getLotteryRules().ticketPrice;
+    this.state.lotteryTickets = (this.state.lotteryTickets || 0) + adet;
+  },
+
+  // paymentMethod: 'ada' | 'ticket' | hammadde anahtarı. carpan: bedel ve ödemenin kaç katı olacağı (yalnız ASTRA ile > 1)
+  spinCarnivalWheel(paymentMethod = 'ada', carpan = 1) {
     const K = karnavalAyari();
-    const bedel = this.getWheelCostAda();
+    const c = Number(carpan) || 1;
+    if (!(K.WHEEL_MULTIPLIERS || [1]).includes(c)) return { success: false, message: 'Geçersiz çarpan!' };
+    if (c > 1 && paymentMethod !== 'ada') return { success: false, message: 'Çarpanlı çevirme yalnız ASTRA ile yapılır.' };
+    const bedel = this.getWheelCostAda() * c;
     const env = this.state.inventory;
 
-    const durum = this.isCarnivalWheelOpen();
+    const durum = this.isCarnivalWheelOpen(c);
     if (!durum.open) {
       return { success: false, wheelClosed: true, message: `🎪 Karnaval kasası yenileniyor (${tr(Math.floor(durum.balance))} / ${tr(durum.minBalance)} ASTRA). Pazar ve harcama komisyonlarıyla kasa dolunca çark yeniden açılacak.` };
     }
@@ -145,8 +161,8 @@ export const karnavalYontemleri = {
       }
       this.state.adAstraBalance -= bedel;
       this._onAdaSpent(bedel);
-      // Bedelin %80'i doğrudan Karnaval kasasına (ödüller buradan ödenir), %20'si her harcama gibi dağıtılır
-      const pay = Math.max(0, Math.min(1, K.WHEEL_CARNIVAL_SHARE ?? 0.8));
+      // Bedelin %85'i doğrudan Karnaval kasasına (ödüller buradan ödenir), kalanı her harcama gibi dağıtılır
+      const pay = Math.max(0, Math.min(1, K.WHEEL_CARNIVAL_SHARE ?? 0.85));
       if (pay > 0 && treasury.depositTo) treasury.depositTo('carnival', bedel * pay);
       globalPool.recordTokenSpend(bedel * (1 - pay));
     } else if (paymentMethod === 'ticket') {
@@ -198,10 +214,19 @@ export const karnavalYontemleri = {
     }
 
     // ── Ödül ──
-    const odul = this._carkOduluSec();
-    let ozetMetni = odul.name;
+    // Şans Sayacı doluysa bu çevirme garantili ödüldür (dilimlerdeki 'pity' dilimi); değilse zar atılır.
+    const dilimler = K.WHEEL_REWARDS;
+    const pitySinir = K.WHEEL_PITY?.STREAK ?? 8;
+    const pityDilimi = dilimler.find((d) => d.pity);
+    const pityTetik = !!pityDilimi && pitySinir > 0 && (this.state.wheelPity || 0) >= pitySinir;
+    const odul = pityTetik ? pityDilimi : this._carkOduluSec();
+    // Sayaç: bedelini (>= 1 ASTRA değeri) ya da piyango biletini geri almayan çevirme sayılır, aksi hâlde sıfırlanır
+    const bedeliGeriAldi = !!odul.pity || (odul.valAda || 0) >= (K.WHEEL_COST_ADA || 1) || odul.type === 'lottery_ticket';
+    this.state.wheelPity = bedeliGeriAldi ? 0 : (this.state.wheelPity || 0) + 1;
+
+    let ozetMetni = c > 1 ? `${c}× ${odul.name}` : odul.name;
     let geriAlimBilgisi = null;
-    let kazanc = { astra: 0, yedek: false, siloSatilan: 0, siloAstra: 0, parcaBirikti: false, kod: null };
+    let kazanc = { astra: 0, yedek: false, siloSatilan: 0, siloAstra: 0, parcaBirikti: false, yeniBilet: 0, stamina: 0 };
 
     const geriAlimUygula = (cfg) => {
       const sonuc = this._carkGeriAlim(cfg);
@@ -212,29 +237,29 @@ export const karnavalYontemleri = {
 
     if (odul.type === 'ada') {
       // Havadan basılmaz: doğrudan Karnaval kasasından karşılanır
-      const odenen = this._drawCarnival(this.adaPrice(odul.amount || 0));
+      const odenen = this._drawCarnival(this.adaPrice((odul.amount || 0) * c));
       this.state.adAstraBalance += odenen;
       this._onAdaEarned(odenen);
       ozetMetni = `${tr(odenen)} ASTRA (🏛️ Karnaval Hazinesinden Karşılandı)`;
       kazanc.astra = odenen;
     } else if (odul.key === 'fragments') {
-      const adet = odul.amount || 1;
+      const adet = (odul.amount || 1) * c;
       const eski = ammMarket.getPrice('fragments') || 45.0;
       geriAlimUygula({
         anahtar: 'fragments', adet, eskiFiyat: eski, basamak: 2,
-        yedekDeger: odul.valAda || Math.round(adet * eski),
+        yedekDeger: (odul.valAda || Math.round((odul.amount || 1) * eski)) * c,
         etiket: `${adet} Teçhizat Parçası`, ad: 'Teçhizat Parçası', simge: '🧩',
         teslim: (n) => { env.fragments = (env.fragments || 0) + n; }
       });
     } else if (odul.type === 'amm_raw' || RES_KEYS().includes(odul.key)) {
       const anahtar = odul.key;
       const eski = ammMarket.getPrice(anahtar) || 1.0;
-      const adet = odul.amount || Math.max(1, Math.round((odul.adaVal || 50) / eski));
+      const adet = odul.amount ? odul.amount * c : Math.max(1, Math.round(((odul.adaVal || 50) * c) / eski));
       const hamAd = kaynakAdi(anahtar);
       const meta = (GAME_CONFIG.RESOURCE_META || {})[anahtar] || {};
       geriAlimUygula({
         anahtar, adet, eskiFiyat: eski, basamak: 4,
-        yedekDeger: odul.adaVal || odul.valAda || 50,
+        yedekDeger: (odul.adaVal || odul.valAda || 50) * c,
         etiket: `${tr(adet)} ${hamAd}`, yedekEtiket: odul.name, ad: hamAd, simge: meta.icon || '📦',
         teslim: (n) => {
           // Silo doluysa sığmayan kısım kaybolmaz, pazarda satılıp ASTRA olarak verilir
@@ -242,38 +267,61 @@ export const karnavalYontemleri = {
           return { satilan: depo.soldQty, astra: depo.adaGained };
         }
       });
+    } else if (odul.type === 'stamina_buy') {
+      // Kasa pazardan buğday alıp YAKAR (oyuncunun buğdayla staminasını doldurması gibi: buğday yakımı korunur), oyuncu stamina kazanır.
+      // Depo neredeyse doluysa (ödülün yarısından azı sığıyorsa) aynı değer nakit ödenir.
+      const fiyat = ammMarket.getPrice('wheat') || 0.009;
+      const bugdayBasi = GAME_CONFIG.WHEAT_PER_STAMINA || 1;
+      const deger = (odul.adaVal || 1) * c;
+      const esdeger = deger / fiyat / bugdayBasi;
+      const bos = Math.max(0, this.getMaxStamina() - (this.state.stamina || 0));
+      const stam = Math.floor(Math.min(esdeger, bos));
+      if (stam < 1 || stam < esdeger * 0.5) {
+        const odenen = this._drawCarnival(deger);
+        this.state.adAstraBalance += odenen;
+        this._onAdaEarned(odenen);
+        ozetMetni = `Stamina deposun dolu olduğu için ${tr(odenen)} ASTRA (🏛️ Karnaval Hazinesinden)`;
+        kazanc.astra = odenen;
+      } else {
+        geriAlimUygula({
+          anahtar: 'wheat', adet: Math.ceil(stam * bugdayBasi), eskiFiyat: fiyat, basamak: 4,
+          yedekDeger: deger * (stam / esdeger),
+          etiket: `+${tr(stam)} ⚡ Stamina`, yedekEtiket: `+${tr(stam)} ⚡ Stamina`, ad: 'Stamina (buğday yakıldı)', simge: '⚡',
+          teslim: (n) => {
+            globalPool.recordResourceBurn('wheat', n);   // yakım dünya sayacına yazılır; katkı puanı verilmez (bedeli kasa ödedi)
+            this.state.stamina = Math.min(this.getMaxStamina(), (this.state.stamina || 0) + n / bugdayBasi);
+            kazanc.stamina = Math.floor(n / bugdayBasi);
+          }
+        });
+      }
     } else if (odul.type === 'key' || odul.id === 'box_key') {
-      const adet = odul.amount || 1;
+      const adet = (odul.amount || 1) * c;
       const eski = ammMarket.getPrice('keys') || 1000.0;
       geriAlimUygula({
         anahtar: 'keys', adet, eskiFiyat: eski, basamak: 1,
-        yedekDeger: odul.valAda || Math.round(adet * eski),
-        etiket: `${adet} Pandora Kutusu Anahtarı`, ad: 'Arena Anahtarı', simge: '🔑',
+        yedekDeger: (odul.valAda || Math.round((odul.amount || 1) * eski)) * c,
+        etiket: `${adet} Anahtar`, ad: 'Anahtar', simge: '🔑',
         teslim: (n) => { this.state.arenaKeys = (this.state.arenaKeys || 0) + n; }
       });
     } else if (odul.type === 'bot_free') {
       this.buyTavernaAutomationBot(true, odul.hours || 24);
     } else if (odul.type === 'scroll') {
       env[odul.key] = (env[odul.key] || 0) + odul.amount;
+    } else if (odul.type === 'lottery_ticket') {
+      this._carkBedavaBilet(c);
+      kazanc.yeniBilet = c;
+      ozetMetni = `${c} Piyango Bileti (her biri bir çark hakkı)`;
     } else if (odul.type === 'ticket_shard') {
       // 3 amorti bileti = 1 çark çevirme / piyango bileti
-      this.state.wheelTicketShards = (this.state.wheelTicketShards || 0) + 1;
-      if (this.state.wheelTicketShards >= 3) {
-        this.state.wheelTicketShards -= 3;
-        // Ücretsiz bilet: ödenen tutar 0 sayılır. lotteryTicketsPaid henüz yoksa mevcut biletlerin bedeliyle başlatılır;
-        // aksi hâlde piyango "bilet × bilet fiyatı" ile hesaplar ve ücretsiz bilet de ödenmiş sayılıp 2 katı alırdı.
-        if (this.state.lotteryTicketsPaid == null) this.state.lotteryTicketsPaid = (this.state.lotteryTickets || 0) * this.getLotteryRules().ticketPrice;
-        this.state.lotteryTickets = (this.state.lotteryTickets || 0) + 1;
-        ozetMetni += ' (🎉 3 Parça Birikti: +1 Çark Çevirme / Piyango Bileti Kazanıldı!)';
+      this.state.wheelTicketShards = (this.state.wheelTicketShards || 0) + c;
+      const yeni = Math.floor(this.state.wheelTicketShards / 3);
+      if (yeni > 0) {
+        this.state.wheelTicketShards -= yeni * 3;
+        this._carkBedavaBilet(yeni);
+        ozetMetni += ` (🎉 ${yeni * 3} Parça Birikti: +${yeni} Çark Çevirme / Piyango Bileti Kazanıldı!)`;
         kazanc.parcaBirikti = true;
+        kazanc.yeniBilet = yeni;
       }
-    } else if (odul.type === 'analysis_code') {
-      const kod = `ALPHAVAX-COIN-${Date.now().toString(36).toUpperCase()}`;
-      if (!Array.isArray(this.state.redeemCodes)) this.state.redeemCodes = [];
-      this.state.redeemCodes.push({ code: kod, type: 'coin_analysis', created: Date.now(), status: 'pending_integration' });
-      // Dürüst açıklama: kod henüz AlphavaxTrade sitesinde geçmiyor, sunucu bağlantısından sonra etkinleşecek
-      ozetMetni = `🎫 Coin Analiz Kuponu: ${kod} — Envanterinde saklandı. AlphavaxTrade sitesiyle bağlantı kurulduğunda kullanılabilecek (şu an sitede geçerli değil).`;
-      kazanc.kod = kod;
     }
 
     this.saveState();
@@ -286,11 +334,14 @@ export const karnavalYontemleri = {
     } else {
       mesaj = `🎉 Tebrikler! Çarktan kazandın: ${ozetMetni}`;
     }
+    if (pityTetik) mesaj += ' 🍀 (Şans Sayacı doldu: garantili ödül)';
 
     return {
       success: true,
       reward: odul,
       slice: odul,
+      multiplier: c,
+      pity: { triggered: pityTetik, ...this.getWheelPityInfo() },
       rewardSummaryText: ozetMetni,
       burnedInfo,
       buybackInfo: geriAlimBilgisi,
