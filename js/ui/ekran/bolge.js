@@ -1,6 +1,7 @@
 // Realm of AdAstra — Hammadde bölgesi ekranı: altı bölgenin (tarla, taş ocağı, orman, kömür, maden, ot bahçesi) tek şablonu.
 // secenek.kaynak: hammadde anahtarı. Sefer başlatma / toplama, üretim hakkı ve alet onarımı.
 import { ekranKaydet, kap, kart, satir, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, sure, tam, astra, sayi, esc, yenile } from './cekirdek.js';
+import { planBedeli, hizliAlVeYap } from './bilesik.js';
 
 const BOLGE_ADLARI = {
   wheat: 'Güneş Tarlası ve Değirmen', stone: 'Taş Ocağı', wood: 'Zümrüt Ormanı ve Oduncu',
@@ -72,6 +73,7 @@ const ekran = {
     const dayanikli = aracDurumu.durability != null ? aracDurumu.durability : bolge.aletEnFazla;
     const dayanikliYuzde = Math.round((dayanikli / bolge.aletEnFazla) * 100);
     const onarim = gs.calculateRepairCost(bolge.aletKimligi) || { woodCost: 0, ironCost: 0, adAstraCost: 0, missingDurability: 0 };
+    const aletPlani = onarim.missingDurability > 0 ? gs.getQuickBuyPlan(`tool:${bolge.aletKimligi}`) : null;
     const sefer = durum.activeExpeditions[bolge.key];
     const saat = gs.getExpeditionDurationHours();
     const dakika = gs.getExpeditionDurationMinutes();
@@ -117,6 +119,7 @@ const ekran = {
         icerik: satir('Bedel', onarimBedeli)
           + not(`Her aşınan dakika için odun ve demir (dakikalık üretimin %25'i, aletlere bölünmüş) ile bu malzemenin pazar değerinin %30'u kadar ASTRA gerekir. Eksik: ${tam(onarim.missingDurability)} dk.`)
           + dugme({ e: 'onar', metin: onarim.missingDurability <= 0 ? `${esc(bolge.aletAdi)} tamamen sağlam` : `${esc(bolge.aletAdi)} onar`, veri: { alet: bolge.aletKimligi }, devreDisi: onarim.missingDurability <= 0, genis: true })
+          + (aletPlani && aletPlani.items.length ? dugme({ e: 'onarHizli', metin: `⚡ Eksikleri al ve onar · ${planBedeli(aletPlani)}`, ton: 'iyi', veri: { alet: bolge.aletKimligi }, devreDisi: !aletPlani.ok, genis: true, ipucu: aletPlani.ok ? 'Eksik odun ve demiri pazardan alıp aleti onarır' : aletPlani.reason }) : '')
       })
     ].join(''));
   },
@@ -141,6 +144,9 @@ const ekran = {
     onar(b, el) {
       const r = b.gameState.repairTool(el.dataset.alet);
       b.bildir(r.message, r.success ? 'success' : 'error');
+    },
+    async onarHizli(b, el) {
+      await hizliAlVeYap(b, `tool:${el.dataset.alet}`, { baslik: 'Eksikler alınıp alet onarılsın mı?', tamam: 'Al ve onar', yap: () => b.gameState.repairTool(el.dataset.alet) });
     },
     parsomen(b) {
       const r = b.gameState.useScroll('scroll_stamina', null);

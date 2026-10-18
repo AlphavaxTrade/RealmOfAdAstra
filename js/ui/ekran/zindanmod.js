@@ -5,6 +5,7 @@
 // sayılar: js/config.js ZINDAN_MODLARI, js/economy/ordu-hakki.js. Bu dosya yalnız gösterir ve eylemleri çağırır.
 import { ekranKaydet, kap, kart, katli, satir, cubukSatiri, dugme, dugmeler, uyari, not, etiket, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
+import { planBedeli } from './bilesik.js';
 import { askerHakki, katOf } from '../../economy/ordu-hakki.js';
 
 const AD = { wood: ['🪵', 'Odun'], iron: ['⛓️', 'Demir'], coal: ['⚫', 'Kömür'], stone: ['🪨', 'Taş'], wheat: ['🌾', 'Buğday'], herb: ['🌿', 'Şifalı ot'] };
@@ -45,6 +46,7 @@ function gecisKarti(b, gs, bilgi) {
       + (g.kalan[k] > 0 ? dugme({ e: 'katki', metin: `Ver (${tam(verilebilir)})`, devreDisi: verilebilir <= 0, veri: { k }, ipucu: 'Envanterindekinden, kalan ihtiyacı aşmayacak kadarını yakar' }) : '') + '</div>';
   }).join('');
   const verilebilirVar = Object.keys(g.gerek).some((k) => g.kalan[k] > 0 && Math.floor(Number(env[k]) || 0) > 0);
+  const gecisPlani = g.hammaddeTamam ? null : gs.getQuickBuyPlan('modgate');
   const astraDurumu = g.astraYeter ? `Bakiyen yeter (${astra(Math.floor(gs.state.adAstraBalance))} ASTRA).` : `Bakiyen yetmiyor (${astra(Math.floor(gs.state.adAstraBalance))} ASTRA).`;
   return kart({
     baslik: `${g.hedefSimge} Sonraki mod: ${esc(g.hedefAd)}`, vurgu: g.yapilabilir ? 'iyi' : '',
@@ -52,6 +54,7 @@ function gecisKarti(b, gs, bilgi) {
       + uyari('🔥 Geçiş bedelindeki hammadde YAKILIR (geri dönmez): silo sınırına takılmaman için günlere yayarak katkı verebilirsin.', 'uyari')
       + satirlar
       + satir('💰 ASTRA bedeli (son adımda)', `${astra(g.astra)} ASTRA`, g.astraYeter ? 'iyi' : 'kotu') + `<div class="ek-kucuk">${astraDurumu}</div>`
+      + (gecisPlani && gecisPlani.items.length ? dugme({ e: 'katkiHizli', metin: `⚡ Eksikleri al ve ver · ${planBedeli(gecisPlani)}`, ton: 'iyi', devreDisi: !gecisPlani.ok, genis: true, ipucu: gecisPlani.ok ? 'Eksik hammaddeyi pazardan alıp geçişe yakar' : gecisPlani.reason }) : '')
       + dugmeler(
         dugme({ e: 'katkiHepsi', metin: 'Elindeki hepsini ver', devreDisi: !verilebilirVar || g.hammaddeTamam, ipucu: 'Her hammaddeden, kalan ihtiyacı aşmayacak kadarını yakar' }),
         dugme({ e: 'gec', metin: `${g.hedefSimge} ${esc(g.hedefAd)} moda geç`, ton: 'birincil', devreDisi: !g.yapilabilir })
@@ -93,6 +96,42 @@ const ekran = {
       }
       if (!Object.keys(miktar).length) return false;
       bildirSonuc(b, await b.gameState.contributeToDungeonGate(miktar));
+      return undefined;
+    },
+    // Eksik hammaddeyi pazardan alıp hemen katkı olarak yakar; silo kalanın hepsini tutamazsa tur tur ilerler (al, yak, tekrar)
+    async katkiHizli(b) {
+      const gs = b.gameState;
+      const plan = gs.getQuickBuyPlan('modgate');
+      if (!plan.items.length) return false;
+      if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+      const tamam = await onay({
+        baslik: 'Eksik hammadde alınıp geçişe verilsin mi?',
+        metin: `${liste}\nAlım ~${astra(plan.total)} ASTRA. Hammadde YAKILIR (geri dönmez). Son adımdaki ${astra(plan.extraAda)} ASTRA geçişte ayrıca düşer.`,
+        tamam: 'Al ve ver', tehlikeli: true
+      });
+      if (!tamam) return false;
+      for (let tur = 0; tur < 60; tur++) {
+        const g = gs.getDungeonModeInfo().gecis;
+        const kalanlar = g ? Object.keys(g.kalan).filter((k) => g.kalan[k] > 0) : [];
+        if (!kalanlar.length) break;
+        const verilecek = {};
+        for (const k of kalanlar) {
+          const elde = Math.floor(Number(gs.state.inventory[k]) || 0);
+          const oda = Math.max(0, Math.floor((gs.getWarehouseCapacity()[k] || 0) - elde));
+          const al = Math.min(Math.max(0, g.kalan[k] - elde), oda);
+          if (al > 0) {
+            const r = await gs.marketBuy(k, al);
+            if (!r || !r.success) { b.bildir(`${k} alınamadı: ${(r && r.message) || ''}`, 'error'); return false; }
+          }
+          const q = Math.min(g.kalan[k], Math.floor(Number(gs.state.inventory[k]) || 0));
+          if (q > 0) verilecek[k] = q;
+        }
+        if (!Object.keys(verilecek).length) { b.bildir('Silo çok küçük: önce siloyu yükselt.', 'warning'); return false; }
+        const r = await gs.contributeToDungeonGate(verilecek);
+        if (!r || !r.success) { b.bildir((r && r.message) || 'Katkı verilemedi.', 'error'); return false; }
+      }
+      b.bildir('🔥 Geçiş için gereken hammadde tamamlandı.', 'success');
       return undefined;
     },
     async gec(b) {

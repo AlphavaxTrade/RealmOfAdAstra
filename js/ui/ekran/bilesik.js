@@ -61,6 +61,27 @@ export async function hizliAl(b, kind) {
   return { alinan, hata: false };
 }
 
+// Tek adımlık işlerde (köy evi, roket, alet tamiri) "eksikleri al ve yap": plan çıkarılır, onaylatılır, eksikler pazardan alınır, sonra iş yapılır.
+// yap: eksikler alındıktan sonra çağrılan işlem; { success, message } döndürmeli. Döndürür: { yapildi, hata }
+export async function hizliAlVeYap(b, kind, { baslik, tamam, yap }) {
+  const gs = b.gameState;
+  const plan = gs.getQuickBuyPlan(kind);
+  if (plan.items.length) {
+    if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { yapildi: false, hata: true }; }
+    const satirlar = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+    const ek = plan.extraAda > 0 ? ` + işin kendi bedeli ${astra(plan.extraAda)} ASTRA` : '';
+    const onayli = await onay({ baslik, metin: `${satirlar}\nAlım ${astra(plan.total)} ASTRA${ek}`, tamam });
+    if (!onayli) return { yapildi: false, hata: false };
+    for (const it of plan.items) {
+      const r = await gs.marketBuy(it.res, it.qty);
+      if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return { yapildi: false, hata: true }; }
+    }
+  }
+  const sonuc = await yap();
+  if (sonuc && sonuc.message) b.bildir(sonuc.message, sonuc.success ? 'success' : 'error');
+  return { yapildi: !!(sonuc && sonuc.success), hata: !(sonuc && sonuc.success) };
+}
+
 // "Eksik otu al ve iyileştir" düğmesinin toplam bedeli: pazardan ot alımı + iyileştirme ASTRA'sı. Kışla, Şifahane ve Zindan AYNI yazıyı kullanır
 // (eskiden biri tam sayıya yuvarlıyor, öbürü kuruşlu yazıyordu: 6 ASTRA ile 5,51 ASTRA).
 export const planBedeli = (plan) => `${astra((Number(plan.total) || 0) + (Number(plan.extraAda) || 0))} ASTRA`;

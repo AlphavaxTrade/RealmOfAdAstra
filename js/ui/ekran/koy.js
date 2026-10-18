@@ -1,6 +1,6 @@
 // Realm of AdAstra — Köy Evleri ekranı: nüfus, buğday ihtiyacı, emek puanı ve yeni ev yapma.
 import { ekranKaydet, kap, kart, not, uyari, dugme, izgara, hucre, satir, tam, sayi, esc } from './cekirdek.js';
-import { kaynakAdi } from './bilesik.js';
+import { kaynakAdi, planBedeli, hizliAlVeYap } from './bilesik.js';
 
 const ekran = {
   id: 'koy',
@@ -40,11 +40,13 @@ const ekran = {
     });
 
     const neden = !koy.canBuildHouse && koy.houseLimitReason ? `${koy.houseLimitReason}.` : (!yeter ? 'Malzeme eksik.' : '');
+    const plan = !yeter && koy.canBuildHouse ? gs.getQuickBuyPlan('house') : null;
     const yeniEv = kart({
       baslik: '🏗️ Yeni ev',
       rozet: `<span class="ek-etiket">${koy.houses} / ${koy.maxHouses} (hesap seviyesi kadar)</span>`,
       icerik: satir('Bedel', bedelMetni.replace(/<[^>]*>/g, ''))
         + dugme({ e: 'evYap', metin: `🏘️ Ev yap (+${evBasina} köylü kapasitesi)`, ton: 'iyi', devreDisi: !(koy.canBuildHouse && yeter), genis: true })
+        + (plan && plan.items.length ? dugme({ e: 'evHizli', metin: `⚡ Eksikleri al ve ev yap · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true, ipucu: plan.ok ? 'Eksik malzemeyi pazardan alıp evi yapar' : plan.reason }) : '')
         + (neden ? `<p class="ek-kucuk">${esc(neden)}</p>` : '')
     });
     return kap(durum + yeniEv);
@@ -54,6 +56,9 @@ const ekran = {
     evYap(b) {
       const r = b.gameState.buildHouse();
       b.bildir(r.message, r.success ? 'success' : 'error');
+    },
+    async evHizli(b) {
+      await hizliAlVeYap(b, 'house', { baslik: 'Eksikler alınıp ev yapılsın mı?', tamam: 'Al ve ev yap', yap: () => b.gameState.buildHouse() });
     }
   }
 };

@@ -50,20 +50,24 @@ const ekran = {
     const gs = b.gameState;
     const envanter = gs.state.inventory || {};
     const kapasite = gs.getWarehouseCapacity();
-    const ambarlar = b.GAME_CONFIG.RESOURCE_KEYS.map((k) => {
+    // Teçhizat parçası da siloda yer tutar (pazardan alırken bu sınır aşılamaz), o yüzden altı hammaddenin yanında gösterilir
+    const ambarlar = [...b.GAME_CONFIG.RESOURCE_KEYS, 'fragments'].map((k) => {
       const mevcut = Math.floor(Number(envanter[k]) || 0);
       const kapasiteDeger = Number(kapasite[k]) || 0;
       const yuzde = kapasiteDeger > 0 ? Math.min(100, (mevcut / kapasiteDeger) * 100) : 0;
-      const renk = (b.GAME_CONFIG.RESOURCE_META[k] || {}).color || '';
+      const parca = k === 'fragments';
+      const renk = parca ? '#a78bfa' : (b.GAME_CONFIG.RESOURCE_META[k] || {}).color || '';
+      const simgeHtml = parca ? '🧩' : kaynakSimgesi(b, k);
+      const ad = parca ? 'Teçhizat parçası' : kaynakAdi(b, k);
       return `<div class="ek-ambar">
-        <div class="ek-ambar-ust">${simge(kaynakSimgesi(b, k), true)}<span class="ek-ambar-ad">${kaynakAdi(b, k)}</span><b>${esc(tam(mevcut))} / ${esc(tam(kapasiteDeger))}</b></div>
+        <div class="ek-ambar-ust">${simge(simgeHtml, true)}<span class="ek-ambar-ad">${ad}</span><b>${esc(tam(mevcut))} / ${esc(tam(kapasiteDeger))}</b></div>
         ${cubuk(yuzde, { renk, ton: yuzde >= 99.5 ? 'dolu' : '' })}
       </div>`;
     });
     return kap([
       kart({
         baslik: `📦 Silo seviye ${gs.state.warehouseLevel}`,
-        icerik: not('Siloyu yükseltince altı hammaddenin de kapasitesi büyür. Yükseltmek için tüm ambarlar en az %80 dolu olmalı; bedel kapasitenin yarısı kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır.')
+        icerik: not('Siloyu yükseltince altı hammaddenin ve teçhizat parçasının kapasitesi büyür; pazardan bu sınırın üstünde alım yapılamaz. Yükseltmek için tüm ambarlar en az %80 dolu olmalı; bedel kapasitenin yarısı kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır.')
       }),
       kart({ baslik: 'Ambarlar', icerik: `<div class="ek-ambarlar">${ambarlar.join('')}</div>` }),
       yukseltmeBolumu(b)

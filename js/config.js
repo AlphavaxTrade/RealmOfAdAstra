@@ -1639,6 +1639,15 @@ export const GAME_CONFIG = {
         `Anahtar kaynağı değişti: Kolezyum haftalık sıralamasında artık ilk 3 oyuncunun her biri 1 anahtar kazanır (eskiden yalnız 1.). Anahtar havadan çıkıyor, arena kasasından ASTRA ödenmiyor; değeri oyuncuların ilan fiyatı belirler. Şans Çarkından da anahtar çıkmıyor (çarkta 17 dilim + Şans Sayacı kaldı, 0,5 ASTRA teselli ödülü bu payı aldı; toplam şans aynı).`,
         `Kaldırılan iki havuzdaki ASTRA kaybolmadı: yarısı Karnaval ödül havuzuna, yarısı pazar geri alım kasasına girdi. Eldeki kutu ve anahtarlar korunur; mevcut kutuyu elindeki anahtarla yine açarsın.`
       ]
+    },
+    {
+      version: 'v1.65',
+      title: '⚡ Her Yerde "Eksikleri Al"; Silo Parçayı Gösteriyor',
+      date: '19 Ekim 2026',
+      changes: [
+        `Malzemen yetmediğinde artık şu yerlerde de tek dokunuşla "⚡ Eksikleri al ve ...": Köy evleri (ev yap), Uzay Limanı (roketi yap), hammadde bölgelerinde alet tamiri (odun + demir) ve Zindan modunda geçiş için gereken hammaddenin katkısı. Eksik malzeme pazardan alınır, bedel (alım + işin kendi ASTRA'sı) onay ekranında yazar. Geçiş katkısında silo hepsini birden tutamıyorsa al-yak-tekrar şeklinde tur tur ilerler.`,
+        `Silo ekranında artık Teçhizat parçası satırı da var (doluluk / kapasite). Parçanın silo sınırı vardı ama ekranda görünmüyordu; pazardan çok parça almaya çalışınca "Silo kapasitesi aşılamaz" uyarısı neden geldiğini göstermiyordu. Parça kapasitesi silo seviyesiyle büyür.`
+      ]
     }
   ],
 

@@ -79,7 +79,8 @@ export const pazarYontemleri = {
   /**
    * ⚡ Hızlı al planı: seviye atlama ('levelup'), silo yükseltme ('warehouse'), teçhizat dövme
    * ('craft:<yuva>') ya da cephanelikteki bir eşyanın geliştirilmesi ('upgrade:<eşya sırası>') ve onarımı ('repair:<eşya sırası>',
-   * 'repairall'; sıra getAllArmoryEquipmentList() içindeki konumdur) için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
+   * 'repairall'; sıra getAllArmoryEquipmentList() içindeki konumdur), iyileştirme ('heal', 'heal:<sıra>'), köy evi ('house'), roket ('rocket'),
+   * alet tamiri ('tool:<alet>') ve zindan modu geçişinin kalan hammaddesi ('modgate') için eksik kaynaklar ve pazar bedeli. ok = ASTRA hem bu alıma hem işin kendi
    * ASTRA bedeline (%3 payla) yetiyor, silo bu miktarı alıyor ve XP tamam.
    */
   getQuickBuyPlan(kind) {
@@ -150,6 +151,37 @@ export const pazarYontemleri = {
       hedef = { herb: iyilestirme.totalHerbs };
       ekAstra = Number(iyilestirme.totalAda) || 0;
       kapasitesiz = true;   // tahmin: iyileştirme tur tur yapılır (ekran/bilesik.js hizliIyilestir), ot hepsi birden siloda durmak zorunda değil
+    } else if (kind === 'house') {
+      // Köy evi: yalnız hammadde (odun, taş, demir); ev sayısı hesap seviyesini geçemez
+      const koy = this.getVillageInfo();
+      if (!koy.nextHouseCost) return { ok: false, items: [], reason: koy.houseLimitReason || 'Daha fazla ev yapılamaz.' };
+      if (!koy.canBuildHouse) return { ok: false, items: [], reason: `${koy.houseLimitReason || 'Ev sınırı'}.` };
+      hedef = { ...koy.nextHouseCost };
+    } else if (kind === 'rocket') {
+      // Roket görevi: parçaların hammaddeleri pazardan, 'adAstra' parçası ASTRA bedeli olarak eklenir
+      const roket = this.getRocketStatus();
+      if (roket.ready) return { ok: false, items: [], reason: 'Roket zaten hazır.' };
+      if (!roket.levelOk) return { ok: false, items: [], reason: `Hesap seviyesi en az ${roket.minLevel} olmalı.` };
+      hedef = {};
+      for (const p of roket.parts) {
+        if (p.key === 'adAstra') ekAstra = Number(p.need) || 0; else hedef[p.key] = p.need;
+      }
+    } else if (String(kind).startsWith('tool:')) {
+      // tool:<alet kimliği> → alet tamiri (odun + demir + ASTRA)
+      const bedel = this.calculateRepairCost(String(kind).slice(5));
+      if (!bedel) return { ok: false, items: [], reason: 'Alet bulunamadı.' };
+      if (!(bedel.missingDurability > 0)) return { ok: false, items: [], reason: 'Alet zaten sağlam.' };
+      hedef = { wood: bedel.woodCost, iron: bedel.ironCost };
+      ekAstra = Number(bedel.adAstraCost) || 0;
+    } else if (kind === 'modgate') {
+      // Zindan modu geçişi: hammadde katkısının KALAN kısmı (verilenler zaten yakıldı) + son adımdaki ASTRA bedeli.
+      // Katkı tur tur verilir (ekran/zindanmod.js hizliModGecis), hepsi birden siloda durmak zorunda değil.
+      const bilgi = this.getDungeonModeInfo();
+      if (!bilgi.gecis) return { ok: false, items: [], reason: 'Zaten en yüksek moddasın.' };
+      if (!bilgi.bitti) return { ok: false, items: [], reason: `Önce ${bilgi.ad} modun son canavarını yenmelisin.` };
+      hedef = Object.fromEntries(Object.entries(bilgi.gecis.kalan).filter(([, v]) => v > 0));
+      ekAstra = Number(bilgi.gecis.astra) || 0;
+      kapasitesiz = true;
     } else {
       return { ok: false, items: [], reason: 'Geçersiz.' };
     }

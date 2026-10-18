@@ -1,6 +1,7 @@
 // Realm of AdAstra — Uzay Limanı ekranı: Universe'e hazırlık, roket görevi ve Hazırlık Deposu (Yük İskelesi).
 import { ekranKaydet, kap, kart, not, uyari, dugme, izgara, hucre, cubukSatiri, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
+import { planBedeli, hizliAlVeYap } from './bilesik.js';
 
 const ASAMALAR = [
   'Aşama 0: Realm (Universe kapalı)',
@@ -54,12 +55,14 @@ const ekran = {
         ])
     });
 
+    const roketPlani = !roket.ready && roket.levelOk && !roket.partsOk ? gs.getQuickBuyPlan('rocket') : null;
     const parcalar = roket.parts.map((p) => `<div class="ek-satir ${p.ok ? 'is-iyi' : 'is-kotu'}"><span>${esc(p.icon)} ${esc(p.name)}</span><b>${esc(tam(p.have))} / ${esc(tam(p.need))}</b></div>`).join('');
     const rampa = kart({
       baslik: '🛠️ Roket Rampası',
       rozet: `<span class="ek-etiket">${roket.ready ? '🏅 Roket hazır' : (roket.levelOk ? 'parçalar' : `seviye ${roket.minLevel} gerekli`)}</span>`,
       icerik: parcalar
         + dugme({ e: 'roket', metin: '🚀 Roketi yap', ton: 'iyi', devreDisi: !roket.canBuild, genis: true })
+        + (roketPlani && roketPlani.items.length ? dugme({ e: 'roketHizli', metin: `⚡ Eksikleri al ve roketi yap · ${planBedeli(roketPlani)}`, ton: 'iyi', devreDisi: !roketPlani.ok, genis: true, ipucu: roketPlani.ok ? 'Eksik hammaddeyi pazardan alıp roketi yapar' : roketPlani.reason }) : '')
         + (roket.reason && !roket.ready ? `<p class="ek-kucuk">${esc(roket.reason)}</p>` : '')
         + (roket.ready ? uyari(`Roket ${new Date(roket.builtAt).toLocaleDateString('tr-TR')} tarihinde hazırlandı; Universe'e geçiş kilidi burada açılacak.`, 'iyi') : '')
     });
@@ -70,6 +73,9 @@ const ekran = {
     roket(b) {
       const r = b.gameState.buildRocket();
       b.bildir(r.message, r.success ? 'success' : 'error');
+    },
+    async roketHizli(b) {
+      await hizliAlVeYap(b, 'rocket', { baslik: 'Eksikler alınıp roket yapılsın mı?', tamam: 'Al ve roketi yap', yap: () => b.gameState.buildRocket() });
     },
     depoKoy(b, el) {
       const k = el.dataset.res;
