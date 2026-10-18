@@ -183,7 +183,7 @@ const ekran = {
       dusmanKarti(b, m, secili, terms),
       ordu(b, secenek, secili),
       `<div class="ek-eylem-cubugu">
-        ${parsomen > 0 ? dugme({ e: 'parsomen', metin: `📜 Parşömenle iyileştir (${parsomen})`, ipucu: 'Bir askeri +10 can iyileştirir' }) : ''}
+        ${parsomen > 0 ? dugme({ e: 'parsomen', metin: `📜 Parşömenle iyileştir (${parsomen})`, ipucu: 'Bir askeri +4 can iyileştirir' }) : ''}
         ${dugme({ e: 'vazgec', metin: '🏳️ Vazgeç' })}
         ${dugme({ e: 'basla', ton: 'iyi', devreDisi: baslamaOlmaz, metin: esc(baslaYazi) })}
       </div>`

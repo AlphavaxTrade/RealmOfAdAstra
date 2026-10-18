@@ -80,7 +80,9 @@ export const GAME_CONFIG = {
   // can başına ADA_PER_HP (× oyun içi fiyat çarpanı), harcama gibi dağıtılır. 5'ten 2'ye inmesi aynı can için 2,5 kat ot yakar:
   // scripts/model/hammadde_kullanim.mjs'te şifalı ot talebi / tam üretim Sv.5'te 0,58 → 0,64, Sv.10'da 0,48 → 0,54 (hedef bant
   // 0,45–0,95). Kendiliğinden (24 saat) iyileşme buğdayla kalır (SOLDIER_PASSIVE_HEAL).
-  SIFAHANE: { HP_PER_HERB: 2, ADA_PER_HP: 0.01 },
+  // PARSOMEN_CAN: Ordu İyileştirme Parşömeninin ekrandaki (savaş ölçeği) can iyileştirmesi = 2 şifalı otun karşılığı, ASTRA harcamadan.
+  // Pazar fiyatı (0,30) bu iyileştirmeyi ota göre pahalı yapar; amaç hemen iyileştirmenin ana yolunun şifalı ot (yakım) kalması.
+  SIFAHANE: { HP_PER_HERB: 2, ADA_PER_HP: 0.01, PARSOMEN_CAN: 4 },
   // Demirhane geri dönüşümü (R4b): alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez
   RECYCLE_RETURN_RATE: 0.70,
   // Uzay Limanı hazırlık modu (R6): roket görevi, Hazırlık Deposu, hazırlık ilerlemesi
@@ -1594,6 +1596,14 @@ export const GAME_CONFIG = {
         `Şifalı otla iyileştirmenin bedeli artık ekranda gördüğün can sayısına göre hesaplanıyor (teçhizat ve set bonusu dahil): 1 ot 2 can iyileştirir, can başına 0,01 ASTRA. Eskiden bedel gizli "taban can" üzerinden hesaplanıyordu, bu yüzden 580/966 canlı askerin iyileştirmesi "31 ot + 0 ASTRA" yazıyordu; şimdi 193 ot ve doğru ASTRA yazar. Güçlü teçhizatlı asker daha çok can taşıdığı için iyileştirmesi daha çok şifalı ot yakar.`,
         `"Hızlı iyileştir" artık silo küçükken de çalışır: bir askerin tam bedeli siloya sığmıyorsa eksik ot parça parça alınıp tur tur iyileştirilir. Kısa ASTRA bedelleri artık "0" yerine küsuratıyla (ör. 3,86) gösteriliyor.`,
         `Kapsamlı tarama düzeltmeleri: Kotalarım ekranı zindan kasasının günlük ödeme payını "%1" yazıyordu, gerçek oran %0,36 (artık ayardan okunuyor); 1 ASTRA'nın altındaki tutarlar (hazine, karnaval, savaş alanı, seviye atlama gibi ekranlarda) "0" görünüyordu, artık küsuratıyla yazılıyor; Ekonomi panosundaki "-0%" yazımı "0%" oldu; Kolezyum ve Danışman metinlerinde kalan "buğdayla iyileştir" ifadeleri şifalı ota çevrildi; Kolezyum'da "ağır yaralı" uyarısı artık ekrandaki can sayısını gösteriyor; Ordu İyileştirme Parşömeni artık "+10 HP" yerine canın yaklaşık %7-10'unu yenilediğini ve ekrandaki can sayısıyla sonucu yazıyor.`
+      ]
+    },
+    {
+      version: 'v1.61',
+      title: '📜 Parşömen Küçüldü, Şifalı Ot Öne Çıktı',
+      date: '18 Ekim 2026',
+      changes: [
+        `Ordu İyileştirme Parşömeni artık bir askere ekrandaki canla 4 can veriyor (2 şifalı otun karşılığı). Eskiden aynı parşömen, 8 kat ucuza gelen bir iyileştirme yolu açıyordu ve şifalı otun yakılma amacını zayıflatıyordu; şimdi büyük iyileştirmelerde şifalı ot daha ucuz, parşömen ise ot ve ASTRA harcamadan tek dokunuşluk küçük bir destek. Elindeki parşömenler silinmez.`
       ]
     }
   ],

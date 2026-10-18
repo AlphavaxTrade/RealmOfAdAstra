@@ -40,7 +40,7 @@ const ekran = {
     const yollar = katli('İyileştirmenin üç yolu: hangisi neden var?',
       not(`<b>1) Kendiliğinden:</b> hiçbir şey yapmazsan asker 24 saatte tam cana kavuşur; can başına az buğday ve çok az ASTRA harcanır. En ucuzu, ama beklersin.`)
       + not(`<b>2) Şifalı otla (burası):</b> hemen iyileştirmenin <b>tek</b> yolu. 1 şifalı ot ${esc(S.HP_PER_HERB ?? 2)} can iyileştirir, kullanılan ot yakılır; üstüne can başına ${esc(S.ADA_PER_HP ?? 0.01)} ASTRA ödersin. Şifalı otun bu ekrandan başka sürekli harcandığı yer yok; yakım burada kurulur ki ot ucuzlayıp değerini yitirmesin.`)
-      + not(`<b>3) Parşömenle:</b> "Ordu İyileştirme Parşömeni" pazardan alınır ve orduyu iyileştirir.`),
+      + not(`<b>3) Parşömenle:</b> "Ordu İyileştirme Parşömeni" zindandan düşer ya da pazardan alınır; bir askere ${esc(S.PARSOMEN_CAN ?? 4)} can verir (2 şifalı otun karşılığı), ot ve ASTRA harcamaz. Pazar fiyatıyla ota göre pahalıdır, o yüzden büyük iyileştirmeler için ot daha ucuza gelir.`),
     { k: 'yollar' });
 
     return kap(kart({

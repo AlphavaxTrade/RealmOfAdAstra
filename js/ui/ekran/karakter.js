@@ -138,7 +138,7 @@ function hammaddeKarti(b) {
 function esyaKarti(b) {
   const s = b.gameState.state;
   const parsomenler = [
-    { id: 'scroll_heal', ad: 'Ordu iyileştirme', simge: '📜', aciklama: 'Bir askerin canını anında yaklaşık %7-10 yeniler.', adet: Number(s.inventory.scroll_heal) || 0, etiket: '✨ Kullan (+10 HP)' },
+    { id: 'scroll_heal', ad: 'Ordu iyileştirme', simge: '📜', aciklama: 'Bir askerin canını anında 4 can (2 şifalı otun karşılığı) yeniler.', adet: Number(s.inventory.scroll_heal) || 0, etiket: '✨ Kullan (+4 can)' },
     { id: 'scroll_stamina', ad: '100 stamina doldurma', simge: '⚡', aciklama: 'Staminana anında +100 ekler.', adet: Number(s.inventory.scroll_stamina) || 0, etiket: '⚡ Kullan (+100 ⚡)' }
   ].map((p) => `<div class="ek-oge">${simge(p.simge)}
       <div class="ek-oge-govde"><b>${esc(p.ad)} · ${esc(p.adet)} adet</b><small>${esc(p.aciklama)}</small></div>

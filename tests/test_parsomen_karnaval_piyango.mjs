@@ -33,8 +33,9 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
   asker.hp = 50;
   s.soldierUnits = [asker];
   s.inventory.scroll_heal = 2;
+  const savasEn = gs.getSoldierBattleStart(0).maxHp;
   assert.equal(gs.useScroll('scroll_heal').success, true);
-  assert.equal(asker.hp, 60);
+  assert.ok(yakin(asker.hp, 50 + asker.maxHp * (GAME_CONFIG.SIFAHANE.PARSOMEN_CAN / savasEn), 1e-9), 'parşömen sabit EKRAN canı (4) kadar iyileştirir');
   assert.equal(s.inventory.scroll_heal, 1);
   asker.hp = asker.maxHp;
   assert.equal(gs.useScroll('scroll_heal').success, false, 'dolu canda harcanmaz');
@@ -42,7 +43,7 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 
   s.soldierUnits = [{ id: 'sol_101', name: 'Piyade', hp: 30, maxHp: 100 }, { id: 'sol_102', name: 'Okçu', hp: 40, maxHp: 100 }];
   assert.equal(gs.useScroll('scroll_heal', 'sol_102').success, true);
-  assert.equal(s.soldierUnits[1].hp, 50);
+  assert.ok(s.soldierUnits[1].hp > 40 && s.soldierUnits[1].hp < 50, 'hedeflenen asker biraz iyileşir');
   assert.equal(s.soldierUnits[0].hp, 30, 'hedeflenmeyen asker etkilenmez');
 
   s.level = 10;
