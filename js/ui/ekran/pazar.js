@@ -5,6 +5,7 @@ import {
 import { resImg } from '../art.js';
 import { onay } from '../v3/bilesenler.js';
 import { terim } from '../v3/sozluk.js';
+import { grafikKarti, grafikEtkilesimiKur } from './fiyatGrafik.js';
 
 const ALINIR = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb', 'fragments'];
 const BOLUMLER = [{ id: 'alsat', ad: 'Al / Sat', simge: '💱' }, { id: 'ilan', ad: 'İlanlar', simge: '🏷️' }, { id: 'yakim', ad: 'Yakım', simge: '🔥' }];
@@ -76,7 +77,40 @@ function alSatBolumu(b, s) {
     const aktif = k === secili;
     return `<button type="button" class="ek-sekme${aktif ? ' is-aktif' : ''}" role="tab" aria-selected="${aktif}" data-e="kaynakSec" data-kaynak="${esc(k)}">${esc(b.ammMarket.pools[k].name)}</button>`;
   }).join('');
-  return `<div class="ek-sekmeler" role="tablist">${cipler}</div>${islemKarti(b, secili)}`;
+  return `<div class="ek-sekmeler" role="tablist">${cipler}</div>${islemKarti(b, secili)}${fiyatGrafigi(b, s, secili)}`;
+}
+
+// ── Fiyat grafiği (19 Ekim 2026): tek oyunculuda geçmiş tarayıcıdaki pazardan, çevrimiçinde sunucudan (GET /api/pazar/gecmis) gelir ──
+const GRAFIK_TAZELIK_MS = 30000;
+const grafikAnahtar = (key, aralik) => `${key}:${aralik}`;
+
+function fiyatGrafigi(b, s, key) {
+  const aralik = s.grafikAralik || '24s';
+  const ad = b.ammMarket.pools[key] ? b.ammMarket.pools[key].name : key;
+  if (!(b.online && b.online.active)) return grafikKarti({ ad, aralik, veri: b.ammMarket.getPriceHistory(key, aralik) });
+  const kayit = (s.grafikVeri || {})[grafikAnahtar(key, aralik)];
+  if (kayit && kayit.veri) return grafikKarti({ ad, aralik, veri: kayit.veri });
+  return grafikKarti({ ad, aralik, durum: kayit && kayit.hata ? 'hata' : 'yukleniyor' });
+}
+
+// Çevrimiçinde seçili varlığın geçmişini sunucudan alır (taze değilse); alınınca ekran yenilenir
+async function grafikYukle(b, s) {
+  if (!b.online || !b.online.active || !b.pazar || !b.pazar.gecmis) return;
+  const key = ALINIR.includes(s.kaynak) ? s.kaynak : 'wheat';
+  const aralik = s.grafikAralik || '24s';
+  const anahtar = grafikAnahtar(key, aralik);
+  s.grafikVeri = s.grafikVeri || {};
+  const kayit = s.grafikVeri[anahtar];
+  if (s.grafikYukleniyor || (kayit && (kayit.hata || Date.now() - kayit.at < GRAFIK_TAZELIK_MS))) return;
+  s.grafikYukleniyor = true;
+  try {
+    s.grafikVeri[anahtar] = { veri: await b.pazar.gecmis(key, aralik), at: Date.now() };
+  } catch (e) {
+    s.grafikVeri[anahtar] = { hata: e.message, at: Date.now() };
+  } finally {
+    s.grafikYukleniyor = false;
+  }
+  yenile();
 }
 
 const TOPLU_TURLER = ['key', 'box', 'artifact'];
@@ -254,7 +288,8 @@ const ekran = {
   },
 
   // İlanlar bölümü açıkken ilan listesi sunucudan alınır
-  async sonra(b, secenek) {
+  async sonra(b, secenek, kok) {
+    if (!secenek.bolum || secenek.bolum === 'alsat') { grafikEtkilesimiKur(kok); return grafikYukle(b, durum(secenek)); }
     if (secenek.bolum !== 'ilan' || !b.online || !b.online.active || !b.pazar || secenek.ilanVeri || secenek.ilanYukleniyor) return;
     secenek.ilanYukleniyor = true;
     try {
@@ -289,6 +324,7 @@ const ekran = {
       if (secenek.bolum === 'ilan') secenek.ilanVeri = null;   // her açılışta taze liste
     },
     kaynakSec(b, el, secenek) { durum(secenek).kaynak = el.dataset.kaynak; },
+    grafikAralik(b, el, secenek) { durum(secenek).grafikAralik = el.dataset.aralik; },
 
     alHizli(b, el) {
       const girdi = el.closest('.ek').querySelector('#adet-al');

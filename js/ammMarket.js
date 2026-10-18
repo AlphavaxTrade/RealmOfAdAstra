@@ -16,6 +16,7 @@ import { GAME_CONFIG } from './config.js';
 import { globalPool } from './globalPool.js';
 import { treasury } from './treasury.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
+import { kaydet as gecmiseKaydet, temizle as gecmisiTemizle, aralikSerisi, aralikMs, ozet as gecmisOzeti } from './economy/fiyatGecmisi.js';
 
 const HAMMADDELER = GAME_CONFIG.RESOURCE_KEYS;
 const META = GAME_CONFIG.RESOURCE_META || {};
@@ -114,6 +115,8 @@ export class AMMMarketEngine {
     this.listeners = [];
     this.pools = this.loadPools();
     this.feeStats = this.loadFeeStats();
+    this.history = this.loadHistory();   // fiyat geçmişi: { varlık: [[zamanMs, fiyat], ...] } (js/economy/fiyatGecmisi.js)
+    this._gecmisYazildi = 0;
   }
 
   // ── Fiyat değişimi aboneliği ───────────────────────────────────────────
@@ -162,7 +165,37 @@ export class AMMMarketEngine {
     if (typeof gameState !== 'undefined' && gameState._isFastForwarding) return;
     writeJSON(this.storageKey, this.pools);
     writeJSON(this.storageKey + '_fees', this.feeStats);
+    this.recordPrices();
     this.notifyPriceChange();
+  }
+
+  // ── Fiyat geçmişi (19 Ekim 2026) ───────────────────────────────────────
+  loadHistory() {
+    if (typeof localStorage === 'undefined') return {};
+    const { data } = readJSON(this.storageKey + '_hist');
+    const cikti = {};
+    if (data && typeof data === 'object') for (const k of Object.keys(data)) cikti[k] = gecmisiTemizle(data[k]);
+    return cikti;
+  }
+
+  // Her havuzun güncel fiyatını geçmişe işler; depoya en çok dakikada bir yazılır (her işlemde yarım megabayt yazılmasın), zorla = hemen yaz
+  recordPrices(simdi = Date.now(), zorla = false) {
+    if (!this.history) this.history = {};
+    for (const key of Object.keys(this.pools)) {
+      gecmiseKaydet(this.history[key] || (this.history[key] = []), this.getPrice(key), simdi);
+    }
+    if (typeof localStorage === 'undefined') return;
+    if (zorla || simdi - this._gecmisYazildi >= 60000) {
+      this._gecmisYazildi = simdi;
+      writeJSON(this.storageKey + '_hist', this.history);
+    }
+  }
+
+  // Grafik için: { key, aralik, points: [[zamanMs, fiyat], ...], ...özet } (aralik: '24s' | '7g' | '30g')
+  getPriceHistory(key, aralik = '24s', simdi = Date.now()) {
+    if (!this.pools[key]) return null;
+    const noktalar = aralikSerisi((this.history && this.history[key]) || [], simdi, aralikMs(aralik), this.getPrice(key));
+    return { key, aralik, name: this.pools[key].name, points: noktalar, ...gecmisOzeti(noktalar) };
   }
 
   // Kaldırılan havuzların (Pandora kutusu 'boxes' ve Anahtar 'keys', 18 Ekim 2026) KAYITLI ASTRA'sını okur: pazar kaydında hâlâ duruyorsa
@@ -200,7 +233,9 @@ export class AMMMarketEngine {
     if (typeof localStorage !== 'undefined') {
       removeJSON(this.storageKey);
       removeJSON(this.storageKey + '_fees');
+      removeJSON(this.storageKey + '_hist');
     }
+    this.history = {};
     this.pools = varsayilanHavuzlar();
     this.feeStats = { collected: 0, burned: 0, burnedResources: sifirHammadde() };
     this.savePools();

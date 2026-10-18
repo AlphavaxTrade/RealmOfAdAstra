@@ -1281,6 +1281,8 @@ export const sponsor = {
 };
 
 export const pazar = {
+  // Takas havuzu fiyat grafiği: aralik '24s' | '7g' | '30g'
+  gecmis: (kaynak, aralik = '24s') => api('GET', '/api/pazar/gecmis?' + new URLSearchParams({ kaynak, aralik }).toString()),
   // süzgeç: { tur, ara, sira ('ucuz' | 'pahali' | 'yeni' | 'eski'), limit }
   list: (f = {}) => {
     const p = new URLSearchParams();

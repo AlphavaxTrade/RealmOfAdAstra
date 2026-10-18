@@ -1667,6 +1667,15 @@ export const GAME_CONFIG = {
         `Piyango kazancını çektiğin an elindeki BÜTÜN biletler yanar (eskiden yalnız kazanan biletler sayılıyordu, çekimden sonra elinde kalan bilet yanmıyordu). Ödül, elindeki biletlere ödediğinin 2 katı olduğu için biletlerle ödül birlikte kapanır. Kazancın çekilmeyi beklerken yeni bilet alınamaz ("önce kazancını çek"), böylece yeni biletin parası çekimde boşa gitmez.`,
         `Savaş Alanı ekranında "Can katkısı" sayısı toplam can sanılıyordu: 4 asker 4.240 canlıyken ekranda 1.060 yazıyordu, çünkü can hasara dörtte biriyle (1:0,25) katılır. Ekran artık önce toplam saldırı ve toplam canı (teçhizat ve set bonusu dahil, Kışla'daki sayılarla aynı) gösterir; altında hasarın nasıl hesaplandığı yazar: saldırı + can × 0,25, yetenek çeşitliliği çarpanıyla. Hasar hesabı değişmedi, yalnız gösterim.`
       ]
+    },
+    {
+      version: 'v1.68',
+      title: '📈 Pazarda Eşya Başına Fiyat Grafiği',
+      date: '19 Ekim 2026',
+      changes: [
+        `Pazar > Al / Sat ekranında seçtiğin eşyanın (buğday, odun, taş, kömür, demir, şifalı ot, teçhizat parçası) altında artık coin grafiği gibi bir fiyat grafiği var. 24 saat, 7 gün ve 30 gün arasında geçebilirsin; grafikle birlikte açılış, en yüksek, en düşük, şimdiki fiyat ve yüzde değişim yazar. Yeşil yükselişi, kırmızı düşüşü gösterir. Grafiğin üzerinde fareyle gezinince (telefonda parmağını sürükleyince, klavyede sağ-sol ok tuşlarıyla) o andaki fiyat, zaman ve açılışa göre değişim bir balonda görünür.`,
+        `Fiyatlar artık kaydediliyor: her eşyanın fiyatı en az 5 dakikada bir (büyük sıçramalar hemen) not edilir; 2 günden eski kayıtlar saatliğe sıkıştırılır, 30 günden eskiler silinir. Grafik bugünden başlar: geçmiş ilk güncellemeden önce tutulmadığı için ilk saatlerde çizgi kısa görünür, zamanla dolar. Çevrimiçi oyunda herkes aynı ortak pazarın geçmişini görür.`
+      ]
     }
   ],
 

@@ -259,6 +259,7 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
     globalPool.state = globalPool.loadState();
     ammMarket.pools = ammMarket.loadPools();
     ammMarket.feeStats = ammMarket.loadFeeStats();
+    ammMarket.history = ammMarket.loadHistory();   // geri alınan işlemin sahte fiyat noktaları geçmişe karışmasın
   }
 
   const runActionFor = (g, name, args) => runAction(g, name, args, GAME_CONFIG, { testMode });

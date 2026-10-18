@@ -459,6 +459,14 @@
       404
     ]
   },
+  "GET /api/pazar/gecmis": {
+    "etiket": "İlan pazarı",
+    "ozet": "Bir varlığın fiyat geçmişi (pazar ekranındaki coin tarzı grafik)",
+    "yanit": "Sorgu: ?kaynak=wood|stone|iron|coal|wheat|herb|fragments &aralik=24s|7g|30g (varsayılan 24s). Yanıt: { key, aralik, name, points: [[zamanMs, fiyat], ...] (en çok 240 nokta, son nokta güncel fiyat), acilis, kapanis, enYuksek, enDusuk, degisimYuzde }. Bilinmeyen varlık 404.",
+    "kodlar": [
+      404
+    ]
+  },
   "GET /api/pazar": {
     "etiket": "İlan pazarı",
     "ozet": "Açık ilanlar (türe ve ada göre süzülür, fiyata göre sıralanır) ve benim ilanlarım",

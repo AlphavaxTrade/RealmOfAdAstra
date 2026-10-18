@@ -2,8 +2,16 @@
 // (kurumsal A3.9: server/app.js'ten AYNEN taşındı; davranış değişmedi. Bağımlılıklar app.js'ten ctx ile gelir.)
 
 export default function ilanRotalari(ctx) {
-  const { pazar, readBody, pazarOp } = ctx;
+  const { pazar, readBody, pazarOp, E } = ctx;
   return {
+    // ── Takas havuzu fiyat grafiği (js/economy/fiyatGecmisi.js): ?kaynak=wood&aralik=24s|7g|30g ──
+    'GET /api/pazar/gecmis': (req) => {
+      const q = new URL(req.url, 'http://x').searchParams;
+      const kaynak = q.get('kaynak') || '';
+      const aralik = ['24s', '7g', '30g'].includes(q.get('aralik')) ? q.get('aralik') : '24s';
+      const r = E.ammMarket.getPriceHistory(kaynak, aralik);
+      return r || [404, { error: 'Bu varlık pazarda yok' }];
+    },
     // ── İlan pazarı (teçhizat; server/pazar.js) ──
     'GET /api/pazar': (req, me) => {
       if (!pazar) return [404, { error: 'İlan pazarı kapalı' }];

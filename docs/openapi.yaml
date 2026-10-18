@@ -1186,6 +1186,28 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/pazar/gecmis:
+    get:
+      tags:
+        - İlan pazarı
+      summary: Bir varlığın fiyat geçmişi (pazar ekranındaki coin tarzı grafik)
+      operationId: get_api_pazar_gecmis
+      security: *a2
+      responses:
+        "200":
+          description: "Sorgu: ?kaynak=wood|stone|iron|coal|wheat|herb|fragments &aralik=24s|7g|30g (varsayılan 24s). Yanıt: { key, aralik, name, points: [[zamanMs, fiyat], ...] (en çok 240 nokta, son nokta güncel fiyat), acilis, kapanis, enYuksek, enDusuk, degisimYuzde }. Bilinmeyen varlık 404."
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "404":
+          $ref: "#/components/responses/Hata404"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/pazar:
     get:
       tags:

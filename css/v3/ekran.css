@@ -293,3 +293,20 @@ html.v3-azalt .ek-cark-ibre { transition: none; }
 
 /* 14. ZİNDAN MODU (geçiş katkısı) ------------------------------------------ */
 .ek-satir-alt { display: flex; align-items: center; justify-content: space-between; gap: var(--v3-gap-2, 8px); flex-wrap: wrap; margin-top: -2px; }
+
+/* Pazar fiyat grafiği (19 Ekim 2026) */
+.ek-fgrafik { display: block; width: 100%; height: 180px; margin: 6px 0 2px; color: var(--v3-yazi, #eceef4); }
+.ek-fgrafik-ust { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; }
+.ek-fgrafik-fiyat { font-size: calc(22px * var(--v3-yazi-olcek, 1)); }
+.ek-fgrafik-fiyat small { font-size: .55em; font-weight: 600; color: var(--v3-yazi-2, #a9b1c4); }
+.ek-fgrafik-zaman { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); color: var(--v3-yazi-2, #a9b1c4); }
+.ek-fgrafik-kap { position: relative; touch-action: pan-y; cursor: crosshair; border-radius: 8px; outline-offset: 2px; user-select: none; -webkit-user-select: none; }
+.ek-fgrafik-kap .ek-fgrafik { margin: 0; }
+.ek-fgrafik-cizgi { position: absolute; top: 6%; bottom: 7%; width: 1px; background: var(--v3-yazi-2, #a9b1c4); opacity: .7; pointer-events: none; }
+.ek-fgrafik-nokta { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: var(--v3-vurgu, #e7b94c); border: 2px solid #11131b; pointer-events: none; }
+.ek-fgrafik-ipucu { position: absolute; top: -4px; transform: translate(-50%, -100%); min-width: 132px; padding: 6px 10px; border-radius: 10px; background: rgba(17, 19, 27, .96); border: 1px solid var(--v3-vurgu, #e7b94c); box-shadow: 0 4px 14px rgba(0, 0, 0, .5); display: flex; flex-direction: column; gap: 1px; text-align: center; pointer-events: none; z-index: 2; }
+.ek-fgrafik-ipucu[hidden], .ek-fgrafik-cizgi[hidden], .ek-fgrafik-nokta[hidden] { display: none; }
+.ek-fgrafik-ipucu b { font-size: calc(14px * var(--v3-yazi-olcek, 1)); }
+.ek-fgrafik-ipucu small, .ek-fgrafik-ipucu em { font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); font-style: normal; color: var(--v3-yazi-2, #a9b1c4); }
+.ek-fgrafik-ipucu em.ek-iyi { color: var(--v3-iyi, #43d19a); } .ek-fgrafik-ipucu em.ek-kotu { color: var(--v3-kotu, #f06868); }
+.ek-fgrafik-kap:focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); }
