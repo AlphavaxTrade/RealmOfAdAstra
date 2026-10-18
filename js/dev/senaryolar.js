@@ -296,7 +296,7 @@ export const SENARYOLAR = [
   {
     id: 'ordu-koylu-siniri', kategori: 'ordu', ad: 'Asker sayısı köylü sayısıyla sınırlı',
     ne: 'Her asker bir köylü ister: sınıra kadar asker alınır, sınırda yeni asker reddedilir ve nedeni "köylü" olur.',
-    kur: (gs) => { temiz(gs); gs.setDevAdAstra(1e8); gs.state.soldierUnits = []; },
+    kur: (gs) => { temiz(gs); gs.setDevAdAstra(1e8); gs.state.soldierUnits = []; gs.state.dungeonMode = 1; gs.state.dungeonProgress = 18; },   // zindan asker hakkı 13: bu senaryo köylü sınırını sınar
     calistir: (gs) => { let n = 0; while (n < 60 && gs.buySoldierUnit().success) n += 1; return { alinan: n, sinir: gs.getVillageInfo().soldierCap, sonraki: gs.buySoldierUnit() }; },
     beklenen: [
       { ad: 'Alınan asker sayısı köyün asker sınırına eşit', tamam: (o, s, r) => r.alinan === r.sinir && s.asker === r.sinir },

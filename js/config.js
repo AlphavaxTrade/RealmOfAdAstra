@@ -415,10 +415,11 @@ export const GAME_CONFIG = {
   // Ordu sınırları (30 Eylül 2026 kararı 5, docs/v2/R5_NUFUS_ORDU.md): "zindan ilerlemesi + hesap seviyesi birlikte".
   //  • ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: asker, hesap seviyesinden yüksek seviyeye çıkamaz (kazanılan XP birikir, hesap
   //    seviyesi artınca asker seviye atlar). Açık.
-  //  • ASKER_HAKKI_ZINDAN_KATINA_BAGLI: asker sayısı <= geçilen zindan katı + 1. KAPALI: 15 Ekim 2026 ölçümü, mevcut canavar
-  //    tablosuyla (docs/v2/SONRA_YAPILACAKLAR.md) bu sınır birinci canavarı bile teçhizatsız yenilmez kılıyor (Sv.1 en az 2 asker,
-  //    Sv.3 en az 6, hak 1 ve 3); açmadan önce canavar/ödül dengesi yeniden kurulmalı.
-  ORDU_SINIRI: { ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: true, ASKER_HAKKI_ZINDAN_KATINA_BAGLI: false },
+  //  • ASKER_HAKKI_ZINDAN_KATINA_BAGLI: yeni asker alımı <= geçilen zindan katı + 1 (Normal mod 2-7; js/economy/ordu-hakki.js). Açık
+  //    (18 Ekim 2026): 15 Ekim'de kapalıydı, çünkü eski canavar tablosuyla (sv.1 asker, hak 1-3) ilk canavar bile yenilmiyordu. Canavar
+  //    tablosu (js/bestiary.js) bu kurala göre yeniden kuruldu: scripts/model/zindan_{denge,tempo,ayarla}.mjs. Sınır teçhizat
+  //    döngüsünü (dövme, geliştirme, aşınma, tamir) zorunlu kılar. Var olan asker hiçbir zaman silinmez.
+  ORDU_SINIRI: { ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: true, ASKER_HAKKI_ZINDAN_KATINA_BAGLI: true },
   SOLDIER_MAX_HP: 100,                // Fix Level 1 HP
   SOLDIER_BASE_ATK: 25,               // Fix Level 1 ATK
   SOLDIER_HP_PER_LEVEL: 25,           // Her seviye atlayışta +25 HP

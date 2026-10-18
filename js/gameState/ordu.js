@@ -3,6 +3,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { cleanName, round3 } from './ortak.js';
+import { askerHakki, katOf } from '../economy/ordu-hakki.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const SET_ESIKLERI = [5, 4, 2];   // kaç parça takılıysa hangi set bonusu (en yüksek eşik önce)
@@ -25,6 +26,14 @@ export const orduYontemleri = {
     return this.adaPrice(round3(taban * Math.pow(n, us)));
   },
 
+  // Zindan asker hakkı: { hak, kat, mod, acik } (acik: kural devrede mi). Yalnız YENİ alımı sınırlar; var olan asker silinmez.
+  getAskerHakki() {
+    const ilerleme = this.state.dungeonProgress || 1;
+    const mod = this.state.dungeonMode || 0;
+    const sinir = GAME_CONFIG.ORDU_SINIRI || {};
+    return { hak: askerHakki({ ilerleme, mod }), kat: katOf(ilerleme), mod, acik: !!sinir.ASKER_HAKKI_ZINDAN_KATINA_BAGLI };
+  },
+
   buySoldierUnit() {
     if (!Array.isArray(this.state.soldierUnits)) this.state.soldierUnits = [];
     const asker = this.state.soldierUnits;
@@ -33,12 +42,12 @@ export const orduYontemleri = {
     if (enFazla !== Infinity && asker.length >= enFazla) {
       return { success: false, message: `Maksimum ${enFazla} askere zaten sahipsin!` };
     }
-    // Zindan ilerlemesine bağlı asker hakkı (config ORDU_SINIRI; varsayılan KAPALI): hak = geçilen kat + 1 = dungeonProgress
+    // Zindan ilerlemesine bağlı asker hakkı (config ORDU_SINIRI, js/economy/ordu-hakki.js): hak = geçilen kat + 1 (Normal mod 2-7)
     const sinir = GAME_CONFIG.ORDU_SINIRI || {};
     if (sinir.ASKER_HAKKI_ZINDAN_KATINA_BAGLI) {
-      const hak = Math.max(1, Math.floor(Number(this.state.dungeonProgress) || 1));
+      const { hak, kat } = this.getAskerHakki();
       if (asker.length + 1 > hak) {
-        return { success: false, message: `⚔️ Asker hakkın dolu: ${hak} asker taşıyabilirsin (geçtiğin zindan katı + 1). Zindanda bir kat ilerleyince yeni hak açılır.` };
+        return { success: false, message: `⚔️ Asker hakkın dolu: ${hak} asker taşıyabilirsin (zindanda ${kat}. kattasın, hak = kat + 1). Zindanda bir kat ilerleyince yeni hak açılır; o zamana kadar askerlerini seviyelendir ve teçhizatla güçlendir.` };
       }
     }
     // Her asker bir köylü ister

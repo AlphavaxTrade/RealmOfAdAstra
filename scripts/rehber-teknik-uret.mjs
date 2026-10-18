@@ -150,7 +150,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
 ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
   ['Silo seviyesi', 'Kalıcı', `${n(C.WAREHOUSE.baseLevels)} seviye; ikinci oyun (Universe) açılana kadar en çok ${n(C.WAREHOUSE.universeGateLevel)}`, 'Sana özel'],
   ['Köy evi', 'Kalıcı', `En çok ${n(C.KOY.MAX_HOUSES)} ev ve ev sayısı hesap seviyeni geçemez; ev başına ${n(C.KOY.VILLAGERS_PER_HOUSE)} köylü`, 'Sana özel'],
-  ['Asker sayısı', 'Kalıcı', 'Her asker 1 köylü ister (200 köylüye kadar); tek zindan savaşına en çok 18 asker', 'Sana özel'],
+  ['Asker sayısı', 'Kalıcı', 'Her asker 1 köylü ister (200 köylüye kadar); zindan asker hakkı = geçtiğin kat + 1 (Normal modda 2-7); tek zindan savaşına en çok 18 asker', 'Sana özel'],
   ['Vatandaş sayısı (kapı)', 'Sürekli', `Başlangıç sınırı ${n(C.KAPI.START_LIMIT)}; aynı internet adresinden günde en çok ${n(C.KAPI.IP_DAILY_ADMIT)} yeni vatandaş; kayıt harcı ${n(C.KAPI.REGISTRATION_FEE_ADA)} ASTRA`, 'Küresel (herkes)'],
   ['Kasa sözleşmesi: tek ödeme', 'İşlem başı', 'Kasadaki paranın en çok %2\'si (kontratta sahibin bile üst sınırı %10)', 'Küresel (herkes)'],
   ['Kasa sözleşmesi: günlük toplam', 'Kayan 24 saat', 'Kasadaki paranın en çok %5\'i (kontratta sahibin bile üst sınırı %30)', 'Küresel (herkes)']
@@ -646,6 +646,7 @@ ${formul([
   `<b>Zafer ödülü</b> = ${n(C.DUNGEON.REWARD_ADA_PER_LEVEL)} ASTRA × canavar seviyesi (9. ve 18. seviyede ×${n(C.DUNGEON.MAJOR_BOSS_REWARD_MULT)}). Ödül zindan kasasından çıkar ve %${sayi(C.LOCKED_BALANCE.FREE_SHARE * 100)}'i serbest, kalanı kilitli gelir.`,
   `<b>Günlük giriş:</b> ${n(C.DUNGEON.DAILY_RUNS)} ödüllü giriş; sonrası kapı harcıyla (ödülün %${sayi(C.DUNGEON.GATE_FEE_RATE * 100)}'si, tamamı zindan kasasına) ödüllü, ödenmezse yalnız deneyim.`,
   `<b>Kişisel günlük tavan</b> = en büyüğü( ${n(C.DUNGEON.DAILY_RUNS)} × ulaştığın en değerli katın ödülü ,  orduya harcadığın ASTRA × ${n(C.DUNGEON.RETURN_SHARE)} ÷ ${n(C.DUNGEON.PAYBACK_DAYS)} ).`,
+  `<b>Asker hakkı:</b> yeni asker alımı <b>geçtiğin kat + 1</b> ile sınırlıdır (Normal modda 1. kat 2 asker … 6. kat 7 asker). Hakkın üstündeki var olan asker silinmez; yalnız yeni alım kapanır. Teçhizat döngüsü (dövme, geliştirme, aşınma, tamir) bu yüzden zorunludur.`,
   `<b>Her giriş stamina ister:</b> asker başına ${n(C.DUNGEON_STAMINA_COST_PER_SOLDIER.BASE_PER_SOLDIER)} + canavar seviyesi (tablo aşağıda).`,
   `<b>Fatih Ödülü:</b> 18. kat bossunu ilk kez yenince, orduya harcadığın − zindandan kazandığın fark (en çok 18 askerin toplam fiyatı kadar) Fatih kasasından bir defaya mahsus ödenir.`
 ])}

@@ -103,6 +103,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 // 5) Depodaki tek eşya bütün askerlere güç vermez
 {
   const gs = fresh(); gs.state.adAstraBalance = 1e7;
+  gs.state.dungeonProgress = 7;   // 3. kat: asker hakkı 4 (js/economy/ordu-hakki.js)
   for (let i = 0; i < 3; i++) gs.buySoldierUnit();
   gs.state.equipment.weapon = { name: 'Test Kılıcı', slot: 'weapon', level: 5, atkBonus: 53, hpBonus: 0, durability: 13 };
   const atk = [0, 1, 2].map(i => gs.getSoldierFullStats(i).totalAtk);

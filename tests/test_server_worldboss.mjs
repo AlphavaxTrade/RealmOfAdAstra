@@ -13,7 +13,7 @@ const P = ['0x' + 'd4'.repeat(20), '0x' + 'e5'.repeat(20), '0x' + 'f6'.repeat(20
 for (const [i, a] of P.entries()) {
   db.q.playerAdd.run(a, Date.now(), Date.now());
   E.withPlayer(a, () => null);
-  E.mutatePlayer(a, gs => { gs.state.adAstraBalance += 200000; gs.state.level = 5; });
+  E.mutatePlayer(a, gs => { gs.state.adAstraBalance += 200000; gs.state.level = 5; gs.state.dungeonProgress = 7; });   // 3. kat: asker hakkı 4
   for (let k = 0; k <= i; k++) assert.ok(E.act(a, 'buySoldierUnit', []).result.success);   // 1, 2, 3 asker
 }
 // İlk ikisi ordusunu kilitler, üçüncüsü kilitlemez

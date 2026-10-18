@@ -180,12 +180,14 @@ function orduSekmesi(b, s) {
   const liste = askerler(b);
   const enCok = b.GAME_CONFIG.MAX_SOLDIERS ?? Infinity;
   const bedel = gs.getSoldierCost(liste.length + 1);
-  const alinabilir = (enCok === Infinity || liste.length < enCok) && gs.state.adAstraBalance >= bedel;
+  const hakBilgi = gs.getAskerHakki();
+  const hakDolu = hakBilgi.acik && liste.length >= hakBilgi.hak;
+  const alinabilir = (enCok === Infinity || liste.length < enCok) && !hakDolu && gs.state.adAstraBalance >= bedel;
 
   if (!liste.length) {
     return kart({
       baslik: 'Ordun henüz boş',
-      icerik: not("İlk askerini al; silah ve zırhları ona buradan takacaksın.")
+      icerik: not("İlk askerini al; silah ve zırhları ona buradan takacaksın. Zindanda en çok " + hakBilgi.hak + " asker taşıyabilirsin; ilerledikçe hakkın artar.")
         + dugmeler(dugme({ e: 'yeniAsker', metin: `Yeni asker al · ${sayi(bedel)} ASTRA`, ton: 'birincil', devreDisi: !alinabilir }))
     });
   }
@@ -209,7 +211,10 @@ function orduSekmesi(b, s) {
 
   const ozet = kart({
     baslik: '🛡️ Ordu',
-    icerik: izgara([hucre('Asker', sayi(liste.length)), hucre('Saldırı', sayi(saldiri)), hucre('Can', sayi(can)), hucre('Dolu yuva', `${dolu}/${liste.length * K.YUVALAR.length}`)])
+    icerik: izgara([hucre('Asker', hakBilgi.acik ? `${sayi(liste.length)} / ${sayi(hakBilgi.hak)}` : sayi(liste.length)), hucre('Saldırı', sayi(saldiri)), hucre('Can', sayi(can)), hucre('Dolu yuva', `${dolu}/${liste.length * K.YUVALAR.length}`)])
+      + (hakBilgi.acik ? not(hakDolu
+        ? `⚔️ Asker hakkın dolu: zindanda ${hakBilgi.kat}. kattasın, hak = kat + 1 (${hakBilgi.hak}). Yeni hak için zindanda bir kat ilerle; o zamana kadar askerlerini seviyelendir, teçhizatla güçlendir ve bakımını yap.`
+        : `Zindan asker hakkın: ${hakBilgi.hak} (${hakBilgi.kat}. kattasın, hak = kat + 1).`) : '')
       + dugmeler(
         dugme({ e: 'hazirla', metin: 'Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları doyurur, boş yuvalara en iyi eşyaları takar' }),
         dugme({ e: 'yeniAsker', metin: `Yeni asker · ${sayi(bedel)} ASTRA`, devreDisi: !alinabilir })

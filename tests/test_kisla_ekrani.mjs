@@ -18,7 +18,7 @@ const { default: kisla } = await import('../js/ui/ekran/kisla.js');
 
 const gs = new GameStateManager();
 const s = gs.state;
-s.level = 30; s.adAstraBalance = 500000; s.stamina = 5000;
+s.level = 30; s.adAstraBalance = 500000; s.stamina = 5000; s.dungeonProgress = 18;   // 6. kat: asker hakkı 7
 for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 9000;
 for (let i = 0; i < 4; i++) gs.buySoldierUnit();
 const esya = (id, yuva, ad, atk, hp, dayanikli = 13, seviye = 1) => ({ id, slot: yuva, name: ad, icon: '⚔️', level: seviye, baseAtk: atk, baseHp: hp, atkBonus: atk, hpBonus: hp, durability: dayanikli, maxDurability: 13, craftedAt: 1 });

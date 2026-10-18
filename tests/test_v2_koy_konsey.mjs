@@ -79,6 +79,7 @@ const DAY = 86400;
 {
   const gs = fresh();
   gs.state.adAstraBalance = 1e6;
+  gs.state.dungeonMode = 1; gs.state.dungeonProgress = 18;   // zindan asker hakkı 13: bu test köylü sınırını sınar, zindan hakkını değil
   for (let i = 0; i < K.START_VILLAGERS; i++) assert.ok(gs.buySoldierUnit().success, `${i + 1}. asker`);
   const r = gs.buySoldierUnit();
   assert.equal(r.success, false);

@@ -11,6 +11,7 @@ globalThis.localStorage = {
 const { GameStateManager } = await import('../js/gameState.js');
 const g = new GameStateManager();
 g.state.adAstraBalance = 1e6;
+g.state.dungeonProgress = 7;   // 3. kat: asker hakkı 4 (zindan asker hakkı kuralı, js/economy/ordu-hakki.js)
 for (let i = 0; i < 3; i++) assert.ok(g.buySoldierUnit().success);
 
 assert.ok(g.stakeArmyForWorldBoss().success);

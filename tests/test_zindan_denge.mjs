@@ -34,7 +34,7 @@ const canavar = lv => DUNGEON_LEVELS.find(c => c.level === lv);
 
 // 4) takım seviyesi araması: bulunan seviye gerçekten eşiği geçiyor, bir altı geçmiyor
 {
-  const c = canavar(3), n = 2, s = 1;
+  const c = canavar(3), n = 2, s = 5;
   const t = gerekenTakimSeviyesi(c, n, s);
   assert.ok(t > 0 && t <= 10, 'bu durumda takım gerekir');
   assert.ok(kazanmaSansi(ordu(n, s, t), c, n) >= 80);

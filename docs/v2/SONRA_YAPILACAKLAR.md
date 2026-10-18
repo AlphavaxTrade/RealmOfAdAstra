@@ -98,3 +98,11 @@ Ayrıntı ve kanıtlar: yerel denetim raporu (docs klasöründe, adı DENETIM_RA
 1. **Asker hakkı = geçilen zindan katı + 1.** Motor yalnız ASTRA bedeli ve köylü sayısına bakıyor (50 köylüyle 1. katta 30 asker alınabiliyor).
 2. **Asker seviyesi <= hesap seviyesi.** Motorda üst sınır yok (hesap seviyesi 1 iken asker seviyesi 100'ü aşabiliyor).
 Seçenekler: (a) kuralları koda ekle (ekonomik etkisi: ordu daha yavaş büyür, Fatih/zindan hesapları değişir; altın kayıt testleri yenilenir), (b) kararı belgeden kaldır, rehber şu an gerçek durumu yazıyor.
+
+## 18 Ekim 2026: zindan dengesi (asker hakkı, canavar tablosu, zindan modları)
+
+**Karar (kullanıcı):** Normal mod, en hızlı oyuncu için ~120 günde (hesap sv.30 civarı) bitsin; asker hakkı = geçilen kat + 1 (2-7); her mod 6 kat ekler ve hak birikir. Zindan tek seferde bitince Diablo'daki gibi bir üst moda (Zor, Uzman, Cehennem) geçilir: büyük hammadde + ASTRA bedeli yakılır/harcanır, zindan sıfırlanır, canavarlar güçlenir, ASTRA/XP ödülü ve eşya düşme oranı artar, asker tavanı yükselir.
+**Ölçüm (savaş motoru, sabit tohum):** asker seviyesi güç eğrisinin ana kaynağı; hak canavar seviyesi kadar (1-18) olursa teçhizat gereksiz kalır, hak kat + 1 olursa teçhizat zorunlu olur. Eski tabloyla "en hızlı oyuncu" Normal modu ~2 haftada bitiriyordu (boss 9 imkânsız, boss 18 yenilemiyordu).
+**Yapıldı (Adım 0-2):** ölçüm araçları scripts/model/zindan_{denge,tempo,ayarla}.mjs (+ testler); js/bestiary.js canavar 2-18 yeniden kuruldu (1. canavar aynı); asker hakkı kuralı açıldı (config ORDU_SINIRI, js/economy/ordu-hakki.js); Kışla ekranı hak bilgisini gösterir; rehber güncellendi. Boss 9: 5.850 can / 425 sld, boss 18: 23.200 / 650 (eski 9.500/520 ve 38.000/1.250).
+**Sırada:** Adım 3 zindan modları (durum, çarpanlar, geçiş eylemi, arayüz), Adım 4 Denge İzleme ekranı (yönetici paneli; veri toplama + haftalık/aylık görünüm + uyarılar + rapor betiği), Adım 5 ekonomi doğrulaması, Adım 6 tam kapı ve tarayıcı denemesi.
+**Bilinen sınırlar (model alt sınırdır):** asker XP hızı, zindan stamina ve günlük giriş sınırı, silo kapasitesi, Üretim Hakkı çarpanı, teçhizat aşınması/tamiri tempo modelinde yok; gerçek oyuncu daha geç gelir. Canlıda Denge İzleme verisiyle yeniden ölçülüp ayarlanacak.
