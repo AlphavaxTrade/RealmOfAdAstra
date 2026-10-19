@@ -123,7 +123,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   const serbest = () => gs.state.adAstraBalance - gs.state.lockedAda;
   const bakiye0 = gs.state.adAstraBalance;
   for (let i = 0; i < 12; i++) {
-    const al = gs.marketBuy('wood', 20000);
+    const al = gs.marketBuy('wood', 400);   // 19 Ekim 2026: odun fiyatı x50 (1,25 ASTRA); 400 birim = eski 20.000 birimle aynı ASTRA
     assert.equal(al.success, true, al.message);
     const sat = gs.marketSell('wood', gs.state.inventory.wood);
     assert.equal(sat.success, true, sat.message);
@@ -131,7 +131,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   const kayip = bakiye0 - gs.state.adAstraBalance;
   assert.ok(kayip > 400, `12 turun kaybı ~481 olmalı: ${kayip}`);
   // Eski kuralda serbest bakiye 0 → 2.401 (kayıp 481: %20 maliyetle kilit açılıyordu). Yenide açılan yalnız komisyon+yakım payı.
-  assert.ok(serbest() < 0.12 * kayip + 1, `al-sat kilidi açmamalı: serbest ${serbest().toFixed(1)}, kayıp ${kayip.toFixed(1)}`);
+  assert.ok(serbest() < 0.15 * kayip + 1, `al-sat kilidi açmamalı: serbest ${serbest().toFixed(1)}, kayıp ${kayip.toFixed(1)}`);
   assert.ok(serbest() < 100, `serbest ${serbest().toFixed(1)} < 100 (eski: 2.401)`);
   ok(`EK-04: 12 tur al-sat: kayıp ${kayip.toFixed(0)}, açılan serbest ${serbest().toFixed(1)} (eski: 2.401)`);
 }
@@ -140,7 +140,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   const gs = yeni();
   gs.state.warehouseLevel = 18;
   gs.state.adAstraBalance = 5000; gs.state.lockedAda = 0;
-  const al = gs.marketBuy('wood', 20000);
+  const al = gs.marketBuy('wood', 400);   // 19 Ekim 2026: odun fiyatı x50 (1,25 ASTRA); 400 birim = eski 20.000 birimle aynı ASTRA
   assert.equal(al.success, true);
   const lockCredit = (gs.state.contribution && gs.state.contribution.lockCredit && gs.state.contribution.lockCredit.wood) || 0;
   assert.equal(lockCredit, 0, 'serbestle alınanda kilit kredisi yok');

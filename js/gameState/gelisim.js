@@ -130,7 +130,7 @@ export const gelisimYontemleri = {
     const { wood, iron, wheat } = costs;
     const siloGerek = this.getSiloLevelToHold(costs);
 
-    const deger = ammMarket.calculateResourcesAdAstraValue(costs);
+    const deger = ammMarket.calculateResourcesCostAdAstra(costs);
 
     const bugunParca = this.getFragmentDropRate(simdiki);
     const sonrakiParca = this.getFragmentDropRate(sonraki);
@@ -333,7 +333,7 @@ export const gelisimYontemleri = {
     const woodCost = Math.ceil(eksik * odunDakika);
     const ironCost = Math.ceil(eksik * demirDakika);
     const pay = Number(GAME_CONFIG.TOOL_REPAIR_ADA_SHARE ?? 0.3);
-    const deger = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost });
+    const deger = ammMarket.calculateResourcesCostAdAstra({ wood: woodCost, iron: ironCost });
     const adAstraCost = Math.max(0.001, round3(deger.totalAda * pay));
 
     return {
@@ -427,7 +427,7 @@ export const gelisimYontemleri = {
     const costs = {};
     const pay = (GAME_CONFIG.WAREHOUSE || {}).upgradeCostShare ?? 0.5;   // x5 kararı: kapasitenin %70'i (eskiden %50)
     for (const k of keys) costs[k] = Math.floor(simdiki[k] * pay);
-    const deger = ammMarket.calculateResourcesAdAstraValue(costs);
+    const deger = ammMarket.calculateResourcesCostAdAstra(costs);
 
     const envanter = this.state.inventory || {};
     const fills = {};

@@ -12,7 +12,7 @@
 //  • Geri alım: fiyat açılışın TRIGGER_DROP kadar altına inen varlıkları hazine kasasından alıp yakar.
 // ============================================================================
 
-import { GAME_CONFIG } from './config.js';
+import { GAME_CONFIG, PAZAR_FIYAT_SEVIYESI } from './config.js';
 import { globalPool } from './globalPool.js';
 import { treasury } from './treasury.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
@@ -74,6 +74,19 @@ function havuzKur(key, meta) {
     return { resourceReserve: maldaRezerv, adAstraReserve: Math.round(maldaRezerv * fiyat), ...meta };
   }
   return { resourceReserve: Math.round(astraRezervi / fiyat), adAstraReserve: Math.round(astraRezervi), ...meta };
+}
+
+// Eski ölçekli (PAZAR_FIYAT_SEVIYESI öncesi) kayıtları çevirir (19 Ekim 2026): bir hammadde havuzunun fiyatı açılışın %10'unun altındaysa havuz eski
+// ölçektedir (eski koridor 0,5x-2,5x = yeni açılışın 0,01-0,05 katı; yeni koridor 0,5x-5x), hammadde adedi PAZAR_FIYAT_SEVIYESI'ne bölünür, ASTRA aynı kalır.
+// Koşula bağlı olduğu için tekrar çalıştırmak zararsızdır (çevrilmiş havuz bu eşiğin çok üstündedir).
+export function eskiOlcekliMi(key, fiyat) {
+  const koridor = koridorlar()[key];
+  return HAMMADDELER.includes(key) && !!koridor && fiyat > 0 && fiyat < koridor.defaultPriceAda * 0.1;
+}
+export function havuzOlcekle(key, havuz) {
+  if (!havuz || !(havuz.resourceReserve > 0) || !(havuz.adAstraReserve > 0)) return havuz;
+  if (!eskiOlcekliMi(key, havuz.adAstraReserve / havuz.resourceReserve)) return havuz;
+  return { ...havuz, resourceReserve: Math.max(1, Math.round(havuz.resourceReserve / PAZAR_FIYAT_SEVIYESI)) };
 }
 
 function varsayilanHavuzlar() {
@@ -146,7 +159,7 @@ export class AMMMarketEngine {
     if (!data) return varsayilan;
     const birlesik = {};
     for (const key of Object.keys(varsayilan)) {
-      const kayitli = data[key];
+      const kayitli = havuzOlcekle(key, data[key]);
       birlesik[key] = kayitli && kayitli.resourceReserve > 0 ? { ...varsayilan[key], ...kayitli } : varsayilan[key];
     }
     return birlesik;
@@ -174,7 +187,14 @@ export class AMMMarketEngine {
     if (typeof localStorage === 'undefined') return {};
     const { data } = readJSON(this.storageKey + '_hist');
     const cikti = {};
-    if (data && typeof data === 'object') for (const k of Object.keys(data)) cikti[k] = gecmisiTemizle(data[k]);
+    if (data && typeof data === 'object') {
+      for (const k of Object.keys(data)) {
+        const seri = gecmisiTemizle(data[k]);
+        // Eski ölçekli hammadde fiyat geçmişi: fiyatlar PAZAR_FIYAT_SEVIYESI ile çarpılır, grafik kopmasın
+        const eski = seri.length > 0 && seri.every((n) => eskiOlcekliMi(k, n[1]));
+        cikti[k] = eski ? seri.map((n) => [n[0], n[1] * PAZAR_FIYAT_SEVIYESI]) : seri;
+      }
+    }
     return cikti;
   }
 
@@ -332,6 +352,16 @@ export class AMMMarketEngine {
     }
     // 3 ondalık: küçük fiyatlar (0,009 ASTRA/buğday) 1'e yuvarlanmasın
     return { totalAda: Math.max(0, Math.round(toplam * 1000) / 1000), breakdown: dokum };
+  }
+
+  // Gelişim bedelinin ASTRA payı (seviye atlama, silo, teçhizat dövme / yükseltme / onarım, alet onarımı): hammaddelerin pazar değerinin
+  // PAZAR_FIYAT_SEVIYESI'ne bölünmüşü. Neden: hammaddenin pazar fiyatı 19 Ekim 2026'da 50 kat yükseldi (balina alımı fiyatı gerçekten oynatsın diye);
+  // ASTRA payı eski tasarım ölçeğinde kalır (ücretsiz oyuncu gelir kaynağı pazar satışı iken bu pay 50 kat olsa ilerleyemezdi), ama pazar fiyatı oynadıkça
+  // (örn. balinalar fiyatı tavana taşıyınca) ASTRA payı da aynı oranda oynar. Bedelin asıl ağırlığı artık hammaddeyi pazardan almak.
+  calculateResourcesCostAdAstra(kaynaklar = {}) {
+    const d = this.calculateResourcesAdAstraValue(kaynaklar);
+    const bol = PAZAR_FIYAT_SEVIYESI || 1;
+    return { totalAda: Math.max(0, Math.round((d.totalAda / bol) * 1000) / 1000), breakdown: Object.fromEntries(Object.entries(d.breakdown || {}).map(([k, v]) => [k, Math.round((v / bol) * 1000) / 1000])) };
   }
 
   // Bu alım yapılırsa fiyat ne olur? (koridor tavanı kontrolü için)

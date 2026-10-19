@@ -22,7 +22,8 @@ treasury.reset();
 const gs = new GameStateManager();
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const SHARE = GAME_CONFIG.TOOL_REPAIR_ADA_SHARE;
-const degeri = (kaynaklar) => ammMarket.calculateResourcesAdAstraValue(kaynaklar).totalAda;
+// ASTRA payı = hammaddenin pazar değeri ÷ PAZAR_FIYAT_SEVIYESI (19 Ekim 2026: hammadde fiyatı 50 kat, gelişim bedelinin ASTRA payı eski ölçekte)
+const degeri = (kaynaklar) => ammMarket.calculateResourcesCostAdAstra(kaynaklar).totalAda;
 const fiyatiYukselt = (carpan) => {
   ammMarket.pools.wood.adAstraReserve *= carpan;
   ammMarket.pools.iron.adAstraReserve *= carpan;

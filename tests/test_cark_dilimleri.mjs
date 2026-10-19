@@ -166,7 +166,11 @@ try {
   {
     const gs = yeniOyuncu(1e6);
     const fiyat = ammMarket.getPrice('wheat');
-    const esdeger = 1 / fiyat / (GAME_CONFIG.WHEAT_PER_STAMINA || 1);
+    // 19 Ekim 2026: buğday 0,45 ASTRA (x50); 1 ASTRA'lık ödül ~2 stamina eder, kısmi sığma ölçülemez: ödülü büyütüp ölç, sonra geri koy
+    const dilim = GAME_CONFIG.CARNIVAL.WHEEL_REWARDS[sira('stamina_1')];
+    const eskiDeger = dilim.adaVal;
+    dilim.adaVal = 60;
+    const esdeger = 60 / fiyat / (GAME_CONFIG.WHEAT_PER_STAMINA || 1);
     const bos = Math.floor(esdeger * 0.6);   // ödülün %60'ı sığar
     gs.state.stamina = gs.getMaxStamina() - bos;
     sabitle(sira('stamina_1'));
@@ -175,10 +179,11 @@ try {
     assert.equal(r.success, true);
     assert.ok(r.buybackInfo && r.gain.stamina === bos, 'sığan kadarı stamina olur');
     assert.equal(gs.state.stamina, gs.getMaxStamina(), 'stamina tavanı aşılmaz');
-    const beklenen = 1 * (1 - bos / esdeger);
+    const beklenen = 60 * (1 - bos / esdeger);
     assert.ok(Math.abs(r.gain.astra - beklenen) < 0.02, `sığmayan %40'ın değeri ödendi (${r.gain.astra} ≈ ${beklenen})`);
     assert.ok(Math.abs(gs.state.adAstraBalance - (bakiyeOnce - gs.getWheelCostAda() + r.gain.astra)) < 1e-6, 'bakiye ödenen kadar arttı');
     assert.match(r.rewardSummaryText, /sığmayan kısmın değeri/);
+    dilim.adaVal = eskiDeger;
     console.log('✅ kısmen boş stamina deposunda sığmayan kısım ASTRA olarak ödeniyor');
   }
 

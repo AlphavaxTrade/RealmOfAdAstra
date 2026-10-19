@@ -8,6 +8,18 @@
 // başlangıç payı), küçülme yalnız kasa GERÇEKTEN bu yıllık payın altına inince başlar.
 const annualPayout = (seed, weeklyRate) => Math.round(seed * (1 - Math.pow(1 - weeklyRate, 52)));
 
+// Pazar fiyat seviyesi (19 Ekim 2026, kullanıcı kararı): altı hammaddenin pazardaki ASTRA fiyatı açılışta bu kat büyüktür; havuzun ASTRA'sı aynı,
+// hammadde adedi bu kat azdır (js/ammMarket.js tohum: mal = ASTRA ÷ açılış fiyatı). Neden: fiyat etkisini "alınacak miktar ÷ havuzdaki miktar" oranı belirler.
+// Hesabı tamamen geliştirmek (seviye 80, silo 49, 11 ev, teçhizat 10) ~3-11 milyon birim ister; 90 M ASTRA'lık havuzda hammaddeler 0,2-1,3 MİLYAR birimdi,
+// yani 5 balina bile havuzun %2,5-4'ünü alıyordu ve fiyat %8 oynuyordu. ×50 ile tam gelişim ~6 dolar, beş balina birlikte alınabilir hammaddenin %40'ını
+// bile alamaz (fiyat tavana dayanır), ücretsiz oyuncunun sattığı hammaddenin ASTRA değeri de 50 kat artar. Sabit ASTRA bedelleri (seviye, asker) aynı kalır.
+// Koridor: taban 0,5×, tavan 5× açılış (eskiden 2,5×): fiyat tırmanışı bantta daha uzun sürer. Kayıtlı eski havuzlar yüklemede kendiliğinden çevrilir (ammMarket.loadPools).
+export const PAZAR_FIYAT_SEVIYESI = 50;
+const hamKoridor = (acilis) => {
+  const yuvarla = (x) => Math.round(x * 1e6) / 1e6;
+  return { minPriceAda: yuvarla(acilis * PAZAR_FIYAT_SEVIYESI * 0.5), maxPriceAda: yuvarla(acilis * PAZAR_FIYAT_SEVIYESI * 5), defaultPriceAda: yuvarla(acilis * PAZAR_FIYAT_SEVIYESI) };
+};
+
 export const GAME_CONFIG = {
   GAME_VERSION: '2.0.0-dev',
 
@@ -44,28 +56,28 @@ export const GAME_CONFIG = {
     ]
   },
   // Madencilik Otoritesi (Sirius Konseyi'nde ortak inşaat; R2/R4): seviye başına kapasite ve herkesin hakkı +%5,
-  // çalışma günü 20→24 saat, hafta 6→7 gün; 1. seviye 2 M birim (×1,4). Karışım ALTI hammaddenin hepsini içerir (13 Ekim 2026
+  // çalışma günü 20→24 saat, hafta 6→7 gün; 1. seviye 8 M birim (×1,4; 19 Ekim 2026'dan önce 2 M). Karışım ALTI hammaddenin hepsini içerir (13 Ekim 2026
   // hammadde kullanım planı): taş %30, kömür %20 (eski "çelik payı" artık kömürle ödenir: çelik demirden ve kömürden olur),
   // demir %15, odun %15, buğday %15 (işçi iaşesi), şifalı ot %5. Toplam %100 hammadde; ASTRA ile ödenen pay yoktur.
   // Ortak kasa: çıkarılan her hammaddenin %5'i Konsey stoğuna girer ve Otorite ile etkin projeye KENDİLİĞİNDEN aktarılır.
   OTORITE: {
-    MAX_LEVEL: 20, BASE_UNITS: 2000000, LEVEL_MULT: 1.4, PER_LEVEL_BONUS: 0.05,
+    MAX_LEVEL: 20, BASE_UNITS: 8000000, LEVEL_MULT: 1.4, PER_LEVEL_BONUS: 0.05,
     HOURS_BASE: 20, HOURS_PER_LEVEL: 0.2, DAYS_BASE: 6, DAYS_PER_LEVEL: 0.05,
     MIX: { stone: 0.30, coal: 0.20, iron: 0.15, wood: 0.15, wheat: 0.15, herb: 0.05 },
     COMMON_CHEST_RATE: 0.05
   },
-  // Konsey projeleri (sırayla, biri açık): 6 M birim hammadde + 50.000 emek; bitince kalıcı bonus. Her projenin kendi
+  // Konsey projeleri (sırayla, biri açık): 24 M birim hammadde (19 Ekim 2026: ×4, eskiden 6 M; Otorite 1. seviye de 2 M → 8 M) + 50.000 emek; bitince kalıcı bonus. Her projenin kendi
   // karışımı vardır (konusuna göre; toplam %100): Şifa Bahçesi şifalı otu, Büyük Ambar buğdayı, Köprü ve Duvar taşı çok ister.
   KONSEY_PROJELERI: [
-    { id: 'bridge',   name: 'Nehir Köprüsü',   icon: '🌉', units: 6000000, labor: 50000, bonus: { expeditionTime: -0.02 }, desc: 'Sefer süreleri %2 kısalır.',
+    { id: 'bridge',   name: 'Nehir Köprüsü',   icon: '🌉', units: 24000000, labor: 50000, bonus: { expeditionTime: -0.02 }, desc: 'Sefer süreleri %2 kısalır.',
       mix: { stone: 0.35, wood: 0.30, iron: 0.15, wheat: 0.15, coal: 0.05 } },
-    { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 6000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.',
+    { id: 'granary',  name: 'Büyük Ambar',     icon: '🏚️', units: 24000000, labor: 50000, bonus: { warehouse: 0.05 },     desc: 'Herkesin silosu %5 büyür.',
       mix: { wheat: 0.30, wood: 0.30, stone: 0.25, iron: 0.15 } },
-    { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 6000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.',
+    { id: 'herbgdn',  name: 'Şifa Bahçesi',    icon: '🌿', units: 24000000, labor: 50000, bonus: { herb: 0.05 },          desc: 'Şifalı ot üretimi %5 artar.',
       mix: { wheat: 0.30, stone: 0.22, wood: 0.21, coal: 0.15, herb: 0.12 } },
-    { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 6000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.',
+    { id: 'pier',     name: 'Liman Rıhtımı',   icon: '⚓', units: 24000000, labor: 50000, bonus: { prepDepotCap: 2 },     desc: 'Hazırlık Deposu kişi tavanı 2 katına çıkar.',
       mix: { iron: 0.25, coal: 0.25, wood: 0.25, stone: 0.25 } },
-    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 6000000, labor: 50000, bonus: { bossPenaltyPoints: -0.06 }, desc: "Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur.",
+    { id: 'wall',     name: 'Savunma Duvarı',  icon: '🧱', units: 24000000, labor: 50000, bonus: { bossPenaltyPoints: -0.06 }, desc: "Dünya Bossu savaşından erken çekilme cezası %18 yerine %12 olur.",
       mix: { stone: 0.45, iron: 0.25, coal: 0.20, wood: 0.10 } }
   ],
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
@@ -373,12 +385,12 @@ export const GAME_CONFIG = {
   //   Tüm evrenin haftalık emek geliri = 1.411.000 ASTRA (v1'de 6.264 ASTRA idi)
   // v2 (R4b): açılış fiyatları ölçekli (×0,01); koridor taban 0,5×, tavan 2,5× açılış (ASTRA/birim; ekranda 1.000 birim başına)
   AMM_CORRIDORS: {
-    wheat:     { minPriceAda: 0.0045, maxPriceAda: 0.0225, defaultPriceAda: 0.009 },
-    stone:     { minPriceAda: 0.006,  maxPriceAda: 0.03,   defaultPriceAda: 0.012 },
-    wood:      { minPriceAda: 0.0125, maxPriceAda: 0.0625, defaultPriceAda: 0.025 },
-    coal:      { minPriceAda: 0.009,  maxPriceAda: 0.045,  defaultPriceAda: 0.018 },
-    iron:      { minPriceAda: 0.02,   maxPriceAda: 0.10,   defaultPriceAda: 0.04 },
-    herb:      { minPriceAda: 0.04,   maxPriceAda: 0.20,   defaultPriceAda: 0.08 },
+    wheat:     hamKoridor(0.009),   // 19 Ekim 2026: açılış fiyatı x PAZAR_FIYAT_SEVIYESI (eski açılış 0,009 ASTRA/birim), koridor 0,5x-5x
+    stone:     hamKoridor(0.012),
+    wood:      hamKoridor(0.025),
+    coal:      hamKoridor(0.018),
+    iron:      hamKoridor(0.04),
+    herb:      hamKoridor(0.08),
     fragments: { minPriceAda: 0.225,  maxPriceAda: 4.5,    defaultPriceAda: 0.45 },   // tavan 10 kat: küçük havuzda kullanım fiyatı gerçekten yükseltir (18 Ekim 2026)
     scroll_heal:    { minPriceAda: 0.15, maxPriceAda: 0.75, defaultPriceAda: 0.30 },
     scroll_stamina: { minPriceAda: 0.30, maxPriceAda: 1.50, defaultPriceAda: 0.60 }
@@ -1836,6 +1848,18 @@ export const GAME_CONFIG = {
       changes: [
         `Oyunda harcanan her ASTRA'nın %4'ü artık "UOA tohumu" kasasında birikiyor (ikinci oyun UOA açıldığında oradaki ilk kasaları ve hammadde pazarı havuzlarını oluşturacak). Kasa kilitli: UOA açılana kadar hiçbir ödeme çıkmaz. Hazine ekranında 🚀 UOA Tohumu olarak görünür.`,
         `Sirius Konseyi kasası (10 milyon) ve Universe Tohum Rezervi (20 milyon) kaldırıldı; hiçbirinden ödeme çıkmıyordu. Konsey kasası yedi kasaya eşit bölündü (zindan, kolezyum, dünya boss, geri alım, görev, karnaval, Fatih); Universe rezervi altı ödeme kasasına ödeme kapasitesiyle orantılı dağıtıldı. Toplam ASTRA aynı kaldı. Konsey projeleri ve Otorite aynen çalışıyor (onlar hammadde ister, kasa ASTRA'sı değil).`
+      ]
+    },
+    {
+      version: 'v1.81',
+      title: '📈 Hammadde Fiyatları 50 Kat, Konsey 4 Kat Zor',
+      date: '19 Ekim 2026',
+      changes: [
+        `Pazardaki altı hammaddenin fiyatı açılışta 50 kat yükseldi (buğday 0,009 → 0,45 ASTRA, demir 0,04 → 2 ASTRA). Pazar havuzlarındaki ASTRA aynı, hammadde adedi 50 kat azaldı. Neden: ASTRA atıp hesabını hemen fullemek isteyenler hammaddeyi pazardan toplu alınca fiyatı gerçekten yukarı taşısın; bu parayı seferle hammadde çıkarıp satan oyuncular kazansın. Haftalık çıkarma sınırı yüzünden bu para uzun sürede erir.`,
+        `Fiyat koridoru genişledi: taban açılışın yarısı, tavan açılışın 5 katı (eskiden 2,5 kat). İki büyük harcayıcı bir hesabı tamamen geliştirecek kadar hammadde alırsa tüm hammadde fiyatları tavana dayanır; üçüncüsü pazarda neredeyse hiçbir şey bulamaz ve ücretsiz oyuncuların satışlarını bekler. Tek bir hesabı tamamen geliştirmek (seviye 80, silo 49, 11 ev, teçhizat 10) yaklaşık 6 dolarlık ASTRA'ya mal oluyor (eskiden yaklaşık 9 sent).`,
+        `Seviye atlama, silo, teçhizat ve alet onarımı bedellerinin ASTRA payı eski ölçekte kaldı (yeni oyuncunun ilk adımları aynı); bu bedellerin asıl yükü artık hammaddeyi pazardan almak. Fiyatlar oynadıkça ASTRA payı da aynı oranda oynar.`,
+        `Sirius Konseyi'nde Otorite 1. seviye 2 milyon yerine 8 milyon birim, her proje 6 milyon yerine 24 milyon birim ister. Konsey tek kişinin pazardan alıp bitireceği bir yer değil, herkesin ortak inşaatı.`,
+        `Karnaval çarkındaki "1 ASTRA değerinde stamina" ödülü artık yaklaşık 2 stamina veriyor (buğday 50 kat pahalandı; ödül ASTRA değeri üzerinden hesaplanır). Hammaddeyle çevirmede ödenen birim sayısı da buna göre azaldı.`
       ]
     }
   ],

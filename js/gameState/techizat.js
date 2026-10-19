@@ -115,7 +115,7 @@ export const techizatYontemleri = {
     const iron = Math.max(20, Math.round(dakika * (uretim.iron ?? 12)));
     const coal = uretim.coal > 0 ? Math.max(10, Math.round(dakika * uretim.coal / 3)) : 0;
     const fragments = 1;   // dövme: yeni oyuncu ilk takımı yapabilsin (yükseltme parçaları GELISIM_PARCA_CARPANI ile büyür)
-    const ada = ammMarket.calculateResourcesAdAstraValue(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
+    const ada = ammMarket.calculateResourcesCostAdAstra(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
     return { wood, iron, coal, fragments, adAstra: ada, woodCost: wood, ironCost: iron, coalCost: coal, fragCost: fragments, adaCost: ada };
   },
 
@@ -195,7 +195,7 @@ export const techizatYontemleri = {
     const coalCost = kumulatif.baseCoal > 0 ? Math.max(10, Math.round(kumulatif.baseCoal * carpan)) : 0;     // ocak
     const stoneCost = kumulatif.baseStone > 0 ? Math.max(10, Math.round(kumulatif.baseStone * carpan)) : 0;  // bileme taşı
     const fragmentCost = Math.round(Math.pow(2, simdiki) * (simdiki >= 4 ? (GAME_CONFIG.GELISIM_PARCA_CARPANI ?? 1) : 1));   // ilk 3 yükseltme eskisi gibi (yeni oyuncu); 4+ parça bedeli x2
-    const adAstraCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
+    const adAstraCost = ammMarket.calculateResourcesCostAdAstra({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
     return {
       isMaxLevel: false,
       currentLevel: simdiki,
@@ -335,7 +335,7 @@ export const techizatYontemleri = {
     const ironCost = Math.max(1, Math.round(kumulatif.totalIron * ONARIM_ORANI * hasarOrani));
     const coalCost = kumulatif.totalCoal > 0 ? Math.max(1, Math.round(kumulatif.totalCoal * ONARIM_ORANI * hasarOrani)) : 0;   // ocakta tavlama
     const fragCost = Math.max(1, Math.round(kumulatif.totalFragments * ONARIM_ORANI * hasarOrani));                              // teçhizat parçası
-    const adaCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost }).totalAda;
+    const adaCost = ammMarket.calculateResourcesCostAdAstra({ wood: woodCost, iron: ironCost, coal: coalCost }).totalAda;
     return { missingDurability: eksik, ironCost, woodCost, coalCost, fragCost, adaCost, isRepaired: false, itemName: esya.name, level: esya.level || 1, item: esya };
   },
 

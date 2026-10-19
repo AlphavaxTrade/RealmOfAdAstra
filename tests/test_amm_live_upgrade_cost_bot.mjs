@@ -30,7 +30,7 @@ assert.deepEqual(Object.keys(lvlReq.costs).sort(), [...GAME_CONFIG.RESOURCE_KEYS
 for (const k of GAME_CONFIG.RESOURCE_KEYS) assert.ok(lvlReq.costs[k] > 0, k + ' bedeli pozitif olmalı');
 assert(lvlReq.adAstra > 0, 'AdAstra yükseltme maliyeti pozitif olmalı');
 
-const expectedLevelAmm = ammMarket.calculateResourcesAdAstraValue({ ...lvlReq.costs });
+const expectedLevelAmm = ammMarket.calculateResourcesCostAdAstra({ ...lvlReq.costs });   // pazar değeri ÷ PAZAR_FIYAT_SEVIYESI (19 Ekim 2026)
 assert.equal(lvlReq.adAstra, expectedLevelAmm.totalAda, 'Seviye atlama ASTRA maliyeti AMM DEX toplam pazar değerine eşit olmalı');
 console.log('✅ Seviye Atlama ASTRA maliyeti AMM DEX pazar değeriyle %100 örtüşüyor!');
 
@@ -43,7 +43,7 @@ assert(whCost.wood > 0 && whCost.iron > 0 && whCost.wheat > 0, 'Silo kaynak mikt
 assert(whCost.adAstra > 0, 'Silo AdAstra yükseltme maliyeti pozitif olmalı');
 
 // v2: silo yükseltmesi 6 hammadde ister (whCost.costs)
-const expectedWhAmm = ammMarket.calculateResourcesAdAstraValue(whCost.costs);
+const expectedWhAmm = ammMarket.calculateResourcesCostAdAstra(whCost.costs);
 assert.equal(whCost.adAstra, expectedWhAmm.totalAda, 'Silo yükseltme ASTRA maliyeti AMM DEX toplam pazar değerine eşit olmalı');
 console.log('✅ Silo yükseltme ASTRA maliyeti AMM DEX pazar değeriyle %100 örtüşüyor!');
 
