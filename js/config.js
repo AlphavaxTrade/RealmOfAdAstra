@@ -107,6 +107,17 @@ export const GAME_CONFIG = {
   UZAY_LIMANI: {
     ROCKET_MIN_LEVEL: 3,
     ROCKET_PARTS: { iron: q(2000), coal: q(1000), stone: q(500), wood: q(300), adAstra: 1 },
+    // Roket seviyeleri (19 Ekim 2026): roket Realm'dan UOA'ya (ikinci oyun) geçiş rampasıdır. Seviye 1 = ilk roket (ROCKET_PARTS). Sonraki her seviye
+    // ROCKET_PARTS'ın parts katı hammadde + adAstra ASTRA ister (çok pahalı; hammaddeyi silo tutabildiği ölçüde pazardan alınır). Seviye yükseldikçe gidiş süresi
+    // kısalır (travelHours), taşıma kapasitesi (cargo: toplam hammadde birimi) ve mürettebat (crew: köylü + asker toplamı) artar. Gidiş-dönüş mümkündür; fırlatma
+    // UOA açılana kadar kilitlidir (UNIVERSE_STAGE). UOA tohumu (harcamanın %4'ü) UOA açıldığında oradaki ilk kasaları ve hammadde pazarını doldurur.
+    ROCKET_LEVELS: [
+      { level: 1, parts: 1,    adAstra: 1,       travelHours: 72, cargo: 500000,    crew: 10 },
+      { level: 2, parts: 2.5,  adAstra: 5000,    travelHours: 48, cargo: 2000000,   crew: 30 },
+      { level: 3, parts: 6,    adAstra: 25000,   travelHours: 36, cargo: 8000000,   crew: 80 },
+      { level: 4, parts: 15,   adAstra: 100000,  travelHours: 24, cargo: 30000000,  crew: 200 },
+      { level: 5, parts: 40,   adAstra: 500000,  travelHours: 12, cargo: 100000000, crew: 500 }
+    ],
     PREP_DEPOT_WEEKS_CAP: 4, PREP_DEPOT_TOTAL_ASTRA: 10000000, PREP_DEPOT_CANCEL_FEE: 0.10,
     PROGRESS_WEIGHTS: { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 }, PROGRESS_VILLAGERS_REF: 100, PROGRESS_SOLDIERS_REF: 10
   },
@@ -1867,6 +1878,16 @@ export const GAME_CONFIG = {
         `Haftalık hammadde çıkarma hakkın hesap seviyene, katkı kademene (oyunda harcadığın ASTRA), aktifliğine ve Konsey Otoritesi'ne bağlı; ne kadar çok katkı yaparsan o kadar çok çıkarırsın. Tekrar eden giderler (stamina için buğday, alet onarımı, köylü yemi, ot ile iyileştirme, bot önkoşulu) çıkardığınla orantılı kaldı.`,
         `Gelişim bedellerinin ASTRA payı ve katkı puanları eski ölçekte kaldı (hammadde pazar değeri ÷ 5). Sirius Konseyi'nde Otorite 1. seviye 400 milyon, her proje 1,2 milyar birim ister: Konsey tek kişinin pazardan alıp bitireceği bir yer değil, herkesin ortak inşaatı.`,
         `Karnaval çarkındaki "1 ASTRA değerinde stamina" ödülü artık yaklaşık 22 stamina veriyor (stamina için gereken buğday 5 kat; ödül ASTRA değeri üzerinden hesaplanır).`
+      ]
+    },
+    {
+      version: 'v1.82',
+      title: '⚡ Konsey Hızlı Katkı, Roket Seviyeleri',
+      date: '19 Ekim 2026',
+      changes: [
+        `Sirius Konseyi ekranında "Hızlı katkı" kartı: yazdığın ASTRA kadar bütçe, hedefin kalan ihtiyacına göre bölünür; hammaddeler pazardan alınır ve hemen Madencilik Otoritesi'ne ya da etkin projeye yatırılır. Siloda yer yoksa önce ne yapman gerektiğini söyler; pazar fiyatı yükselirse aldığın miktar azalır. Alım katkı puanı kazandırır.`,
+        `Uzay Limanı'nda roket artık 5 seviyeli: roket Realm'dan UOA'ya (ikinci oyun) geçiş rampasıdır. Seviye yükseldikçe gidiş süresi kısalır (72 → 12 saat), taşıma kapasitesi (500 bin → 100 milyon birim) ve mürettebat (köylü + asker: 10 → 500 kişi) artar; bedel çok pahalı (seviye 5: 40 kat hammadde + 500 bin ASTRA). Gidiş-dönüş yapılabilir; fırlatma UOA açılana kadar kilitli. Harcadığın ASTRA'nın %4'ü UOA tohumunda birikmeye devam ediyor.`,
+        `Test menüsündeki "ilk güne sıfırla" denetlendi: dünya (kasalar, UOA tohumu, pazar havuzları, piyango, Konsey, Otorite, sayaçlar) ve oyuncu (seviye, envanter, silo, roket) taze kurulmuş oyunla birebir aynıya dönüyor; bunu bir test kanıtlıyor.`
       ]
     }
   ],

@@ -66,13 +66,50 @@ const ekran = {
         + (roket.reason && !roket.ready ? `<p class="ek-kucuk">${esc(roket.reason)}</p>` : '')
         + (roket.ready ? uyari(`Roket ${new Date(roket.builtAt).toLocaleDateString('tr-TR')} tarihinde hazırlandı; Universe'e geçiş kilidi burada açılacak.`, 'iyi') : '')
     });
-    return kap(durum + rampa + depoBolumu(dp));
+    // Roket seviyeleri (19 Ekim 2026): mevcut özellikler, sıradaki seviyenin bedeli, mürettebat; fırlatma UOA açılana kadar kilitli
+    let seviyeKarti = '';
+    if (roket.ready && roket.spec) {
+      const s = roket.spec;
+      const gelisim = roket.next ? (() => {
+        const plan = !roket.next.partsOk ? gs.getQuickBuyPlan('rocketup') : null;
+        const satirlar = roket.next.parts.map((p) => `<div class="ek-satir ${p.ok ? 'is-iyi' : 'is-kotu'}"><span>${esc(p.icon)} ${esc(p.name)}</span><b>${esc(tam(p.have))} / ${esc(tam(p.need))}</b></div>`).join('');
+        return `<p class="ek-not"><b>Seviye ${roket.next.spec.level} için:</b> gidiş ${roket.next.spec.travelHours} sa · taşıma ${esc(tam(roket.next.spec.cargo))} birim · mürettebat ${roket.next.spec.crew}</p>`
+          + satirlar
+          + dugme({ e: 'roketYukselt', metin: `🛠️ Roketi seviye ${roket.next.spec.level}'e yükselt`, ton: 'iyi', devreDisi: !roket.next.canUpgrade, genis: true })
+          + (plan && plan.items.length ? dugme({ e: 'roketYukseltHizli', metin: `⚡ Eksikleri al ve yükselt · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true, ipucu: plan.ok ? 'Eksik hammaddeyi pazardan alıp roketi yükseltir' : plan.reason }) : '');
+      })() : uyari('Roket en üst seviyede.', 'iyi');
+      seviyeKarti = kart({
+        baslik: `🚀 Roket seviye ${roket.rocketLevel} / ${roket.maxRocketLevel}`,
+        rozet: `<span class="ek-etiket">${roket.launchOpen ? 'fırlatma açık' : 'UOA kapalı'}</span>`,
+        icerik: not('Roket, Realm\'dan UOA\'ya (ikinci oyun) geçiş rampasıdır; gidiş-dönüş yapılabilir. Seviye yükseldikçe daha hızlı gider, daha çok hammadde ve daha çok kişi taşır. Mürettebat köylü + askerdir.')
+          + izgara([
+            hucre('Gidiş süresi', `${s.travelHours} saat`),
+            hucre('Taşıma', `${tam(s.cargo)} birim`),
+            hucre('Mürettebat', `${tam(roket.crewFits)} / ${tam(s.crew)}`),
+            hucre('Elindeki köylü + asker', tam(roket.crewNow))
+          ])
+          + gelisim
+          + dugme({ e: 'roketFirlat', metin: '🚀 UOA\'ya fırlat', ton: 'hayalet', devreDisi: !roket.launchOpen, genis: true, ipucu: roket.launchReason || 'Fırlatma' })
+          + (roket.launchReason ? `<p class="ek-kucuk">${esc(roket.launchReason)}</p>` : '')
+      });
+    }
+    return kap(durum + rampa + seviyeKarti + depoBolumu(dp));
   },
 
   eylemler: {
     roket(b) {
       const r = b.gameState.buildRocket();
       b.bildir(r.message, r.success ? 'success' : 'error');
+    },
+    roketYukselt(b) {
+      const r = b.gameState.upgradeRocket();
+      b.bildir(r.message, r.success ? 'success' : 'error');
+    },
+    async roketYukseltHizli(b) {
+      await hizliAlVeYap(b, 'rocketup', { baslik: 'Eksikler alınıp roket yükseltilsin mi?', tamam: 'Al ve yükselt', yap: () => b.gameState.upgradeRocket() });
+    },
+    roketFirlat(b) {
+      b.bildir('UOA henüz açılmadı: fırlatma kilitli. Harcadığın ASTRA\'nın %4\'ü UOA tohumunda birikiyor.', 'error');
     },
     async roketHizli(b) {
       await hizliAlVeYap(b, 'rocket', { baslik: 'Eksikler alınıp roket yapılsın mı?', tamam: 'Al ve roketi yap', yap: () => b.gameState.buildRocket() });

@@ -154,6 +154,7 @@ export class GameStateManager {
       uretim: kayit.uretim || null,   // Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
       rocketReady: !!kayit.rocketReady,
       rocketBuiltAt: kayit.rocketBuiltAt || 0,
+      rocketLevel: Math.max(0, Math.min(5, Number(kayit.rocketLevel) || (kayit.rocketReady ? 1 : 0))),   // 0 = yok, 1-5 roket seviyesi (config UZAY_LIMANI.ROCKET_LEVELS)
       grants: Array.isArray(kayit.grants) ? kayit.grants : [],
       equipment: { ...bosDonanim(), ...(kayit.equipment || {}) },
       armoryInventory: Array.isArray(kayit.armoryInventory) ? kayit.armoryInventory : [],

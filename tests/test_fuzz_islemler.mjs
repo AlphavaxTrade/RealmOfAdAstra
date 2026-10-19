@@ -48,6 +48,7 @@ const GECERLI = {
   gorulen: ['merkez', 'bolge', 'kota', 'koy', 'hazine', 'ekonomi', 'profil', 'zindanOnizleme', 'ilan', 'yakim', 'lig', 'havuzlar', 'tur'],
   eser: (GAME_CONFIG.COLLECTION_ARTIFACTS || []).map(c => c.id),
   fightOpts: [{}, { payGateFee: true }, { payGateFee: false }],
+  konseyHedef: ['otorite', 'proje'],
   healOpts: [{}, { kismi: true }, { kismi: false }],
   amounts: [{}, { wood: 1 }, { wood: 1e12 }, { stone: 0 }, Object.fromEntries(NODES.map(k => [k, 5]))]
 };

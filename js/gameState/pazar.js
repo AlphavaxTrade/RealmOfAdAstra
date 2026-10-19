@@ -166,6 +166,15 @@ export const pazarYontemleri = {
       for (const p of roket.parts) {
         if (p.key === 'adAstra') ekAstra = Number(p.need) || 0; else hedef[p.key] = p.need;
       }
+    } else if (kind === 'rocketup') {
+      // Roket geliştirme (seviye 2-5): sıradaki seviyenin hammadde parçaları pazardan, adAstra kalemi işin kendi ASTRA bedeli
+      const roket = this.getRocketStatus();
+      if (!roket.ready) return { ok: false, items: [], reason: 'Önce roketi yap.' };
+      if (!roket.next) return { ok: false, items: [], reason: 'Roket zaten en üst seviyede.' };
+      hedef = {};
+      for (const p of roket.next.parts) {
+        if (p.key === 'adAstra') ekAstra = Number(p.need) || 0; else hedef[p.key] = p.need;
+      }
     } else if (String(kind).startsWith('tool:')) {
       // tool:<alet kimliği> → alet tamiri (odun + demir + ASTRA)
       const bedel = this.calculateRepairCost(String(kind).slice(5));

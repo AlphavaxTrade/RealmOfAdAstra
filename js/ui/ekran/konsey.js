@@ -2,6 +2,7 @@
 // Konsey projeleri ve ortak kasa. Hammadde ve emek katkıları buradan yapılır.
 import { ekranKaydet, kap, kart, cubuk, dugme, not, izgara, etiket, simge, tam, sayi, esc } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi } from './bilesik.js';
+import { onay } from '../v3/bilesenler.js';
 
 const emekAdi = '💪 Emek';
 
@@ -87,6 +88,23 @@ function projeKarti(b) {
   });
 }
 
+// ⚡ Hızlı katkı: ASTRA bütçesini yaz, eksik hammaddeler pazardan alınıp Otorite'ye ya da etkin projeye yatırılsın
+function hizliKatkiKarti(b) {
+  const gs = b.gameState;
+  const bakiye = Math.floor(Number(gs.state.adAstraBalance) || 0);
+  const ot = gs.konseyHizliPlan('otorite', Math.max(1, bakiye));
+  const pj = gs.konseyHizliPlan('proje', Math.max(1, bakiye));
+  return kart({
+    baslik: '⚡ Hızlı katkı: ASTRA harca, hemen yatır',
+    icerik: [
+      not('Yazdığın ASTRA kadar bütçe, hedefin kalan ihtiyacına göre bölünür; hammaddeler pazardan alınır ve hemen Konsey\'e yatırılır. Pazar fiyatı yükselirse aldığın miktar azalır. Alım katkı puanı kazandırır.'),
+      `<div class="ek-alan-satiri"><input type="number" class="ek-girdi ek-girdi-dar" min="1" max="${bakiye}" value="${Math.max(1, Math.min(1000, bakiye))}" inputmode="numeric" id="hizli-butce" aria-label="ASTRA bütçesi (bakiyen ${bakiye})"><small>ASTRA (bakiyen ${esc(tam(bakiye))})</small></div>`,
+      dugme({ e: 'hizliKatki', metin: '⛏️ Otorite\'ye yatır', veri: { hedef: 'otorite' }, devreDisi: !ot.ok || bakiye < 1, genis: true }),
+      dugme({ e: 'hizliKatki', metin: '🏗️ Etkin projeye yatır', veri: { hedef: 'proje' }, devreDisi: !pj.ok || bakiye < 1, genis: true })
+    ].join('')
+  });
+}
+
 const ekran = {
   id: 'konsey',
   canliYenile: false,   // miktar kutuları yazılırken yeniden çizim olmasın; eylemlerden sonra çizilir
@@ -97,12 +115,27 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([uretimKarti(b, us, ortakKasa), otoriteKarti(b), projeKarti(b), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
+    return kap([uretimKarti(b, us, ortakKasa), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {
     // Haritadaki Konsey binası ve menü aynı ekranı açar (19 Ekim 2026); ASTRA kasaları ayrı ekranda (Hazine)
     hazine() { return { git: 'hazine' }; },
+    async hizliKatki(b, el) {
+      const gs = b.gameState;
+      const hedef = el.dataset.hedef;
+      const girdi = document.getElementById('hizli-butce');
+      const butce = Math.floor(Number(girdi && girdi.value));
+      if (!(butce > 0)) { b.bildir('Geçerli bir ASTRA tutarı yaz.', 'error'); return false; }
+      const plan = gs.konseyHizliPlan(hedef, butce);
+      if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
+      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (~${tam(Math.ceil(i.cost))} ASTRA)`).join('\n');
+      const tamam = await onay({ baslik: `${hedef === 'otorite' ? 'Otorite' : 'Proje'} için pazardan alınıp yatırılsın mı?`, metin: `${liste}\nİlk tur ~${tam(Math.ceil(plan.total))} ASTRA (bütçe ${tam(butce)} ASTRA; kalanla ek turlar yapılır)`, tamam: 'Al ve yatır' });
+      if (!tamam) return false;
+      const r = await gs.konseyHizliKatki(hedef, butce);
+      b.bildir(r.message, r.success ? 'success' : 'error');
+      return undefined;
+    },
     katki(b, el) {
       const gs = b.gameState;
       const { hedef, kaynak } = el.dataset;
