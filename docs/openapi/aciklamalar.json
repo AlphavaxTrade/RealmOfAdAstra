@@ -251,6 +251,11 @@
     "ozet": "Oyuncu kaydı + dünya görüntüsü (zamanla ilerleyen işler sunucuda işlenir)",
     "yanit": "{ player, world, address, epochId, gate }"
   },
+  "GET /api/uoa/pasaport": {
+    "etiket": "Oyun",
+    "ozet": "UOA pasaportu: roketini yapan hesap UOA'ya geçebilir (allowed); roket seviyesi, gidiş süresi, taşıma kapasitesi ve yükü, mürettebat",
+    "yanit": "{ pasaport: { allowed, reason, rocketLevel, travelHours, cargoCap, cargo, cargoUnits, crewCap, crew, universeOpen } }"
+  },
   "POST /api/action": {
     "etiket": "Oyun",
     "ozet": "Oyun işlemi (yalnız beyaz listedekiler; bkz. x-islemler)",

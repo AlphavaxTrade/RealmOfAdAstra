@@ -98,7 +98,7 @@ export const GAME_CONFIG = {
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
   KOY: {
     HOUSE_BASE_COST: { wood: qU(400), stone: qU(200), iron: qU(50) }, HOUSE_COST_MULT: 1.5, MAX_HOUSES: 20,
-    VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: qU(2), STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
+    VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: qU(10), STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
     LABOR_PER_VILLAGER_DAY: 1, PROD_BONUS_PER_10: 0.01, PROD_BONUS_MAX: 0.20, VILLAGER_PER_SOLDIER: 1,
     START_HOUSES: 1, START_VILLAGERS: 10
   },
@@ -115,18 +115,23 @@ export const GAME_CONFIG = {
   RECYCLE_RETURN_RATE: 0.70,
   // Uzay Limanı hazırlık modu (R6): roket görevi, Hazırlık Deposu, hazırlık ilerlemesi
   UZAY_LIMANI: {
-    ROCKET_MIN_LEVEL: 3,
-    ROCKET_PARTS: { iron: q(2000), coal: q(1000), stone: q(500), wood: q(300), adAstra: 1 },
+    // ROKET PLANI (19 Ekim 2026, kullanıcı kararı): roket ROA'dan UOA'ya geçiş RAMPASIDIR; roketini yapmayan UOA'ya geçemez. Roket "inanılmaz maliyetli" olmalı:
+    // 1 yıl aktif oynayan ancak biriktirebilir (bir hesabın yıllık çıkarma hakkı ~ demir 2,7 M, taş 4,5 M, odun 4 M, kömür 3,4 M; seviye atlamalar da bunu yer).
+    // Bedel silo kapasitesini çok aştığı için KADEMELİ katkıyla yatırılır (Konsey gibi). Hesap seviyesi en az 10 (1 yıllık F2P ~Sv.12-15).
+    ROCKET_MIN_LEVEL: 10,
+    ROCKET_PARTS: { iron: 1200000, coal: 1500000, stone: 2000000, wood: 1800000, adAstra: 250000 },   // ~yıllık çıkarma limitinin %35-40'ı (seviye atlamalar da çıkarmayı yer)
     // Roket seviyeleri (19 Ekim 2026): roket Realm'dan UOA'ya (ikinci oyun) geçiş rampasıdır. Seviye 1 = ilk roket (ROCKET_PARTS). Sonraki her seviye
     // ROCKET_PARTS'ın parts katı hammadde + adAstra ASTRA ister (çok pahalı; hammaddeyi silo tutabildiği ölçüde pazardan alınır). Seviye yükseldikçe gidiş süresi
     // kısalır (travelHours), taşıma kapasitesi (cargo: toplam hammadde birimi) ve mürettebat (crew: köylü + asker toplamı) artar. Gidiş-dönüş mümkündür; fırlatma
     // UOA açılana kadar kilitlidir (UNIVERSE_STAGE). UOA tohumu (harcamanın %4'ü) UOA açıldığında oradaki ilk kasaları ve hammadde pazarını doldurur.
+    // Her seviye parts x ROCKET_PARTS hammadde + o seviyenin ASTRA bedeli (250 B → 50 M ASTRA, 0,04 → 8,3 dolar) ister; hammadde bedeli seviye 5'te 40 katıdır (pazarın tavana kadar
+    // verebildiği demirin %20'si): üst seviyeler uzun vadeli hedeftir. cargo = Hazırlık Deposu'na konabilecek toplam hammadde adedi; crew = köylü + asker.
     ROCKET_LEVELS: [
-      { level: 1, parts: 1,    adAstra: 1,       travelHours: 72, cargo: 500000,    crew: 10 },
-      { level: 2, parts: 2.5,  adAstra: 5000,    travelHours: 48, cargo: 2000000,   crew: 30 },
-      { level: 3, parts: 6,    adAstra: 25000,   travelHours: 36, cargo: 8000000,   crew: 80 },
-      { level: 4, parts: 15,   adAstra: 100000,  travelHours: 24, cargo: 30000000,  crew: 200 },
-      { level: 5, parts: 40,   adAstra: 500000,  travelHours: 12, cargo: 100000000, crew: 500 }
+      { level: 1, parts: 1,    adAstra: 250000,    travelHours: 72, cargo: 500000,    crew: 10 },
+      { level: 2, parts: 2.5,  adAstra: 1000000,   travelHours: 48, cargo: 2000000,   crew: 30 },
+      { level: 3, parts: 6,    adAstra: 4000000,   travelHours: 36, cargo: 8000000,   crew: 80 },
+      { level: 4, parts: 15,   adAstra: 15000000,  travelHours: 24, cargo: 30000000,  crew: 200 },
+      { level: 5, parts: 40,   adAstra: 50000000,  travelHours: 12, cargo: 100000000, crew: 500 }
     ],
     PREP_DEPOT_WEEKS_CAP: 4, PREP_DEPOT_TOTAL_ASTRA: 10000000, PREP_DEPOT_CANCEL_FEE: 0.10,
     PROGRESS_WEIGHTS: { rocket: 0.2, depot: 0.2, villagers: 0.2, soldiers: 0.2, genesis: 0.2 }, PROGRESS_VILLAGERS_REF: 100, PROGRESS_SOLDIERS_REF: 10
@@ -1932,6 +1937,21 @@ export const GAME_CONFIG = {
         `Haftalık çıkarma hakkı artık iki katmanlı: herkesin KİŞİSEL limiti vardır (hesap seviyesi, köy evleri, katkı kademesi, aktiflik ve Konsey Otoritesi ile büyür; her ev +%3, en çok +%30) ve oyunun ortak GLOBAL havuzu vardır. Havuz oyuncu sayısına bağlı değildir: havuzun %60'ı herkese eşit taban pay olarak bölünür, kalan %40'ı limiti ve katkı kademesi yüksek olanlara gider; kimse kişisel limitini aşamaz. Oyuncu çoğaldıkça kişi başı pay küçülür.`,
         `Global havuz fiyata göre kendini dengeler: hammadde fiyatı açılışın 0,8 katının altına düşerse havuz küçülür (arz azalır, talep artar, fiyat yükselir); 1,5 katının üstüne çıkarsa havuz büyür (haftada en çok %25). Fiyat açılışın 3 katını aşarsa oyun oynanmaz olmasın diye havuz haftayı beklemeden %25 açılır. Oyuna bot projesinden gelen ASTRA normalin üstündeyse havuz önceden büyür, altındaysa küçülür.`,
         `Konsey ve Çıkarma Hakkı ekranlarındaki anlatım yeni sisteme göre yenilendi.`
+      ]
+    },
+    {
+      version: 'v1.85',
+      title: '🚀 Roket Rampası: UOA\'ya Geçiş Roketi',
+      date: '19 Ekim 2026',
+      changes: [
+        `"Uzay Limanı" artık "Roket Rampası". Roket, ROA'dan UOA'ya (Sirius gezegeni) geçiş rampasıdır: roketini yapmayan UOA'ya geçemez, UOA hesabı aktif olmaz. Roketini yapanlar UOA açıldığında roketlerine basıp UOA ekranına geçecek. Hesabın UOA'ya geçip geçemeyeceğini UOA oyunu "UOA pasaportu" ile sorar (roket seviyesi, taşıma, mürettebat dahil).`,
+        `Roket çok pahalı: bir yıl aktif oynayanın ancak biriktirebileceği ölçekte (ilk roket: demir 1,2 M, kömür 1,5 M, taş 2 M, odun 1,8 M + 250 bin ASTRA; hesap seviyesi en az 10). Bu kadar hammadde siloya sığmadığı için roket KADEMELİ inşa edilir: hammadde ve ASTRA parça parça yatırılır, hepsi dolunca roket (ya da bir üst seviye) tamamlanır. Hammadde yatırırken katkı puanı da kazanırsın. "Hızlı katkı" ASTRA bütçesiyle pazardan hammadde alıp hemen yatırır.`,
+        `Konsey'de yeni "🎖️ Katkı puanın" kartı: bu haftaki, geçen haftaki ve toplam puanını, kademeni ve hafta dönümünde hangi kademeye geçeceğini gösterir. Katkı kademesi geçen haftanın puanına bakar; o yüzden katkı yaptığın an çıkarma hakkın değişmez, hafta dönümünde işler. "Hızlı katkı" sonrası mesaj artık kazandığın puanı, hedefin doluluğunu (küçük yüzdeler %0 diye yuvarlanmaz) ve kademenin ne zaman işleyeceğini söyler. Taverna'daki "Günlük Üretim Hakkı sınırı" satırı için bir açıklama ve hakkı büyütme yolları eklendi.`,
+        `Köylüler artık günde 50 buğday yer (eskiden ekranda "2" yazıyordu ama gerçekte 10 kesiliyordu; yazı ve hesap tutarsızdı). Köy ekranındaki açıklama gerçek rakamı gösterir. 10 köylü günde 500, 40 köylü günde 2.000 buğday yakar: buğday için gerçek bir tüketim kalemi.`,
+        `"Üretim hakkın" kartı sadeleşti: "Şimdi çıkarabilirsin", "Bu haftaki hakkın" ve "çıkardığın" olarak üç sayı; çubuk haftalık hakkının ne kadarını çıkardığını gösterir. "Tüm seferleri topla" hakkın dolduğu için bir seferi toplayamazsa artık nedenini ve yeni hakkın ne zaman açılacağını söyler; hakkı dolan hazır sefer "⏳ hak bekliyor" görünür.`,
+        `Asker ekranında "Ön saf / Arka saf" seçimi netleşti: iki düğme yan yana, askerin şu anki yeri işaretli, diğerine basınca geçer; hangisinin ne işe yaradığı yazıyor.`,
+        `Haftalık temel gelir (UBI) kartı açıklandı: biriken para o hafta alınamaz, gelecek Pazartesi 00:01'de kasa olarak açılır. Kartta "Bu hafta birikiyor", "Pazartesi tahmini payın", "Şu an açık kasa" ve "Şu an alabileceğin" ayrı gösterilir.`,
+        `Roketin 5 seviyesi var: seviye yükseldikçe gidiş süresi kısalır (72 → 12 saat), Hazırlık Deposu'na konabilecek yük (taşıma kapasitesi) ve mürettebat (köylü + asker) artar. Üst seviyelerin bedeli hızla büyür (seviye 5'te hammadde 40 katı, ASTRA 50 milyon). Hazırlık Deposu'ndaki yük artık roketle taşınır: roketi olmayan yük koyamaz, toplam yük roketin taşıma kapasitesini aşamaz. Mürettebatı (kaç köylü ve asker gideceğini) roket ekranında seçersin.`
       ]
     }
   ],

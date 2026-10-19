@@ -243,6 +243,7 @@ html.v3-azalt .ek-cark-ibre { transition: none; }
 .ek-ad-duzen .ek-girdi { flex: 1 1 160px; }
 .ek-can { display: flex; flex-direction: column; gap: 6px; }
 .ek-yuvalar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.ek-saf-secimi { display: grid; gap: 6px; }
 .ek-yuva { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
 .ek-yuva.is-acik { border-color: rgba(231,185,76,.55); }
 .ek-yuva.is-bos { border-style: dashed; }

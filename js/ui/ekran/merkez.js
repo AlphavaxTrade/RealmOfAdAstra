@@ -4,6 +4,10 @@ import { kaynakSimgesi, hizliIyilestir } from './bilesik.js';
 
 // Eylem sonucunu tek satır bildirime çevirir
 function seferToplamaBildirimi(b, r) {
+  if (r.hakBekleyen && r.hakBekleyen.length) {
+    const ad = r.hakBekleyen.map((h) => h.ad).join(', ');
+    b.bildir(`⏳ ${ad} toplanamadı: bu kaynak için bugün alabileceğin Üretim Hakkın doldu, mahsul seferde bekliyor. Yeni hak ${r.hakBekleyen[0].bekle} sonra açılır (hakkını büyütmek için Konsey'e bak).`, 'warning');
+  }
   if (r.staminaWarning) b.bildir(r.staminaWarning, 'warning');
   else if (r.messages && r.messages.length > 0) b.bildir(r.messages[0], 'warning');
   if (r.claimed > 0 || r.partialClaimed > 0 || r.restarted > 0) {
@@ -54,7 +58,7 @@ const ekran = {
     const seferler = ozet.activeExps.length
       ? ozet.activeExps.map((e) => cubukSatiri(
         `${esc(e.icon)} ${esc(e.name)}`,
-        e.isCompleted ? '✅ hazır' : sure(e.remainingSeconds * 1000),
+        e.isCompleted ? (gs.getUretimHakki(e.nodeId).canTake < 1 ? '⏳ hak bekliyor' : '✅ hazır') : sure(e.remainingSeconds * 1000),
         e.pct,
         { ton: e.isCompleted ? '' : 'dolu', renk: e.isCompleted ? '#43d19a' : '' }
       )).join('')
@@ -67,8 +71,8 @@ const ekran = {
       const m = meta[k] || {};
       return cubukSatiri(
         `${esc(m.icon || '')} ${esc(m.name || k)}`,
-        `${tam(hak.canTake)} / ${tam(hak.weekly)}`,
-        hak.weekly > 0 ? (hak.canTake / hak.weekly) * 100 : 0,
+        `şimdi ${tam(hak.canTake)} · haftalık ${tam(hak.weekly)}`,
+        hak.weekly > 0 ? (hak.used / hak.weekly) * 100 : 0,
         { renk: m.color || '' }
       );
     }).join('');

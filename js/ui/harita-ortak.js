@@ -13,7 +13,7 @@ export const TOWN_ZONES = [
   { id: 'mine',        icon: '⛏️', name: 'Demir Madeni',      sub: 'Demir seferleri',                               px: 0.165, py: 0.200, pr: 0.050, color: '#38bdf8' },
   { id: 'quarry',      icon: '🪨', name: 'Taş Ocağı',         sub: 'Taş seferleri',                                 px: 0.280, py: 0.165, pr: 0.055, color: '#a8a29e' },
   { id: 'forest',      icon: '🌲', name: 'Zümrüt Ormanı',     sub: 'Odun seferleri',                                px: 0.620, py: 0.160, pr: 0.090, color: '#4ade80' },
-  { id: 'spaceport',   icon: '🚀', name: 'Uzay Limanı',       sub: 'Roket görevi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.085, color: '#38bdf8' },
+  { id: 'spaceport',   icon: '🚀', name: 'Roket Rampası',      sub: 'UOA roketi, Hazırlık Deposu, Gözlem Kulesi',  px: 0.870, py: 0.165, pr: 0.085, color: '#38bdf8' },
   { id: 'healer',      icon: '🌿', name: 'Şifahane',          sub: 'Şifalı otla asker iyileştirme',                 px: 0.285, py: 0.500, pr: 0.040, color: '#86efac' },
   { id: 'carnival',    icon: '🎪', name: 'Karnaval',          sub: 'Şans çarkı ve haftalık piyango',                px: 0.385, py: 0.420, pr: 0.050, color: '#ec4899' },
   { id: 'council',     icon: '🏛️', name: 'Sirius Konseyi',    sub: 'Kasalar, Otorite, projeler, ortak kasa',        px: 0.460, py: 0.305, pr: 0.045, color: '#a78bfa' },

@@ -25,7 +25,7 @@ const ekran = {
       baslik: '🏘️ Köy durumu',
       rozet: `<span class="ek-etiket">${koy.houses} ev · ${tam(koy.villagers)} / ${tam(koy.capacity)} köylü</span>`,
       icerik: [
-        not(`Köylüler günde 2 buğday yer; buğday varsa nüfus günde %2 büyür (ev kapasitesine kadar). ${koy.starveDays} gün aç kalırsa günde %5 göç eder. Her köylü günde 1 emek puanı üretir (Konsey projeleri için). Her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir.`),
+        not(`Her köylü günde ${tam(b.GAME_CONFIG.KOY.WHEAT_PER_VILLAGER_DAY)} buğday yer (ev dolu ise 10 köylü = günde ${tam(10 * b.GAME_CONFIG.KOY.WHEAT_PER_VILLAGER_DAY)}); buğday varsa nüfus günde %2 büyür (ev kapasitesine kadar). ${koy.starveDays} gün aç kalırsa günde %5 göç eder. Her köylü günde 1 emek puanı üretir (Konsey projeleri için). Her 10 köylü üretimi %1 artırır (en çok %20). Her asker için 1 köylü gerekir.`),
         koy.starving ? uyari(`Köy aç! ${koy.starvingDays} gündür buğday yok; ${koy.starveDays} günden sonra köylüler göç eder. Günlük ihtiyaç: ${tam(koy.wheatPerDay)} buğday.`, 'kotu') : '',
         izgara([
           hucre('Köylü', tam(koy.villagers)),

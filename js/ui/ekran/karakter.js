@@ -89,13 +89,15 @@ function ubiKarti(b) {
   return kart({
     baslik: '🏛️ Haftalık temel gelir (UBI)',
     rozet: etiket(u.eligible ? `+${astra(u.payout)} ASTRA / hafta` : 'Seviye 3\'te açılır', u.eligible ? 'iyi' : ''),
-    icerik: not(`Oyundaki her harcamanın <b>%6'sı</b> bu havuzda toplanır. Pazartesi 00:01'de (TSİ) kasa açılır; payın seviyene göre belirlenir ve haftada bir kez talep edersin.`)
+    icerik: not(`Oyundaki her harcamanın <b>%6'sı</b> havuzda birikir. Biriken para <b>o hafta alınamaz</b>: gelecek Pazartesi 00:01'de (TSİ) kasa olarak açılır ve payını o hafta talep edersin. Payın seviyene göre belirlenir.`)
       + izgara([
-        hucre('Havuzdaki toplam', `${astra(u.totalPool)} ASTRA`),
-        hucre('Bu haftanın kasası', `${astra(u.weeklyBudget)} ASTRA`),
-        hucre(`Senin payın (Lv.${gs.state.level})`, `${astra(u.payout)} ASTRA`, 'iyi'),
+        hucre('Bu hafta birikiyor', `${astra(u.accruingThisWeek)} ASTRA`),
+        hucre('Pazartesi tahmini payın', `~${astra(u.nextWeekPayout)} ASTRA`, 'iyi'),
+        hucre('Şu an açık kasa', `${astra(u.claimRemaining)} ASTRA`),
+        hucre(`Şu an alabileceğin (Lv.${gs.state.level})`, `${astra(u.payout)} ASTRA`, 'iyi'),
         hucre(`Sonraki seviye (Lv.${Math.min(81, gs.state.level + 1)})`, `${astra(u.nextLevelPayout)} ASTRA (+%${tam(u.increasePct)})`)
       ])
+      + (u.payout <= 0 && !u.alreadyClaimedThisWeek && u.eligible ? not('ℹ️ Şu an açık kasa boş: geçen hafta birikmiş para yoktu ya da alındı. Bu hafta biriken para gelecek Pazartesi açılır.') : '')
       + (u.alreadyClaimedThisWeek
         ? uyari('Bu haftaki temel gelirini aldın. Sonraki dağıtım Pazartesi 00:01 (TSİ).', 'iyi')
         : dugme({ e: 'ubi', metin: `🏛️ Haftalık temel geliri al (+${astra(u.payout)} ASTRA)`, ton: 'birincil', devreDisi: !u.eligible, genis: true }))

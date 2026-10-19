@@ -165,8 +165,9 @@ export const pazarYontemleri = {
       if (!roket.levelOk) return { ok: false, items: [], reason: `Hesap seviyesi en az ${roket.minLevel} olmalı.` };
       hedef = {};
       for (const p of roket.parts) {
-        if (p.key === 'adAstra') ekAstra = Number(p.need) || 0; else hedef[p.key] = p.need;
+        if (p.key === 'adAstra') ekAstra = Number(p.remain) || 0; else if (p.remain > 0) hedef[p.key] = p.remain;
       }
+      kapasitesiz = true;   // roket kademeli katkıyla inşa edilir: kalan bedelin hepsi aynı anda siloda durmak zorunda değil
     } else if (kind === 'rocketup') {
       // Roket geliştirme (seviye 2-5): sıradaki seviyenin hammadde parçaları pazardan, adAstra kalemi işin kendi ASTRA bedeli
       const roket = this.getRocketStatus();
@@ -174,8 +175,9 @@ export const pazarYontemleri = {
       if (!roket.next) return { ok: false, items: [], reason: 'Roket zaten en üst seviyede.' };
       hedef = {};
       for (const p of roket.next.parts) {
-        if (p.key === 'adAstra') ekAstra = Number(p.need) || 0; else hedef[p.key] = p.need;
+        if (p.key === 'adAstra') ekAstra = Number(p.remain) || 0; else if (p.remain > 0) hedef[p.key] = p.remain;
       }
+      kapasitesiz = true;   // roket kademeli katkıyla inşa edilir: kalan bedelin hepsi aynı anda siloda durmak zorunda değil
     } else if (String(kind).startsWith('tool:')) {
       // tool:<alet kimliği> → alet tamiri (odun + demir + ASTRA)
       const bedel = this.calculateRepairCost(String(kind).slice(5));

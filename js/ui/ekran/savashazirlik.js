@@ -1,7 +1,7 @@
 // Realm of AdAstra — Savaşa hazırlık ekranı (zindan): düşman, giriş koşulları, ordu seçimi ve savaşın başlatılması.
 // Kurallar js/gameState/zindan.js, sefer.js ve toplu.js içindedir; savaşın canlandırması canlı savaş arenasında oynanır.
 import {
-  ekranKaydet, kap, kart, katli, satir, cubukSatiri, dugme, uyari, not, bos, izgara, hucre, etiket,
+  ekranKaydet, kap, kart, katli, satir, cubuk, cubukSatiri, dugme, uyari, not, bos, izgara, hucre, etiket,
   tam, astra, sayi, esc, ac
 } from './cekirdek.js';
 import { soldierPortrait } from '../art.js';
@@ -56,6 +56,20 @@ function dusmanKarti(b, m, secili, terms) {
       + (!yeter
         ? uyari(`${esc(terms.staminaShortfall)} ⚡ stamina eksik.`, 'kotu') + dugme({ e: 'staminaDoldur', metin: '🍞 Buğdayla doldur' })
         : '')
+  });
+}
+
+// Kazanma şansı ekranın EN ÜSTÜNDE (19 Ekim 2026): "Aynı savaşı tekrarla" ile açılınca şans aşağıdaki düşman kartında kalıp görünmüyordu
+function sansSeridi(b, m, secili) {
+  if (!secili.length) return kart({ icerik: not('⚠️ Asker seçilmedi: kazanma şansı hesaplanamıyor. Aşağıdan savaşa girecek askerleri seç.') });
+  const tahmin = b.gameState.predictDungeonBattle(m, secili);
+  const sans = tahmin.winChance;
+  const ton = sans >= 75 ? 'iyi' : (sans >= 50 ? 'uyari' : 'kotu');
+  const yazi = sans >= 75 ? '🔥 Ordun ezici üstünlüğe sahip.' : (sans >= 50 ? '⚖️ Dengeli bir savaş, yaralanmalar olabilir.' : '⚠️ Yüksek risk: ordun yenilgiye uğrayabilir. Daha çok asker seçmeyi ya da askerleri güçlendirmeyi dene.');
+  return kart({
+    baslik: `🎯 Ordunun kazanma şansı: %${tam(sans)}`,
+    rozet: etiket(`${secili.length} asker`, ton),
+    icerik: cubuk(Math.max(0, Math.min(100, sans)), { ton: ton === 'kotu' ? 'kotu' : '' }) + not(`${yazi} (${esc(tahmin.difficulty)})`)
   });
 }
 
@@ -186,6 +200,7 @@ const ekran = {
 
     const parsomen = gs.state.inventory.scroll_heal || 0;
     return kap([
+      sansSeridi(b, m, secili),
       girisKarti(b, m, terms),
       dusmanKarti(b, m, secili, terms),
       ordu(b, secenek, secili),

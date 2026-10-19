@@ -10,6 +10,7 @@ const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
 const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
 const talepCarpani = (oran) => { const H = GAME_CONFIG.HAMMADDE || {}; const o = Math.max(0, Math.min(1, Number(oran) || 0)); return 1 + ((H.ORAN || 1) - 1) * o; };   // gameState/ortak.js ile aynı (döngüsel içe aktarımı önlemek için kopya)
 const r2 = v => Math.round((Number(v) || 0) * 100) / 100;
+const sayiTr = v => Math.round(Number(v) || 0).toLocaleString('tr-TR');
 const resName = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).name || k;
 const resIcon = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).icon || '';
 // Katkı puanı için fiyat: canlı pazar (varsa) yoksa açılış fiyatı (pazar modülü döngüsel içe aktarımı önlemek için küresel nesneden okunur)
@@ -54,7 +55,7 @@ export const globalPoolV2 = {
     const workNext = this.otoriteWork(Math.min(max, level + 1));
     return {
       level, max, maxed, units, need, progress, mix,
-      pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 1000) / 10 : 100,
+      pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 100000) / 1000 : 100,
       hours: Math.round(work.hours * 10) / 10, nextHours: Math.round(workNext.hours * 10) / 10,
       days: Math.round(work.days * 100) / 100, nextDays: Math.round(workNext.days * 100) / 100,
       perLevelBonus: O.PER_LEVEL_BONUS ?? 0.05,
@@ -151,7 +152,7 @@ export const globalPoolV2 = {
     const needTotal = Object.values(need).reduce((s, v) => s + v, 0) + (active ? active.labor : 0);
     const doneTotal = Object.values(progress).reduce((s, v) => s + v, 0) + labor;
     const done = (k ? k.projects.done : []).map(id => list.find(p => p.id === id)).filter(Boolean);
-    return { active, index: idx, need, progress, labor, mix: active ? mix : {}, pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 1000) / 10 : 100, done };
+    return { active, index: idx, need, progress, labor, mix: active ? mix : {}, pct: needTotal > 0 ? Math.round((doneTotal / needTotal) * 100000) / 1000 : 100, done };
   },
 
   contributeProject(amounts, labor = 0) {
@@ -408,94 +409,222 @@ export const gameStateV2 = {
     return { success: true, message: `♻️ ${item.name || 'Eşya'} geri dönüştürüldü: ${txt}${extra}.`, value, got, sold, lost };
   },
 
-  // ── Uzay Limanı (R6): roket görevi ──
+  // ── Roket Rampası (R6; 19 Ekim 2026 roket planı): ROA'dan UOA'ya geçiş rampası ──
+  // Roketini yapmayan UOA'ya geçemez. Roket çok pahalıdır (1 yıl aktif oynayan ancak biriktirir): bedel silo kapasitesini çok aşar, bu yüzden
+  // KADEMELİ katkıyla inşa edilir (Konsey gibi): hammadde ve ASTRA parça parça yatırılır, hepsi dolunca roket / yeni seviye tamamlanır.
+  // Seviye yükseldikçe gidiş süresi kısalır, taşıma kapasitesi (Hazırlık Deposu) ve mürettebat (köylü + asker) artar.
+  _rocketBuild() {
+    if (!this.state.rocketBuild || typeof this.state.rocketBuild !== 'object') this.state.rocketBuild = { level: 0, items: {}, ada: 0 };
+    if (!this.state.rocketBuild.items) this.state.rocketBuild.items = {};
+    return this.state.rocketBuild;
+  },
+
   getRocketStatus() {
     const U = GAME_CONFIG.UZAY_LIMANI || {};
     const parts = U.ROCKET_PARTS || {};
     const minLevel = U.ROCKET_MIN_LEVEL ?? 3;
     const level = Math.max(1, Number(this.state.level) || 1);
     const inv = this.state.inventory || {};
-    const rows = Object.entries(parts).map(([k, need]) => {
-      const have = k === 'adAstra' ? (Number(this.state.adAstraBalance) || 0) : (Number(inv[k]) || 0);
-      return { key: k, name: k === 'adAstra' ? 'ASTRA' : resName(k), icon: k === 'adAstra' ? '🟣' : resIcon(k), need, have: Math.floor(have * 1000) / 1000, ok: have >= need };
-    });
-    const ready = !!this.state.rocketReady;
-    const levelOk = level >= minLevel;
-    const partsOk = rows.every(r => r.ok);
-    const reason = ready ? 'Roket hazır' : (!levelOk ? `Hesap seviyesi en az ${minLevel} olmalı (şu an ${level})` : (!partsOk ? 'Eksik parça var' : null));
-    // Roket seviyeleri (19 Ekim 2026): mevcut seviye özellikleri, sıradaki seviyenin bedeli, mürettebat ve taşıma durumu
     const seviyeler = U.ROCKET_LEVELS || [];
+    const ready = !!this.state.rocketReady;
     const rl = ready ? Math.max(1, Number(this.state.rocketLevel) || 1) : 0;
     const spec = seviyeler.find(x => x.level === rl) || null;
-    const sonraki = seviyeler.find(x => x.level === rl + 1) || null;
-    let next = null;
-    if (ready && sonraki) {
-      const satirlar = Object.entries(parts).map(([k, need0]) => {
-        const need = k === 'adAstra' ? sonraki.adAstra : Math.round(need0 * sonraki.parts);
+    const hedefSpec = seviyeler.find(x => x.level === rl + 1) || null;   // şu an inşa edilen seviye (ilk roket = 1)
+    const levelOk = level >= minLevel;
+    // İnşa edilen seviyenin satırları: need = toplam bedel, done = şimdiye kadar yatırılan, remain = kalan, have = elindeki
+    let build = null;
+    if (hedefSpec) {
+      const rb = this._rocketBuild();
+      const ilerleme = rb.level === hedefSpec.level ? rb : { items: {}, ada: 0 };
+      const rows = Object.entries(parts).map(([k, need0]) => {
+        const need = k === 'adAstra' ? hedefSpec.adAstra : Math.round(need0 * hedefSpec.parts);
+        const done = Math.min(need, Math.floor(Number(k === 'adAstra' ? ilerleme.ada : ilerleme.items[k]) || 0));
         const have = k === 'adAstra' ? (Number(this.state.adAstraBalance) || 0) : (Number(inv[k]) || 0);
-        return { key: k, name: k === 'adAstra' ? 'ASTRA' : resName(k), icon: k === 'adAstra' ? '🟣' : resIcon(k), need, have: Math.floor(have * 1000) / 1000, ok: have >= need };
+        const remain = Math.max(0, need - done);
+        return { key: k, name: k === 'adAstra' ? 'ASTRA' : resName(k), icon: k === 'adAstra' ? '🟣' : resIcon(k), need, done, remain, have: Math.floor(have * 1000) / 1000, ok: remain <= 0 };
       });
-      const hepsiTamam = satirlar.every(r => r.ok);
-      next = { spec: sonraki, parts: satirlar, partsOk: hepsiTamam, canUpgrade: hepsiTamam };
+      const pct = rows.length ? Math.round(rows.reduce((t, r) => t + (r.need > 0 ? Math.min(1, r.done / r.need) : 1), 0) / rows.length * 100) : 100;
+      build = { spec: hedefSpec, rows, ok: rows.every(r => r.ok), pct };
     }
+    const rows = !ready && build ? build.rows : [];
+    const partsOk = rows.length > 0 && rows.every(r => r.ok);
+    const reason = ready ? 'Roket hazır' : (!levelOk ? `Hesap seviyesi en az ${minLevel} olmalı (şu an ${level})` : (!partsOk ? 'Roket henüz tamamlanmadı: hammadde ve ASTRA yatırmaya devam et' : null));
+    const next = ready && build ? { spec: hedefSpec, parts: build.rows, partsOk: build.ok, canUpgrade: build.ok, pct: build.pct } : null;
     const kore = this._village ? this._village() : null;
-    const crewNow = Math.floor(Number(kore && kore.villagers) || 0) + (Array.isArray(this.state.soldierUnits) ? this.state.soldierUnits.length : 0);
+    const villagersNow = Math.floor(Number(kore && kore.villagers) || 0);
+    const soldiersNow = Array.isArray(this.state.soldierUnits) ? this.state.soldierUnits.length : 0;
+    const crewNow = villagersNow + soldiersNow;
+    const crew = this._rocketCrewNormalized(spec ? spec.crew : 0, villagersNow, soldiersNow);
     const universeAcik = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 1;
     return {
-      ready, levelOk, minLevel, level, parts: rows, partsOk, canBuild: !ready && levelOk && partsOk, reason, builtAt: this.state.rocketBuiltAt || 0,
-      rocketLevel: rl, maxRocketLevel: seviyeler.length, spec, next,
-      crewNow, crewFits: spec ? Math.min(crewNow, spec.crew) : 0,
+      ready, levelOk, minLevel, level, parts: rows, partsOk, canBuild: !ready && levelOk, reason, builtAt: this.state.rocketBuiltAt || 0,
+      rocketLevel: rl, maxRocketLevel: seviyeler.length, spec, next, build,
+      crewNow, crewFits: spec ? Math.min(crewNow, spec.crew) : 0, crew, villagersNow, soldiersNow,
       launchOpen: !!(ready && universeAcik),
-      launchReason: !ready ? 'Önce roketi yap.' : (universeAcik ? '' : 'UOA henüz açılmadı: fırlatma kilitli.')
+      launchReason: !ready ? 'Önce roketini yap: roketi olmayan UOA\'ya geçemez.' : (universeAcik ? '' : 'UOA henüz açılmadı: fırlatma kilitli.')
     };
   },
 
-  // Roketi bir üst seviyeye geliştirir (seviye 2-5): ROCKET_PARTS x seviye katı hammadde + seviyenin ASTRA bedeli; hammadde yakılır
+  // Seçilen mürettebat (köylü + asker), roketin mürettebat kapasitesini ve elindeki köylü/asker sayısını aşamaz
+  _rocketCrewNormalized(cap, villagersNow, soldiersNow) {
+    const c = this.state.rocketCrew || { villagers: 0, soldiers: 0 };
+    let s = Math.max(0, Math.min(Math.floor(Number(c.soldiers) || 0), soldiersNow, cap));
+    let v = Math.max(0, Math.min(Math.floor(Number(c.villagers) || 0), villagersNow, cap - s));
+    return { villagers: v, soldiers: s, total: v + s, cap };
+  },
+
+  // Mürettebatı seç: roketin kapasitesi kadar köylü + asker UOA'ya gider (ROA'daki köylü ve askerler)
+  setRocketCrew(villagers, soldiers) {
+    const st = this.getRocketStatus();
+    if (!st.ready || !st.spec) return { success: false, message: '🚀 Önce roketini yap: mürettebat roketle gider.' };
+    const v = Math.max(0, Math.floor(Number(villagers) || 0));
+    const s = Math.max(0, Math.floor(Number(soldiers) || 0));
+    if (v > st.villagersNow) return { success: false, message: `Köyünde ${st.villagersNow} köylü var, ${v} seçemezsin.` };
+    if (s > st.soldiersNow) return { success: false, message: `Kışlanda ${st.soldiersNow} asker var, ${s} seçemezsin.` };
+    if (v + s > st.spec.crew) return { success: false, message: `Roketin mürettebat kapasitesi ${st.spec.crew} kişi (köylü + asker); ${v + s} seçtin.` };
+    this.state.rocketCrew = { villagers: v, soldiers: s };
+    this.saveState();
+    return { success: true, message: `👥 Mürettebat seçildi: ${v} köylü + ${s} asker (kapasite ${st.spec.crew}).`, crew: { villagers: v, soldiers: s, total: v + s } };
+  },
+
+  // UOA pasaportu: sunucu ve UOA oyunu bu bilgiyle hesabın UOA'ya geçip geçemeyeceğine karar verir (roketi olmayan geçemez)
+  getUoaPassport() {
+    const st = this.getRocketStatus();
+    const d = this._prepDepot ? this._prepDepot() : { items: {} };
+    const yuk = {};
+    let yukAdedi = 0;
+    for (const [k, q] of Object.entries(d.items || {})) { const n = Math.floor(Number(q) || 0); if (n > 0) { yuk[k] = n; yukAdedi += n; } }
+    return {
+      allowed: !!st.ready,
+      reason: st.ready ? '' : 'Roketini yapmayan UOA\'ya geçemez.',
+      rocketLevel: st.rocketLevel,
+      travelHours: st.spec ? st.spec.travelHours : null,
+      cargoCap: st.spec ? st.spec.cargo : 0,
+      cargo: yuk, cargoUnits: yukAdedi,
+      crewCap: st.spec ? st.spec.crew : 0,
+      crew: st.crew,
+      universeOpen: !!st.launchOpen
+    };
+  },
+
+  // Roket (ya da bir üst seviye) için hammadde ve ASTRA yatır. amounts: { iron: 1000, adAstra: 5000, ... }; her kalem kalan bedeli, elindekini ve istediğini aşmaz.
+  // Hammadde yakılır (katkı puanı yazılır), ASTRA harcanır (yakım/dağıtım). Her kalem dolunca roket / seviye tamamlanır.
+  contributeToRocket(amounts) {
+    const st = this.getRocketStatus();
+    const hedef = st.ready ? st.next : st.build;
+    if (!hedef) return { success: false, message: '🚀 Roket zaten en üst seviyede.' };
+    if (!st.ready && !st.levelOk) return { success: false, message: `🚀 Roket için hesap seviyesi en az ${st.minLevel} olmalı (şu an ${st.level}).` };
+    const rows = st.ready ? st.next.parts : st.build.rows;
+    const spec = st.ready ? st.next.spec : st.build.spec;
+    const rb = this._rocketBuild();
+    if (rb.level !== spec.level) { rb.level = spec.level; rb.items = {}; rb.ada = 0; }
+    const inv = this.state.inventory || {};
+    const put = {}; const burn = {};
+    for (const [k, n] of Object.entries(amounts || {})) {
+      const row = rows.find(r => r.key === k);
+      if (!row || row.remain <= 0) continue;
+      const istek = Math.max(0, Math.floor(Number(n) || 0));
+      if (k === 'adAstra') {
+        const q = Math.min(istek, row.remain, Math.floor(Number(this.state.adAstraBalance) || 0));
+        if (q <= 0) continue;
+        this.state.adAstraBalance = round3((Number(this.state.adAstraBalance) || 0) - q);
+        this._onAdaSpent(q);
+        globalPool.recordTokenSpend(q);
+        rb.ada = (Number(rb.ada) || 0) + q;
+        put[k] = q;
+      } else {
+        const q = Math.min(istek, row.remain, Math.floor(Number(inv[k]) || 0));
+        if (q <= 0) continue;
+        inv[k] = (Number(inv[k]) || 0) - q;
+        rb.items[k] = (Number(rb.items[k]) || 0) + q;
+        burn[k] = q; put[k] = q;
+      }
+    }
+    if (!Object.keys(put).length) return { success: false, message: '🚀 Yatırılacak bir şey yok: kalan bedel yok, elinde ilgili hammadde ya da ASTRA yok.' };
+    if (Object.keys(burn).length) this.burnResources(burn);
+    this.saveState();
+    const sonra = this.getRocketStatus();
+    const sonrakiRows = sonra.ready ? (sonra.next ? sonra.next.parts : []) : sonra.build.rows;
+    const tamamlandi = (st.ready ? sonra.rocketLevel > st.rocketLevel : sonra.ready) || (sonrakiRows.length > 0 && sonrakiRows.every(r => r.ok) && (st.ready ? st.next.spec.level : st.build.spec.level) === spec.level);
+    const parca = Object.entries(put).map(([k, q]) => `${sayiTr(q)} ${k === 'adAstra' ? 'ASTRA' : resName(k)}`).join(', ');
+    if (!tamamlandi) {
+      const pct = (st.ready ? this.getRocketStatus().next : this.getRocketStatus().build).pct;
+      return { success: true, completed: false, put, pct, message: `🚀 Roket inşaatına yatırıldı: ${parca}. İlerleme %${pct}.` };
+    }
+    // Tamamlandı: roket hazır / bir üst seviye
+    rb.level = 0; rb.items = {}; rb.ada = 0;
+    const ilkRoket = !st.ready;
+    this.state.rocketReady = true;
+    this.state.rocketLevel = spec.level;
+    if (ilkRoket) this.state.rocketBuiltAt = this._now();
+    this.saveState();
+    return {
+      success: true, completed: true, put, level: spec.level,
+      message: ilkRoket
+        ? `🚀 Roket hazır! (${parca} ile tamamlandı.) Artık UOA açıldığında Sirius gezegenine geçebilirsin: gidiş ${spec.travelHours} saat, taşıma ${sayiTr(spec.cargo)} birim, mürettebat ${spec.crew} kişi (köylü + asker).`
+        : `🚀 Roket seviye ${spec.level} oldu! Gidiş ${spec.travelHours} saat, taşıma ${sayiTr(spec.cargo)} birim, mürettebat ${spec.crew} kişi (köylü + asker).`
+    };
+  },
+
+  // Eski ad (Roketi yap / yükselt): elindeki her şeyi (kalan bedele kadar) roket inşaatına yatırır
+  buildRocket() {
+    const st = this.getRocketStatus();
+    if (st.ready) return { success: false, message: '🚀 Roket zaten hazır; bir üst seviye için "yükselt".' };
+    return this._rocketHepsiniYatir(st.build);
+  },
+
   upgradeRocket() {
     const st = this.getRocketStatus();
     if (!st.ready) return { success: false, message: '🚀 Önce roketi yap.' };
     if (!st.next) return { success: false, message: '🚀 Roket zaten en üst seviyede.' };
-    if (!st.next.canUpgrade) {
-      const eksik = st.next.parts.filter(p => !p.ok).map(p => p.name).join(', ');
-      return { success: false, message: `🚀 Roket geliştirilemedi: eksik ${eksik}.` };
-    }
-    const inv = this.state.inventory || {};
-    const burn = {};
-    for (const p of st.next.parts) {
-      if (p.key === 'adAstra') {
-        this.state.adAstraBalance = round3((Number(this.state.adAstraBalance) || 0) - p.need);
-        this._onAdaSpent(p.need);
-        globalPool.recordTokenSpend(p.need);
-      } else { inv[p.key] = (Number(inv[p.key]) || 0) - p.need; burn[p.key] = p.need; }
-    }
-    this.burnResources(burn);
-    this.state.rocketLevel = st.next.spec.level;
-    this.saveState();
-    const s = st.next.spec;
-    return { success: true, message: `🚀 Roket seviye ${s.level} oldu! Gidiş ${s.travelHours} saat, taşıma ${s.cargo.toLocaleString('tr-TR')} birim, mürettebat ${s.crew} kişi (köylü + asker).` };
+    return this._rocketHepsiniYatir({ rows: st.next.parts });
   },
 
-  buildRocket() {
+  _rocketHepsiniYatir(build) {
+    const amounts = {};
+    for (const r of (build ? build.rows : [])) amounts[r.key] = Math.min(r.remain, Math.floor(r.have));
+    return this.contributeToRocket(amounts);
+  },
+
+  // ⚡ Roket hızlı katkı: ASTRA bütçesi, kalan HAMMADDE bedeline değer ağırlığıyla bölünür; pazardan alınıp hemen yatırılır (en çok 12 tur).
+  // ASTRA bedeli (adAstra satırı) ayrıca "ASTRA yatır" ile verilir. Hammaddeyi yatırmak katkı puanı kazandırır.
+  rocketHizliPlan(butce) {
     const st = this.getRocketStatus();
-    if (st.ready) return { success: false, message: '🚀 Roket zaten hazır.' };
-    if (!st.canBuild) return { success: false, message: `🚀 Roket yapılamadı: ${st.reason}.` };
-    const U = GAME_CONFIG.UZAY_LIMANI || {};
-    const parts = U.ROCKET_PARTS || {};
-    const inv = this.state.inventory || {};
-    const burn = {};
-    for (const [k, need] of Object.entries(parts)) {
-      if (k === 'adAstra') {
-        this.state.adAstraBalance = round3((Number(this.state.adAstraBalance) || 0) - need);
-        this._onAdaSpent(need);
-        globalPool.recordTokenSpend(need);
-      } else { inv[k] = (Number(inv[k]) || 0) - need; burn[k] = need; }
+    const rows = st.ready ? (st.next ? st.next.parts : null) : st.build.rows;
+    if (!rows) return { ok: false, items: [], total: 0, reason: 'Roket zaten en üst seviyede.' };
+    if (!st.ready && !st.levelOk) return { ok: false, items: [], total: 0, reason: `Hesap seviyesi en az ${st.minLevel} olmalı.` };
+    const kalan = Object.fromEntries(rows.filter(r => r.key !== 'adAstra' && r.remain > 0).map(r => [r.key, r.remain]));
+    if (!Object.keys(kalan).length) return { ok: false, items: [], total: 0, reason: 'Hammadde bedeli tamam; kalan ASTRA bedelini yatır.' };
+    return this._butceyiBol(kalan, butce);
+  },
+
+  rocketHizliKatki(butce) {
+    let kalanButce = Math.min(Number(butce) || 0, Number(this.state.adAstraBalance) || 0);
+    if (!(kalanButce > 0)) return { success: false, message: 'Bütçe için ASTRA yok ya da geçerli bir tutar yazmadın.' };
+    const hepsi = {};
+    let harcanan = 0;
+    let tamamlandi = false;
+    for (let tur = 0; tur < 12 && kalanButce > 0.01; tur++) {
+      const plan = this.rocketHizliPlan(kalanButce);
+      if (!plan.ok) break;
+      const alinan = {};
+      for (const it of plan.items) {
+        const r = this.marketBuy(it.res, it.qty);
+        if (!r || !r.success) continue;
+        alinan[it.res] = (alinan[it.res] || 0) + (r.resourceReceived || it.qty);
+        harcanan += r.cost || 0;
+        kalanButce -= r.cost || 0;
+      }
+      if (!Object.keys(alinan).length) break;
+      const k = this.contributeToRocket(alinan);
+      if (!k.success) break;
+      for (const [r, q] of Object.entries(k.put || {})) hepsi[r] = (hepsi[r] || 0) + q;
+      if (k.completed) { tamamlandi = true; break; }
     }
-    this.burnResources(burn);
-    this.state.rocketReady = true;
-    this.state.rocketLevel = Math.max(1, Number(this.state.rocketLevel) || 1);
-    this.state.rocketBuiltAt = this._now();
-    this.saveState();
-    return { success: true, message: '🚀 Roket hazır! "Roket hazır" rozeti kazandın; Universe açıldığında geçiş kilidi buradan açılacak.' };
+    const parca = Object.entries(hepsi).map(([r, q]) => `${sayiTr(q)} ${resName(r)}`).join(', ');
+    if (!parca) return { success: false, spent: 0, message: 'Bu bütçeyle pazardan hammadde alınıp yatırılamadı (fiyat tavanı, bütçe, silo yeri ya da ihtiyaç).' };
+    return { success: true, spent: round3(harcanan), contributed: hepsi, completed: tamamlandi,
+      message: `⚡ ${round3(harcanan)} ASTRA ile pazardan alınıp roket inşaatına yatırıldı: ${parca}.${tamamlandi ? ' Roket / seviye tamamlandı!' : ''}` };
   },
 
   // ── Sirius Konseyi katkıları (oyuncu tarafı): hammadde yakılır, katkı puanı yazılır ──
@@ -529,6 +658,13 @@ export const gameStateV2 = {
     const bitti = hedef === 'otorite' ? st.maxed : !st.active;
     if (!m || bitti) return { ok: false, items: [], total: 0, reason: hedef === 'otorite' ? 'Madencilik Otoritesi en üst seviyede.' : 'Bütün Konsey projeleri tamamlandı.' };
     const kalan = Object.fromEntries(Object.keys(st.need).map(k => [k, Math.max(0, (st.need[k] || 0) - (st.progress[k] || 0))]));
+    return this._butceyiBol(kalan, butce);
+  },
+
+  // ASTRA bütçesini kalan hammadde bedeline değer ağırlığıyla böler (pazar fiyatı, tek işlem tavanı ve silo yeri gözetilir). kalan: { hammadde: adet }
+  _butceyiBol(kalan, butce) {
+    const m = globalThis.ammMarket;
+    if (!m) return { ok: false, items: [], total: 0, reason: 'Pazar şu an kullanılamıyor.' };
     const fiyat = Object.fromEntries(Object.keys(kalan).map(k => [k, Number(m.getPrice(k)) || 0]));
     const deger = Object.fromEntries(Object.keys(kalan).map(k => [k, kalan[k] * fiyat[k]]));
     const toplamDeger = Object.values(deger).reduce((s, v) => s + v, 0);
@@ -561,6 +697,7 @@ export const gameStateV2 = {
     const hepsi = {};
     let harcanan = 0;
     let tamamlandi = false;
+    const puan0 = this.getContributionInfo ? this.getContributionInfo().week : 0;
     for (let tur = 0; tur < 12 && kalanButce > 0.01; tur++) {
       const plan = this.konseyHizliPlan(hedef, kalanButce);
       if (!plan.ok) break;
@@ -580,9 +717,15 @@ export const gameStateV2 = {
     }
     const parca = Object.entries(hepsi).map(([r, q]) => `${q} ${resName(r)}`).join(', ');
     if (!parca) { const pl = this.konseyHizliPlan(hedef, Math.min(Number(butce) || 0, Number(this.state.adAstraBalance) || 0)); return { success: false, spent: 0, message: pl.reason || 'Bu bütçeyle pazardan hammadde alınıp yatırılamadı (fiyat tavanı, bütçe ya da ihtiyaç).' }; }
+    // Ne kazandın (19 Ekim 2026): yazılan katkı puanı, hedefin doluluğu ve kademenin ne zaman işleyeceği
+    const kd = this.getContributionStanding ? this.getContributionStanding() : null;
+    const kazanilan = kd ? kd.week - puan0 : 0;
+    const st = hedef === 'otorite' ? globalPool.getOtoriteStatus() : globalPool.getProjectStatus();
+    const dolu = st && st.pct != null ? (st.pct >= 1 ? st.pct : Math.round(st.pct * 1000) / 1000) : null;
+    const kademeNotu = kd ? (kd.atWeekEnd.id !== kd.now.id ? ` Hafta dönümünde kademen ${kd.atWeekEnd.name} olacak.` : ` Kademen hafta dönümünde ${kd.atWeekEnd.name} kalır.`) : '';
     return {
-      success: true, spent: round3(harcanan), contributed: hepsi, completed: tamamlandi,
-      message: `⚡ ${round3(harcanan)} ASTRA ile pazardan alınıp ${hedef === 'otorite' ? 'Otorite' : 'projeye'} yatırıldı: ${parca}.${tamamlandi ? ' Seviye / proje tamamlandı!' : ''}`
+      success: true, spent: round3(harcanan), contributed: hepsi, completed: tamamlandi, contribution: kazanilan,
+      message: `⚡ ${round3(harcanan)} ASTRA ile pazardan alınıp ${hedef === 'otorite' ? 'Otorite' : 'projeye'} yatırıldı: ${parca}.${tamamlandi ? ' Seviye / proje tamamlandı!' : (dolu != null ? ` Şu an %${String(dolu).replace(".", ",")} dolu.` : '')} Katkı puanı +${kazanilan} (bu hafta toplam ${kd ? kd.week : '?'}).${kademeNotu}`
     };
   },
 
@@ -660,31 +803,37 @@ export const gameStateV2Depot = {
       const stored = Math.floor(Number(d.items[k]) || 0);
       return { key: k, name: resName(k), icon: resIcon(k), stored, cap, room: Math.max(0, cap - stored), price: priceOf(k), have: Math.floor(Number((this.state.inventory || {})[k]) || 0) };
     });
+    // Roket planı (19 Ekim 2026): depoya konan yük roketle taşınır; toplam yük roketin taşıma kapasitesini (cargo) aşamaz, roketi olmayan yük koyamaz
+    const rk = this.getRocketStatus ? this.getRocketStatus() : null;
+    const cargoCap = rk && rk.spec ? rk.spec.cargo : 0;
+    const cargoUsed = rows.reduce((s, r) => s + r.stored, 0);
     const value = round3(rows.reduce((s, r) => s + r.stored * r.price, 0));
     const capValue = round3(rows.reduce((s, r) => s + r.cap * r.price, 0));
     const worldTotal = globalPool.getPrepDepotTotal ? globalPool.getPrepDepotTotal() : 0;
     const worldCap = U.PREP_DEPOT_TOTAL_ASTRA ?? 1e7;
     return { open: stage >= 1, stage, rows, value, capValue, fill: capValue > 0 ? Math.min(1, value / capValue) : 0,
+      rocketReady: !!(rk && rk.ready), cargoCap, cargoUsed, cargoRoom: Math.max(0, cargoCap - cargoUsed),
       worldTotal, worldCap, worldRoom: Math.max(0, round3(worldCap - worldTotal)), cancelFee: U.PREP_DEPOT_CANCEL_FEE ?? 0.1, weeksCap };
   },
   depositToPrepDepot(amounts) {
     const st = this.getPrepDepotStatus();
     if (!st.open) return { success: false, message: '🔒 Hazırlık Deposu henüz kapalı: Universe hazırlık aşaması (Aşama 1) başlayınca açılır.' };
+    if (!st.rocketReady) return { success: false, message: '🚀 Önce roketini yap: Hazırlık Deposu\'ndaki yük roketle UOA\'ya taşınır; roketi olmayan yük koyamaz.' };
     const inv = this.state.inventory || {};
     const d = this._prepDepot();
-    const put = {}; let value = 0; let worldRoom = st.worldRoom;
+    const put = {}; let value = 0; let worldRoom = st.worldRoom; let cargoRoom = st.cargoRoom;
     for (const [k, n] of Object.entries(amounts || {})) {
       const row = st.rows.find(r => r.key === k);
       if (!row) continue;
-      let q = Math.min(Math.max(0, Math.floor(Number(n) || 0)), row.have, row.room);
+      let q = Math.min(Math.max(0, Math.floor(Number(n) || 0)), row.have, row.room, cargoRoom);
       if (row.price > 0) q = Math.min(q, Math.floor(worldRoom / row.price));
       if (q <= 0) continue;
       put[k] = q;
       inv[k] = (Number(inv[k]) || 0) - q;
       d.items[k] = (Number(d.items[k]) || 0) + q;
-      value += q * row.price; worldRoom -= q * row.price;
+      value += q * row.price; worldRoom -= q * row.price; cargoRoom -= q;
     }
-    if (!Object.keys(put).length) return { success: false, message: 'Depoya konacak uygun miktar yok (sınır: kişi başı 4 haftalık Üretim Hakkı; dünya toplamı 10 M ASTRA değeri).' };
+    if (!Object.keys(put).length) return { success: false, message: 'Depoya konacak uygun miktar yok (sınırlar: kişi başı 4 haftalık Üretim Hakkı, roketinin taşıma kapasitesi, dünya toplamı 10 M ASTRA değeri).' };
     value = round3(value);
     d.value = round3((Number(d.value) || 0) + value);
     if (!d.since) d.since = this._now();

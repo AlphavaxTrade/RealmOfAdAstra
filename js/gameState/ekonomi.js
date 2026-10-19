@@ -274,6 +274,27 @@ export const ekonomiYontemleri = {
     return { ...best, score };
   },
 
+  // Katkı durumu (19 Ekim 2026): kademe GEÇEN haftanın puanına bakar, bu hafta yazılan puan hafta dönümünde geçerli olur.
+  // Ekranda "ne kazandım, ne zaman işleyecek" görünsün diye: bu hafta / geçen hafta puanı, şimdiki ve hafta sonunda olacak kademe, sıradaki eşik.
+  getContributionStanding() {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const tiers = U.TIERS || [{ id: 'none', name: 'Yok', min: 0, mult: 1 }];
+    const mult = this.getAdaPriceMultiplier();
+    const info = this.getContributionInfo();
+    const kademeOf = (puan) => { let b = tiers[0]; for (const t of tiers) if (puan >= (t.min || 0) * mult) b = t; return b; };
+    const simdi = kademeOf(info.lastWeek);
+    // Hafta dönümünde kademeyi belirleyen: bu haftanın puanı (o zaman "geçen hafta" olur)
+    const olacak = kademeOf(info.week);
+    const siradaki = tiers.find((t) => (t.min || 0) * mult > info.week) || null;
+    const bitis = Number(globalPool && globalPool.state && globalPool.state.epochEndTime) || 0;
+    return {
+      week: info.week, lastWeek: info.lastWeek, total: info.total,
+      now: simdi, atWeekEnd: olacak,
+      next: siradaki ? { name: siradaki.name, mult: siradaki.mult, need: Math.max(1, Math.ceil((siradaki.min || 0) * mult - info.week)) } : null,
+      weekEndsAt: bitis
+    };
+  },
+
   // Aktiflik: son 7 günde sefer toplanan gün sayısı / 7 (en az 0,25); ilk hafta tam sayılır
   getUretimActivity() {
     const U = GAME_CONFIG.URETIM_HAKKI || {};

@@ -45,6 +45,37 @@ function girisKarti(b, us) {
   });
 }
 
+// Küçük yüzdeler "%0" görünmesin (1000 ASTRA Otorite seviye 1 için ~%0,01)
+const yuz = (p) => { const n = Number(p) || 0; return n >= 10 ? Math.round(n) : (Math.round(n * 100) / 100).toLocaleString("tr"); };
+
+// Katkı puanın: yatırdıkça ne kazandın, hafta dönümünde kademen ne olacak (kademe GEÇEN haftanın puanına bakar)
+function katkiPuaniKarti(b) {
+  const gs = b.gameState;
+  if (!gs.getContributionStanding) return '';
+  const s = gs.getContributionStanding();
+  const kalanMs = s.weekEndsAt ? s.weekEndsAt - (b.globalPool.getTrustedTime ? b.globalPool.getTrustedTime() : Date.now()) : 0;
+  const gun = Math.floor(kalanMs / 86400000), saat = Math.floor((kalanMs % 86400000) / 3600000);
+  const sure = kalanMs > 0 ? (gun > 0 ? `${gun} gün ${saat} saat` : `${Math.max(1, saat)} saat`) : 'kısa süre';
+  const yuzde = (m) => Math.round((m - 1) * 100);
+  let durum;
+  if (s.week <= 0 && s.lastWeek <= 0) durum = 'Henüz katkı puanın yok. Konsey\'e hammadde ya da "Hızlı katkı" ile ASTRA yatırınca puan yazılır.';
+  else if (s.atWeekEnd.id === s.now.id) durum = `Kademen <b>${esc(s.now.name)}</b> (çıkarma hakkın %${esc(yuzde(s.now.mult))} büyük) ve bu puanlarla hafta sonunda da aynı kalır.`;
+  else durum = `Şu an kademen <b>${esc(s.now.name)}</b>. Bu haftaki puanın sayesinde <b>${sure} sonra</b> (hafta dönümünde) kademen <b>${esc(s.atWeekEnd.name)}</b> olacak ve çıkarma hakkın %${esc(yuzde(s.atWeekEnd.mult))} büyüyecek.`;
+  const siradaki = s.next ? `Sıradaki kademe <b>${esc(s.next.name)}</b> için bu hafta <b>${esc(tam(s.next.need))}</b> puan daha lazım.` : 'En üst kademedesin.';
+  return kart({
+    baslik: '🎖️ Katkı puanın',
+    rozet: etiket(`Kademe: ${s.now.name}`),
+    icerik: izgara([
+      `<div class="ek-hucre"><small>Bu hafta</small><b>${esc(tam(s.week))}</b></div>`,
+      `<div class="ek-hucre"><small>Geçen hafta</small><b>${esc(tam(s.lastWeek))}</b></div>`,
+      `<div class="ek-hucre"><small>Toplam</small><b>${esc(tam(s.total))}</b></div>`
+    ], { genis: true })
+      + not(durum)
+      + not(siradaki)
+      + katli('Neden hemen değişmiyor? (ayrıntı)', not('Katkı kademen <b>geçen haftanın</b> toplam puanına göre belirlenir; bu hafta yazdığın puan hafta dönümünde kademeye dönüşür. Böylece herkes aynı kurala bağlı kalır ve kademe hafta içinde oynamaz. Puan kazanmak için: Konsey\'e hammadde ya da ASTRA katkısı, hammadde yakmak ve oyunda ASTRA harcamak (bazı harcamalar ve pazardan alım tek başına puan getirmez). Her 1.000 ASTRA\'lık Konsey katkısı yaklaşık 290 puan yazar.'), { k: 'konsey-katki-detay' })
+  });
+}
+
 function uretimKarti(b, us, ortakKasa) {
   const kaynaklar = b.GAME_CONFIG.RESOURCE_KEYS.map((k) => {
     const hak = us.rights[k];
@@ -73,7 +104,7 @@ function otoriteKarti(b) {
   const ot = b.globalPool.getOtoriteStatus();
   const gerekenler = Object.keys(ot.need);
   const icerik = [
-    not(ot.maxed ? 'Madencilik Otoritesi en üst seviyede. Herkes tam fayda alıyor.' : `Bu bina bitince <b>herkesin</b> haftalık hammadde hakkı %${Math.round(ot.perLevelBonus * 100)} büyür ve çalışma süresi uzar. Şu an <b>%${Math.round(ot.pct)}</b> tamamlandı.`),
+    not(ot.maxed ? 'Madencilik Otoritesi en üst seviyede. Herkes tam fayda alıyor.' : `Bu bina bitince <b>herkesin</b> haftalık hammadde hakkı %${Math.round(ot.perLevelBonus * 100)} büyür ve çalışma süresi uzar. Şu an <b>%${yuz(ot.pct)}</b> tamamlandı.`),
     katli('Neler gerekiyor? (ayrıntı)', not(`Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: ${karisimYazisi(b, ot.mix)} (kömür çeliğin payıdır). Ortak kasa payı (çıkarılan her hammaddenin %5'i) buraya ve etkin projeye kendiliğinden eklenir.`)
       + (ot.maxed ? '' : gerekenler.map((k) => katkiSatiri(b, k, ot.progress[k] || 0, ot.need[k])).join('')), { k: 'konsey-otorite-detay' }),
     ot.maxed ? '' : cubuk(ot.pct, { renk: '#a78bfa' }),
@@ -98,7 +129,7 @@ function projeKarti(b) {
   return kart({
     baslik: `${esc(pj.active.icon)} Konsey projesi: ${esc(pj.active.name)}`,
     icerik: [
-      not(`<b>Bitince herkese faydası:</b> ${esc(pj.active.desc)} Şu an <b>%${Math.round(pj.pct)}</b> tamamlandı.`),
+      not(`<b>Bitince herkese faydası:</b> ${esc(pj.active.desc)} Şu an <b>%${yuz(pj.pct)}</b> tamamlandı.`),
       cubuk(pj.pct, { renk: '#63b0ff' }),
       katli('Neler gerekiyor? (ayrıntı)', not(`Gereken: ${tam(pj.active.units)} birim hammadde (${karisimYazisi(b, pj.mix)}) + ${tam(pj.active.labor)} emek. Senin emek puanın: ${tam(emek)}.`)
         + gerekenler.map((k) => katkiSatiri(b, k, pj.progress[k] || 0, pj.need[k])).join('') + katkiSatiri(b, 'labor', pj.labor, pj.active.labor), { k: 'konsey-proje-detay' }),
@@ -135,7 +166,7 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([girisKarti(b, us), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
+    return kap([girisKarti(b, us), katkiPuaniKarti(b), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {

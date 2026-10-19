@@ -95,7 +95,10 @@ function esyaKarti(b, g, sira) {
       && (env.stone || 0) >= (gelistirmeBedeli.stoneCost || 0) && (env.fragments || 0) >= gelistirmeBedeli.fragCost && gs.state.adAstraBalance >= gelistirmeBedeli.adaCost;
     if (!yeter) {
       const plan = gs.getQuickBuyPlan('upgrade:' + sira);
+      // Düğme her zaman görünür (19 Ekim 2026): alınamıyorsa kilitli kalır ve nedeni yazar (eskiden plan olmayınca düğme hiç çıkmıyordu)
       if (plan.ok) hizliGelistirme = dugme({ e: 'hizliGelistir', metin: `⚡ Eksikleri al ve geliştir · ${astra(plan.total)} ASTRA`, ton: 'iyi', veri, genis: true });
+      else hizliGelistirme = dugme({ e: 'hizliGelistir', metin: '⚡ Eksikleri al ve geliştir', ton: 'iyi', veri, genis: true, devreDisi: true })
+        + `<p class="ek-kucuk">⚠️ Şimdi alınamıyor: ${esc(plan.reason || 'pazardan eksik alınamıyor')}</p>`;
     }
   }
 

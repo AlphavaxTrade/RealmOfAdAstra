@@ -702,6 +702,26 @@ paths:
           $ref: "#/components/responses/Hata429"
         "500":
           $ref: "#/components/responses/Hata500"
+  /api/uoa/pasaport:
+    get:
+      tags:
+        - Oyun
+      summary: "UOA pasaportu: roketini yapan hesap UOA'ya geçebilir (allowed); roket seviyesi, gidiş süresi, taşıma kapasitesi ve yükü, mürettebat"
+      operationId: get_api_uoa_pasaport
+      security: *a2
+      responses:
+        "200":
+          description: "{ pasaport: { allowed, reason, rocketLevel, travelHours, cargoCap, cargo, cargoUnits, crewCap, crew, universeOpen } }"
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Hata401"
+        "429":
+          $ref: "#/components/responses/Hata429"
+        "500":
+          $ref: "#/components/responses/Hata500"
   /api/action:
     post:
       tags:
@@ -2652,6 +2672,7 @@ x-argüman-tipleri:
   fightOpts: "Seçenekler { payGateFee?: boolean }"
   konseyHedef: "Konsey hedefi: 'otorite' (Madencilik Otoritesi) ya da 'proje' (etkin Konsey projesi)"
   healOpts: "Seçenekler { kismi?: boolean }: şifalı ot tam iyileştirmeye yetmiyorsa eldeki otla kısmen iyileştir"
+  rocketAmounts: "Roket inşaatı katkısı { hammadde | adAstra: miktar } (en çok 8 anahtar, 0..1e12); adAstra roketin ASTRA bedelidir"
   amounts: "Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)"
 x-islemler:
   startExpedition:
@@ -2701,6 +2722,16 @@ x-islemler:
     argumanlar: []
   upgradeRocket:
     argumanlar: []
+  contributeToRocket:
+    argumanlar:
+      - rocketAmounts
+  rocketHizliKatki:
+    argumanlar:
+      - qty
+  setRocketCrew:
+    argumanlar:
+      - int
+      - int
   contributeToOtorite:
     argumanlar:
       - amounts

@@ -52,6 +52,7 @@ export const TIP_ACIKLAMALARI = {
   fightOpts: 'Seçenekler { payGateFee?: boolean }',
   konseyHedef: "Konsey hedefi: 'otorite' (Madencilik Otoritesi) ya da 'proje' (etkin Konsey projesi)",
   healOpts: 'Seçenekler { kismi?: boolean }: şifalı ot tam iyileştirmeye yetmiyorsa eldeki otla kısmen iyileştir',
+  rocketAmounts: 'Roket inşaatı katkısı { hammadde | adAstra: miktar } (en çok 8 anahtar, 0..1e12); adAstra roketin ASTRA bedelidir',
   amounts: 'Hammadde miktarları { hammadde: miktar } (en çok 8 anahtar, 0..1e12)'
 };
 

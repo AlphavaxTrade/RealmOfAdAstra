@@ -39,10 +39,10 @@ const DAY = 86400;
   assert.equal(v0.capacity, K.START_HOUSES * K.VILLAGERS_PER_HOUSE);
   assert.ok(near(v0.bonus, Math.floor(K.START_VILLAGERS / 10) * K.PROD_BONUS_PER_10), 'Her 10 köylü +%1 üretim');
   assert.equal(v0.soldierCap, K.START_VILLAGERS, 'Her asker 1 köylü');
-  gs.state.inventory.wheat = 100 * UR;
+  gs.state.inventory.wheat = 1000 * UR;
   const r = gs.processVillage(DAY);
-  assert.ok(near(r.eaten, K.START_VILLAGERS * K.WHEAT_PER_VILLAGER_DAY), '10 köylü günde 20 x50 buğday yer');
-  assert.ok(near(gs.state.inventory.wheat, 100 * UR - 20 * UR), 'Buğday depodan düştü');
+  assert.ok(near(r.eaten, K.START_VILLAGERS * K.WHEAT_PER_VILLAGER_DAY), '10 köylü günde config kadar buğday yer');
+  assert.ok(near(gs.state.inventory.wheat, 1000 * UR - K.START_VILLAGERS * K.WHEAT_PER_VILLAGER_DAY), 'Buğday depodan düştü');
   assert.ok(near(gs.getVillageInfo().labor, K.START_VILLAGERS * K.LABOR_PER_VILLAGER_DAY, 1), 'Günde köylü başına 1 emek');
   assert.equal(r.grew, 0, 'Kapasite doluyken büyüme yok');
   // Ev: hesap seviyesi sınırı, bedel, kapasite ve büyüme

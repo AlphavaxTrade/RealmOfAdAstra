@@ -188,12 +188,26 @@ function askerSayfasi(b, s, idx) {
         <small class="ek-kucuk">Asker ${idx + 1} · Sv.${a.level || 1}${set ? ` · ✨ ${esc(set.name)}` : ''}</small></div>
     </div>
     ${izgara([hucre('Saldırı', sayi(stats.totalAtk)), hucre('En yüksek can', sayi(stats.totalMaxHp))])}
-    ${dugmeler(dugme({ e: 'saf', metin: `${a.row === 'back' ? '🏹 Arka saf' : '🛡️ Ön saf'} ⇄`, ipucu: 'Savaşta duracağı yer' }))}
+    ${safSecimi(a)}
     ${can}
     <div class="ek-yuvalar">${K.YUVALAR.map((y) => yuvaKutusu(b, s, a, idx, y)).join('')}</div>
     ${seciciPaneli(b, s, a)}
     ${katli(`Yetenekler (${yetenekler.length})`, yetenekListesi + not("Yeni yetenekler seviye 10, 25, 45 ve 65'te açılır."), { k: 'kisla-yetenek' })}
   </section>`;
+}
+
+// Savaştaki yeri (19 Ekim 2026): iki seçenek yan yana, şu an bulunduğu yer dolu ve işaretli, diğerine basınca oraya geçer
+function safSecimi(a) {
+  const arkada = a.row === 'back';
+  const secenek = (arka) => dugme({
+    e: 'saf',
+    metin: `${arka ? '🏹 Arka saf' : '🛡️ Ön saf'}${arkada === arka ? ' ✓' : ''}`,
+    ton: arkada === arka ? 'birincil' : '',
+    devreDisi: arkada === arka,
+    ipucu: arkada === arka ? 'Şu an burada' : (arka ? 'Arka safa geçir' : 'Ön safa geçir')
+  });
+  return `<div class="ek-saf-secimi"><small class="ek-kucuk">Savaştaki yeri: şu an <b>${arkada ? 'arka saf' : 'ön saf'}</b>. Diğerine basınca geçer.</small>${dugmeler(secenek(false), secenek(true))}`
+    + `<small class="ek-kucuk">🛡️ Ön saf: düşmanın ilk vurduğu yer, en çok darbeyi alır. 🏹 Arka saf: ön safın arkasında durur, daha az darbe alır.</small></div>`;
 }
 
 function orduSekmesi(b, s) {

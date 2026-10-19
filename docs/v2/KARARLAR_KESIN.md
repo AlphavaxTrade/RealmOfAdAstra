@@ -51,6 +51,7 @@ Köy Evleri: 1. ev 400 odun + 200 taş + 50 demir, her ev ×1,2, en çok 20, ev 
 
 ## H. Uzay Limanı hazırlık modu (R6)
 
+- **19 Ekim 2026 ROKET PLANI (kullanıcı kararı, bu satırdaki eski bedelin yerine geçer):** ekranın adı "Roket Rampası" (eski Uzay Limanı). Roket ROA'dan UOA'ya (Sirius gezegeni) geçiş rampasıdır; roketini yapmayan UOA'ya geçemez (UOA hesabı aktif olmaz), yapan UOA açılınca roketine basıp UOA ekranına geçer. Roket çok pahalıdır (1 yıl aktif oyun), kademeli katkıyla inşa edilir, hesap seviyesi en az 10; 5 seviye: hız (72→12 sa), taşıma (Hazırlık Deposu yükü, 0,5 M→100 M birim) ve mürettebat (köylü + asker, 10→500) artar. UOA oyunu hesabı `GET /api/uoa/pasaport` ile doğrular. Ayrıntı: js/config.js UZAY_LIMANI, js/v2/koyVeKonsey.js, tests/test_roket_seviyeleri.mjs.
 - Roket Rampası: "Roket görevi" (hesap 3; parçalar 2.000 demir, 1.000 kömür, 500 taş, 300 odun, 100 ASTRA; tamamlanınca "Roket hazır" rozeti ve hazırlık puanı; Universe'e geçiş kilidi burada açılır).
 - Yük İskelesi: Hazırlık Deposu (F) + kilitli "gönderim" sekmesi.
 - Gözlem Kulesi: kilitli; Konsey göstergelerine kısayol.

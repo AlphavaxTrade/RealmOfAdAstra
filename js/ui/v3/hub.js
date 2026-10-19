@@ -20,7 +20,7 @@ export const HUB = {
     { k: 'sifahane', s: '🌿', ad: 'Şifahane', ac: 'Şifalı otla askerlerini iyileştir' },
     { k: 'koy', s: '🏘️', ad: 'Köy evleri', ac: 'Köylüler, emek ve nüfus' },
     { k: 'konsey', s: '🏛️', ad: 'Sirius Konseyi', ac: 'Kasalar, projeler, ortak kasa' },
-    { k: 'uzay', s: '🚀', ad: 'Uzay Limanı', ac: 'Roket görevi ve hazırlık deposu' }
+    { k: 'uzay', s: '🚀', ad: 'Roket Rampası', ac: 'UOA ya geçiş roketi ve hazırlık deposu' }
   ] },
   savas: { baslik: ['⚔️', 'Savaş'], ogeler: [
     { k: 'kisla', s: '⚔️', ad: 'Kışla', ac: 'Ordun, askerlerin ve teçhizatları', kilit: 'barracks' },

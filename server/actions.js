@@ -58,6 +58,9 @@ const T = {
     (v.payGateFee === undefined || typeof v.payGateFee === 'boolean'),
   // v2: Konsey katkısı — { hammadde: miktar } (yalnız oyunun 6 hammaddesi, pozitif sayılar)
   konseyHedef: v => v === 'otorite' || v === 'proje',
+  // Roket inşaatı katkısı: 6 hammadde + adAstra (ASTRA bedeli)
+  rocketAmounts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 &&
+    Object.entries(v).every(([k, x]) => (NODES.includes(k) || k === 'adAstra') && typeof x === 'number' && isFinite(x) && x >= 0 && x <= 1e12),
   amounts: v => v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length <= 8 &&
     Object.entries(v).every(([k, x]) => NODES.includes(k) && typeof x === 'number' && isFinite(x) && x >= 0 && x <= 1e12)
 };
@@ -87,6 +90,9 @@ export const ACTIONS = {
   recycleEquipment: A(['ref']),
   buildRocket: A([]),
   upgradeRocket: A([]),   // 19 Ekim 2026: roket seviyeleri (2-5)
+  contributeToRocket: A(['rocketAmounts']),   // roket planı: kademeli inşaat (hammadde + ASTRA yatır)
+  rocketHizliKatki: A(['qty']),               // ASTRA bütçesiyle pazardan alıp roket inşaatına yatır
+  setRocketCrew: A(['int', 'int']),           // UOA'ya gidecek mürettebat: köylü, asker
   contributeToOtorite: A(['amounts']),
   contributeToProject: A(['amounts', 'int?']),
   konseyHizliKatki: A(['konseyHedef', 'qty']),   // 19 Ekim 2026: ASTRA bütçesiyle pazardan alıp Konsey'e yatır

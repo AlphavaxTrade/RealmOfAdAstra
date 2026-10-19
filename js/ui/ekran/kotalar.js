@@ -84,10 +84,10 @@ const ekran = {
       const m = meta[k] || adlar[k] || {};
       return cubukSatiri(
         `${esc(m.icon || '')} ${esc(m.name || k)}`,
-        `Alınabilir ${tam(hak.canTake)} · haftalık ${tam(hak.weekly)}`,
-        oran(hak.used + hak.canTake, hak.weekly),
+        `Şimdi çıkarabilirsin: ${tam(hak.canTake)}`,
+        oran(hak.used, hak.weekly),
         { renk: m.color || '' }
-      ) + `<div class="ek-kucuk">Kullanılan ${tam(hak.used)} · açılan ${tam(hak.released)}${hak.extra > 0 ? ` · başkalarından +${tam(hak.extra)}` : ''}</div>`;
+      ) + `<div class="ek-kucuk">Bu haftaki hakkın ${tam(hak.weekly)} · çıkardığın ${tam(hak.used)}${hak.canTake < 1 ? ' · bugünlük bitti, yeni parça yarın açılır' : ''}${hak.extra > 0 ? ` · başkalarının boşta kalan hakkından +${tam(hak.extra)}` : ''}</div>`;
     }).join('');
 
     const nasil = `Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(otorite.hours)} sa × ${Math.round(otorite.days)} gün) × sabit kişisel kota × ağırlığın (seviye ×${agirlik.levelFactor} · ev ×${agirlik.houseFactor ?? 1} · katkı kademesi ${esc(agirlik.tier.name)} ×${agirlik.tier.mult} · aktiflik ×${agirlik.activity}). Bu senin kişisel limitindir; ortak havuz kıtsa payın limitinden küçük olur (havuzun %60'ı herkese eşit, %40'ı limiti ve katkısı yüksek olanlara). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`;
@@ -128,7 +128,7 @@ const ekran = {
       kart({
         baslik: '🎫 Üretim hakkın (bu hafta)',
         rozet: etiket(`ağırlık ×${agirlik.weight} · kademe ${agirlik.tier.name}`),
-        icerik: hakSatirlari + katli('Nasıl hesaplanır?', not(nasil), { k: 'kota-nasil' })
+        icerik: not('Haftalık hakkın 7 güne bölünür: her gün bir parçası açılır. "Şimdi çıkarabilirsin", açılan parçadan henüz kullanmadığın miktardır; sefer mahsulü en çok bu kadar toplanır. Çubuk, haftalık hakkının ne kadarını çıkardığını gösterir.') + hakSatirlari + katli('Nasıl hesaplanır?', not(nasil), { k: 'kota-nasil' })
       }),
       katli(`🌍 Sirius kapasitesi (herkes) · ${gunSirasi + 1}. gün / 7`, gunSeridi + siriusSatirlari + not(siriusNotu), { k: 'kota-sirius' }),
       kart({ baslik: '📅 Günlük sınırların (bugün)', icerik: gunluk }),

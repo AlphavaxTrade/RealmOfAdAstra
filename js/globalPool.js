@@ -535,6 +535,8 @@ export class GlobalResourceManager {
     const kasa = this.state.ubiClaimPotAtOpen || 0;
     const paySeviyesi = L => shareOf({ pot: kasa, playerLevel: L, totalWeight: this.getUbiTotalWeight(L), rules: UBI_KURALLARI });
     const payout = paySeviyesi(seviye);
+    // Bu hafta birikenin gelecek Pazartesi açıldığında senin payın (19 Ekim 2026: oyuncu "havuzda ASTRA var ama payım 0" diye karışıyordu)
+    const birikenPay = shareOf({ pot: this.state.ubiWeekAccrued || 0, playerLevel: seviye, totalWeight: this.getUbiTotalWeight(seviye), rules: UBI_KURALLARI });
     const sonraki = Math.min(81, seviye + 1);
     const w = levelWeight(seviye, UBI_KURALLARI);
     const wSonraki = levelWeight(sonraki, UBI_KURALLARI);
@@ -552,6 +554,7 @@ export class GlobalResourceManager {
       playerWeight: Math.round(w * 100) / 100,
       nextLevelWeight: Math.round(wSonraki * 100) / 100,
       payout,
+      nextWeekPayout: birikenPay,
       nextLevelPayout: paySeviyesi(sonraki),
       increasePct: w > 0 ? Math.round(((wSonraki - w) / w) * 100) : 0
     };

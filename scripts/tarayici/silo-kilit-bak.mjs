@@ -28,7 +28,8 @@ await s.goto(BASE, { waitUntil: 'domcontentloaded' });
 await s.waitForFunction(() => window.__v3 && window.gameState, null, { timeout: 30000 });
 await bekle(1500);
 await s.evaluate(() => { const gs = window.gameState; gs.state.level = 1; gs.state.warehouseLevel = 1; gs.state.adAstraBalance = 5000; for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) gs.state.inventory[k] = 1e6; gs.saveState(); });
-for (const [ekran, aranan, dosya] of [['silo', /hesap seviyeni geçemez/, 'silo-kilit'], ['konsey', /Kişisel limit|Bu haftaki çıkarma hakkın/, 'konsey-hak']]) {
+for (const [ekran, aranan, dosya] of [['silo', /hesap seviyeni geçemez/, 'silo-kilit'], ['konsey', /Kişisel limit|Bu haftaki çıkarma hakkın/, 'konsey-hak'], ['uzay', /Roket Rampası[\s\S]*Roketini inşa et/, 'roket-rampasi']]) {
+  if (ekran === 'uzay') await s.evaluate(() => { const gs = window.gameState; gs.state.level = 12; gs.state.rocketReady = false; gs.state.rocketBuild = { level: 1, items: { iron: 600000 }, ada: 100000 }; gs.state.inventory.stone = 50000; gs.saveState(); });
   await s.evaluate((e) => window.__v3.git(e), ekran);
   await bekle(1200);
   const metin = await s.evaluate(() => document.getElementById('modal-body').innerText.replace(/\s+/g, ' '));

@@ -15,6 +15,13 @@ export default function oyunRotalari(ctx) {
       return playerPayload(me, out.state);
     },
 
+    // UOA pasaportu (19 Ekim 2026 roket planı): UOA oyunu bu bilgiyle hesabın geçip geçemeyeceğine karar verir. Roketini yapmayan geçemez (allowed: false).
+    'GET /api/uoa/pasaport': (req, me) => {
+      const out = safePlayer(me, g => g.getUoaPassport());
+      if (out.error) return [500, { error: out.result.message }];
+      return { pasaport: out.result };
+    },
+
     'POST /api/action': async (req, me) => {
       const { name, args } = await readBody(req);
       if (typeof name !== 'string') return [400, { error: 'İşlem adı gerekli' }];

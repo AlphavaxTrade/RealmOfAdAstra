@@ -154,6 +154,8 @@ export class GameStateManager {
       uretim: kayit.uretim || null,   // Üretim Hakkı kullanımı (hafta, kullanılan, aktif günler)
       rocketReady: !!kayit.rocketReady,
       rocketBuiltAt: kayit.rocketBuiltAt || 0,
+      rocketBuild: kayit.rocketBuild && typeof kayit.rocketBuild === 'object' ? { level: Number(kayit.rocketBuild.level) || 0, items: { ...(kayit.rocketBuild.items || {}) }, ada: Number(kayit.rocketBuild.ada) || 0 } : { level: 0, items: {}, ada: 0 },   // roket inşaatı: yatırılan hammadde ve ASTRA
+      rocketCrew: kayit.rocketCrew && typeof kayit.rocketCrew === 'object' ? { villagers: Math.max(0, Number(kayit.rocketCrew.villagers) || 0), soldiers: Math.max(0, Number(kayit.rocketCrew.soldiers) || 0) } : { villagers: 0, soldiers: 0 },   // UOA'ya gidecek mürettebat
       rocketLevel: Math.max(0, Math.min(5, Number(kayit.rocketLevel) || (kayit.rocketReady ? 1 : 0))),   // 0 = yok, 1-5 roket seviyesi (config UZAY_LIMANI.ROCKET_LEVELS)
       grants: Array.isArray(kayit.grants) ? kayit.grants : [],
       equipment: { ...bosDonanim(), ...(kayit.equipment || {}) },

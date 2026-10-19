@@ -28,6 +28,7 @@ const fresh = () => {
   treasury.reset();
   const gs = new GameStateManager();
   gs.state.warehouseLevel = gs.getWarehouseMaxLevel();
+  gs.state.rocketReady = true; gs.state.rocketLevel = 5;   // roket planı (19 Ekim 2026): yük roketle taşınır; roketi olmayan yük koyamaz (5. seviye: 100 M birim)
   return gs;
 };
 
@@ -173,12 +174,17 @@ const fresh = () => {
     assert.equal(s1.body.world.universeStage, 1, 'Dünya görüntüsünde aşama');
     const st = await call('GET', '/api/admin/status', null, cfg.adminToken);
     assert.equal(st.body.universeStage, 1);
-    engine.mutatePlayer(v.body.playerId, gs => { gs.state.inventory.wood = 50; });
+    engine.mutatePlayer(v.body.playerId, gs => { gs.state.inventory.wood = 50; gs.state.rocketReady = true; gs.state.rocketLevel = 1; });   // roket planı: yük roketle taşınır
     const dep1 = await call('POST', '/api/action', { name: 'depositToPrepDepot', args: [{ wood: 10 }] }, tok);
     assert.equal(dep1.status, 200, JSON.stringify(dep1.body));
     assert.equal(dep1.body.result.success, true, dep1.body.result.message);
     assert.equal(dep1.body.player.hazirlikDepo.items.wood, 10, 'Depo kayıtta saklanır');
     assert.equal(dep1.body.player.inventory.wood, 40);
+    const pas = await call('GET', '/api/uoa/pasaport', null, tok);
+    assert.equal(pas.status, 200, JSON.stringify(pas.body));
+    assert.equal(pas.body.pasaport.allowed, true, 'roketi olan hesap UOA ya geçebilir');
+    assert.equal(pas.body.pasaport.rocketLevel, 1);
+    assert.equal(pas.body.pasaport.cargoUnits, 10, 'depodaki yük pasaportta');
     const wd = await call('POST', '/api/action', { name: 'withdrawFromPrepDepot', args: ['wood', 10] }, tok);
     assert.equal(wd.body.result.success, true, wd.body.result.message);
     assert.equal(wd.body.player.inventory.wood, 49, '1 odun kesinti');

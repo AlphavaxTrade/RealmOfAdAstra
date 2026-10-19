@@ -45,22 +45,25 @@ const planla = (gs, plan) => { for (const i of plan.items) assert.equal(gs.marke
   ok('köy evi planı eksikleri hesaplar, ev yapılır, seviye sınırında reddeder');
 }
 
-// 2) Roket: hammaddeler pazardan, 'adAstra' parçası işin kendi bedeli olarak eklenir
+// 2) Roket (19 Ekim 2026: kademeli inşaat): plan KALAN hammaddeyi pazardan alır, 'adAstra' bedeli işin kendi bedeli olarak eklenir; seviye şartı sorulur
 {
   const gs = yeni();
-  gs.state.level = 5;
+  gs.state.level = GAME_CONFIG.UZAY_LIMANI.ROCKET_MIN_LEVEL;
   const P = GAME_CONFIG.UZAY_LIMANI.ROCKET_PARTS;
-  gs.state.warehouseLevel = 14;
   const plan = gs.getQuickBuyPlan('rocket');
   const k = kalem(plan);
   for (const [res, n] of Object.entries(P)) if (res !== 'adAstra') assert.equal(k[res], n, `${res} eksiği`);
-  assert.equal(plan.extraAda, P.adAstra, 'ASTRA parçası işin bedeli');
+  assert.equal(plan.extraAda, P.adAstra, 'ASTRA bedeli işin bedeli');
   assert.ok(!('adAstra' in k), 'ASTRA pazardan alınmaz');
-  if (!plan.ok) assert.ok(plan.reason, 'yapılamıyorsa nedeni yazılı (silo vb.)');
-  else { planla(gs, plan); assert.equal(gs.buildRocket().success, true, 'planla alınan malzemeyle roket yapıldı'); assert.equal(gs.getQuickBuyPlan('rocket').ok, false, 'roket hazır: yeni plan yok'); }
+  // bir kısmı yatırılmışsa plan yalnız kalanı alır
+  gs.state.inventory.iron = 400000;
+  gs.contributeToRocket({ iron: 400000, adAstra: 50000 });
+  const plan2 = gs.getQuickBuyPlan('rocket');
+  assert.equal(kalem(plan2).iron, P.iron - 400000, 'yalnız kalan demir');
+  assert.equal(plan2.extraAda, P.adAstra - 50000, 'yalnız kalan ASTRA bedeli');
   gs.state.level = 1;
   assert.equal(yeni().getQuickBuyPlan('rocket').ok, false, 'seviye yetmezse plan reddeder');
-  ok('roket planı hammaddeyi ve ASTRA parçasını ayırır, seviye şartını sorar');
+  ok('roket planı kalan hammaddeyi ve ASTRA bedelini ayırır, seviye şartını sorar');
 }
 
 // 3) Alet tamiri: odun + demir eksiği, ASTRA işin bedeli

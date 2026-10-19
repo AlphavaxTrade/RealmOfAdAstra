@@ -50,6 +50,7 @@ const GECERLI = {
   fightOpts: [{}, { payGateFee: true }, { payGateFee: false }],
   konseyHedef: ['otorite', 'proje'],
   healOpts: [{}, { kismi: true }, { kismi: false }],
+  rocketAmounts: [{}, { iron: 1 }, { adAstra: 5 }, { adAstra: 1e12, iron: 1e12 }, Object.fromEntries([...NODES, 'adAstra'].map(k => [k, 5]))],
   amounts: [{}, { wood: 1 }, { wood: 1e12 }, { stone: 0 }, Object.fromEntries(NODES.map(k => [k, 5]))]
 };
 const GECERLI_DEGER = (tur) => { const t = tur.replace('?', ''); const l = GECERLI[t]; assert.ok(l && l.length, 'fuzz örneği tanımsız: ' + t); return pick(l); };

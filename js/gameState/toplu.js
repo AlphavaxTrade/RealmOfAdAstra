@@ -11,7 +11,7 @@ const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 export const topluYontemleri = {
   // Biten seferleri toplar, bitmeyenin o ana kadarki hasadını alır, kırık aleti onarır, boştaki alanlara yeni sefer başlatır
   claimAndRestartAllExpeditions() {
-    const sonuc = { claimed: 0, partialClaimed: 0, restarted: 0, totalHarvest: 0, messages: [] };
+    const sonuc = { claimed: 0, partialClaimed: 0, restarted: 0, totalHarvest: 0, messages: [], hakBekleyen: [] };
 
     for (const alan of Object.keys(this.state.activeExpeditions || {})) {
       const sefer = this.state.activeExpeditions[alan];
@@ -23,6 +23,10 @@ export const topluYontemleri = {
         sonuc.totalHarvest += r.amount || 0;
       } else if (r.isWarehouseFull) {
         sonuc.messages.push(r.message);
+      } else if (r.isQuotaWait && bitmisti) {
+        // Üretim Hakkı doldu: sefer bitmiş ama mahsul izin bekliyor (19 Ekim 2026: eskiden sessizce toplanmıyordu, oyuncu nedenini anlamıyordu)
+        const hak = this.getUretimHakki(alan);
+        sonuc.hakBekleyen.push({ ad: kaynakAdi(alan) || alan, bekleyen: r.remainingToClaim || 0, bekle: this._fmtWait((hak.nextReleaseAt || 0) - this._now()) });
       }
     }
 

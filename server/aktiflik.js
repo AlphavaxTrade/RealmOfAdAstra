@@ -42,7 +42,7 @@ const KATEGORI_ESLEME = {
   // pazar (hammadde + Hazırlık Deposu)
   marketSell: 'pazar', marketBuy: 'pazar', depositToPrepDepot: 'pazar', withdrawFromPrepDepot: 'pazar',
   // Konsey / Otorite / Uzay Limanı hazırlığı
-  contributeToOtorite: 'konsey', contributeToProject: 'konsey', konseyHizliKatki: 'konsey', buildRocket: 'konsey', upgradeRocket: 'konsey',
+  contributeToOtorite: 'konsey', contributeToProject: 'konsey', konseyHizliKatki: 'konsey', buildRocket: 'konsey', upgradeRocket: 'konsey', contributeToRocket: 'konsey', rocketHizliKatki: 'konsey', setRocketCrew: 'konsey',
   // karnaval (çark, kutu, piyango, koleksiyon)
   spinCarnivalWheel: 'karnaval', unboxMysteryBox: 'karnaval', carnivalCheer: 'karnaval',
   buyLotteryTickets: 'karnaval', claimWinnerLotteryPayout: 'karnaval', useLotteryTicketForWheel: 'karnaval',

@@ -84,6 +84,7 @@ function ucretDokumu(b) {
     ...(Number(h.rightsLimitLossAda) >= 0.5 ? [satir('Günlük Üretim Hakkı sınırı (bugün alabileceğin kadarıyla sınırlı)', `−${n0(h.rightsLimitLossAda)} ASTRA`, 'kotu')] : []),
     satir('Net kâr', `+${n0(h.netProfitAda)} ASTRA`),
     satir('Bot ücreti (net kârın yarısı)', `${n0(h.botCostAda)} ASTRA`, 'uyari'),
+    ...(Number(h.rightsLimitLossAda) >= 0.5 ? [not('ℹ️ <b>Üretim Hakkı sınırı nedir?</b> Oyun, herkesin haftada çıkarabileceği hammaddeyi sınırlar (Konsey\'deki "Bu haftaki çıkarma hakkın" kartı). Bot, bir günde üretebileceğinden fazlasını alamaz; hakkın üretiminin yalnız bir kısmına yetiyorsa kalanı bota yazılmaz (kâr olarak da, masraf olarak da). Hakkını büyütmek için: hesap seviyeni yükselt, köy evi ekle, Konsey\'e katkı yap (katkı kademesi), her gün sefer topla (aktiflik). Hak büyüdükçe bot kârı da büyür.')] : []),
     not(`🛡️ <b>Güvenlik payı:</b> Bot kasanda en az <b>${esc(astra(gs.getBotAdaReserve()))} ASTRA</b> bırakır${gs.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}.`)
   ].join('');
   return katli('📊 Ücret nasıl hesaplanıyor?', icerik, { k: 'ucret' });

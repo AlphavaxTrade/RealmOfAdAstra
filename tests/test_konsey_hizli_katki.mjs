@@ -77,4 +77,23 @@ const doluluk = (st) => Object.values(st.progress).reduce((s, v) => s + v, 0);
   ok('büyük bütçede fiyat koridor tavanında kalır, döngü biter');
 }
 
+// 5) Katkı durumu görünür: hızlı katkı puan yazar, kademe geçen haftaya bakar, hafta sonunda olacak kademe gösterilir, mesaj ne kazandığını söyler
+{
+  const gs = yeni();
+  const s0 = gs.getContributionStanding();
+  assert.equal(s0.week, 0);
+  assert.equal(s0.atWeekEnd.id, 'none');
+  const r = gs.konseyHizliKatki('otorite', 1000);
+  assert.equal(r.success, true, r.message);
+  const s = gs.getContributionStanding();
+  assert.ok(s.week > 200, `1000 ASTRA ~290 puan yazar (${s.week})`);
+  assert.equal(s.now.id, 'none', 'şu anki kademe geçen haftaya bakar, hemen değişmez');
+  assert.equal(s.atWeekEnd.id, 'silver', 'hafta dönümünde Gümüş olacak');
+  assert.ok(s.next && s.next.name === 'Altın' && s.next.need > 0, 'sıradaki kademe ve kalan puan');
+  assert.match(r.message, /Katkı puanı \+\d+/, 'mesaj kazanılan puanı söyler');
+  assert.match(r.message, /Gümüş olacak/, 'mesaj kademenin ne zaman işleyeceğini söyler');
+  assert.match(r.message, /Şu an %0,0\d+ dolu/, 'küçük ilerleme %0 diye yuvarlanmaz');
+  ok('katkı durumu: puan, şimdiki / hafta sonu kademesi ve sıradaki eşik görünür');
+}
+
 console.log(`\n${n} Konsey hızlı katkı kontrolü geçti.`);
