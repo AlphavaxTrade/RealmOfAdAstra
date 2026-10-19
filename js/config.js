@@ -1695,6 +1695,14 @@ export const GAME_CONFIG = {
         `Zindan'da "Zindan kasasının bugünkü ödeme bütçesi doldu" uyarısı tüm oyuncular için sanılıyordu. Bu sınır yalnız senin hesabının o günkü zindan ödeme payıdır (kasanın günlük payı ile günlük kişisel tavanından küçüğü); başka oyuncuların girişini etkilemez. Mesaj bunu açıkça söyleyecek şekilde yenilendi ("Bugünkü zindan ödeme payını doldurdun…"). Her gece 00:00'da (TSİ) yenilenir.`,
         `Krallık Yolu: hazır ödüllerin hepsini tek tek almak yerine haritadaki Krallık Yolu kartında ve panelin üstünde "Tümünü topla" düğmesi var. Hazır görev ödülleri, tamamlanan bölümlerin ödülleri ve açıldıysa final unvanı tek dokunuşta alınır. Haftalık ödeme payı dolarsa o noktada durur; alınmayan ödüller kaybolmaz, yeni haftada tekrar basınca alınır.`,
       ]
+    },
+{
+      version: 'v1.71',
+      title: '⚔️ Zindanda Savaş İki Kez Oynanıyordu',
+      date: '19 Ekim 2026',
+      changes: [
+        `Zindan savaşında düşman yenilince canı sıfır olup kartı soluklaşıyor, sonra can yeniden doluyor ve aynı düşmanı bir kez daha yeniyor gibi görünüyordu. İkinci bir canavar yoktu: çevrimiçi oyunda savaş kaydı arenada baştan sona İKİ KEZ oynatılıyordu (hasar, ölüm ve yetenek satırları iki kez görünüyordu). Düzeltildi: savaş artık tek sefer oynuyor. Sonuç, ödül ve kalan can hesabı zaten tek savaşa göre yapılıyordu, onlar değişmedi.`
+      ]
     }
   ],
 

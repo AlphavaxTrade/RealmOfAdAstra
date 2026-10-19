@@ -48,8 +48,16 @@ export function olayKuyrugu(replay) {
   const kuyruk = [];
   if (!replay || !Array.isArray(replay.rounds)) return kuyruk;
   replay.rounds.forEach((r) => (r.events || []).forEach((ev) => kuyruk.push({ round: r.round, ev })));
-  const sayilan = new Set(kuyruk.map((x) => x.ev));
-  const basta = (replay.log || []).filter((ev) => !sayilan.has(ev)).map((ev) => ({ round: 0, ev }));
+  // Tur kayıtları ve günlük aynı olayları taşır. Sunucudan JSON olarak gelen kayıtta nesne kimliği kaybolur (aynı olay iki ayrı nesne olur),
+  // bu yüzden eşleştirme içerikle ve adetle yapılır; yoksa bütün savaş iki kez oynardı (düşman öldükten sonra canı geri gelip yeniden ölürdü).
+  const sayilan = new Map();
+  for (const x of kuyruk) { const k = JSON.stringify(x.ev); sayilan.set(k, (sayilan.get(k) || 0) + 1); }
+  const basta = (replay.log || []).filter((ev) => {
+    const k = JSON.stringify(ev);
+    const kalan = sayilan.get(k) || 0;
+    if (kalan > 0) { sayilan.set(k, kalan - 1); return false; }
+    return true;
+  }).map((ev) => ({ round: 0, ev }));
   return [...basta, ...kuyruk];
 }
 

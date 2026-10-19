@@ -24,6 +24,9 @@ console.log('✅ birim resmi seçimi');
   const baslangic = { type: 'modifier', text: 'Kat etkisi' };
   const k = olayKuyrugu({ rounds: [{ round: 1, events: [e1] }, { round: 2, events: [e2] }], log: [baslangic, e1, e2] });
   assert.deepEqual(k.map((x) => [x.round, x.ev.type]), [[0, 'modifier'], [1, 'damage'], [2, 'heal']]);
+  // Sunucudan JSON olarak gelen kayıt (olaylar artık aynı nesne değil) savaşı İKİ KEZ oynatmamalı; tekrar eden aynı olaylar da silinmemeli
+  const json = JSON.parse(JSON.stringify({ rounds: [{ round: 1, events: [e1, e1] }, { round: 2, events: [e2] }], log: [baslangic, e1, e1, e2] }));
+  assert.deepEqual(olayKuyrugu(json).map((x) => [x.round, x.ev.type]), [[0, 'modifier'], [1, 'damage'], [1, 'damage'], [2, 'heal']], 'JSON kopyada her olay bir kez');
   assert.deepEqual(olayKuyrugu(null), []);
   assert.deepEqual(olayKuyrugu({}), []);
   console.log('✅ olay kuyruğu');
