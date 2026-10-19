@@ -75,7 +75,7 @@ assert.ok(ubiAfter > ubiBefore, 'Silo yükseltme ASTRA harcamasından %6 UBI hav
 
 const hazineOzeti = treasury.getSummary();
 console.log('Hazine kasaları:', hazineOzeti.pools.map(p => `${p.name}: ${p.balance.toFixed(2)} ASTRA`));
-assert.ok(hazineOzeti.pools.length >= 9, 'hazine defterinde 9 kasa olmalı');
+assert.ok(hazineOzeti.pools.length >= 8, 'hazine defterinde 8 kasa olmalı');
 assert.ok(globalPool.state.ubiPool > 0, 'UBI havuzunda bakiye görünmeli');
 
 console.log('✅ Silo yükseltme ASTRA dağıtımı ve Hazine/UBI havuz görünürlüğü doğrulandı.');

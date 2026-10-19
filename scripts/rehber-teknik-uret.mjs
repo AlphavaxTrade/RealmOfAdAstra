@@ -160,7 +160,7 @@ ${tablo(['Limit', 'Süre', 'Değer', 'Kimin için?'], [
 // 2) ASTRA AKIŞI
 // ═══════════════════════════════════════════════════════════════════════════
 const hazinePay = C.TOKEN_REWARD_POOL_RATE;
-const KASA_AD = { dungeon: '🗺️ Zindan Ganimet Kasası', arena: '🏟️ Kolezyum Şampiyonluk Havuzu', worldBoss: '🌋 Dünya Bossu Ödül Havuzu', ammBuyback: '🛡️ Pazar Geri Alım Kasası', quest: '📜 Görev ve Ücretsiz Oyuncu Kasası', carnival: '🎪 Karnaval Ödül Havuzu', fatih: '👑 Fatih Kasası', konsey: '🏛️ Sirius Konseyi Kasası', universe: '🚀 Universe Tohum Rezervi (kilitli)' };
+const KASA_AD = { dungeon: '🗺️ Zindan Ganimet Kasası', arena: '🏟️ Kolezyum Şampiyonluk Havuzu', worldBoss: '🌋 Dünya Bossu Ödül Havuzu', ammBuyback: '🛡️ Pazar Geri Alım Kasası', quest: '📜 Görev ve Ücretsiz Oyuncu Kasası', carnival: '🎪 Karnaval Ödül Havuzu', fatih: '👑 Fatih Kasası', uoaTohum: '🚀 UOA Tohumu (kilitli)' };
 const seedToplam = Object.values(C.TREASURY_SEED).reduce((s, v) => s + v, 0);
 const ammToplam = Object.values(C.AMM_SEED_ASTRA).reduce((s, v) => s + v, 0);
 const akis = bolum('t-akis', '💸', 'ASTRA nereye gider? (harcama bölüşümü)', 'Oyunda harcadığın her ASTRA dört yere bölünür. Hiçbir ASTRA yok olmaz ve havadan yenisi basılmaz: ya yakılır ya da başka bir kasaya geçer.',
@@ -181,14 +181,14 @@ ${tablo(['Kasa', 'Hazine payının %\'si', '1.000 ASTRA harcayınca', 'Ne ödeme
   [KASA_AD.quest, yuzde(C.TREASURY_ALLOCATION.quest, 0), astra(1000 * hazinePay * C.TREASURY_ALLOCATION.quest, 1), 'Krallık Yolu, promo kodları, ücretsiz oyuncu payı'],
   [KASA_AD.carnival, yuzde(C.TREASURY_ALLOCATION.carnival, 0), astra(1000 * hazinePay * C.TREASURY_ALLOCATION.carnival, 1), 'Çark ve piyango ödülleri'],
   [KASA_AD.fatih, yuzde(C.TREASURY_ALLOCATION.fatih, 0), astra(1000 * hazinePay * C.TREASURY_ALLOCATION.fatih, 1), '18. kat bossunu ilk kez yenene Fatih Ödülü'],
-  [KASA_AD.konsey, yuzde(C.TREASURY_ALLOCATION.konsey, 0), astra(1000 * hazinePay * C.TREASURY_ALLOCATION.konsey, 1), 'Sirius Konseyi projeleri']
+  [KASA_AD.uoaTohum, yuzde(C.TREASURY_ALLOCATION.uoaTohum, 1), astra(1000 * hazinePay * C.TREASURY_ALLOCATION.uoaTohum, 1), 'İkinci oyun UOA için biriktirilir (kilitli)']
 ])}
   <div class="kutu ipucu" data-s="💡"><b>Bilmen gereken</b>
   <p>Bu bölüşüm <b>RealmRates</b> adlı bir zincir sözleşmesinden okunur; değiştirmek için <b>${24} saatlik bekleme</b> gerekir. Yani oranlar bir gecede değişemez, herkes önceden görür.</p></div>
   <h3>Başlangıç parası: ${sayi((seedToplam + ammToplam + C.CARNIVAL.LOTTERY.SEED_POOL_ADA) / 1e6)} milyon ASTRA nereye ayrıldı?</h3>
 ${tablo(['Yer', 'Başlangıç tohumu', 'Not'], [
   ['🏪 Pazar havuzları', astra(ammToplam, 0), `6 hammaddeye ${sayi(C.AMM_SEED_ASTRA.raw)}, parça/anahtar/kutu/parşömenlere ${sayi(ammToplam - C.AMM_SEED_ASTRA.raw)}`],
-  ...Object.keys(C.TREASURY_SEED).map((id) => [KASA_AD[id], astra(C.TREASURY_SEED[id], 0), id === 'universe' ? 'İkinci oyun açılana kadar kimse kullanamaz' : id === 'fatih' ? 'Yalnız 18. kat bossu için' : id === 'konsey' ? 'Proje kasası' : 'Ödeme kasası']),
+  ...Object.keys(C.TREASURY_SEED).map((id) => [KASA_AD[id], astra(C.TREASURY_SEED[id], 0), id === 'uoaTohum' ? 'İkinci oyun UOA açılana kadar kimse kullanamaz; harcamanın %4\'üyle dolar' : id === 'fatih' ? 'Yalnız 18. kat bossu için' : 'Ödeme kasası']),
   ['🎟️ Piyango kasası', astra(C.CARNIVAL.LOTTERY.SEED_POOL_ADA, 0), 'Kazanan ödülünü buradan alır']
 ])}
   <p>Toplam: <b>${astra(seedToplam + ammToplam + C.CARNIVAL.LOTTERY.SEED_POOL_ADA, 0)}</b>.</p>

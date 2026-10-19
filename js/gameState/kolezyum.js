@@ -31,7 +31,7 @@ export const kolezyumYontemleri = {
     if (miktar <= 0) return;
     const pay = Math.max(0, Math.min(1, GAME_CONFIG.COLOSSEUM.ENTRY_ARENA_SHARE ?? 0.7));
     this._onAdaSpent(miktar);
-    if (pay > 0 && treasury.depositTo) treasury.depositTo('arena', miktar * pay);
+    if (pay > 0 && treasury.depositDirect) treasury.depositDirect('arena', miktar * pay);   // %4 UOA tohumu önce ayrılır
     globalPool.recordTokenSpend(miktar * (1 - pay));
   },
 

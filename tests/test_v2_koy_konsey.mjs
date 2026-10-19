@@ -207,12 +207,12 @@ const DAY = 86400;
   assert.equal(gs.state.inventory.stone, 600, 'Verilen taş depodan düştü');
   assert.equal(globalPool.getOtoriteStatus().progress.stone, 400);
   assert.ok(gs.getContributionInfo().week > 0, 'Katkı puanı yazıldı');
-  const kBefore = treasury.getPool('konsey');
+  const kBefore = treasury.getPool('uoaTohum');
   const r = globalPool.contributeOtorite(st0.need);
   assert.equal(r.completed, true, 'Karışım tamamlanınca seviye atlar');
   assert.equal(globalPool.uretimParams().otoriteLevel, 1);
   assert.ok(near(globalPool.state.resources.wood.baseCap, Math.floor(cap0 * (1 + O.PER_LEVEL_BONUS) * (globalPool.otoriteWork(1).minutes / globalPool.otoriteWork(0).minutes)), 2), 'Kapasite +%5 ve daha uzun çalışma');
-  assert.equal(treasury.getPool('konsey'), kBefore, 'Konsey kasasından kimseye ödeme çıkmadı (çelik payı kasadan değil kömürden)');
+  assert.equal(treasury.getPool('uoaTohum'), kBefore, 'Konsey kasasından kimseye ödeme çıkmadı (çelik payı kasadan değil kömürden)');
   assert.equal(globalPool.getOtoriteStatus().units, Math.round(O.BASE_UNITS * O.LEVEL_MULT), '2. seviye ×1,4');
   ok('Madencilik Otoritesi: altı hammaddeli karışım, katkı, seviye ve kapasite');
 }

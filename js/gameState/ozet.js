@@ -205,8 +205,7 @@ export const ozetYontemleri = {
     // v2: yeni kasalar (Fatih, Sirius Konseyi, Universe rezervi) da listede
     const EXTRA_POOL_META = {
       fatih: { icon: '👑', color: '#f59e0b', description: '18. kat bossunu ilk kez yenen oyuncuya Fatih Ödülü bu kasadan ödenir: orduna harcadığın ASTRA\'dan zindanda geri kazandıkların düşülür, kalan (en çok 18 askerin bedeli kadar) verilir. Kasa, ordu harcamalarının bir payıyla dolar.', howToEarn: 'Zindanın 18. katındaki bossu ilk kez yen.', actionType: 'dungeon', actionText: '💀 Zindana Git' },
-      konsey: { icon: '🏛️', color: '#a78bfa', description: 'Sirius Konseyi kasası: Universe açılış günü ödülleri için ayrılmıştır, o güne kadar kilitli bekler. Otorite ve Konsey projeleri hammaddeyle yapılır.', howToEarn: 'Bu kasadan ödeme yalnız Universe açılış gününde yapılır.', actionType: 'council', actionText: '🏛️ Konsey' },
-      universe: { icon: '🚀', color: '#38bdf8', description: 'Universe Tohum Rezervi: Realm bu kasaya dokunamaz; Universe açılınca Galaksi Pazarı ve Hazırlık Deposu için kullanılır.', howToEarn: 'Kilitli — Universe açılışına kadar.', actionType: 'spaceport', actionText: '🚀 Uzay Limanı' }
+      uoaTohum: { icon: '🚀', color: '#38bdf8', description: 'UOA tohumu: oyunda harcanan her ASTRA\'nın %4\'ü ikinci oyun UOA için burada birikir. Realm bu kasaya dokunamaz; UOA açılınca oradaki kasalara ve hammadde pazarı havuzlarına aktarılır (roketle taşınan ilk kaynaklar bu havuzlarla birleşir).', howToEarn: 'Kilitli — UOA açılışına kadar. Oyunda ASTRA harcadıkça dolar.', actionType: 'spaceport', actionText: '🚀 Uzay Limanı' }
     };
     const listed = new Set(pools.map(p => p.id));
     for (const id of Object.keys(GAME_CONFIG.TREASURY_SEED || {})) {

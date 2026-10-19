@@ -163,7 +163,7 @@ export const karnavalYontemleri = {
       this._onAdaSpent(bedel);
       // Bedelin %85'i doğrudan Karnaval kasasına (ödüller buradan ödenir), kalanı her harcama gibi dağıtılır
       const pay = Math.max(0, Math.min(1, K.WHEEL_CARNIVAL_SHARE ?? 0.85));
-      if (pay > 0 && treasury.depositTo) treasury.depositTo('carnival', bedel * pay);
+      if (pay > 0 && treasury.depositDirect) treasury.depositDirect('carnival', bedel * pay);   // %4 UOA tohumu önce ayrılır
       globalPool.recordTokenSpend(bedel * (1 - pay));
     } else if (paymentMethod === 'ticket') {
       if ((this.state.lotteryTickets || 0) < 1) {

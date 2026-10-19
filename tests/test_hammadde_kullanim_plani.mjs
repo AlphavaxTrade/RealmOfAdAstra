@@ -171,11 +171,11 @@ const yeni = () => {
 {
   yeni();
   const st = globalPool.getOtoriteStatus();
-  const kasa0 = treasury.getPool('konsey');
+  const kasa0 = treasury.getPool('uoaTohum');
   for (const [k, n] of Object.entries(st.need)) globalPool.addKonseyStock(k, n * 2 + 2);   // yarısı Otorite'ye gider: tam yetsin
   globalPool.konseyStokuKullan();
   assert.equal(globalPool.uretimParams().otoriteLevel, 1, 'stoktan Otorite 1. seviyeye çıktı');
-  assert.equal(treasury.getPool('konsey'), kasa0, 'Konsey kasasından ödeme çıkmadı');
+  assert.equal(treasury.getPool('uoaTohum'), kasa0, 'UOA tohumundan ödeme çıkmadı');
   ok('stok aktarımı seviye tamamlanmasını tetikler, kasadan ödeme çıkmaz');
 }
 

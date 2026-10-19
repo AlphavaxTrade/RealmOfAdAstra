@@ -12,8 +12,7 @@ const KASA = {
   quest: { simge: '📜', renk: '#22c55e', gider: 'Krallık Yolu görev ödülleri ve ücretsiz oyuncu payı bu kasadan ödenir.', git: 'rehber', gitAd: '📜 Görevler', pay: 'quest' },
   carnival: { simge: '🎪', renk: '#ec4899', gider: 'Şans çarkı ve piyango ödülleri bu kasadan ödenir.', git: 'karnaval', gitAd: '🎪 Karnavala git', pay: 'carnival' },
   fatih: { simge: '👑', renk: '#facc15', gider: '18. kat boss\'unu ilk kez yenenlere verilen "Fatih Ödülü" için ayrılmıştır: orduna harcadığının zindanda geri dönmeyen kısmı.', git: 'zindan', gitAd: '💀 Zindana gir', pay: 'fatih' },
-  konsey: { simge: '🏛️', renk: '#a78bfa', gider: 'Universe açılış günü ödülleri için ayrılmıştır; o güne kadar kilitli bekler (Otorite ve projeler artık hammaddeyle yapılır).', git: 'konsey', gitAd: '🏛️ Konseye git', pay: 'konsey' },
-  universe: { simge: '🚀', renk: '#94a3b8', gider: 'Universe açılışı için ayrılmış kilitli rezerv: hiçbir ödeme çıkmaz.', git: 'uzay', gitAd: '🚀 Uzay limanı', pay: 'universe' }
+  uoaTohum: { simge: '🚀', renk: '#38bdf8', gider: 'Harcadığın her ASTRA\'nın %4\'ü ikinci oyun UOA için buraya birikir; UOA açılana kadar hiçbir ödeme çıkmaz. Açılınca UOA kasalarına ve hammadde pazarı havuzlarına aktarılır.', git: 'uzay', gitAd: '🚀 Uzay limanı', pay: 'uoaTohum' }
 };
 
 const KATEGORI_ADLARI = { sefer: '🌾 Sefer', bakim: '🔧 Bakım', kisla: '⚔️ Kışla', zindan: '🏰 Zindan', kolezyum: '🛡️ Kolezyum', boss: '🐉 Dünya Bossu', pazar: '🏪 Pazar', konsey: '🏛️ Konsey', karnaval: '🎪 Karnaval', rehber: '🧭 Rehber' };

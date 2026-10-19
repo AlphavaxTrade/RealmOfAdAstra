@@ -21,7 +21,7 @@ export const RATE_KEYS = [
   { key: 'quest', label: 'Görev ve ücretsiz oyuncu kasası', group: 'pool' },
   { key: 'carnival', label: 'Karnaval kasası', group: 'pool' },
   { key: 'fatih', label: 'Fatih Ödülü kasası', group: 'pool' },
-  { key: 'konsey', label: 'Sirius Konseyi kasası', group: 'pool' },
+  { key: 'uoaTohum', label: 'UOA tohumu (kilitli)', group: 'pool' },
   // 12-20 Özel kurallar
   { key: 'wheelCarnival', label: 'Şans çarkı: doğrudan karnaval kasasına', group: 'rule', max: 10000 },
   { key: 'dungeonGate', label: 'Zindan kapı harcı: doğrudan zindan kasasına', group: 'rule', max: 10000 },
@@ -37,10 +37,10 @@ export const RATE_COUNT = RATE_KEYS.length;
 // Oyunun bugünkü oranları (sözleşme kurulmadan ya da oyun sunucusuna bağlanmadan gösterilen değerler).
 // js/config.js ile aynı olmalı: tests/test_rates_contract.mjs denetler.
 // v2 (7 Ekim 2026): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
-// 19 Ekim 2026 (akış modeli, scripts/ekonomi/akis-modeli.mjs): kasa payları ödeme kapasitesine göre zindan 21, kolezyum 9, boss 17, geri alım 21,
-// görev 13, karnaval 9, Fatih 5, Konsey 5; çark doğrudan payı %80 (ödeme çevirme başına olduğu için kasayı zarara sokmayacak en düşük seviye), zindan kapı harcı doğrudan payı %60.
-export const DEFAULT_RATES = [500, 300, 600, 8600, 2100, 900, 1700, 2100, 1300, 900, 500, 500, 8000, 6000, 200, 200, 200, 300, 600, 5000, 150];
-export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey'];
+// 19 Ekim 2026 (akış modeli, scripts/ekonomi/akis-modeli.mjs): kasa payları ödeme kapasitesine göre zindan 21,05, kolezyum 9,05, boss 17,05, geri alım 21,10,
+// görev 13,05, karnaval 9,05, Fatih 5, UOA tohumu 4,65 (Konsey kasası kaldırıldı; payı UOA tohumuna: harcamanın %4'ü); çark doğrudan payı %80 (ödeme çevirme başına olduğu için kasayı zarara sokmayacak en düşük seviye), zindan kapı harcı doğrudan payı %60.
+export const DEFAULT_RATES = [500, 300, 600, 8600, 2105, 905, 1705, 2110, 1305, 905, 500, 465, 8000, 6000, 200, 200, 200, 300, 600, 5000, 150];
+export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'uoaTohum'];
 export const RATE_CHANGE_DELAY_SEC = 24 * 3600;
 
 // Haftalık çekim kurallarının başlangıç değerleri (server/economy.js WEEKLY_RULES ile aynı)
@@ -58,7 +58,7 @@ export function ratesFromConfig(cfg, weekly = WEEKLY_DEFAULTS) {
     pools: bps(cfg.TOKEN_REWARD_POOL_RATE ?? 0.86),
     dungeon: bps(A.dungeon), arena: bps(A.arena), worldBoss: bps(A.worldBoss),
     ammBuyback: bps(A.ammBuyback), quest: bps(A.quest), carnival: bps(A.carnival),
-    fatih: bps(A.fatih), konsey: bps(A.konsey),
+    fatih: bps(A.fatih), uoaTohum: bps(A.uoaTohum),
     wheelCarnival: bps(cfg.CARNIVAL?.WHEEL_CARNIVAL_SHARE ?? 0.85),
     dungeonGate: bps(cfg.DUNGEON_GATE_POOL_SHARE ?? 1),
     lotteryAmorti: bps(cfg.CARNIVAL?.LOTTERY?.AMORTI_SHARE ?? 0.02),
@@ -110,7 +110,7 @@ export function applyRates(cfg, weekly, arr) {
   return true;
 }
 
-const POOL_LABEL = { dungeon: 'zindan', arena: 'kolezyum', worldBoss: 'dünya bossu', ammBuyback: 'pazar desteği', quest: 'görev/ücretsiz oyuncu', carnival: 'karnaval', fatih: 'Fatih Ödülü', konsey: 'Sirius Konseyi' };
+const POOL_LABEL = { dungeon: 'zindan', arena: 'kolezyum', worldBoss: 'dünya bossu', ammBuyback: 'pazar desteği', quest: 'görev/ücretsiz oyuncu', carnival: 'karnaval', fatih: 'Fatih Ödülü', uoaTohum: 'UOA tohumu' };
 const pct = v => '%' + (Math.round(v * 100) / 100).toLocaleString('tr-TR');
 
 // "ASTRA nereye gidiyor" listesi: her oyun alanı için paranın gittiği yerler (yüzdeler harcamanın tamamına göre)

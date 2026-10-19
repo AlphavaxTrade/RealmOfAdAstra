@@ -80,8 +80,8 @@ const B = GAME_CONFIG.TREASURY_WEEKLY_BUDGET;
   T.state.weekBudget = { worldBoss: 1e12 }; T.state.weekSpent = {};
   const want = 1000;
   assert.equal(T.withdraw('worldBoss', want).granted, want, 'bütçeli kasada tek ödeme sağlıkla ikinci kez küçülmez');
-  T.state.pools.konsey = target.konsey != null ? target.konsey * 0.5 : 1e6;
-  const r = T.withdraw('konsey', want);
+  T.state.pools.quest = target.quest * 0.5; T.state.weekBudget = {};   // bütçesiz kasa
+  const r = T.withdraw('quest', want);
   assert.ok(r.granted < want, 'bütçesiz kasada eski sağlık yumuşatması korunur');
   ok('Sağlık yumuşatması yalnız bir kez uygulanır (bütçeli kasa: bütçede; bütçesiz kasa: tek ödemede)');
 }

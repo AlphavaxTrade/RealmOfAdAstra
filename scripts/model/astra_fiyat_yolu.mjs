@@ -25,7 +25,7 @@ const P = {
   weeks: num('weeks', 156), avaxUsd: num('avax', 11.43),
   N0: num('N0', 50), Nmax: num('Nmax', 1000), kapiHedefUsd: num('hedef', 100), kapiArtis: 0.10,
   // havuz: oyuncuya ödeme yapan + proje kasaları (TREASURY_SEED'den); ödeme oranı: kasaların haftalık bütçe oranlarının ortalaması
-  havuz0: num('havuz', ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'konsey'].reduce((s, k) => s + C.TREASURY_SEED[k], 0)),
+  havuz0: num('havuz', ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival'].reduce((s, k) => s + C.TREASURY_SEED[k], 0)),
   odemeHafta: num('odeme', (() => { const R = C.TREASURY_WEEKLY_BUDGET.RATES; const v = Object.values(R); return v.reduce((s, x) => s + x, 0) / v.length; })()),
   pazarNet0: num('pazarNet', 0.55e6), pazarNetAzalma: 0.97,
   harcamaPayi: num('harcama', 0.6),           // dağıtılan gelirin oyun içinde yeniden harcanan payı

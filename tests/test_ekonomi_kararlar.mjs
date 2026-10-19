@@ -23,17 +23,19 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 // 2) Hazine payının 8 kasaya bölünüşü (§E): zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
 {
   const A = G.TREASURY_ALLOCATION;
-  assert.deepEqual({ dungeon: A.dungeon, arena: A.arena, worldBoss: A.worldBoss, ammBuyback: A.ammBuyback, quest: A.quest, carnival: A.carnival, fatih: A.fatih, konsey: A.konsey },
-    { dungeon: 0.21, arena: 0.09, worldBoss: 0.17, ammBuyback: 0.21, quest: 0.13, carnival: 0.09, fatih: 0.05, konsey: 0.05 }, '8 kasa payı 21/9/17/21/13/9/5/5 (19 Ekim 2026, ödeme kapasitesine göre)');
+  assert.deepEqual({ dungeon: A.dungeon, arena: A.arena, worldBoss: A.worldBoss, ammBuyback: A.ammBuyback, quest: A.quest, carnival: A.carnival, fatih: A.fatih, uoaTohum: A.uoaTohum },
+    { dungeon: 0.2105, arena: 0.0905, worldBoss: 0.1705, ammBuyback: 0.2110, quest: 0.1305, carnival: 0.0905, fatih: 0.05, uoaTohum: 0.0465 }, '8 kasa payı 21,05/9,05/17,05/21,10/13,05/9,05/5/4,65 (19 Ekim 2026: ödeme kapasitesine göre; UOA tohumu harcamanın yüzde 4 payı)');
   assert.ok(near(sum(A), 1), 'hazine payları toplam 1');
-  ok('hazine 8 kasaya bölünüşü: 21/9/17/21/13/9/5/5');
+  ok('hazine 8 kasaya bölünüşü: 21,05/9,05/17,05/21,10/13,05/9,05/5/4,65');
 }
 
 // 3) 200 M ASTRA tohum dağılımı (§E): kasalar 95,82 M (Universe rezervi 20 M dahil) + pazar havuzları 92,18 M + piyango 12 M
 //    (parça havuzu 4 M → 180 bin ASTRA küçüldü, Pandora kutusu ve Anahtar havuzları (2 M + 2 M) kalktı; çıkan 7,82 M geri alım ve karnaval kasalarına eklendi; toplam 200 M)
 {
   assert.equal(sum(G.TREASURY_SEED), 103820000, 'hazine kasaları tohumu (Universe rezervi dahil) 103,82 M (19 Ekim 2026: piyangodan gelen 8 M zindan, Kolezyum ve dünya bossu kasalarına eşit bölündü)');
-  assert.equal(G.TREASURY_SEED.universe, 20000000, 'Universe Tohum Rezervi kilitli 20 M');
+  assert.equal(G.TREASURY_SEED.uoaTohum, 0, 'UOA tohumu 0 ile açılır, harcamanın yüzde 4 payıyla dolar');
+  assert.equal(G.TREASURY_SEED.universe, undefined, 'Universe rezervi kaldırıldı (dağıtıldı)');
+  assert.equal(G.TREASURY_SEED.konsey, undefined, 'Konsey kasası kaldırıldı (dağıtıldı)');
   assert.equal(sum(G.AMM_SEED_ASTRA), 92180000, 'pazar havuzları tohumu 92,18 M');
   assert.equal(G.CARNIVAL.LOTTERY.SEED_POOL_ADA, 4000000, 'piyango tohumu 4 M (19 Ekim 2026; R3: 12 M, eskiden 20 M)');
   assert.equal(sum(G.TREASURY_SEED) + sum(G.AMM_SEED_ASTRA) + G.CARNIVAL.LOTTERY.SEED_POOL_ADA, 200000000, 'toplam tohum 200 M');

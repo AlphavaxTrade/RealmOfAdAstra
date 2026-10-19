@@ -54,10 +54,12 @@ export class TreasuryLedger {
     if (typeof localStorage === 'undefined') return taban;
     const { data } = readJSON(this.storageKey);
     if (!data) return taban;
+    // Config'te artık olmayan kasalar (19 Ekim 2026: konsey, universe kaldırıldı) eski kayıttan yüklenmez; bakiyeleri geçiş 014 ile dağıtıldı
+    const gecerliKasalar = Object.fromEntries(Object.entries(data.pools || {}).filter(([id]) => kasaMi(id)));
     return {
       ...taban,
       ...data,
-      pools: { ...taban.pools, ...(data.pools || {}) },
+      pools: { ...taban.pools, ...gecerliKasalar },
       inflow: { ...taban.inflow, ...(data.inflow || {}) },
       outflow: { ...taban.outflow, ...(data.outflow || {}) }
     };
@@ -99,6 +101,18 @@ export class TreasuryLedger {
     this.state.lifetimeDeposited += miktar;
     this.save();
     return { allocations };
+  }
+
+  // Doğrudan paylı harcama (zindan kapı harcı, çark, kolezyum): kendi kasasına giden kısım (direkt) önce UOA_TOHUM_ORANI kadar UOA tohumuna ayrılır
+  // (harcamanın %4'ü "tüm harcamalardan UOA tohumu" kuralı), kalanı kasaya girer (taşma kuralı uygulanır). Döner: kasaya giren miktar.
+  depositDirect(poolId, amount) {
+    const miktar = Number(amount);
+    if (!kasaMi(poolId) || !isFinite(miktar) || miktar <= 0) return 0;
+    const oran = Math.max(0, Math.min(1, Number(GAME_CONFIG.UOA_TOHUM_ORANI) || 0));
+    const tohum = kasaMi('uoaTohum') ? miktar * oran : 0;
+    if (tohum > 0) this.depositTo('uoaTohum', tohum);
+    this.depositTo(poolId, miktar - tohum);
+    return miktar - tohum;
   }
 
   // Taşma kuralı (19 Ekim 2026, GAME_CONFIG.TREASURY_OVERFLOW): bir kasa başlangıç bakiyesinin HEALTH_MAX katını geçecekse fazla giriş,

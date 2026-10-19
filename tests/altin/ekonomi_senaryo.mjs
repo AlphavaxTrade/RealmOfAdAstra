@@ -51,7 +51,7 @@ function kararli(x) {
 const ozet = x => crypto.createHash('sha256').update(JSON.stringify(kararli(x))).digest('hex').slice(0, 16);
 
 const HAVUZ_ANAHTARLARI = ['wood', 'iron', 'wheat', 'stone', 'coal', 'herb', 'fragments', 'scroll_heal', 'scroll_stamina', 'yok_boyle_bir_sey'];
-const KASALAR = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey', 'universe', 'olmayan'];
+const KASALAR = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'uoaTohum', 'olmayan'];
 
 // Her adımın sonunda üç modülün tam durumu
 function dunya() {

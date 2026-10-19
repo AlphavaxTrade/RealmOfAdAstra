@@ -57,8 +57,8 @@ export function defaults() {
     ortak: OT.COMMON_CHEST_RATE, otoriteShare: num('otorite', 0.10), hazirlik: num('hazirlik', 0.20), hazirlikCapWeeks: num('hazirlikCap', 4),
     toolRes: 0.25, toolAda: 0.3, staminaWheat: 0.15,
     split: { burn: C.TOKEN_BURN_RATE, creator: C.CREATOR_ROYALTY_RATE, ubi: C.UBI_POOL_RATE },
-    alloc: { dungeon: ALLOC.dungeon, arena: ALLOC.arena, boss: ALLOC.worldBoss, buyback: ALLOC.ammBuyback, quest: ALLOC.quest, carnival: ALLOC.carnival, fatih: ALLOC.fatih, konsey: ALLOC.konsey },
-    seed: { dungeon: SEED.dungeon, arena: SEED.arena, boss: SEED.worldBoss, buyback: SEED.ammBuyback, quest: SEED.quest, carnival: SEED.carnival, fatih: SEED.fatih, konsey: SEED.konsey, lottery: C.CARNIVAL.LOTTERY.SEED_POOL_ADA, universe: SEED.universe },
+    alloc: { dungeon: ALLOC.dungeon, arena: ALLOC.arena, boss: ALLOC.worldBoss, buyback: ALLOC.ammBuyback, quest: ALLOC.quest, carnival: ALLOC.carnival, fatih: ALLOC.fatih, uoaTohum: ALLOC.uoaTohum },
+    seed: { dungeon: SEED.dungeon, arena: SEED.arena, boss: SEED.worldBoss, buyback: SEED.ammBuyback, quest: SEED.quest, carnival: SEED.carnival, fatih: SEED.fatih, uoaTohum: SEED.uoaTohum, lottery: C.CARNIVAL.LOTTERY.SEED_POOL_ADA },
     pay: { dungeon: num('pDungeon', WB.dungeon), arena: num('pArena', WB.arena), boss: num('pBoss', WB.worldBoss), quest: num('pQuest', WB.quest) },   // haftalık ödeme oranları (12 ay ömür için ~%2-3)
     faucetSupplyShareMonth: 0.01, faucetPoolCapWeek: num('faucetCap', C.FREE_PLAYER_POOL.WEEKLY_POOL_CAP),
     fiyatOlcek: num('fiyatOlcek', 1),   // ASTRA fiyat listesinin ölçeği (1 = config'teki liste, zaten v2 ölçekli); yalnız "ya olsaydı" denemeleri için
@@ -225,7 +225,7 @@ export function run(P) {
       const idxUsd = Math.exp(RES.reduce((s, r) => s + Math.log(price(r) * p / (P0[r] * P.p0usd)), 0) / RES.length);
       const byType = {}; for (const t of TYPES) { const cs = cohorts.filter(c => c.type === t); const n = cs.reduce((s, c) => s + c.count, 0); byType[t] = { n, inc: income[t] / Math.max(1, n), net: (income[t] - outgo[t]) / Math.max(1, n), level: cs.length ? Math.round(cs.reduce((s, c) => s + c.level * c.count, 0) / n) : 0, bal: cs.length ? cs.reduce((s, c) => s + c.bal * c.count, 0) / n : 0 }; }
       const incTot = TYPES.reduce((s, t) => s + income[t], 0);
-      const pools = ['dungeon', 'arena', 'boss', 'buyback', 'quest', 'carnival', 'konsey'].reduce((s, k) => s + K[k], 0);
+      const pools = ['dungeon', 'arena', 'boss', 'buyback', 'quest', 'carnival'].reduce((s, k) => s + K[k], 0);
       monthly.push({ ay: w / 4, N, idx: +idx.toFixed(3), idxUsd: +idxUsd.toFixed(3), fiyat: Object.fromEntries(RES.map(r => [r, +price(r).toFixed(2)])), m: +m.toFixed(3), quotaUse: +quotaUse.toFixed(2), qpp: +(RES.reduce((s, r) => s + qppNow[r], 0) / RES.length).toFixed(3), otorite, pools: Math.round(pools), pazarASTRA: Math.round(RES.reduce((s, r) => s + pool[r].A, 0)), runwayMonths: weeklyPay > 0 ? +(pools / (weeklyPay * 4.33)).toFixed(1) : 999, byType, top5Share: incTot > 0 ? +(income.whale / incTot).toFixed(2) : 0, whaleF2pRatio: byType.f2p.inc > 0 ? +(byType.whale.inc / byType.f2p.inc).toFixed(1) : 0, burned: Math.round(T.burn), buyback: Math.round(T.buybackSpent), waste: Math.round(T.waste), hazirlikASTRA: Math.round(T.hazirlik) });
     }
   }

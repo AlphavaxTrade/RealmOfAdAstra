@@ -20,12 +20,12 @@ const ok = (ad) => { n++; console.log(`✅ ${ad}`); };
   ok('kasa ağırlıkları %100; doğrudan paylar sınırlı: zindan/kolezyum <= %70, çark <= %85 (oyunun her yeri birbirini besler)');
 }
 
-// 2) Ağırlıklar kapasiteyle orantılı: ödeme yapan her kasanın payı, haftalık ödeme kapasitesi payına (Fatih ve Konsey'in %10'u düşülmüş) ±%20 yakın
+// 2) Ağırlıklar kapasiteyle orantılı: ödeme yapan her kasanın payı, haftalık ödeme kapasitesi payına (Fatih ve UOA tohumunun ~%9,65'i düşülmüş) ±%20 yakın
 {
   const oran = (id) => (id === 'ammBuyback' ? 0.03 : C.TREASURY_WEEKLY_BUDGET.RATES[id]);
   const kap = Object.fromEntries(ODEYEN_KASALAR.map((id) => [id, C.TREASURY_SEED[id] * oran(id)]));
   const top = Object.values(kap).reduce((s, v) => s + v, 0);
-  const ayrilan = 1 - C.TREASURY_ALLOCATION.fatih - C.TREASURY_ALLOCATION.konsey;
+  const ayrilan = 1 - C.TREASURY_ALLOCATION.fatih - C.TREASURY_ALLOCATION.uoaTohum;
   for (const id of ODEYEN_KASALAR) {
     const hedef = ayrilan * kap[id] / top;
     const gercek = C.TREASURY_ALLOCATION[id];
@@ -72,7 +72,7 @@ const ok = (ad) => { n++; console.log(`✅ ${ad}`); };
   const tohum = { ...C.TREASURY_SEED };
   pools.arena = tohum.arena * 0.2;           // çok aç
   const once = Object.values(pools).reduce((s, v) => s + v, 0);
-  const giren = 8000000;   // zindanın 1,25 tavanına ~3,2 M sığar; kalan ~4,8 M kolezyumun açığına (~5,3 M) akar
+  const giren = 10000000;   // zindanın 1,25 tavanına ~4,7 M sığar; kalan ~5,3 M kolezyumun açığına (~8 M) akar
   treasury.depositTo('dungeon', giren);
   const sonra = Object.values(treasury.state.pools).reduce((s, v) => s + v, 0);
   assert.ok(Math.abs(sonra - once - giren) < 1e-3, 'taşmada toplam korunur');
@@ -85,7 +85,7 @@ const ok = (ad) => { n++; console.log(`✅ ${ad}`); };
   treasury.depositTo('fatih', 5000000);
   assert.equal(treasury.state.pools.fatih, f0 + 5000000, 'Fatih kasası taşma kuralına girmez');
   treasury.reset();
-  ok('taşma kuralı: fazla en aç kasaya akar, toplam korunur, Fatih/Konsey etkilenmez');
+  ok('taşma kuralı: fazla en aç kasaya akar, toplam korunur, Fatih etkilenmez');
 }
 
 console.log(`\n${n} akış modeli kontrolü geçti.`);

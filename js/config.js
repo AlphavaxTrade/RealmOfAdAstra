@@ -829,7 +829,13 @@ export const GAME_CONFIG = {
   // zindan 27 / kolezyum 14 / boss 12 / geri alım 15 / görev 18 / karnaval 4: boss ve geri alım kronik aç, zindan ve kolezyum şişiyordu).
   // Şimdi zindan 21, kolezyum 9, boss 17, geri alım 21, görev 13, karnaval 9, Fatih 5, Konsey 5. RealmRates sözleşmesi kurulurken aynı
   // başlangıç oranları verilmeli (js/economy/rates.js DEFAULT_RATES); sözleşme kuruluysa oranlar oradan okunur.
-  TREASURY_ALLOCATION: { dungeon: 0.21, arena: 0.09, worldBoss: 0.17, ammBuyback: 0.21, quest: 0.13, carnival: 0.09, fatih: 0.05, konsey: 0.05 },
+  // 19 Ekim 2026 (UOA tohumu): Sirius Konseyi kasası KALDIRILDI (hiçbir ödeme çıkarmıyordu); payı "UOA tohumu"na verildi: harcamanın %4'ü
+  // (hazine payının 465/10000'i × %86 = %4,0) ikinci oyun UOA için biriktirilir. Kalan 7 kasa payı bu yüzden %0,3 büyüdü (toplam 10000 baz puan):
+  // zindan 21,05 / kolezyum 9,05 / boss 17,05 / geri alım 21,10 / görev 13,05 / karnaval 9,05 / Fatih 5,00 / UOA tohumu 4,65.
+  TREASURY_ALLOCATION: { dungeon: 0.2105, arena: 0.0905, worldBoss: 0.1705, ammBuyback: 0.2110, quest: 0.1305, carnival: 0.0905, fatih: 0.05, uoaTohum: 0.0465 },
+  // Doğrudan paylı harcamalarda (zindan kapı harcı, çark, kolezyum) UOA tohumu payı: harcamanın bu oranı ÖNCE kesilir; böylece "tüm harcamaların %4'ü"
+  // UOA tohumuna gider (ortak dağılımdan geçen kısım zaten TREASURY_ALLOCATION.uoaTohum ile %4 verir). treasury.depositDirect kullanır.
+  UOA_TOHUM_ORANI: 0.04,
   // Taşma kuralı (19 Ekim 2026, js/treasury.js): bir kasa başlangıç bakiyesinin HEALTH_MAX katını geçecekse, fazla giriş açığı en büyük
   // kasalara (açıkla orantılı) akar. Toplam ASTRA değişmez; amaç hiçbir kasanın şişip diğerlerinin aç kalmaması.
   TREASURY_OVERFLOW: { HEALTH_MAX: 1.25, POOLS: ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival'] },
@@ -841,21 +847,23 @@ export const GAME_CONFIG = {
     carnival: 'Karnaval Ödül Havuzu',
     quest: 'Görev & Ücretsiz Oyuncu Kasası',
     fatih: 'Fatih Kasası (18. boss)',
-    konsey: 'Sirius Konseyi Kasası',
-    universe: 'Universe Tohum Rezervi (kilitli)'
+    uoaTohum: 'UOA Tohumu (kilitli)'
   },
   // v2 (R3): tohumlar 200 M ASTRA'dan (pazar ayrı: AMM_SEED_ASTRA). 18 Ekim 2026: parça havuzu 4 M'den 180 bin ASTRA'ya küçüldü (çıkan 3,82 M) ve
   // Pandora kutusu ile Anahtar havuzları (2 M + 2 M) kaldırıldı; çıkan toplam 7,82 M ASTRA yarı yarıya geri alım ve karnaval kasalarına eklendi
   // (ammBuyback 7 M → 10,91 M, carnival 3 M → 6,91 M); toplam 200 M değişmez.
-  TREASURY_SEED: { dungeon: 12666667, arena: 6666667, worldBoss: 8666666, ammBuyback: 10910000, quest: 8000000, carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  // 19 Ekim 2026: Konsey kasası (10 M) yedi kasaya EŞİT (1.428.571'er, kalan zindana) ve Universe rezervi (20 M) altı ödeme kasasına ödeme kapasitesiyle
+  // orantılı dağıtıldı (zindan 4,604 / kolezyum 1,939 / boss 3,780 / geri alım 4,760 / görev 2,908 / karnaval 2,009 M); UOA tohumu 0'dan başlar ve
+  // harcamanın %4'üyle dolar. Toplam kasa tohumu 103,82 M aynı (200 M toplam değişmez). Canlı dünya geçiş 014 ile aynı dağıtımı yapar.
+  TREASURY_SEED: { dungeon: 18699241, arena: 10034238, worldBoss: 13875237, ammBuyback: 17098571, quest: 12336571, carnival: 10347571, fatih: 21428571, uoaTohum: 0 },
   // Hedef rezerv = ~12 aylık ödeme (annualPayout, yukarıda); sağlık = bakiye / hedef. Haftalık oranla sürekli ödeme
   // yapan 5 kasa (dungeon/arena/worldBoss/ammBuyback/quest) formülle hesaplanır; sürekli haftalık oranı olmayan
   // (karnaval: çevirme başına kendini finanse eder; fatih: yalnız 18. boss ilk zaferinde; konsey/universe: kilitli/
   // proje bazlı) kasalarda hedef = tohum (değişmedi).
   TREASURY_TARGET_RESERVE: {
-    dungeon: annualPayout(12666667, 0.025), ammBuyback: annualPayout(10910000, 0.03), worldBoss: annualPayout(8666666, 0.03),
-    arena: annualPayout(6666667, 0.02), quest: annualPayout(8000000, 0.015),
-    carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000
+    dungeon: annualPayout(18699241, 0.025), ammBuyback: annualPayout(17098571, 0.03), worldBoss: annualPayout(13875237, 0.03),
+    arena: annualPayout(10034238, 0.02), quest: annualPayout(12336571, 0.015),
+    carnival: 10347571, fatih: 21428571, uoaTohum: 0
   },
   // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3. Her alanın gerçek kullanım yeri:
   //  • dungeon: bilgi amaçlı (gerçek tavan DUNGEON.DAILY_BUDGET_RATE × 7, aynı sayı: 0,0036×7≈0,025)
@@ -879,13 +887,13 @@ export const GAME_CONFIG = {
   // artmayan kısım kasada kalır (kayıp yok). Aktif sayı 10'u geçince formül eskisi gibidir (bütçe × 3 ÷ aktif).
   TREASURY_WEEKLY_BUDGET: { RATES: { dungeon: 0.025, arena: 0.02, worldBoss: 0.03, quest: 0.025, carnival: 0.02 }, INFLOW_SHARE: 0.9, INFLOW_WEEKS: 4, HEALTH_MIN: 0.15, PERSON_CAP_MULT: 3, PERSON_CAP_MIN_ACTIVE: 10, FULL_MESSAGE: 'Bu haftaki ödeme payı doldu; Pazartesi yenilenir.' },
   // Kasa ömrü (fiyat çarpanı kasa-ömrü düzeltmesi, server/world/haftalik.js): yalnız OYUNCUYA ödeme yapan kasalar sayılır.
-  // universe (Universe açılışına kadar kilitli), konsey (proje kasası, kilitli), fatih (tek bir olaya bağlı), ammBuyback (alıp yakar,
+  // uoaTohum (UOA açılışına kadar kilitli), fatih (tek bir olaya bağlı), ammBuyback (alıp yakar,
   // vatandaşa ödenmez) sayılmaz: eskiden toplam 88 M sayılıyor, aylık ücretsiz havuza göre ~170 ay çıkıp çarpan sürekli ×0,8'e iniyordu.
   TREASURY_RUNWAY_POOLS: ['dungeon', 'arena', 'worldBoss', 'quest', 'carnival'],
   // Sponsorluk (docs/v2/SPONSORLUK_TASARIMI.md): B, A'ya ASTRA bağışlar; A bunu çekemez, yalnız oyunda harcar; A her haftalık net çekiminin
   // SHARE oranını (tüm sponsorlara toplam, anapara oranında bölünür) sponsorlara öder; sözleşme DAYS gün ya da toplam getiri anaparanın RETURN_CAP katına ulaşana dek.
   SPONSORLUK: { MIN_AMOUNT: 1000, SHARE: 0.30, DAYS: 365, RETURN_CAP: 2, MAX_PER_TARGET: 5, MAX_PER_SPONSOR: 20 },
-  TREASURY_LOCKED_POOLS: ['universe'],
+  TREASURY_LOCKED_POOLS: ['uoaTohum'],   // UOA açılana kadar hiçbir ödeme çıkmaz
   // Ücretsiz oyuncu havuzu (sunucu aşaması): görev kasasından ayda piyasa değerinin %1'i, kişi başı en fazla 100$
   // Ücretsiz oyuncu payı (sahte hesaplara karşı, 4 Ekim 2026 — ayrıntı js/economy/faucet.js): en az MIN_LEVEL seviye ve o hafta
   // en az MIN_WEEKLY_CONTRIBUTION katkı puanı (× fiyat çarpanı); pay = katkı^WEIGHT_EXP × sadakat serisi (haftada +STREAK_STEP,
@@ -1819,6 +1827,15 @@ export const GAME_CONFIG = {
         `Tek seferlik gelişim bedelleri yaklaşık 5 kat pahalandı: teçhizat yükseltmesi (1→10 toplamı ~x4,8), köy evleri (~x5), hesap seviye atlama (4. seviyeden başlayıp 10. seviyede x5), asker ASTRA bedeli (1. asker 250, 18. asker 90.000) ve teçhizat parçası bedeli (4. basamaktan itibaren x2). Yeni oyuncunun ilk adımları (ilk takım, ilk yükseltme, ilk ev, 4. seviyeye kadar seviye atlama) eskisi gibi kaldı. Tekrar eden harcamalar (stamina, onarım, iyileştirme) değişmedi.`,
         `Silo artık 49. seviyeye kadar yükseltilir (18. seviyeden sonra her seviye kapasite x1,08; 49. seviye buğdayda yaklaşık 799 bin). Yeni kural: yükseltmek için tüm depolar en az %70 dolu olmalı ve bedel, silonun %70'ini dolduran miktarın tamamı kadar hammadde ile o hammaddelerin anlık pazar fiyatı toplamı kadar ASTRA'dır.`,
         `Bakiye yazısı düzeltildi: dar ekranda 964 bin ASTRA "964,64 B" diye yazılıyordu ve milyar sanılıyordu. Artık kısaltmalar açık: "Bin", "Mn" (milyon), "Mr" (milyar).`
+      ]
+    },
+    {
+      version: 'v1.80',
+      title: '🚀 UOA Tohumu: Harcamanın Yüzde 4 Payı İkinci Oyun İçin Birikiyor',
+      date: '19 Ekim 2026',
+      changes: [
+        `Oyunda harcanan her ASTRA'nın %4'ü artık "UOA tohumu" kasasında birikiyor (ikinci oyun UOA açıldığında oradaki ilk kasaları ve hammadde pazarı havuzlarını oluşturacak). Kasa kilitli: UOA açılana kadar hiçbir ödeme çıkmaz. Hazine ekranında 🚀 UOA Tohumu olarak görünür.`,
+        `Sirius Konseyi kasası (10 milyon) ve Universe Tohum Rezervi (20 milyon) kaldırıldı; hiçbirinden ödeme çıkmıyordu. Konsey kasası yedi kasaya eşit bölündü (zindan, kolezyum, dünya boss, geri alım, görev, karnaval, Fatih); Universe rezervi altı ödeme kasasına ödeme kapasitesiyle orantılı dağıtıldı. Toplam ASTRA aynı kaldı. Konsey projeleri ve Otorite aynen çalışıyor (onlar hammadde ister, kasa ASTRA'sı değil).`
       ]
     }
   ],

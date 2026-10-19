@@ -1,7 +1,7 @@
 // ASTRA AKIŞ MODELİ (19 Ekim 2026): oyuncu harcaması kasalara nasıl dağılıyor, kasalar kendi kendini dengeliyor mu?
 // ---------------------------------------------------------------------------------------------------------------------------
 // Model GERÇEK kodu çalıştırır (js/treasury.js ve js/globalPool.js; kopya hesap yok): bir haftalık harcama, kaynağına göre
-//   - doğrudan pay (zindan kapı harcı, çark, kolezyum) → treasury.depositTo(kendi kasa)
+//   - doğrudan pay (zindan kapı harcı, çark, kolezyum) → treasury.depositDirect(kendi kasa; %4'ü önce UOA tohumuna)
 //   - kalanı → globalPool.recordTokenSpend (yakım, yapımcı payı, temel gelir, TREASURY_ALLOCATION ağırlıklı kasalar, taşma kuralı)
 // akar; haftalık ödeme kasaların kapasitesine göre (oran × bakiye, EN SIKI durum: kullanım %100) kasadan düşer.
 // Çıktı: 52 hafta sonunda her ödeme yapan kasanın "sağlığı" = bakiye / başlangıç bakiyesi (1,00 = başladığı yerde).
@@ -67,7 +67,7 @@ export function simuleEt({ karisim, harcamaDuzeyi = 1, hafta = 52, parca = 10 })
   let oran = 0;
   for (const [kaynak, pay] of Object.entries(mix)) {
     const dp = kaynak === 'diger' ? 0 : d[kaynak].pay;
-    oran += pay * (dp + (1 - dp) * C.TOKEN_REWARD_POOL_RATE * odeyenAgirlik);
+    oran += pay * (dp * (1 - C.UOA_TOHUM_ORANI) + (1 - dp) * C.TOKEN_REWARD_POOL_RATE * odeyenAgirlik);
   }
   const haftalikHarcama = harcamaDuzeyi * kapasite / oran;
 
@@ -79,7 +79,7 @@ export function simuleEt({ karisim, harcamaDuzeyi = 1, hafta = 52, parca = 10 })
         const x = haftalikHarcama * pay / parca;
         harcanan += x;
         const dp = kaynak === 'diger' ? 0 : d[kaynak].pay;
-        if (dp > 0) treasury.depositTo(d[kaynak].kasa, x * dp);
+        if (dp > 0) treasury.depositDirect(d[kaynak].kasa, x * dp);   // %4'ü önce UOA tohumuna
         const kalan = x * (1 - dp);
         if (kalan > 0) {
           const sonuc = globalPool.recordTokenSpend(kalan);

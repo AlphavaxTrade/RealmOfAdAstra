@@ -137,7 +137,7 @@ E.withPlayer(P, () => null);
     const pay = E.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE;
     assert.ok(E.act(P, 'spinCarnivalWheel', ['ada']).result.success);
     const gain = E.treasury.getPool('carnival') - c0;
-    assert.ok(Math.abs(gain - (cost * pay + cost * (1 - pay) * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %85 + kalanın karnaval payı girdi (${gain})`);
+    assert.ok(Math.abs(gain - (cost * pay * (1 - E.GAME_CONFIG.UOA_TOHUM_ORANI) + cost * (1 - pay) * 0.86 * carnShare)) < 1e-6, `ASTRA çevirmesinde kasaya %85 (UOA tohumu payı düşülmüş) + kalanın karnaval payı girdi (${gain})`);
     // Bilet: satın alınmış biletin piyango kasasındaki 98 ASTRA'sı Karnaval kasasına
     assert.ok(E.act(P, 'buyLotteryTickets', [1]).result.success);
     const l0 = E.lottery().pool, c1 = E.treasury.getPool('carnival');

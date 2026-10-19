@@ -228,8 +228,8 @@ console.log('✅ piyango');
   assert.equal(ozet.treasuryRatePct, 86);
   const pay = ozet.allocations;
   assert.deepEqual(
-    [pay.dungeon, pay.arena, pay.worldBoss, pay.ammBuyback, pay.quest, pay.carnival, pay.fatih, pay.konsey],
-    [0.21, 0.09, 0.17, 0.21, 0.13, 0.09, 0.05, 0.05],
+    [pay.dungeon, pay.arena, pay.worldBoss, pay.ammBuyback, pay.quest, pay.carnival, pay.fatih, pay.uoaTohum],
+    [0.2105, 0.0905, 0.1705, 0.2110, 0.1305, 0.0905, 0.05, 0.0465],
     'kasa payları (19 Ekim 2026: ödeme kapasitesine göre)'
   );
   assert.ok(Math.abs(Object.values(pay).reduce((a, v) => a + v, 0) - 1) < 1e-9, 'kasa payları toplamı 1');

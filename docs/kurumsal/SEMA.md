@@ -3,7 +3,7 @@
 > Bu dosya **otomatik üretilir**: `node scripts/db/sema-belge.mjs` (güncelliği `tests/test_sema_belge.mjs` korur).
 > Şema değişikliği yalnız `server/gecis/` altına yeni numaralı geçiş eklenerek yapılır; uygulanmış geçişler değişmez (mühür).
 
-Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama, 009_geri_bildirim, 010_denge, 011_piyango_kasa_paylasim, 012_piyango_kasa_duzelt, 013_piyango_kasa_duzelt2
+Geçişler: 001_taban, 002_kolonlar, 003_oturum_ozet, 004_indeksler, 005_eposta_anahtari, 006_kapi_ip, 007_eposta_belirtec_ozeti, 008_muhur_sifirlama, 009_geri_bildirim, 010_denge, 011_piyango_kasa_paylasim, 012_piyango_kasa_duzelt, 013_piyango_kasa_duzelt2, 014_uoa_tohum_dagitim
 
 ## accounts
 

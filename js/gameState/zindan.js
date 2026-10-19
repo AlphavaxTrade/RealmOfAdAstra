@@ -150,7 +150,7 @@ export const zindanYontemleri = {
       this._onAdaSpent(kosul.fee);
       // Harcın oranı kadarı doğrudan zindan kasasına, kalanı her harcama gibi dağıtılır (oran RealmRates'ten; varsayılan %100)
       const kasaPayi = Math.max(0, Math.min(1, GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1));
-      if (kasaPayi > 0 && treasury && treasury.depositTo) treasury.depositTo('dungeon', kosul.fee * kasaPayi);
+      if (kasaPayi > 0 && treasury && treasury.depositDirect) treasury.depositDirect('dungeon', kosul.fee * kasaPayi);   // %4 UOA tohumu önce ayrılır
       if (kasaPayi < 1) globalPool.recordTokenSpend(kosul.fee * (1 - kasaPayi));
       sayac.dungeonPaidEntries = (sayac.dungeonPaidEntries || 0) + 1;
       if (kosul.rewardless) sayac.dungeonZeroEntries = (sayac.dungeonZeroEntries || 0) + 1;

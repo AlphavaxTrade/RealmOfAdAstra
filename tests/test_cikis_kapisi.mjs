@@ -114,7 +114,7 @@ E.globalPool.state.creatorRoyaltyTotal = 500; E.globalPool.saveState();   // öd
 
 // 5) Oyun İçi Fiyat Endeksi (makro plan B1): dağıtım tasarımın üstüne çıkınca bedel çarpanı yükselir
 {
-  const tas = 10482;   // 19 Ekim 2026: piyangodan gelen 8 M zindan, Kolezyum ve dünya bossu kasalarına eklendi (eskiden 8.482)
+  const tas = 15998;   // 19 Ekim 2026: Konsey (10 M) ve Universe (20 M) kasaları ödeme kasalarına dağıtıldı (eskiden 10.482; ondan önce 8.482)
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [], tasarimKisi: tas, onceki: 2 }), 2, 'veri yoksa önceki değer');
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [tas * 10], tasarimKisi: tas, onceki: 1 }), 1.25, 'yükselişte haftada en çok %25');
   assert.equal(oyunIciEndeks({ kisiBasiSeri: [0], tasarimKisi: tas, onceki: 1 }), 0.95, 'düşüşte haftada en çok %5');
@@ -123,7 +123,7 @@ E.globalPool.state.creatorRoyaltyTotal = 500; E.globalPool.saveState();   // öd
   assert.equal(etkinCarpan({ priceMultiplier: 1.8, oyunEndeksi: 1.1 }), 1.8, 'fiyat düşünce dolar tabanı');
   assert.equal(etkinCarpan({}), 1);
   const tasarim = Object.keys(E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES).reduce((s, id) => s + E.GAME_CONFIG.TREASURY_SEED[id] * E.GAME_CONFIG.TREASURY_WEEKLY_BUDGET.RATES[id], 0) / E.GAME_CONFIG.KAPI.START_LIMIT;
-  assert.equal(Math.round(tasarim), tas, 'tasarım payı: tohum kasaların haftalık oranıyla 100 vatandaşa ~10.482 ASTRA (karnaval kasası havuz artıklarıyla 6,91 M; zindan 12,67 M, Kolezyum 6,67 M, dünya bossu 8,67 M)');
+  assert.equal(Math.round(tasarim), tas, 'tasarım payı: tohum kasaların haftalık oranıyla 100 vatandaşa ~15.998 ASTRA (zindan 18,70 M, Kolezyum 10,03 M, dünya bossu 13,88 M, görev 12,34 M, karnaval 10,35 M)');
 
   // Dünya: bol dağıtım haftası → endeks %25 artar, oyuncunun bedel çarpanı en büyüğü(fiyat çarpanı, endeks) olur
   const once = Number(world.econ().oyunEndeksi) || 1;
