@@ -80,6 +80,8 @@ function ucretDokumu(b) {
     satir('24 saatlik üretimin pazar değeri', `+${n0(h.grossRevenueAda)} ASTRA`, 'iyi'),
     satir(`Stamina için buğday (${n0(h.dailyWheatNeededForStamina)} buğday)`, `−${n0(h.staminaWheatCostAda)} ASTRA`, 'kotu'),
     satir('Alet onarımı', `−${n0(h.toolRepairCostAda)} ASTRA`, 'kotu'),
+    // Günlük Üretim Hakkın üretimin tamamını almana yetmiyorsa kırpılan kısım (yoksa tablo toplamı tutmuyordu)
+    ...(Number(h.rightsLimitLossAda) >= 0.5 ? [satir('Günlük Üretim Hakkı sınırı (bugün alabileceğin kadarıyla sınırlı)', `−${n0(h.rightsLimitLossAda)} ASTRA`, 'kotu')] : []),
     satir('Net kâr', `+${n0(h.netProfitAda)} ASTRA`),
     satir('Bot ücreti (net kârın yarısı)', `${n0(h.botCostAda)} ASTRA`, 'uyari'),
     not(`🛡️ <b>Güvenlik payı:</b> Bot kasanda en az <b>${esc(astra(gs.getBotAdaReserve()))} ASTRA</b> bırakır${gs.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}.`)

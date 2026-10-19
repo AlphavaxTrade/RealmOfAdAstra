@@ -1685,6 +1685,16 @@ export const GAME_CONFIG = {
         `Piyango bilet alım sınırı artık GÜNLÜK: bir hesap günde en fazla 100 bilet alabilir (eskiden haftada 100'dü). Gün, Türkiye saatiyle gece yarısı yenilenir. Kazanmayan biletler yine yanmaz, kazanana kadar sonraki haftalara devreder. Kalan hakkını Karnaval > Piyango ekranında ve Kotalar'ın günlük bölümünde görebilirsin.`,
         `Pazar > İlanlar'daki tür düğmeleri (Anahtar, Pandora kutusu, Eser, Silah, Miğfer, Zırh, Pantolon, Bot) artık ekrandan taşmaz: sığmayanlar alt satıra geçer. Eskiden satır yana kayıyordu ama fareyle kaydırılamadığı için sağdaki düğmelere ulaşılamıyordu. Al / Sat ekranındaki eşya seçme düğmeleri de aynı şekilde düzeltildi.`
       ]
+    },
+    {
+      version: 'v1.70',
+      title: '🎁 Tüm Ödülleri Topla, Bot Ücreti Dökümü ve Zindan Mesajı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Taverna > Bot > "Ücret nasıl hesaplanıyor?" tablosu düzeltildi: rakamlar toplamı tutmuyordu (üretim 930, stamina −47, alet −138 yazıp net kâr 236 görünüyordu). Eksik satır, günlük Üretim Hakkı sınırıydı: o gün alabileceğin miktar üretimin tamamından azsa bot kârı o kadarla sınırlanır ve bu kesinti tabloda yoktu. Artık "Günlük Üretim Hakkı sınırı" satırı ayrıca görünür, tablo toplamı tutar. Bot ücreti hesabı değişmedi: net kârın yarısı.`,
+        `Zindan'da "Zindan kasasının bugünkü ödeme bütçesi doldu" uyarısı tüm oyuncular için sanılıyordu. Bu sınır yalnız senin hesabının o günkü zindan ödeme payıdır (kasanın günlük payı ile günlük kişisel tavanından küçüğü); başka oyuncuların girişini etkilemez. Mesaj bunu açıkça söyleyecek şekilde yenilendi ("Bugünkü zindan ödeme payını doldurdun…"). Her gece 00:00'da (TSİ) yenilenir.`,
+        `Krallık Yolu: hazır ödüllerin hepsini tek tek almak yerine haritadaki Krallık Yolu kartında ve panelin üstünde "Tümünü topla" düğmesi var. Hazır görev ödülleri, tamamlanan bölümlerin ödülleri ve açıldıysa final unvanı tek dokunuşta alınır. Haftalık ödeme payı dolarsa o noktada durur; alınmayan ödüller kaybolmaz, yeni haftada tekrar basınca alınır.`,
+      ]
     }
   ],
 

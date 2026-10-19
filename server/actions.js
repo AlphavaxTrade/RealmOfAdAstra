@@ -146,6 +146,7 @@ export const ACTIONS = {
   // Görevler, temel gelir, koleksiyon
   claimOnboardingReward: A(['quest']),
   claimOnboardingSection: A(['section']),
+  claimAllOnboarding: A([]),
   ogreticiGordu: A(['gorulen']),
   claimWeeklyUbi: A([]),
   mintGenesisNft: A([]),

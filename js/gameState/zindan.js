@@ -111,7 +111,7 @@ export const zindanYontemleri = {
     // Antrenman girişi YOKTUR (18 Ekim 2026): günlük harçsız haklar bitince girmenin tek yolu kapı harcıdır; ödenmezse ya da kasanın günlük
     // ödeme bütçesi dolmuşsa giriş reddedilir (stamina düşmez, giriş sayılmaz).
     if (kosul.nextNeedsFee && kosul.budgetBlocked) {
-      return { success: false, rewarded: false, fee: 0, budgetBlocked: true, message: '🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz. Haklar ve bütçe her gece 00:00\'da (TSİ) yenilenir.' };
+      return { success: false, rewarded: false, fee: 0, budgetBlocked: true, message: '🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Haklar ve ödeme payı her gece 00:00\'da (TSİ) yenilenir.' };
     }
     if (kosul.nextNeedsFee && !payGateFee) {
       return { success: false, rewarded: false, fee: kosul.fee, needsFee: true, message: `Günlük harçsız girişlerin bitti: girmek için kapı harcı (${kosul.fee} ASTRA) ödemelisin.` };

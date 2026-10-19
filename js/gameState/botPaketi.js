@@ -56,8 +56,11 @@ export const botPaketiYontemleri = {
     const netDakika = Math.max(0.0001, brutDakika - staminaBedelDakika - aletBedelDakika);
     const net24 = Math.max(0.01, round3(Math.min(netDakika * GUN_DAKIKA, brutGun - (staminaBedelDakika + aletBedelDakika) * GUN_DAKIKA)));
 
+    // Üretim Hakkı sınırı net kârı kırpıyorsa kırpılan kısım ayrıca gösterilir; tablo toplamı tutsun (brüt − stamina − alet − sınır = net)
+    const sinirKaybi = Math.max(0, round3((brutDakika - staminaBedelDakika - aletBedelDakika) * GUN_DAKIKA - net24));
     return {
       grossRevenueAda: round3(brutDakika * GUN_DAKIKA),
+      rightsLimitLossAda: sinirKaybi,
       staminaWheatCostAda: round3(staminaBedelDakika * GUN_DAKIKA),
       toolRepairCostAda: round3(aletBedelDakika * GUN_DAKIKA),
       netProfitAda: round3(net24),

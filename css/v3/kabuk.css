@@ -256,6 +256,8 @@ html.v3 #v3-dock .guide-widget { position: static !important; left: auto !import
   html.v3 #v3-dock .guide-title { font-size: calc(12.5px * var(--v3-yazi-olcek, 1)); white-space: nowrap; }
   html.v3 #v3-dock .guide-sub { font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); min-width: 0; }
   html.v3 #v3-dock .guide-count { padding: 1px 7px; font-size: calc(11px * var(--v3-yazi-olcek, 1)); }
+  html.v3 #v3-dock .guide-widget.has-reward .guide-count { display: none; }   /* ödül hazırken yer düğmeye ve "N ödül hazır" yazısına kalsın */
+  html.v3 #v3-dock .guide-claim-all { margin-right: 8px; padding: 5px 10px; font-size: calc(11.5px * var(--v3-yazi-olcek, 1)); }
 }
 
 /* 8. YAN PANEL (seferler ve üretim hakkı) -------------------------------- */
@@ -417,6 +419,8 @@ html.v3 .v3-yol-baslik b { font: 800 calc(16px * var(--v3-yazi-olcek, 1))/1.2 va
 html.v3 .v3-yol-baslik span { font: 600 calc(12.5px * var(--v3-yazi-olcek, 1)) var(--font-ui); color: var(--v3-yazi-2); }
 html.v3 .v3-yol-bar { display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
 html.v3 .v3-yol-bar i { display: block; height: 100%; background: var(--v3-vurgu); border-radius: 3px; }
+html.v3 .v3-yol-hazir { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+html.v3 .v3-yol-hazir .v3-yol-hepsi { min-height: 36px; padding: 0 14px; }
 html.v3 .v3-yol-hazir { font: 700 calc(13px * var(--v3-yazi-olcek, 1)) var(--font-ui); color: var(--v3-vurgu-acik); }
 html.v3 .v3-yol-sirada { padding: 10px 14px; border-radius: var(--v3-r); background: var(--v3-yuzey-2); border: 1px solid rgba(231,185,76,.45); }
 html.v3 .v3-yol-sirada > small { display: block; font: 800 calc(10.5px * var(--v3-yazi-olcek, 1)) var(--font-ui); letter-spacing: .08em; color: var(--v3-vurgu-acik); margin-bottom: 2px; }

@@ -7,7 +7,7 @@ import { MISAFIR_ACTIONS, runMisafirAction } from '../actions.js';
 export default function oyunRotalari(ctx) {
   const { E, world, promo, kapi, cfg, accounts, readBody, safePlayer, playerPayload, vatandasDegil } = ctx;
   // Krallık Yolu ödülleri (ASTRA) yalnız e-postası doğrulanmış hesaba verilir: yan hesapla öğretici ödülü toplanamaz
-  const ODUL_ISLEMLERI = new Set(['claimOnboardingReward', 'claimOnboardingSection']);
+  const ODUL_ISLEMLERI = new Set(['claimOnboardingReward', 'claimOnboardingSection', 'claimAllOnboarding']);
   return {
     'GET /api/state': (req, me) => {
       const out = safePlayer(me, () => null);

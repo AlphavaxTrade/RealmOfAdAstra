@@ -236,6 +236,15 @@ input, textarea, select { user-select: text; }
 .guide-sub { font-size: 12px; color: var(--c-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .guide-widget.has-reward .guide-sub { color: #ffe1a6; font-weight: 700; }
 .guide-count { font-size: 12px; font-weight: 800; color: var(--c-text-2); padding: 3px 8px; border-radius: 999px; background: var(--c-surface-3); font-variant-numeric: tabular-nums; }
+.guide-row { display: flex; align-items: center; }
+.guide-row .guide-head { width: auto; flex: 1; min-width: 0; }
+.guide-claim-all {
+  all: unset; cursor: pointer; flex: none; box-sizing: border-box;
+  margin-right: 10px; padding: 8px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 800; color: #1a1305; white-space: nowrap;
+  background: linear-gradient(90deg, var(--c-gold), var(--c-gold-2));
+}
+.guide-claim-all:focus-visible { box-shadow: var(--ring); }
 .guide-progress { height: 3px; background: rgba(255,255,255,0.06); }
 .guide-progress > span { display: block; height: 100%; background: linear-gradient(90deg, var(--c-gold), var(--c-gold-2)); transition: width .4s ease; }
 .guide-dismiss {

@@ -1,5 +1,5 @@
 // Realm of AdAstra — v3 Krallık Yolu (öğretici) ekranı parçaları. Saf HTML üreticileri: DOM'a ve oyun durumuna dokunmaz,
-// her metni kaçırır. Düğmeler: [data-claim-quest], [data-claim-section], [data-ogretici-goster] (app.js dinler).
+// her metni kaçırır. Düğmeler: [data-claim-quest], [data-claim-section], [data-claim-all], [data-ogretici-goster] (js/ui/yol.js dinler).
 import { esc } from './hub.js';
 
 const f0 = (v) => Number(v || 0).toLocaleString('tr-TR', { maximumFractionDigits: 1 });
@@ -53,7 +53,7 @@ export function yolHtml({ sections, final }, kilitOf = () => null) {
   const ust = `<div class="v3-yol-ust">
       <div class="v3-yol-baslik"><b>🧭 Krallık Yolu</b><span>${biten}/${toplam} görev · ${bolumBiten}/${sections.length} bölüm</span></div>
       <div class="v3-yol-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${yuzde}"><i style="width:${yuzde}%"></i></div>
-      ${hazirOdul > 0 ? `<div class="v3-yol-hazir">🎁 ${hazirOdul} ödül almaya hazır</div>` : ''}
+      ${hazirOdul > 0 ? `<div class="v3-yol-hazir">🎁 ${hazirOdul} ödül almaya hazır <button type="button" class="v3-birincil v3-yol-hepsi" data-claim-all>Tüm ödülleri topla</button></div>` : ''}
     </div>`;
   const sirada = siradaki
     ? `<div class="v3-yol-sirada"><small>SIRADAKİ GÖREV</small><ul class="v3-yol-liste">${gorevSatiriHtml(siradaki, kilitOf(siradaki))}</ul></div>`

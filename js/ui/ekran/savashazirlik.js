@@ -77,7 +77,7 @@ function girisKarti(b, m, terms) {
     icerik: cubukSatiri('Bugünkü ödüllü girişler', `${terms.freeUsed} / ${terms.freeTotal}`, terms.freeTotal > 0 ? (terms.freeUsed / terms.freeTotal) * 100 : 0, { ton: terms.nextNeedsFee ? 'dolu' : '' })
       + (terms.nextNeedsFee
         ? (terms.budgetBlocked
-          ? uyari('🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
+          ? uyari('🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
           : `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Savaşa girerken ödenir, ödülle girersin. ${esc(kasayaNot)}</small></p>`)
         : '')
       + gunlukOdemeNotu(terms, taban.ada)
@@ -176,7 +176,7 @@ const ekran = {
     else if (yok) baslaYazi = '⚔️ Asker yok';
     else if (secili.length === 0) baslaYazi = '⚔️ Asker seçin';
     else if (staminaYetersiz) baslaYazi = `⚡ Yetersiz stamina (${Math.floor(gs.state.stamina || 0)}/${terms.staminaCost} ⚡)`;
-    else if (harcYok) baslaYazi = '🏦 Bugünkü ödeme bütçesi doldu';
+    else if (harcYok) baslaYazi = '🏦 Bugünkü ödeme payın doldu';
 
     const parsomen = gs.state.inventory.scroll_heal || 0;
     return kap([
@@ -273,7 +273,7 @@ const ekran = {
         b.bildir(`⚠️ Yetersiz stamina! ${secili.length} asker için ${terms.staminaCost} ⚡ gerekiyor (mevcut: ${Math.floor(gs.state.stamina || 0)} ⚡).`, 'error');
         return undefined;
       }
-      if (terms.budgetBlocked) { b.bildir('🏦 Zindan kasasının bugünkü ödeme bütçesi doldu: bugün yeni giriş yapılamaz.', 'error'); return false; }
+      if (terms.budgetBlocked) { b.bildir('🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz.', 'error'); return false; }
       const harc = !!terms.nextNeedsFee;   // günlük harçsız haklar bitince kapı harcı savaşa girerken ödenir (antrenman girişi yok)
       if (harc) {
         const ucret = gs.getDungeonGateFee(m.level, asBoss(m));

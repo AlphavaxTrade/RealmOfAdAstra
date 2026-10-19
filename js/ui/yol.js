@@ -15,15 +15,22 @@ export function yolKutusu(ozet, kapatildi = false) {
   if (!ozet.toplam || (kapatildi && ozet.hazir === 0) || bitti) return { gizli: true, html: '', odulVar: false };
   const yuzde = Math.round((ozet.biten / ozet.toplam) * 100);
   const alt = ozet.hazir > 0 ? `${ozet.hazir} ödül hazır` : (ozet.siradaki ? ozet.siradaki.title : 'Tüm görevler tamam');
+  // Hazır ödül varsa kartın yanında tek dokunuşla "Tümünü topla" düğmesi (başlık düğmesinin İÇİNE konmaz: düğme içinde düğme olmaz)
+  const topla = ozet.hazir > 0
+    ? `<button type="button" class="guide-claim-all" data-guide-claim-all aria-label="Hazır ${ozet.hazir} ödülün hepsini topla">Tümünü topla</button>`
+    : '';
   const html = `
-    <button class="guide-head" data-guide-open aria-label="Krallık Yolu'nu aç">
-      <span class="guide-icon">🧭</span>
-      <span class="guide-head-text">
-        <span class="guide-title">Krallık Yolu</span>
-        <span class="guide-sub">${esc(alt)}</span>
-      </span>
-      <span class="guide-count">${ozet.biten}/${ozet.toplam}</span>
-    </button>
+    <div class="guide-row">
+      <button class="guide-head" data-guide-open aria-label="Krallık Yolu'nu aç">
+        <span class="guide-icon">🧭</span>
+        <span class="guide-head-text">
+          <span class="guide-title">Krallık Yolu</span>
+          <span class="guide-sub">${esc(alt)}</span>
+        </span>
+        <span class="guide-count">${ozet.biten}/${ozet.toplam}</span>
+      </button>
+      ${topla}
+    </div>
     <div class="guide-progress"><span style="width:${yuzde}%"></span></div>`;
   return { gizli: false, html, odulVar: ozet.hazir > 0 };
 }
@@ -59,6 +66,18 @@ export function kurYol({ gs, bildir, panelYaz, panelKok, panelKapat, git, hudYen
     kutu.classList.toggle('has-reward', durum.odulVar);
   };
 
+  // Hazır bütün ödülleri tek işlemle alır (panel ve harita kartı aynı yolu kullanır)
+  const hepsiniTopla = () => {
+    const sonuc = gs.claimAllOnboarding();
+    bildir(sonuc.message, sonuc.success ? 'success' : 'error');
+    panelAcikse();
+    kutuCiz();
+    hudYenile();
+  };
+
+  // Panel şu an açıksa içeriği tazelenir (harita kartından toplayınca panel kendiliğinden açılmasın)
+  const panelAcikse = () => { if (panelKok().querySelector('.v3-yol')) panelAc(); };
+
   const panelAc = () => {
     gs.checkOnboardingProgress();
     panelYaz(['🧭', 'Krallık Yolu'], yolHtml(gs.getOnboardingSections(), kilitNedeni));
@@ -67,6 +86,7 @@ export function kurYol({ gs, bildir, panelYaz, panelKok, panelKapat, git, hudYen
   // Panel içindeki düğmeler (görev ödülü, bölüm ödülü, "Bana göster"); eski panel kodu tıklamaları durdurduğu için yakalama aşaması
   panelKok().addEventListener('click', (e) => {
     if (!e.target.closest('.v3-yol')) return;
+    if (e.target.closest('[data-claim-all]')) { hepsiniTopla(); return; }
     const gorev = e.target.closest('[data-claim-quest]');
     const bolum = e.target.closest('[data-claim-section]');
     const goster = e.target.closest('[data-ogretici-goster]');
@@ -83,6 +103,7 @@ export function kurYol({ gs, bildir, panelYaz, panelKok, panelKapat, git, hudYen
 
   if (kutu) {
     kutu.addEventListener('click', (e) => {
+      if (e.target.closest('[data-guide-claim-all]')) { hepsiniTopla(); return; }
       if (e.target.closest('[data-guide-dismiss]')) {
         gs.state.guideDismissed = true;
         gs.saveState();

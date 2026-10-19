@@ -159,6 +159,41 @@ export const ogreticiYontemleri = {
     return { success: true, granted, budgetFull, message: `🏅 ${ad}: bölüm ödülü +${granted.toLocaleString('tr-TR')} ASTRA${budgetNote}` };
   },
 
+  // "Tüm ödülleri topla": hazır görev ödülleri, sonra bölüm ödülleri, sonra (açıldıysa) final unvanı tek adımda alınır.
+  // Her ödül kendi işleminden geçer (aynı kasa, aynı haftalık pay kuralı); haftalık pay dolarsa orada durur, kalanı yeni haftada alınır.
+  claimAllOnboarding() {
+    const gorevler = GAME_CONFIG.ONBOARDING_QUESTS || [];
+    const bolumler = GAME_CONFIG.ONBOARDING_SECTIONS || [];
+    const final = GAME_CONFIG.ONBOARDING_FINAL;
+    let adet = 0;
+    let toplam = 0;
+    let doldu = false;
+    const al = (r) => {
+      if (r && r.success) { adet += 1; toplam += r.granted || 0; if (r.budgetFull) doldu = true; return true; }
+      if (r && r.budgetFull) doldu = true;
+      return false;
+    };
+    const ob = () => this.state.onboarding || {};
+    for (const q of gorevler) {
+      if (doldu) break;
+      const e = ob()[q.id];
+      if (e && e.done && !e.claimed) al(this.claimOnboardingReward(q.id));
+    }
+    const alindi = (id) => !!((this.state.onboardingSections || {})[id] || {}).claimed;
+    for (const b of bolumler) {
+      if (doldu) break;
+      if (alindi(b.id)) continue;
+      const bitti = gorevler.filter(q => q.section === b.id).every(q => (ob()[q.id] || {}).done);
+      if (bitti) al(this.claimOnboardingSection(b.id));
+    }
+    if (!doldu && final && !alindi(final.id) && bolumler.length > 0 && bolumler.every(b => alindi(b.id))) al(this.claimOnboardingSection(final.id));
+    if (adet === 0) {
+      return { success: false, granted: 0, count: 0, budgetFull: doldu, message: doldu ? `⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE}` : 'Şu an alınacak ödül yok.' };
+    }
+    const not = doldu ? ` ⏳ ${GAME_CONFIG.TREASURY_WEEKLY_BUDGET.FULL_MESSAGE} Kalanını yeni haftada alabilirsin.` : '';
+    return { success: true, granted: toplam, count: adet, budgetFull: doldu, message: `🧭 ${adet} ödül toplandı: +${toplam.toLocaleString('tr-TR')} ASTRA (Krallık Hazinesinden)${not}` };
+  },
+
   // Bölüm kartları için: her bölümün görevleri, tamamlanma ve alınabilir ödülleri
   getOnboardingSections() {
     const ob = this.state.onboarding || {};

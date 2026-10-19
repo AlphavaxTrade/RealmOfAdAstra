@@ -2847,6 +2847,8 @@ x-islemler:
   claimOnboardingSection:
     argumanlar:
       - section
+  claimAllOnboarding:
+    argumanlar: []
   ogreticiGordu:
     argumanlar:
       - gorulen
