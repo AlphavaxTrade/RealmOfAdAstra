@@ -24,9 +24,9 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 {
   const A = G.TREASURY_ALLOCATION;
   assert.deepEqual({ dungeon: A.dungeon, arena: A.arena, worldBoss: A.worldBoss, ammBuyback: A.ammBuyback, quest: A.quest, carnival: A.carnival, fatih: A.fatih, konsey: A.konsey },
-    { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 }, '8 kasa payı 27/14/12/15/18/4/5/5');
+    { dungeon: 0.21, arena: 0.09, worldBoss: 0.17, ammBuyback: 0.21, quest: 0.13, carnival: 0.09, fatih: 0.05, konsey: 0.05 }, '8 kasa payı 21/9/17/21/13/9/5/5 (19 Ekim 2026, ödeme kapasitesine göre)');
   assert.ok(near(sum(A), 1), 'hazine payları toplam 1');
-  ok('hazine 8 kasaya bölünüşü: 27/14/12/15/18/4/5/5');
+  ok('hazine 8 kasaya bölünüşü: 21/9/17/21/13/9/5/5');
 }
 
 // 3) 200 M ASTRA tohum dağılımı (§E): kasalar 95,82 M (Universe rezervi 20 M dahil) + pazar havuzları 92,18 M + piyango 12 M

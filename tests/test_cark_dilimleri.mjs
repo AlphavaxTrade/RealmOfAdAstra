@@ -29,7 +29,7 @@ const PAY = K.WHEEL_CARNIVAL_SHARE;
   assert.equal(new Set(dilimler.map((r) => r.id)).size, dilimler.length, 'dilim kimlikleri benzersiz');
   assert.equal(dilimler.filter((r) => r.pity).length, 1, 'tek Şans Sayacı dilimi');
   assert.equal(dilimler.find((r) => r.pity).weight, 0, 'Şans Sayacı dilimini zar seçemez, yalnız sayaç doldurur');
-  assert.equal(PAY, 0.85, 'kasa payı %85');
+  assert.equal(PAY, 0.8, 'kasa payı %80 (19 Ekim 2026: kalan %20 ortak dağılıma gider; çevirme başına kasa kârı >= 0,07 korunur)');
   assert.deepEqual(K.WHEEL_MULTIPLIERS, [1, 2, 10], 'çarpanlar x1, x2, x10');
   const oran = (f) => dilimler.filter(f).reduce((s, r) => s + r.weight, 0) / toplam;
   assert.ok(oran((r) => r.type === 'bot_free') < 0.01, '24 saatlik bot oranı %1 altında');

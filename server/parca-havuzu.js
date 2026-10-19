@@ -12,8 +12,8 @@ const BAYRAK_PARCA = 'world:parca_havuzu_v2';
 function kasalaraBol(treasury, miktar) {
   if (!(miktar > 0)) return;
   const yarim = Math.floor(miktar / 2 * 1000) / 1000;
-  treasury.depositTo('carnival', yarim);
-  treasury.depositTo('ammBuyback', miktar - yarim);
+  treasury.depositTo('carnival', yarim, { tasma: false });   // bilerek belirlenen taşıma: taşma kuralı uygulanmaz
+  treasury.depositTo('ammBuyback', miktar - yarim, { tasma: false });
 }
 
 export function parcaHavuzuGecisi({ db, ammMarket, treasury, log = null }) {

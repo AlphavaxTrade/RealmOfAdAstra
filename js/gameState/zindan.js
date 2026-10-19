@@ -91,6 +91,12 @@ export const zindanYontemleri = {
   // Bir sonraki girişin koşulları: stamina bedeli (her girişte), silah aşınması, harç
   getDungeonEntryTerms(level, isBoss = false, soldierCount = 1) {
     const gun = this.getDungeonDayStatus();
+    const zCfg = GAME_CONFIG.DUNGEON || {};
+    const odemesiz = !!gun.nextNeedsFee && !(gun.budgetLeft > 0);
+    const ekCarpan = zCfg.ZERO_REWARD_FEE_MULT ?? 2;
+    const ekEnFazla = zCfg.ZERO_REWARD_MAX_PER_DAY ?? 15;
+    const ekKullanilan = (this.getDailyCounters().dungeonZeroEntries) || 0;
+    const ekDoldu = odemesiz && ekKullanilan >= ekEnFazla;
     const staminaBedeli = this.getDungeonStaminaCost(level, soldierCount);
     const simdiki = Math.floor(this.state.stamina || 0);
     return {
@@ -98,9 +104,13 @@ export const zindanYontemleri = {
       staminaCost: staminaBedeli,
       staminaOk: simdiki >= staminaBedeli,
       staminaShortfall: Math.max(0, staminaBedeli - simdiki),
-      // Günlük ödeme tavanı dolmuşsa harç alınmaz ve harçlı giriş yapılamaz (antrenman girişi yoktur): fee 0 + budgetBlocked
-      fee: gun.nextNeedsFee && gun.budgetLeft > 0 ? this.getDungeonGateFee(level, isBoss) : 0,
-      budgetBlocked: !!gun.nextNeedsFee && !(gun.budgetLeft > 0)
+      // Ödeme payı (günlük kişi tavanı ya da kasa bütçesi) dolduktan sonra da harçlı giriş sürer (19 Ekim 2026): ASTRA kazanılmaz
+      // (rewardless), deneyim ve ganimet sürer, harç ZERO_REWARD_FEE_MULT katıdır (harç kasalara girer; silah aşınır, stamina harcanır).
+      // Günde en çok ZERO_REWARD_MAX_PER_DAY ek giriş: dolunca giriş engellenir (budgetBlocked, fee 0).
+      fee: gun.nextNeedsFee ? (ekDoldu ? 0 : round3(this.getDungeonGateFee(level, isBoss) * (odemesiz ? ekCarpan : 1))) : 0,
+      rewardless: odemesiz,
+      extraEntriesLeft: odemesiz ? Math.max(0, ekEnFazla - ekKullanilan) : null,
+      budgetBlocked: ekDoldu
     };
   },
 
@@ -108,10 +118,11 @@ export const zindanYontemleri = {
   beginDungeonEntry(level, isBoss = false, { payGateFee = false, soldierCount = 1 } = {}) {
     const kosul = this.getDungeonEntryTerms(level, isBoss, soldierCount);
     const sayac = this.state.dailyCounters;
-    // Antrenman girişi YOKTUR (18 Ekim 2026): günlük harçsız haklar bitince girmenin tek yolu kapı harcıdır; ödenmezse ya da kasanın günlük
-    // ödeme bütçesi dolmuşsa giriş reddedilir (stamina düşmez, giriş sayılmaz).
+    // Antrenman girişi YOKTUR (18 Ekim 2026): günlük harçsız haklar bitince girmenin tek yolu kapı harcıdır. Ödeme payı dolduktan sonra da
+    // harçlı giriş sürer (ASTRA kazanılmaz); yalnız günlük ek giriş sınırı dolunca giriş reddedilir (stamina düşmez, giriş sayılmaz).
     if (kosul.nextNeedsFee && kosul.budgetBlocked) {
-      return { success: false, rewarded: false, fee: 0, budgetBlocked: true, message: '🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Haklar ve ödeme payı her gece 00:00\'da (TSİ) yenilenir.' };
+      const sinir = (GAME_CONFIG.DUNGEON || {}).ZERO_REWARD_MAX_PER_DAY ?? 15;
+      return { success: false, rewarded: false, fee: 0, budgetBlocked: true, message: `🏦 Bugünkü zindan ödeme payını doldurdun ve ASTRA vermeyen ${sinir} ek girişin de bitti (bu sınırlar yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Haklar her gece 00:00'da (TSİ) yenilenir.` };
     }
     if (kosul.nextNeedsFee && !payGateFee) {
       return { success: false, rewarded: false, fee: kosul.fee, needsFee: true, message: `Günlük harçsız girişlerin bitti: girmek için kapı harcı (${kosul.fee} ASTRA) ödemelisin.` };
@@ -142,8 +153,14 @@ export const zindanYontemleri = {
       if (kasaPayi > 0 && treasury && treasury.depositTo) treasury.depositTo('dungeon', kosul.fee * kasaPayi);
       if (kasaPayi < 1) globalPool.recordTokenSpend(kosul.fee * (1 - kasaPayi));
       sayac.dungeonPaidEntries = (sayac.dungeonPaidEntries || 0) + 1;
+      if (kosul.rewardless) sayac.dungeonZeroEntries = (sayac.dungeonZeroEntries || 0) + 1;
       this.saveState();
-      return { ...ortak, rewarded: true, fee: kosul.fee, message: `🚪 Kapı harcı ödendi (-${kosul.fee} ASTRA, zindan kasasına)` };
+      return {
+        ...ortak, rewarded: true, rewardless: !!kosul.rewardless, fee: kosul.fee,
+        message: kosul.rewardless
+          ? `🚪 Kapı harcı ödendi (-${kosul.fee} ASTRA, kasalara). Ödeme payın dolu: bu zaferden ASTRA gelmez; deneyim ve ganimet sürer.`
+          : `🚪 Kapı harcı ödendi (-${kosul.fee} ASTRA, zindan kasasına)`
+      };
     }
   },
 

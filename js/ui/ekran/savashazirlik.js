@@ -60,7 +60,7 @@ function dusmanKarti(b, m, secili, terms) {
 
 function girisKarti(b, m, terms) {
   const gs = b.gameState;
-  const ucret = gs.getDungeonGateFee(m.level, asBoss(m));
+  const ucret = terms.fee > 0 ? terms.fee : gs.getDungeonGateFee(m.level, asBoss(m));   // ödeme payı dolunca harç iki kat (terms.fee)
   const paySayi = b.GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1;
   const kasayaNot = paySayi >= 1
     ? 'Harcın tamamı zindan kasasına gider.'
@@ -77,8 +77,10 @@ function girisKarti(b, m, terms) {
     icerik: cubukSatiri('Bugünkü ödüllü girişler', `${terms.freeUsed} / ${terms.freeTotal}`, terms.freeTotal > 0 ? (terms.freeUsed / terms.freeTotal) * 100 : 0, { ton: terms.nextNeedsFee ? 'dolu' : '' })
       + (terms.nextNeedsFee
         ? (terms.budgetBlocked
-          ? uyari('🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
-          : `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Savaşa girerken ödenir, ödülle girersin. ${esc(kasayaNot)}</small></p>`)
+          ? uyari('🏦 Bugünkü zindan ödeme payını doldurdun ve ASTRA vermeyen ek girişlerin de bitti (bu sınırlar yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
+          : (terms.rewardless
+            ? `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Ödeme payın dolu: bu girişlerde ASTRA kazanılmaz, deneyim ve ganimet sürer. Harç iki katıdır; ödediğin ASTRA oyun kasalarına girer. Bugün ${esc(terms.extraEntriesLeft)} ek giriş hakkın kaldı. ${esc(kasayaNot)}</small></p>`
+            : `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Savaşa girerken ödenir, ödülle girersin. ${esc(kasayaNot)}</small></p>`))
         : '')
       // Harçlı giriş ödeme payı yüzünden ENGELLİYSE yukarıdaki kırmızı not yeter: "deneyim ve ganimet sürer" cümlesi yalnız harçsız giriş hakkı sürerken doğrudur
       + (terms.nextNeedsFee && terms.budgetBlocked ? '' : gunlukOdemeNotu(terms, taban.ada))
@@ -177,7 +179,7 @@ const ekran = {
     else if (yok) baslaYazi = '⚔️ Asker yok';
     else if (secili.length === 0) baslaYazi = '⚔️ Asker seçin';
     else if (staminaYetersiz) baslaYazi = `⚡ Yetersiz stamina (${Math.floor(gs.state.stamina || 0)}/${terms.staminaCost} ⚡)`;
-    else if (harcYok) baslaYazi = '🏦 Bugünkü ödeme payın doldu';
+    else if (harcYok) baslaYazi = '🏦 Bugünkü ek giriş hakkın doldu';
 
     const parsomen = gs.state.inventory.scroll_heal || 0;
     return kap([
@@ -274,10 +276,10 @@ const ekran = {
         b.bildir(`⚠️ Yetersiz stamina! ${secili.length} asker için ${terms.staminaCost} ⚡ gerekiyor (mevcut: ${Math.floor(gs.state.stamina || 0)} ⚡).`, 'error');
         return undefined;
       }
-      if (terms.budgetBlocked) { b.bildir('🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz.', 'error'); return false; }
+      if (terms.budgetBlocked) { b.bildir('🏦 Bugünkü zindan ödeme payını doldurdun ve ASTRA vermeyen ek girişlerin de bitti: bugün yeni giriş yapılamaz.', 'error'); return false; }
       const harc = !!terms.nextNeedsFee;   // günlük harçsız haklar bitince kapı harcı savaşa girerken ödenir (antrenman girişi yok)
       if (harc) {
-        const ucret = gs.getDungeonGateFee(m.level, asBoss(m));
+        const ucret = terms.fee > 0 ? terms.fee : gs.getDungeonGateFee(m.level, asBoss(m));
         if ((gs.state.adAstraBalance || 0) < ucret) { b.bildir(`Kapı harcı için ${astra(ucret)} ASTRA gerekiyor.`, 'error'); return false; }
       }
       sonSavasiYaz(m.level, secili);   // zindan ekranındaki "son savaşı tekrarla" için

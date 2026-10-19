@@ -207,16 +207,21 @@ const asker = (gs, n = 1, seviye = 8) => {
   let toplam = 0;
   for (let i = 0; i < 12; i++) { const g = gs.addDungeonXpAndDrops(9, true, { rewarded: true }); toplam += g.adAstraGained; }
   assert.ok(Math.abs(toplam - taban) < 0.01, `günlük toplam tavanı aşmamalı: ${toplam} / ${taban}`);
-  // tavan dolduktan sonra harç alınmaz ve harçlı giriş de yapılamaz (antrenman girişi yok)
+  // tavan dolduktan sonra harçlı giriş SÜRER ama ASTRA kazanılmaz (19 Ekim 2026): harç iki katı; günlük ek giriş sınırı dolunca engellenir
   gs.getDailyCounters().dungeonRuns = 5;                 // harçsız haklar bitti
   const kosul = gs.getDungeonEntryTerms(9, true, 1);
   assert.equal(kosul.nextNeedsFee, true);
-  assert.equal(kosul.fee, 0, 'ödeme tavanı doluyken harç alınmaz');
-  assert.equal(kosul.budgetBlocked, true, 'bütçe dolu: giriş engelli');
+  assert.equal(kosul.rewardless, true, 'ödeme payı dolu: ASTRA kazanılmaz');
+  assert.equal(kosul.fee, Math.round(gs.getDungeonGateFee(9, true) * GAME_CONFIG.DUNGEON.ZERO_REWARD_FEE_MULT * 1000) / 1000, 'harç iki katı');
+  assert.equal(kosul.budgetBlocked, false, 'ek giriş hakkı varken giriş engelli değil');
+  gs.getDailyCounters().dungeonZeroEntries = GAME_CONFIG.DUNGEON.ZERO_REWARD_MAX_PER_DAY;
+  const dolu = gs.getDungeonEntryTerms(9, true, 1);
+  assert.equal(dolu.budgetBlocked, true, 'günlük ek giriş sınırı dolunca giriş engelli');
+  assert.equal(dolu.fee, 0, 'engelliyken harç alınmaz');
   const giris = gs.beginDungeonEntry(9, true, { payGateFee: true, soldierCount: 1 });
-  assert.equal(giris.success, false, 'ödeme bütçesi doluyken yeni giriş yok');
+  assert.equal(giris.success, false, 'ek giriş sınırı dolunca yeni giriş yok');
   assert.equal(giris.budgetBlocked, true);
-  ok(`EK-05: harcanan = 0 iken günlük zindan geliri ${toplam.toFixed(1)} (40 giriş eski: ~777); dolunca harç alınmıyor`);
+  ok(`EK-05: harcanan = 0 iken günlük zindan geliri ${toplam.toFixed(1)} (40 giriş eski: ~777); dolunca ASTRA'sız ek girişler, sınırdan sonra engel`);
 }
 {
   // Ordu harcamasıyla orantılı tavan: harcanan × 0,70 ÷ 93 (10 askerlik ordu ~20.720 ASTRA → 156)

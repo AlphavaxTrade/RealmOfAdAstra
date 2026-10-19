@@ -118,11 +118,27 @@ tamam('E-2: günlük ödeme tavanı cümleleri (önizleme ve sonuç notu)');
     sayac.dungeonRuns = GAME_CONFIG.DUNGEON.DAILY_RUNS;
     sayac.dungeonBudget = 0;
     sayac.dungeonPaid = 0;
+    sayac.dungeonZeroEntries = GAME_CONFIG.DUNGEON.ZERO_REWARD_MAX_PER_DAY;   // günlük ek giriş sınırı da doldu
     const e = bul('savashazirlik');
     const yazi = metin(e.govde(baglam(gs), e.ornekSecenekler()[0]));
     assert.match(yazi, /ödeme payını doldurdun/, 'engel mesajı var');
     assert.ok(!/deneyim ve ganimet sürer/.test(yazi), 'engelliyken çelişen "ganimet sürer" cümlesi yok');
     assert.ok(!/ödeme tavanın doldu/.test(yazi), 'aynı şeyi söyleyen ikinci uyarı yok');
+  }
+
+  // b3) ödeme payı dolu ama ek giriş hakkı var: harçlı giriş açık; kart ASTRA kazanılmayacağını ve ek giriş hakkını söyler
+  {
+    depo.clear();
+    const gs = new GameStateManager();
+    const sayac = gs.getDailyCounters();
+    sayac.dungeonRuns = GAME_CONFIG.DUNGEON.DAILY_RUNS;
+    sayac.dungeonBudget = 0;
+    sayac.dungeonPaid = 0;
+    const e = bul('savashazirlik');
+    const yazi = metin(e.govde(baglam(gs), e.ornekSecenekler()[0]));
+    assert.match(yazi, /ASTRA kazanılmaz/, 'ASTRA kazanılmayacağı söylenir');
+    assert.ok(yazi.includes(`${GAME_CONFIG.DUNGEON.ZERO_REWARD_MAX_PER_DAY} ek giriş hakkın kaldı`), 'ek giriş hakkı yazılır');
+    assert.ok(!/bugün yeni giriş yapılamaz/.test(yazi), 'giriş açıkken "yapılamaz" yazmaz');
   }
 
   // d) demirhane: cephanelik boşken toplu işlem düğmeleri pasif (eskiden "uygun teçhizat bulunamadı" hatası veriyordu)

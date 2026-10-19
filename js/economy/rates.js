@@ -37,7 +37,9 @@ export const RATE_COUNT = RATE_KEYS.length;
 // Oyunun bugünkü oranları (sözleşme kurulmadan ya da oyun sunucusuna bağlanmadan gösterilen değerler).
 // js/config.js ile aynı olmalı: tests/test_rates_contract.mjs denetler.
 // v2 (7 Ekim 2026): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
-export const DEFAULT_RATES = [500, 300, 600, 8600, 2700, 1400, 1200, 1500, 1800, 400, 500, 500, 8500, 10000, 200, 200, 200, 300, 600, 5000, 150];
+// 19 Ekim 2026 (akış modeli, scripts/ekonomi/akis-modeli.mjs): kasa payları ödeme kapasitesine göre zindan 21, kolezyum 9, boss 17, geri alım 21,
+// görev 13, karnaval 9, Fatih 5, Konsey 5; çark doğrudan payı %80 (ödeme çevirme başına olduğu için kasayı zarara sokmayacak en düşük seviye), zindan kapı harcı doğrudan payı %60.
+export const DEFAULT_RATES = [500, 300, 600, 8600, 2100, 900, 1700, 2100, 1300, 900, 500, 500, 8000, 6000, 200, 200, 200, 300, 600, 5000, 150];
 export const POOL_KEYS = ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival', 'fatih', 'konsey'];
 export const RATE_CHANGE_DELAY_SEC = 24 * 3600;
 

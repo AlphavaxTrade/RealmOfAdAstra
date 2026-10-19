@@ -86,25 +86,71 @@ export class TreasuryLedger {
     if (!isFinite(miktar) || miktar <= 0) return { allocations: {} };
 
     const oranlar = GAME_CONFIG.TREASURY_ALLOCATION;
-    const allocations = {};
+    const giris = {};
     for (const id of KASA_KIMLIKLERI) {
       const pay = miktar * (oranlar[id] || 0);
-      if (!(pay > 0)) continue;
+      if (pay > 0) giris[id] = pay;
+    }
+    const allocations = this._tasmaDagit(giris);
+    for (const [id, pay] of Object.entries(allocations)) {
       this.state.pools[id] = (this.state.pools[id] || 0) + pay;
       this.state.inflow[id] = (this.state.inflow[id] || 0) + pay;
-      allocations[id] = pay;
     }
     this.state.lifetimeDeposited += miktar;
     this.save();
     return { allocations };
   }
 
+  // Taşma kuralı (19 Ekim 2026, GAME_CONFIG.TREASURY_OVERFLOW): bir kasa başlangıç bakiyesinin HEALTH_MAX katını geçecekse fazla giriş,
+  // başlangıç bakiyesinin altında kalan kasalara açıkla orantılı akar (hepsi dolduysa kasaların tohumuyla orantılı). Toplam değişmez.
+  // giris: { kasa: miktar }; döner: taşma uygulanmış { kasa: miktar }. Taşma havuzu dışındaki kasalara (Fatih, Konsey, Universe) dokunulmaz.
+  _tasmaDagit(giris) {
+    const ayar = GAME_CONFIG.TREASURY_OVERFLOW || {};
+    const kasalar = (ayar.POOLS || []).filter(kasaMi);
+    const enCok = Number(ayar.HEALTH_MAX) || 0;
+    const sonuc = { ...giris };
+    if (!(enCok > 1) || kasalar.length < 2) return sonuc;
+    const bakiye = (id) => this.state.pools[id] || 0;
+    let sinirdan = 0;
+    for (let tur = 0; tur < 4; tur++) {
+      let tasan = 0;
+      for (const id of kasalar) {
+        const g = sonuc[id] || 0;
+        if (!(g > 0)) continue;
+        const tavan = Math.max(0, enCok * TOHUMLAR[id] - bakiye(id));
+        if (g > tavan) { tasan += g - tavan; sonuc[id] = tavan; }
+      }
+      if (!(tasan > 1e-9)) break;
+      const acik = {};
+      let toplamAcik = 0;
+      for (const id of kasalar) {
+        acik[id] = Math.max(0, TOHUMLAR[id] - bakiye(id) - (sonuc[id] || 0));
+        toplamAcik += acik[id];
+      }
+      if (toplamAcik > 0) {
+        for (const id of kasalar) sonuc[id] = (sonuc[id] || 0) + tasan * acik[id] / toplamAcik;
+      } else {
+        sinirdan += tasan;   // hiçbir kasa tohumun altında değil: aşağıda tohumla orantılı verilir
+        break;
+      }
+    }
+    if (sinirdan > 0) {
+      const tohumToplam = kasalar.reduce((s, id) => s + TOHUMLAR[id], 0);
+      for (const id of kasalar) sonuc[id] = (sonuc[id] || 0) + sinirdan * TOHUMLAR[id] / tohumToplam;
+    }
+    for (const id of Object.keys(sonuc)) if (!(sonuc[id] > 0)) delete sonuc[id];
+    return sonuc;
+  }
+
   // Tek bir kasaya doğrudan giriş (ör. zindan kapı harcının tamamı zindan kasasına)
-  depositTo(poolId, amount) {
+  // opsiyon tasma:false → taşma kuralı uygulanmaz (belirli kasalara bilerek yapılan tek seferlik taşımalar, ör. parça havuzu geçişi)
+  depositTo(poolId, amount, { tasma = true } = {}) {
     const miktar = Number(amount);
     if (!kasaMi(poolId) || !isFinite(miktar) || miktar <= 0) return 0;
-    this.state.pools[poolId] = (this.state.pools[poolId] || 0) + miktar;
-    this.state.inflow[poolId] = (this.state.inflow[poolId] || 0) + miktar;
+    for (const [id, pay] of Object.entries(tasma ? this._tasmaDagit({ [poolId]: miktar }) : { [poolId]: miktar })) {
+      this.state.pools[id] = (this.state.pools[id] || 0) + pay;
+      this.state.inflow[id] = (this.state.inflow[id] || 0) + pay;
+    }
     this.state.lifetimeDeposited += miktar;
     this.save();
     return miktar;

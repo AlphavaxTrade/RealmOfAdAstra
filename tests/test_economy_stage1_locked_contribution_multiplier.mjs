@@ -45,8 +45,8 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   assert.equal(res.creatorRoyalty, 300);
   assert.equal(res.ubiShare, 600);
   assert.equal(res.treasuryShare, 8600);
-  // v2 (R3): 8 kasa — zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
-  assert.deepEqual(A, { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 });
+  // 19 Ekim 2026 (akış modeli): 8 kasa — zindan 21, kolezyum 9, boss 17, geri alım 21, görev 13, karnaval 9, Fatih 5, Konsey 5
+  assert.deepEqual(A, { dungeon: 0.21, arena: 0.09, worldBoss: 0.17, ammBuyback: 0.21, quest: 0.13, carnival: 0.09, fatih: 0.05, konsey: 0.05 });
   const expect = Object.fromEntries(Object.entries(A).map(([id, s]) => [id, 8600 * s]));
   for (const [id, v] of Object.entries(expect)) {
     assert.ok(near(treasury.getPool(id) - before[id], v, 1e-3), `${id} kasasına ${v} ASTRA girmeli`);

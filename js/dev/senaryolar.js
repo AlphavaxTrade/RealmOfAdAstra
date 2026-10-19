@@ -385,7 +385,7 @@ export const SENARYOLAR = [
       { ad: 'Reddedilen giriş ASTRA harcamadı', tamam: (o, s, r) => r.arada.astra === r.once.astra },
       { ad: 'Harçlı giriş ödüllü', tamam: (o, s, r) => r.odemeli.success === true && r.odemeli.entry.rewarded === true },
       { ad: 'Harç tam tutarıyla ASTRA\'dan düştü', tamam: (o, s, r) => Math.abs((r.arada.astra - s.astra) - r.beklenenHarc) < 1e-6 },
-      { ad: 'Harç zindan kasasına gitti', tamam: (o, s, r) => s.zindanKasasi - r.arada.zindanKasasi >= r.beklenenHarc - 1e-6 }
+      { ad: 'Harcın doğrudan payı (DUNGEON_GATE_POOL_SHARE) zindan kasasına gitti, kalanı ortak dağılıma', tamam: (o, s, r) => s.zindanKasasi - r.arada.zindanKasasi >= r.beklenenHarc * (GAME_CONFIG.DUNGEON_GATE_POOL_SHARE ?? 1) - 1e-6 }
     ]
   },
   {

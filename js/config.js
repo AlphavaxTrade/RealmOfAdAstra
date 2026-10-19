@@ -671,6 +671,10 @@ export const GAME_CONFIG = {
     //  • 2.–5. giriş: harçsız ödüllü giriş; her askerin rastgele bir eşyası aşınır.
     //  • 6. girişten itibaren: yalnız kapı harcı ödenerek girilir (ödüllü); harç ödenmezse giriş yoktur (antrenman girişi 18 Ekim 2026'da kaldırıldı).
     DAILY_RUNS: 5,                    // harçsız ödüllü giriş sayısı
+    // Ödeme payı (günlük tavan ya da kasa bütçesi) dolduktan sonra harçlı giriş sürer ama ASTRA KAZANILMAZ (deneyim ve ganimet sürer): harç iki
+    // katıdır ve günde en çok ZERO_REWARD_MAX_PER_DAY ek giriş yapılır (19 Ekim 2026). Harç kasalara girer, silahlar aşınır, stamina ve ot harcanır.
+    ZERO_REWARD_FEE_MULT: 2,
+    ZERO_REWARD_MAX_PER_DAY: 15,
     FIRST_ENTRY_NO_WEAR: true,        // günün ilk girişinde eşyalar aşınmaz
     // Eşya aşınma algoritması (18 Ekim 2026): savaşa giren HER askerin takılı eşyalarından, savaş başına ortalama
     //   E = TABAN + KAT_BASINA × (kat − 1) + MOD_BASINA × (zindan modu) + (büyük boss ise BOSS_EKI)   (en çok EN_FAZLA)
@@ -743,7 +747,7 @@ export const GAME_CONFIG = {
     // karşılığı bir kasa harcaması yok; değeri oyuncuların ilan fiyatıdır.
     HAFTALIK_ANAHTAR: [1, 1, 1],
     ENTRY_FEE_ASTRA: 10,
-    ENTRY_ARENA_SHARE: 0.7,
+    ENTRY_ARENA_SHARE: 0.6,   // 19 Ekim 2026: %70'ten %60'a (kalan %40 ortak dağılıma gider: bkz. TREASURY_OVERFLOW açıklaması)
     ENTRY_STAMINA_COST: 12,
     DAILY_MATCH_CAP: 10,
     STARTING_RATING: 1000,
@@ -792,10 +796,18 @@ export const GAME_CONFIG = {
   // %5 Yakım, %6 UBI, %3 Team Payı; kalan %86'lık hazine girişinin 6 kasaya dağılımı (hazine payının yüzdesi):
   // Zindan %30, Kolezyum %15, World Boss %15, Pazar geri alımı %15, Görev & ücretsiz oyuncu %21, Karnaval %4
   // Zindan kapı harcının doğrudan zindan kasasına giden kısmı (kalanı her harcama gibi dağıtılır). Oranlar: RealmRates sözleşmesi
-  DUNGEON_GATE_POOL_SHARE: 1,
+  // 19 Ekim 2026: %100'den %60'a. Kalan %40 her harcama gibi dağıtılır: oyunun her yeri birbirini besler (akış modeli: scripts/ekonomi/akis-modeli.mjs).
+  DUNGEON_GATE_POOL_SHARE: 0.6,
   // v2 (R3): hazine payının 8 kasaya bölünüşü (toplam %100; RealmRates sözleşmesindeki 8 kasa payıyla aynı):
   // zindan 27, kolezyum 14, boss 12, geri alım 15, görev 18, karnaval 4, Fatih 5, Konsey 5
-  TREASURY_ALLOCATION: { dungeon: 0.27, arena: 0.14, worldBoss: 0.12, ammBuyback: 0.15, quest: 0.18, carnival: 0.04, fatih: 0.05, konsey: 0.05 },
+  // 19 Ekim 2026 (kullanıcı onayı, akış modeli): ağırlıklar kasaların haftalık ÖDEME KAPASİTESİNE göre yeniden ayarlandı (eskiden
+  // zindan 27 / kolezyum 14 / boss 12 / geri alım 15 / görev 18 / karnaval 4: boss ve geri alım kronik aç, zindan ve kolezyum şişiyordu).
+  // Şimdi zindan 21, kolezyum 9, boss 17, geri alım 21, görev 13, karnaval 9, Fatih 5, Konsey 5. RealmRates sözleşmesi kurulurken aynı
+  // başlangıç oranları verilmeli (js/economy/rates.js DEFAULT_RATES); sözleşme kuruluysa oranlar oradan okunur.
+  TREASURY_ALLOCATION: { dungeon: 0.21, arena: 0.09, worldBoss: 0.17, ammBuyback: 0.21, quest: 0.13, carnival: 0.09, fatih: 0.05, konsey: 0.05 },
+  // Taşma kuralı (19 Ekim 2026, js/treasury.js): bir kasa başlangıç bakiyesinin HEALTH_MAX katını geçecekse, fazla giriş açığı en büyük
+  // kasalara (açıkla orantılı) akar. Toplam ASTRA değişmez; amaç hiçbir kasanın şişip diğerlerinin aç kalmaması.
+  TREASURY_OVERFLOW: { HEALTH_MAX: 1.25, POOLS: ['dungeon', 'arena', 'worldBoss', 'ammBuyback', 'quest', 'carnival'] },
   TREASURY_POOL_NAMES: {
     dungeon: 'Zindan Ganimet Kasası',
     ammBuyback: 'Pazar Geri Alım Kasası',
@@ -874,7 +886,10 @@ export const GAME_CONFIG = {
     // Kullanıcı kararı (18 Ekim 2026): ASTRA ile çevrilen çarkın bedelinin %85'i DOĞRUDAN Karnaval kasasına girer (ödüller bu
     // kasadan ödenir; kasa uzun vadede büyür ve oyunun ömrünü uzatır). Kalan %15 her harcama gibi dağıtılır (yakım, yapımcı
     // payı, temel gelir, hazine kasaları). 4 Ekim'de %80'di; eskiden yalnız %3,4'ü giriyordu.
-    WHEEL_CARNIVAL_SHARE: 0.85,
+    // 19 Ekim 2026: %85'ten %80'e. Çark ödemesi haftalık orana değil ÇEVİRME BAŞINA ödenir (ödül tablosunun beklenen değeri ~0,72 ASTRA / çevirme);
+    // doğrudan pay bunun üstünde en az 0,07 pay bırakmalı yoksa kasa her çevirmede erir (tests/test_cark_dilimleri.mjs bunu denetler: %60 denendi, çevirme başına -0,116 çıktı).
+    // Kalan %20 yakım, yapımcı payı, temel gelir ve bütün kasalara dağılır (akış modeli: scripts/ekonomi/akis-modeli.mjs).
+    WHEEL_CARNIVAL_SHARE: 0.8,
     // Hammadde oyunda bedava toplandığı için hammaddeyle çevirme günde en çok bu kadar (kasa bu yoldan erimesin)
     WHEEL_RESOURCE_DAILY_LIMIT: 3,
     // Çarpanlı çevirme (zaman kazanmak isteyenler için): bedel ve ödeme aynı oranda artar; yalnız ASTRA ile çevrilir.
@@ -1726,6 +1741,17 @@ export const GAME_CONFIG = {
       date: '19 Ekim 2026',
       changes: [
         `Zindan savaşa hazırlık ekranında ödeme payı dolduğunda iki uyarı birbiriyle çelişiyordu: biri "bugün yeni giriş yapılamaz", diğeri "bu zaferden ASTRA gelmez; deneyim ve ganimet sürer" diyordu. İkincisi yalnız günlük harçsız girişlerin sürdüğü zaman doğrudur. Harçlı giriş ödeme payı yüzünden engelliyken artık yalnızca engel uyarısı gösteriliyor.`
+      ]
+    },
+    {
+      version: 'v1.75',
+      title: '🔁 Kasalar Birbirini Besliyor, Ödeme Payı Dolunca da Zindana Girilir',
+      date: '19 Ekim 2026',
+      changes: [
+        `Zindan: günlük ödeme payın (tavanın) dolduktan sonra da kapı harcıyla girebilirsin. Bu girişlerde ASTRA kazanılmaz; deneyim ve ganimet sürer, silahlar aşınır, stamina harcanır. Harç iki kat olur ve oyun kasalarına girer. Günde en fazla 15 ek giriş yapılır.`,
+        `Kasalar artık birbirini besliyor: zindan kapı harcının, çark bedelinin ve Kolezyum ücretinin yalnız %60 / %80 / %60'ı kendi kasasına gider (eskiden %100 / %85 / %70). Kalanı yakıma, yapımcı payına, temel gelire ve bütün kasalara dağılır. Böylece oyunun her yeri hem kendini hem diğer yerleri besler ve yakım artar.`,
+        `Kasa payları ödeme kapasitesine göre yeniden ayarlandı: Zindan %21, Kolezyum %9, Dünya Boss %17, Pazar Geri Alım %21, Görev %13, Karnaval %9 (Fatih ve Konsey %5'er). Dünya Boss ve Geri Alım kasaları eskiden aç kalıyordu, zindan ve çark kasaları şişiyordu.`,
+        `Taşma kuralı: bir kasa başlangıç bakiyesinin 1,25 katını geçerse, ona gelecek fazla ASTRA en aç kasalara akar. Toplam ASTRA değişmez.`
       ]
     }
   ],
