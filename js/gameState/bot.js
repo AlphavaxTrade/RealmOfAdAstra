@@ -162,6 +162,8 @@ export const botYontemleri = {
       if (this.state.activeExpeditions && this.state.activeExpeditions[nodeId]) return false;
       const aletId = GAME_CONFIG.GLOBAL_RESOURCE_CAPS[nodeId].requiredTool;
       const alet = this.state.tools ? this.state.tools[aletId] : null;
+      // Çıkarma hakkı bitmiş kaynakta sefer başlatılmaz: stamina ve alet boşuna harcanmasın (mahsul zaten izin beklerdi)
+      if (typeof this.getUretimHakki === 'function') { const hak = this.getUretimHakki(nodeId); if (hak && Number(hak.canTake) < 2) return false; }
       return !!alet && alet.durability > 0;
     });
   },
@@ -407,9 +409,12 @@ export const botYontemleri = {
     }
 
     const bitis = Math.max(durum.botActiveUntil || 0, durum.tavernaBotExpiresAt || 0);
-    const onkosul = this._botOnkosulunuTamamla();
+    // Üretim Hakkı bitince bot boşuna çalışmasın (19 Ekim 2026): hiçbir kaynaktan çıkarma hakkı kalmadıysa süre donar, yeni hak açılınca kaldığı yerden devam eder
+    const hakBitti = this._botUretimHakkiBitti();
+    const onkosul = hakBitti ? this.checkBotPrerequisites() : this._botOnkosulunuTamamla();
 
-    if (!onkosul.isMet) {
+    if (!onkosul.isMet || hakBitti) {
+      durum.botPauseReason = hakBitti ? 'hak' : 'onkosul';
       if (!durum.botPaused) {
         durum.botPaused = true;
         durum.botPausedRemainingMs = Math.max(1000, bitis - now);
@@ -423,7 +428,7 @@ export const botYontemleri = {
           durum.activeBuffs.auto_collector.expiresAt = durum.botActiveUntil;
         }
       }
-      return { isBotPurchased: true, isPaused: true, prereq: onkosul };
+      return { isBotPurchased: true, isPaused: true, prereq: onkosul, reason: durum.botPauseReason };
     }
 
     if (!durum.botPaused) return { isBotPurchased: true, isPaused: false };
@@ -434,6 +439,7 @@ export const botYontemleri = {
     durum.tavernaBotExpiresAt = durum.botActiveUntil;
     durum.botPausedRemainingMs = null;
     durum.botPausedAt = null;
+    durum.botPauseReason = null;
     if (!durum.activeBuffs) durum.activeBuffs = {};
     durum.activeBuffs['auto_collector'] = {
       id: 'auto_collector',
@@ -448,6 +454,22 @@ export const botYontemleri = {
       console.warn('Bot uyanma turu hatası:', e);
     }
     return { isBotPurchased: true, isPaused: false, justResumed: true };
+  },
+
+  // Altı kaynağın hiçbirinden şu an çıkarılabilir hak yok mu (günlük açılan parça bitti ya da hafta hakkı doldu)
+  _botUretimHakkiBitti() {
+    if (typeof this.getUretimHakki !== 'function') return false;
+    for (const k of RES_KEYS()) {
+      const hak = this.getUretimHakki(k);
+      if (!hak || Number(hak.canTake) >= 2) return false;
+    }
+    return true;
+  },
+
+  // Bir sonraki hak açılışı (ms; bilinmiyorsa 0)
+  getBotNextRightAt() {
+    const h = typeof this.getUretimHakki === 'function' ? this.getUretimHakki(RES_KEYS()[0]) : null;
+    return h && h.nextReleaseAt ? Number(h.nextReleaseAt) : 0;
   },
 
   isBotPaused() {

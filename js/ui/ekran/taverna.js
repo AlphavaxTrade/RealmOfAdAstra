@@ -17,7 +17,9 @@ function botKarti(b) {
   const ON = botCfg.REQUIRED_PREREQUISITES || { iron: 50, wood: 50, wheat: 50, adAstra: 0.5 };   // botun çalışma önkoşulu (yapılandırmadan)
 
   let durumEtiketi;
-  if (duraklatildi) durumEtiketi = `<span class="ek-etiket is-uyari">⏸️ Duraklatıldı · ${esc(kalanMetin)} donduruldu</span>`;
+  const hakBekliyor = duraklatildi && gs.state.botPauseReason === 'hak';
+  if (hakBekliyor) durumEtiketi = `<span class="ek-etiket is-uyari">⏸️ Üretim Hakkı bekleniyor · ${esc(kalanMetin)} donduruldu</span>`;
+  else if (duraklatildi) durumEtiketi = `<span class="ek-etiket is-uyari">⏸️ Duraklatıldı · ${esc(kalanMetin)} donduruldu</span>`;
   else if (calisiyor) durumEtiketi = `<span class="ek-etiket is-iyi">✅ Çalışıyor · ${esc(kalanMetin)} kaldı</span>`;
   else durumEtiketi = '<span class="ek-etiket">💤 Kapalı</span>';
 
@@ -34,7 +36,8 @@ function botKarti(b) {
     rozet: durumEtiketi,
     vurgu: duraklatildi ? 'uyari' : (calisiyor ? 'iyi' : ''),
     icerik: not('Sen yokken altı alanda (buğday, taş, odun, kömür, demir, şifalı ot) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <b>günlük net kârın yarısıdır</b>.')
-      + (duraklatildi ? uyari(`<b>Bot bekliyor:</b> çalışmak ve aletleri onarmak için deponda en az ${tam(ON.iron)} demir, ${tam(ON.wood)} odun, ${tam(ON.wheat)} buğday ve ${ON.adAstra} ASTRA olmalı. Kalan süren (${esc(kalanMetin)}) bu sırada azalmaz. <b>Eksikler:</b> ${esc(onkosul.missingText)}. Tamamladığın anda bot kaldığı yerden devam eder.`, 'uyari') : '')
+      + (hakBekliyor ? uyari(`<b>Bot bekliyor: Üretim Hakkın bitti.</b> Altı kaynaktan hiçbirinde şu an çıkarabileceğin hak kalmadığı için bot boşuna çalışmıyor. Kalan süren (${esc(kalanMetin)}) bu sırada <b>azalmaz</b>; yeni hak açıldığında (her gün gece 00:00 TSİ'de günün parçası, hafta başında yeni hak) bot kaldığı yerden devam eder.`, 'uyari') : '')
+      + (duraklatildi && !hakBekliyor ? uyari(`<b>Bot bekliyor:</b> çalışmak ve aletleri onarmak için deponda en az ${tam(ON.iron)} demir, ${tam(ON.wood)} odun, ${tam(ON.wheat)} buğday ve ${ON.adAstra} ASTRA olmalı. Kalan süren (${esc(kalanMetin)}) bu sırada azalmaz. <b>Eksikler:</b> ${esc(onkosul.missingText)}. Tamamladığın anda bot kaldığı yerden devam eder.`, 'uyari') : '')
       + `<div class="ek-dugmeler">${paketDugmeleri.join('')}</div>`
   });
 }
@@ -84,6 +87,7 @@ function ucretDokumu(b) {
     ...(Number(h.rightsLimitLossAda) >= 0.5 ? [satir('Günlük Üretim Hakkı sınırı (bugün alabileceğin kadarıyla sınırlı)', `−${n0(h.rightsLimitLossAda)} ASTRA`, 'kotu')] : []),
     satir('Net kâr', `+${n0(h.netProfitAda)} ASTRA`),
     satir('Bot ücreti (net kârın yarısı)', `${n0(h.botCostAda)} ASTRA`, 'uyari'),
+    ...(h.rightsExhausted ? [uyari('⚠️ <b>Üretim Hakkın şu an bitti</b> (bu hafta çıkarabileceğin hammadde kalmadı). Bu yüzden bot kârı 0 görünüyor ve ücret en düşük tutar olan 1 ASTRA seviyesine iniyor. Bu halde bot çalışmaz: hak açılana kadar bekler ve satın aldığın süre azalmaz, hak açılınca kaldığı yerden devam eder.', 'uyari')] : []),
     ...(Number(h.rightsLimitLossAda) >= 0.5 ? [not('ℹ️ <b>Üretim Hakkı sınırı nedir?</b> Oyun, herkesin haftada çıkarabileceği hammaddeyi sınırlar (Konsey\'deki "Bu haftaki çıkarma hakkın" kartı). Bot, bir günde üretebileceğinden fazlasını alamaz; hakkın üretiminin yalnız bir kısmına yetiyorsa kalanı bota yazılmaz (kâr olarak da, masraf olarak da). Hakkını büyütmek için: hesap seviyeni yükselt, köy evi ekle, Konsey\'e katkı yap (katkı kademesi), her gün sefer topla (aktiflik). Hak büyüdükçe bot kârı da büyür.')] : []),
     not(`🛡️ <b>Güvenlik payı:</b> Bot kasanda en az <b>${esc(astra(gs.getBotAdaReserve()))} ASTRA</b> bırakır${gs.state.botAutoRenew24h ? ' (ertesi günün bot ücreti dahil)' : ''}.`)
   ].join('');

@@ -38,6 +38,9 @@ const bol = (gs) => {
   s.stamina = 100;
   for (const k of ['wood', 'iron', 'wheat']) s.inventory[k] = 500;
   for (const alet of ['axe', 'pickaxe', 'sickle']) s.tools[alet].durability = 5000;
+  // Bu test botun döngü kurallarına bakar; Üretim Hakkı sınırı ve bot duraklaması test_bot_hak_bekleme.mjs'te (burada hak sınırsız sayılır)
+  const hak = gs.getUretimHakki.bind(gs);
+  gs.getUretimHakki = (k) => ({ ...hak(k), canTake: 1e12 });
 };
 
 // 1) Maliyet: 24 saatlik net kârın yarısı

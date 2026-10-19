@@ -67,6 +67,7 @@ export const botPaketiYontemleri = {
     return {
       grossRevenueAda: round3(brutTam),
       rightsLimitLossAda: sinirKaybi,
+      rightsExhausted: !(brutGun > 0),   // hakkın hiç kalmadı: ücret en az 1 ASTRA'ya iner, bot hak açılana kadar bekler
       staminaWheatCostAda: round3(staminaGun),
       toolRepairCostAda: round3(aletGun),
       netProfitAda: round3(net24),

@@ -636,6 +636,8 @@ export const gameStateV2 = {
       if (q > 0) want[k] = q;
     }
     if (!Object.keys(want).length) return { success: false, message: 'Verilecek hammadde yok.' };
+    const pctOnce = globalPool.getOtoriteStatus().pct;
+    const p0 = this.getContributionInfo().week;
     const r = globalPool.contributeOtorite(want);
     const acc = r.accepted || {};
     if (!Object.keys(acc).length) return { success: false, message: r.status && r.status.maxed ? 'Madencilik Otoritesi en üst seviyede.' : 'Bu hammadde için sıradaki seviyede yer kalmadı.' };
@@ -643,6 +645,8 @@ export const gameStateV2 = {
     for (const [k, q] of Object.entries(acc)) { inv[k] = (Number(inv[k]) || 0) - q; value += q * priceOf(k); }
     this.burnResources(acc);
     if (value > 0 && this._addContribution) this._addContribution(round3(value));
+    // Yakılan hammaddenin kendi katkı puanı da (burnResources) yazılır; geçmişe ikisinin toplamı konur
+    if (!this._hizliKatkiAktif && value > 0) this._katkiGecmisiYaz({ hedef: 'Madencilik Otoritesi', puan: this.getContributionInfo().week - p0, ilerleme: r.completed ? null : r.status.pct - pctOnce, tamamlandi: r.completed, ozet: Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ') });
     this._markFirst('konsey');
     this.saveState();
     const txt = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ');
@@ -698,6 +702,9 @@ export const gameStateV2 = {
     let harcanan = 0;
     let tamamlandi = false;
     const puan0 = this.getContributionInfo ? this.getContributionInfo().week : 0;
+    const pct0 = (hedef === 'otorite' ? globalPool.getOtoriteStatus() : globalPool.getProjectStatus()).pct;
+    this._hizliKatkiAktif = true;
+    try {
     for (let tur = 0; tur < 12 && kalanButce > 0.01; tur++) {
       const plan = this.konseyHizliPlan(hedef, kalanButce);
       if (!plan.ok) break;
@@ -715,6 +722,7 @@ export const gameStateV2 = {
       for (const [r, q] of Object.entries(k.accepted || alinan)) hepsi[r] = (hepsi[r] || 0) + q;
       if (k.completed) { tamamlandi = true; if (hedef === 'otorite') break; }
     }
+    } finally { this._hizliKatkiAktif = false; }
     const parca = Object.entries(hepsi).map(([r, q]) => `${q} ${resName(r)}`).join(', ');
     if (!parca) { const pl = this.konseyHizliPlan(hedef, Math.min(Number(butce) || 0, Number(this.state.adAstraBalance) || 0)); return { success: false, spent: 0, message: pl.reason || 'Bu bütçeyle pazardan hammadde alınıp yatırılamadı (fiyat tavanı, bütçe ya da ihtiyaç).' }; }
     // Ne kazandın (19 Ekim 2026): yazılan katkı puanı, hedefin doluluğu ve kademenin ne zaman işleyeceği
@@ -722,6 +730,9 @@ export const gameStateV2 = {
     const kazanilan = kd ? kd.week - puan0 : 0;
     const st = hedef === 'otorite' ? globalPool.getOtoriteStatus() : globalPool.getProjectStatus();
     const dolu = st && st.pct != null ? (st.pct >= 1 ? st.pct : Math.round(st.pct * 1000) / 1000) : null;
+    const hedefAdi = hedef === 'otorite' ? 'Madencilik Otoritesi' : ((st && st.active && st.active.name) || 'Konsey projesi');
+    this._katkiGecmisiYaz({ hedef: hedefAdi, puan: kazanilan, ilerleme: tamamlandi ? null : (st.pct - pct0), tamamlandi, astra: harcanan, ozet: parca });
+    this.saveState();
     const kademeNotu = kd ? (kd.atWeekEnd.id !== kd.now.id ? ` Hafta dönümünde kademen ${kd.atWeekEnd.name} olacak.` : ` Kademen hafta dönümünde ${kd.atWeekEnd.name} kalır.`) : '';
     return {
       success: true, spent: round3(harcanan), contributed: hepsi, completed: tamamlandi, contribution: kazanilan,
@@ -739,6 +750,8 @@ export const gameStateV2 = {
     }
     const giveL = Math.min(Math.max(0, Math.floor(Number(labor) || 0)), Math.floor(Number(v.labor) || 0));
     if (!Object.keys(want).length && giveL <= 0) return { success: false, message: 'Verilecek hammadde ya da emek yok.' };
+    const pctOnceP = globalPool.getProjectStatus().pct;
+    const p0 = this.getContributionInfo().week;
     const r = globalPool.contributeProject(want, giveL);
     const acc = r.accepted || {};
     if (!Object.keys(acc).length && !(r.acceptedLabor > 0)) return { success: false, message: r.status && !r.status.active ? 'Bütün Konsey projeleri tamamlandı.' : 'Sıradaki projede bu katkıya yer kalmadı.' };
@@ -747,6 +760,7 @@ export const gameStateV2 = {
     this.burnResources(acc);
     if (r.acceptedLabor > 0) v.labor = (Number(v.labor) || 0) - r.acceptedLabor;
     if (value > 0 && this._addContribution) this._addContribution(round3(value));
+    if (!this._hizliKatkiAktif && (value > 0 || r.acceptedLabor > 0)) this._katkiGecmisiYaz({ hedef: r.completed ? ((r.status.done[r.status.done.length - 1] || {}).name || 'Konsey projesi') : (r.status.active ? r.status.active.name : 'Konsey projesi'), puan: this.getContributionInfo().week - p0, ilerleme: r.completed ? null : r.status.pct - pctOnceP, tamamlandi: r.completed, ozet: Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ') });
     this.saveState();
     const parts = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`);
     if (r.acceptedLabor > 0) parts.push(`${r.acceptedLabor} emek`);

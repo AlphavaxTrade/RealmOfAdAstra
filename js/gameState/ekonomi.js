@@ -244,6 +244,14 @@ export const ekonomiYontemleri = {
     c.week += p;
   },
 
+  // Son katkılar (19 Ekim 2026): Konsey ekranında "ne kazandım" görünsün; en çok 8 kayıt. k: { hedef, puan, ilerleme, tamamlandi, astra, ozet }
+  _katkiGecmisiYaz(k) {
+    const c = this._contribution();
+    if (!Array.isArray(c.son)) c.son = [];
+    c.son.unshift({ at: this._now(), hedef: String(k.hedef || ''), puan: Math.round(Number(k.puan) || 0), ilerleme: k.ilerleme == null ? null : Number(k.ilerleme), tamamlandi: !!k.tamamlandi, astra: Math.round(Number(k.astra) || 0), ozet: String(k.ozet || '').slice(0, 160) });
+    c.son = c.son.slice(0, 8);
+  },
+
   getContributionInfo() {
     const c = this._contribution();
     return { total: Math.round(c.total), week: Math.round(c.week), lastWeek: Math.round(c.lastWeek || 0) };
@@ -291,7 +299,8 @@ export const ekonomiYontemleri = {
       week: info.week, lastWeek: info.lastWeek, total: info.total,
       now: simdi, atWeekEnd: olacak,
       next: siradaki ? { name: siradaki.name, mult: siradaki.mult, need: Math.max(1, Math.ceil((siradaki.min || 0) * mult - info.week)) } : null,
-      weekEndsAt: bitis
+      weekEndsAt: bitis,
+      son: Array.isArray(this._contribution().son) ? this._contribution().son : []
     };
   },
 

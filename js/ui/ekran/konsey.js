@@ -61,6 +61,10 @@ function katkiPuaniKarti(b) {
   if (s.week <= 0 && s.lastWeek <= 0) durum = 'Henüz katkı puanın yok. Konsey\'e hammadde ya da "Hızlı katkı" ile ASTRA yatırınca puan yazılır.';
   else if (s.atWeekEnd.id === s.now.id) durum = `Kademen <b>${esc(s.now.name)}</b> (çıkarma hakkın %${esc(yuzde(s.now.mult))} büyük) ve bu puanlarla hafta sonunda da aynı kalır.`;
   else durum = `Şu an kademen <b>${esc(s.now.name)}</b>. Bu haftaki puanın sayesinde <b>${sure} sonra</b> (hafta dönümünde) kademen <b>${esc(s.atWeekEnd.name)}</b> olacak ve çıkarma hakkın %${esc(yuzde(s.atWeekEnd.mult))} büyüyecek.`;
+  // Son katkıların: ne verdin, kaç puan yazıldı, hedef ne kadar doldu (oyuncu "hiçbir şey olmadı" hissetmesin)
+  const tarih = (ms) => new Date(ms).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const sonSatirlari = (s.son || []).slice(0, 5).map((k) => `<div class="ek-satir"><span>${esc(tarih(k.at))} · ${esc(k.hedef)}</span><b class="ek-iyi">+${esc(tam(k.puan))} puan</b></div>`
+    + `<small class="ek-kucuk">${k.astra > 0 ? `${esc(tam(k.astra))} ASTRA · ` : ''}${esc(k.ozet)}${k.tamamlandi ? ' · ✅ tamamlandı!' : (k.ilerleme != null && k.ilerleme > 0 ? ` · hedefi %${esc(yuz(k.ilerleme))} ilerletti` : '')}</small>`).join('');
   const siradaki = s.next ? `Sıradaki kademe <b>${esc(s.next.name)}</b> için bu hafta <b>${esc(tam(s.next.need))}</b> puan daha lazım.` : 'En üst kademedesin.';
   return kart({
     baslik: '🎖️ Katkı puanın',
@@ -72,6 +76,7 @@ function katkiPuaniKarti(b) {
     ], { genis: true })
       + not(durum)
       + not(siradaki)
+      + (sonSatirlari ? `<div class="ek-liste"><b>Son katkıların</b>${sonSatirlari}</div>` : '')
       + katli('Neden hemen değişmiyor? (ayrıntı)', not('Katkı kademen <b>geçen haftanın</b> toplam puanına göre belirlenir; bu hafta yazdığın puan hafta dönümünde kademeye dönüşür. Böylece herkes aynı kurala bağlı kalır ve kademe hafta içinde oynamaz. Puan kazanmak için: Konsey\'e hammadde ya da ASTRA katkısı, hammadde yakmak ve oyunda ASTRA harcamak (bazı harcamalar ve pazardan alım tek başına puan getirmez). Her 1.000 ASTRA\'lık Konsey katkısı yaklaşık 290 puan yazar.'), { k: 'konsey-katki-detay' })
   });
 }
