@@ -1955,6 +1955,17 @@ export const GAME_CONFIG = {
         `Bot artık Üretim Hakkın bitince çalışmaz: altı kaynaktan hiçbirinden çıkarabileceğin hak kalmadıysa bot "⏸️ Üretim Hakkı bekleniyor" durumuna geçer, satın aldığın süre azalmaz; yeni hak açılınca (her gün 00:00 TSİ'de günün parçası, hafta başında yeni hak) bot kaldığı yerden devam eder. Hakkı biten kaynakta sefer başlatılmaz, böylece stamina ve alet boşuna harcanmaz. Bot ücreti tablosunda hak bittiğinde ücretin neden en düşük 1 ASTRA göründüğü yazılır.`,
         `Roketin 5 seviyesi var: seviye yükseldikçe gidiş süresi kısalır (72 → 12 saat), Hazırlık Deposu'na konabilecek yük (taşıma kapasitesi) ve mürettebat (köylü + asker) artar. Üst seviyelerin bedeli hızla büyür (seviye 5'te hammadde 40 katı, ASTRA 50 milyon). Hazırlık Deposu'ndaki yük artık roketle taşınır: roketi olmayan yük koyamaz, toplam yük roketin taşıma kapasitesini aşamaz. Mürettebatı (kaç köylü ve asker gideceğini) roket ekranında seçersin.`
       ]
+    },
+    {
+      version: 'v1.86',
+      title: '🧹 Daha sade menüler: Kışla, Krallık merkezi, Köy ve Konsey, Arena',
+      date: '20 Ekim 2026',
+      changes: [
+        `Kışla artık tek akışta: üstte ordu özeti ve iki düğme ("Orduyu hazırla", "Yeni asker"), telefonda askerler yatay şeritte. Bir askere dokununca altında o askerin sayfası açılır; bir eşya yuvasına dokununca takılı eşyayı <b>geliştirebilir</b> (eksik malzeme pazardan alınır), çıkarabilir ya da depodan başkasını takabilirsin. Depoda uygun eşya yoksa aynı yuvadan yeni eşya dövebilirsin; Demirhane'ye gitmeye gerek kalmaz. Yaralı askerin yanında "yaralı" rozeti görünür.`,
+        `Demirhane'de dövme ve eşya kartları kısaldı: bedel tek satır (eksik kalem kırmızı), tek ana düğme ("Geliştir" ya da "Eksikleri al ve geliştir"), ayrıntılı bedeller katlı.`,
+        `Krallık merkezi "✅ Şimdi yapılacaklar" ile açılır: hazır sefer, yaralı asker, onarım bekleyen alet, düşük stamina ve dolan silo için her satırda tek dokunuşluk eylem. Toplu işlemler ve silo bu ekrandan da yapılır.`,
+        `Menü sadeleşti. Krallık: Krallık merkezi, Taverna, Demirhane, Köy ve Konsey, Roket Rampası (8. seviyeden). Savaş: Kışla, Zindan, Arena. Pazar: Meydan pazarı, Karnaval, Sandıklar. "Şifahane", "Silo" ve "Savaş alanı" ayrı girişlerden kalktı (işleri Kışla ve Krallık merkezinde; Ctrl+K ile hâlâ bulunur). "Köy ve Konsey" ile "Arena" tek girişte iki sekmedir. "Ben" menüsünde 6 temel öğe var; Hazine, Ekonomi panosu, Kotalarım, Sürüm geçmişi ve diğerleri "Gelişmiş" katında.`
+      ]
     }
   ],
 

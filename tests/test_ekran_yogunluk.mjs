@@ -19,31 +19,31 @@ const ekran = await import('../js/ui/ekran/index.js');
 // Tavanlar: { harf, dugme, sayi }. Aşama 0 (19 Ekim 2026): mevcut ölçümün biraz üstü. Her aşama bitince ilgili satır düşürülür.
 // Hedef (plan): harf ≤ ~700, düğme ≤ 6, sayı ≤ 15 (tüm ekranlar; sürüm geçmişi ayrı).
 const TAVAN = {
-  surum: { harf: 80000, dugme: 2, sayi: 900 },
-  konsey: { harf: 5200, dugme: 18, sayi: 120 },
-  karakter: { harf: 3000, dugme: 16, sayi: 120 },
-  kotalar: { harf: 3000, dugme: 2, sayi: 100 },
-  hazine: { harf: 2900, dugme: 12, sayi: 60 },
-  karnaval: { harf: 2500, dugme: 18, sayi: 90 },
-  uzay: { harf: 1800, dugme: 8, sayi: 40 },
-  taverna: { harf: 1800, dugme: 8, sayi: 20 },
-  koleksiyon: { harf: 1500, dugme: 4, sayi: 40 },
-  kisla: { harf: 1500, dugme: 30, sayi: 60 },
-  demirhane: { harf: 1400, dugme: 10, sayi: 90 },
-  merkez: { harf: 1400, dugme: 8, sayi: 70 },
-  savasalani: { harf: 1300, dugme: 4, sayi: 50 },
-  sifahane: { harf: 1300, dugme: 3, sayi: 20 },
-  savashazirlik: { harf: 1300, dugme: 15, sayi: 55 },
-  silo: { harf: 1200, dugme: 3, sayi: 70 },
-  ekonomi: { harf: 1200, dugme: 5, sayi: 35 },
-  zindanmod: { harf: 1200, dugme: 2, sayi: 30 },
-  kolezyum: { harf: 1100, dugme: 12, sayi: 40 },
-  pazar: { harf: 1000, dugme: 26, sayi: 45 },
-  koy: { harf: 800, dugme: 3, sayi: 40 },
-  bolge: { harf: 800, dugme: 4, sayi: 25 },
-  cevrimdisi: { harf: 600, dugme: 3, sayi: 40 },
-  hurda: { harf: 600, dugme: 4, sayi: 15 },
-  geribildirim: { harf: 300, dugme: 2, sayi: 5 }
+  surum: { harf: 6800, dugme: 1, sayi: 70 },
+  konsey: { harf: 2900, dugme: 7, sayi: 53 },
+  hazine: { harf: 1950, dugme: 11, sayi: 49 },
+  karakter: { harf: 1850, dugme: 7, sayi: 59 },
+  kotalar: { harf: 1500, dugme: 1, sayi: 59 },
+  uzay: { harf: 1450, dugme: 1, sayi: 35 },
+  koleksiyon: { harf: 1400, dugme: 5, sayi: 34 },
+  savasalani: { harf: 1200, dugme: 6, sayi: 44 },
+  karnaval: { harf: 1100, dugme: 11, sayi: 31 },
+  silo: { harf: 1050, dugme: 3, sayi: 60 },
+  ekonomi: { harf: 1000, dugme: 5, sayi: 24 },
+  demirhane: { harf: 950, dugme: 10, sayi: 62 },
+  taverna: { harf: 850, dugme: 8, sayi: 9 },
+  pazar: { harf: 800, dugme: 27, sayi: 38 },
+  kolezyum: { harf: 750, dugme: 9, sayi: 33 },
+  savashazirlik: { harf: 750, dugme: 10, sayi: 39 },
+  kisla: { harf: 750, dugme: 17, sayi: 35 },
+  koy: { harf: 650, dugme: 5, sayi: 34 },
+  bolge: { harf: 650, dugme: 4, sayi: 22 },
+  zindanmod: { harf: 600, dugme: 1, sayi: 17 },
+  merkez: { harf: 500, dugme: 5, sayi: 16 },
+  cevrimdisi: { harf: 500, dugme: 3, sayi: 39 },
+  hurda: { harf: 450, dugme: 4, sayi: 15 },
+  sifahane: { harf: 350, dugme: 3, sayi: 6 },
+  geribildirim: { harf: 150, dugme: 1, sayi: 2 }
 };
 const VARSAYILAN = { harf: 1500, dugme: 12, sayi: 60 };   // tavanı yazılmamış yeni ekranlar bunu aşmamalı
 
@@ -55,7 +55,10 @@ for (let i = 0; i < 4; i++) gs.buySoldierUnit();
 for (const k of GAME_CONFIG.RESOURCE_KEYS) gs.state.inventory[k] = 4000;
 const b = { gameState: gs, GAME_CONFIG, globalPool, ammMarket, treasury, online: { active: false }, bildir() {}, hudYenile() {}, kilit: () => null };
 
-const olc = (html) => {
+// Katlı (<details>) bölümlerin gövdesi sayılmaz: oyuncu ilk bakışta yalnız başlığını (summary) görür
+const gorunur = (html) => { let h = html, onceki; do { onceki = h; h = h.replace(/<details[^>]*>((?:(?!<details)[\s\S])*?)<\/details>/, (m, ic) => { const s = ic.match(/<summary[^>]*>([\s\S]*?)<\/summary>/); return s ? s[1] : ''; }); } while (h !== onceki); return h; };
+const olc = (html0) => {
+  const html = gorunur(html0);
   const metin = html.replace(/<[^>]*>/g, ' ').replace(/&[a-z#0-9]+;/gi, ' ').replace(/\s+/g, ' ').trim();
   return { harf: metin.length, dugme: (html.match(/data-e="/g) || []).length, sayi: (metin.match(/\d[\d.,]*/g) || []).length };
 };

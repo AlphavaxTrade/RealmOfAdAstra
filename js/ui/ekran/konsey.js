@@ -1,6 +1,6 @@
 // Realm of AdAstra — Sirius Konseyi ekranı: üretim düzeni (kota termostatı, ağırlık), Madencilik Otoritesi,
 // Konsey projeleri ve ortak kasa. Hammadde ve emek katkıları buradan yapılır.
-import { ekranKaydet, kap, kart, katli, cubuk, dugme, not, izgara, etiket, simge, tam, sayi, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, cubuk, dugme, not, izgara, etiket, simge, tam, sayi, esc, grupSekmeleri, grupEylemleri } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi } from './bilesik.js';
 import { onay } from '../v3/bilesenler.js';
 
@@ -171,10 +171,11 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([girisKarti(b, us), katkiPuaniKarti(b), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
+    return kap([grupSekmeleri('koyKonsey', 'konsey'), girisKarti(b, us), katkiPuaniKarti(b), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {
+    ...grupEylemleri,
     // Haritadaki Konsey binası ve menü aynı ekranı açar (19 Ekim 2026); ASTRA kasaları ayrı ekranda (Hazine)
     hazine() { return { git: 'hazine' }; },
     async hizliKatki(b, el) {

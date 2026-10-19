@@ -1,5 +1,5 @@
 // Realm of AdAstra — Savaş alanı ekranı: haftalık Dünya Bossu. Ordu kilitleme, hasar hesabı, ödül talebi.
-import { ekranKaydet, kap, kart, satir, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, izgara, hucre, etiket, tam, astra, sayi, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, satir, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, izgara, hucre, etiket, tam, astra, sayi, esc, grupSekmeleri, grupEylemleri } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
 
 function guc(b) {
@@ -96,10 +96,11 @@ const ekran = {
           ton: talep > 0 ? 'birincil' : '', devreDisi: !(talep > 0 || v.kilitli), genis: true
         })
     });
-    return kap([aciklama, ordu, bossKarti, odul].join(''));
+    return kap([grupSekmeleri('arena', 'savasalani'), aciklama, ordu, bossKarti, odul].join(''));
   },
 
   eylemler: {
+    ...grupEylemleri,
     kilitle(b) {
       const r = b.gameState.stakeArmyForWorldBoss();
       b.bildir(r.message, r.success ? 'success' : 'error');

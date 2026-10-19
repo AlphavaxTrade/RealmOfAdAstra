@@ -1,5 +1,5 @@
 // Realm of AdAstra — Köy Evleri ekranı: nüfus, buğday ihtiyacı, emek puanı ve yeni ev yapma.
-import { ekranKaydet, kap, kart, not, uyari, dugme, izgara, hucre, satir, tam, sayi, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, not, uyari, dugme, izgara, hucre, satir, tam, sayi, esc, grupSekmeleri, grupEylemleri } from './cekirdek.js';
 import { kaynakAdi, planBedeli, hizliAlVeYap } from './bilesik.js';
 
 const ekran = {
@@ -49,10 +49,11 @@ const ekran = {
         + (plan && plan.items.length ? dugme({ e: 'evHizli', metin: `⚡ Eksikleri al ve ev yap · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true, ipucu: plan.ok ? 'Eksik malzemeyi pazardan alıp evi yapar' : plan.reason }) : '')
         + (neden ? `<p class="ek-kucuk">${esc(neden)}</p>` : '')
     });
-    return kap(durum + yeniEv);
+    return kap(grupSekmeleri('koyKonsey', 'koy') + durum + yeniEv);
   },
 
   eylemler: {
+    ...grupEylemleri,
     evYap(b) {
       const r = b.gameState.buildHouse();
       b.bildir(r.message, r.success ? 'success' : 'error');

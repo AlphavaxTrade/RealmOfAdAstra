@@ -208,3 +208,52 @@ export function iyilestirmeParsomeni(gs) {
   const yarali = (gs.state.soldierUnits || []).some((_, i) => (gs.getHerbHealInfo(i) || {}).missingHp > 0);
   return yarali ? adet : 0;
 }
+
+// Tek eşya için "Eksikleri al ve geliştir" (Kışla yuvası ve Demirhane aynı akışı kullanır): konum verilir; eksik yoksa doğrudan geliştirir.
+// Eksik malzeme tek tek pazardan alınır (silo hepsini birden tutmak zorunda kalmaz). Döndürür: { yapildi }
+export async function hizliGelistir(b, konum) {
+  const gs = b.gameState;
+  const sira = gs.getAllArmoryEquipmentList().findIndex((g) => ayniKonum(esyaKonumu(g), konum));
+  if (sira < 0) { b.bildir('Eşya bulunamadı.', 'error'); return { yapildi: false }; }
+  const plan = gs.getQuickBuyPlan(`upgrade:${sira}`);
+  if (plan.items.length) {
+    if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { yapildi: false }; }
+    const satirlar = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+    const tamam = await onay({
+      baslik: 'Eksikler alınıp eşya geliştirilsin mi?',
+      metin: `${satirlar}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
+      tamam: 'Al ve geliştir'
+    });
+    if (!tamam) return { yapildi: false };
+    for (const it of plan.items) {
+      const r = await gs.marketBuy(it.res, it.qty);
+      if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return { yapildi: false }; }
+    }
+  }
+  const r = await gs.upgradeAnyEquipment(konum);
+  if (r && r.message) b.bildir(r.message, r.success ? 'success' : 'error');
+  return { yapildi: !!(r && r.success) };
+}
+
+// Yeni eşya dövme (eksik malzeme varsa "Eksikleri al ve döv"): Kışla yuva panelinden Demirhane'ye gitmeden eşya üretilir. Döndürür: { yapildi }
+export async function hizliDov(b, yuva) {
+  const gs = b.gameState;
+  const bedel = gs.calculateEquipmentCraftCost(yuva);
+  const env = gs.state.inventory;
+  const yeter = (env.iron || 0) >= bedel.ironCost && (env.wood || 0) >= bedel.woodCost && (env.coal || 0) >= (bedel.coalCost || 0)
+    && (env.fragments || 0) >= bedel.fragCost && gs.state.adAstraBalance >= bedel.adaCost;
+  if (!yeter) {
+    const plan = gs.getQuickBuyPlan('craft:' + yuva);
+    if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { yapildi: false }; }
+    const satirlar = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+    const tamam = await onay({ baslik: 'Eksikler alınıp eşya dövülsün mü?', metin: `${satirlar}\nAlım ${astra(plan.total)} ASTRA + dövme bedeli ${astra(plan.extraAda)} ASTRA`, tamam: 'Al ve döv' });
+    if (!tamam) return { yapildi: false };
+    for (const it of plan.items) {
+      const r = await gs.marketBuy(it.res, it.qty);
+      if (!r || !r.success) { b.bildir(`${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return { yapildi: false }; }
+    }
+  }
+  const r = await gs.craftEquipment(yuva);
+  if (r && r.message) b.bildir(r.message, r.success ? 'success' : 'error');
+  return { yapildi: !!(r && r.success) };
+}

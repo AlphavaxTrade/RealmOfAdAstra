@@ -154,7 +154,7 @@ export function kurV3Kabuk(api) {
     tepsiAc(false);
     sekmeSec(id);
     if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); return; }
-    api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu));
+    api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu, Number(gs.state.level) || 1));
   };
 
   const uyariMetni = () => (api.duyurular() || []).filter((a) => a.active !== false);

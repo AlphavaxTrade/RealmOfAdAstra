@@ -3,7 +3,7 @@
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
 import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
-import { hizliIyilestir, planBedeli, iyilesmeKiyasi, hizliOnar, iyilestirmeParsomeni } from './bilesik.js';
+import { hizliIyilestir, planBedeli, iyilesmeKiyasi, hizliOnar, hizliGelistir, hizliDov, iyilestirmeParsomeni } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
 import { PLAYER_SKILLS } from '../../combat.js';
 import * as K from '../kisla-kurallari.js';
@@ -66,7 +66,7 @@ function orduSatirlari(b, s) {
       <span class="ek-ordu-no">${i + 1}</span>
       <img class="ek-ordu-yuz" src="${esc(soldierPortrait(a, i))}" alt="" loading="lazy" draggable="false">
       <span class="ek-ordu-ana">
-        <span class="ek-ordu-ad">${esc(a.name)}${a.row === 'back' ? ` ${etiket('arka')}` : ''}${heal.isPaused ? ` ${etiket('iyileşme durdu', 'kotu')}` : ''}</span>
+        <span class="ek-ordu-ad">${esc(a.name)}${a.row === 'back' ? ` ${etiket('arka')}` : ''}${heal.isPaused ? ` ${etiket('iyileşme durdu', 'kotu')}` : (!heal.isFull ? ` ${etiket('yaralı', 'kotu')}` : '')}</span>
         ${cubuk(heal.hpPct, { ton: K.canTonu(heal.hpPct) === 'kotu' ? 'kotu' : '' })}
       </span>
       <span class="ek-ordu-yan"><small>${filled}/${K.YUVALAR.length} yuva</small><b>${sayi(stats.totalAtk)} ⚔</b></span>
@@ -104,18 +104,39 @@ function yuvaKutusu(b, s, a, idx, yuva) {
   const d = K.dayaniklilik(esya);
   const onarim = d.cur < d.max ? b.gameState.calculateEquipmentRepairCost(yuva, idx) : null;
   return `<div class="ek-yuva${acik ? ' is-acik' : ''}">
-    <button type="button" class="ek-yuva-sec" data-e="secici" data-yuva="${yuva}" aria-label="${K.YUVA_AD[yuva]} değiştir">
+    <button type="button" class="ek-yuva-sec" data-e="secici" data-yuva="${yuva}" aria-label="${K.YUVA_AD[yuva]}: değiştir, geliştir ya da çıkar" title="Dokun: değiştir, geliştir, çıkar">
       <span class="ek-yuva-simge">${simgeYuva(yuva, esya)}</span>
       <span class="ek-yuva-ad">${esc(esya.name)} ${etiket(`Sv.${esya.level || 1}`)}</span>
       <small>${esc(istatMetni(esya))}</small>
       ${cubuk(d.pct, { ton: d.ton === 'kotu' ? 'kotu' : '' })}
       <small class="ek-ton-${d.ton}">${d.cur}/${d.max} dayanıklılık</small>
     </button>
-    <div class="ek-yuva-eylem">
-      ${onarim ? dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun + ${sayi(onarim.coalCost || 0)} kömür + ${sayi(onarim.fragCost || 0)} parça` }) : ''}
-      ${onarim && !onarimYeter(b, onarim) ? onarimHizli(b, idx, yuva) : ''}
-      ${dugme({ e: 'cikar', metin: 'Çıkar', ton: 'hayalet', veri: { yuva } })}
-    </div></div>`;
+    ${onarim ? `<div class="ek-yuva-eylem">
+      ${dugme({ e: 'onar', metin: 'Onar', veri: { yuva }, ipucu: `${sayi(onarim.ironCost)} demir + ${sayi(onarim.woodCost)} odun + ${sayi(onarim.coalCost || 0)} kömür + ${sayi(onarim.fragCost || 0)} parça` })}
+      ${!onarimYeter(b, onarim) ? onarimHizli(b, idx, yuva) : ''}
+    </div>` : ''}</div>`;
+}
+
+// Takılı eşyanın yuva panelindeki eylemleri: Geliştir (eksik varsa "Eksikleri al ve geliştir") ve Çıkar. Demirhane'ye gitmeye gerek kalmaz.
+function takiliEylemleri(b, idx, yuva, mevcut) {
+  const gs = b.gameState;
+  const yuk = gs.calculateEquipmentUpgradeCost ? gs.calculateEquipmentUpgradeCost(mevcut) : null;
+  let gelistir = '';
+  if (yuk && yuk.isMaxLevel) gelistir = etiket('🏆 en yüksek seviye', 'vurgu');
+  else if (yuk && yuk.accountLevelBlocked) gelistir = not(`🔒 Sv.${yuk.nextLevel} için hesabın en az ${yuk.accountLevelNeeded}. seviye olmalı (şu an ${gs.state.level || 1}).`);
+  else if (yuk) {
+    const env = gs.state.inventory;
+    const yeter = (env.iron || 0) >= yuk.ironCost && (env.wood || 0) >= yuk.woodCost && (env.coal || 0) >= (yuk.coalCost || 0) && (env.stone || 0) >= (yuk.stoneCost || 0) && (env.fragments || 0) >= yuk.fragCost && gs.state.adAstraBalance >= yuk.adaCost;
+    if (yeter) gelistir = dugme({ e: 'yuvaGelistir', metin: `⬆️ Geliştir · Sv.${yuk.nextLevel}`, ton: 'birincil', veri: { yuva } });
+    else {
+      const sira = gs.getAllArmoryEquipmentList().findIndex((g) => g.source === 'soldier' && g.soldierIndex === idx && g.slotKey === yuva);
+      const plan = sira >= 0 ? gs.getQuickBuyPlan(`upgrade:${sira}`) : { ok: false, items: [] };
+      gelistir = plan.ok
+        ? dugme({ e: 'yuvaGelistir', metin: `⚡ Eksikleri al ve geliştir · ${planBedeli(plan)}`, ton: 'iyi', veri: { yuva } })
+        : dugme({ e: 'yuvaGelistir', metin: `⬆️ Geliştir · Sv.${yuk.nextLevel}`, devreDisi: true }) + not(`⚠️ Şimdi geliştirilemiyor: ${esc(plan.reason || 'malzeme eksik')}`);
+    }
+  }
+  return `<div class="ek-secici-takili"><b>Takılı: ${esc(mevcut.name)} · Sv.${mevcut.level || 1}</b>${dugmeler(gelistir, dugme({ e: 'cikar', metin: 'Çıkar', ton: 'hayalet', veri: { yuva } }))}</div>`;
 }
 
 function seciciPaneli(b, s, a) {
@@ -123,10 +144,10 @@ function seciciPaneli(b, s, a) {
   const yuva = s.secici;
   const mevcut = (a.equipment || {})[yuva];
   const liste = K.adaylar(b.gameState.state, yuva);
-  const ust = `<div class="ek-secici-ust"><b>${K.YUVA_SIMGE[yuva]} ${K.YUVA_AD[yuva]} seç</b>
-    <small>${liste.length} eşya depoda${mevcut ? ` · takılı: Sv.${mevcut.level || 1}, ${esc(istatMetni(mevcut))}` : ''}</small>
-    ${dugme({ e: 'seciciKapat', metin: 'Kapat', ton: 'hayalet' })}</div>`;
-  if (!liste.length) return `<div class="ek-secici" id="kisla-secici">${ust}${bos('📭', 'Depoda bu yuvaya uyan eşya yok', "Demirhane'de dövebilirsin.")}</div>`;
+  const ust = `<div class="ek-secici-ust"><b>${K.YUVA_SIMGE[yuva]} ${K.YUVA_AD[yuva]}</b>
+    <small>${liste.length} uygun eşya depoda</small>
+    ${dugme({ e: 'seciciKapat', metin: 'Kapat', ton: 'hayalet' })}</div>${mevcut ? takiliEylemleri(b, s.secili, yuva, mevcut) : ''}`;
+  if (!liste.length) return `<div class="ek-secici" id="kisla-secici">${ust}${bos('📭', 'Depoda bu yuvaya uyan eşya yok', 'Buradan yenisini dövebilirsin; eksik malzeme pazardan alınır.')}${dugme({ e: 'dovYuva', metin: `🔨 Yeni ${K.YUVA_AD[yuva].toLocaleLowerCase('tr')} döv`, ton: 'birincil', veri: { yuva }, genis: true })}</div>`;
   const oge = liste.slice(0, SECICI_SINIRI).map((c) => {
     const d = K.dayaniklilik(c.item);
     return `<div class="ek-secici-oge">
@@ -167,7 +188,7 @@ function askerSayfasi(b, s, idx) {
       <small class="ek-kucuk">${heal.isFull ? 'Tam can'
     : heal.isPaused ? 'Kendiliğinden iyileşme durdu: şifalı ot ya da ASTRA yetersiz'
       : `Kendiliğinden dolacak: ${Math.floor(heal.secondsRemaining / 3600)} sa ${Math.floor((heal.secondsRemaining % 3600) / 60)} dk`}</small>
-      ${heal.isFull || !ot ? '' : iyilesmeKiyasi({ saniye: heal.secondsRemaining, kendiOt: ot.passiveHerbNeeded, kendiAda: ot.passiveAdaCost, hemenOt: ot.herbsNeeded, hemenAda: ot.herbAdaCost })}
+      ${heal.isFull || !ot ? '' : katli('Hemen mi, bekleyerek mi?', iyilesmeKiyasi({ saniye: heal.secondsRemaining, kendiOt: ot.passiveHerbNeeded, kendiAda: ot.passiveAdaCost, hemenOt: ot.herbsNeeded, hemenAda: ot.herbAdaCost }), { k: 'kisla-iyilesme' })}
       ${heal.isFull ? '' : dugmeler(
     ot ? dugme({ e: 'otla', metin: `🌿 Otla iyileştir · ${sayi(ot.herbsNeeded)} ot + ${astra(ot.herbAdaCost)} ASTRA${ot.herbsInStock < ot.herbsNeeded ? ` (elinde ${sayi(ot.herbsInStock)})` : ''}`, devreDisi: ot.herbsInStock < ot.herbsNeeded, ipucu: 'Hemen iyileştirmenin tek yolu: 1 şifalı ot = 2 can, kullanılan ot yakılır' }) : '',
     otPlani && otPlani.items.length ? dugme({ e: 'otHizli', metin: `⚡ Eksik otu al ve iyileştir · ${planBedeli(otPlani)}`, ton: 'iyi', devreDisi: !otPlani.ok, ipucu: otPlani.ok ? 'Eksik şifalı otu pazardan alıp askeri iyileştirir' : otPlani.reason }) : '',
@@ -187,7 +208,7 @@ function askerSayfasi(b, s, idx) {
       <div class="ek-sayfa-kimlik">${kimlik}
         <small class="ek-kucuk">Asker ${idx + 1} · Sv.${a.level || 1}${set ? ` · ✨ ${esc(set.name)}` : ''}</small></div>
     </div>
-    ${izgara([hucre('Saldırı', sayi(stats.totalAtk)), hucre('En yüksek can', sayi(stats.totalMaxHp))])}
+    <p class="ek-ozet-satir">⚔️ <b>${sayi(stats.totalAtk)}</b> saldırı · ❤️ <b>${sayi(stats.totalMaxHp)}</b> en yüksek can</p>
     ${safSecimi(a)}
     ${can}
     <div class="ek-yuvalar">${K.YUVALAR.map((y) => yuvaKutusu(b, s, a, idx, y)).join('')}</div>
@@ -206,8 +227,8 @@ function safSecimi(a) {
     devreDisi: arkada === arka,
     ipucu: arkada === arka ? 'Şu an burada' : (arka ? 'Arka safa geçir' : 'Ön safa geçir')
   });
-  return `<div class="ek-saf-secimi"><small class="ek-kucuk">Savaştaki yeri: şu an <b>${arkada ? 'arka saf' : 'ön saf'}</b>. Diğerine basınca geçer.</small>${dugmeler(secenek(false), secenek(true))}`
-    + `<small class="ek-kucuk">🛡️ Ön saf: düşmanın ilk vurduğu yer, en çok darbeyi alır. 🏹 Arka saf: ön safın arkasında durur, daha az darbe alır.</small></div>`;
+  return `<div class="ek-saf-secimi"><small class="ek-kucuk">Savaştaki yeri (diğerine basınca geçer):</small>${dugmeler(secenek(false), secenek(true))}`
+    + `<small class="ek-kucuk">🛡️ Ön saf en çok darbeyi alır · 🏹 Arka saf korunur.</small></div>`;
 }
 
 function orduSekmesi(b, s) {
@@ -243,20 +264,20 @@ function orduSekmesi(b, s) {
   const aktifTaktik = (taktik && taktik.activePresetId) || 1;
   const durduruldu = gs.isArmyPassiveHealBlocked ? gs.isArmyPassiveHealBlocked() : false;
   const aramaAcik = !!s.q || s.filtre !== 'hepsi' || s.sirala !== 'sira' || liste.length > 10;
+  const aramaGerekli = aramaAcik || liste.length > 6;   // az askerde arama kutusu gösterilmez (yatay şerit yeter)
 
   const ozet = kart({
     baslik: '🛡️ Ordu',
-    icerik: izgara([hucre('Asker', hakBilgi.acik ? `${sayi(liste.length)} / ${sayi(hakBilgi.hak)}` : sayi(liste.length)), hucre('Saldırı', sayi(saldiri)), hucre('Can', sayi(can)), hucre('Dolu yuva', `${dolu}/${liste.length * K.YUVALAR.length}`)])
-      + (hakBilgi.acik ? not(hakDolu
-        ? `⚔️ Asker hakkın dolu: zindanda ${hakBilgi.kat}. kattasın, hak = kat + 1 (${hakBilgi.hak}). Yeni hak için zindanda bir kat ilerle; o zamana kadar askerlerini seviyelendir, teçhizatla güçlendir ve bakımını yap.`
-        : `Zindan asker hakkın: ${hakBilgi.hak} (${hakBilgi.kat}. kattasın, hak = kat + 1).`) : '')
+    icerik: `<p class="ek-ozet-satir"><b>${sayi(liste.length)}</b>${hakBilgi.acik ? ` / ${sayi(hakBilgi.hak)}` : ''} asker · ⚔️ <b>${sayi(saldiri)}</b> · ❤️ <b>${sayi(can)}</b> · yuva <b>${dolu}/${liste.length * K.YUVALAR.length}</b></p>`
+      + (hakDolu ? not(`⚔️ Asker hakkın dolu (zindanda ${hakBilgi.kat}. kattasın, hak = kat + 1). Yeni hak için zindanda bir kat ilerle.`) : '')
       + dugmeler(
-        dugme({ e: 'hazirla', metin: 'Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları şifalı otla iyileştirir (eksik otu pazardan alır), boş yuvalara en iyi eşyaları takar' }),
-        iyilestirmeParsomeni(gs) > 0 ? dugme({ e: 'parsomenOnce', metin: `📜 Önce parşömen (${sayi(iyilestirmeParsomeni(gs))}) · sonra ot`, ton: 'iyi', ipucu: 'Önce İyileştirme Parşömenlerini kullanır (ot ve ASTRA harcamaz), kalan yarayı şifalı otla iyileştirir' }) : '',
+        dugme({ e: 'hazirla', metin: '⚡ Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları şifalı otla iyileştirir (eksik otu pazardan alır), boş yuvalara en iyi eşyaları takar' }),
         dugme({ e: 'yeniAsker', metin: `Yeni asker · ${sayi(bedel)} ASTRA`, devreDisi: !alinabilir })
       )
       + katli('Diğer işlemler',
-        dugmeler(dugme({ e: 'doldur', metin: 'Boş yuvaları doldur' }), dugme({ e: 'hepsiniIyilestir', metin: '🌿 Hepsini iyileştir', ipucu: 'Şifalı otla hemen iyileştirir; ot yetmezse pazardan alır' }), dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet', ipucu: 'Bütün askerlerin eşyaları depoya döner' })),
+        dugmeler(
+          iyilestirmeParsomeni(gs) > 0 ? dugme({ e: 'parsomenOnce', metin: `📜 Önce parşömen (${sayi(iyilestirmeParsomeni(gs))}) · sonra ot`, ton: 'iyi', ipucu: 'Önce İyileştirme Parşömenlerini kullanır (ot ve ASTRA harcamaz), kalan yarayı şifalı otla iyileştirir' }) : '',
+          dugme({ e: 'doldur', metin: 'Boş yuvaları doldur' }), dugme({ e: 'hepsiniIyilestir', metin: '🌿 Hepsini iyileştir', ipucu: 'Şifalı otla hemen iyileştirir; ot yetmezse pazardan alır' }), dugme({ e: 'sifahane', metin: '🌿 Şifahane (iyileştirme ayrıntıları)' }), dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet', ipucu: 'Bütün askerlerin eşyaları depoya döner' })),
         { k: 'kisla-diger' })
   });
 
@@ -281,11 +302,12 @@ function orduSekmesi(b, s) {
 
   return [
     durduruldu ? uyari('Şifalı ot ya da ASTRA yetmediği için askerlerin kendiliğinden iyileşmesi durdu. Şifalı ot topla (ya da pazardan al) ve hesabında ASTRA bulundur.', 'uyari') : '',
-    ozet, taktikKarti,
+    ozet,
     `<div class="ek-kisla-bolme">
-      <section class="ek-kart ek-ordu" aria-label="Asker listesi">${aramaBolumu}<div class="ek-ordu-liste" id="kisla-liste">${orduSatirlari(b, s)}</div></section>
+      <section class="ek-kart ek-ordu" aria-label="Asker listesi">${aramaGerekli ? aramaBolumu : ''}<div class="ek-ordu-liste" id="kisla-liste">${orduSatirlari(b, s)}</div></section>
       ${askerSayfasi(b, s, s.secili)}
-    </div>`
+    </div>`,
+    taktikKarti
   ].join('');
 }
 
@@ -358,10 +380,12 @@ function cephanelikSekmesi(b, s) {
         + dugmeler(
           dugme({ e: 'doldur', metin: 'Boş yuvaları doldur', ton: 'birincil' }),
           dugme({ e: 'onarHepsi', metin: 'Hepsini onar' }),
-          onarimHepsiHizli(b),
+          onarimHepsiHizli(b)
+        )
+        + katli('Diğer işlemler', dugmeler(
           dugme({ e: 'erit', metin: 'Seviye 1 fazlalıkları erit', ipucu: 'Boştaki seviye 1 fazlalıklar parçaya çevrilir' }),
           dugme({ e: 'soyHepsi', metin: 'Hepsini soy', ton: 'hayalet' })
-        )
+        ), { k: 'kisla-c-diger' })
     }),
     `<div class="ek-arac"><div class="ek-cipler">${yuvaCipleri}</div>
       <div class="ek-cipler">${nerede}</div>
@@ -464,6 +488,9 @@ const ekran = {
     async cikar(b, el, s) { bildirSonuc(b, await b.gameState.unequipSoldierToArmory(durum(s).secili, el.dataset.yuva)); },
     async onar(b, el, s) { bildirSonuc(b, await b.gameState.repairEquipment(el.dataset.yuva, durum(s).secili)); },
     async onarHizli(b, el, s) { await hizliOnar(b, { source: 'soldier', slotKey: el.dataset.yuva, armoryIndex: null, soldierIndex: durum(s).secili }); },
+    sifahane() { return { git: 'sifahane' }; },
+    async dovYuva(b, el) { await hizliDov(b, el.dataset.yuva); },
+    async yuvaGelistir(b, el, s) { await hizliGelistir(b, { source: 'soldier', slotKey: el.dataset.yuva, armoryIndex: null, soldierIndex: durum(s).secili }); },
     async otHizli(b, el, s) { await hizliIyilestir(b, durum(s).secili); },
     async otla(b, el, s) { bildirSonuc(b, await b.gameState.healSoldierWithHerb(durum(s).secili)); },
     async parsomen(b, el, s) {

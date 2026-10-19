@@ -31,3 +31,11 @@
 | Siloyu yükselt | Krallık → Silo → Yükselt (eksik varsa Pazar'a gidip geri) = 3-8 | 3, eksik varsa panelde tek dokunuşla al |
 | Eşya geliştir | Krallık → Demirhane → Eşyalarım → eşya → Geliştir (eksik: Pazar) = 5-9 | ≤4, Kışla yuvasından da |
 | Konsey'e katkı | Krallık → Konsey → hızlı katkı kutusu → düğme → onay = 5 | 4 |
+
+## Aşama 1 + 2 (v1.86, 20 Ekim 2026): Kışla, Demirhane, menü, Krallık merkezi, Köy+Konsey, Arena
+- Kışla: ordu özeti tek satır + 2 düğme; telefonda yatay asker şeridi; yuva paneli = takılı eşya Geliştir (eksik al) / Çıkar + uygun eşya listesi + depo boşsa "yeni döv"; yaralı rozeti; görünür düğme 24 → 14 (görünür yazı 1.225 → 663).
+- Demirhane: bedel tek satır, tek ana düğme; görünür harf 1.112 → 838.
+- Menü: Krallık 8 → 5, Savaş 5 → 3, Pazar 4 → 3, Ben 14 → 6 + "Gelişmiş"; Köy|Konsey ve Kolezyum|Dünya bossu tek giriş, iki sekme; Silo/Şifahane/Savaş alanı/Zindan modu/Konsey ayrı girişten kalktı ama Ctrl+K ve bağlantılarla hâlâ açılır (eski kimlikler çalışır).
+- Krallık merkezi: "Şimdi yapılacaklar" listesi (tek dokunuşluk eylemler), toplu işlemler katlı.
+- Ölçüm yöntemi değişti: yoğunluk testi artık katlı bölümlerin gövdesini saymaz (oyuncu ilk bakışta yalnız başlığı görür); tavanlar yeni ölçüme göre yazıldı.
+- Gerçek tarayıcı: `scripts/tarayici/menu-gez.mjs` (menü, gelişmiş kat, Köy→Konsey ve Kolezyum→Dünya bossu geçişi, Şimdi yapılacaklar) ve `kisla-akis.mjs` (asker seç → yuva → panel) 390×844'te geçti.

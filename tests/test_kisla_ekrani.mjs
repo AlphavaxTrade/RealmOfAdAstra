@@ -148,4 +148,34 @@ console.log('✅ arama ve kaçışlama');
 }
 console.log('✅ cephanelik');
 
-console.log('\n7/7 Kışla ekran testi geçti.');
+// 8) Yuva panelinden işin bitmesi (19 Ekim 2026): takılı eşya Kışla'dan geliştirilir, depoda eşya yoksa yuvadan yeni eşya dövülür (Demirhane'ye gitmeden)
+{
+  s.inventory.fragments = 500;
+  s.equipment = {};
+  s.soldierUnits[0].equipment = {};
+  s.armoryInventory = [esya('g1', 'weapon', 'Geliştirilecek Kılıç', 10, 0)];
+  const secenek = {};
+  await kisla.eylemler.sec(b, el({ idx: '0' }), secenek);
+  await kisla.eylemler.tak(b, el({ kaynak: 'armory', yuva: 'weapon', depo: '0' }), secenek);
+  assert.equal(s.soldierUnits[0].equipment.weapon.level, 1);
+  await kisla.eylemler.secici(b, el({ yuva: 'weapon' }), secenek);
+  const panel = kisla.govde(b, secenek);
+  assert.ok(panel.includes('data-e="yuvaGelistir"'), 'takılı eşya için yuva panelinde Geliştir düğmesi olmalı');
+  assert.ok(panel.includes('data-e="cikar"'), 'Çıkar yuva panelinde olmalı');
+  await kisla.eylemler.yuvaGelistir(b, el({ yuva: 'weapon' }), secenek);
+  assert.equal(son()[1], 'success', son()[0]);
+  assert.equal(s.soldierUnits[0].equipment.weapon.level, 2, 'eşya Kışla yuvasından geliştirildi');
+
+  // Depoda uygun eşya yoksa yuva panelinde "yeni döv" (malzeme yeterli: onay penceresi çıkmaz)
+  for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 1e5;
+  s.inventory.fragments = 1000; s.adAstraBalance = 1e6;
+  s.armoryInventory = [];
+  await kisla.eylemler.secici(b, el({ yuva: 'helmet' }), secenek);
+  assert.ok(kisla.govde(b, secenek).includes('data-e="dovYuva"'), 'depo boşken yeni eşya dövme düğmesi çıkmalı');
+  await kisla.eylemler.dovYuva(b, el({ yuva: 'helmet' }), secenek);
+  assert.equal(son()[1], 'success', son()[0]);
+  assert.ok(s.equipment.helmet || s.armoryInventory.some((e) => e.slot === 'helmet'), 'dövülen miğfer krallık yuvasına ya da depoya girdi');
+}
+console.log('✅ yuva panelinden geliştir ve döv');
+
+console.log('\n8/8 Kışla ekran testi geçti.');

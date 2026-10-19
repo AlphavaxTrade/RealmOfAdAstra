@@ -2,7 +2,7 @@
 // Kurallar js/gameState/kolezyum.js (düello), js/economy/pvp.js ve server/arena.js (gerçek rakip) içindedir.
 import {
   ekranKaydet, kap, kart, katli, satir, sekmeler, dugme, uyari, not, bos, izgara, hucre, etiket,
-  tam, astra, sayi, esc, ac, yenile
+  tam, astra, sayi, esc, ac, yenile, grupSekmeleri, grupEylemleri
 } from './cekirdek.js';
 import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazisi.js';
 import { hizliIyilestir } from './bilesik.js';
@@ -273,7 +273,7 @@ const ekran = {
     secenek.sekme = secenek.sekme || 'duel';
     if (secenek.sampiyon == null) secenek.sampiyon = sonSampiyon;
     const icerik = secenek.sekme === 'lig' ? ligSekmesi(b) : (secenek.sekme === 'pvp' ? pvpSekmesi(b, secenek) : duelloSekmesi(b, secenek));
-    return kap(sekmeler(SEKMELER, secenek.sekme, 'sekme') + icerik);
+    return kap(grupSekmeleri('arena', 'kolezyum') + sekmeler(SEKMELER, secenek.sekme, 'sekme') + icerik);
   },
 
   // Gerçek rakip verisi sunucudan bir kez yüklenir; eylemlerden sonra yeniden istenir
@@ -295,6 +295,7 @@ const ekran = {
   },
 
   eylemler: {
+    ...grupEylemleri,
     sekme(b, el, secenek) {
       secenek.sekme = el.dataset.sekme;
     },

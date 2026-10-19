@@ -3,7 +3,7 @@ import {
   ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, not, bos, izgara, simge, etiket, tam, astra, esc
 } from './cekirdek.js';
 import { equipImg } from '../art.js';
-import { maliyetSatiri, planBedeli, hizliOnar } from './bilesik.js';
+import { planBedeli, hizliOnar } from './bilesik.js';
 import { onay } from '../v3/bilesenler.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
@@ -37,6 +37,13 @@ function dovmeKarti(b, yuva) {
   const yeter = (env.iron || 0) >= bedel.ironCost && (env.wood || 0) >= bedel.woodCost && (env.coal || 0) >= (bedel.coalCost || 0)
     && (env.fragments || 0) >= bedel.fragCost && gs.state.adAstraBalance >= bedel.adaCost;
   const siloUyari = (k, gerek) => (kap_[k] != null && gerek > kap_[k] ? ' <span class="ek-uyari-renk" title="Silon bu kadar alamıyor">⚠ silo</span>' : '');
+  // Bedel tek satır (19 Ekim 2026): yeten kalem kısa, eksik kalem kırmızı "elinde/gereken"; ayrıntı satırları katlı
+  const kalem = (ikon, sahip, gereken, ek = '') => (gereken > 0 ? (sahip >= gereken ? `${ikon} ${tam(gereken)}${ek}` : `<span class="ek-ton-kotu">${ikon} ${tam(sahip)}/${tam(gereken)}</span>${ek}`) : '');
+  const bedelSatiri = [
+    kalem('⛏️', env.iron || 0, bedel.ironCost, siloUyari('iron', bedel.ironCost)), kalem('🌲', env.wood || 0, bedel.woodCost, siloUyari('wood', bedel.woodCost)),
+    kalem('⚫', env.coal || 0, bedel.coalCost || 0, siloUyari('coal', bedel.coalCost)), kalem('🧩', env.fragments || 0, bedel.fragCost),
+    kalem('🟣', gs.state.adAstraBalance || 0, bedel.adaCost)
+  ].filter(Boolean).join(' · ');
 
   let dugme_;
   if (yeter) {
@@ -55,11 +62,7 @@ function dovmeKarti(b, yuva) {
     vurgu: yeter ? 'iyi' : '',
     icerik: `<div class="ek-oge">${simge(equipImg(yuva, tarif.icon))}
         <div class="ek-oge-govde"><b>${YUVA_ADLARI[yuva]}</b><small>${esc(ozellik)} · dayanıklılık 13/13</small></div></div>
-      ${maliyetSatiri('⛏️ Demir', env.iron || 0, bedel.ironCost).replace('</b>', `${siloUyari('iron', bedel.ironCost)}</b>`)}
-      ${maliyetSatiri('🌲 Odun', env.wood || 0, bedel.woodCost).replace('</b>', `${siloUyari('wood', bedel.woodCost)}</b>`)}
-      ${bedel.coalCost > 0 ? maliyetSatiri('⚫ Kömür', env.coal || 0, bedel.coalCost).replace('</b>', `${siloUyari('coal', bedel.coalCost)}</b>`) : ''}
-      ${maliyetSatiri('🧩 Parça', env.fragments || 0, bedel.fragCost)}
-      ${maliyetSatiri('🟣 ASTRA', gs.state.adAstraBalance || 0, bedel.adaCost, { astraMi: true })}
+      <p class="ek-kucuk">Bedel: ${bedelSatiri}</p>
       ${dugme_}`
   });
 }
@@ -117,16 +120,13 @@ function esyaKarti(b, g, sira) {
           <small>${esc(ozellik)}</small>
           <small class="${guncel <= 4 ? 'ek-kotu' : ''}">🛡️ Dayanıklılık ${tam(guncel)}/${tam(enFazla)} · 📍 ${esc(g.locationLabel)}</small>
         </div></div>
-      ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
-      ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${tam(onarimBedeli.fragCost || 0)}🧩 · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
-      ${hizliOnarma}
       ${gelistirmeBedeli && gelistirmeBedeli.accountLevelBlocked ? `<p class="ek-kucuk">🔒 Bu eşya ${tam((esya.level || 1) + 1)}. seviyeye çıkmak için hesabın en az ${tam(gelistirmeBedeli.accountLevelNeeded)}. seviye olmalı.</p>` : ''}
-      ${hizliGelistirme}
       ${dugmeler(
-        !enYuksek ? dugme({ e: 'gelistir', metin: '⬆️ Geliştir', ton: 'birincil', veri }) : etiket('🏆 en yüksek seviye', 'vurgu'),
-        hasarli ? dugme({ e: 'onar', metin: '🔧 Onar', veri }) : '',
+        enYuksek ? etiket('🏆 en yüksek seviye', 'vurgu') : (hizliGelistirme || (gelistirmeBedeli && gelistirmeBedeli.accountLevelBlocked ? '' : dugme({ e: 'gelistir', metin: `⬆️ Geliştir · Sv.${tam((esya.level || 1) + 1)}`, ton: 'birincil', veri }))),
+        hasarli ? (hizliOnarma || dugme({ e: 'onar', metin: '🔧 Onar', veri })) : '',
         giyili ? '' : dugme({ e: 'giydir', metin: '🛡️ Askerime giydir', ton: 'iyi' })
       )}
+      ${gelistirmeBedeli || onarimBedeli ? katli('Bedeller', (gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)}: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : '') + (onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${tam(onarimBedeli.fragCost || 0)}🧩 · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''), { k: `bedel-${sira}` }) : ''}
       ${ikinci.length ? katli('Diğer', `<div class="ek-dugmeler">${ikinci.join('')}</div>`, { k: `diger-${sira}` }) : ''}`
   });
 }

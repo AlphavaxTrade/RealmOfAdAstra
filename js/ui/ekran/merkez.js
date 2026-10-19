@@ -19,6 +19,26 @@ function seferToplamaBildirimi(b, r) {
   }
 }
 
+// "Şimdi yapılacaklar" (19 Ekim 2026): krallığın durumuna göre yalnız işe yarayan satırlar, her biri tek dokunuşluk eylem. Hiç iş yoksa bunu söyler.
+function yapilacaklar(b, ozet, onarim, iyilestirme) {
+  const satirlar = [];
+  const satir_ = (metin, dugmeHtml) => `<div class="ek-yapilacak"><span>${metin}</span>${dugmeHtml}</div>`;
+  const hazir = ozet.completedExps.length;
+  const bosAlan = b.GAME_CONFIG.RESOURCE_KEYS.length - ozet.activeExps.length;
+  if (hazir > 0) satirlar.push(satir_(`✅ <b>${hazir}</b> sefer toplanmayı bekliyor`, dugme({ e: 'topla', metin: 'Topla ve başlat', ton: 'birincil' })));
+  else if (bosAlan > 0) satirlar.push(satir_(`💤 <b>${bosAlan}</b> alan boşta`, dugme({ e: 'topla', metin: 'Sefere gönder', ton: 'birincil' })));
+  if (iyilestirme.count > 0) satirlar.push(satir_(`🩹 <b>${iyilestirme.count}</b> asker yaralı`, dugme({ e: 'iyilestir', metin: 'İyileştir' })));
+  if (onarim.count > 0) satirlar.push(satir_(`🔨 <b>${onarim.count}</b> alet onarım bekliyor`, dugme({ e: 'onar', metin: 'Onar' })));
+  if (ozet.stamina < ozet.maxStamina * 0.4) satirlar.push(satir_(`⚡ Stamina düşük (<b>${tam(ozet.stamina)}</b> / ${tam(ozet.maxStamina)})`, dugme({ e: 'staminaDoldur', metin: 'Buğdayla doldur', devreDisi: !(Number(ozet.inventory && ozet.inventory.wheat) > 0) })));
+  const doluSilo = (ozet.kaynaklar || []).filter((r) => r.pct >= 90);
+  if (doluSilo.length) satirlar.push(satir_(`📦 Silo dolmak üzere (${doluSilo.map((r) => esc(r.name)).join(', ')})`, dugme({ e: 'silo', metin: 'Siloyu aç' })));
+  return kart({
+    baslik: '✅ Şimdi yapılacaklar',
+    vurgu: satirlar.length ? 'vurgu' : '',
+    icerik: satirlar.length ? satirlar.join('') : not('Her şey yolunda: seferler sürüyor, askerler sağlam. Süre dolunca burada görünür.')
+  });
+}
+
 const ekran = {
   id: 'merkez',
   goruldu: 'merkez',
@@ -92,13 +112,14 @@ const ekran = {
       ${cubuk(r.pct, { renk: r.color, ton: r.pct >= 99 ? 'dolu' : '' })}</div>`).join('');
 
     return kap([
-      kart({ baslik: '⚡ Tek dokunuşla toplu işlemler', vurgu: 'vurgu', icerik: toplu }),
+      yapilacaklar(b, ozet, onarim, iyilestirme),
+      katli('⚡ Hepsi bir arada', toplu, { k: 'merkez-toplu' }),
       genel,
       kart({ baslik: `⏳ Seferler (${ozet.activeExps.length}/${b.GAME_CONFIG.RESOURCE_KEYS.length})`, icerik: seferler }),
       katli('🎫 Üretim hakkın (bu hafta)', haklar + dugmeler(dugme({ e: 'kotalar', metin: '📊 Kotalarım ve günlük sınırlar', ton: 'hayalet' })), { k: 'uretim-hakki' }),
       katli(`🔨 Aletler (ort. %${ozet.avgToolHealth})`, aletler, { k: 'aletler' }),
       katli(`🛡️ Ordu (%${ozet.avgHpPct} can)`, ordu, { k: 'ordu' }),
-      katli(`📦 Silo seviye ${gs.state.warehouseLevel}`, `<div class="ek-ambarlar">${silo}</div>`, { k: 'silo' })
+      katli(`📦 Silo seviye ${gs.state.warehouseLevel}`, `<div class="ek-ambarlar">${silo}</div>${dugme({ e: 'silo', metin: '📦 Siloyu yükselt', genis: true })}`, { k: 'silo' })
     ].join(''));
   },
 
@@ -120,6 +141,7 @@ const ekran = {
       await hizliIyilestir(b);   // eksik ot pazardan alınır
     },
     kotalar() { return { git: 'kotalar' }; },
+    silo() { return { git: 'silo' }; },
     parsomen(b, el) {
       const r = b.gameState.useScroll(el.dataset.parsomen, null);
       b.bildir(r.message, r.success ? 'success' : 'error');

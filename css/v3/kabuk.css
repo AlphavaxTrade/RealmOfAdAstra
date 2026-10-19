@@ -507,3 +507,11 @@ html.v3 .v3-bildirim-oge.is-uyari i { color: var(--v3-kotu); }
 /* Odak halkası: koyu zeminde de görünür */
 #online-overlay :is(button, a, input, select):focus-visible { outline: 2px solid var(--v3-vurgu, #e7b94c); outline-offset: 2px; }
 #online-overlay #online-pencere:focus { outline: none; }
+
+/* Arayüz sadeleştirme (19 Ekim 2026): menüde "Gelişmiş" katı; ilk bakışta yalnız temel öğeler */
+html.v3 .v3-gelismis { grid-column: 1 / -1; }
+html.v3 .v3-gelismis > summary { cursor: pointer; list-style: none; padding: 12px 14px; min-height: var(--v3-tap, 44px); display: flex; align-items: center; border-radius: 14px; background: var(--v3-yuzey-2, #151a26); border: 1px dashed var(--v3-cizgi, rgba(255,255,255,.14)); color: var(--v3-yazi-2, #a9b1c4); font-weight: 700; }
+html.v3 .v3-gelismis > summary::-webkit-details-marker { display: none; }
+html.v3 .v3-gelismis > summary::after { content: '▾'; margin-left: auto; transition: transform .15s; }
+html.v3 .v3-gelismis[open] > summary::after { transform: rotate(180deg); }
+html.v3 .v3-gelismis > .v3-hub { margin-top: var(--v3-gap-2); }

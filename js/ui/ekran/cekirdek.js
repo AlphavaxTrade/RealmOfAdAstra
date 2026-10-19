@@ -376,3 +376,14 @@ export function etiket(metin, ton = '') {
 export function simge(icerik, kucuk = false) {
   return `<span class="ek-simge${kucuk ? ' is-kucuk' : ''}" aria-hidden="true">${icerik}</span>`;
 }
+
+// Aynı işin parçası ekranlar (Köy ↔ Konsey, Kolezyum ↔ Dünya bossu) üstte ortak bir sekme çubuğu taşır (19 Ekim 2026: menüde tek giriş, iki sekme).
+// Başka sekmeye dokunmak o ekrana götürür; her ekran eylemlerine grupEylemleri'ni ekler.
+export const EKRAN_GRUPLARI = {
+  koyKonsey: [{ id: 'koy', ad: 'Köy', simge: '🏘️' }, { id: 'konsey', ad: 'Konsey', simge: '🏛️' }],
+  arena: [{ id: 'kolezyum', ad: 'Kolezyum', simge: '🏟️' }, { id: 'savasalani', ad: 'Dünya bossu', simge: '🌋' }]
+};
+export function grupSekmeleri(grup, aktifId) {
+  return `<div class="ek-grup">${sekmeler(EKRAN_GRUPLARI[grup], aktifId, 'grupGit')}</div>`;
+}
+export const grupEylemleri = { grupGit(b, el) { return { git: el.dataset.sekme }; } };
