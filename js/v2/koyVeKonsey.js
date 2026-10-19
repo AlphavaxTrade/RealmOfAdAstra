@@ -203,9 +203,9 @@ export const gameStateV2 = {
     const H = GAME_CONFIG.HAMMADDE || {};
     const mult = Math.pow(K.HOUSE_COST_MULT ?? 1.2, Math.max(0, n - 2)) * talepCarpani((n - 2) / Math.max(1, H.EV_RAMPA_SAYISI ?? 10));   // 19 Ekim 2026: evler ilerledikçe talep ölçeğine tırmanır
     // Hiçbir ev bedeli en büyük silonun %80'ini geçemez (siloya sığma ilkesi; 19 Ekim 2026 x5 kararı)
-    const Wk = GAME_CONFIG.WAREHOUSE || {};
-    const kap = this.getWarehouseCapacity(Math.min(this.getWarehouseMaxLevel ? this.getWarehouseMaxLevel() : 18, Wk.levelUpCostGateLevel || 18)) || {};
-    const sigma = GAME_CONFIG.LEVEL_UP_SILO_SHARE ?? 0.8;
+    const evAdimi = Math.max(1, (GAME_CONFIG.HESAP_BAGI || {}).EV_SEVIYE_ADIMI ?? 2);
+    const kap = this.getWarehouseCapacity(Math.max(1, Math.min(this.getWarehouseMaxLevel ? this.getWarehouseMaxLevel() : 18, Math.max(Number(this.state.level) || 1, evAdimi * (n - 1))))) || {};   // silo hesabı geçemez: n. ev, yapılabildiği hesap seviyesindeki siloya sığar
+    const sigma = ((GAME_CONFIG.HESAP_BAGI || {}).SEVIYE_BEDELI_PAYI || {}).SON ?? 0.9;   // en çok hesap seviyesi bedeli kadar pay (0,9)
     return Object.fromEntries(Object.entries(base).map(([k, v]) => {
       const ham = Math.round(v * mult);
       return [k, kap[k] != null ? Math.min(ham, Math.floor(kap[k] * sigma)) : ham];
@@ -223,9 +223,10 @@ export const gameStateV2 = {
     const perSoldier = K.VILLAGER_PER_SOLDIER ?? 1;
     const level = Math.max(1, Number(this.state.level) || 1);
     const hardMax = K.MAX_HOUSES ?? 20;
-    const maxHouses = Math.min(hardMax, level);
+    const evAdimi = Math.max(1, (GAME_CONFIG.HESAP_BAGI || {}).EV_SEVIYE_ADIMI ?? 2);
+    const maxHouses = Math.min(hardMax, 1 + Math.floor(level / evAdimi));   // 19 Ekim 2026: n. ev için hesap seviyesi en az evAdimi x (n-1)
     const starvingDays = v.starvingSince ? Math.max(0, (Number(v.starveSec) || 0) / 86400) : 0;
-    const houseLimitReason = v.houses >= hardMax ? `En çok ${hardMax} ev` : (v.houses >= level ? `Ev sayısı hesap seviyesini (${level}) geçemez` : null);
+    const houseLimitReason = v.houses >= hardMax ? `En çok ${hardMax} ev` : (v.houses >= maxHouses ? `${v.houses + 1}. ev için hesap seviyesi en az ${v.houses * evAdimi} olmalı (şu an ${level})` : null);
     return {
       houses: v.houses, villagers, villagersExact: v.villagers, capacity, bonus,
       wheatPerDay: Math.round(villagers * (K.WHEAT_PER_VILLAGER_DAY ?? 2)),

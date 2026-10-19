@@ -50,13 +50,13 @@ function uretimKarti(b, us, ortakKasa) {
     const hak = us.rights[k];
     return `<div class="ek-hucre"><small>${simge(kaynakSimgesi(b, k), true)} ${esc(kaynakAdi(b, k))}</small>
       <b>${esc(tam(hak.used))} / ${esc(tam(hak.weekly))}</b>
-      <small>kota %${esc(Math.round((hak.qpp || 0) * 100))} · ortak kasa ${esc(tam(ortakKasa[k] || 0))}</small></div>`;
+      <small>limit ${esc(tam(hak.limit ?? hak.weekly))} · havuz çarpanı %${esc(Math.round((hak.qpp || 0) * 100))} · ortak kasa ${esc(tam(ortakKasa[k] || 0))}</small></div>`;
   });
   return kart({
     baslik: '📊 Bu haftaki çıkarma hakkın',
     rozet: etiket(`Otorite sv.${us.otorite.level}`),
-    icerik: not('Her hammaddeden bu hafta ne kadar çıkarabileceğin (kullandığın / toplam hakkın). Hakkın seviyene, katkı kademene ve ne kadar aktif olduğuna göre büyür.')
-      + katli('Nasıl hesaplanıyor? (ayrıntı)', not(`Kişi başı kota (termostat): her hafta kaynağın fiyatı açılışın üstündeyse +%10, altındaysa −%10 (0,05-1,0). Senin ağırlığın ×${esc(us.weight.weight)} (seviye ×${esc(us.weight.levelFactor)} · katkı kademesi ${esc(us.weight.tier.name)} ×${esc(us.weight.tier.mult)} · aktiflik ×${esc(us.weight.activity)}). Dünya ağırlık toplamı: ${esc(sayi(us.params.sumWeight || 1))}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.`), { k: 'konsey-uretim-detay' })
+    icerik: not('Her hammaddeden bu hafta ne kadar çıkarabileceğin (kullandığın / toplam hakkın). Hakkın; hesap seviyene, köy evlerine, katkı kademene, aktifliğine ve Konsey Otoritesi\'ne göre büyür. Ama herkesin ortak bir havuzdan payı vardır: havuz kıtsa payın kişisel limitinden küçük olabilir.')
+      + katli('Nasıl hesaplanıyor? (ayrıntı)', not(`<b>Kişisel limit:</b> senin ağırlığın ×${esc(us.weight.weight)} (seviye ×${esc(us.weight.levelFactor)} · ev ×${esc(us.weight.houseFactor ?? 1)} · katkı kademesi ${esc(us.weight.tier.name)} ×${esc(us.weight.tier.mult)} · aktiflik ×${esc(us.weight.activity)}). Bu limit seni üst sınıra çıkarır. <b>Ortak havuz:</b> oyunun her hafta dağıttığı toplam hammadde oyuncu sayısına bağlı değildir; fiyat düşünce havuz küçülür (hammadde azalır, fiyat yükselir), fiyat çok yükselince havuz büyür, oyuna bot projesinden gelen ASTRA arttıkça da havuz önceden büyür. Havuzun %60'ı herkese eşit taban pay olarak bölünür, kalan %40'ı limiti ve katkı kademesi yüksek olanlara gider. Dünya ağırlık toplamı: ${esc(sayi(us.params.sumWeight || 1))}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.`), { k: 'konsey-uretim-detay' })
       + izgara(kaynaklar, { genis: true })
   });
 }

@@ -94,7 +94,8 @@ export const botSiloYontemleri = {
 
     // KURAL 1: %80 dolu ama yükseltme parası yok → baraj üstündeki fazlayı sat
     const bedel = this.getWarehouseUpgradeCost();
-    if (bedel && bedel.is80PercentFull && !(bedel.canAffordCost && this._botCanSpend(bedel.adAstra))) {
+    // Hesap seviyesi silo yükseltmeye izin vermiyorsa (silo hesabı geçemez) yükseltme parası biriktirmek anlamsız: yalnız KURAL 2 (taşacaksa sat) çalışır
+    if (bedel && !bedel.accountLevelBlocked && bedel.is80PercentFull && !(bedel.canAffordCost && this._botCanSpend(bedel.adAstra))) {
       const baraj = Math.round(limit * barajOrani());
       const fazla = Math.max(0, mevcut - baraj);
       const astraAcigi = Math.max(0, bedel.adAstra + this.getBotAdaReserve() - (this.state.adAstraBalance || 0));
@@ -158,6 +159,7 @@ export const botSiloYontemleri = {
 
     const bedel = this.getWarehouseUpgradeCost();
     if (!bedel) return { success: false, reason: 'max_level' };
+    if (bedel.accountLevelBlocked) return { success: false, reason: 'account_level' };
 
     if (bedel.canUpgrade && this._botCanSpend(bedel.adAstra) && this._botSiloyuYukselt(now)) {
       return { success: true, upgraded: true, newLevel: this.state.warehouseLevel };

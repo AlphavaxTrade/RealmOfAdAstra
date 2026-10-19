@@ -52,6 +52,7 @@ const botOn = (gs, hours = 24) => {
 // 2) Silo yükselt modunda 24 saat: kasa güvenlik payının altına inmez
 {
   const gs = fresh();
+  gs.state.level = 6;   // silo hesap seviyesini geçemez (19 Ekim 2026)
   gs.state.adAstraBalance = 5000;
   gs.state.inventory = { wood: 300 * U, iron: 200 * U, wheat: 500 * U, stone: 300 * U, coal: 250 * U, herb: 60 * U, fragments: 0 };   // v2: kapasite içinde
   gs.setBotSiloOption(true);

@@ -114,7 +114,7 @@ const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 // 10) Üretim Hakkı (R2/R4): kişi başı kota başlangıcı %40 (0,05-1,0 arası, ±%10/hafta), adalet tavanı 3×, seviye ağırlığı ×2 tavanlı
 {
   const U = G.URETIM_HAKKI;
-  assert.equal(U.QPP_START, 0.40); assert.equal(U.QPP_MIN, 0.05); assert.equal(U.QPP_MAX, 1.0); assert.equal(U.TERMO_STEP, 0.10);
+  assert.equal(U.QPP_START, 0.40); assert.equal(U.QPP_MIN, 0.08); assert.equal(U.QPP_MAX, 1.2); assert.equal(U.TERMO_STEP, 0.10);   // 19 Ekim 2026: qpp = global havuz çarpanı (başlangıcın 0,2-3 katı)
   assert.equal(U.FAIRNESS_CAP, 3, 'adalet tavanı: en yüksek ağırlık en düşüğün 3 katını geçmez (E-planı S8)');
   assert.equal(U.LEVEL_WEIGHT_MAX, 2.0, 'seviye ağırlığı en çok ×2');
   ok('Üretim Hakkı: kota %40 başlar (%5-100 arası, ±%10/hafta), adalet tavanı 3×, seviye ağırlığı ×2 tavanlı');

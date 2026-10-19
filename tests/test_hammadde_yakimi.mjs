@@ -66,7 +66,7 @@ console.log('✅ alet onarımı odun ve demir yakar');
   const s = gs.state;
   const anahtarlar = Object.keys(globalPool.state.resources);
   const once = Object.fromEntries(anahtarlar.map((k) => [k, arz(k)]));
-  s.warehouseLevel = 1;
+  s.level = 10; s.warehouseLevel = 1;   // silo hesap seviyesini geçemez (19 Ekim 2026)
   for (const k of anahtarlar) s.inventory[k] = 50000;
   s.adAstraBalance = 100000;
   const maliyet = gs.getWarehouseUpgradeCost(1);

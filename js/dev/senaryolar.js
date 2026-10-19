@@ -185,7 +185,7 @@ export const SENARYOLAR = [
   {
     id: 'silo-yuzde-80', kategori: 'silo', ad: 'Silo, depolar %70 dolu değilse yükseltilemez',
     ne: 'Depolar boşken silo yükseltme reddedilmeli ve nedeni %70 doluluk kuralı olmalı (19 Ekim 2026: eskiden %80).',
-    kur: (gs) => { temiz(gs); hepsiBos(gs); gs.setDevAdAstra(1e6); },
+    kur: (gs) => { temiz(gs); gs.state.level = 10; hepsiBos(gs); gs.setDevAdAstra(1e6); },
     calistir: (gs) => gs.upgradeWarehouse(),
     beklenen: [
       { ad: 'Yükseltme reddedildi', tamam: (o, s, r) => r.success === false },
@@ -196,7 +196,7 @@ export const SENARYOLAR = [
   {
     id: 'silo-astra-ister', kategori: 'silo', ad: 'Silo yükseltme ASTRA da ister',
     ne: 'Depolar dolu ama ASTRA yoksa yükseltme reddedilmeli.',
-    kur: (gs) => { temiz(gs); tumuDolu(gs); gs.setDevAdAstra(0); },
+    kur: (gs) => { temiz(gs); gs.state.level = 10; tumuDolu(gs); gs.setDevAdAstra(0); },
     calistir: (gs) => gs.upgradeWarehouse(),
     beklenen: [
       { ad: 'Yükseltme reddedildi', tamam: (o, s, r) => r.success === false },
@@ -207,13 +207,24 @@ export const SENARYOLAR = [
   {
     id: 'silo-yukselir', kategori: 'silo', ad: 'Koşullar tamamsa silo yükselir',
     ne: 'Depolar dolu ve ASTRA yeterliyse silo bir seviye çıkmalı, kapasite büyümeli, ASTRA ve hammadde harcanmalı.',
-    kur: (gs) => { temiz(gs); gs.state.warehouseLevel = 1; tumuDolu(gs); gs.setDevAdAstra(1e6); },
+    kur: (gs) => { temiz(gs); gs.state.level = 10; gs.state.warehouseLevel = 1; tumuDolu(gs); gs.setDevAdAstra(1e6); },
     calistir: (gs) => gs.upgradeWarehouse(),
     beklenen: [
       { ad: 'Yükseltme başarılı', tamam: (o, s, r) => r.success === true },
       { ad: 'Silo seviyesi 1 arttı', tamam: (o, s) => s.siloSeviye === o.siloSeviye + 1 },
       { ad: 'Silo kapasitesi büyüdü', tamam: (o, s) => s.siloOdun > o.siloOdun },
       { ad: 'ASTRA harcandı', tamam: (o, s) => s.astra < o.astra }
+    ]
+  },
+  {
+    id: 'silo-hesap-seviyesi', kategori: 'silo', ad: 'Silo seviyesi hesap seviyesini geçemez',
+    ne: 'Hesap seviyesi silo seviyesine eşitken silo bir üst seviyeye yükseltilememeli; neden hesap seviyesi olmalı (19 Ekim 2026).',
+    kur: (gs) => { temiz(gs); gs.state.level = 1; gs.state.warehouseLevel = 1; tumuDolu(gs); gs.setDevAdAstra(1e6); },
+    calistir: (gs) => gs.upgradeWarehouse(),
+    beklenen: [
+      { ad: 'Yükseltme reddedildi', tamam: (o, s, r) => r.success === false },
+      { ad: 'Neden: hesap seviyesi', tamam: (o, s, r) => /hesap seviyen/i.test(r.message) },
+      { ad: 'Silo seviyesi değişmedi', tamam: (o, s) => s.siloSeviye === o.siloSeviye }
     ]
   },
   // ------------------------------------------------------------------ ORDU

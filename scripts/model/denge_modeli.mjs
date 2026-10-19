@@ -14,6 +14,8 @@ import { GAME_CONFIG as C, URETIM_CARPANI as URETIM } from '../../js/config.js';
 const depo = new Map();
 globalThis.localStorage = globalThis.localStorage || { getItem: (k) => (depo.has(k) ? depo.get(k) : null), setItem: (k, v) => { depo.set(k, String(v)); }, removeItem: (k) => { depo.delete(k); } };
 const { GameStateManager } = await import('../../js/gameState.js');
+const { havuzDagit, oyuncuPayi, yeniHavuzCarpani } = await import('../../js/economy/uretimDagitimi.js');
+const URETIM_HAKKI = C.URETIM_HAKKI;
 const A = Object.fromEntries(process.argv.slice(2).map(a => a.split('=')));
 const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 
@@ -46,7 +48,9 @@ export function defaults() {
     qpp: num('qpp', 0.4),            // kişi başı haftalık kota = tek alanın kesintisiz haftalık üretiminin bu katı (Otorite 0); termostatta başlangıç
     kota: num('kota', 1),            // yönetici çarpanı (ana ayar kolu)
     kotaModu: A.kotaModu || 'termostat',   // sabit | termostat (fiyat açılışın üstündeyse kota %10 artar, altındaysa azalır; kişi başı en az qppMin)
-    termoAdim: num('termoAdim', 0.10), termoHedef: num('termoHedef', 1.0), qppMin: num('qppMin', 0.05), qppMax: num('qppMax', 1.0),   // kişi başı kota: en az tam alanın %5'i, en çok tamamı
+    termoAdim: num('termoAdim', 0.10), termoHedef: num('termoHedef', 1.0), qppMin: num('qppMin', 0.08), qppMax: num('qppMax', 1.2),
+    havuz: A.havuz !== 'eski',          // 19 Ekim 2026 ekonomi planı: global havuz (oyuncu sayısından bağımsız) + taban/üst pay; havuz=eski eski kişi başı kota modelini çalıştırır
+    havuzKisisel: num('havuzKisisel', URETIM_HAKKI.KISISEL_QPP), havuzRef: num('havuzRef', URETIM_HAKKI.REFERANS_AGIRLIK), tabanPayi: num('tabanPayi', URETIM_HAKKI.TABAN_PAYI),   // kişi başı kota: en az tam alanın %5'i, en çok tamamı
     otoriteTaban: num('otoriteTaban', OT.BASE_UNITS), otoriteKat: OT.LEVEL_MULT,   // Otorite 1. sv 2 M birim, her sv ×1,4; karışımın tamamı hammadde (çelik payı kömürdür, ASTRA değil)
     hazirlikToplam: num('hazirlikToplam', 10e6),   // Hazırlık Deposu toplam vaadi (ASTRA değeri, P0 ile) — Universe rezervinin yarısı
     hakTavan: num('hakTavan', 3),    // en yüksek Üretim Hakkı / en düşük (adalet tavanı)
@@ -120,17 +124,29 @@ export function run(P) {
     const oMult = 1 + OT.PER_LEVEL_BONUS * otorite, oHours = ((OT.HOURS_BASE + OT.HOURS_PER_LEVEL * otorite) * (OT.DAYS_BASE + OT.DAYS_PER_LEVEL * otorite)) / 168;
     // ── 1) kota ve Üretim Hakkı dağılımı ──
     if (P.kotaModu === 'termostat' && w > 1) for (const r of RES) {   // arz fiyatı izler: fiyat hedefin üstündeyse kota artar, altındaysa azalır
-      const rel = price(r) / (P0[r] * mPazar) / P.termoHedef; const step = Math.max(-P.termoAdim, Math.min(P.termoAdim, (rel - 1)));
-      qppNow[r] = Math.min(P.qppMax, Math.max(P.qppMin, qppNow[r] * (1 + step)));
+      const rel = price(r) / (P0[r] * mPazar) / P.termoHedef;
+      if (P.havuz) qppNow[r] = yeniHavuzCarpani(qppNow[r], rel, 1, { ...URETIM_HAKKI, QPP_MIN: P.qppMin, QPP_MAX: P.qppMax });   // fiyat bandı (0,8-1,5): altında arz kısılır, üstünde açılır
+      else { const step = Math.max(-P.termoAdim, Math.min(P.termoAdim, (rel - 1))); qppNow[r] = Math.min(P.qppMax, Math.max(P.qppMin, qppNow[r] * (1 + step))); }
     }
-    const Q = Object.fromEntries(RES.map(r => [r, qppNow[r] * TABAN[r] * 168 * N * oMult * oHours * P.kota]));
     let ws = cohorts.map(c => P.act[c.type] * (1 + 0.025 * c.level) * P.katki[c.type]);
     const wMin = Math.min(...ws); ws = ws.map(x => Math.min(x, P.hakTavan * wMin));
     const W = cohorts.reduce((s, c, i) => s + ws[i] * c.count, 0);
+    // Havuz modeli: G (oyuncu sayısından bağımsız) taban pay + üst pay olarak dağıtılır; eski model: kişi başı kota x N
+    const dagit = {};
+    const Q = Object.fromEntries(RES.map(r => {
+      if (!P.havuz) return [r, qppNow[r] * TABAN[r] * 168 * N * oMult * oHours * P.kota];
+      const birim = TABAN[r] * 168 * P.havuzKisisel * oMult * oHours * P.kota;
+      const liste = []; cohorts.forEach((c, i) => { for (let j = 0; j < c.count; j++) liste.push({ L: birim * ws[i] / P.katki[c.type], S: P.katki[c.type] }); });
+      const G = qppNow[r] * TABAN[r] * 168 * P.havuzRef * oMult * oHours * P.kota;
+      dagit[r] = havuzDagit(liste, G, P.tabanPayi);
+      return [r, dagit[r].total];
+    }));
     const prod = cohorts.map(() => ({})); let used = {};
     for (const r of RES) {
       const out = cohorts.map(c => TABAN[r] * 168 * P.act[c.type] * (1 + 0.01 * c.level));
-      let hak = cohorts.map((c, i) => Q[r] * ws[i] / W);
+      let hak = P.havuz
+        ? cohorts.map((c, i) => oyuncuPayi(TABAN[r] * 168 * P.havuzKisisel * oMult * oHours * P.kota * ws[i] / P.katki[c.type], P.katki[c.type], dagit[r]))
+        : cohorts.map((c, i) => Q[r] * ws[i] / W);
       let take = out.map((o, i) => Math.min(o, hak[i]));
       let unused = cohorts.reduce((s, c, i) => s + (hak[i] - take[i]) * c.count, 0);
       const needers = cohorts.map((c, i) => Math.max(0, out[i] - take[i]) * c.count); const needTot = needers.reduce((a, b) => a + b, 0);

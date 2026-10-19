@@ -125,16 +125,21 @@ const fresh = () => {
   fresh();
   const prev = { ...globalPool.state, uretim: { ...globalPool.nextUretim(null), priceRatio: { wood: 1.5, iron: 0.5, wheat: 1.0 } } };
   const next = globalPool.nextUretim(prev.uretim);
-  assert.ok(near(next.qpp.wood, Math.round(U.QPP_START * (1 + U.TERMO_STEP) * 1000) / 1000), 'Pahalı → kota +%10');
-  assert.ok(near(next.qpp.iron, Math.round(U.QPP_START * (1 - U.TERMO_STEP) * 1000) / 1000), 'Ucuz → kota −%10');
+  // 19 Ekim 2026: havuz çarpanı fiyat bandına göre (0,8-1,5 bant içi sabit; dışında karekökle, haftada en çok -%25 / +%25)
+  const B = U.AYAR;
+  assert.ok(near(next.qpp.wood, U.QPP_START), 'Bant içi (1,5) → değişmez');
+  assert.ok(near(next.qpp.iron, Math.round(U.QPP_START * Math.sqrt(0.5 / B.BAND_ALT) * 1000) / 1000), 'Ucuz (0,5) → arz kısılır');
   assert.ok(near(next.qpp.wheat, U.QPP_START), 'Açılışta → değişmez');
-  let u = { ...globalPool.nextUretim(null), qpp: Object.fromEntries(R.map(k => [k, U.QPP_MAX])), priceRatio: { wood: 2 } };
-  assert.equal(globalPool.nextUretim(u).qpp.wood, U.QPP_MAX, 'Üst sınır 1,0');
+  const pahali = globalPool.nextUretim({ ...globalPool.nextUretim(null), priceRatio: { wood: 2.0 } });
+  assert.ok(near(pahali.qpp.wood, Math.round(U.QPP_START * Math.sqrt(2.0 / B.BAND_UST) * 1000) / 1000), 'Çok pahalı (2,0) → arz açılır');
+  let u = { ...globalPool.nextUretim(null), qpp: Object.fromEntries(R.map(k => [k, U.QPP_MAX])), priceRatio: { wood: 4 } };
+  assert.equal(globalPool.nextUretim(u).qpp.wood, U.QPP_MAX, 'Üst sınır 1,2');
   u = { ...globalPool.nextUretim(null), qpp: Object.fromEntries(R.map(k => [k, U.QPP_MIN])), priceRatio: { wood: 0.1 } };
-  assert.equal(globalPool.nextUretim(u).qpp.wood, U.QPP_MIN, 'Alt sınır 0,05');
+  assert.equal(globalPool.nextUretim(u).qpp.wood, U.QPP_MIN, 'Alt sınır 0,08');
   // Yeni hafta kapasitesi yeni kotayla
   const ep = globalPool.createNewEpoch(prev);
-  assert.ok(near(ep.resources.wood.baseCap, Math.floor(globalPool.weeklyRightPerWeight('wood', globalPool.uretimParams(ep.uretim)))), 'Yeni hafta tabanı yeni kotayla');
+  const epP = globalPool.uretimParams(ep.uretim);
+  assert.ok(near(ep.resources.wood.baseCap, Math.floor(Math.min(globalPool.globalHavuz('wood', epP), globalPool.weeklyRightPerWeight('wood', epP) * epP.sumWeight))), 'Yeni hafta tabanı: havuz ve limitlerin küçüğü');
   ok('Termostat: pahalı kaynakta kota artar, ucuzda azalır, sınırlar korunur');
 }
 

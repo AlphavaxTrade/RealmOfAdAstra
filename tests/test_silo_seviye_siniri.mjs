@@ -37,33 +37,38 @@ const yeni = () => { depo.clear(); return new GameStateManager(); };
   ok('silo 49. seviyeye kadar açık; şart ve bedel %70 (12. seviye buğday 12.976 → 18. 73.500 → 49. ~798 bin)');
 }
 
-// 2) Seviye bedeli tavanı eski sınırda (12. silo × %80) kalır; hiçbir seviye bedeli bunu aşmaz
+// 2) Seviye bedeli tavanı: HESABIN o seviyesindeki silonun kapasitesi x pay (silo hesabı geçemez); hiçbir seviye bedeli bunu aşmaz
 {
   GAME_CONFIG.UNIVERSE_STAGE = 0;
   const gs = yeni();
-  const tavan = gs.getLevelUpCostCeiling();
-  const k18 = gs.getWarehouseCapacity(18);
-  const pay = GAME_CONFIG.LEVEL_UP_SILO_SHARE;
-  for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) {
-    assert.equal(tavan[k], Math.floor(k18[k] * pay), `${k}: tavan 18. silonun %80'i (silo 49'a açılsa da tavan 18. silodan hesaplanır: bedeller sınırsız büyümez)`);
-  }
-  for (const L of [10, 12, 20, 40, 80]) {
+  for (const L of [1, 10, 12, 20, 40, 49, 80]) {
     gs.state.level = L;
+    const tavan = gs.getLevelUpCostCeiling();
+    const kap = gs.getWarehouseCapacity(Math.min(L, 49));
+    const pay = gs._seviyeSiloPayi(L);
+    for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) assert.equal(tavan[k], Math.floor(kap[k] * pay), `Sv.${L} ${k}: tavan silo(${Math.min(L, 49)}) x pay`);
     const r = gs.getNextLevelRequirement();
     for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron']) assert.ok((r.costs[k] || 0) <= tavan[k], `Sv.${L} ${k} bedeli tavanı aşmaz`);
   }
-  ok('seviye bedeli tavanı 18. silonun %80 kapasitesinde (x5 kararı); hiçbir seviye bedeli bunu aşmaz');
+  ok('seviye bedeli tavanı o hesap seviyesindeki silonun payı; hiçbir seviye bedeli bunu aşmaz');
 }
 
-// 3) Universe aşaması 3: tavan en üst siloya geçer (eski davranış korunur)
+// 3) Silo seviyesi hesap seviyesini geçemez
 {
-  GAME_CONFIG.UNIVERSE_STAGE = 3;
   const gs = yeni();
-  const tavan = gs.getLevelUpCostCeiling();
-  const k18 = gs.getWarehouseCapacity(18);
-  assert.equal(tavan.wheat, Math.floor(k18.wheat * GAME_CONFIG.LEVEL_UP_SILO_SHARE));
-  GAME_CONFIG.UNIVERSE_STAGE = 0;
-  ok('Universe aşaması 3: seviye bedeli tavanı en üst siloya göre (eski davranış)');
+  gs.state.level = 3; gs.state.warehouseLevel = 3;
+  const u = gs.getWarehouseUpgradeCost(3);
+  assert.equal(u.accountLevelBlocked, true, 'silo 3 = hesap 3: 4. silo kapalı');
+  assert.equal(u.canUpgrade, false);
+  assert.equal(u.accountLevelNeeded, 4);
+  const r = gs.upgradeWarehouse();
+  assert.equal(r.success, false);
+  assert.equal(r.accountLevelBlocked, true);
+  assert.match(r.message, /hesap seviyeni/);
+  assert.equal(gs.state.warehouseLevel, 3, 'silo değişmedi');
+  gs.state.level = 4;
+  assert.equal(gs.getWarehouseUpgradeCost(3).accountLevelBlocked, false, 'hesap 4 olunca açılır');
+  ok('silo seviyesi hesap seviyesini geçemez (hesap yetmiyorsa yükseltme kapalı, neden söylenir)');
 }
 
 console.log(`\n${n} silo seviye sınırı kontrolü geçti.`);

@@ -89,7 +89,7 @@ function esyaKarti(b, g, sira) {
   }
   // Geliştirme için kaynak yetmiyorsa dövmedeki gibi "eksikleri al ve geliştir" (pazardan alım planı yapılabiliyorsa)
   let hizliGelistirme = '';
-  if (gelistirmeBedeli) {
+  if (gelistirmeBedeli && !gelistirmeBedeli.accountLevelBlocked) {
     const env = gs.state.inventory;
     const yeter = (env.iron || 0) >= gelistirmeBedeli.ironCost && (env.wood || 0) >= gelistirmeBedeli.woodCost && (env.coal || 0) >= (gelistirmeBedeli.coalCost || 0)
       && (env.stone || 0) >= (gelistirmeBedeli.stoneCost || 0) && (env.fragments || 0) >= gelistirmeBedeli.fragCost && gs.state.adAstraBalance >= gelistirmeBedeli.adaCost;
@@ -117,6 +117,7 @@ function esyaKarti(b, g, sira) {
       ${gelistirmeBedeli ? `<p class="ek-kucuk">✨ Seviye ${tam((esya.level || 1) + 1)} bedeli: ${tam(gelistirmeBedeli.ironCost)}⛏️ · ${tam(gelistirmeBedeli.woodCost)}🌲 · ${tam(gelistirmeBedeli.coalCost || 0)}⚫ · ${tam(gelistirmeBedeli.stoneCost || 0)}🪨 · ${tam(gelistirmeBedeli.fragCost)}🧩 · ${astra(gelistirmeBedeli.adaCost)}🟣</p>` : ''}
       ${onarimBedeli ? `<p class="ek-kucuk">🔧 Onarım bedeli: ${tam(onarimBedeli.ironCost)}⛏️ · ${tam(onarimBedeli.woodCost)}🌲 · ${tam(onarimBedeli.coalCost || 0)}⚫ · ${tam(onarimBedeli.fragCost || 0)}🧩 · ${astra(onarimBedeli.adaCost)}🟣</p>` : ''}
       ${hizliOnarma}
+      ${gelistirmeBedeli && gelistirmeBedeli.accountLevelBlocked ? `<p class="ek-kucuk">🔒 Bu eşya ${tam((esya.level || 1) + 1)}. seviyeye çıkmak için hesabın en az ${tam(gelistirmeBedeli.accountLevelNeeded)}. seviye olmalı.</p>` : ''}
       ${hizliGelistirme}
       ${dugmeler(
         !enYuksek ? dugme({ e: 'gelistir', metin: '⬆️ Geliştir', ton: 'birincil', veri }) : etiket('🏆 en yüksek seviye', 'vurgu'),

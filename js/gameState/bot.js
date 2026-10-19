@@ -183,7 +183,7 @@ export const botYontemleri = {
   _botSiloBakimi(actions) {
     if (this.state.botSiloAutoUpgrade) {
       const yukseltme = this.getWarehouseUpgradeCost();
-      if (yukseltme && yukseltme.is80PercentFull) {
+      if (yukseltme && yukseltme.is80PercentFull && !yukseltme.accountLevelBlocked) {
         const sonuc = this.tryAutoUpgradeWarehouseWithAdaFinancing();
         if (sonuc && sonuc.upgraded) {
           actions.push(`🏰 Silo otomatik Seviye ${this.state.warehouseLevel}'e yükseltildi!`);

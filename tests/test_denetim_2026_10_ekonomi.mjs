@@ -12,7 +12,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
+const { GAME_CONFIG } = await import('../js/config.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 const { ammMarket } = await import('../js/ammMarket.js');
@@ -42,42 +42,37 @@ const asker = (gs, n = 1, seviye = 8) => {
   }
 };
 
-// ═══ EK-01: seviye bedeli ulaşılabilir silonun kapasitesini aşamaz; her seviye gerçekten atlanabilir ═══
+// ═══ EK-01: seviye bedeli, o hesap seviyesindeki silonun kapasitesini aşamaz (silo hesabı geçemez); her seviye gerçekten atlanabilir ═══
 {
   const gs = yeni();
   for (const evren of [0, 3]) {                     // 0: Universe öncesi, 3: Universe açık
     GAME_CONFIG.UNIVERSE_STAGE = evren;
     const enUst = gs.getWarehouseMaxLevel();
     assert.equal(enUst, 49, '19 Ekim 2026: silo her aşamada 49. seviyeye kadar açık (kullanıcı kararı)');
-    // seviye bedelinin tavanı: aşama 3'te en üst silo, öncesinde ESKİ sınır (levelUpCostGateLevel = 12) → silo büyüdü diye seviye atlamak yavaşlamaz
-    const kap = gs.getWarehouseCapacity(evren === 3 ? 18 : GAME_CONFIG.WAREHOUSE.levelUpCostGateLevel);
-    const oran = GAME_CONFIG.LEVEL_UP_SILO_SHARE;
-    // değişmez: hiçbir kalemin bedeli ulaşılabilir en büyük silonun kapasitesini aşamaz (eski kodda Sv.11→12'de düşer)
+    // değişmez: hiçbir kalemin bedeli, hesabın o seviyesindeki (silo en çok hesap seviyesi kadar) silonun kapasitesini aşamaz; pay 0,45 → 0,9
     for (let L = 1; L < GAME_CONFIG.MAX_PLAYER_LEVEL; L++) {
       gs.state.level = L;
+      const kap = gs.getWarehouseCapacity(Math.min(L, enUst));
+      const pay = gs._seviyeSiloPayi(L);
       const r = gs.getNextLevelRequirement();
-      for (const k of K) assert.ok(r.costs[k] <= kap[k], `evren ${evren} Sv.${L}→${L + 1}: ${k} bedeli ${r.costs[k]} > silo kapasitesi ${kap[k]}`);
-    }
-    // ayar: bedel kapasitenin LEVEL_UP_SILO_SHARE'ini aşmaz ve tutan bir silo seviyesi bildirilir
-    assert.equal(oran, 0.8);
-    for (let L = 1; L < GAME_CONFIG.MAX_PLAYER_LEVEL; L++) {
-      gs.state.level = L;
-      const r = gs.getNextLevelRequirement();
-      for (const k of K) assert.ok(r.costs[k] <= Math.floor(kap[k] * oran) + 1e-9, `${k} bedeli kapasitenin %${oran * 100}'ini aşıyor`);
-      assert.ok(r.siloLevelNeeded >= 1 && r.siloLevelNeeded <= enUst, `Sv.${L}: tutan bir silo seviyesi var (${r.siloLevelNeeded})`);
+      for (const k of K) {
+        assert.ok(r.costs[k] <= kap[k], `evren ${evren} Sv.${L}→${L + 1}: ${k} bedeli ${r.costs[k]} > silo kapasitesi ${kap[k]}`);
+        assert.ok(r.costs[k] <= Math.floor(kap[k] * pay) + 1e-9, `${k} bedeli kapasitenin %${Math.round(pay * 100)}'ini aşıyor`);
+      }
+      assert.ok(r.siloLevelNeeded >= 1 && r.siloLevelNeeded <= Math.min(L, enUst), `Sv.${L}: tutan silo seviyesi hesap seviyesini geçmez (${r.siloLevelNeeded})`);
     }
   }
   GAME_CONFIG.UNIVERSE_STAGE = 0;
-  ok('EK-01: her L ≤ 80 için seviye bedeli ≤ ulaşılabilir silo kapasitesi × 0,8 (Universe öncesi ve sonrası)');
+  ok('EK-01: her L ≤ 80 için seviye bedeli ≤ silo(min(L,49)) × pay; tutan silo seviyesi ≤ hesap seviyesi');
 }
 {
   // Gerçek atlama: en üst silo (12) ve bedeli kadar kaynakla, 81. seviyeye kadar her adım başarılı
   const gs = yeni();
-  gs.state.warehouseLevel = gs.getWarehouseMaxLevel();
-  gs.state.adAstraBalance = 1e9;
+  gs.state.adAstraBalance = 1e12;
   let atlayan = 0;
   for (let L = 1; L < GAME_CONFIG.MAX_PLAYER_LEVEL; L++) {
     gs.state.level = L;
+    gs.state.warehouseLevel = Math.min(L, gs.getWarehouseMaxLevel());   // silo hesap seviyesini izler (geçemez)
     const r = gs.getNextLevelRequirement();
     for (const k of K) gs.state.inventory[k] = r.costs[k];
     gs.state.currentXp = r.xp;
@@ -91,14 +86,15 @@ const asker = (gs, n = 1, seviye = 8) => {
 {
   // Silo küçükse: "yetersiz" yerine "silon tutamıyor, önce siloyu büyüt" denir ve gereken seviye verilir (EK-12 ipucu verisi)
   const gs = yeni();
-  gs.state.level = 2;
+  gs.state.level = 8;   // silo hesabı geçemez ama oyuncu siloyu geride bırakmış olabilir (silo 1, hesap 8)
   gs.state.warehouseLevel = 1;
   gs.state.adAstraBalance = 1e6;
   const r = gs.getNextLevelRequirement();
-  assert.equal(r.costs.wheat, 972 * U, 'Sv.2→3 buğday bedeli (x50)');
-  assert.ok(gs.getWarehouseCapacity(1).wheat < 972 * U, 'silo-1 bu bedeli tutamaz');
-  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < 972 * U || r.siloLevelNeeded === 1, true);
-  assert.ok(gs.getWarehouseCapacity(r.siloLevelNeeded).wheat >= 972, 'ipucundaki silo bedeli tutar');
+  const W = r.costs.wheat;
+  assert.equal(W, Math.floor(gs.getWarehouseCapacity(8).wheat * gs._seviyeSiloPayi(8)), 'Sv.8→9 buğday bedeli = silo-8 x 0,8');
+  assert.ok(gs.getWarehouseCapacity(1).wheat < W, 'silo-1 bu bedeli tutamaz');
+  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < W || r.siloLevelNeeded === 1, true);
+  assert.ok(gs.getWarehouseCapacity(r.siloLevelNeeded).wheat >= W, 'ipucundaki silo bedeli tutar');
   gs.state.currentXp = r.xp;
   const red = gs.levelUp();
   assert.equal(red.success, false);
@@ -111,7 +107,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   assert.equal(red2.success, false);
   assert.ok(!red2.siloTooSmall, 'silo yetiyorsa silo uyarısı yok');
   assert.match(red2.message, /Yetersiz/);
-  ok(`EK-12: Sv.2→3 buğday 972 > silo-1 540: levelUp "önce siloyu büyüt" der, gereken silo seviyesi ${r.siloLevelNeeded} veri olarak döner`);
+  ok(`EK-12: Sv.8→9 buğday bedeli > silo-1: levelUp "önce siloyu büyüt" der, gereken silo seviyesi ${r.siloLevelNeeded} veri olarak döner`);
 }
 
 // ═══ EK-04: pazardan alıp geri satmakla kilit açılamaz ═══

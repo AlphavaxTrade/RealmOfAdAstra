@@ -61,8 +61,9 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
   ok('yeni oyuncunun ilk adımları arz ölçeğinde; ileri seviyeler talep ölçeğine tırmanır');
 }
 
-// 3) Balina senaryosu: bir hesabın tam gelişimi (seviye 80, silo 49, 11 ev, teçhizat 10) kadar hammaddeyi pazardan alan ilk balina yaklaşık 6 dolar öder
-//    (6 M ASTRA = 1 dolar), ikincisi fiyatı tavana taşır, üçüncüsü neredeyse hiçbir şey alamaz (arz tükenir: gerisini ücretsiz oyuncular satar)
+// 3) Balina senaryosu (19 Ekim 2026, hesap seviyesi her şeyin anahtarı): bir hesabın TAM gelişimi (seviye 80, silo 49, 11 ev, teçhizat 10) pazarın tavana kadar verebileceğinden
+//    FAZLA hammadde ister (seviye 50-80 en üst silo kadar bedel ister): kimse hesabını yalnız pazardan alarak fullemeyebilir, açığı kendi üretim hakkıyla kapatır.
+//    İlk balina pazarın tavana kadar verdiği her şeyi alır ve fiyatları tavana taşır; ikinci balina neredeyse hiçbir şey alamaz.
 {
   const gs = yeniOyun();
   const tam = Object.fromEntries(HAM.map((k) => [k, 0]));
@@ -76,10 +77,12 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
       tam.wood += u.woodCost || 0; tam.iron += u.ironCost || 0;
     }
   }
-  assert.ok(tam.wheat > 1e8, `bir hesabın tam gelişimi yüz milyonlarca buğday (${Math.round(tam.wheat)})`);
+  assert.ok(tam.wheat > 1e9, `bir hesabın tam gelişimi milyarlarca buğday (${Math.round(tam.wheat)})`);
 
   const m = yeniPazar();
   const acilis = Object.fromEntries(HAM.map((k) => [k, m.getPrice(k)]));
+  const tavanaKadar = (k) => { const h = m.pools[k], tavan = C.AMM_CORRIDORS[k].maxPriceAda; return h.resourceReserve - Math.sqrt(h.adAstraReserve * h.resourceReserve / tavan); };
+  for (const k of HAM) assert.ok(tam[k] > tavanaKadar(k), `${k}: bir hesabın tam gelişimi (${Math.round(tam[k])}) pazarın tavana kadar verebileceğinden (${Math.round(tavanaKadar(k))}) fazla`);
   const balina = () => {
     let maliyet = 0, alinamayan = 0, istenen = 0;
     for (const k of HAM) {
@@ -95,15 +98,13 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
     return { maliyet, alinamayan, istenen };
   };
   const b1 = balina();
-  assert.equal(b1.alinamayan, 0, 'ilk balina istediğinin hepsini alır');
   const dolar1 = b1.maliyet / 6e6;
-  assert.ok(dolar1 > 3 && dolar1 < 12, `tek hesabın tam gelişimi birkaç dolar (${dolar1.toFixed(2)} $)`);
+  assert.ok(b1.alinamayan > 0 && b1.alinamayan / b1.istenen < 0.6, `ilk balina pazarın verebildiğini alır, gerisini alamaz (alınamayan %${(b1.alinamayan / b1.istenen * 100).toFixed(0)})`);
+  assert.ok(dolar1 > 10 && dolar1 < 400, `ilk balina pazardan alabildiği için onlarca dolar öder (${dolar1.toFixed(1)} $)`);
+  assert.ok(HAM.every((k) => m.getPrice(k) / acilis[k] >= 3.5), 'ilk balinadan sonra hammadde fiyatları açılışın 3,5 katından fazla (tavan 5x)');
   const b2 = balina();
-  assert.ok(HAM.every((k) => m.getPrice(k) / acilis[k] >= 3.5), 'iki balinadan sonra hammadde fiyatları açılışın 3,5 katından fazla (tavan 5x)');
-  const b3 = balina();
-  assert.ok(b3.alinamayan / b3.istenen > 0.8, `üçüncü balinanın isteğinin %80'inden fazlası alınamaz (arz tükendi): ${(b3.alinamayan / b3.istenen * 100).toFixed(0)}%`);
-  assert.ok(b2.maliyet > b1.maliyet * 0.8, 'ikinci balina da yüksek fiyattan öder');
-  ok(`1. balina ${dolar1.toFixed(1)} $, 2. balina fiyatı tavana taşır, 3. balina alamaz (arz tükendi)`);
+  assert.ok(b2.alinamayan / b2.istenen > 0.9, `ikinci balinanın isteğinin %90'ından fazlası alınamaz (arz tükendi): ${(b2.alinamayan / b2.istenen * 100).toFixed(0)}%`);
+  ok(`1. balina ${dolar1.toFixed(1)} $ (pazarın tavana kadar verdiği her şey), 2. balina alamaz; hesabı fullemek üretim hakkı ister`);
 }
 
 // 4) Konsey: tek kişi pazardan alarak tüm projeleri bitiremez (toplam proje birimi, tavana kadar alınabilecek toplam hammaddeden fazla)

@@ -55,7 +55,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
   await t.test('2. Silo Seviye Yükseltildiğinde ambarlar sıfırlansa bile bot aktifse bot durmamalı', () => {
     const gs = new GameStateManager();
     const now = Date.now();
-    gs.state.level = 2; // Oyuncu Seviye 2
+    gs.state.level = 3; // Oyuncu Seviye 3 (silo 3'e çıkabilsin: silo hesap seviyesini geçemez)
     gs.state.tavernaBotActive = true;
     gs.state.tavernaBotExpiresAt = now + 24 * 3600 * 1000;
     gs.state.botActiveUntil = gs.state.tavernaBotExpiresAt;

@@ -106,7 +106,7 @@ console.log('✅ bütçe dolunca görev ödülü kaybolmaz');
 {
   const gs = yeni();
   const s = gs.state;
-  s.warehouseLevel = 18;
+  s.level = 30; s.warehouseLevel = 18;   // 19 Ekim 2026: teçhizat seviyesi hesap seviyesine bağlı
   const kapasite = gs.getWarehouseCapacity();   // silo sınırını aşan stok kırpılır; ölçümü bozmasın diye sınır içinde başla
   for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = kapasite[k];
   s.inventory.fragments = 2000;

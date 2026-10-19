@@ -70,6 +70,7 @@ console.log('✅ bot gelen mahsul kadar yer açar');
 // 4) Yükselt modunda ASTRA eksikse %80 barajının üzerindeki fazlalık satılır, baraj delinmez
 {
   s.warehouseLevel = 1;
+  s.level = 2;   // silo hesap seviyesini geçemez (19 Ekim 2026): 1 -> 2 yükseltilebilsin
   gs.setBotSiloOption(true);
   for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = Math.round(kap[k] * 0.8) + Math.max(5, Math.floor(kap[k] * 0.1));
   s.adAstraBalance = 0;

@@ -153,6 +153,7 @@ assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
 // Silo planı: hem yükseltme bedeli hem %80 dolu şartı karşılanır
 {
   for (const k of GAME_CONFIG.RESOURCE_KEYS) s.inventory[k] = 0;
+  gs.state.level = Math.max(gs.state.level || 1, 10);   // silo hesap seviyesini geçemez (19 Ekim 2026)
   const plan = gs.getQuickBuyPlan('warehouse');
   const bedel = gs.getWarehouseUpgradeCost();
   for (const k of bedel.keys) {

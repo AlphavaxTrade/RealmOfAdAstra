@@ -38,7 +38,8 @@ test('🧪 Kullanıcı Akışı: 50k ASTRA -> Bot Satın Alma -> Silo Şişmeme 
     assert.equal(report.botExecutionStatus, 'ran', 'Bot aktif olarak çalışmalı');
     // 19 Ekim 2026: silo yükseltme bedeli silonun %70'i (eskiden %50) olduğu için bot yükseltme sırasında 1-2 sefer geç kalabilir: en az 114/120
     assert.ok(report.totalExpeditionsClaimed >= R.length * 20 - 6 && report.totalExpeditionsClaimed <= R.length * 20, `6 saatte ${R.length} alan × ~20 sefer toplanmalı (${report.totalExpeditionsClaimed})`);
-    assert.ok(gameState.state.warehouseLevel >= 2, 'Silo otomatik yükseltilmeli');
+    // 19 Ekim 2026: silo seviyesi hesap seviyesini geçemez; hesap Sv.1 iken silo 1'de kalır, bot yine de çalışır ve donmaz
+    assert.equal(gameState.state.warehouseLevel, 1, 'Hesap seviyesi 1 iken silo yükseltilemez');
     assert.equal(gameState.isBotPaused(), false, 'Bot dondurulmamış olmalı');
   });
 });

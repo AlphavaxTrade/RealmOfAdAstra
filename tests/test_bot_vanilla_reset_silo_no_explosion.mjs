@@ -17,6 +17,7 @@ console.log('🧪 Test: Vanilla Reset Sonrası 50k ASTRA + Bot Alımı & Silo Ta
 
 const gs = new GameStateManager();
 gs.vanillaReset();
+gs.state.level = 10;   // silo hesap seviyesini geçemez (19 Ekim 2026)
 
 // 1. Başlangıç Seviye 1 Kontrolleri
 assert.strictEqual(gs.state.warehouseLevel, 1, 'Silo seviyesi 1 olmalı');

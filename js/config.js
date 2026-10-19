@@ -48,7 +48,17 @@ export const GAME_CONFIG = {
   // Üretim Hakkı (R4): kişi başı haftalık kota = tek alanın kesintisiz haftalık üretiminin bu katı (termostat başlangıcı),
   // sınırlar, haftalık adım, ağırlık çarpanları ve adalet tavanı. Sunucu dünyası hesaplar; tarayıcı tek oyuncu sayar.
   URETIM_HAKKI: {
-    QPP_START: 0.40, QPP_MIN: 0.05, QPP_MAX: 1.0, TERMO_STEP: 0.10, TERMO_TARGET: 1.0, ADMIN_MULT: 1,
+    QPP_START: 0.40, QPP_MIN: 0.08, QPP_MAX: 1.2, TERMO_STEP: 0.10, TERMO_TARGET: 1.0, ADMIN_MULT: 1,
+    // 19 Ekim 2026 EKONOMİ PLANI (kullanıcı kararı): kişisel haftalık limit + global haftalık havuz.
+    //  • KISISEL_QPP: kişisel limit birimi (sabit): L = hız x çalışma dakikası x KISISEL_QPP x Otorite x ağırlık (ağırlık: seviye x ev x katkı kademesi x aktiflik).
+    //  • Global havuz G = hız x dakika x qpp(kaynak) x Otorite x REFERANS_AGIRLIK; qpp artık HAVUZ çarpanıdır (fiyat ve bot ASTRA girişiyle haftalık ayarlanır,
+    //    QPP_MIN-QPP_MAX = başlangıcın 0,2-3 katı). Havuz oyuncu sayısından bağımsızdır: oyuncu çoğalınca kişi başı pay küçülür, fiyat yükselir, havuz büyür.
+    //  • Havuzun TABAN_PAYI'ı herkese eşit azami pay olarak bölünür; kalan, tabanın üstünde limiti olanlara (limit - taban) x katkı kademesi çarpanıyla orantılı gider.
+    //  • Ev etkisi: her ev ağırlığı EV_KATSAYISI artırır (en çok EV_KATSAYI_MAX).
+    //  • Fiyat bandı AYAR.BAND_ALT-BAND_UST (açılışa oranla): altında arz kısılır, üstünde açılır (haftada en çok KISMA/ARTIS); ACIL_ESIK katını 24 saat aşarsa ek ACIL_ARTIS.
+    //  • Bot (trade) ASTRA girişi normalin üstündeyse havuz BOT_DUYARLILIK kadar önceden büyür (BOT_ENAZ-BOT_ENCOK).
+    KISISEL_QPP: 0.40, REFERANS_AGIRLIK: 120, TABAN_PAYI: 0.60, EV_KATSAYISI: 0.03, EV_KATSAYI_MAX: 1.3, ACIL_ESIK: 3, ACIL_ARTIS: 1.25,
+    AYAR: { BAND_ALT: 0.8, BAND_UST: 1.5, HAFTALIK_KISMA: 0.75, HAFTALIK_ARTIS: 1.25, BOT_DUYARLILIK: 0.25, BOT_ENAZ: 0.85, BOT_ENCOK: 1.3 },
     LEVEL_WEIGHT_PER_LEVEL: 0.025, LEVEL_WEIGHT_MAX: 2.0, ACTIVITY_MIN: 0.25, FAIRNESS_CAP: 3,
     // Katkı kademeleri: haftalık katkı puanı eşiği (fiyat çarpanıyla ölçekli) → Üretim Hakkı çarpanı
     TIERS: [
@@ -449,7 +459,19 @@ export const GAME_CONFIG = {
   //   • Asker ASTRA bedeli x5 (SOLDIER_COST_BASE, SOLDIER_18_TARGET_COST); teçhizat parçası bedeli (dövme ve yükseltme) PARCA_CARPANI = x2
   //     (parça arzı düşme şansına ve küçük pazar havuzuna bağlı: x5 pazar fiyatını patlatırdı).
   EQUIPMENT_UPGRADE_GROWTH: 1.55,   // ilk yükseltme basamağı 1,18 (eski), sonrası her basamak x1,55 (1→10 toplam ~x4,8)
-  LEVEL_UP_COST_RAMP: { FROM_LEVEL: 4, TO_LEVEL: 10, MULT: 5 },
+  // HESAP SEVİYESİ HER ŞEYİN ANAHTARI (19 Ekim 2026, kullanıcı kararı: "silonun en yüksek seviyesi hesabın seviyesini geçemesin, oyundaki en pahalı şey hesap
+  // yükseltme bedeli olsun, her şey hesap seviyesine bağlı olsun"):
+  //   • Silo seviyesi hesap seviyesini geçemez; bu yüzden hesap seviyesi bedeli, O SEVİYEDEKİ silonun kapasitesinin payıdır (siloya sığar, silo ile birlikte büyür).
+  //     Pay 1. seviyede 0,45 (eski ilk basamakla aynı), her seviye +0,05, en çok 0,9: silo yükseltmesi (0,7) ve ev/teçhizattan hep daha pahalı.
+  //   • En üst silo (49) ile hesap en üst seviyesi (81) arasında hammadde bedeli düz kalır; ASTRA payı her seviye x1,05 büyür (hem hammadde hem ASTRA en pahalı).
+  //   • n. ev için hesap seviyesi en az EV_SEVIYE_ADIMI x (n-1) (2, 4, 6 ...); teçhizat seviyesi en çok min(10, TABAN + seviye x SEVIYE_BASI).
+  HESAP_BAGI: {
+    SEVIYE_BEDELI_PAYI: { BASLANGIC: 0.45, ARTIS: 0.05, SON: 0.9 },
+    SEVIYE_ASTRA_ASIM: 1.05,
+    EV_SEVIYE_ADIMI: 2,
+    TECHIZAT_TABAN: 2,
+    TECHIZAT_SEVIYE_BASI: 0.5
+  },
   GELISIM_PARCA_CARPANI: 2,
 
   // =========================================================================
@@ -1898,6 +1920,18 @@ export const GAME_CONFIG = {
         `Zindan ekranı, Kışla ve Şifahane'de elinde İyileştirme Parşömeni varken ve yaralı asker varken "📜 Önce parşömen (adet) · sonra ot" düğmesi çıkıyor: önce parşömenler kullanılır (ot ve ASTRA harcamaz), geriye kalan yara şifalı otla kapatılır, eksik ot gerekirse pazardan alınır. Parşömen boşa gitmesin diye, eksik can parşömenin yarısından azsa o askerde parşömen kullanılmaz.`,
         `Sirius Konseyi ekranı sadeleştirildi: en üstte "Konsey ne işe yarar?" kartı (ortak şantiye; bitince herkese fayda, sen katkı yaptıkça katkı kademen ve haftalık çıkarma hakkın büyür). Rakam dolu ayrıntılar "ayrıntı" bölümlerine katlandı; Otorite ve proje kartları önce "bitince ne kazandırır" ve yüzde olarak gösteriyor.`,
         `Taverna botunun ücret hesabı düzeltildi: Üretim Hakkın üretimin yalnız bir kısmına yetiyorsa bot o kadarını toplar; stamina ve alet onarımı da artık o orantıda hesaplanıyor. Eskiden bu iki bedel TAM üretim üzerinden düşüldüğü için hakkı sınırlı oyuncularda net kâr 0 çıkıyor, tablo "Net kâr +0 ASTRA, bot ücreti 1 ASTRA" gösteriyordu.`
+      ]
+    },
+    {
+      version: 'v1.84',
+      title: '🏛️ Hesap Seviyesi Her Şeyin Anahtarı, Global Çıkarma Havuzu',
+      date: '19 Ekim 2026',
+      changes: [
+        `Hesap seviyesi artık oyundaki EN PAHALI şey. Seviye atlama bedeli, o seviyedeki silonun kapasitesinin payıdır (1. seviyede %45, her seviye +%5, en çok %90) ve ASTRA bedeli de buna göre büyür. Silo 49. seviyeden sonra hammadde bedeli düz kalır, ASTRA bedeli her seviye %5 artar. Bir hesabı sonuna kadar geliştirmek yaklaşık 20 dolar: bunun yarısından fazlası hesap seviyeleri.`,
+        `Silo seviyesi hesap seviyesini geçemez: hesabın 5. seviyeyse silo en çok 5. seviyeye çıkar. Teçhizat seviyesi de hesap seviyesine bağlı (en çok 2 + seviye/2, 10'u geçmez) ve n. ev için hesap seviyesi en az 2 x (n-1) olmalı. Yetmediğinde düğmeler neden yazarak kilitli kalır; bot da bu durumda siloyu yükseltmek için boşuna satış yapmaz.`,
+        `Haftalık çıkarma hakkı artık iki katmanlı: herkesin KİŞİSEL limiti vardır (hesap seviyesi, köy evleri, katkı kademesi, aktiflik ve Konsey Otoritesi ile büyür; her ev +%3, en çok +%30) ve oyunun ortak GLOBAL havuzu vardır. Havuz oyuncu sayısına bağlı değildir: havuzun %60'ı herkese eşit taban pay olarak bölünür, kalan %40'ı limiti ve katkı kademesi yüksek olanlara gider; kimse kişisel limitini aşamaz. Oyuncu çoğaldıkça kişi başı pay küçülür.`,
+        `Global havuz fiyata göre kendini dengeler: hammadde fiyatı açılışın 0,8 katının altına düşerse havuz küçülür (arz azalır, talep artar, fiyat yükselir); 1,5 katının üstüne çıkarsa havuz büyür (haftada en çok %25). Fiyat açılışın 3 katını aşarsa oyun oynanmaz olmasın diye havuz haftayı beklemeden %25 açılır. Oyuna bot projesinden gelen ASTRA normalin üstündeyse havuz önceden büyür, altındaysa küçülür.`,
+        `Konsey ve Çıkarma Hakkı ekranlarındaki anlatım yeni sisteme göre yenilendi.`
       ]
     }
   ],

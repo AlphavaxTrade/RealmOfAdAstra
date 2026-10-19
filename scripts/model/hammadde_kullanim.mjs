@@ -62,8 +62,8 @@ export function haftalikOlcum(seviye) {
       topla(t, { wood: dongu * r.durMin * b.wood / 2, iron: dongu * r.durMin * b.iron / 2, wheat: dongu * r.durMin * b.wheat / 2 }, haftadaSeviye);
       return;
     }
-    // 19 Ekim 2026 (x5 kararı): bedel RAMP kadar büyüdüyse oyuncu o oranda YAVAŞ seviye atlar; haftalık talep payı sabit kalır (hiçbir bedel haftalık üretimi aşan bir hızla ödenemez)
-    const haftadaSeviye = HAFTA / Math.max(1, r.cycles * r.durMin) / (ESKI ? 1 : gs._seviyeBedeliCarpani(seviye));
+    // 19 Ekim 2026: bedel silo kapasitesine bağlı (HESAP_BAGI); bu model XP hızında seviye atlama TALEBİNİ ölçer, kıtlık bilerek vardır (arz < talep)
+    const haftadaSeviye = HAFTA / Math.max(1, r.cycles * r.durMin);
     topla(t, r.costs || { wood: r.wood, iron: r.iron, wheat: r.wheat }, haftadaSeviye);
   });
 

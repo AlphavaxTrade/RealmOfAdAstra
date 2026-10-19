@@ -100,6 +100,7 @@ export const pazarYontemleri = {
     } else if (kind === 'warehouse') {
       const bedel = this.getWarehouseUpgradeCost();
       if (!bedel) return { ok: false, items: [], reason: 'Silo en üst seviyede.' };
+      if (bedel.accountLevelBlocked) return { ok: false, items: [], reason: `Silo seviyesi hesap seviyeni geçemez: önce hesabını ${bedel.accountLevelNeeded}. seviyeye yükselt.` };
       // Hem yükseltme bedeli hem %80 doluluk şartı karşılanır (bütün hammaddeler)
       hedef = Object.fromEntries(bedel.keys.map(k => [k, Math.max(bedel.costs[k] || 0, bedel.fills[k] || 0)]));
       ekAstra = Number(bedel.adAstra) || 0;

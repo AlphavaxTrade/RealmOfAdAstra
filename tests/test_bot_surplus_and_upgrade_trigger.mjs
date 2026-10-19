@@ -15,6 +15,7 @@ globalThis.localStorage = {
 };
 
 const gs = new GameStateManager();
+gs.state.level = 10;   // silo hesap seviyesini geçemez (19 Ekim 2026)
 const cap = gs.getWarehouseCapacity();
 const woodCap = cap.wood; // 1080
 

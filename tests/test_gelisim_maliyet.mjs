@@ -47,16 +47,16 @@ const gs = yeni();
   ok(`teçhizat yükseltmesi toplamı x${oran.toFixed(1)}; ilk basamak 1. siloya sığar; onarım eski ölçekte`);
 }
 
-// 3) Köy evi: 11 evin toplamı ~x4-5; hiçbir ev bedeli 18. silonun %80'ini aşmaz
+// 3) Köy evi: 11 evin toplamı ~x4-5; hiçbir ev bedeli, yapılabildiği hesap seviyesindeki (2 x (n-1)) silonun %90'ını aşmaz
 {
   let yeniT = 0, eskiT = 0;
-  const kap18 = gs.getWarehouseCapacity(18);
   for (let h = 2; h <= 12; h++) {
     const c = gs.getHouseCost(h);
     const mult = 1.2 ** (h - 2);
     yeniT += c.wood;
     eskiT += Math.round(400 * U * mult);
-    for (const k of Object.keys(c)) assert.ok(c[k] <= Math.floor(kap18[k] * C.LEVEL_UP_SILO_SHARE), `${h}. ev ${k} bedeli silo tavanını aşmaz`);
+    const kapH = gs.getWarehouseCapacity(Math.min(gs.getWarehouseMaxLevel(), 2 * (h - 1)));
+    for (const k of Object.keys(c)) assert.ok(c[k] <= Math.floor(kapH[k] * 0.9), `${h}. ev ${k} bedeli silo tavanını aşmaz`);
   }
   // 19 Ekim 2026: evler talep ölçeğine tırmanır (ev 2: arz ölçeği, ev 12: x10 ve üstel artış)
   assert.ok(yeniT / eskiT >= 20 && yeniT / eskiT <= 80, `ev bedelleri arz ölçeğindeki üstel artışın 20-80 katı (x${(yeniT / eskiT).toFixed(2)})`);
@@ -64,14 +64,20 @@ const gs = yeni();
   ok(`köy evleri x${(yeniT / eskiT).toFixed(1)}; 2. ev eski bedelde; hiçbiri siloyu aşmaz`);
 }
 
-// 4) Hesap seviye bedeli: 4. seviyeye kadar eski, 10. seviyeden sonra x5, arası doğrusal
+// 4) Hesap seviye bedeli: o seviyedeki silonun kapasitesinin payı (0,45 → 0,9); silo hesabı geçemediği için hep siloya sığar
 {
-  assert.equal(gs._seviyeBedeliCarpani(1), 1);
-  assert.equal(gs._seviyeBedeliCarpani(4), 1);
-  assert.equal(gs._seviyeBedeliCarpani(7), 3);
-  assert.equal(gs._seviyeBedeliCarpani(10), 5);
-  assert.equal(gs._seviyeBedeliCarpani(40), 5);
-  ok('hesap seviye bedeli çarpanı: Sv.≤4 x1, Sv.7 x3, Sv.≥10 x5');
+  assert.equal(gs._seviyeSiloPayi(1), 0.45);
+  assert.ok(Math.abs(gs._seviyeSiloPayi(4) - 0.6) < 1e-9);
+  assert.equal(gs._seviyeSiloPayi(10), 0.9);
+  assert.equal(gs._seviyeSiloPayi(60), 0.9);
+  for (const L of [1, 2, 5, 12, 30, 49, 80]) {
+    gs.state.level = L;
+    const r = gs.getNextLevelRequirement();
+    const kap = gs.getWarehouseCapacity(Math.min(L, gs.getWarehouseMaxLevel()));
+    for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) assert.equal(r.costs[k], Math.floor(kap[k] * gs._seviyeSiloPayi(L)), `Sv.${L} ${k} bedeli = silo(${L}) x pay`);
+  }
+  gs.state.level = 1;
+  ok('hesap seviye bedeli = o seviyedeki silonun yüzde 45-90 payı');
 }
 
 // 5) Silo yükseltme bedeli: %70 (eskiden %50) ve şart %70 dolu

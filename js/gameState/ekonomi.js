@@ -5,6 +5,7 @@ import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
 import { RES_KEYS, zeroRes, round3 } from './ortak.js';
+import { oyuncuPayi } from '../economy/uretimDagitimi.js';
 
 export const ekonomiYontemleri = {
   // Hammadde kalıcı yakımı: harcanan hammadde oyuncunun sayacına yazılır, dünya toplam arzından (haftalık kota)
@@ -293,10 +294,13 @@ export const ekonomiYontemleri = {
     const levelFactor = Math.min(U.LEVEL_WEIGHT_MAX ?? 2, 1 + (U.LEVEL_WEIGHT_PER_LEVEL ?? 0.025) * lvl);
     const tier = this.getContributionTier();
     const activity = this.getUretimActivity();
+    // Ev etkisi (19 Ekim 2026): köy evleri çalışacak köylü sayısını artırır; her ev ağırlığı EV_KATSAYISI büyütür (en çok EV_KATSAYI_MAX)
+    const houses = Math.max(1, Number(this._village && this._village().houses) || 1);
+    const houseFactor = Math.min(U.EV_KATSAYI_MAX ?? 1.3, 1 + (U.EV_KATSAYISI ?? 0.03) * (houses - 1));
     // Onaylı kural (E-planı Faz 1, KARAR 8): izindeyken Üretim Hakkı alınmaz — yer tutulur, ekonomiden pay alınmaz
     // (tatil yüzünden diğer vatandaşların payı küçülmesin: toplam ağırlıktan da düşer).
-    if (this.izindeMiOkuma && this.izindeMiOkuma()) return { weight: 0, levelFactor: round3(levelFactor), tier, activity: round3(activity), izinde: true };
-    return { weight: round3(levelFactor * tier.mult * activity), levelFactor: round3(levelFactor), tier, activity: round3(activity) };
+    if (this.izindeMiOkuma && this.izindeMiOkuma()) return { weight: 0, levelFactor: round3(levelFactor), houseFactor: round3(houseFactor), tier, activity: round3(activity), izinde: true };
+    return { weight: round3(levelFactor * houseFactor * tier.mult * activity), levelFactor: round3(levelFactor), houseFactor: round3(houseFactor), tier, activity: round3(activity) };
   },
 
   // v2 düzeltmesi (E-planı S8, 8 Ekim 2026): docs/v2/KARARLAR_KESIN.md "adalet tavanı: en yüksek ağırlık en düşüğün
@@ -316,7 +320,9 @@ export const ekonomiYontemleri = {
     const U = GAME_CONFIG.URETIM_HAKKI || {};
     const params = globalPool.uretimParams();
     const w = this.getUretimWeight();
-    const weekly = Math.floor(globalPool.weeklyRightPerWeight(key, params) * w.weight + 1e-6);
+    // Kişisel limit (L) ve global havuzdan düşen pay (19 Ekim 2026): pay = min(L, A) + (L - A)+ x min(1, phi x katkı kademesi çarpanı); dağıtım yoksa pay = limit
+    const limit = Math.floor(globalPool.weeklyRightPerWeight(key, params) * w.weight + 1e-6);
+    const weekly = Math.floor(oyuncuPayi(limit, (w.tier && w.tier.mult) || 1, params.pay && params.pay[key]) + 1e-6);
     const dayIndex = globalPool.getEpochDayIndex();
     const released = Math.floor(weekly * (dayIndex + 1) / 7);
     const u = this._uretim();
@@ -328,7 +334,7 @@ export const ekonomiYontemleri = {
     const fairnessCap = Math.floor(released * (U.FAIRNESS_CAP ?? 3));
     const extra = own > 0 ? 0 : Math.max(0, Math.min(worldSpare, fairnessCap - used));
     const canTake = Math.max(0, Math.min(own + extra, info.availableToday || 0));
-    return { key, weekly, released, used, remaining: own, extra, worldSpare, canTake, weight: w.weight, qpp: params.qpp[key], dayIndex, nextReleaseAt: info.nextReleaseAt, worldAvailable: info.availableToday || 0 };
+    return { key, weekly, limit, released, used, remaining: own, extra, worldSpare, canTake, weight: w.weight, qpp: params.qpp[key], dayIndex, nextReleaseAt: info.nextReleaseAt, worldAvailable: info.availableToday || 0 };
   },
 
   getUretimSummary() {

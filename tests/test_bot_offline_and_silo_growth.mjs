@@ -35,6 +35,7 @@ import { GameStateManager } from '../js/gameState.js';
 test('🌾 Botun Kaynak Biriktirme, Silo Büyütme ve 3 Saatlik Çevrimdışı İlerleme Testi', async (t) => {
   localStorage.clear();
   const gs = new GameStateManager();
+  gs.state.level = 2;   // silo 1→2 için hesap seviyesi 2 yeter: silo hesabı geçemez (19 Ekim 2026)
 
   await t.test('1. "Siloyu Yükselt" seçiliyken kaynaklar erken panik satışı ile satılmamalı, depoda korunmalı', () => {
     gs.state.botActiveUntil = Date.now() + 24 * 3600 * 1000;

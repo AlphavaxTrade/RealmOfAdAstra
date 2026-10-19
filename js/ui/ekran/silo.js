@@ -23,7 +23,8 @@ function yukseltmeBolumu(b) {
   const yeniKapasite = bedel.keys.map((k) => `${kaynakAdi(b, k)} ${tam(bedel.nextCap[k])}`).join(' · ');
 
   let dugmeHtml;
-  if (!bedel.is80PercentFull) dugmeHtml = dugme({ e: 'yukselt', metin: `⚠️ Tüm ambarlar en az %${dolulukYuzde} dolu olmalı`, devreDisi: true, genis: true });
+  if (bedel.accountLevelBlocked) dugmeHtml = dugme({ e: 'yukselt', metin: `🔒 Silo hesap seviyeni geçemez: önce hesabını ${bedel.accountLevelNeeded}. seviyeye yükselt`, devreDisi: true, genis: true });
+  else if (!bedel.is80PercentFull) dugmeHtml = dugme({ e: 'yukselt', metin: `⚠️ Tüm ambarlar en az %${dolulukYuzde} dolu olmalı`, devreDisi: true, genis: true });
   else if (!bedel.canAffordCost) dugmeHtml = dugme({ e: 'yukselt', metin: '⚠️ Kaynak ya da ASTRA yetmiyor', devreDisi: true, genis: true });
   else dugmeHtml = dugme({ e: 'yukselt', metin: `🔨 Siloyu Seviye ${bedel.nextLevel}'e yükselt`, ton: 'iyi', genis: true });
 
@@ -68,7 +69,7 @@ const ekran = {
     return kap([
       kart({
         baslik: `📦 Silo seviye ${gs.state.warehouseLevel}`,
-        icerik: not('Siloyu yükseltince altı hammaddenin ve teçhizat parçasının kapasitesi büyür; pazardan bu sınırın üstünde alım yapılamaz. Yükseltmek için tüm ambarlar en az %80 dolu olmalı; bedel kapasitenin yarısı kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır.')
+        icerik: not('Siloyu yükseltince altı hammaddenin ve teçhizat parçasının kapasitesi büyür; pazardan bu sınırın üstünde alım yapılamaz. Yükseltmek için tüm ambarlar en az %70 dolu olmalı; bedel kapasitenin %70\'i kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır. Silo seviyesi hesap seviyeni geçemez: silonu büyütmek için hesabını da yükselt.')
       }),
       kart({ baslik: 'Ambarlar', icerik: `<div class="ek-ambarlar">${ambarlar.join('')}</div>` }),
       yukseltmeBolumu(b)

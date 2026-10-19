@@ -792,7 +792,7 @@
     <tr><td>Günlük açılan pay</td><td>Günlük</td><td>Haftalık hakkın her gün <b>1/7'si</b> açılır; kullanmadığın birikir (yalnız o hafta içinde)</td><td>Sana özel</td></tr>
     <tr><td>Başkasının kullanmadığı hak</td><td>Günlük</td><td>Kendi hakkın bitince, toplam çıkardığın miktar açılmış payının <b>3 katına</b> varana dek (ortak kapasitede boş yer varsa) çıkarabilirsin</td><td>Sana özel</td></tr>
     <tr><td>Dünyanın toplam haftalık kapasitesi</td><td>Haftalık</td><td>Tüm aktif oyuncuların ağırlıkları toplamı × birim hak. Oyuncu arttıkça kapasite büyür, kişi başı hak değişmez</td><td>Küresel (herkes)</td></tr>
-    <tr><td>Kota katsayısı (termostat)</td><td>Haftalık</td><td>Başlangıç 0,4; her hafta fiyata göre en çok ±%10; en az 0,05, en çok 1</td><td>Küresel (her hammadde ayrı)</td></tr>
+    <tr><td>Kota katsayısı (termostat)</td><td>Haftalık</td><td>Başlangıç 0,4; her hafta fiyata göre en çok ±%10; en az 0,08, en çok 1,2</td><td>Küresel (her hammadde ayrı)</td></tr>
     <tr><td>Stamina (enerji)</td><td>Sürekli</td><td>En çok: 100 + 50 × (seviye − 1) (ya da 6 alanı aynı anda başlatmaya yetecek kadar); her 150 saniyede 1 yenilenir</td><td>Sana özel</td></tr>
   </table></div>
   <h3>🏦 ASTRA çekimi</h3>
@@ -1023,120 +1023,120 @@
 <section class="bolum" id="t-seviye" data-grup="Teknik başvuru" data-ikon="⭐">
   <div class="bolum-baslik"><div class="no">⭐</div><div><small>Teknik başvuru</small><h2>Seviye atlama bedelleri (1 → 81)</h2></div></div>
   <p class="ozet">Her seviye atlayışta <b>ne kadar XP, hangi hammaddeden ne kadar ve kaç ASTRA</b> gittiği. 80 geçişin hepsi aşağıda.</p>
-<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Toplam XP (seviye L'ye kadar)</b> = 2.520 × 1.100 × ((L − 1) ÷ 80) <sup>2,2</sup>  → bir seviyeden sonrakine gereken XP, bu toplamın farkıdır (en az 60). Hedef: günde ~2.520 XP ile 81. seviyeye yaklaşık 1.100 günde varılsın.</p><p><b>Hammadde bedeli</b> = bir "XP döngüsü"nde altı alanda toplanan miktarın <b>yarısı</b>. Döngü sayısı = gereken XP ÷ (6 × sefer XP'si); sefer XP'si = 35 × sefer süresi (saat).</p><p><b>Silo tavanı:</b> hiçbir hammaddenin bedeli, ulaşılabilir en büyük silonun (12. seviye) kapasitesinin <b>%80'ini</b> geçemez. Bu tavanlar: 🌾 2.940.000 · 🪨 1.200.000 · 🌲 1.080.000 · ⚫ 900.000 · ⛏️ 780.000 · 🌿 240.000.</p><p><b>ASTRA bedeli</b> = bu hammaddelerin o anki pazar değeri (tabloda açılış fiyatıyla).</p></div>
+<div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Toplam XP (seviye L'ye kadar)</b> = 2.520 × 1.100 × ((L − 1) ÷ 80) <sup>2,2</sup>  → bir seviyeden sonrakine gereken XP, bu toplamın farkıdır (en az 60). Hedef: günde ~2.520 XP ile 81. seviyeye yaklaşık 1.100 günde varılsın.</p><p><b>Hammadde bedeli</b> = bir "XP döngüsü"nde altı alanda toplanan miktarın <b>yarısı</b>. Döngü sayısı = gereken XP ÷ (6 × sefer XP'si); sefer XP'si = 35 × sefer süresi (saat).</p><p><b>Silo tavanı:</b> hiçbir hammaddenin bedeli, ulaşılabilir en büyük silonun (12. seviye) kapasitesinin <b>%80'ini</b> geçemez. Bu tavanlar: 🌾 1.215 · 🪨 810 · 🌲 729 · ⚫ 607 · ⛏️ 486 · 🌿 162.</p><p><b>ASTRA bedeli</b> = bu hammaddelerin o anki pazar değeri (tabloda açılış fiyatıyla).</p></div>
   <div class="kutu dikkat" data-s="⚠️"><b>Sık yapılan hata</b><p>Seviye atlamak için XP tek başına yetmez: bedeldeki <b>hammaddenin hepsi</b> ve ASTRA da siloda/cüzdanında olmalı. Bedel silonun alabileceğinden büyükse oyun sana "önce siloyu yükselt" der.</p></div>
   <h3>Toplamlar (1 → 81)</h3>
 <div class="tablo-kap"><table>
     <tr><th>Kalem</th><th>Toplam</th></tr>
     <tr><td>Gereken XP</td><td>2.772.000</td></tr>
-    <tr><td>🌾 Buğday</td><td>202.742.437</td></tr>
-    <tr><td>🪨 Taş</td><td>85.110.161</td></tr>
-    <tr><td>🌲 Odun</td><td>76.599.146</td></tr>
-    <tr><td>⚫ Kömür</td><td>63.832.622</td></tr>
-    <tr><td>⛏️ Demir</td><td>55.089.595</td></tr>
-    <tr><td>🌿 Şifalı Ot</td><td>17.022.032</td></tr>
-    <tr><td>ASTRA (açılış fiyatıyla)</td><td>1.817.323 ASTRA</td></tr>
+    <tr><td>🌾 Buğday</td><td>1.564.420.211</td></tr>
+    <tr><td>🪨 Taş</td><td>638.760.936</td></tr>
+    <tr><td>🌲 Odun</td><td>574.884.852</td></tr>
+    <tr><td>⚫ Kömür</td><td>479.070.706</td></tr>
+    <tr><td>⛏️ Demir</td><td>415.169.716</td></tr>
+    <tr><td>🌿 Şifalı Ot</td><td>127.752.146</td></tr>
+    <tr><td>ASTRA (açılış fiyatıyla)</td><td>26.951.726 ASTRA</td></tr>
   </table></div>
   <p>Tablolar silo tavanına takılan yerlerde (✂️) hammaddeyi tavandan fazla istemez; bu yüzden orta seviyelerden sonra bedel <b>sabit kalır</b>.</p>
   <h3>Seçili seviyeler</h3>
 <div class="tablo-kap"><table>
     <tr><th>Geçiş</th><th>Gereken XP</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>ASTRA</th><th>Not</th></tr>
-    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>1.215</td><td>810</td><td>729</td><td>608</td><td>486</td><td>162</td><td>15,79</td><td>—</td></tr>
-    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>4.860</td><td>3.240</td><td>2.916</td><td>2.430</td><td>1.944</td><td>648</td><td>63,17</td><td>—</td></tr>
-    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>8.505</td><td>5.670</td><td>5.103</td><td>4.253</td><td>3.402</td><td>1.134</td><td>110,54</td><td>—</td></tr>
-    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>40.957</td><td>27.305</td><td>24.574</td><td>20.479</td><td>16.383</td><td>5.461</td><td>532,32</td><td>—</td></tr>
-    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>988.313</td><td>658.875</td><td>592.988</td><td>494.156</td><td>395.325</td><td>131.775</td><td>12.836,16</td><td>—</td></tr>
-    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>2.493.703</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.019,51</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>1.215</td><td>810</td><td>729</td><td>607</td><td>486</td><td>162</td><td>15,79</td><td>—</td></tr>
+    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>2.064</td><td>1.337</td><td>1.203</td><td>1.002</td><td>806</td><td>267</td><td>26,19</td><td>—</td></tr>
+    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>3.470</td><td>2.184</td><td>1.965</td><td>1.637</td><td>1.322</td><td>436</td><td>42,99</td><td>—</td></tr>
+    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>9.586</td><td>5.694</td><td>5.124</td><td>4.270</td><td>3.481</td><td>1.138</td><td>113,3</td><td>—</td></tr>
+    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>110.847</td><td>56.994</td><td>51.294</td><td>42.745</td><td>35.676</td><td>11.398</td><td>1.166,27</td><td>—</td></tr>
+    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>925.677</td><td>411.998</td><td>370.798</td><td>308.998</td><td>264.042</td><td>82.399</td><td>8.689,27</td><td>—</td></tr>
+    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>3.857.868</td><td>1.574.640</td><td>1.417.176</td><td>1.180.980</td><td>1.023.516</td><td>314.928</td><td>33.822,96</td><td>—</td></tr>
+    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>5.668.473</td><td>2.313.662</td><td>2.082.296</td><td>1.735.246</td><td>1.503.881</td><td>462.732</td><td>49.650,72</td><td>—</td></tr>
+    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>8.328.847</td><td>3.399.529</td><td>3.059.577</td><td>2.549.646</td><td>2.209.694</td><td>679.905</td><td>72.853,5</td><td>—</td></tr>
+    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>17.981.357</td><td>7.339.329</td><td>6.605.397</td><td>5.504.497</td><td>4.770.564</td><td>1.467.865</td><td>156.509,47</td><td>—</td></tr>
+    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>325.520,13</td><td>—</td></tr>
+    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>530.237,99</td><td>—</td></tr>
+    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>863.701,8</td><td>—</td></tr>
   </table></div>
   <details><summary>📋 Bütün geçişler (1 → 2 … 80 → 81)</summary><div><div class="tablo-kap"><table>
     <tr><th>Geçiş</th><th>Gereken XP</th><th>🌾 Buğday</th><th>🪨 Taş</th><th>🌲 Odun</th><th>⚫ Kömür</th><th>⛏️ Demir</th><th>🌿 Şifalı Ot</th><th>ASTRA</th><th>Not</th></tr>
-    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>1.215</td><td>810</td><td>729</td><td>608</td><td>486</td><td>162</td><td>15,79</td><td>—</td></tr>
-    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>4.860</td><td>3.240</td><td>2.916</td><td>2.430</td><td>1.944</td><td>648</td><td>63,17</td><td>—</td></tr>
-    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>8.505</td><td>5.670</td><td>5.103</td><td>4.253</td><td>3.402</td><td>1.134</td><td>110,54</td><td>—</td></tr>
-    <tr><td><b>Lv.4 → 5</b></td><td>1.786</td><td>12.083</td><td>8.055</td><td>7.250</td><td>6.041</td><td>4.833</td><td>1.611</td><td>157,04</td><td>—</td></tr>
-    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>40.957</td><td>27.305</td><td>24.574</td><td>20.479</td><td>16.383</td><td>5.461</td><td>532,32</td><td>—</td></tr>
-    <tr><td><b>Lv.6 → 7</b></td><td>3.069</td><td>128.074</td><td>85.382</td><td>76.844</td><td>64.037</td><td>51.229</td><td>17.076</td><td>1.664,46</td><td>—</td></tr>
-    <tr><td><b>Lv.7 → 8</b></td><td>3.750</td><td>247.438</td><td>164.959</td><td>148.463</td><td>123.719</td><td>98.975</td><td>32.992</td><td>3.215,47</td><td>—</td></tr>
-    <tr><td><b>Lv.8 → 9</b></td><td>4.452</td><td>422.565</td><td>281.710</td><td>253.539</td><td>211.283</td><td>169.026</td><td>56.342</td><td>5.490,54</td><td>—</td></tr>
-    <tr><td><b>Lv.9 → 10</b></td><td>5.174</td><td>666.120</td><td>444.080</td><td>399.672</td><td>333.060</td><td>266.448</td><td>88.816</td><td>8.653,59</td><td>—</td></tr>
-    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>988.313</td><td>658.875</td><td>592.988</td><td>494.156</td><td>395.325</td><td>131.775</td><td>12.836,16</td><td>—</td></tr>
-    <tr><td><b>Lv.11 → 12</b></td><td>6.666</td><td>1.235.363</td><td>823.575</td><td>741.218</td><td>617.681</td><td>494.145</td><td>164.715</td><td>16.041,92</td><td>—</td></tr>
-    <tr><td><b>Lv.12 → 13</b></td><td>7.435</td><td>1.509.750</td><td>1.006.500</td><td>905.850</td><td>754.875</td><td>603.900</td><td>201.300</td><td>19.601,04</td><td>—</td></tr>
-    <tr><td><b>Lv.13 → 14</b></td><td>8.217</td><td>1.808.747</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>723.499</td><td>240.000</td><td>23.406,25</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.14 → 15</b></td><td>9.013</td><td>2.137.556</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>24.405,93</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>2.493.703</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.019,51</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.16 → 17</b></td><td>10.638</td><td>2.877.188</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.679,83</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.17 → 18</b></td><td>11.466</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.18 → 19</b></td><td>12.305</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.19 → 20</b></td><td>13.153</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.21 → 22</b></td><td>14.878</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.22 → 23</b></td><td>15.752</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.23 → 24</b></td><td>16.636</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.24 → 25</b></td><td>17.527</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.26 → 27</b></td><td>19.332</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.27 → 28</b></td><td>20.245</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.28 → 29</b></td><td>21.165</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.29 → 30</b></td><td>22.092</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.31 → 32</b></td><td>23.965</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.32 → 33</b></td><td>24.911</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.33 → 34</b></td><td>25.863</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.34 → 35</b></td><td>26.821</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.35 → 36</b></td><td>27.785</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.36 → 37</b></td><td>28.754</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.37 → 38</b></td><td>29.728</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.38 → 39</b></td><td>30.709</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.39 → 40</b></td><td>31.693</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.41 → 42</b></td><td>33.679</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.42 → 43</b></td><td>34.680</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.43 → 44</b></td><td>35.685</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.44 → 45</b></td><td>36.695</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.45 → 46</b></td><td>37.710</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.46 → 47</b></td><td>38.729</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.47 → 48</b></td><td>39.752</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.48 → 49</b></td><td>40.780</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.49 → 50</b></td><td>41.813</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.51 → 52</b></td><td>43.890</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.52 → 53</b></td><td>44.936</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.53 → 54</b></td><td>45.984</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.54 → 55</b></td><td>47.037</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.55 → 56</b></td><td>48.095</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.56 → 57</b></td><td>49.155</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.57 → 58</b></td><td>50.220</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.58 → 59</b></td><td>51.289</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.59 → 60</b></td><td>52.361</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.61 → 62</b></td><td>54.517</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.62 → 63</b></td><td>55.599</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.63 → 64</b></td><td>56.686</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.64 → 65</b></td><td>57.776</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.65 → 66</b></td><td>58.869</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.66 → 67</b></td><td>59.967</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.67 → 68</b></td><td>61.067</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.68 → 69</b></td><td>62.170</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.69 → 70</b></td><td>63.277</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.71 → 72</b></td><td>65.500</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.72 → 73</b></td><td>66.617</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.73 → 74</b></td><td>67.737</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.74 → 75</b></td><td>68.860</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.75 → 76</b></td><td>69.985</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.76 → 77</b></td><td>71.114</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.77 → 78</b></td><td>72.246</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.78 → 79</b></td><td>73.380</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.79 → 80</b></td><td>74.518</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
-    <tr><td><b>Lv.80 → 81</b></td><td>75.659</td><td>2.940.000</td><td>1.200.000</td><td>1.080.000</td><td>900.000</td><td>780.000</td><td>240.000</td><td>25.787,95</td><td>✂️ silo tavanı</td></tr>
+    <tr><td><b>Lv.1 → 2</b></td><td>180</td><td>1.215</td><td>810</td><td>729</td><td>607</td><td>486</td><td>162</td><td>15,79</td><td>—</td></tr>
+    <tr><td><b>Lv.2 → 3</b></td><td>648</td><td>2.064</td><td>1.337</td><td>1.203</td><td>1.002</td><td>806</td><td>267</td><td>26,19</td><td>—</td></tr>
+    <tr><td><b>Lv.3 → 4</b></td><td>1.193</td><td>3.470</td><td>2.184</td><td>1.965</td><td>1.637</td><td>1.322</td><td>436</td><td>42,99</td><td>—</td></tr>
+    <tr><td><b>Lv.4 → 5</b></td><td>1.786</td><td>5.788</td><td>3.538</td><td>3.184</td><td>2.654</td><td>2.153</td><td>708</td><td>70,05</td><td>—</td></tr>
+    <tr><td><b>Lv.5 → 6</b></td><td>2.412</td><td>9.586</td><td>5.694</td><td>5.124</td><td>4.270</td><td>3.481</td><td>1.138</td><td>113,3</td><td>—</td></tr>
+    <tr><td><b>Lv.6 → 7</b></td><td>3.069</td><td>15.782</td><td>9.108</td><td>8.197</td><td>6.831</td><td>5.595</td><td>1.821</td><td>182,22</td><td>—</td></tr>
+    <tr><td><b>Lv.7 → 8</b></td><td>3.750</td><td>25.852</td><td>14.494</td><td>13.045</td><td>10.871</td><td>8.946</td><td>2.898</td><td>291,59</td><td>—</td></tr>
+    <tr><td><b>Lv.8 → 9</b></td><td>4.452</td><td>42.158</td><td>22.964</td><td>20.668</td><td>17.223</td><td>14.240</td><td>4.592</td><td>464,57</td><td>—</td></tr>
+    <tr><td><b>Lv.9 → 10</b></td><td>5.174</td><td>68.478</td><td>36.240</td><td>32.616</td><td>27.180</td><td>22.579</td><td>7.247</td><td>737,32</td><td>—</td></tr>
+    <tr><td><b>Lv.10 → 11</b></td><td>5.912</td><td>110.847</td><td>56.994</td><td>51.294</td><td>42.745</td><td>35.676</td><td>11.398</td><td>1.166,27</td><td>—</td></tr>
+    <tr><td><b>Lv.11 → 12</b></td><td>6.666</td><td>169.461</td><td>84.653</td><td>76.187</td><td>63.489</td><td>53.240</td><td>16.930</td><td>1.742,46</td><td>—</td></tr>
+    <tr><td><b>Lv.12 → 13</b></td><td>7.435</td><td>259.071</td><td>125.735</td><td>113.161</td><td>94.301</td><td>79.451</td><td>25.146</td><td>2.603,57</td><td>—</td></tr>
+    <tr><td><b>Lv.13 → 14</b></td><td>8.217</td><td>396.064</td><td>186.753</td><td>168.078</td><td>140.065</td><td>118.566</td><td>37.350</td><td>3.890,55</td><td>—</td></tr>
+    <tr><td><b>Lv.14 → 15</b></td><td>9.013</td><td>605.498</td><td>277.384</td><td>249.646</td><td>208.038</td><td>176.936</td><td>55.476</td><td>5.814,12</td><td>—</td></tr>
+    <tr><td><b>Lv.15 → 16</b></td><td>9.819</td><td>925.677</td><td>411.998</td><td>370.798</td><td>308.998</td><td>264.042</td><td>82.399</td><td>8.689,27</td><td>—</td></tr>
+    <tr><td><b>Lv.16 → 17</b></td><td>10.638</td><td>1.415.162</td><td>611.938</td><td>550.745</td><td>458.954</td><td>394.032</td><td>122.387</td><td>12.986,64</td><td>—</td></tr>
+    <tr><td><b>Lv.17 → 18</b></td><td>11.466</td><td>2.163.481</td><td>908.910</td><td>818.019</td><td>681.682</td><td>588.016</td><td>181.782</td><td>19.409,18</td><td>—</td></tr>
+    <tr><td><b>Lv.18 → 19</b></td><td>12.305</td><td>3.307.500</td><td>1.350.000</td><td>1.215.000</td><td>1.012.500</td><td>877.500</td><td>270.000</td><td>29.005,96</td><td>—</td></tr>
+    <tr><td><b>Lv.19 → 20</b></td><td>13.153</td><td>3.572.100</td><td>1.458.000</td><td>1.312.200</td><td>1.093.500</td><td>947.700</td><td>291.600</td><td>31.322,16</td><td>—</td></tr>
+    <tr><td><b>Lv.20 → 21</b></td><td>14.011</td><td>3.857.868</td><td>1.574.640</td><td>1.417.176</td><td>1.180.980</td><td>1.023.516</td><td>314.928</td><td>33.822,96</td><td>—</td></tr>
+    <tr><td><b>Lv.21 → 22</b></td><td>14.878</td><td>4.166.497</td><td>1.700.611</td><td>1.530.549</td><td>1.275.458</td><td>1.105.397</td><td>340.122</td><td>36.522,98</td><td>—</td></tr>
+    <tr><td><b>Lv.22 → 23</b></td><td>15.752</td><td>4.499.817</td><td>1.836.659</td><td>1.652.994</td><td>1.377.495</td><td>1.193.829</td><td>367.332</td><td>39.438,06</td><td>—</td></tr>
+    <tr><td><b>Lv.23 → 24</b></td><td>16.636</td><td>4.859.802</td><td>1.983.592</td><td>1.785.233</td><td>1.487.694</td><td>1.289.335</td><td>396.718</td><td>42.585,2</td><td>—</td></tr>
+    <tr><td><b>Lv.24 → 25</b></td><td>17.527</td><td>5.248.586</td><td>2.142.279</td><td>1.928.052</td><td>1.606.710</td><td>1.392.481</td><td>428.455</td><td>45.982,8</td><td>—</td></tr>
+    <tr><td><b>Lv.25 → 26</b></td><td>18.426</td><td>5.668.473</td><td>2.313.662</td><td>2.082.296</td><td>1.735.246</td><td>1.503.881</td><td>462.732</td><td>49.650,72</td><td>—</td></tr>
+    <tr><td><b>Lv.26 → 27</b></td><td>19.332</td><td>6.121.952</td><td>2.498.755</td><td>2.248.880</td><td>1.874.066</td><td>1.624.191</td><td>499.751</td><td>53.610,28</td><td>—</td></tr>
+    <tr><td><b>Lv.27 → 28</b></td><td>20.245</td><td>6.611.707</td><td>2.698.656</td><td>2.428.790</td><td>2.023.992</td><td>1.754.127</td><td>539.730</td><td>57.884,51</td><td>—</td></tr>
+    <tr><td><b>Lv.28 → 29</b></td><td>21.165</td><td>7.140.644</td><td>2.914.548</td><td>2.623.094</td><td>2.185.911</td><td>1.894.456</td><td>582.909</td><td>62.498,27</td><td>—</td></tr>
+    <tr><td><b>Lv.29 → 30</b></td><td>22.092</td><td>7.711.895</td><td>3.147.712</td><td>2.832.941</td><td>2.360.784</td><td>2.046.013</td><td>629.542</td><td>67.478,33</td><td>—</td></tr>
+    <tr><td><b>Lv.30 → 31</b></td><td>23.026</td><td>8.328.847</td><td>3.399.529</td><td>3.059.577</td><td>2.549.646</td><td>2.209.694</td><td>679.905</td><td>72.853,5</td><td>—</td></tr>
+    <tr><td><b>Lv.31 → 32</b></td><td>23.965</td><td>8.995.155</td><td>3.671.492</td><td>3.304.342</td><td>2.753.619</td><td>2.386.469</td><td>734.298</td><td>78.654,86</td><td>—</td></tr>
+    <tr><td><b>Lv.32 → 33</b></td><td>24.911</td><td>9.714.768</td><td>3.965.211</td><td>3.568.689</td><td>2.973.908</td><td>2.577.387</td><td>793.042</td><td>84.915,88</td><td>—</td></tr>
+    <tr><td><b>Lv.33 → 34</b></td><td>25.863</td><td>10.491.948</td><td>4.282.428</td><td>3.854.185</td><td>3.211.821</td><td>2.783.578</td><td>856.485</td><td>91.672,58</td><td>—</td></tr>
+    <tr><td><b>Lv.34 → 35</b></td><td>26.821</td><td>11.331.305</td><td>4.625.022</td><td>4.162.520</td><td>3.468.766</td><td>3.006.264</td><td>925.004</td><td>98.963,78</td><td>—</td></tr>
+    <tr><td><b>Lv.35 → 36</b></td><td>27.785</td><td>12.237.809</td><td>4.995.024</td><td>4.495.521</td><td>3.746.268</td><td>3.246.766</td><td>999.004</td><td>106.831,22</td><td>—</td></tr>
+    <tr><td><b>Lv.36 → 37</b></td><td>28.754</td><td>13.216.834</td><td>5.394.626</td><td>4.855.163</td><td>4.045.969</td><td>3.506.507</td><td>1.078.925</td><td>115.319,87</td><td>—</td></tr>
+    <tr><td><b>Lv.37 → 38</b></td><td>29.728</td><td>14.274.180</td><td>5.826.196</td><td>5.243.576</td><td>4.369.647</td><td>3.787.028</td><td>1.165.239</td><td>124.478,04</td><td>—</td></tr>
+    <tr><td><b>Lv.38 → 39</b></td><td>30.709</td><td>15.416.116</td><td>6.292.292</td><td>5.663.062</td><td>4.719.219</td><td>4.089.989</td><td>1.258.458</td><td>134.357,73</td><td>—</td></tr>
+    <tr><td><b>Lv.39 → 40</b></td><td>31.693</td><td>16.649.405</td><td>6.795.675</td><td>6.116.108</td><td>5.096.756</td><td>4.417.189</td><td>1.359.135</td><td>145.014,86</td><td>—</td></tr>
+    <tr><td><b>Lv.40 → 41</b></td><td>32.685</td><td>17.981.357</td><td>7.339.329</td><td>6.605.397</td><td>5.504.497</td><td>4.770.564</td><td>1.467.865</td><td>156.509,47</td><td>—</td></tr>
+    <tr><td><b>Lv.41 → 42</b></td><td>33.679</td><td>19.419.866</td><td>7.926.475</td><td>7.133.828</td><td>5.944.857</td><td>5.152.209</td><td>1.585.295</td><td>168.906,1</td><td>—</td></tr>
+    <tr><td><b>Lv.42 → 43</b></td><td>34.680</td><td>20.973.455</td><td>8.560.593</td><td>7.704.534</td><td>6.420.445</td><td>5.564.385</td><td>1.712.118</td><td>182.274,02</td><td>—</td></tr>
+    <tr><td><b>Lv.43 → 44</b></td><td>35.685</td><td>22.651.331</td><td>9.245.441</td><td>8.320.897</td><td>6.934.081</td><td>6.009.536</td><td>1.849.088</td><td>196.687,64</td><td>—</td></tr>
+    <tr><td><b>Lv.44 → 45</b></td><td>36.695</td><td>24.463.438</td><td>9.985.077</td><td>8.986.569</td><td>7.488.807</td><td>6.490.299</td><td>1.997.015</td><td>212.226,7</td><td>—</td></tr>
+    <tr><td><b>Lv.45 → 46</b></td><td>37.710</td><td>26.420.513</td><td>10.783.882</td><td>9.705.494</td><td>8.087.912</td><td>7.009.524</td><td>2.156.776</td><td>228.976,73</td><td>—</td></tr>
+    <tr><td><b>Lv.46 → 47</b></td><td>38.729</td><td>28.534.154</td><td>11.646.594</td><td>10.481.934</td><td>8.734.945</td><td>7.570.286</td><td>2.329.318</td><td>247.029,38</td><td>—</td></tr>
+    <tr><td><b>Lv.47 → 48</b></td><td>39.752</td><td>30.816.886</td><td>12.578.320</td><td>11.320.488</td><td>9.433.740</td><td>8.175.908</td><td>2.515.663</td><td>266.482,75</td><td>—</td></tr>
+    <tr><td><b>Lv.48 → 49</b></td><td>40.780</td><td>33.282.237</td><td>13.584.586</td><td>12.226.128</td><td>10.188.440</td><td>8.829.981</td><td>2.716.917</td><td>287.441,95</td><td>—</td></tr>
+    <tr><td><b>Lv.49 → 50</b></td><td>41.813</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>310.019,17</td><td>—</td></tr>
+    <tr><td><b>Lv.50 → 51</b></td><td>42.850</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>325.520,13</td><td>—</td></tr>
+    <tr><td><b>Lv.51 → 52</b></td><td>43.890</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>341.796,13</td><td>—</td></tr>
+    <tr><td><b>Lv.52 → 53</b></td><td>44.936</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>358.885,94</td><td>—</td></tr>
+    <tr><td><b>Lv.53 → 54</b></td><td>45.984</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>376.830,24</td><td>—</td></tr>
+    <tr><td><b>Lv.54 → 55</b></td><td>47.037</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>395.671,75</td><td>—</td></tr>
+    <tr><td><b>Lv.55 → 56</b></td><td>48.095</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>415.455,34</td><td>—</td></tr>
+    <tr><td><b>Lv.56 → 57</b></td><td>49.155</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>436.228,1</td><td>—</td></tr>
+    <tr><td><b>Lv.57 → 58</b></td><td>50.220</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>458.039,51</td><td>—</td></tr>
+    <tr><td><b>Lv.58 → 59</b></td><td>51.289</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>480.941,48</td><td>—</td></tr>
+    <tr><td><b>Lv.59 → 60</b></td><td>52.361</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>504.988,56</td><td>—</td></tr>
+    <tr><td><b>Lv.60 → 61</b></td><td>53.436</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>530.237,99</td><td>—</td></tr>
+    <tr><td><b>Lv.61 → 62</b></td><td>54.517</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>556.749,88</td><td>—</td></tr>
+    <tr><td><b>Lv.62 → 63</b></td><td>55.599</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>584.587,38</td><td>—</td></tr>
+    <tr><td><b>Lv.63 → 64</b></td><td>56.686</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>613.816,75</td><td>—</td></tr>
+    <tr><td><b>Lv.64 → 65</b></td><td>57.776</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>644.507,59</td><td>—</td></tr>
+    <tr><td><b>Lv.65 → 66</b></td><td>58.869</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>676.732,96</td><td>—</td></tr>
+    <tr><td><b>Lv.66 → 67</b></td><td>59.967</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>710.569,61</td><td>—</td></tr>
+    <tr><td><b>Lv.67 → 68</b></td><td>61.067</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>746.098,09</td><td>—</td></tr>
+    <tr><td><b>Lv.68 → 69</b></td><td>62.170</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>783.403</td><td>—</td></tr>
+    <tr><td><b>Lv.69 → 70</b></td><td>63.277</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>822.573,15</td><td>—</td></tr>
+    <tr><td><b>Lv.70 → 71</b></td><td>64.388</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>863.701,8</td><td>—</td></tr>
+    <tr><td><b>Lv.71 → 72</b></td><td>65.500</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>906.886,9</td><td>—</td></tr>
+    <tr><td><b>Lv.72 → 73</b></td><td>66.617</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>952.231,24</td><td>—</td></tr>
+    <tr><td><b>Lv.73 → 74</b></td><td>67.737</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>999.842,8</td><td>—</td></tr>
+    <tr><td><b>Lv.74 → 75</b></td><td>68.860</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.049.834,94</td><td>—</td></tr>
+    <tr><td><b>Lv.75 → 76</b></td><td>69.985</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.102.326,69</td><td>—</td></tr>
+    <tr><td><b>Lv.76 → 77</b></td><td>71.114</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.157.443,02</td><td>—</td></tr>
+    <tr><td><b>Lv.77 → 78</b></td><td>72.246</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.215.315,17</td><td>—</td></tr>
+    <tr><td><b>Lv.78 → 79</b></td><td>73.380</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.276.080,93</td><td>—</td></tr>
+    <tr><td><b>Lv.79 → 80</b></td><td>74.518</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.339.884,98</td><td>—</td></tr>
+    <tr><td><b>Lv.80 → 81</b></td><td>75.659</td><td>35.944.816</td><td>14.671.353</td><td>13.204.218</td><td>11.003.515</td><td>9.536.380</td><td>2.934.270</td><td>1.406.879,23</td><td>—</td></tr>
   </table></div></div></details>
   <div class="kutu ipucu" data-s="💡"><b>İpucu</b><p>Seviye atlayınca sefer süren uzar. Bu yüzden her seviyede biraz daha az sık, ama daha büyük sefer yaparsın; üretim <b>dakikalık</b> olarak yalnız %1 artar.</p></div>
 </section>
@@ -1232,11 +1232,11 @@
   <p>Aşağıdaki tablo, ağırlığı 1,0 olan bir oyuncunun <b>6 hammaddelik toplam haftalık hakkının açılış fiyatıyla değerini</b> gösterir. Satırlar kota katsayısı, sütunlar Otorite seviyesidir:</p>
 <div class="tablo-kap"><table>
     <tr><th>Kota katsayısı</th><th>Otorite 0</th><th>Otorite 5</th><th>Otorite 10</th><th>Otorite 15</th><th>Otorite 20</th></tr>
-    <tr><td><b>0,05</b></td><td>1.096 ASTRA</td><td>1.499 ASTRA</td><td>1.959 ASTRA</td><td>2.482 ASTRA</td><td>3.069 ASTRA</td></tr>
-    <tr><td><b>0,2</b></td><td>4.385 ASTRA</td><td>5.995 ASTRA</td><td>7.838 ASTRA</td><td>9.927 ASTRA</td><td>12.277 ASTRA</td></tr>
+    <tr><td><b>0,08</b></td><td>8.770 ASTRA</td><td>11.990 ASTRA</td><td>15.676 ASTRA</td><td>19.855 ASTRA</td><td>24.555 ASTRA</td></tr>
+    <tr><td><b>0,2</b></td><td>8.770 ASTRA</td><td>11.990 ASTRA</td><td>15.676 ASTRA</td><td>19.855 ASTRA</td><td>24.555 ASTRA</td></tr>
     <tr><td><b>0,4</b></td><td>8.770 ASTRA</td><td>11.990 ASTRA</td><td>15.676 ASTRA</td><td>19.855 ASTRA</td><td>24.555 ASTRA</td></tr>
-    <tr><td><b>0,7</b></td><td>15.347 ASTRA</td><td>20.982 ASTRA</td><td>27.432 ASTRA</td><td>34.746 ASTRA</td><td>42.971 ASTRA</td></tr>
-    <tr><td><b>1</b></td><td>21.924 ASTRA</td><td>29.974 ASTRA</td><td>39.189 ASTRA</td><td>49.637 ASTRA</td><td>61.387 ASTRA</td></tr>
+    <tr><td><b>0,7</b></td><td>8.770 ASTRA</td><td>11.990 ASTRA</td><td>15.676 ASTRA</td><td>19.855 ASTRA</td><td>24.555 ASTRA</td></tr>
+    <tr><td><b>1,2</b></td><td>8.770 ASTRA</td><td>11.990 ASTRA</td><td>15.676 ASTRA</td><td>19.855 ASTRA</td><td>24.555 ASTRA</td></tr>
   </table></div>
   <ul>
     <li><b>Termostat:</b> her hafta bir hammaddenin fiyatı açılış fiyatının <b>üstündeyse</b> o hammaddenin kota katsayısı %10 artar (daha çok çıkarılsın); <b>altındaysa</b> %10 azalır. Böylece fiyat çökmez.</li>
@@ -1497,16 +1497,16 @@
 <div class="tablo-kap"><table>
     <tr><th>Ev</th><th>Odun</th><th>Taş</th><th>Demir</th><th>Kapasite (köylü)</th></tr>
     <tr><td><b>2. ev</b></td><td>2.000</td><td>1.000</td><td>250</td><td>20</td></tr>
-    <tr><td><b>3. ev</b></td><td>5.700</td><td>2.850</td><td>712</td><td>30</td></tr>
-    <tr><td><b>4. ev</b></td><td>12.600</td><td>6.300</td><td>1.575</td><td>40</td></tr>
-    <tr><td><b>5. ev</b></td><td>24.975</td><td>12.487</td><td>3.122</td><td>50</td></tr>
+    <tr><td><b>3. ev</b></td><td>4.777</td><td>2.850</td><td>712</td><td>30</td></tr>
+    <tr><td><b>4. ev</b></td><td>10.539</td><td>6.300</td><td>1.575</td><td>40</td></tr>
+    <tr><td><b>5. ev</b></td><td>23.251</td><td>12.487</td><td>3.122</td><td>50</td></tr>
     <tr><td><b>6. ev</b></td><td>46.575</td><td>23.287</td><td>5.822</td><td>60</td></tr>
     <tr><td><b>8. ev</b></td><td>145.800</td><td>72.900</td><td>18.225</td><td>80</td></tr>
     <tr><td><b>10. ev</b></td><td>420.314</td><td>210.157</td><td>52.539</td><td>100</td></tr>
-    <tr><td><b>12. ev</b></td><td>1.080.000</td><td>576.650</td><td>144.163</td><td>120</td></tr>
-    <tr><td><b>15. ev</b></td><td>1.080.000</td><td>1.200.000</td><td>486.549</td><td>150</td></tr>
-    <tr><td><b>18. ev</b></td><td>1.080.000</td><td>1.200.000</td><td>780.000</td><td>180</td></tr>
-    <tr><td><b>20. ev</b></td><td>1.080.000</td><td>1.200.000</td><td>780.000</td><td>200</td></tr>
+    <tr><td><b>12. ev</b></td><td>1.153.301</td><td>576.650</td><td>144.163</td><td>120</td></tr>
+    <tr><td><b>15. ev</b></td><td>2.623.094</td><td>1.946.195</td><td>486.549</td><td>150</td></tr>
+    <tr><td><b>18. ev</b></td><td>4.162.520</td><td>4.625.022</td><td>1.642.102</td><td>180</td></tr>
+    <tr><td><b>20. ev</b></td><td>5.663.062</td><td>6.292.292</td><td>3.694.730</td><td>200</td></tr>
   </table></div>
   <h3>Alet onarımı (tam aşınmış alet)</h3>
 <div class="kutu ozet-kutu" data-s="📐"><b>Formül</b><p><b>Odun</b> = eksik dakika × (dakikalık odun üretimi × %25 ÷ 6 alet).  <b>Demir</b> aynı şekilde demir üretiminden.</p><p><b>ASTRA</b> = bu odun ve demirin pazar değerinin %30'i.</p></div>

@@ -5,7 +5,7 @@ import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { levelWeight as ubiLevelWeight } from '../economy/ubi.js';
-import { RES_KEYS, round3, kaynakAdi, kaynakSimgesi, talepCarpani } from './ortak.js';
+import { RES_KEYS, round3, kaynakAdi, kaynakSimgesi } from './ortak.js';
 
 // Seviye eğrisi hedeften türetilir: "Seviye 81 yaklaşık 1.100 günde ulaşılabilir olsun"; günlük XP arzı ≈ 3 düğüm x 35 XP/saat x 24
 const GUNLUK_XP_ARZI = 2520;
@@ -95,19 +95,17 @@ export const gelisimYontemleri = {
   // Bir sonraki seviyenin XP'si ve bedeli: bedel, XP'yi toplamaya yetecek sefer döngülerinde ALTI alanda kazanılan hammaddenin
   // yarısıdır (her hammaddenin kendi üretim hızına göre); ASTRA bedeli bu hammaddelerin anlık pazar değeridir.
   // Eskiden yalnız odun, demir ve buğday sayılıyordu (üç alanlı dönemden kalma); artık altı hammadde de bedele girer.
-  // x5 kararı (19 Ekim 2026): hesap seviye bedeli, RAMP.FROM_LEVEL'e kadar eski; TO_LEVEL'den sonra MULT katı; arası doğrusal
-  _seviyeBedeliCarpani(seviye) {
-    const R = GAME_CONFIG.LEVEL_UP_COST_RAMP || { FROM_LEVEL: 1, TO_LEVEL: 1, MULT: 1 };
-    const aralik = Math.max(1, (R.TO_LEVEL || 1) - (R.FROM_LEVEL || 0));
-    const oran = Math.max(0, Math.min(1, ((Number(seviye) || 1) - (R.FROM_LEVEL || 0)) / aralik));
-    return 1 + ((R.MULT || 1) - 1) * oran;
+  // 19 Ekim 2026 (hesap seviyesi her şeyin anahtarı, config HESAP_BAGI): seviye bedeli, o seviyedeki silonun kapasitesinin payıdır. Silo seviyesi hesap
+  // seviyesini geçemediği için bu bedel her zaman siloya sığar; silo büyüdükçe bedel de büyür. Pay seviyeyle artar (0,45 → 0,9).
+  _seviyeSiloPayi(seviye) {
+    const P = (GAME_CONFIG.HESAP_BAGI || {}).SEVIYE_BEDELI_PAYI || { BASLANGIC: 0.45, ARTIS: 0.05, SON: 0.9 };
+    return Math.min(P.SON, P.BASLANGIC + P.ARTIS * Math.max(0, (Number(seviye) || 1) - 1));
   },
 
-  // Talep çarpanı (19 Ekim 2026): hesap seviyesi SEVIYE_RAMPA_BASLA'ya kadar arz ölçeğinde, SEVIYE_RAMPA_BITIS'te talep ölçeğinde (config HAMMADDE)
-  _seviyeTalepCarpani(seviye) {
-    const H = GAME_CONFIG.HAMMADDE || {};
-    const b = H.SEVIYE_RAMPA_BASLA ?? 4, e = H.SEVIYE_RAMPA_BITIS ?? 20;
-    return talepCarpani(((Number(seviye) || 1) - b) / Math.max(1, e - b));
+  // En üst silodan sonraki seviyelerde hammadde bedeli düz kalır; ASTRA payı her seviye büyür
+  _seviyeAstraAsimi(seviye) {
+    const asim = (GAME_CONFIG.HESAP_BAGI || {}).SEVIYE_ASTRA_ASIM ?? 1;
+    return Math.pow(asim, Math.max(0, (Number(seviye) || 1) - this.getWarehouseMaxLevel()));
   },
 
   getNextLevelRequirement() {
@@ -127,17 +125,16 @@ export const gelisimYontemleri = {
     const kazanilan = {};
     const costs = {};
     const tavan = this.getLevelUpCostCeiling();
-    const siloyaSigdirilan = {};                       // bedeli silo tavanına kırpılan hammaddeler (ham bedel burada)
+    const siloyaSigdirilan = {};                       // artık hiç kırpma yok (bedel zaten siloya sığar); eski alan, arayüz okur
     for (const k of alanlar) {
       kazanilan[k] = dongu * sure * (uretim[k] || 0);
-      const ham = Math.round((kazanilan[k] / 2) * this._seviyeBedeliCarpani(simdiki) * this._seviyeTalepCarpani(simdiki));
-      costs[k] = tavan[k] != null ? Math.min(ham, tavan[k]) : ham;
-      if (costs[k] < ham) siloyaSigdirilan[k] = ham;
+      costs[k] = tavan[k] != null ? tavan[k] : Math.round(kazanilan[k] / 2);
     }
     const { wood, iron, wheat } = costs;
     const siloGerek = this.getSiloLevelToHold(costs);
 
     const deger = ammMarket.calculateResourcesCostAdAstra(costs);
+    deger.totalAda = round3(deger.totalAda * this._seviyeAstraAsimi(simdiki));
 
     const bugunParca = this.getFragmentDropRate(simdiki);
     const sonrakiParca = this.getFragmentDropRate(sonraki);
@@ -174,13 +171,11 @@ export const gelisimYontemleri = {
     };
   },
 
-  // Seviye bedelinin hammadde başına tavanı: ulaşılabilir en büyük silonun kapasitesi × LEVEL_UP_SILO_SHARE.
-  // Silo kapasitesi Büyük Ambar projesiyle de büyür; tavan da onunla kayar. Kapasitesiz kalem (null) tavansızdır.
-  getLevelUpCostCeiling() {
-    const pay = GAME_CONFIG.LEVEL_UP_SILO_SHARE != null ? GAME_CONFIG.LEVEL_UP_SILO_SHARE : 0.8;
-    const W = GAME_CONFIG.WAREHOUSE || {};
-    const kapi = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? (W.baseLevels || 18) : (W.levelUpCostGateLevel || W.universeGateLevel || W.baseLevels || 18);
-    const kap = this.getWarehouseCapacity(Math.min(this.getWarehouseMaxLevel(), kapi));
+  // Seviye bedeli (hammadde başına): hesabın şu anki seviyesindeki silonun kapasitesi x _seviyeSiloPayi (silo hesabı geçemez, bedel siloya sığar).
+  // Silo kapasitesi Büyük Ambar projesiyle de büyür; bedel de onunla kayar. Kapasitesiz kalem (null) tavansızdır.
+  getLevelUpCostCeiling(level = this.state.level) {
+    const pay = this._seviyeSiloPayi(level);
+    const kap = this.getWarehouseCapacity(Math.max(1, Math.min(this.getWarehouseMaxLevel(), Number(level) || 1)));
     const tavan = {};
     for (const k of RES_KEYS()) tavan[k] = kap[k] != null ? Math.floor(kap[k] * pay) : null;
     return tavan;
@@ -426,6 +421,8 @@ export const gelisimYontemleri = {
   getWarehouseUpgradeCost(currentLevel = this.state.warehouseLevel) {
     const enUst = this.getWarehouseMaxLevel();
     if (currentLevel >= enUst) return null;
+    // Silo seviyesi hesap seviyesini geçemez (19 Ekim 2026): hesap yetmiyorsa yükseltme kapalı, bedel yine gösterilir
+    const hesapYetmiyor = currentLevel + 1 > Math.max(1, Number(this.state.level) || 1);
 
     const simdiki = this.getWarehouseCapacity(currentLevel);
     const sonraki = this.getWarehouseCapacity(currentLevel + 1);
@@ -464,7 +461,9 @@ export const gelisimYontemleri = {
       is80PercentFull: yuzde80Dolu,   // eski ad (testler ve arayüz okur); anlamı: doluluk şartı sağlandı (fillShare)
       fillShare: doluluk,
       canAffordCost: karsilanabilir,
-      canUpgrade: yuzde80Dolu && karsilanabilir
+      accountLevelNeeded: currentLevel + 1,
+      accountLevelBlocked: hesapYetmiyor,
+      canUpgrade: yuzde80Dolu && karsilanabilir && !hesapYetmiyor
     };
   },
 
@@ -475,6 +474,9 @@ export const gelisimYontemleri = {
     }
 
     const envanter = this.state.inventory || {};
+    if (bedel.accountLevelBlocked) {
+      return { success: false, accountLevelBlocked: true, message: `⚠️ Silo seviyesi hesap seviyeni geçemez: ${bedel.nextLevel}. silo için hesabın en az ${bedel.accountLevelNeeded}. seviye olmalı. Önce hesabını yükselt.` };
+    }
     if (!bedel.is80PercentFull) {
       const eksikler = bedel.keys.filter(k => !bedel.fillOk[k])
         .map(k => `${kaynakSimgesi(k)} ${kaynakAdi(k)} (${Math.floor(envanter[k] || 0)}/${bedel.fills[k]})`);

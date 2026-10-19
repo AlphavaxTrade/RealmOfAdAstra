@@ -180,6 +180,12 @@ export const techizatYontemleri = {
   },
 
   // ── Yükseltme ───────────────────────────────────────────────────────────
+  // Teçhizat seviye tavanı (19 Ekim 2026, config HESAP_BAGI): hesap seviyesine bağlı, en çok EQUIPMENT_MAX_LEVEL
+  getEquipmentLevelCap(level = this.state.level) {
+    const B = GAME_CONFIG.HESAP_BAGI || {};
+    return Math.min(GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10, Math.floor((B.TECHIZAT_TABAN ?? 2) + (B.TECHIZAT_SEVIYE_BASI ?? 0.5) * Math.max(1, Number(level) || 1)));
+  },
+
   calculateEquipmentUpgradeCost(itemOrSlot, soldierIndex = null) {
     const esya = this._esyaBul(itemOrSlot, soldierIndex);
     if (!esya) return null;
@@ -201,6 +207,8 @@ export const techizatYontemleri = {
       isMaxLevel: false,
       currentLevel: simdiki,
       nextLevel: sonraki,
+      accountLevelBlocked: sonraki > this.getEquipmentLevelCap(),
+      accountLevelNeeded: Math.max(1, Math.ceil((sonraki - ((GAME_CONFIG.HESAP_BAGI || {}).TECHIZAT_TABAN ?? 2)) / ((GAME_CONFIG.HESAP_BAGI || {}).TECHIZAT_SEVIYE_BASI ?? 0.5))),
       ironCost,
       woodCost,
       coalCost,
@@ -220,6 +228,7 @@ export const techizatYontemleri = {
     if (!bedel) return { success: false, message: 'Ekipman bulunamadı!' };
     if (bedel.isMaxLevel) return { success: false, message: 'Bu ekipman zaten maksimum seviyede (Lv.10 Master)!' };
 
+    if (bedel.accountLevelBlocked) return { success: false, accountLevelBlocked: true, message: `⚠️ Teçhizat ${bedel.nextLevel}. seviyeye çıkmak için hesabın en az ${bedel.accountLevelNeeded}. seviye olmalı (şu an ${this.state.level || 1}). Önce hesabını yükselt.` };
     const envanter = this.state.inventory;
     if ((envanter.fragments || 0) < bedel.fragmentCost) return { success: false, message: `Yetersiz Teçhizat Parçası! (${bedel.fragmentCost} Teçhizat Parçaları gerekli)` };
     if ((envanter.iron || 0) < bedel.ironCost) return { success: false, message: `Yetersiz Demir! (${bedel.ironCost} Demir gerekli)` };
@@ -275,7 +284,7 @@ export const techizatYontemleri = {
   upgradeEquipmentByTypeAndLevel(targetSlot = null, targetLevel = null) {
     let yukseltilen = 0;
     const mesajlar = [];
-    const enUst = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+    const enUst = this.getEquipmentLevelCap();
     for (const kayit of this.getAllArmoryEquipmentList()) {
       const esya = kayit.item;
       if (!esya) continue;
@@ -294,7 +303,7 @@ export const techizatYontemleri = {
   // upgradeEquipmentByTypeAndLevel ile aynı seçimin (yuva + seviye) tek seferlik toplam yükseltme bedeli; "eksikleri al ve geliştir" planı bunu kullanır
   // Toplu geliştirmeye girecek eşyalar (yuva + seviye süzgeci; en yüksek seviyedekiler girmez)
   getUpgradeSetItems(targetSlot = null, targetLevel = null) {
-    const enUst = GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10;
+    const enUst = this.getEquipmentLevelCap();
     return this.getAllArmoryEquipmentList().filter((kayit) => {
       const esya = kayit.item;
       if (!esya) return false;

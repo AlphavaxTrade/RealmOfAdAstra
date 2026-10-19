@@ -12,6 +12,7 @@ import { GAME_CONFIG } from './config.js';
 import { treasury } from './treasury.js';
 import { openWeek, shareOf, isEligible, levelWeight, DEFAULT_UBI_RULES } from './economy/ubi.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
+import { yeniHavuzCarpani } from './economy/uretimDagitimi.js';
 import { globalPoolV2, globalPoolV2Depot } from './v2/koyVeKonsey.js';
 
 const GUN_MS = 24 * 3600 * 1000;
@@ -238,7 +239,9 @@ export class GlobalResourceManager {
       adminMult: Number(kaynak.adminMult) > 0 ? Number(kaynak.adminMult) : (U.ADMIN_MULT ?? 1),
       otoriteLevel: Math.max(0, Number(kaynak.otoriteLevel) || 0),
       sumWeight: Number(kaynak.sumWeight) > 0 ? Number(kaynak.sumWeight) : 1,
-      priceRatio: (kaynak.priceRatio && typeof kaynak.priceRatio === 'object') ? kaynak.priceRatio : {}
+      priceRatio: (kaynak.priceRatio && typeof kaynak.priceRatio === 'object') ? kaynak.priceRatio : {},
+      botRatio: Number(kaynak.botRatio) > 0 ? Number(kaynak.botRatio) : 1,
+      pay: (kaynak.pay && typeof kaynak.pay === 'object') ? kaynak.pay : {}   // kaynak -> { A (null = sınırsız), phi, total }: sunucu saatte bir dağıtımı yazar
     };
   }
 
@@ -251,14 +254,58 @@ export class GlobalResourceManager {
   }
 
   // Bir birim ağırlık için haftalık hak (birim)
+  // Bir birim ağırlık için KİŞİSEL haftalık limit (birim): sabit KISISEL_QPP ile (19 Ekim 2026; eskiden termostatlı qpp)
   weeklyRightPerWeight(key, params = this.uretimParams()) {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
     const hiz = (GAME_CONFIG.BASE_PRODUCTION || {})[key] || 0;
     const calisma = this.otoriteWork(params.otoriteLevel);
-    return hiz * calisma.minutes * (params.qpp[key] || 0) * calisma.mult * params.adminMult;
+    return hiz * calisma.minutes * (U.KISISEL_QPP ?? U.QPP_START ?? 0.4) * calisma.mult * params.adminMult;
   }
 
+  // Global haftalık havuz G (kaynak başına): oyuncu sayısından bağımsız; qpp havuz çarpanıdır (fiyat ve bot girişiyle ayarlanır)
+  globalHavuz(key, params = this.uretimParams()) {
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const hiz = (GAME_CONFIG.BASE_PRODUCTION || {})[key] || 0;
+    const calisma = this.otoriteWork(params.otoriteLevel);
+    return hiz * calisma.minutes * (params.qpp[key] || 0) * calisma.mult * params.adminMult * (U.REFERANS_AGIRLIK ?? 120);
+  }
+
+  // Dünya haftalık kapasitesi: sunucu dağıtımı yazdıysa dağıtılan toplam; yoksa (tek oyuncu / ilk saat) havuzla herkesin limitleri toplamının küçüğü
   computeWeekCapacity(key, params = this.uretimParams()) {
-    return Math.floor(this.weeklyRightPerWeight(key, params) * params.sumWeight + 1e-6);
+    const yazilan = params.pay && params.pay[key] ? params.pay[key].total : null;
+    if (yazilan != null && isFinite(Number(yazilan)) && Number(yazilan) >= 0) return Math.floor(Number(yazilan) + 1e-6);
+    return Math.floor(Math.min(this.globalHavuz(key, params), this.weeklyRightPerWeight(key, params) * params.sumWeight) + 1e-6);
+  }
+
+  // Sunucu saatte bir: global havuzun oyunculara dağıtımı (kaynak -> { A, phi, total }) ve bot ASTRA giriş oranı
+  setUretimPay(pay, botRatio) {
+    if (!this.state) return;
+    this._uretimiHazirla();
+    this.state.uretim.pay = pay && typeof pay === 'object' ? pay : {};
+    if (Number(botRatio) > 0) this.state.uretim.botRatio = Number(botRatio);
+    this.recomputeWeekCapacity();
+  }
+
+  // ACİL DURUM: bir hammaddenin fiyatı açılışın ACIL_ESIK katına çıkmışsa (oyun oynanmaz olmasın) havuz haftayı beklemeden ACIL_ARTIS kadar açılır (günde en çok 1 kez)
+  uretimAcilDurum(zaman = this.getTrustedTime()) {
+    if (!this.state) return {};
+    this._uretimiHazirla();
+    const U = GAME_CONFIG.URETIM_HAKKI || {};
+    const u = this.state.uretim;
+    const sonuc = {};
+    for (const k of kotaAnahtarlari()) {
+      const oran = Number((u.priceRatio || {})[k]);
+      if (!(oran >= (U.ACIL_ESIK ?? 3))) continue;
+      if (zaman - (Number((u.acilSon || {})[k]) || 0) < 24 * 3600 * 1000) continue;
+      const eski = Number(u.qpp[k]) || (U.QPP_START ?? 0.4);
+      const yeni = Math.min(U.QPP_MAX ?? 1.2, Math.round(eski * (U.ACIL_ARTIS ?? 1.25) * 1000) / 1000);
+      if (yeni <= eski) continue;
+      u.qpp[k] = yeni;
+      u.acilSon = { ...(u.acilSon || {}), [k]: zaman };
+      sonuc[k] = { from: eski, to: yeni, priceRatio: oran };
+    }
+    if (Object.keys(sonuc).length) { this.recomputeWeekCapacity(); this.saveState(); }
+    return sonuc;
   }
 
   // Yeni haftanın parametreleri: termostat (fiyat/açılış oranı) kotayı ±%10 oynatır
@@ -267,19 +314,16 @@ export class GlobalResourceManager {
     const p = this.uretimParams(oncekiU || {});
     const qpp = { ...p.qpp };
     const uygulanan = {};
+    // 19 Ekim 2026: havuz çarpanı fiyat bandına ve bot ASTRA girişine göre ayarlanır (js/economy/uretimDagitimi.js)
     for (const k of Object.keys(qpp)) {
       const oran = Number((p.priceRatio || {})[k]);
-      if (!isFinite(oran) || oran <= 0) continue;
-      const adim = U.TERMO_STEP ?? 0.1;
-      const hedef = U.TERMO_TARGET ?? 1;
-      let yeni = qpp[k];
-      if (oran > hedef * 1.0001) yeni = qpp[k] * (1 + adim);
-      else if (oran < hedef * 0.9999) yeni = qpp[k] * (1 - adim);
-      yeni = Math.max(U.QPP_MIN ?? 0.05, Math.min(U.QPP_MAX ?? 1, Math.round(yeni * 1000) / 1000));
-      uygulanan[k] = { from: qpp[k], to: yeni, priceRatio: oran };
+      const bot = Number(p.botRatio) > 0 ? Number(p.botRatio) : 1;
+      if (!(isFinite(oran) && oran > 0) && bot === 1) continue;
+      const yeni = yeniHavuzCarpani(qpp[k], isFinite(oran) && oran > 0 ? oran : 1, bot, U);
+      uygulanan[k] = { from: qpp[k], to: yeni, priceRatio: oran, botRatio: bot };
       qpp[k] = yeni;
     }
-    return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, lastTermostat: uygulanan };
+    return { qpp, adminMult: p.adminMult, otoriteLevel: p.otoriteLevel, sumWeight: p.sumWeight, priceRatio: {}, priceAt: 0, botRatio: 1, pay: p.pay, acilSon: {}, lastTermostat: uygulanan };
   }
 
   _uretimiHazirla() {
