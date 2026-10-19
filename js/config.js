@@ -1889,6 +1889,16 @@ export const GAME_CONFIG = {
         `Uzay Limanı'nda roket artık 5 seviyeli: roket Realm'dan UOA'ya (ikinci oyun) geçiş rampasıdır. Seviye yükseldikçe gidiş süresi kısalır (72 → 12 saat), taşıma kapasitesi (500 bin → 100 milyon birim) ve mürettebat (köylü + asker: 10 → 500 kişi) artar; bedel çok pahalı (seviye 5: 40 kat hammadde + 500 bin ASTRA). Gidiş-dönüş yapılabilir; fırlatma UOA açılana kadar kilitli. Harcadığın ASTRA'nın %4'ü UOA tohumunda birikmeye devam ediyor.`,
         `Test menüsündeki "ilk güne sıfırla" denetlendi: dünya (kasalar, UOA tohumu, pazar havuzları, piyango, Konsey, Otorite, sayaçlar) ve oyuncu (seviye, envanter, silo, roket) taze kurulmuş oyunla birebir aynıya dönüyor; bunu bir test kanıtlıyor.`
       ]
+    },
+    {
+      version: 'v1.83',
+      title: '📜 Önce Parşömen, Bot Ücreti Düzeltmesi',
+      date: '19 Ekim 2026',
+      changes: [
+        `Zindan ekranı, Kışla ve Şifahane'de elinde İyileştirme Parşömeni varken ve yaralı asker varken "📜 Önce parşömen (adet) · sonra ot" düğmesi çıkıyor: önce parşömenler kullanılır (ot ve ASTRA harcamaz), geriye kalan yara şifalı otla kapatılır, eksik ot gerekirse pazardan alınır. Parşömen boşa gitmesin diye, eksik can parşömenin yarısından azsa o askerde parşömen kullanılmaz.`,
+        `Sirius Konseyi ekranı sadeleştirildi: en üstte "Konsey ne işe yarar?" kartı (ortak şantiye; bitince herkese fayda, sen katkı yaptıkça katkı kademen ve haftalık çıkarma hakkın büyür). Rakam dolu ayrıntılar "ayrıntı" bölümlerine katlandı; Otorite ve proje kartları önce "bitince ne kazandırır" ve yüzde olarak gösteriyor.`,
+        `Taverna botunun ücret hesabı düzeltildi: Üretim Hakkın üretimin yalnız bir kısmına yetiyorsa bot o kadarını toplar; stamina ve alet onarımı da artık o orantıda hesaplanıyor. Eskiden bu iki bedel TAM üretim üzerinden düşüldüğü için hakkı sınırlı oyuncularda net kâr 0 çıkıyor, tablo "Net kâr +0 ASTRA, bot ücreti 1 ASTRA" gösteriyordu.`
+      ]
     }
   ],
 

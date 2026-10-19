@@ -1,6 +1,6 @@
 // Realm of AdAstra — Sirius Konseyi ekranı: üretim düzeni (kota termostatı, ağırlık), Madencilik Otoritesi,
 // Konsey projeleri ve ortak kasa. Hammadde ve emek katkıları buradan yapılır.
-import { ekranKaydet, kap, kart, cubuk, dugme, not, izgara, etiket, simge, tam, sayi, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, cubuk, dugme, not, izgara, etiket, simge, tam, sayi, esc } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi } from './bilesik.js';
 import { onay } from '../v3/bilesenler.js';
 
@@ -26,6 +26,25 @@ function emekKatkisi(hedef, emek) {
   return dugme({ e: 'katki', metin: `${emekAdi} ver (hepsi: ${tam(tamEmek)})`, veri: { hedef, kaynak: 'labor' }, devreDisi: tamEmek < 1 });
 }
 
+// Sade anlatım (19 Ekim 2026): Konsey ne işe yarar, yatırım yapmak sana ne kazandırır. Rakamlar aşağıdaki "ayrıntı" bölümlerinde.
+function girisKarti(b, us) {
+  const kademe = us && us.weight && us.weight.tier ? us.weight.tier : null;
+  const kademeMetni = kademe && kademe.id !== 'none'
+    ? `Şu an katkı kademen <b>${esc(kademe.name)}</b>: haftalık hammadde çıkarma hakkın %${esc(Math.round((kademe.mult - 1) * 100))} büyük.`
+    : 'Henüz hiç katkın yok. İlk katkıyla birlikte kademe kazanmaya başlarsın.';
+  return kart({
+    baslik: '🏛️ Konsey ne işe yarar?',
+    vurgu: 'vurgu',
+    icerik: not('<b>Sirius Konseyi, bütün oyuncuların birlikte kurduğu ortak şantiyedir.</b> Herkes biraz hammadde (ya da ASTRA) verir, büyük binalar birlikte yapılır. Bir bina bitince <b>herkes</b> bedava fayda kazanır: sen vermiş de olsan, başkası vermiş de olsan.')
+      + not('<b>Sana faydası:</b>')
+      + not('⛏️ <b>Madencilik Otoritesi</b> büyüdükçe herkesin haftalık hammadde çıkarma hakkı %5 artar ve çalışma süresi uzar. Yani daha çok hammadde çıkarırsın.')
+      + not('🏗️ <b>Projeler</b> (köprü, ambar, şifa bahçesi, rıhtım, duvar) sefer süresini kısaltır, silonu büyütür, şifalı ot üretimini artırır.')
+      + not('🎖️ <b>Sen katkı yaptıkça</b> katkı kademen yükselir (Bronz → Gümüş → Altın → Platin → Elmas) ve haftalık çıkarma hakkın büyür. Çok veren daha çok kazanır.')
+      + not(kademeMetni)
+      + not('<b>Nasıl katkı yaparım?</b> Elindeki hammaddeyi verebilirsin ya da aşağıdaki "⚡ Hızlı katkı"ya ASTRA yazarsın, gerisini oyun halleder. Büyük işler tek kişiyle bitmez; herkes biraz verir.')
+  });
+}
+
 function uretimKarti(b, us, ortakKasa) {
   const kaynaklar = b.GAME_CONFIG.RESOURCE_KEYS.map((k) => {
     const hak = us.rights[k];
@@ -34,9 +53,10 @@ function uretimKarti(b, us, ortakKasa) {
       <small>kota %${esc(Math.round((hak.qpp || 0) * 100))} · ortak kasa ${esc(tam(ortakKasa[k] || 0))}</small></div>`;
   });
   return kart({
-    baslik: '🏛️ Üretim düzeni ve ortak kasa',
-    rozet: etiket(`Otorite sv.${us.otorite.level} · ${Math.round(us.otorite.hours)} sa × ${Math.round(us.otorite.days)} gün`),
-    icerik: not(`Kişi başı kota (termostat): her hafta kaynağın fiyatı açılışın üstündeyse +%10, altındaysa −%10 (0,05-1,0). Senin ağırlığın ×${esc(us.weight.weight)} (seviye ×${esc(us.weight.levelFactor)} · katkı kademesi ${esc(us.weight.tier.name)} ×${esc(us.weight.tier.mult)} · aktiflik ×${esc(us.weight.activity)}). Dünya ağırlık toplamı: ${esc(sayi(us.params.sumWeight || 1))}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.`)
+    baslik: '📊 Bu haftaki çıkarma hakkın',
+    rozet: etiket(`Otorite sv.${us.otorite.level}`),
+    icerik: not('Her hammaddeden bu hafta ne kadar çıkarabileceğin (kullandığın / toplam hakkın). Hakkın seviyene, katkı kademene ve ne kadar aktif olduğuna göre büyür.')
+      + katli('Nasıl hesaplanıyor? (ayrıntı)', not(`Kişi başı kota (termostat): her hafta kaynağın fiyatı açılışın üstündeyse +%10, altındaysa −%10 (0,05-1,0). Senin ağırlığın ×${esc(us.weight.weight)} (seviye ×${esc(us.weight.levelFactor)} · katkı kademesi ${esc(us.weight.tier.name)} ×${esc(us.weight.tier.mult)} · aktiflik ×${esc(us.weight.activity)}). Dünya ağırlık toplamı: ${esc(sayi(us.params.sumWeight || 1))}. Çıkarılan her hammaddenin %5'i ortak kasada birikir.`), { k: 'konsey-uretim-detay' })
       + izgara(kaynaklar, { genis: true })
   });
 }
@@ -53,10 +73,11 @@ function otoriteKarti(b) {
   const ot = b.globalPool.getOtoriteStatus();
   const gerekenler = Object.keys(ot.need);
   const icerik = [
-    not(`Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: ${karisimYazisi(b, ot.mix)} (kömür çeliğin payıdır). Ortak kasa payı (çıkarılan her hammaddenin %5'i) buraya ve etkin projeye kendiliğinden eklenir.`),
+    not(ot.maxed ? 'Madencilik Otoritesi en üst seviyede. Herkes tam fayda alıyor.' : `Bu bina bitince <b>herkesin</b> haftalık hammadde hakkı %${Math.round(ot.perLevelBonus * 100)} büyür ve çalışma süresi uzar. Şu an <b>%${Math.round(ot.pct)}</b> tamamlandı.`),
+    katli('Neler gerekiyor? (ayrıntı)', not(`Her seviye: kapasite ve herkesin hakkı +%${Math.round(ot.perLevelBonus * 100)}, çalışma ${ot.hours} sa × ${ot.days} gün → ${ot.nextHours} sa × ${ot.nextDays} gün. Karışım: ${karisimYazisi(b, ot.mix)} (kömür çeliğin payıdır). Ortak kasa payı (çıkarılan her hammaddenin %5'i) buraya ve etkin projeye kendiliğinden eklenir.`)
+      + (ot.maxed ? '' : gerekenler.map((k) => katkiSatiri(b, k, ot.progress[k] || 0, ot.need[k])).join('')), { k: 'konsey-otorite-detay' }),
     ot.maxed ? '' : cubuk(ot.pct, { renk: '#a78bfa' }),
-    ...(ot.maxed ? [] : gerekenler.map((k) => katkiSatiri(b, k, ot.progress[k] || 0, ot.need[k]))),
-    ...(ot.maxed ? [] : gerekenler.map((k) => hammaddeKatkisi(b, 'otorite', k)))
+    ...(ot.maxed ? [] : [katli('Hammadde ver (elindekinden)', gerekenler.map((k) => hammaddeKatkisi(b, 'otorite', k)).join(''), { k: 'konsey-otorite-ver' })])
   ].join('');
   return kart({
     baslik: `⛏️ Madencilik Otoritesi: seviye ${ot.level}${ot.maxed ? ' (en üst)' : ` → ${ot.level + 1}`}`,
@@ -77,12 +98,11 @@ function projeKarti(b) {
   return kart({
     baslik: `${esc(pj.active.icon)} Konsey projesi: ${esc(pj.active.name)}`,
     icerik: [
-      not(`${esc(pj.active.desc)} Gereken: ${tam(pj.active.units)} birim hammadde (${karisimYazisi(b, pj.mix)}) + ${tam(pj.active.labor)} emek. Senin emek puanın: ${tam(emek)}.`),
+      not(`<b>Bitince herkese faydası:</b> ${esc(pj.active.desc)} Şu an <b>%${Math.round(pj.pct)}</b> tamamlandı.`),
       cubuk(pj.pct, { renk: '#63b0ff' }),
-      ...gerekenler.map((k) => katkiSatiri(b, k, pj.progress[k] || 0, pj.need[k])),
-      katkiSatiri(b, 'labor', pj.labor, pj.active.labor),
-      ...gerekenler.map((k) => hammaddeKatkisi(b, 'project', k)),
-      emekKatkisi('project', emek),
+      katli('Neler gerekiyor? (ayrıntı)', not(`Gereken: ${tam(pj.active.units)} birim hammadde (${karisimYazisi(b, pj.mix)}) + ${tam(pj.active.labor)} emek. Senin emek puanın: ${tam(emek)}.`)
+        + gerekenler.map((k) => katkiSatiri(b, k, pj.progress[k] || 0, pj.need[k])).join('') + katkiSatiri(b, 'labor', pj.labor, pj.active.labor), { k: 'konsey-proje-detay' }),
+      katli('Hammadde ve emek ver', gerekenler.map((k) => hammaddeKatkisi(b, 'project', k)).join('') + emekKatkisi('project', emek), { k: 'konsey-proje-ver' }),
       pj.done.length ? not(`<span class="ek-iyi">Biten: ${pj.done.map((d) => esc(`${d.icon} ${d.name}`)).join(', ')}</span>`) : ''
     ].join('')
   });
@@ -97,7 +117,7 @@ function hizliKatkiKarti(b) {
   return kart({
     baslik: '⚡ Hızlı katkı: ASTRA harca, hemen yatır',
     icerik: [
-      not('Yazdığın ASTRA kadar bütçe, hedefin kalan ihtiyacına göre bölünür; hammaddeler pazardan alınır ve hemen Konsey\'e yatırılır. Pazar fiyatı yükselirse aldığın miktar azalır. Alım katkı puanı kazandırır.'),
+      not('En kolay yol: kaç ASTRA harcamak istediğini yaz, bir düğmeye bas. Oyun gereken hammaddeyi pazardan senin yerine alır ve hemen Konsey\'e yatırır. Katkı kademene de puan yazılır.'),
       `<div class="ek-alan-satiri"><input type="number" class="ek-girdi ek-girdi-dar" min="1" max="${bakiye}" value="${Math.max(1, Math.min(1000, bakiye))}" inputmode="numeric" id="hizli-butce" aria-label="ASTRA bütçesi (bakiyen ${bakiye})"><small>ASTRA (bakiyen ${esc(tam(bakiye))})</small></div>`,
       dugme({ e: 'hizliKatki', metin: '⛏️ Otorite\'ye yatır', veri: { hedef: 'otorite' }, devreDisi: !ot.ok || bakiye < 1, genis: true }),
       dugme({ e: 'hizliKatki', metin: '🏗️ Etkin projeye yatır', veri: { hedef: 'proje' }, devreDisi: !pj.ok || bakiye < 1, genis: true })
@@ -115,7 +135,7 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([uretimKarti(b, us, ortakKasa), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
+    return kap([girisKarti(b, us), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {

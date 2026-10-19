@@ -141,6 +141,7 @@ export const ACTIONS = {
   spinCarnivalWheel: A(['wheelPay', 'wheelMult?'], { random: true }),
   unboxMysteryBox: A([], { random: true }),
   useScroll: A(['scroll', 'str?']),
+  useHealScrollsFirst: A(['idx?']),   // 19 Ekim 2026: önce parşömen, sonra şifalı ot (parşömen kısmı)
   carnivalCheer: A([]),
   // Ortak piyango (kasa ve toplam bilet sunucuda ortak; çekiliş haftalık hesaplaşmada)
   buyLotteryTickets: A(['int']),

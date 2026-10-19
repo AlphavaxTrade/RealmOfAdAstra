@@ -3,7 +3,7 @@
 // Oyun kuralları değişmez: yalnız mevcut oyun işlemleri çağrılır (equipSoldierFromDepot, unequipSoldierToArmory, …).
 import { ekranKaydet, kap, kart, katli, sekmeler, dugme, dugmeler, uyari, bos, not, izgara, hucre, etiket, cubuk, tam, astra, esc } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
-import { hizliIyilestir, planBedeli, iyilesmeKiyasi, hizliOnar } from './bilesik.js';
+import { hizliIyilestir, planBedeli, iyilesmeKiyasi, hizliOnar, iyilestirmeParsomeni } from './bilesik.js';
 import { equipImg, soldierPortrait } from '../art.js';
 import { PLAYER_SKILLS } from '../../combat.js';
 import * as K from '../kisla-kurallari.js';
@@ -238,6 +238,7 @@ function orduSekmesi(b, s) {
         : `Zindan asker hakkın: ${hakBilgi.hak} (${hakBilgi.kat}. kattasın, hak = kat + 1).`) : '')
       + dugmeler(
         dugme({ e: 'hazirla', metin: 'Orduyu hazırla', ton: 'birincil', ipucu: 'Yaralıları şifalı otla iyileştirir (eksik otu pazardan alır), boş yuvalara en iyi eşyaları takar' }),
+        iyilestirmeParsomeni(gs) > 0 ? dugme({ e: 'parsomenOnce', metin: `📜 Önce parşömen (${sayi(iyilestirmeParsomeni(gs))}) · sonra ot`, ton: 'iyi', ipucu: 'Önce İyileştirme Parşömenlerini kullanır (ot ve ASTRA harcamaz), kalan yarayı şifalı otla iyileştirir' }) : '',
         dugme({ e: 'yeniAsker', metin: `Yeni asker · ${sayi(bedel)} ASTRA`, devreDisi: !alinabilir })
       )
       + katli('Diğer işlemler',
@@ -477,6 +478,7 @@ const ekran = {
     },
     async doldur(b) { bildirSonuc(b, await b.gameState.autoEquipBest()); },
     async hepsiniIyilestir(b) { await hizliIyilestir(b); },
+    async parsomenOnce(b) { await hizliIyilestir(b, null, { parsomenOnce: true }); },
     async yeniAsker(b) { bildirSonuc(b, await b.gameState.buySoldierUnit()); },
     async soyHepsi(b) {
       const tamam = await onay({ baslik: 'Hepsi soyulsun mu?', metin: 'Bütün askerlerin eşyaları depoya döner.', tamam: 'Soy', tehlikeli: true });

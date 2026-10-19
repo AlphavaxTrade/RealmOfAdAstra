@@ -53,19 +53,25 @@ export const botPaketiYontemleri = {
       brutGun += fiyat[k] * Math.min(gunlukUretim, Math.max(0, dunyaKalan), this._botKisiselGunlukHak(k, gunlukUretim));
     }
 
+    // Hak üretimin yalnız bir kısmına yetiyorsa bot o kadarını toplar; seferler ve alet aşınması da o orantıda olur (19 Ekim 2026:
+    // üretim x5 olunca günlük hak üretimin ~%30'u kaldı, ama stamina ve onarım bedeli TAM üretim üzerinden düşülüyordu: net kâr hep 0 çıkıyordu)
+    const brutTam = brutDakika * GUN_DAKIKA;
+    const hakOrani = brutTam > 0 ? Math.min(1, Math.max(0, brutGun / brutTam)) : 1;
+    const staminaGun = staminaBedelDakika * GUN_DAKIKA * hakOrani;
+    const aletGun = aletBedelDakika * GUN_DAKIKA * hakOrani;
     const netDakika = Math.max(0.0001, brutDakika - staminaBedelDakika - aletBedelDakika);
-    const net24 = Math.max(0.01, round3(Math.min(netDakika * GUN_DAKIKA, brutGun - (staminaBedelDakika + aletBedelDakika) * GUN_DAKIKA)));
+    const net24 = Math.max(0.01, round3(Math.min(netDakika * GUN_DAKIKA, brutGun - staminaGun - aletGun)));
 
-    // Üretim Hakkı sınırı net kârı kırpıyorsa kırpılan kısım ayrıca gösterilir; tablo toplamı tutsun (brüt − stamina − alet − sınır = net)
-    const sinirKaybi = Math.max(0, round3((brutDakika - staminaBedelDakika - aletBedelDakika) * GUN_DAKIKA - net24));
+    // Üretim Hakkı sınırı kırpılan kısım ayrıca gösterilir; tablo toplamı tutsun (brüt − stamina − alet − sınır = net)
+    const sinirKaybi = Math.max(0, round3(brutTam - staminaGun - aletGun - net24));
     return {
-      grossRevenueAda: round3(brutDakika * GUN_DAKIKA),
+      grossRevenueAda: round3(brutTam),
       rightsLimitLossAda: sinirKaybi,
-      staminaWheatCostAda: round3(staminaBedelDakika * GUN_DAKIKA),
-      toolRepairCostAda: round3(aletBedelDakika * GUN_DAKIKA),
+      staminaWheatCostAda: round3(staminaGun),
+      toolRepairCostAda: round3(aletGun),
       netProfitAda: round3(net24),
       botCostAda: Math.max(1, round3(net24 * 0.50)),
-      dailyWheatNeededForStamina: Math.round(staminaBugdayDakika * GUN_DAKIKA)
+      dailyWheatNeededForStamina: Math.round(staminaBugdayDakika * GUN_DAKIKA * hakOrani)
     };
   },
 

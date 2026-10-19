@@ -1,6 +1,6 @@
 // Realm of AdAstra — Şifahane ekranı: şifalı otla hemen iyileştirme (hemen iyileştirmenin tek yolu).
 import { ekranKaydet, kap, kart, katli, not, uyari, dugme, tam, astra, esc } from './cekirdek.js';
-import { hizliIyilestir, planBedeli, iyilesmeKiyasi } from './bilesik.js';
+import { hizliIyilestir, planBedeli, iyilesmeKiyasi, iyilestirmeParsomeni } from './bilesik.js';
 
 const ekran = {
   id: 'sifahane',
@@ -37,7 +37,7 @@ const ekran = {
 
     const govde = yaralilar.length === 0
       ? uyari('Bütün askerler tam can.', 'iyi')
-      : `<div class="ek-liste">${satirlar}</div>${yaralilar.length > 1 ? iyilesmeKiyasi({ saniye: toplu.passiveSeconds, kendiOt: toplu.passiveHerbs, kendiAda: toplu.passiveAda, hemenOt: toplu.totalHerbs, hemenAda: toplu.totalAda }) : ''}${dugme({ e: 'hepsi', metin: hepsiMetin, ton: 'iyi', genis: true, devreDisi: !!hepsiPlan && hepsiPlan.items.length > 0 && !hepsiPlan.ok })}`;
+      : `<div class="ek-liste">${satirlar}</div>${yaralilar.length > 1 ? iyilesmeKiyasi({ saniye: toplu.passiveSeconds, kendiOt: toplu.passiveHerbs, kendiAda: toplu.passiveAda, hemenOt: toplu.totalHerbs, hemenAda: toplu.totalAda }) : ''}${iyilestirmeParsomeni(gs) > 0 ? dugme({ e: 'parsomenOnce', metin: `📜 Önce parşömen (${tam(iyilestirmeParsomeni(gs))}) · sonra ot`, ton: 'iyi', genis: true, ipucu: 'Önce İyileştirme Parşömenlerini kullanır (ot ve ASTRA harcamaz), kalan yarayı şifalı otla iyileştirir' }) : ''}${dugme({ e: 'hepsi', metin: hepsiMetin, ton: 'iyi', genis: true, devreDisi: !!hepsiPlan && hepsiPlan.items.length > 0 && !hepsiPlan.ok })}`;
 
     const yollar = katli('İyileştirmenin üç yolu: hangisi neden var?',
       not(`<b>1) Kendiliğinden:</b> hiçbir şey yapmazsan asker 24 saatte tam cana kavuşur; bu sırada ekrandaki can başına ${esc(P.herbPerHp ?? 0.1)} şifalı ot ve ${esc(P.adaPerHp ?? 0.002)} ASTRA harcanır (hemen iyileştirmenin beşte biri). En ucuzu, ama beklersin; ot ya da ASTRA biterse iyileşme durur.`)
@@ -65,6 +65,9 @@ const ekran = {
     },
     async hepsi(b) {
       await hizliIyilestir(b);
+    },
+    async parsomenOnce(b) {
+      await hizliIyilestir(b, null, { parsomenOnce: true });
     },
     kisla() {
       return { git: 'kisla' };

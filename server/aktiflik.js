@@ -26,7 +26,7 @@ const KATEGORI_ESLEME = {
   repairEquipment: 'bakim', repairAllEquipmentInKingdom: 'bakim', scrapAllLowTierEquipment: 'bakim',
   equipSoldierSlot: 'bakim', unequipSoldierSlot: 'bakim', equipSoldierFromDepot: 'bakim',
   unequipSoldierToArmory: 'bakim', unequipAllSoldiers: 'bakim', autoEquipBest: 'bakim', recycleEquipment: 'bakim',
-  useScroll: 'bakim', refillStaminaWithWheat: 'bakim', refillStaminaExact: 'bakim', refillStaminaToMaxWithWheat: 'bakim',
+  useScroll: 'bakim', useHealScrollsFirst: 'bakim', refillStaminaWithWheat: 'bakim', refillStaminaExact: 'bakim', refillStaminaToMaxWithWheat: 'bakim',
   buyTavernaAutomationBot: 'bakim', startBotTrial: 'bakim', setBotSiloOption: 'bakim', setBotAutoRenew24h: 'bakim',
   buyTavernBuff: 'bakim',
   // Kışla (asker, nüfus)

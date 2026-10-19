@@ -4,7 +4,7 @@
 // Kurallar ve sayılar js/gameState/zindan.js'ten gelir; bu dosya yalnız gösterir ve tıklamayı yönlendirir.
 // Dış olaylar: 'enter-dungeon-view' (haritadan giriş), 'feature-locked', 'monster-defeated' {level} (zafer sonrası tazeler).
 import { esc, tam, astra } from '../ekran/cekirdek.js';
-import { hizliIyilestir, planBedeli } from '../ekran/bilesik.js';
+import { hizliIyilestir, planBedeli, iyilestirmeParsomeni } from '../ekran/bilesik.js';
 import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
 import { seviyeHazir } from '../seviye-hazir.js';
 import {
@@ -100,7 +100,10 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     let iyilestir = '';
     if (o.asker && o.yarali) {
       const plan = gs.getQuickBuyPlan('heal');
-      iyilestir = `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir" title="Bütün yaralı askerleri şifalı otla anında iyileştirir; ot eksikse pazardan alınır">🌿 Hızlı iyileştir · ${planBedeli(plan)}</button>`;
+      const parsomen = iyilestirmeParsomeni(gs);
+      // Zindandan düşen ya da alınan İyileştirme Parşömeni varsa önce o önerilir; kalan yara şifalı otla kapanır
+      if (parsomen > 0) iyilestir += `<button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="iyilestir-parsomen" title="Önce ${parsomen} İyileştirme Parşömenini kullanır (ot ve ASTRA harcamaz), geriye kalan yarayı şifalı otla iyileştirir">📜 Önce parşömen (${tam(parsomen)}) · sonra ot</button>`;
+      iyilestir += `<button type="button" class="zd-dugme zd-kucuk${parsomen > 0 ? '' : ' zd-ana'}" data-e="iyilestir" title="Bütün yaralı askerleri şifalı otla anında iyileştirir; ot eksikse pazardan alınır">🌿 Hızlı iyileştir · ${planBedeli(plan)}</button>`;
     }
     // Zindan modu rozeti: Normal'de de görünür; son boss yenilince ve bir üst mod varsa "geçiş hazır" vurgusu
     const mb = gs.getDungeonModeInfo();
@@ -392,6 +395,10 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     // Hızlı iyileştir: hemen iyileştirmenin tek yolu şifalı ottur; eksik ot onaydan sonra pazardan alınır (ortak yardımcı: ekran/bilesik.js)
     async iyilestir() {
       await hizliIyilestir({ gameState: gs, bildir });
+      ciz();
+    },
+    async 'iyilestir-parsomen'() {
+      await hizliIyilestir({ gameState: gs, bildir }, null, { parsomenOnce: true });
       ciz();
     },
     kutuk() { durum.kutuk = true; ciz(); },

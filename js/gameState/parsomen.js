@@ -3,6 +3,29 @@
 import { GAME_CONFIG } from '../config.js';
 
 export const parsomenYontemleri = {
+  // "Önce parşömen, sonra şifalı ot" (19 Ekim 2026): elindeki İyileştirme Parşömenlerini yaralı askerlere harcar. sira verilirse yalnız o asker.
+  // Parşömen boşa gitmesin diye eksik can parşömenin yarısından azsa o askerde kullanılmaz (kalanı şifalı otla kapatılır).
+  // Döndürür: { used (kullanılan parşömen), healedHp }
+  useHealScrollsFirst(sira = null) {
+    const env = this.state.inventory || {};
+    const ekranCan = GAME_CONFIG.SIFAHANE?.PARSOMEN_CAN ?? 4;
+    const askerler = this.state.soldierUnits || [];
+    const sirasi = sira != null ? [sira] : askerler.map((_, i) => i);
+    let used = 0;
+    for (const i of sirasi) {
+      const a = askerler[i];
+      if (!a) continue;
+      for (let tur = 0; tur < 1000 && (env.scroll_heal || 0) > 0; tur++) {
+        const bilgi = typeof this.getHerbHealInfo === 'function' ? this.getHerbHealInfo(i) : null;
+        if (!bilgi || bilgi.isFull || !(bilgi.missingBattleHp >= ekranCan / 2)) break;
+        const r = this.useScroll('scroll_heal', a.id != null ? a.id : i);
+        if (!r.success) break;
+        used++;
+      }
+    }
+    return { used, healedHp: used * ekranCan };
+  },
+
   // scrollType: 'scroll_heal' | 'scroll_stamina'; targetId yalnız iyileştirmede (asker kimliği ya da sırası)
   useScroll(scrollType, targetId = null) {
     if (!this.state.inventory) this.state.inventory = {};

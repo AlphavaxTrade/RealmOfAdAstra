@@ -2838,6 +2838,9 @@ x-islemler:
     argumanlar:
       - scroll
       - str?
+  useHealScrollsFirst:
+    argumanlar:
+      - idx?
   carnivalCheer:
     argumanlar: []
   buyLotteryTickets:

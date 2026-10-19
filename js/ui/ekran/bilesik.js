@@ -142,15 +142,26 @@ export function iyilesmeKiyasi(k) {
 // Şifalı otla "Hızlı iyileştir" (Kışla, Şifahane, Zindan, Krallık merkezi, Kolezyum): hemen iyileştirmenin tek yolu şifalı ottur.
 // Eksik ot pazardan alınır (asker asker: silo hepsini birden tutmak zorunda kalmaz), sonra iyileştirilir. sira verilirse yalnız o asker.
 // Ot yetiyorsa onay sorulmaz (bedel zaten düğmede yazıyor). Döndürür: { iyilesen, hata }
-export async function hizliIyilestir(b, sira = null) {
+// parsomenOnce: true ise önce elindeki İyileştirme Parşömenleri kullanılır, geriye kalan eksik şifalı otla kapatılır (19 Ekim 2026).
+export async function hizliIyilestir(b, sira = null, { parsomenOnce = false } = {}) {
   const gs = b.gameState;
-  const yaralilar = sira != null
+  const yaralilariBul = () => (sira != null
     ? [sira]
-    : (gs.state.soldierUnits || []).map((_, i) => i).filter((i) => (gs.getHerbHealInfo(i) || {}).missingHp > 0);
-  if (!yaralilar.length || (sira != null && !((gs.getHerbHealInfo(sira) || {}).missingHp > 0))) {
+    : (gs.state.soldierUnits || []).map((_, i) => i).filter((i) => (gs.getHerbHealInfo(i) || {}).missingHp > 0));
+  const yarali = () => !(sira != null && !((gs.getHerbHealInfo(sira) || {}).missingHp > 0)) && yaralilariBul().length > 0;
+  if (!yarali()) {
     b.bildir('İyileştirilecek yaralı asker yok.', 'info');
     return { iyilesen: 0, hata: false };
   }
+  let parsomen = 0;
+  if (parsomenOnce) {
+    const p = gs.useHealScrollsFirst(sira);
+    parsomen = p.used;
+    if (parsomen > 0) b.bildir(`📜 ${parsomen} İyileştirme Parşömeni kullanıldı (+${tam(p.healedHp)} can)`, 'success');
+    else b.bildir('Parşömen kullanılacak yaralı yok; şifalı otla devam ediliyor.', 'info');
+    if (!yarali()) return { iyilesen: 0, parsomen, hata: false };
+  }
+  const yaralilar = yaralilariBul();
   const plan = gs.getQuickBuyPlan(sira == null ? 'heal' : `heal:${sira}`);
   if (plan.items.length) {
     if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return { iyilesen: 0, hata: true }; }
@@ -187,5 +198,13 @@ export async function hizliIyilestir(b, sira = null) {
     iyilesen++;
   }
   b.bildir(`🌿 ${iyilesen} asker anında iyileşti (-${tam(ot)} 🌿 şifalı ot, -${astra(ada)} ASTRA)`, 'success');
-  return { iyilesen, hata: false };
+  return { iyilesen, parsomen, hata: false };
+}
+
+// Elde İyileştirme Parşömeni varken "Hızlı iyileştir"in yanında çıkan öneri düğmesi için parşömen sayısı (yaralı yoksa ya da parşömen yoksa 0)
+export function iyilestirmeParsomeni(gs) {
+  const adet = Math.floor(Number((gs.state.inventory || {}).scroll_heal) || 0);
+  if (adet <= 0) return 0;
+  const yarali = (gs.state.soldierUnits || []).some((_, i) => (gs.getHerbHealInfo(i) || {}).missingHp > 0);
+  return yarali ? adet : 0;
 }
