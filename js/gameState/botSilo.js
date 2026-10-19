@@ -2,11 +2,12 @@
 // ASTRA finansmanıyla silo yükseltme). 11 Ekim 2026'da baştan yazıldı; kurallar öncekiyle aynı.
 // Karışım olarak GameStateManager.prototype'a eklenir (bkz. js/gameState.js).
 import { ammMarket } from '../ammMarket.js';
+import { GAME_CONFIG } from '../config.js';
 
 // Bot aynı saniyede arka arkaya silo yükseltmesin (ileri sarmada bu bekleme yok)
 const YUKSELTME_BEKLEMESI_MS = 3000;
 // Silo yükseltme için gereken doluluk barajı ve "sat" modunda korunan pay
-const BARAJ_ORANI = 0.8;
+const barajOrani = () => (GAME_CONFIG.WAREHOUSE || {}).upgradeFillShare ?? 0.8;   // silo yükseltme doluluk şartı (19 Ekim 2026: %70)
 const SATIS_MODU_KORUMA = 0.5;
 // Oyuncu pazardan elle bir kaynak aldıysa bot o kaynağı bu süre boyunca satmaz: "Eksikleri al ve döv" gibi birden çok istekli akışlarda
 // bot satın alınanı arada geri satıp işlemi "Yetersiz Demir" ile bozmasın (13 Ekim 2026 denetimi, ikinci tur notu).
@@ -94,7 +95,7 @@ export const botSiloYontemleri = {
     // KURAL 1: %80 dolu ama yükseltme parası yok → baraj üstündeki fazlayı sat
     const bedel = this.getWarehouseUpgradeCost();
     if (bedel && bedel.is80PercentFull && !(bedel.canAffordCost && this._botCanSpend(bedel.adAstra))) {
-      const baraj = Math.round(limit * BARAJ_ORANI);
+      const baraj = Math.round(limit * barajOrani());
       const fazla = Math.max(0, mevcut - baraj);
       const astraAcigi = Math.max(0, bedel.adAstra + this.getBotAdaReserve() - (this.state.adAstraBalance || 0));
 
@@ -175,7 +176,7 @@ export const botSiloYontemleri = {
     let satilanAstra = 0;
     for (const node of bedel.keys) {
       if (acik <= 0) break;
-      const baraj = Math.round((bedel.currentCap[node] || 0) * BARAJ_ORANI);
+      const baraj = Math.round((bedel.currentCap[node] || 0) * barajOrani());
       const fazla = Math.max(0, (Number(depo[node]) || 0) - baraj);
       if (fazla <= 0) continue;
 

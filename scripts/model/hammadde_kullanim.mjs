@@ -62,7 +62,8 @@ export function haftalikOlcum(seviye) {
       topla(t, { wood: dongu * r.durMin * b.wood / 2, iron: dongu * r.durMin * b.iron / 2, wheat: dongu * r.durMin * b.wheat / 2 }, haftadaSeviye);
       return;
     }
-    const haftadaSeviye = HAFTA / Math.max(1, r.cycles * r.durMin);
+    // 19 Ekim 2026 (x5 kararı): bedel RAMP kadar büyüdüyse oyuncu o oranda YAVAŞ seviye atlar; haftalık talep payı sabit kalır (hiçbir bedel haftalık üretimi aşan bir hızla ödenemez)
+    const haftadaSeviye = HAFTA / Math.max(1, r.cycles * r.durMin) / (ESKI ? 1 : gs._seviyeBedeliCarpani(seviye));
     topla(t, r.costs || { wood: r.wood, iron: r.iron, wheat: r.wheat }, haftadaSeviye);
   });
 
@@ -91,7 +92,9 @@ export function haftalikOlcum(seviye) {
     topla(t, { wood: dovme.woodCost, iron: dovme.ironCost, coal: dovme.coalCost });
     const parca = { slot: 'armor', level: 3, baseAtk: 0, baseHp: 120, durability: 13, maxDurability: 13, name: 'Referans zırh' };
     const yuk = gs.calculateEquipmentUpgradeCost(parca);
-    topla(t, { wood: yuk.woodCost, iron: yuk.ironCost, coal: ESKI ? 0 : (yuk.coalCost || 0), stone: ESKI ? 0 : (yuk.stoneCost || 0) });
+    // x5 kararı: yükseltme bedeli büyüme oranı kadar pahalı → o oranda seyrek yapılır (haftalık talep payı sabit)
+    const yukTempo = ESKI ? 1 : Math.pow(1.18, parca.level) / (1.18 * Math.pow(GAME_CONFIG.EQUIPMENT_UPGRADE_GROWTH ?? 1.18, parca.level - 1));
+    topla(t, { wood: yuk.woodCost, iron: yuk.ironCost, coal: ESKI ? 0 : (yuk.coalCost || 0), stone: ESKI ? 0 : (yuk.stoneCost || 0) }, yukTempo);
     const hasarli = { ...parca, durability: 6 };
     const onar = gs.calculateEquipmentRepairCost(hasarli);
     topla(t, { wood: onar.woodCost, iron: onar.ironCost, coal: ESKI ? 0 : (onar.coalCost || 0) }, 2);
@@ -100,7 +103,9 @@ export function haftalikOlcum(seviye) {
   // 6) Ev yapımı: iki haftada bir (seviyeye kadar)
   kalem('ev yapımı', (t) => {
     const n = Math.min(20, Math.max(2, seviye));
-    topla(t, gs.getHouseCost(n), 0.5);
+    // x5 kararı: ev bedeli büyüme oranı kadar pahalı → o oranda seyrek yapılır
+    const evTempo = ESKI ? 1 : 1 / Math.pow((GAME_CONFIG.KOY || {}).HOUSE_COST_MULT / 1.2, Math.max(0, n - 2));
+    topla(t, gs.getHouseCost(n), 0.5 * evTempo);
   });
 
   // 7) Silo yükseltmesi: üç haftada bir; bedel = mevcut kapasitenin yarısı (altı hammadde). Silo seviyesi ≈ 1 + seviye/3.
@@ -110,6 +115,7 @@ export function haftalikOlcum(seviye) {
     const siloSeviyesi = Math.min(17, 1 + Math.floor(seviye / 3));
     if (siloSeviyesi >= gs.getWarehouseMaxLevel()) return;
     const kap = gs.getWarehouseCapacity(siloSeviyesi);
+    // yükseltme bedeli kapasitenin upgradeCostShare'i (x5 kararından sonra %70); %50 ölçeğinde 3 haftada bir ≙ aynı haftalık talep
     for (const k of K) t[k] += Math.floor((kap[k] || 0) / 2) / 3;
   });
 

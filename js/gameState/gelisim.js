@@ -95,6 +95,14 @@ export const gelisimYontemleri = {
   // Bir sonraki seviyenin XP'si ve bedeli: bedel, XP'yi toplamaya yetecek sefer döngülerinde ALTI alanda kazanılan hammaddenin
   // yarısıdır (her hammaddenin kendi üretim hızına göre); ASTRA bedeli bu hammaddelerin anlık pazar değeridir.
   // Eskiden yalnız odun, demir ve buğday sayılıyordu (üç alanlı dönemden kalma); artık altı hammadde de bedele girer.
+  // x5 kararı (19 Ekim 2026): hesap seviye bedeli, RAMP.FROM_LEVEL'e kadar eski; TO_LEVEL'den sonra MULT katı; arası doğrusal
+  _seviyeBedeliCarpani(seviye) {
+    const R = GAME_CONFIG.LEVEL_UP_COST_RAMP || { FROM_LEVEL: 1, TO_LEVEL: 1, MULT: 1 };
+    const aralik = Math.max(1, (R.TO_LEVEL || 1) - (R.FROM_LEVEL || 0));
+    const oran = Math.max(0, Math.min(1, ((Number(seviye) || 1) - (R.FROM_LEVEL || 0)) / aralik));
+    return 1 + ((R.MULT || 1) - 1) * oran;
+  },
+
   getNextLevelRequirement() {
     const enUst = GAME_CONFIG.MAX_PLAYER_LEVEL || 81;
     const simdiki = this.state.level || 1;
@@ -115,7 +123,7 @@ export const gelisimYontemleri = {
     const siloyaSigdirilan = {};                       // bedeli silo tavanına kırpılan hammaddeler (ham bedel burada)
     for (const k of alanlar) {
       kazanilan[k] = dongu * sure * (uretim[k] || 0);
-      const ham = Math.round(kazanilan[k] / 2);
+      const ham = Math.round((kazanilan[k] / 2) * this._seviyeBedeliCarpani(simdiki));
       costs[k] = tavan[k] != null ? Math.min(ham, tavan[k]) : ham;
       if (costs[k] < ham) siloyaSigdirilan[k] = ham;
     }
@@ -382,23 +390,28 @@ export const gelisimYontemleri = {
   },
 
   // ── Silo ────────────────────────────────────────────────────────────────
-  // 18 seviye; en üst seviye config WAREHOUSE.universeGateLevel (19 Ekim 2026'dan beri 18: hepsi açık)
+  // 49 seviye (19 Ekim 2026): en üst seviye config WAREHOUSE.maxLevel / universeGateLevel
   getWarehouseMaxLevel() {
     const W = GAME_CONFIG.WAREHOUSE || {};
-    const kapi = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? (W.baseLevels || 18) : (W.universeGateLevel || W.baseLevels || 18);
-    return Math.min(W.baseLevels || 18, kapi);
+    const enUst = W.maxLevel || W.baseLevels || 18;
+    const kapi = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? enUst : (W.universeGateLevel || enUst);
+    return Math.min(enUst, kapi);
   },
 
   // Kapasite seviye 1'de initialCapacities, son seviyede maxCapacities; arası üstel. Büyük Ambar projesi herkesin silosunu büyütür
   getWarehouseCapacity(level = this.state.warehouseLevel) {
-    const { baseLevels: enUst, initialCapacities: min, maxCapacities: max, fragmentsPerLevel } = GAME_CONFIG.WAREHOUSE;
-    const seviye = Math.max(1, Math.min(enUst, level));
-    const adim = seviye - 1;
-    const buyut = (k) => (seviye === enUst ? max[k] : Math.round(min[k] * Math.pow(Math.pow(max[k] / min[k], 1 / (enUst - 1)), adim)));
+    const W = GAME_CONFIG.WAREHOUSE;
+    const { baseLevels: enUst, initialCapacities: min, maxCapacities: max, fragmentsPerLevel } = W;
+    // En üst seviye 49 (maxLevel); kapasite eğrisi 18. seviyeye (enUst) kadar eski üssel eğridir, sonrası her seviye postAnchorGrowth katıdır
+    const seviye = Math.max(1, Math.min(W.maxLevel || enUst, level));
+    const egri = Math.min(seviye, enUst);
+    const asim = seviye > enUst ? Math.pow(W.postAnchorGrowth ?? 1.08, seviye - enUst) : 1;
+    const adim = egri - 1;
+    const buyut = (k) => (egri === enUst ? max[k] : Math.round(min[k] * Math.pow(Math.pow(max[k] / min[k], 1 / (enUst - 1)), adim)));
     const proje = 1 + ((globalPool && globalPool.getProjectBonus) ? globalPool.getProjectBonus('warehouse') : 0);
     const kapasite = {};
-    for (const k of RES_KEYS()) kapasite[k] = min[k] != null && max[k] != null ? Math.round(buyut(k) * proje) : null;
-    kapasite.fragments = seviye === enUst ? max.fragments : Math.round(min.fragments + adim * fragmentsPerLevel);
+    for (const k of RES_KEYS()) kapasite[k] = min[k] != null && max[k] != null ? Math.round(buyut(k) * asim * proje) : null;
+    kapasite.fragments = Math.round((egri === enUst ? max.fragments : min.fragments + adim * fragmentsPerLevel) * asim);
     return kapasite;
   },
 
@@ -412,14 +425,16 @@ export const gelisimYontemleri = {
     const keys = RES_KEYS().filter(k => simdiki[k] != null);
 
     const costs = {};
-    for (const k of keys) costs[k] = Math.floor(simdiki[k] / 2);
+    const pay = (GAME_CONFIG.WAREHOUSE || {}).upgradeCostShare ?? 0.5;   // x5 kararı: kapasitenin %70'i (eskiden %50)
+    for (const k of keys) costs[k] = Math.floor(simdiki[k] * pay);
     const deger = ammMarket.calculateResourcesAdAstraValue(costs);
 
     const envanter = this.state.inventory || {};
     const fills = {};
     const fillOk = {};
+    const doluluk = (GAME_CONFIG.WAREHOUSE || {}).upgradeFillShare ?? 0.8;   // 19 Ekim 2026: %70
     for (const k of keys) {
-      fills[k] = Math.round(simdiki[k] * 0.8);
+      fills[k] = Math.round(simdiki[k] * doluluk);
       fillOk[k] = (envanter[k] || 0) >= fills[k];
     }
     const yuzde80Dolu = keys.every(k => fillOk[k]);
@@ -439,7 +454,8 @@ export const gelisimYontemleri = {
       wood: costs.wood || 0, iron: costs.iron || 0, wheat: costs.wheat || 0,
       adAstra: deger.totalAda,
       ammBreakdown: deger.breakdown,
-      is80PercentFull: yuzde80Dolu,
+      is80PercentFull: yuzde80Dolu,   // eski ad (testler ve arayüz okur); anlamı: doluluk şartı sağlandı (fillShare)
+      fillShare: doluluk,
       canAffordCost: karsilanabilir,
       canUpgrade: yuzde80Dolu && karsilanabilir
     };
@@ -448,15 +464,14 @@ export const gelisimYontemleri = {
   upgradeWarehouse() {
     const bedel = this.getWarehouseUpgradeCost();
     if (!bedel) {
-      const kapali = (this.state.warehouseLevel || 1) < ((GAME_CONFIG.WAREHOUSE || {}).baseLevels || 18);
-      return { success: false, message: kapali ? '🚀 Silonun 13. seviyesi ve üstü Universe alüminyumu ister; Universe açılınca devam eder.' : 'Deponuz zaten maksimum seviyede!' };
+      return { success: false, message: 'Deponuz zaten maksimum seviyede!' };
     }
 
     const envanter = this.state.inventory || {};
     if (!bedel.is80PercentFull) {
       const eksikler = bedel.keys.filter(k => !bedel.fillOk[k])
         .map(k => `${kaynakSimgesi(k)} ${kaynakAdi(k)} (${Math.floor(envanter[k] || 0)}/${bedel.fills[k]})`);
-      return { success: false, message: `⚠️ Silo yükseltilemez! Tüm depolar en az %80 dolu olmalıdır. Yetersiz olanlar: ${eksikler.join(', ')}` };
+      return { success: false, message: `⚠️ Silo yükseltilemez! Tüm depolar en az %${Math.round((bedel.fillShare ?? 0.8) * 100)} dolu olmalıdır. Yetersiz olanlar: ${eksikler.join(', ')}` };
     }
     for (const k of bedel.keys) {
       if ((envanter[k] || 0) < bedel.costs[k]) return { success: false, message: `Yetersiz ${kaynakAdi(k)}! (${bedel.costs[k]} ${kaynakAdi(k)} gerekli)` };

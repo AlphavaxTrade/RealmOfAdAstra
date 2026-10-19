@@ -48,7 +48,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   for (const evren of [0, 3]) {                     // 0: Universe öncesi, 3: Universe açık
     GAME_CONFIG.UNIVERSE_STAGE = evren;
     const enUst = gs.getWarehouseMaxLevel();
-    assert.equal(enUst, 18, '19 Ekim 2026: silo her aşamada 18. seviyeye kadar açık (kullanıcı kararı)');
+    assert.equal(enUst, 49, '19 Ekim 2026: silo her aşamada 49. seviyeye kadar açık (kullanıcı kararı)');
     // seviye bedelinin tavanı: aşama 3'te en üst silo, öncesinde ESKİ sınır (levelUpCostGateLevel = 12) → silo büyüdü diye seviye atlamak yavaşlamaz
     const kap = gs.getWarehouseCapacity(evren === 3 ? 18 : GAME_CONFIG.WAREHOUSE.levelUpCostGateLevel);
     const oran = GAME_CONFIG.LEVEL_UP_SILO_SHARE;

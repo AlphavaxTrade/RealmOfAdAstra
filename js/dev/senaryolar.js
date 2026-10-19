@@ -183,13 +183,13 @@ export const SENARYOLAR = [
   },
   // ------------------------------------------------------------------ SİLO
   {
-    id: 'silo-yuzde-80', kategori: 'silo', ad: 'Silo, depolar %80 dolu değilse yükseltilemez',
-    ne: 'Depolar boşken silo yükseltme reddedilmeli ve nedeni %80 kuralı olmalı.',
+    id: 'silo-yuzde-80', kategori: 'silo', ad: 'Silo, depolar %70 dolu değilse yükseltilemez',
+    ne: 'Depolar boşken silo yükseltme reddedilmeli ve nedeni %70 doluluk kuralı olmalı (19 Ekim 2026: eskiden %80).',
     kur: (gs) => { temiz(gs); hepsiBos(gs); gs.setDevAdAstra(1e6); },
     calistir: (gs) => gs.upgradeWarehouse(),
     beklenen: [
       { ad: 'Yükseltme reddedildi', tamam: (o, s, r) => r.success === false },
-      { ad: 'Neden: %80 doluluk kuralı', tamam: (o, s, r) => /%80/.test(r.message) },
+      { ad: 'Neden: %70 doluluk kuralı', tamam: (o, s, r) => /%70/.test(r.message) },
       { ad: 'Silo seviyesi değişmedi', tamam: (o, s) => s.siloSeviye === o.siloSeviye }
     ]
   },

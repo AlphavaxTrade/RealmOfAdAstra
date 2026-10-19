@@ -75,7 +75,9 @@ export const techizatYontemleri = {
 
   // ── Dövme ───────────────────────────────────────────────────────────────
   // Eşyanın bugüne kadar harcanan kümülatif hammaddesi (onarım bedeli bundan oranlanır)
-  getCumulativeEquipmentResourceCost(item) {
+  // gercek: true → yükseltmeler GERÇEKTEN harcanan (yeni, x5 kararı) büyümeyle hesaplanır (geri dönüşüm iadesi); varsayılan eski 1,18 ölçeği (onarım)
+  getCumulativeEquipmentResourceCost(item, { gercek = false } = {}) {
+    const artis = gercek ? (GAME_CONFIG.EQUIPMENT_UPGRADE_GROWTH ?? YUKSELTME_ARTISI) : YUKSELTME_ARTISI;
     const seviye = Math.max(1, item?.level || 1);
     const atk = item?.baseAtk || (item?.slot === 'weapon' ? 25 : 0);
     const hp = item?.baseHp || (item?.slot !== 'weapon' ? 50 : 0);
@@ -92,7 +94,7 @@ export const techizatYontemleri = {
     let komur = 0;
     let tas = 0;
     for (let l = 1; l <= seviye; l++) {
-      const carpan = Math.pow(YUKSELTME_ARTISI, l - 1);
+      const carpan = gercek ? (l <= 1 ? 1 : YUKSELTME_ARTISI * Math.pow(artis, l - 2)) : Math.pow(YUKSELTME_ARTISI, l - 1);   // gercek: upgrade ile aynı basamak çarpanı
       odun += taban.wood * carpan;
       demir += taban.iron * carpan;
       komur += taban.coal * carpan;       // dövme (l = 1) ve her yükseltme kömür ister
@@ -112,7 +114,7 @@ export const techizatYontemleri = {
     const wood = Math.max(15, Math.round(dakika * (uretim.wood ?? 18)));
     const iron = Math.max(20, Math.round(dakika * (uretim.iron ?? 12)));
     const coal = uretim.coal > 0 ? Math.max(10, Math.round(dakika * uretim.coal / 3)) : 0;
-    const fragments = 1;
+    const fragments = 1;   // dövme: yeni oyuncu ilk takımı yapabilsin (yükseltme parçaları GELISIM_PARCA_CARPANI ile büyür)
     const ada = ammMarket.calculateResourcesAdAstraValue(coal > 0 ? { wood, iron, coal } : { wood, iron }).totalAda;
     return { wood, iron, coal, fragments, adAstra: ada, woodCost: wood, ironCost: iron, coalCost: coal, fragCost: fragments, adaCost: ada };
   },
@@ -186,12 +188,13 @@ export const techizatYontemleri = {
 
     const sonraki = simdiki + 1;
     const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
-    const carpan = Math.pow(YUKSELTME_ARTISI, simdiki);
+    // x5 kararı: ilk yükseltme basamağı eski (1,18; yeni oyuncu ilk silosuna sığar), sonraki her basamak EQUIPMENT_UPGRADE_GROWTH katı (onarım 1,18 ölçeğinde kalır)
+    const carpan = YUKSELTME_ARTISI * Math.pow(GAME_CONFIG.EQUIPMENT_UPGRADE_GROWTH ?? YUKSELTME_ARTISI, simdiki - 1);
     const woodCost = Math.max(15, Math.round(kumulatif.baseWood * carpan));
     const ironCost = Math.max(20, Math.round(kumulatif.baseIron * carpan));
     const coalCost = kumulatif.baseCoal > 0 ? Math.max(10, Math.round(kumulatif.baseCoal * carpan)) : 0;     // ocak
     const stoneCost = kumulatif.baseStone > 0 ? Math.max(10, Math.round(kumulatif.baseStone * carpan)) : 0;  // bileme taşı
-    const fragmentCost = Math.pow(2, simdiki);
+    const fragmentCost = Math.round(Math.pow(2, simdiki) * (simdiki >= 4 ? (GAME_CONFIG.GELISIM_PARCA_CARPANI ?? 1) : 1));   // ilk 3 yükseltme eskisi gibi (yeni oyuncu); 4+ parça bedeli x2
     const adAstraCost = ammMarket.calculateResourcesAdAstraValue({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
     return {
       isMaxLevel: false,

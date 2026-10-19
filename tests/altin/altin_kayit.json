@@ -46,9 +46,9 @@
  {
   "adim": "ordu",
   "oyuncu": [
-   "849303687c93303b"
+   "3dddd2c098452efb"
   ],
-  "dunya": "5c636192b1d73ae8",
+  "dunya": "2f8ab9f1dfc85a03",
   "sonuc": [
    "buySoldierUnit:ok",
    "buySoldierUnit:ok",
@@ -59,9 +59,9 @@
  {
   "adim": "teçhizat",
   "oyuncu": [
-   "8c065c26b201574e"
+   "5bcda87f4a0fa6ce"
   ],
-  "dunya": "466f9848b8827997",
+  "dunya": "d86614d6fd153aff",
   "sonuc": [
    "craftEquipment:ok",
    "craftEquipment:RED",
@@ -76,9 +76,9 @@
  {
   "adim": "silo",
   "oyuncu": [
-   "565af65f2bc33d92"
+   "ef4b8fc7c76d4847"
   ],
-  "dunya": "6014fb025de06ada",
+  "dunya": "01d5a9d30ba05edb",
   "sonuc": [
    "upgradeWarehouse:ok",
    "levelUp:RED"
@@ -87,9 +87,9 @@
  {
   "adim": "pazar",
   "oyuncu": [
-   "72b7bcea5d76ea6b"
+   "b32ab6d63503fb10"
   ],
-  "dunya": "318f26c3a911d234",
+  "dunya": "8d73fce0f1fbd3da",
   "sonuc": [
    "marketSell:ok",
    "marketBuy:ok",
@@ -99,9 +99,9 @@
  {
   "adim": "bot alindi",
   "oyuncu": [
-   "17d0b9b10efcf6b3"
+   "01ff16052072c794"
   ],
-  "dunya": "f92679acd52dcdfb",
+  "dunya": "5372f991437feed7",
   "sonuc": [
    "buyTavernaAutomationBot:ok",
    "setBotSiloOption:ok"
@@ -110,9 +110,9 @@
  {
   "adim": "bot 12 saat calisti",
   "oyuncu": [
-   "1ad960a8adaa078a"
+   "50b8f759bdfa587c"
   ],
-  "dunya": "baa7d9a37c344ee9",
+  "dunya": "82e0d718baaad933",
   "sonuc": [
    "claimAllCompletedExpeditions:ok"
   ]
@@ -120,9 +120,9 @@
  {
   "adim": "zindan",
   "oyuncu": [
-   "feec6bce5279d2f6"
+   "dd2bb966296264cd"
   ],
-  "dunya": "f3f3d3883e9129dd",
+  "dunya": "1a5a7d759ac12ed0",
   "sonuc": [
    "fightDungeon:ok",
    "fightDungeon:ok",
@@ -132,9 +132,9 @@
  {
   "adim": "karnaval",
   "oyuncu": [
-   "dfa50da89bd00e71"
+   "6c2bdbc6fd475381"
   ],
-  "dunya": "25323efb6ad35119",
+  "dunya": "40d77f66c5365d47",
   "sonuc": [
    "spinCarnivalWheel:ok",
    "spinCarnivalWheel:ok",
@@ -145,10 +145,10 @@
  {
   "adim": "piyango bileti",
   "oyuncu": [
-   "7a7aed9c03dfe18a",
-   "929c578eadc5f5d2"
+   "9bc3c7dc88f8e6dd",
+   "9220a29fc8b22bdf"
   ],
-  "dunya": "7e5658fbca131e2f",
+  "dunya": "b58c0c0f07b8b998",
   "sonuc": [
    "buyLotteryTickets:ok",
    "buyLotteryTickets:ok"
@@ -157,9 +157,9 @@
  {
   "adim": "B ordu",
   "oyuncu": [
-   "4c870ec0f44c4399"
+   "dbab39e905f6bff4"
   ],
-  "dunya": "43d2b73790913755",
+  "dunya": "4957c3adbeeafa15",
   "sonuc": [
    "buySoldierUnit:ok",
    "startExpedition:ok",
@@ -169,9 +169,9 @@
  {
   "adim": "C ordu",
   "oyuncu": [
-   "23580e857c93da79"
+   "db1a8f96267c0d99"
   ],
-  "dunya": "8bde1a8926229da2",
+  "dunya": "1ab963aa6a0ca87b",
   "sonuc": [
    "buySoldierUnit:ok",
    "levelUp:RED"
@@ -180,10 +180,10 @@
  {
   "adim": "kolezyum",
   "oyuncu": [
-   "58979ab053308f2b",
-   "0d5147d3b74bf78f"
+   "59121a0b46e98cf3",
+   "7411c9ff81a24962"
   ],
-  "dunya": "ef05901332c53a0a",
+  "dunya": "02d7b61e49eea84e",
   "sonuc": {
    "sira": true,
    "eslesti": true,
@@ -193,10 +193,10 @@
  {
   "adim": "gun 1",
   "oyuncu": [
-   "5e5c8bbd4da4af0f",
-   "68038a18db7e86df"
+   "837aa554aff81e69",
+   "2649fa1c0fef437b"
   ],
-  "dunya": "8c533800ae84b65d",
+  "dunya": "411f2dc94c815ee1",
   "sonuc": [
    "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
@@ -206,12 +206,12 @@
  {
   "adim": "gun 2",
   "oyuncu": [
-   "b01e62a3015da6ce",
-   "c5a0e62e10834c66"
+   "427d4f5151cb50b8",
+   "596bb7fa39125f98"
   ],
-  "dunya": "5f0e4c521d5a0cc3",
+  "dunya": "32fd3636c6a1c750",
   "sonuc": [
-   "claimAllHarvests:RED",
+   "claimAllHarvests:ok",
    "claimWeeklyUbi:RED",
    "claimAllHarvests:ok"
   ]
@@ -219,12 +219,12 @@
  {
   "adim": "gun 3",
   "oyuncu": [
-   "d19d0269a159c794",
-   "ec711e214161a7c3"
+   "c383169baeacfa97",
+   "15efb47d9d64fef2"
   ],
-  "dunya": "8e390da51198783f",
+  "dunya": "7235f805d483e496",
   "sonuc": [
-   "claimAllHarvests:RED",
+   "claimAllHarvests:ok",
    "claimWeeklyUbi:ok",
    "claimAllHarvests:ok"
   ]
@@ -232,11 +232,11 @@
  {
   "adim": "haftalik hesaplasma",
   "oyuncu": [
-   "563e4a13ba4e638b",
-   "f33a8175d7f84785",
-   "0d5147d3b74bf78f"
+   "d216ee8f1af2d64a",
+   "79d49616d37c021b",
+   "7411c9ff81a24962"
   ],
-  "dunya": "1f5a8608a21c7798",
+  "dunya": "0a381126055006b1",
   "sonuc": {
    "piyangoCekildi": true,
    "kolezyum": 1
@@ -245,11 +245,11 @@
  {
   "adim": "hafta sonrasi",
   "oyuncu": [
-   "f0cc70f116dd734c",
-   "3bb867002eda9a52",
-   "0d5147d3b74bf78f"
+   "888165c8ea274fb1",
+   "fba4b77b70b53402",
+   "7411c9ff81a24962"
   ],
-  "dunya": "41c7b24d8924fb57",
+  "dunya": "174f510078ade631",
   "sonuc": [
    "claimWinnerLotteryPayout:ok",
    "claimWinnerLotteryPayout:RED",

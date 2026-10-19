@@ -176,7 +176,7 @@ try {
 
   // 7) Eşzamanlı çift harcama + kilitli bakiyeyle çekim + UBI tekrarı
   {
-    engine.mutatePlayer(A.pid, gs => { gs.state.adAstraBalance = 60; gs.state.lockedAda = 0; });   // yalnız 1 asker (50 ASTRA) alacak kadar
+    engine.mutatePlayer(A.pid, gs => { gs.state.adAstraBalance = 260; gs.state.lockedAda = 0; });   // yalnız 1 asker (250 ASTRA; 19 Ekim 2026 x5 kararı, eskiden 50) alacak kadar
     const yaris = await Promise.all(Array.from({ length: 10 }, () => call('POST', '/api/action', { name: 'buySoldierUnit', args: [] }, A.token)));
     const basarili = yaris.filter(r => r.status === 200 && r.body.result && r.body.result.success !== false).length;
     assert.equal(basarili, 1, `10 eşzamanlı satın alma: yalnız biri geçmeli (${basarili})`);

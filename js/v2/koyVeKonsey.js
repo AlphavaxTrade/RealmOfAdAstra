@@ -198,7 +198,14 @@ export const gameStateV2 = {
     const K = GAME_CONFIG.KOY || {};
     const base = K.HOUSE_BASE_COST || { wood: 400, stone: 200, iron: 50 };
     const mult = Math.pow(K.HOUSE_COST_MULT ?? 1.2, Math.max(0, n - 2));
-    return Object.fromEntries(Object.entries(base).map(([k, v]) => [k, Math.round(v * mult)]));
+    // Hiçbir ev bedeli en büyük silonun %80'ini geçemez (siloya sığma ilkesi; 19 Ekim 2026 x5 kararı)
+    const Wk = GAME_CONFIG.WAREHOUSE || {};
+    const kap = this.getWarehouseCapacity(Math.min(this.getWarehouseMaxLevel ? this.getWarehouseMaxLevel() : 18, Wk.levelUpCostGateLevel || 18)) || {};
+    const sigma = GAME_CONFIG.LEVEL_UP_SILO_SHARE ?? 0.8;
+    return Object.fromEntries(Object.entries(base).map(([k, v]) => {
+      const ham = Math.round(v * mult);
+      return [k, kap[k] != null ? Math.min(ham, Math.floor(kap[k] * sigma)) : ham];
+    }));
   },
 
   getVillageInfo() {
@@ -354,7 +361,7 @@ export const gameStateV2 = {
 
   // ── Demirhane geri dönüşümü (R4b): eşya yok olur, hammaddelerin %70'i geri gelir, ASTRA gelmez ──
   getRecycleValue(item) {
-    const cum = this.getCumulativeEquipmentResourceCost(item);
+    const cum = this.getCumulativeEquipmentResourceCost(item, { gercek: true });   // iade, gerçekten harcananın %70'i (x5 kararından sonraki yükseltme bedelleri)
     const rate = GAME_CONFIG.RECYCLE_RETURN_RATE ?? 0.7;
     // İade, eşyaya gerçekten harcanan hammaddenin %70'idir: odun ve demir dövme + yükseltmeler, kömür dövme + yükseltmeler
     // (ocak), taş yalnız yükseltmeler (bileme). 13 Ekim 2026 öncesi yükseltme kömür/taş istemiyordu; bu yüzden iade yalnız dövme

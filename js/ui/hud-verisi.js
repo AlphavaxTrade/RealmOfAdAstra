@@ -16,9 +16,15 @@ export function botDurumu(gs) {
   return { durum: 'off', metin: 'Bot: Kapalı', ipucu: 'Otomasyon botu kapalı — Tavernadan başlat' };
 }
 
-/** Bakiyenin yazılışı: dar ekranda 10 bin ve üstü kısaltılır (12,35 B / 1,2 Mn): 360 px'te en uzun metin "9.999,99" (denetim QA-07). */
+/**
+ * Bakiyenin yazılışı: dar ekranda 10 bin ve üstü kısaltılır (denetim QA-07: 360 px'te en uzun metin "9.999,99").
+ * Kısaltmalar AÇIK yazılır: Bin / Mn / Mr. (Eskiden Türkçe "B" = bin idi; oyuncu 964 bin ASTRA'yı "964,64 B" görüp milyar sanıyordu, 19 Ekim 2026.)
+ */
 export function bakiyeYazisi(bakiye, darEkran) {
-  if (darEkran && bakiye >= 10000) return bakiye.toLocaleString('tr-TR', { notation: 'compact', maximumFractionDigits: 2 });
+  if (darEkran && bakiye >= 10000) {
+    const [bolen, ek] = bakiye >= 1e9 ? [1e9, 'Mr'] : (bakiye >= 1e6 ? [1e6, 'Mn'] : [1e3, 'Bin']);
+    return `${(bakiye / bolen).toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ${ek}`;
+  }
   return bakiye.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 

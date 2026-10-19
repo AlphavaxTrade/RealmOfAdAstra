@@ -11,24 +11,25 @@ function yukseltmeBolumu(b) {
   const envanter = gs.state.inventory || {};
   const bakiye = Number(gs.state.adAstraBalance) || 0;
 
-  // Önce şart: her ambar en az %80 dolu olmalı
+  // Önce şart: her ambar en az %70 dolu olmalı (config WAREHOUSE.upgradeFillShare)
+  const dolulukYuzde = Math.round((bedel.fillShare ?? 0.8) * 100);
   const dolulukSatirlari = bedel.keys.map((k) => {
     const sahip = Math.floor(Number(envanter[k]) || 0);
     return `<div class="ek-satir ${bedel.fillOk[k] ? 'is-iyi' : 'is-kotu'}"><span>${kaynakAdi(b, k)}</span><b>${esc(tam(sahip))} / ${esc(tam(bedel.fills[k]))} ${bedel.fillOk[k] ? '✅' : '❌'}</b></div>`;
   });
-  // Sonra bedel: kapasitenin yarısı kadar hammadde + pazar değeri kadar ASTRA
+  // Sonra bedel: silonun %70'ini dolduran miktarın tamamı kadar hammadde + o hammaddelerin anlık pazar değeri kadar ASTRA
   const bedelSatirlari = bedel.keys.map((k) => maliyetSatiri(kaynakAdi(b, k), Math.floor(Number(envanter[k]) || 0), bedel.costs[k]));
   bedelSatirlari.push(maliyetSatiri('ASTRA', bakiye, bedel.adAstra, { astraMi: true }));
   const yeniKapasite = bedel.keys.map((k) => `${kaynakAdi(b, k)} ${tam(bedel.nextCap[k])}`).join(' · ');
 
   let dugmeHtml;
-  if (!bedel.is80PercentFull) dugmeHtml = dugme({ e: 'yukselt', metin: '⚠️ Tüm ambarlar en az %80 dolu olmalı', devreDisi: true, genis: true });
+  if (!bedel.is80PercentFull) dugmeHtml = dugme({ e: 'yukselt', metin: `⚠️ Tüm ambarlar en az %${dolulukYuzde} dolu olmalı`, devreDisi: true, genis: true });
   else if (!bedel.canAffordCost) dugmeHtml = dugme({ e: 'yukselt', metin: '⚠️ Kaynak ya da ASTRA yetmiyor', devreDisi: true, genis: true });
   else dugmeHtml = dugme({ e: 'yukselt', metin: `🔨 Siloyu Seviye ${bedel.nextLevel}'e yükselt`, ton: 'iyi', genis: true });
 
   return [
     kart({
-      baslik: 'Şart: ambarlar en az %80 dolu',
+      baslik: `Şart: ambarlar en az %${dolulukYuzde} dolu`,
       rozet: bedel.is80PercentFull ? '<span class="ek-etiket is-iyi">sağlandı</span>' : '<span class="ek-etiket is-uyari">bekleniyor</span>',
       vurgu: bedel.is80PercentFull ? 'iyi' : 'uyari',
       icerik: dolulukSatirlari.join('')

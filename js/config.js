@@ -70,7 +70,7 @@ export const GAME_CONFIG = {
   ],
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
   KOY: {
-    HOUSE_BASE_COST: { wood: 400, stone: 200, iron: 50 }, HOUSE_COST_MULT: 1.2, MAX_HOUSES: 20,
+    HOUSE_BASE_COST: { wood: 400, stone: 200, iron: 50 }, HOUSE_COST_MULT: 1.5, MAX_HOUSES: 20,
     VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: 2, STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
     LABOR_PER_VILLAGER_DAY: 1, PROD_BONUS_PER_10: 0.01, PROD_BONUS_MAX: 0.20, VILLAGER_PER_SOLDIER: 1,
     START_HOUSES: 1, START_VILLAGERS: 10
@@ -408,13 +408,28 @@ export const GAME_CONFIG = {
   // geri kalan %20'ye sefer toplayabilir. Alternatif (seçilmedi): %100 — silo tam dolu beklemek toplama kaybettirir.
   LEVEL_UP_SILO_SHARE: 0.8,
 
+  // GELİŞİM BEDELLERİ ×5 (19 Ekim 2026, kullanıcı kararı: "oyuna 1 M ASTRA attım, silo, ev, asker, teçhizat hepsini bir günde bitirdim, çok ucuz").
+  // Yalnız TEK SEFERLİK gelişim bedelleri büyür; tekrar eden harcamalar (stamina, alet ve eşya onarımı, iyileştirme, haftalık talep) haftalık
+  // Üretim Hakkı ile dengelidir (docs/v2/HAMMADDE_KULLANIM_PLANI.md), 5 katı oyunu oynanmaz yapardı. Hiçbir bedel TOPLAM x5'i geçirmek için
+  // ilk basamakları şişirmez: yeni oyuncu ilk siloya sığan ilk takımı yine dövebilir (başlangıç silosu ilkesi); yük üst basamaklara biner.
+  //   • Teçhizat yükseltmesi: seviye başına artış 1,18 → EQUIPMENT_UPGRADE_GROWTH (1→10 toplam ~x4,8; ilk basamak aynı). Onarım eski 1,18 ölçeğinde kalır.
+  //   • Köy evi: HOUSE_COST_MULT 1,2 → 1,5 (11 evin toplamı ~x4,4); tek bedel en büyük silonun %80'ini geçemez (siloya sığma ilkesi).
+  //   • Hesap seviyesi bedeli: LEVEL_UP_COST_RAMP: FROM_LEVEL'e kadar eski, TO_LEVEL'den sonra MULT katı, arası doğrusal; tavan en üst silo (18. seviye) x %80.
+  //   • Silo yükseltmesi: kapasitenin %50'si → %70'i (siloya sığma kuralı yüzünden x5 olamaz: bedel kapasiteyi aşamaz).
+  //   • Asker ASTRA bedeli x5 (SOLDIER_COST_BASE, SOLDIER_18_TARGET_COST); teçhizat parçası bedeli (dövme ve yükseltme) PARCA_CARPANI = x2
+  //     (parça arzı düşme şansına ve küçük pazar havuzuna bağlı: x5 pazar fiyatını patlatırdı).
+  EQUIPMENT_UPGRADE_GROWTH: 1.55,   // ilk yükseltme basamağı 1,18 (eski), sonrası her basamak x1,55 (1→10 toplam ~x4,8)
+  LEVEL_UP_COST_RAMP: { FROM_LEVEL: 4, TO_LEVEL: 10, MULT: 5 },
+  GELISIM_PARCA_CARPANI: 2,
+
   // =========================================================================
   // SOLDIER & MILITARY SYSTEM (TEK TİP ADASTRA ŞAMPİYONU)
   // =========================================================================
   // Tek bir asker türü: AdAstra Şampiyonu. Level 1'de fix 100 HP ve fix 25 ATK.
-  SOLDIER_COST_BASE: 50,              // Taban maliyet: 50 ASTRA (1. asker; v2 ölçekli)
+  // 19 Ekim 2026 (kullanıcı kararı: "gelişim bedelleri çok düşük", x5): asker bedeli 5 katına çıktı (taban 50 → 250, 18. asker 18.000 → 90.000)
+  SOLDIER_COST_BASE: 250,             // Taban maliyet: 250 ASTRA (1. asker; v2 ölçekli, x5)
   SOLDIER_COST_EXPONENT: 2.0364522367650437, // Kademeli artış üssü (1. asker: 50, 18. asker: 18.000)
-  SOLDIER_18_TARGET_COST: 18000,      // 18. asker maliyeti (v2 ölçekli)
+  SOLDIER_18_TARGET_COST: 90000,      // 18. asker maliyeti (v2 ölçekli, x5)
   MAX_SOLDIERS: Infinity,             // Sınırsız ordu ve asker alımı
   // Ordu sınırları (30 Eylül 2026 kararı 5, docs/v2/R5_NUFUS_ORDU.md): "zindan ilerlemesi + hesap seviyesi birlikte".
   //  • ASKER_SEVIYESI_HESAP_SEVIYESINI_GECEMEZ: asker, hesap seviyesinden yüksek seviyeye çıkamaz (kazanılan XP birikir, hesap
@@ -442,22 +457,27 @@ export const GAME_CONFIG = {
   // =========================================================================
   // SİLO / DEPO KAPASİTE & YÜKSELTMELERİ (İSTİFÇİLİK ÖNLEME MODELİ)
   // gameState.getWarehouseCapacity bu değerleri okur.
-  // Maksimum Seviye: 18
+  // Maksimum Seviye: 49 (19 Ekim 2026; ilk 18 seviye eski eğri, 19-49 her seviye postAnchorGrowth kadar büyür)
   // Başlangıç (Lv 1): 1080 Odun, 720 Demir, 1800 Buğday
   // Ara seviyeler: başlangıçtan maksimuma eşit oranlı (üssel) büyüme
   // Maksimum (Lv 18): Haftalık havuz tavanının %50'si (90k Odun, 65k Demir, 245k Buğday)
-  // Yükseltme Şartı: Tüm depolar %80 dolu olmak zorunda
-  // Yükseltme Maliyeti: Mevcut kapasitenin yarısı (%50) + Anlık DEX Pazar ASTRA karşılığı
+  // Yükseltme Şartı: Tüm depolar %70 dolu olmak zorunda (upgradeFillShare; 19 Ekim 2026, eskiden %80)
+  // Yükseltme Maliyeti: Silonun %70'ini dolduran kısmın TAMAMI kadar hammadde (upgradeCostShare) + o hammaddelerin ANLIK pazar ASTRA fiyatı toplamı
   // =========================================================================
   WAREHOUSE: {
-    baseLevels: 18,
+    baseLevels: 18,           // kapasite eğrisinin DAYANAK seviyesi (initial → max üssel); 18. seviyeden sonrası postAnchorGrowth ile büyür
+    maxLevel: 49,             // 19 Ekim 2026 (kullanıcı kararı): silo en çok 49. seviyeye kadar yükseltilir
+    postAnchorGrowth: 1.08,   // 19-49. seviyeler: her seviye kapasite x1,08 (49. seviye = 18. seviyenin ~10,3 katı)
+    upgradeFillShare: 0.7,    // yükseltme şartı: tüm depolar en az %70 dolu (eskiden %80)
     // v2: 13. seviyeden itibaren Universe alüminyumu ister; Universe açılana kadar bu tavan
     // 19 Ekim 2026 (kullanıcı kararı: "silo 12 çok az"): Universe beklemeden 18. seviyeye kadar açıldı. 12. seviye buğdayda 12.976, taşta 6.298 alıyordu;
     // 18. seviye 73.500 / 30.000 (tasarımdaki en üst seviye: haftalık havuz tavanının %50'si). 13+ yükseltme bedeli ve %80 doluluk şartı aynı kalır.
-    universeGateLevel: 18,
+    universeGateLevel: 49,
+    // 19 Ekim 2026: silo yükseltme bedeli = silonun %70'ini dolduran miktarın tamamı (eskiden kapasitenin %50'si) + o hammaddelerin anlık pazar ASTRA'sı.
+    upgradeCostShare: 0.7,
     // Seviye atlama bedelinin tavanı hâlâ ESKİ sınır olan 12. silonun kapasitesine göre hesaplanır (Universe aşaması 3'e kadar): silo büyüyünce
     // seviye bedelleri de 5 kata kadar büyümesin, seviye atlama yavaşlamasın. Aşama 3'te tavan en üst siloya geçer (eski davranış).
-    levelUpCostGateLevel: 12,
+    levelUpCostGateLevel: 18,
     initialCapacities: {   // 1 saatlik üretim
       wheat: 540,
       stone: 360,
@@ -1789,6 +1809,16 @@ export const GAME_CONFIG = {
       changes: [
         `Haritada Sirius Konseyi binasına tıklayınca "Hazine" ekranı açılıyor, menüden tıklayınca "Sirius Konseyi" ekranı açılıyordu. Artık ikisi de Sirius Konseyi'ni açar; Konsey ekranının altındaki "Oyun kasaları (Hazine)" düğmesi ASTRA kasalarını gösteren Hazine ekranına götürür.`,
         `Piyango kasasının küçültülmesinde (v1.73) kasalara yazılamayan ASTRA'nın geri eklenmesi tamamlandı: Zindan, Kolezyum ve Dünya Boss kasalarına toplam 8.000.090 ASTRA eklendi (bir önceki onarım, bu arada bilet satıldığı için eşleşmemişti).`
+      ]
+    },
+    {
+      version: 'v1.79',
+      title: '💰 Gelişim Bedelleri 5 Kat, Silo 49. Seviyeye, Bakiye Yazısı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Tek seferlik gelişim bedelleri yaklaşık 5 kat pahalandı: teçhizat yükseltmesi (1→10 toplamı ~x4,8), köy evleri (~x5), hesap seviye atlama (4. seviyeden başlayıp 10. seviyede x5), asker ASTRA bedeli (1. asker 250, 18. asker 90.000) ve teçhizat parçası bedeli (4. basamaktan itibaren x2). Yeni oyuncunun ilk adımları (ilk takım, ilk yükseltme, ilk ev, 4. seviyeye kadar seviye atlama) eskisi gibi kaldı. Tekrar eden harcamalar (stamina, onarım, iyileştirme) değişmedi.`,
+        `Silo artık 49. seviyeye kadar yükseltilir (18. seviyeden sonra her seviye kapasite x1,08; 49. seviye buğdayda yaklaşık 799 bin). Yeni kural: yükseltmek için tüm depolar en az %70 dolu olmalı ve bedel, silonun %70'ini dolduran miktarın tamamı kadar hammadde ile o hammaddelerin anlık pazar fiyatı toplamı kadar ASTRA'dır.`,
+        `Bakiye yazısı düzeltildi: dar ekranda 964 bin ASTRA "964,64 B" diye yazılıyordu ve milyar sanılıyordu. Artık kısaltmalar açık: "Bin", "Mn" (milyon), "Mr" (milyar).`
       ]
     }
   ],

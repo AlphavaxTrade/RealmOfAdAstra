@@ -62,6 +62,11 @@ console.log('✅ zindan ganimet şansı');
   const genis = bakiyeYazisi(1234567.891, false);
   assert.ok(dar.length < genis.length, `dar ekranda bakiye kısalmalı (${dar} / ${genis})`);
   assert.equal(bakiyeYazisi(500, true), bakiyeYazisi(500, false), '100 binin altı kısaltılmaz');
+  // Kısaltmalar açık: 964 bin "B" (milyar sanılıyordu) değil "Bin"; milyon "Mn", milyar "Mr"
+  assert.equal(bakiyeYazisi(964636, true), '964,6 Bin');
+  assert.equal(bakiyeYazisi(1234567, true), '1,2 Mn');
+  assert.equal(bakiyeYazisi(2500000000, true), '2,5 Mr');
+  assert.ok(!/B/.test(bakiyeYazisi(964636, true)), 'tek harfli "B" yok');
 }
 console.log('✅ üst çubuk verisi');
 
