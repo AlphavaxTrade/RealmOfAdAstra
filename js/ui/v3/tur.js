@@ -14,7 +14,7 @@ export const TUR_ADIMLARI = [
   { id: 'merkez', hedef: '[data-v3-git="merkez"]', baslik: 'Krallık merkezi', metin: '"Krallık merkezi"ne dokun: işçilerini buradan yönetirsin.', tamam: (d) => /Krallık merkezi/i.test(d.baslik) },
   { id: 'sefer', hedef: '[data-e="topla"]', baslik: 'İlk seferin', metin: 'Bu düğme boştaki işçilerini sefere gönderir. Dokun!', tamam: (d) => d.seferSayisi > 0 },
   { id: 'bekle', ona: 'paneliKapat', baslik: 'İşçilerin yolda', metin: 'Süre dolunca ürünleri toplarsın. Ekranın altındaki "Şimdi" kartı sana haber verir.', dugme: 'Anladım' },
-  { id: 'ben', hedef: '[data-v3-sekme="ben"]', baslik: 'Takılırsan', metin: 'Ben sekmesinde "Rehber ve yardım" var. Yazıların yanındaki ? işaretine dokunursan o kelimenin açıklaması çıkar.', dugme: 'Devam' },
+  { id: 'ben', hedef: '[data-v3-sekme="ben"]', baslik: 'Takılırsan', metin: 'Ben sekmesinde "Görevler ve yardım" ile "Oyun rehberi" var. Yazıların yanındaki ? işaretine dokunursan o kelimenin açıklaması çıkar.', dugme: 'Devam' },
   { id: 'bitis', baslik: 'Hazırsın!', metin: 'Sol alttaki Krallık Rehberi sıradaki görevleri ve ödüllerini gösterir. Kolay gelsin!', dugme: 'Oyuna başla' }
 ];
 

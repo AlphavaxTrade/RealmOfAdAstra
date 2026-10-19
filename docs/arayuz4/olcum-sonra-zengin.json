@@ -1,0 +1,422 @@
+[
+ {
+  "ekran": "merkez",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 436,
+  "dugme": 7,
+  "yukseklik": 852,
+  "gorunen": 844,
+  "baslik": "✅ Şimdi yapılacaklar 💤 6 alan boşta Sefere gönder ⚡ Stamina"
+ },
+ {
+  "ekran": "silo",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 798,
+  "dugme": 1,
+  "yukseklik": 1324,
+  "gorunen": 844,
+  "baslik": "📦 Silo seviye 3 Silo, hammaddelerini sakladığın ambardır. Y"
+ },
+ {
+  "ekran": "taverna",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 756,
+  "dugme": 6,
+  "yukseklik": 1079,
+  "gorunen": 844,
+  "baslik": "Otomasyon botu 💤 Kapalı Sen yokken altı alanda (buğday, taş"
+ },
+ {
+  "ekran": "demirhane",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 838,
+  "dugme": 8,
+  "yukseklik": 1369,
+  "gorunen": 844,
+  "baslik": "🔥 Yeni eşya dök 🎒 Eşyalarım (0) Bir parça seç ve döv; eksi"
+ },
+ {
+  "ekran": "sifahane",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 281,
+  "dugme": 1,
+  "yukseklik": 653,
+  "gorunen": 844,
+  "baslik": "🌿 Şifahane 794 şifalı ot Hemen iyileştirme yalnız şifalı ot"
+ },
+ {
+  "ekran": "koy",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 593,
+  "dugme": 3,
+  "yukseklik": 689,
+  "gorunen": 844,
+  "baslik": "🏘️ Köy 🏛️ Konsey 🏘️ Köy durumu 1 ev · 10 / 10 köylü Her k"
+ },
+ {
+  "ekran": "konsey",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 1349,
+  "dugme": 16,
+  "yukseklik": 1707,
+  "gorunen": 844,
+  "baslik": "🏘️ Köy 🏛️ Konsey 🏛️ Konsey ne işe yarar? Sirius Konseyi, "
+ },
+ {
+  "ekran": "uzay",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 956,
+  "dugme": 6,
+  "yukseklik": 1107,
+  "gorunen": 844,
+  "baslik": "🚀 Roket Rampası Aşama 0: Realm (Universe kapalı) Roket Ramp"
+ },
+ {
+  "ekran": "kisla",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 645,
+  "dugme": 20,
+  "yukseklik": 1249,
+  "gorunen": 844,
+  "baslik": "🛡️ Ordu · 2 🗃️ Cephanelik · 0 boşta 🛡️ Ordu 2 / 2 asker ·"
+ },
+ {
+  "ekran": "zindanmod",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 522,
+  "dugme": 0,
+  "yukseklik": 653,
+  "gorunen": 844,
+  "baslik": "🟢 Normal mod mod 1/4 Zindandaki yerin 1. kattasın (canavar "
+ },
+ {
+  "ekran": "kolezyum",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 677,
+  "dugme": 11,
+  "yukseklik": 960,
+  "gorunen": 844,
+  "baslik": "🏟️ Kolezyum 🌋 Dünya bossu ⚔️ Düello 🏆 Lig 🌐 Rakipler ⚔️ "
+ },
+ {
+  "ekran": "savasalani",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 906,
+  "dugme": 3,
+  "yukseklik": 1117,
+  "gorunen": 844,
+  "baslik": "🏟️ Kolezyum 🌋 Dünya bossu 🌋 Haftalık dünya bossu Bu hafta"
+ },
+ {
+  "ekran": "pazar",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 490,
+  "dugme": 24,
+  "yukseklik": 1079,
+  "gorunen": 844,
+  "baslik": "ASTRA bakiyen 2.998.724 ASTRA Al ve sat. Fiyatı takas havuzu"
+ },
+ {
+  "ekran": "karnaval",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 977,
+  "dugme": 14,
+  "yukseklik": 1385,
+  "gorunen": 844,
+  "baslik": "🎡 Çark 🎟️ Piyango 🏛️ Kasalar 🎡 18 ödüllü Krallık Çarkı O"
+ },
+ {
+  "ekran": "koleksiyon",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 738,
+  "dugme": 2,
+  "yukseklik": 1301,
+  "gorunen": 844,
+  "baslik": "👑 Genesis Yolu (18 eser) 📦 Pandora kutuları 🏆 RoA Genesis"
+ },
+ {
+  "ekran": "ekonomi",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 908,
+  "dugme": 3,
+  "yukseklik": 1210,
+  "gorunen": 844,
+  "baslik": "🌐 Genel ⚖️ Hammadde dengesi 💱 Fiyatlar 🩺 Ekonomi durumu \ud83d"
+ },
+ {
+  "ekran": "profil",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 1170,
+  "dugme": 4,
+  "yukseklik": 1351,
+  "gorunen": 844,
+  "baslik": "👑 Seviye 12: AlphAvax Gezgini Sefer süresi: 11,1 saat Seviy"
+ },
+ {
+  "ekran": "kotalar",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 1257,
+  "dugme": 0,
+  "yukseklik": 1287,
+  "gorunen": 844,
+  "baslik": "Oyunda her şeyin günlük ve haftalık bir sınırı var. Bu ekran"
+ },
+ {
+  "ekran": "hazine",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 453,
+  "dugme": 9,
+  "yukseklik": 653,
+  "gorunen": 844,
+  "baslik": "Bu ekran oyunun parasının nerede toplandığını ve sana ne düş"
+ },
+ {
+  "ekran": "surum",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 976,
+  "dugme": 0,
+  "yukseklik": 669,
+  "gorunen": 844,
+  "baslik": "v1.86 🧹 Daha sade menüler: Kışla, Krallık merkezi, Köy ve K"
+ },
+ {
+  "ekran": "sorunbildir",
+  "boyut": "telefon",
+  "acik": true,
+  "harf": 106,
+  "dugme": 0,
+  "yukseklik": 653,
+  "gorunen": 844,
+  "baslik": "📮 Sorun bildir Sorun bildir, sunucuya bağlı (çevrimiçi) sür"
+ },
+ {
+  "ekran": "merkez",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 436,
+  "dugme": 7,
+  "yukseklik": 831,
+  "gorunen": 800,
+  "baslik": "✅ Şimdi yapılacaklar 💤 6 alan boşta Sefere gönder ⚡ Stamina"
+ },
+ {
+  "ekran": "silo",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 798,
+  "dugme": 1,
+  "yukseklik": 1286,
+  "gorunen": 800,
+  "baslik": "📦 Silo seviye 3 Silo, hammaddelerini sakladığın ambardır. Y"
+ },
+ {
+  "ekran": "taverna",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 756,
+  "dugme": 6,
+  "yukseklik": 836,
+  "gorunen": 800,
+  "baslik": "Otomasyon botu 💤 Kapalı Sen yokken altı alanda (buğday, taş"
+ },
+ {
+  "ekran": "demirhane",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 838,
+  "dugme": 8,
+  "yukseklik": 594,
+  "gorunen": 800,
+  "baslik": "🔥 Yeni eşya dök 🎒 Eşyalarım (0) Bir parça seç ve döv; eksi"
+ },
+ {
+  "ekran": "sifahane",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 281,
+  "dugme": 1,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "🌿 Şifahane 794 şifalı ot Hemen iyileştirme yalnız şifalı ot"
+ },
+ {
+  "ekran": "koy",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 593,
+  "dugme": 3,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "🏘️ Köy 🏛️ Konsey 🏘️ Köy durumu 1 ev · 10 / 10 köylü Her k"
+ },
+ {
+  "ekran": "konsey",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 1349,
+  "dugme": 16,
+  "yukseklik": 1334,
+  "gorunen": 800,
+  "baslik": "🏘️ Köy 🏛️ Konsey 🏛️ Konsey ne işe yarar? Sirius Konseyi, "
+ },
+ {
+  "ekran": "uzay",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 956,
+  "dugme": 6,
+  "yukseklik": 793,
+  "gorunen": 800,
+  "baslik": "🚀 Roket Rampası Aşama 0: Realm (Universe kapalı) Roket Ramp"
+ },
+ {
+  "ekran": "kisla",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 663,
+  "dugme": 20,
+  "yukseklik": 930,
+  "gorunen": 800,
+  "baslik": "🛡️ Ordu · 2 🗃️ Cephanelik · 0 boşta 🛡️ Ordu 2 / 2 asker ·"
+ },
+ {
+  "ekran": "zindanmod",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 522,
+  "dugme": 0,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "🟢 Normal mod mod 1/4 Zindandaki yerin 1. kattasın (canavar "
+ },
+ {
+  "ekran": "kolezyum",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 677,
+  "dugme": 11,
+  "yukseklik": 895,
+  "gorunen": 800,
+  "baslik": "🏟️ Kolezyum 🌋 Dünya bossu ⚔️ Düello 🏆 Lig 🌐 Rakipler ⚔️ "
+ },
+ {
+  "ekran": "savasalani",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 906,
+  "dugme": 3,
+  "yukseklik": 855,
+  "gorunen": 800,
+  "baslik": "🏟️ Kolezyum 🌋 Dünya bossu 🌋 Haftalık dünya bossu Bu hafta"
+ },
+ {
+  "ekran": "pazar",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 490,
+  "dugme": 24,
+  "yukseklik": 850,
+  "gorunen": 800,
+  "baslik": "ASTRA bakiyen 2.998.724 ASTRA Al ve sat. Fiyatı takas havuzu"
+ },
+ {
+  "ekran": "karnaval",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 977,
+  "dugme": 14,
+  "yukseklik": 1196,
+  "gorunen": 800,
+  "baslik": "🎡 Çark 🎟️ Piyango 🏛️ Kasalar 🎡 18 ödüllü Krallık Çarkı O"
+ },
+ {
+  "ekran": "koleksiyon",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 738,
+  "dugme": 2,
+  "yukseklik": 629,
+  "gorunen": 800,
+  "baslik": "👑 Genesis Yolu (18 eser) 📦 Pandora kutuları 🏆 RoA Genesis"
+ },
+ {
+  "ekran": "ekonomi",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 908,
+  "dugme": 3,
+  "yukseklik": 809,
+  "gorunen": 800,
+  "baslik": "🌐 Genel ⚖️ Hammadde dengesi 💱 Fiyatlar 🩺 Ekonomi durumu \ud83d"
+ },
+ {
+  "ekran": "profil",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 1170,
+  "dugme": 4,
+  "yukseklik": 1073,
+  "gorunen": 800,
+  "baslik": "👑 Seviye 12: AlphAvax Gezgini Sefer süresi: 11,1 saat Seviy"
+ },
+ {
+  "ekran": "kotalar",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 1257,
+  "dugme": 0,
+  "yukseklik": 1170,
+  "gorunen": 800,
+  "baslik": "Oyunda her şeyin günlük ve haftalık bir sınırı var. Bu ekran"
+ },
+ {
+  "ekran": "hazine",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 453,
+  "dugme": 9,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "Bu ekran oyunun parasının nerede toplandığını ve sana ne düş"
+ },
+ {
+  "ekran": "surum",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 976,
+  "dugme": 0,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "v1.86 🧹 Daha sade menüler: Kışla, Krallık merkezi, Köy ve K"
+ },
+ {
+  "ekran": "sorunbildir",
+  "boyut": "masaustu",
+  "acik": true,
+  "harf": 106,
+  "dugme": 0,
+  "yukseklik": 583,
+  "gorunen": 800,
+  "baslik": "📮 Sorun bildir Sorun bildir, sunucuya bağlı (çevrimiçi) sür"
+ }
+]

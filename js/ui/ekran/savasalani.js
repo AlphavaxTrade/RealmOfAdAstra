@@ -1,5 +1,5 @@
 // Realm of AdAstra — Savaş alanı ekranı: haftalık Dünya Bossu. Ordu kilitleme, hasar hesabı, ödül talebi.
-import { ekranKaydet, kap, kart, satir, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, izgara, hucre, etiket, tam, astra, sayi, esc, grupSekmeleri, grupEylemleri } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, satir, cubuk, cubukSatiri, dugme, dugmeler, uyari, not, izgara, hucre, etiket, tam, astra, sayi, esc, grupSekmeleri, grupEylemleri } from './cekirdek.js';
 import { onay } from '../v3/bilesenler.js';
 
 function guc(b) {
@@ -54,8 +54,9 @@ const ekran = {
       baslik: '🌋 Haftalık dünya bossu',
       rozet: etiket(`Bu haftanın havuzu: ${astra(boss.weeklyAdaPool)} ASTRA`, 'vurgu'),
       vurgu: 'uyari',
-      icerik: not('<b>Otomatik savaş:</b> manuel saldırmazsın. Hafta boyunca kilitlenen orduların saldırı ve can puanlarından toplam hasar hesaplanır; <b>her Pazar 18:00\'de (TSİ)</b> savaş otomatik yapılır ve haftanın havuzu hasar payına göre paylaşılır. Havuz kasanın %' + Math.round((b.GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE || 0.03) * 100) + '\'ü kadardır (kasada toplam ' + tam(boss.vaultAda || 0) + ' ASTRA).')
-        + satir('Hasar formülü', 'ATK × 1,0 + HP × 0,25 (yetenek çeşitliliği bonuslu)')
+      icerik: not('Her Pazar akşamı 18:00 (TSİ) ordunla otomatik savaşılır; havuz, hasar payına göre dağıtılır. Ordunu savaşa kilitlemen yeter.')
+        + katli('Nasıl işliyor? (ayrıntı)', not('<b>Otomatik savaş:</b> manuel saldırmazsın. Hafta boyunca kilitlenen orduların saldırı ve can puanlarından toplam hasar hesaplanır; <b>her Pazar 18:00\'de (TSİ)</b> savaş otomatik yapılır ve haftanın havuzu hasar payına göre paylaşılır. Havuz kasanın %' + Math.round((b.GAME_CONFIG.WORLD_BOSS.WEEKLY_DISTRIBUTION_RATE || 0.03) * 100) + '\'ü kadardır (kasada toplam ' + tam(boss.vaultAda || 0) + ' ASTRA).')
+        + satir('Hasar formülü', 'ATK × 1,0 + HP × 0,25 (yetenek çeşitliliği bonuslu)'), { k: 'boss-kural' })
     });
 
     const ordu = kart({

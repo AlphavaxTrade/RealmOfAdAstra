@@ -44,3 +44,26 @@
 Görünür (katlı bölümlerin gövdesi hariç) harf, önce → sonra: Sürüm geçmişi 6.327 → 967 · Konsey 2.679 → 1.350 · Hazine 1.789 → 453 · Karakterim 1.712 → 988 · Kotalarım 1.364 → 1.257 · Roket Rampası 1.306 → 956 · Koleksiyon 1.269 → 738 · Silo 960 → 725 · Pazar düğme 23 → 17 (Satın al / Sat iki sekme).
 Teçhizat yükseltme: ASTRA bedeli = hammadde pazar değeri × (3 × 1,35^(hedef sv − 2)); 1→10 toplam ~12.700 → ~320.000 ASTRA (`tests/test_techizat_astra_bedeli.mjs`). Ham madde adetleri silo kapasitesine sığma kuralı yüzünden değişmedi.
 Not: `scripts/tarayici/pazar-grafik.mjs` (kendi sunucusunu kuran eski betik) bu oturumda sayfa yüklemede zaman aşımına uğradı; Pazar ekranı yeni sürümle `test_pazar_hizli_al`, `test_ekran_cizim` testlerinden geçti ama bu betik yeniden çalıştırılıp doğrulanmadı.
+
+## Sonuç tablosu (gerçek tarayıcı, zengin hesap, telefon 390×844; kaydırma yüksekliği px)
+| Ekran | Önce | Sonra |
+|---|---|---|
+| Sürüm geçmişi | 3.210 | 669 |
+| Hazine | 3.245 | 653 |
+| Konsey | 2.855 | 1.707 |
+| Karakterim | 2.357 | 1.351 |
+| Demirhane | 1.914 | 1.369 |
+| Pazar | 1.767 | 1.079 |
+| Koleksiyon | 1.695 | 1.301 |
+| Kışla | 1.476 | 1.249 |
+| Kotalarım | 1.415 | 1.287 |
+| Silo | 1.371 | 1.324 |
+| Roket Rampası | 1.231 | 1.107 |
+| Krallık merkezi | 745 | 852 (yeni "Şimdi yapılacaklar" listesi eklendi; görünür yazı 425 → 436, ama her satır tek dokunuşluk eylem) |
+Ham ölçümler: `olcum-once-zengin.json`, `olcum-sonra-zengin.json`. Yeni hesapla tarama (`HESAP=yeni`): 21 ekranın hiçbirinde konsol hatası yok; kilitli ekranlar nedenini yazıyor.
+
+## Yapılmayanlar / dürüst notlar
+- Gerçek telefonda denenmedi (Chromium taklidi, 390×844).
+- Menüde seviyeye göre açılma: yalnız Roket Rampası (8. seviye) ve "Gelişmiş" katı eklendi; var olan özellik kilitleri (Pazar, Demirhane, Kışla, Zindan, Kolezyum, Karnaval) aynen duruyor.
+- Karnaval (977 harf, 14 düğme), Ekonomi (908), Taverna (756), Silo ve Kotalarım'ın kalan kısmı bu turda yeniden düzenlenmedi; sonraki tur adayları.
+- Eski `scripts/tarayici/pazar-grafik.mjs` yeniden doğrulanmadı (sayfa yüklemede zaman aşımı).
