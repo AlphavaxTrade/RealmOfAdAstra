@@ -102,4 +102,39 @@ const ok = (ad) => { n++; console.log(`✅ ${ad}`); };
   ok('ödeme payı varken harçlı giriş normal harçla ve ödüllü');
 }
 
+// 5) Uçtan uca: ödeme tavanı dolana kadar ödül gelir, TOPLAM tavanı aşmaz; dolduktan sonra her zafer tam 0 ASTRA verir ve harç iki katıdır
+{
+  const gs = yeni();
+  gs.state.dungeonProgress = 9;
+  gs.state.fatih = { harcanan: 8417, kazanilan: 0, alindi: false, odul: 0, at: 0 };
+  const tavan = gs.getDungeonDailyCap();
+  assert.ok(tavan > 100 && tavan < 200, `tavan ~121,5 (boss katı ödülü 24,3 x 5): ${tavan}`);
+  const sayac = gs.getDailyCounters();
+  sayac.dungeonBudget = 1e9;   // kasanın günlük bütçesi bol: sınır kişi tavanı
+  let toplam = 0, doluOnce = 0, doluSonra = 0, sifirOdul = 0, ikiKatHarc = 0;
+  // 1. kat (Bataklık Balçığı, ödül 0,9): zayıf ordu bile yener; tavan hesabı hangi katta savaşıldığına bakmaz (ulaşılan en değerli kata göre)
+  const normalHarc = gs.getDungeonGateFee(1, false);
+  for (let i = 0; i < 700 && doluSonra < 6; i++) {
+    gs.state.stamina = 1e7;
+    for (const a of gs.state.soldierUnits) a.hp = a.maxHp;
+    const kosul = gs.getDungeonEntryTerms(1, false, 4);
+    if (kosul.budgetBlocked) break;
+    const doluydu = kosul.rewardless;
+    const r = gs.fightDungeon(1, [0, 1, 2, 3], { payGateFee: true });
+    if (!r.success || !r.outcome.victory) continue;
+    toplam += r.outcome.adaReward;
+    if (doluydu) {
+      doluSonra++;
+      if (r.outcome.adaReward === 0) sifirOdul++;
+      if (Math.abs(r.entry.fee - normalHarc * 2) < 1e-6) ikiKatHarc++;
+    } else doluOnce++;
+  }
+  assert.ok(toplam <= tavan + 1e-6, `günlük toplam kazanç tavanı aşmaz: ${toplam} / ${tavan}`);
+  assert.ok(toplam > tavan - 1, `tavan neredeyse tam dolmalı (son zafer kısmi olabilir): ${toplam} / ${tavan}`);
+  assert.ok(doluSonra >= 3, "tavan dolduktan sonra ASTRA'sız girişler yapıldı");
+  assert.equal(sifirOdul, doluSonra, 'tavan dolduktan sonraki HER zafer tam 0 ASTRA verir');
+  assert.equal(ikiKatHarc, doluSonra, 'tavan dolduktan sonraki HER giriş iki kat harçlıdır');
+  ok(`uçtan uca: ${doluOnce} ödüllü zaferle ${toplam.toFixed(1)} / ${tavan} ASTRA, sonra ${doluSonra} ASTRA'sız giriş (hepsi 0 ASTRA, iki kat harç)`);
+}
+
 console.log(`\n${n} zindan ASTRA'sız giriş kontrolü geçti.`);

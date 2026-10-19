@@ -59,6 +59,10 @@ html.v3 .v3-profil-metin { display: flex; flex-direction: column; gap: 4px; min-
 html.v3 .v3-profil-metin b { font: 800 calc(13px * var(--v3-yazi-olcek, 1))/1 var(--font-ui); color: var(--v3-vurgu-acik); }
 html.v3 .v3-stamina { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
 html.v3 .v3-stamina i { display: block; height: 100%; width: 0; background: var(--c-blue, #63b0ff); }
+/* Deneyim (XP) çubuğu: stamina çubuğunun üstünde, altın rengi; dolunca yeşil (19 Ekim 2026) */
+html.v3 .v3-xp { display: block; height: 4px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+html.v3 .v3-xp i { display: block; height: 100%; width: 0; background: var(--c-gold, #e7b94c); }
+html.v3 .v3-xp i.is-dolu { background: #34d399; }
 html.v3 .v3-hap {
   display: inline-flex !important; align-items: center; gap: 6px; position: relative;
   min-height: var(--v3-tap); padding: 0 12px; border-radius: 22px;

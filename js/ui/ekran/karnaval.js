@@ -194,7 +194,7 @@ function piyangoSekmesi(b) {
       icerik: `<div class="ek-alan-satiri"><label class="ek-alan" for="ek-bilet-adet"><span>Bilet adedi</span>
           <input class="ek-girdi ek-girdi-dar" type="number" id="ek-bilet-adet" inputmode="numeric" min="1" max="${esc(Math.max(1, l.canBuy))}" value="${esc(Math.min(1, l.canBuy) || 1)}"${l.canBuy > 0 ? '' : ' disabled'}></label>
           ${dugme({ e: 'biletAl', ton: 'birincil', devreDisi: l.canBuy <= 0, metin: l.canBuy > 0 ? `🎟️ Bilet al (${esc(astra(kurallar.ticketPrice))} ASTRA/adet)` : '🚫 Şu an bilet alamazsın' })}</div>`
-        + (l.canBuy > 0 ? '' : uyari('Bu haftalık alım sınırın doldu. Yeni hafta Pazartesi 00:01 (TSİ) başlar.', 'uyari'))
+        + (l.canBuy > 0 ? '' : uyari('Bugünkü bilet alım sınırın doldu. Gece yarısı (00:00 TSİ) yenilenir.', 'uyari'))
         + katli('Bilet bedeli nereye gider?', not(`Bilet bedelinin %${esc(sayi(kurallar.amortiShare * 100, 0))}'i amorti kasasına (şu an ${esc(astra(l.amortiPool))} ASTRA), kalanı piyango kasasına gider. Amorti yalnız piyango kasası biterse kalan tüm biletlere eşit dağıtılır.`), { k: 'piyango-bedel' })
     }),
     kart({

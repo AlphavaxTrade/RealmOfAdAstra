@@ -6,6 +6,7 @@
 import { esc, tam, astra } from '../ekran/cekirdek.js';
 import { hizliIyilestir, planBedeli } from '../ekran/bilesik.js';
 import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
+import { seviyeHazir } from '../seviye-hazir.js';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, katCanavarlari, katDurumu, baslangicKati, kilitMesaji,
   sansTonu, sansYorumu, yetenekBilgisi, ganimetSanslari, bossKatiMi
@@ -241,6 +242,14 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
       </div></div>`;
   }
 
+  // XP çubuğu dolduysa hesabı yükseltebileceğini söyler (19 Ekim 2026); kutlama bandıyla birlikte de gösterilebilir
+  function seviyeBandi() {
+    const h = seviyeHazir(gs);
+    if (!h) return '';
+    return `<div class="zd-kutlama zd-seviye" role="status"><div><b>🆙 Hesabını yükseltebilirsin!</b><span>XP çubuğun doldu: Seviye ${esc(h.sonraki)}'e çık, askerlerin de seviye atlasın.</span></div>
+      <button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="hesap-yukselt">Karakterim</button></div>`;
+  }
+
   function kutlamaBandi() {
     if (!durum.kutlama) return '';
     const k = KATLAR[durum.kutlama - 1];
@@ -257,7 +266,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     kok.dataset.gorunum = durum.oda == null ? 'kat' : 'oda';
     kok.dataset.tema = `kat${durum.kat}`;
     const govde = durum.oda == null ? katHtml() : odaHtml();
-    kok.innerHTML = `${ustHtml()}${seritHtml()}<main class="zd-orta" id="zd-orta">${govde}</main>${kutlamaBandi()}${durum.kutuk ? kutukPenceresi() : ''}`;
+    kok.innerHTML = `${ustHtml()}${seritHtml()}${seviyeBandi()}<main class="zd-orta" id="zd-orta">${govde}</main>${kutlamaBandi()}${durum.kutuk ? kutukPenceresi() : ''}`;
     const aktifSekme = kok.querySelector('.zd-kat.is-aktif');
     const katlar = kok.querySelector('.zd-katlar');
     if (aktifSekme && katlar) katlar.scrollLeft = Math.max(0, aktifSekme.offsetLeft - (katlar.clientWidth - aktifSekme.offsetWidth) / 2);
@@ -379,6 +388,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
       ekranAc('savashazirlik', secili.length ? { canavar: m, secili, secimYapildi: true } : { canavar: m });
     },
     kisla() { ekranAc('kisla'); },
+    'hesap-yukselt'() { ekranAc('karakter'); },
     // Hızlı iyileştir: hemen iyileştirmenin tek yolu şifalı ottur; eksik ot onaydan sonra pazardan alınır (ortak yardımcı: ekran/bilesik.js)
     async iyilestir() {
       await hizliIyilestir({ gameState: gs, bildir });

@@ -452,7 +452,12 @@ export const GAME_CONFIG = {
   WAREHOUSE: {
     baseLevels: 18,
     // v2: 13. seviyeden itibaren Universe alüminyumu ister; Universe açılana kadar bu tavan
-    universeGateLevel: 12,
+    // 19 Ekim 2026 (kullanıcı kararı: "silo 12 çok az"): Universe beklemeden 18. seviyeye kadar açıldı. 12. seviye buğdayda 12.976, taşta 6.298 alıyordu;
+    // 18. seviye 73.500 / 30.000 (tasarımdaki en üst seviye: haftalık havuz tavanının %50'si). 13+ yükseltme bedeli ve %80 doluluk şartı aynı kalır.
+    universeGateLevel: 18,
+    // Seviye atlama bedelinin tavanı hâlâ ESKİ sınır olan 12. silonun kapasitesine göre hesaplanır (Universe aşaması 3'e kadar): silo büyüyünce
+    // seviye bedelleri de 5 kata kadar büyümesin, seviye atlama yavaşlamasın. Aşama 3'te tavan en üst siloya geçer (eski davranış).
+    levelUpCostGateLevel: 12,
     initialCapacities: {   // 1 saatlik üretim
       wheat: 540,
       stone: 360,
@@ -1761,6 +1766,20 @@ export const GAME_CONFIG = {
       changes: [
         `Sunucu yeniden başlatılınca (her yeni sürüm yüklemesinde) bütün oyun kasalarının bakiyesi başlangıç değerine dönüyordu: o ana kadar kasalardan ödenen ve kasalara giren küçük farklar siliniyordu. Düzeltildi: kasa bakiyeleri artık diskten okunuyor ve korunuyor.`,
         `Piyango kasasının 4 milyona indirilmesinde bu hata yüzünden fazlanın yarısı kasalara yazılamamıştı. Eksik kalan 8.000.090 ASTRA, Zindan, Kolezyum ve Dünya Boss kasalarına eşit şekilde eklendi (her birine yaklaşık 2,67 milyon daha; toplamda her birine 5,33 milyon).`
+      ]
+    },
+    {
+      version: 'v1.77',
+      title: '📱 Telefon Düzeltmeleri, XP Çubuğu, Seviye Bildirimi ve Büyük Silo',
+      date: '19 Ekim 2026',
+      changes: [
+        `Sol üstteki seviye göstergesinin altında artık iki ince çubuk var: üstteki altın rengi çubuk deneyim (XP) çubuğudur (dolunca yeşil olur), alttaki mavi çubuk staminadır. Eskiden orada yalnızca stamina çubuğu vardı ve deneyim dolsa bile bir şey göstermiyordu. Üstüne basınca (ya da basılı tutunca) deneyim ve stamina rakamları görünür.`,
+        `Telefonda zindan ekranında parça ve Pandora kutusu düşme şansı artık görünüyor (masaüstündeki gibi); başlığın ikinci satırında duruyor.`,
+        `Telefonda Şifahane ve benzer listelerde asker satırı bozuktu: uzun düğme yazısı metni dar bir sütuna sıkıştırıyordu. Artık metin tam genişlikte, düğme altında.`,
+        `Silo artık 18. seviyeye kadar yükseltilebiliyor (eskiden Universe açılana kadar 12. seviyede kilitliydi). 12. seviye buğdayda 12.976, taşta 6.298 alıyordu; 18. seviye 73.500 ve 30.000 alıyor. Yükseltme bedeli (kapasitenin yarısı + pazar karşılığı ASTRA) ve "%80 dolu olmalı" şartı aynı. Hesap seviyesi atlamak için gereken hammadde bedelleri bundan etkilenmez: silo büyüdü diye seviye atlamak pahalanmaz.`,
+        `Karnaval'da bilet alım sınırı dolunca "Bu haftalık alım sınırın doldu" yazıyordu; sınır günlük (100 bilet) ve gece yarısı yenilendiği için metin düzeltildi: "Bugünkü bilet alım sınırın doldu. Gece yarısı (00:00 TSİ) yenilenir."`,
+        `Zindanda zaferden sonra deneyim (XP) çubuğun dolduysa ve hesabını yükseltebiliyorsan bildirim geliyor: zafer kartında "🆙 Hesabı yükselt" düğmesiyle Karakterim ekranına gidersin; zindan haritasında da XP dolu kaldıkça ince bir uyarı şeridi duruyor. Hesabı yükseltince askerlerinin biriken XP'si de seviyeye dönüyor (asker seviyesi hesap seviyesini geçemediği için bekleyen XP).`,
+        `Zindan savaşa hazırlık ekranında artık "Bugünkü ASTRA kazancın" çubuğu var (ör. 96,8 / 121,5): günlük ödeme tavanından ne kadarını kullandığını ve ne kadar kaldığını gösterir. Tavan, ulaştığın en değerli katın ödülünün 5 katı ya da orduya harcadığının günlük payıdır (hangisi büyükse); yeni bir boss katını açınca tavan yükselir, bu yüzden dolmuş görünen tavan açılınca ödül yeniden gelir.`
       ]
     }
   ],

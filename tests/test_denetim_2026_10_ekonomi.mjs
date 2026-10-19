@@ -45,11 +45,12 @@ const asker = (gs, n = 1, seviye = 8) => {
 // ═══ EK-01: seviye bedeli ulaşılabilir silonun kapasitesini aşamaz; her seviye gerçekten atlanabilir ═══
 {
   const gs = yeni();
-  for (const evren of [0, 3]) {                     // 0: Universe öncesi (silo tavanı 12), 3: Universe açık (silo tavanı 18)
+  for (const evren of [0, 3]) {                     // 0: Universe öncesi, 3: Universe açık
     GAME_CONFIG.UNIVERSE_STAGE = evren;
     const enUst = gs.getWarehouseMaxLevel();
-    assert.equal(enUst, evren === 3 ? 18 : 12);
-    const kap = gs.getWarehouseCapacity(enUst);
+    assert.equal(enUst, 18, '19 Ekim 2026: silo her aşamada 18. seviyeye kadar açık (kullanıcı kararı)');
+    // seviye bedelinin tavanı: aşama 3'te en üst silo, öncesinde ESKİ sınır (levelUpCostGateLevel = 12) → silo büyüdü diye seviye atlamak yavaşlamaz
+    const kap = gs.getWarehouseCapacity(evren === 3 ? 18 : GAME_CONFIG.WAREHOUSE.levelUpCostGateLevel);
     const oran = GAME_CONFIG.LEVEL_UP_SILO_SHARE;
     // değişmez: hiçbir kalemin bedeli ulaşılabilir en büyük silonun kapasitesini aşamaz (eski kodda Sv.11→12'de düşer)
     for (let L = 1; L < GAME_CONFIG.MAX_PLAYER_LEVEL; L++) {

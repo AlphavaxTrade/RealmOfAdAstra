@@ -60,6 +60,7 @@ export function kurV3Kabuk(api) {
     <button type="button" id="v3-profil" class="v3-profil" aria-label="Karakterim">
       <span class="v3-av" aria-hidden="true">🧙</span>
       <span class="v3-profil-metin"><b id="v3-lv">Lv.1</b>
+        <span class="v3-xp" title="Deneyim (XP)"><i id="v3-xp-dolu"></i></span>
         <span class="v3-stamina" title="Stamina"><i id="v3-st-dolu"></i></span></span>
     </button>
     <button type="button" id="v3-bakiye" class="v3-hap v3-bakiye" aria-label="ASTRA bakiyen, hesap ve cüzdan">
@@ -318,7 +319,9 @@ export function kurV3Kabuk(api) {
     yaz($('v3-lv'), v.seviye);
     const dolu = $('v3-st-dolu');
     if (dolu) dolu.style.width = `${v.staminaYuzde}%`;
-    $('v3-profil').title = `Stamina ${v.staminaMetin}`;
+    const xpDolu = $('v3-xp-dolu');
+    if (xpDolu) { xpDolu.style.width = `${v.xpYuzde}%`; xpDolu.classList.toggle('is-dolu', v.xpYuzde >= 100); }
+    $('v3-profil').title = `Deneyim ${v.xpMetin || '-'} · Stamina ${v.staminaMetin}`;
     yaz($('v3-bakiye-deger'), v.bakiye);
 
     let doluVar = false;

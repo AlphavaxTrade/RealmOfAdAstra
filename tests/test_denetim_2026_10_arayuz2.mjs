@@ -137,6 +137,7 @@ tamam('E-2: günlük ödeme tavanı cümleleri (önizleme ve sonuç notu)');
     const e = bul('savashazirlik');
     const yazi = metin(e.govde(baglam(gs), e.ornekSecenekler()[0]));
     assert.match(yazi, /ASTRA kazanılmaz/, 'ASTRA kazanılmayacağı söylenir');
+    assert.match(yazi, /Bugünkü ASTRA kazancın/, 'günlük ASTRA kazanç çubuğu gösterilir');
     assert.ok(yazi.includes(`${GAME_CONFIG.DUNGEON.ZERO_REWARD_MAX_PER_DAY} ek giriş hakkın kaldı`), 'ek giriş hakkı yazılır');
     assert.ok(!/bugün yeni giriş yapılamaz/.test(yazi), 'giriş açıkken "yapılamaz" yazmaz');
   }

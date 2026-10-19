@@ -5,6 +5,7 @@ import {
   tam, astra, sayi, esc, ac
 } from './cekirdek.js';
 import { soldierPortrait } from '../art.js';
+import { seviyeHazir, seviyeHazirYazisi } from '../seviye-hazir.js';
 import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '../../combat.js';
 import { getDungeonEntry } from '../../bestiary.js';
 import { sonSavasiYaz } from '../zindan/son-savas.js';
@@ -75,6 +76,8 @@ function girisKarti(b, m, terms) {
     baslik: `🎟️ Bugünkü ${esc(terms.nextEntryNumber)}. girişin`,
     rozet: etiket(terms.nextNeedsFee ? 'Kapı harçlı' : 'Ödüllü', terms.nextNeedsFee ? 'uyari' : 'iyi'),
     icerik: cubukSatiri('Bugünkü ödüllü girişler', `${terms.freeUsed} / ${terms.freeTotal}`, terms.freeTotal > 0 ? (terms.freeUsed / terms.freeTotal) * 100 : 0, { ton: terms.nextNeedsFee ? 'dolu' : '' })
+      // Günlük ASTRA kazanç tavanı (kişi tavanı ya da kasa bütçesi, hangisi küçükse): oyuncu ne kadar kaldığını görsün (19 Ekim 2026)
+      + (terms.budget >= 0 ? cubukSatiri('Bugünkü ASTRA kazancın', `${astra(Math.max(0, terms.budget - terms.budgetLeft))} / ${astra(terms.budget)}`, terms.budget > 0 ? Math.min(100, Math.max(0, ((terms.budget - terms.budgetLeft) / terms.budget) * 100)) : 100, { ton: terms.budgetLeft > 0 ? '' : 'dolu' }) : '')
       + (terms.nextNeedsFee
         ? (terms.budgetBlocked
           ? uyari('🏦 Bugünkü zindan ödeme payını doldurdun ve ASTRA vermeyen ek girişlerin de bitti (bu sınırlar yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
@@ -350,6 +353,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
     loot: ganimet,
     onComplete: () => {
       // Durum savaş başında işlendi; burada yalnızca bildirimler ve sonuç kartı gösterilir
+      const seviyeBilgisi = outcome.victory ? seviyeHazir(gs) : null;   // XP çubuğu doldu mu (hesap seviye atlayabilir)
       if (outcome.victory) {
         const duyuru = [
           `${m.name} yenildi! ${kazancYazisi(outcome.adaReward, serbestOran)} kazandın (⚡ -${staminaBedeli} stamina).`,
@@ -363,6 +367,7 @@ async function savasiOyna(b, m, secili, odeHarc) {
         if (b.bildirimEkle) b.bildirimEkle('🏆', duyuru);
         if (outcome.weaponsWorn.length) b.bildir(`🛡️ Eşyaların dayanıklılığı -1 azaldı: ${outcome.weaponsWorn.join(', ')}`, 'info');
         b.bildir(`🏆 Zafer! ${m.name} mağlup edildi! (${kazancYazisi(outcome.adaReward, serbestOran)})`, 'success');
+        if (seviyeBilgisi) { b.bildir(seviyeHazirYazisi(seviyeBilgisi), 'success'); if (b.bildirimEkle) b.bildirimEkle('🆙', seviyeHazirYazisi(seviyeBilgisi)); }
         window.dispatchEvent(new CustomEvent('monster-defeated', { detail: { level: m.level } }));   // zindan haritası levhaları tazeler
       } else {
         b.bildir(`💀 Bozgun! Ordun ${m.name} karşısında geri çekildi. Kalan can: ${outcome.remainingEnemyHp}/${m.hp}`, 'error');
@@ -381,12 +386,14 @@ async function savasiOyna(b, m, secili, odeHarc) {
         outcome.levelUps.forEach((t) => satirlar.push(`🎉 ${t}`));
         if (outcome.weaponsWorn.length) satirlar.push(`🛡️ Eşya aşındı: ${outcome.weaponsWorn.join(', ')}`);
         satirlar.push(`⚡ -${staminaBedeli} stamina`);
+        if (seviyeBilgisi) satirlar.push(seviyeHazirYazisi(seviyeBilgisi));
         return {
           altBaslik: `${m.name} yenildi`,
           satirlar,
           not: odemeNotu,
           eylemler: [
-            { etiket: '↻ Aynı savaşı tekrarla', birincil: true, tikla: () => ac('savashazirlik', { canavar: m, secili: [...secili], secimYapildi: true }) },
+            ...(seviyeBilgisi ? [{ etiket: `🆙 Hesabı yükselt (Sv.${seviyeBilgisi.sonraki})`, birincil: true, tikla: () => ac('karakter') }] : []),
+            { etiket: '↻ Aynı savaşı tekrarla', birincil: !seviyeBilgisi, tikla: () => ac('savashazirlik', { canavar: m, secili: [...secili], secimYapildi: true }) },
             { etiket: '⚔️ Kışlaya git', tikla: () => ac('kisla') }
           ]
         };

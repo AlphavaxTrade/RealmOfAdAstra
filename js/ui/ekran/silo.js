@@ -6,7 +6,7 @@ function yukseltmeBolumu(b) {
   const gs = b.gameState;
   const bedel = gs.getWarehouseUpgradeCost();
   if (!bedel) {
-    return uyari(`Silo bu sürümdeki en üst seviyede (Seviye ${gs.state.warehouseLevel}). 13. seviye ve üstü Universe açılınca gelir.`, 'iyi');
+    return uyari(`Silo bu sürümdeki en üst seviyede (Seviye ${gs.state.warehouseLevel}).`, 'iyi');
   }
   const envanter = gs.state.inventory || {};
   const bakiye = Number(gs.state.adAstraBalance) || 0;

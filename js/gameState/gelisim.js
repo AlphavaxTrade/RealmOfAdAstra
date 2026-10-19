@@ -163,7 +163,9 @@ export const gelisimYontemleri = {
   // Silo kapasitesi Büyük Ambar projesiyle de büyür; tavan da onunla kayar. Kapasitesiz kalem (null) tavansızdır.
   getLevelUpCostCeiling() {
     const pay = GAME_CONFIG.LEVEL_UP_SILO_SHARE != null ? GAME_CONFIG.LEVEL_UP_SILO_SHARE : 0.8;
-    const kap = this.getWarehouseCapacity(this.getWarehouseMaxLevel());
+    const W = GAME_CONFIG.WAREHOUSE || {};
+    const kapi = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? (W.baseLevels || 18) : (W.levelUpCostGateLevel || W.universeGateLevel || W.baseLevels || 18);
+    const kap = this.getWarehouseCapacity(Math.min(this.getWarehouseMaxLevel(), kapi));
     const tavan = {};
     for (const k of RES_KEYS()) tavan[k] = kap[k] != null ? Math.floor(kap[k] * pay) : null;
     return tavan;
@@ -380,7 +382,7 @@ export const gelisimYontemleri = {
   },
 
   // ── Silo ────────────────────────────────────────────────────────────────
-  // 18 seviye; 13 ve üstü Universe açılana kadar kapalı (universeGateLevel)
+  // 18 seviye; en üst seviye config WAREHOUSE.universeGateLevel (19 Ekim 2026'dan beri 18: hepsi açık)
   getWarehouseMaxLevel() {
     const W = GAME_CONFIG.WAREHOUSE || {};
     const kapi = (GAME_CONFIG.UNIVERSE_STAGE || 0) >= 3 ? (W.baseLevels || 18) : (W.universeGateLevel || W.baseLevels || 18);

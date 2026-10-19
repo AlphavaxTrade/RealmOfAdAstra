@@ -95,6 +95,12 @@
 .ek-oge-govde { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .ek-oge-govde > b { font: 800 calc(14.5px * var(--v3-yazi-olcek, 1))/1.25 var(--font-ui); color: var(--v3-yazi, #eceef4); }
 .ek-oge-govde > small { font: 500 calc(12.5px * var(--v3-yazi-olcek, 1))/1.35 var(--font-ui); color: var(--v3-yazi-2, #a9b1c4); }
+/* Telefonda satır sarılır: metin tam genişlikte, düğme altında (eskiden uzun düğme yazısı metni dar bir sütuna sıkıştırıyordu: Şifahane, 19 Ekim 2026) */
+@media (max-width: 640px) {
+  .ek-oge { flex-wrap: wrap; }
+  .ek-oge-govde { flex: 1 1 100%; }
+  .ek-oge > .ek-dugme { flex: 1 1 100%; }
+}
 .ek-hucre { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--v3-yuzey-3, #1c2231); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.07)); }
 .ek-hucre > small { font: 700 calc(11.5px * var(--v3-yazi-olcek, 1))/1.2 var(--font-ui); color: var(--v3-yazi-3, #8a94aa); letter-spacing: .04em; text-transform: uppercase; }
 .ek-hucre > b { font: 800 calc(17px * var(--v3-yazi-olcek, 1))/1.2 var(--font-ui); color: var(--v3-yazi, #eceef4); font-variant-numeric: tabular-nums; }

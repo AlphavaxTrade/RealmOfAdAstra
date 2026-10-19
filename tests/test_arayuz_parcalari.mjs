@@ -44,6 +44,7 @@ console.log('✅ zindan ganimet şansı');
   assert.equal(v.seviye, 'Lv.7');
   assert.equal(v.staminaMetin, '41/100');
   assert.equal(Math.round(v.staminaYuzde), 41);
+  assert.equal(v.xpYuzde, 0, 'gs XP bilgisi vermiyorsa XP çubuğu 0 (NaN değil)');
   assert.equal(v.kaynaklar.wood.yuzde, 50);
   assert.equal(v.kaynaklar.iron.yuzde, 0, 'kapasite 0 ise yüzde 0 (NaN değil)');
   assert.equal(v.kaynaklar.fragments.deger, '12');

@@ -183,7 +183,9 @@
   .zd-kat.is-aktif .zd-kat-ad { display: inline; }
   .zd-kat-isaret { display: none; }
   .zd-geri-ad { display: none; }
-  .zd-sanslar { display: none; }
+  /* Telefonda da parça ve Pandora kutusu düşme şansı görünür: başlık iki satıra bölünür, oranlar ikinci satırda (19 Ekim 2026) */
+  .zd-ust { flex-wrap: wrap; }
+  .zd-sanslar { order: 3; flex: 1 0 100%; justify-content: flex-start; padding: 0 2px 2px; }
   .zd-etiket { display: none; }
 }
 
@@ -260,6 +262,8 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, .6);
 }
 .zd-kutlama > div { display: grid; gap: 2px; }
+/* Hesap seviye atlayabilir uyarısı: örtü değil, ordu şeridinin altında ince şerit (akışın içinde) */
+.zd-kutlama.zd-seviye { position: static; transform: none; width: auto; flex: none; margin: 6px max(10px, env(safe-area-inset-left)); padding: 8px 12px; box-shadow: none; }
 .zd-kutlama span { color: var(--zd-yazi-2); font-size: 13px; }
 
 .zd-katman { position: absolute; inset: 0; z-index: 6; display: grid; place-items: center; padding: 12px; background: rgba(4, 6, 10, .78); }

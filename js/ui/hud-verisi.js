@@ -50,9 +50,25 @@ export function hudVerisi({ gs, kaynaklar, okunmamis, danisman, darEkran }) {
   }
   kaynakVeri.fragments = { deger: tr(st.inventory.fragments), yuzde: 0, dolu: false, ipucu: '' };
 
+  // Deneyim (XP) çubuğu: sonraki seviye için gereken XP'ye oranı (karakter ekranıyla aynı kaynak: gs.getNextLevelRequirement).
+  // Çubuk dolduysa (yüzde 100) seviye atlamak için hammadde / ASTRA gerekiyor olabilir; çubuk yine de dolu gösterilir.
+  let xpYuzde = 0;
+  let xpMetin = '';
+  if (typeof gs.getNextLevelRequirement === 'function') {
+    const r = gs.getNextLevelRequirement();
+    if (r && r.isMaxLevel) { xpYuzde = 100; xpMetin = 'maksimum seviye'; }
+    else if (r && Number(r.xp) > 0) {
+      const mevcut = Number(st.currentXp) || 0;
+      xpYuzde = Math.max(0, Math.min(100, (mevcut / Number(r.xp)) * 100));
+      xpMetin = `${tr(mevcut)}/${tr(r.xp)}`;
+    }
+  }
+
   const bot = botDurumu(gs);
   return {
     seviye: `Lv.${st.level}`,
+    xpYuzde,
+    xpMetin,
     staminaYuzde: Math.max(0, Math.min(100, (stamina / Math.max(1, enCokStamina)) * 100)),
     staminaMetin: `${stamina}/${enCokStamina}`,
     bakiye: bakiyeYazisi(st.adAstraBalance, darEkran),
