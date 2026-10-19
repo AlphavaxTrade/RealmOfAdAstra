@@ -10,5 +10,6 @@ import * as g008 from './008_muhur_sifirlama.js';
 import * as g009 from './009_geri_bildirim.js';
 import * as g010 from './010_denge.js';
 import * as g011 from './011_piyango_kasa_paylasim.js';
+import * as g012 from './012_piyango_kasa_duzelt.js';
 
-export const GECISLER = [g001, g002, g003, g004, g005, g006, g007, g008, g009, g010, g011].sort((a, b) => a.surum - b.surum);
+export const GECISLER = [g001, g002, g003, g004, g005, g006, g007, g008, g009, g010, g011, g012].sort((a, b) => a.surum - b.surum);

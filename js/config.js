@@ -1753,6 +1753,15 @@ export const GAME_CONFIG = {
         `Kasa payları ödeme kapasitesine göre yeniden ayarlandı: Zindan %21, Kolezyum %9, Dünya Boss %17, Pazar Geri Alım %21, Görev %13, Karnaval %9 (Fatih ve Konsey %5'er). Dünya Boss ve Geri Alım kasaları eskiden aç kalıyordu, zindan ve çark kasaları şişiyordu.`,
         `Taşma kuralı: bir kasa başlangıç bakiyesinin 1,25 katını geçerse, ona gelecek fazla ASTRA en aç kasalara akar. Toplam ASTRA değişmez.`
       ]
+    },
+    {
+      version: 'v1.76',
+      title: '🏦 Kasa Bakiyeleri Artık Yeniden Başlatmada Korunuyor',
+      date: '19 Ekim 2026',
+      changes: [
+        `Sunucu yeniden başlatılınca (her yeni sürüm yüklemesinde) bütün oyun kasalarının bakiyesi başlangıç değerine dönüyordu: o ana kadar kasalardan ödenen ve kasalara giren küçük farklar siliniyordu. Düzeltildi: kasa bakiyeleri artık diskten okunuyor ve korunuyor.`,
+        `Piyango kasasının 4 milyona indirilmesinde bu hata yüzünden fazlanın yarısı kasalara yazılamamıştı. Eksik kalan 8.000.090 ASTRA, Zindan, Kolezyum ve Dünya Boss kasalarına eşit şekilde eklendi (her birine yaklaşık 2,67 milyon daha; toplamda her birine 5,33 milyon).`
+      ]
     }
   ],
 

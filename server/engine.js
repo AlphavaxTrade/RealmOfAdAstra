@@ -55,6 +55,10 @@ export async function createEngine(db, { clock = () => Date.now(), testMode = fa
   const { gameState: gs } = await import('../js/gameState.js');
   const { globalPool } = await import('../js/globalPool.js');
   const { treasury } = await import('../js/treasury.js');
+  // Hazine defteri DİSKTEN OKUNUR: js/treasury.js, sunucunun statik içe aktarmaları (actions.js → ogretici.js) yüzünden depolama taklidi kurulmadan
+  // ÖNCE oluşur ve tohum değerlerle başlardı; ardından openWeekBudgets() bu tohum durumu diske yazıp gerçek bakiyeleri siliyordu (her yeniden
+  // başlatmada kasalar tohuma dönüyordu; 19 Ekim 2026'da piyango geçişinin yarısı böyle kayboldu).
+  treasury.state = treasury.load();
   const { ammMarket } = await import('../js/ammMarket.js');
   const { levelWeight } = await import('../js/economy/ubi.js');
 
