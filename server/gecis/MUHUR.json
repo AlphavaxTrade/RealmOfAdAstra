@@ -8,5 +8,6 @@
   "007_eposta_belirtec_ozeti.js": "67ca8cad22304300a4fb1f0bb22bf6c7512b48cc6787986dfeadd8db71758189",
   "008_muhur_sifirlama.js": "d03f86ccda419cb4fac446aaf04d6b1b93ce6730a211b17c36e7ea17ca7481b8",
   "009_geri_bildirim.js": "60549aecd5b36f93c4ac751385a7c7cfeddf8c6ccc4649c34adb5106f7695893",
-  "010_denge.js": "d18ff3a3ab58c46995e1744cfa68d4741dd85765f12be5b80ebf62b1e30bbb3c"
+  "010_denge.js": "d18ff3a3ab58c46995e1744cfa68d4741dd85765f12be5b80ebf62b1e30bbb3c",
+  "011_piyango_kasa_paylasim.js": "230a8443ed8030cf64516177863608873bec356a81c480969edc9d645fad735f"
 }

@@ -19,7 +19,7 @@ export default function yonetimRotalari(ctx) {
         players: { total: players.length, activeWeek: players.filter(p => p.last_seen >= clock() - 7 * 86400000).length,
           depositors: players.filter(p => p.deposited_ada > 0).length,
           pendingWithdraw: players.reduce((s, p) => s + (p.pending_withdraw || 0), 0) },
-        treasury: E.treasury.state.pools,
+        treasury: E.treasury.state.pools, lottery: E.lottery(),
         kapi: kapi ? kapi.adminSummary() : null,
         universeStage: world.universeStage ? world.universeStage() : (Number(E.GAME_CONFIG.UNIVERSE_STAGE) || 0),
         telegramAcik: !!(telegram && telegram.enabled),

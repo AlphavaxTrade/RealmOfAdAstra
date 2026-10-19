@@ -90,7 +90,7 @@ export const ozetYontemleri = {
     const burnRate = GAME_CONFIG.TOKEN_BURN_RATE ?? 0.05;
     const ubiRate = GAME_CONFIG.UBI_POOL_RATE ?? 0.06;
     const creatorRate = GAME_CONFIG.CREATOR_ROYALTY_RATE ?? 0.03;
-    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 12000000);
+    const lotteryPool = state.lotteryPool != null ? state.lotteryPool : (GAME_CONFIG.CARNIVAL?.LOTTERY?.SEED_POOL_ADA || 4000000);
     const amortiPool = state.lotteryAmortiPool || 0;
     const myTickets = state.lotteryTickets || 0;
     const lotteryWinnerMultiplier = GAME_CONFIG.CARNIVAL?.LOTTERY?.WINNER_MULTIPLIER || 2.0;

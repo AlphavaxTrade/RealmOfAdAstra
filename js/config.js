@@ -810,14 +810,14 @@ export const GAME_CONFIG = {
   // v2 (R3): tohumlar 200 M ASTRA'dan (pazar ayrı: AMM_SEED_ASTRA). 18 Ekim 2026: parça havuzu 4 M'den 180 bin ASTRA'ya küçüldü (çıkan 3,82 M) ve
   // Pandora kutusu ile Anahtar havuzları (2 M + 2 M) kaldırıldı; çıkan toplam 7,82 M ASTRA yarı yarıya geri alım ve karnaval kasalarına eklendi
   // (ammBuyback 7 M → 10,91 M, carnival 3 M → 6,91 M); toplam 200 M değişmez.
-  TREASURY_SEED: { dungeon: 10000000, arena: 4000000, worldBoss: 6000000, ammBuyback: 10910000, quest: 8000000, carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
+  TREASURY_SEED: { dungeon: 12666667, arena: 6666667, worldBoss: 8666666, ammBuyback: 10910000, quest: 8000000, carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000 },
   // Hedef rezerv = ~12 aylık ödeme (annualPayout, yukarıda); sağlık = bakiye / hedef. Haftalık oranla sürekli ödeme
   // yapan 5 kasa (dungeon/arena/worldBoss/ammBuyback/quest) formülle hesaplanır; sürekli haftalık oranı olmayan
   // (karnaval: çevirme başına kendini finanse eder; fatih: yalnız 18. boss ilk zaferinde; konsey/universe: kilitli/
   // proje bazlı) kasalarda hedef = tohum (değişmedi).
   TREASURY_TARGET_RESERVE: {
-    dungeon: annualPayout(10000000, 0.025), ammBuyback: annualPayout(10910000, 0.03), worldBoss: annualPayout(6000000, 0.03),
-    arena: annualPayout(4000000, 0.02), quest: annualPayout(8000000, 0.015),
+    dungeon: annualPayout(12666667, 0.025), ammBuyback: annualPayout(10910000, 0.03), worldBoss: annualPayout(8666666, 0.03),
+    arena: annualPayout(6666667, 0.02), quest: annualPayout(8000000, 0.015),
     carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000
   },
   // Haftalık ödeme oranları (R3): kasaların 12 ay dayanması için %2-3. Her alanın gerçek kullanım yeri:
@@ -916,7 +916,7 @@ export const GAME_CONFIG = {
     // Haftalık Piyango Sistemi
     LOTTERY: {
       TICKET_COST_ADA: 1,          // v2 ölçekli
-      SEED_POOL_ADA: 12000000,     // v2 (R3): 12 M ASTRA tohum (eskiden 20 M; model 2 yılda hiç erimedi)
+      SEED_POOL_ADA: 4000000,      // 19 Ekim 2026: 4 M ASTRA (R3'te 12 M, eskiden 20 M). Günlük 100 bilet sınırıyla bile 20 yılda bitmiyordu; fazlası zindan, Kolezyum ve dünya bossu kasalarına verildi (geçiş 011)
       // Balina koruması: bir hesap bir günde (Türkiye saatiyle gece yarısı yenilenir) en fazla bu kadar bilet satın alabilir.
       // Kazanmayan biletler yanmaz; sayı sınırı olmadan, kazanana kadar sonraki haftalara devreder. (19 Ekim 2026: haftalık 100'dü, günlük 100 oldu.)
       MAX_TICKETS_PER_DAY: 100,      // günlük alım sınırı
@@ -1710,6 +1710,14 @@ export const GAME_CONFIG = {
       date: '19 Ekim 2026',
       changes: [
         `Karnaval bildirimlerinde "Haftalık çekiliş yapıldı, bu hafta sana çıkmadı" ile "Piyango sana çıktı!" mesajları arka arkaya, birbiriyle çelişerek geliyordu. Sebep: oyun, tarayıcıda sunucudan bağımsız ikinci bir sahte çekiliş yapıp sahte kazanç bildirimi üretiyordu. Artık çekilişi yalnız sunucu yapıyor; gelen bildirim gerçek çekilişin sonucudur. Gerçek biletlerin, ödülün ve kasanın hesabı hiç değişmedi.`
+      ]
+    },
+    {
+      version: 'v1.73',
+      title: '🏦 Piyango Kasası Küçüldü, Fazlası Üç Kasaya Dağıtıldı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Piyango kasası 4 milyon ASTRA'ya indirildi. Günlük 100 bilet sınırıyla bile kasa 20 yılda bitmiyordu ve en büyük tek kazanç yaklaşık 1 milyonu geçmiyordu; fazlası boşta duruyordu. Artan ASTRA üçe eşit bölünüp Zindan, Kolezyum ve Dünya Boss kasalarına eklendi. Bu üç kasanın haftalık ödeme payı kasayla birlikte büyür, yani oyunculara bu alanlardan daha çok ödül çıkabilir. Piyango kuralları (1 ASTRA bilet, kazanana 2 katı, günlük 100 bilet) değişmedi.`
       ]
     }
   ],

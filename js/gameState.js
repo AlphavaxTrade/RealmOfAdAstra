@@ -132,7 +132,7 @@ export class GameStateManager {
     const piyango = piyangoKonfigi();
     const piyangoKasasi = (kayit.lotteryPool != null && isFinite(kayit.lotteryPool) && kayit.lotteryPool >= 0)
       ? kayit.lotteryPool
-      : (piyango.SEED_POOL_ADA || 12000000);   // yalnız hiç kayıt yoksa tohumla başlar (her yüklemede tamamlanmaz)
+      : (piyango.SEED_POOL_ADA || 4000000);   // yalnız hiç kayıt yoksa tohumla başlar (her yüklemede tamamlanmaz)
     const amortiKasasi = (kayit.lotteryAmortiPool != null && kayit.lotteryAmortiPool > 0)
       ? kayit.lotteryAmortiPool
       : Math.round((kayit.lotteryTickets || 0) * biletBedeli() * amortiPayi());
