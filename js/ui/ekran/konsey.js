@@ -35,13 +35,13 @@ function girisKarti(b, us) {
   return kart({
     baslik: '🏛️ Konsey ne işe yarar?',
     vurgu: 'vurgu',
-    icerik: not('<b>Sirius Konseyi, bütün oyuncuların birlikte kurduğu ortak şantiyedir.</b> Herkes biraz hammadde (ya da ASTRA) verir, büyük binalar birlikte yapılır. Bir bina bitince <b>herkes</b> bedava fayda kazanır: sen vermiş de olsan, başkası vermiş de olsan.')
-      + not('<b>Sana faydası:</b>')
-      + not('⛏️ <b>Madencilik Otoritesi</b> büyüdükçe herkesin haftalık hammadde çıkarma hakkı %5 artar ve çalışma süresi uzar. Yani daha çok hammadde çıkarırsın.')
-      + not('🏗️ <b>Projeler</b> (köprü, ambar, şifa bahçesi, rıhtım, duvar) sefer süresini kısaltır, silonu büyütür, şifalı ot üretimini artırır.')
-      + not('🎖️ <b>Sen katkı yaptıkça</b> katkı kademen yükselir (Bronz → Gümüş → Altın → Platin → Elmas) ve haftalık çıkarma hakkın büyür. Çok veren daha çok kazanır.')
+    icerik: not('<b>Sirius Konseyi, bütün oyuncuların birlikte kurduğu ortak şantiyedir.</b> Hammadde ya da ASTRA katkısı yaparsan katkı puanın ve kademen yükselir; biten binalar <b>herkese</b> bedava fayda sağlar.')
       + not(kademeMetni)
-      + not('<b>Nasıl katkı yaparım?</b> Elindeki hammaddeyi verebilirsin ya da aşağıdaki "⚡ Hızlı katkı"ya ASTRA yazarsın, gerisini oyun halleder. Büyük işler tek kişiyle bitmez; herkes biraz verir.')
+      + katli('Sana faydası ve nasıl katkı yapılır? (ayrıntı)',
+        not('⛏️ <b>Madencilik Otoritesi</b> büyüdükçe herkesin haftalık hammadde çıkarma hakkı %5 artar ve çalışma süresi uzar.')
+        + not('🏗️ <b>Projeler</b> (köprü, ambar, şifa bahçesi, rıhtım, duvar) sefer süresini kısaltır, silonu büyütür, şifalı ot üretimini artırır.')
+        + not('🎖️ <b>Katkı kademen</b> (Bronz → Gümüş → Altın → Platin → Elmas) yükseldikçe çıkarma hakkın büyür. Çok veren daha çok kazanır.')
+        + not('<b>Nasıl katkı yaparım?</b> Elindeki hammaddeyi verebilirsin ya da aşağıdaki "⚡ Hızlı katkı"ya ASTRA yazarsın, gerisini oyun halleder.'), { k: 'konsey-giris-detay' })
   });
 }
 
@@ -171,7 +171,7 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([grupSekmeleri('koyKonsey', 'konsey'), girisKarti(b, us), katkiPuaniKarti(b), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), uretimKarti(b, us, ortakKasa), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
+    return kap([grupSekmeleri('koyKonsey', 'konsey'), girisKarti(b, us), katkiPuaniKarti(b), hizliKatkiKarti(b), otoriteKarti(b), projeKarti(b), katli('📊 Bu haftaki çıkarma hakkın (ayrıntı)', uretimKarti(b, us, ortakKasa), { k: 'konsey-hak' }), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {

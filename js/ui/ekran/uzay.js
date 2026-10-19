@@ -114,7 +114,7 @@ const ekran = {
           hucre('Genesis NFT', gs.state.genesisNftMinted ? 'Var ✅' : 'Yok')
         ])
     });
-    return kap(durum + insaKarti(roket, bakiye) + seviyeKarti(roket) + depoBolumu(dp));
+    return kap(durum + insaKarti(roket, bakiye) + katli('🚀 Roket seviyeleri (ayrıntı)', seviyeKarti(roket), { k: 'roket-seviyeler' }) + katli('📦 Hazırlık Deposu', depoBolumu(dp), { k: 'roket-depo' }));
   },
 
   eylemler: {

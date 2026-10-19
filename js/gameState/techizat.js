@@ -202,9 +202,14 @@ export const techizatYontemleri = {
     const coalCost = kumulatif.baseCoal > 0 ? Math.max(10, Math.round(kumulatif.baseCoal * carpan)) : 0;     // ocak
     const stoneCost = kumulatif.baseStone > 0 ? Math.max(10, Math.round(kumulatif.baseStone * carpan)) : 0;  // bileme taşı
     const fragmentCost = Math.round(Math.pow(2, simdiki) * (simdiki >= 4 ? (GAME_CONFIG.GELISIM_PARCA_CARPANI ?? 1) : 1));   // ilk 3 yükseltme eskisi gibi (yeni oyuncu); 4+ parça bedeli x2
-    const adAstraCost = ammMarket.calculateResourcesCostAdAstra({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
+    // ASTRA bedeli: hammaddenin pazar değeri x seviyeye bağlı çarpan (config EQUIPMENT_UPGRADE_ASTRA; zorluk ham madde adedinden değil ASTRA'dan gelir, çünkü adet silo kapasitesine sığmak zorunda)
+    const AC = GAME_CONFIG.EQUIPMENT_UPGRADE_ASTRA || { BASE: 1, GROWTH: 1 };
+    const astraCarpani = AC.BASE * Math.pow(AC.GROWTH, sonraki - 2);
+    const hamDeger = ammMarket.calculateResourcesCostAdAstra({ wood: woodCost, iron: ironCost, coal: coalCost, stone: stoneCost }).totalAda;
+    const adAstraCost = Math.round(hamDeger * astraCarpani * 1000) / 1000;
     return {
       isMaxLevel: false,
+      astraCarpani,
       currentLevel: simdiki,
       nextLevel: sonraki,
       accountLevelBlocked: sonraki > this.getEquipmentLevelCap(),

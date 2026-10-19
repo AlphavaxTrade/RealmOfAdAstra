@@ -39,3 +39,8 @@
 - Krallık merkezi: "Şimdi yapılacaklar" listesi (tek dokunuşluk eylemler), toplu işlemler katlı.
 - Ölçüm yöntemi değişti: yoğunluk testi artık katlı bölümlerin gövdesini saymaz (oyuncu ilk bakışta yalnız başlığı görür); tavanlar yeni ölçüme göre yazıldı.
 - Gerçek tarayıcı: `scripts/tarayici/menu-gez.mjs` (menü, gelişmiş kat, Köy→Konsey ve Kolezyum→Dünya bossu geçişi, Şimdi yapılacaklar) ve `kisla-akis.mjs` (asker seç → yuva → panel) 390×844'te geçti.
+
+## Aşama 3 (v1.86, 20 Ekim 2026): yoğun ekranlar + teçhizat ASTRA bedeli
+Görünür (katlı bölümlerin gövdesi hariç) harf, önce → sonra: Sürüm geçmişi 6.327 → 967 · Konsey 2.679 → 1.350 · Hazine 1.789 → 453 · Karakterim 1.712 → 988 · Kotalarım 1.364 → 1.257 · Roket Rampası 1.306 → 956 · Koleksiyon 1.269 → 738 · Silo 960 → 725 · Pazar düğme 23 → 17 (Satın al / Sat iki sekme).
+Teçhizat yükseltme: ASTRA bedeli = hammadde pazar değeri × (3 × 1,35^(hedef sv − 2)); 1→10 toplam ~12.700 → ~320.000 ASTRA (`tests/test_techizat_astra_bedeli.mjs`). Ham madde adetleri silo kapasitesine sığma kuralı yüzünden değişmedi.
+Not: `scripts/tarayici/pazar-grafik.mjs` (kendi sunucusunu kuran eski betik) bu oturumda sayfa yüklemede zaman aşımına uğradı; Pazar ekranı yeni sürümle `test_pazar_hizli_al`, `test_ekran_cizim` testlerinden geçti ama bu betik yeniden çalıştırılıp doğrulanmadı.

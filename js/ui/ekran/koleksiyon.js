@@ -1,6 +1,6 @@
 // Realm of AdAstra — Sandıklar ve koleksiyon ekranı: Genesis Yolu (şartlar, katkı defteri, eser uyandırma, mühür) ve Pandora kutuları.
 // Kurallar js/gameState/genesis.js (makro plan C6; kullanıcı kuralı: Genesis basan, 3 yıllık ayrıcalık maliyetini önden ödemiş olmalı).
-import { ekranKaydet, kap, kart, sekmeler, dugme, uyari, not, bos, izgara, etiket, satir, cubukSatiri, sure, tam, astra, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, sekmeler, dugme, uyari, not, bos, izgara, etiket, satir, cubukSatiri, sure, tam, astra, esc } from './cekirdek.js';
 
 const SEKMELER = [{ id: 'koleksiyon', ad: 'Genesis Yolu (18 eser)', simge: '👑' }, { id: 'kutular', ad: 'Pandora kutuları', simge: '📦' }];
 const dolar = (v) => `${(Number(v) || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
@@ -21,13 +21,13 @@ function genesisKarti(b, y) {
     rozet: etiket(`${tamam}/${y.sartlar.length} şart`, y.hazir ? 'iyi' : ''),
     vurgu: y.hazir ? 'iyi' : '',
     icerik: not('Genesis uzun bir yolun sonudur: hesabını büyüt, Krallık Yolu\'nu ve zindanın 18. katını bitir, 18 eseri bulup tek tek uyandır. Bu yolda yaptığın harcama ve yakımlar ekosisteme katkındır; ekosistem karşılığını ayrıcalıklarla öder. Kural: Genesis basan, ayrıcalıklarının en az 3 yıllık maliyetini önden ödemiş olmalı.')
-      + y.sartlar.map((x) => satir(`${x.ok ? '✅' : '⬜'} ${x.ad}`, x.deger || (x.ok ? 'tamam' : 'eksik'), x.ok ? 'iyi' : '')).join('')
       + cubukSatiri('Ekosisteme net katkın (mühür dahil)', `${dolar(y.defter.net + y.muhur.usd)} / ${dolar(y.maliyet.gerekli)}`, katkiYuzde, { ton: katkiYuzde >= 100 ? 'dolu' : '' })
-      + satir('Oyunda harcadığın (harcandığı andaki değer)', dolar(y.defter.harcananUsd))
-      + satir('Yaktığın hammadde', dolar(y.defter.yakilanUsd))
-      + satir('Oyundan çektiğin (düşülür)', dolar(y.defter.cekilenUsd))
-      + satir('Mühür bedeli', `${y.muhur.usd} $ ≈ ${astra(y.muhur.astra)} ASTRA (yarısı yakılır)`)
-      + (y.dunya.fiyatOlculdu ? '' : not('ASTRA fiyatı şu an ölçülemiyor; hesap yedek fiyatla yapılıyor.'))
+      + katli(`Şartlar (${tamam}/${y.sartlar.length}) ve hesap (ayrıntı)`, y.sartlar.map((x) => satir(`${x.ok ? '✅' : '⬜'} ${x.ad}`, x.deger || (x.ok ? 'tamam' : 'eksik'), x.ok ? 'iyi' : '')).join('')
+        + satir('Oyunda harcadığın (harcandığı andaki değer)', dolar(y.defter.harcananUsd))
+        + satir('Yaktığın hammadde', dolar(y.defter.yakilanUsd))
+        + satir('Oyundan çektiğin (düşülür)', dolar(y.defter.cekilenUsd))
+        + satir('Mühür bedeli', `${y.muhur.usd} $ ≈ ${astra(y.muhur.astra)} ASTRA (yarısı yakılır)`)
+        + (y.dunya.fiyatOlculdu ? '' : not('ASTRA fiyatı şu an ölçülemiyor; hesap yedek fiyatla yapılıyor.')), { k: 'genesis-detay' })
       + dugme({ e: 'genesis', metin: `🏆 Genesis NFT bas (${y.muhur.usd} $)`, ton: 'birincil', devreDisi: !y.hazir, genis: true })
   });
 }

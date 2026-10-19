@@ -51,9 +51,11 @@ function seviyeKarti(b) {
       cubukSatiri('✨ Deneyim (XP)', `${tam(s.currentXp)} / ${tam(req.xp)}${xpYeter ? ' ✅' : ''}`, (s.currentXp / req.xp) * 100, { ton: xpYeter ? '' : 'dolu' }),
       xpYeter ? '' : not('💡 XP kazanmak için haritadan hammadde bölgelerinde seferlere çıkmalısın.'),
       silo,
-      ...kaynaklar.map((k) => maliyetSatiri(`${kaynakSimgesi(b, k)} ${kaynakAdi(b, k)}`, env[k] || 0, req.costs[k] || 0)),
-      maliyetSatiri('🟣 ASTRA', s.adAstraBalance || 0, req.adAstra, { astraMi: true }),
-      not('Hammadde bedeli, seviye için gereken deneyimi toplarken altı alanda ürettiğinin yarısıdır. Ekstra ASTRA bedeli, bu hammaddelerin pazar değeridir.'),
+      katli(hammaddeTamam && s.adAstraBalance >= req.adAstra ? '✅ Gereken hammadde ve ASTRA tamam' : '📋 Gereken hammadde ve ASTRA', [
+        ...kaynaklar.map((k) => maliyetSatiri(`${kaynakSimgesi(b, k)} ${kaynakAdi(b, k)}`, env[k] || 0, req.costs[k] || 0)),
+        maliyetSatiri('🟣 ASTRA', s.adAstraBalance || 0, req.adAstra, { astraMi: true }),
+        not('Hammadde bedeli, seviye için gereken deneyimi toplarken altı alanda ürettiğinin yarısıdır. Ekstra ASTRA bedeli, bu hammaddelerin pazar değeridir.')
+      ].join(''), { k: 'seviye-bedel', acik: !(hammaddeTamam && s.adAstraBalance >= req.adAstra) && xpYeter }),
       hizliAlKarti(b, 'levelup'),
       dugme({ e: 'seviye', metin: yeter ? `✨ Seviye ${s.level + 1}'e yükselt` : `🔒 Seviye ${s.level + 1}'e yükselt: ${esc(neden)}`, ton: yeter ? 'iyi' : '', genis: true })
     ].join('')
@@ -86,10 +88,16 @@ function siloIpucuKarti(b, req) {
 function ubiKarti(b) {
   const gs = b.gameState;
   const u = b.globalPool.getUbiPoolInfo(gs.state.level || 1, gs.state.lastClaimedUbiEpoch || 0);
+  // Kısa özet (19 Ekim 2026 sadeleştirme): alınabiliyorsa tek düğme, ayrıntılar (birikim, tahmin, kurallar) katlı
+  const ozet = u.alreadyClaimedThisWeek
+    ? uyari('Bu haftaki temel gelirini aldın. Sonraki dağıtım Pazartesi 00:01 (TSİ).', 'iyi')
+    : (u.payout > 0
+      ? dugme({ e: 'ubi', metin: `🏛️ Haftalık temel geliri al (+${astra(u.payout)} ASTRA)`, ton: 'birincil', genis: true })
+      : not(u.eligible ? `Şu an alınacak gelir yok. Bu hafta biriken (~${astra(u.accruingThisWeek)} ASTRA) gelecek Pazartesi açılır; senin payın yaklaşık <b>${astra(u.nextWeekPayout)} ASTRA</b>.` : 'Haftalık temel gelir 3. seviyede açılır.'));
   return kart({
-    baslik: '🏛️ Haftalık temel gelir (UBI)',
+    baslik: '🏛️ Haftalık temel gelir',
     rozet: etiket(u.eligible ? `+${astra(u.payout)} ASTRA / hafta` : 'Seviye 3\'te açılır', u.eligible ? 'iyi' : ''),
-    icerik: not(`Oyundaki her harcamanın <b>%6'sı</b> havuzda birikir. Biriken para <b>o hafta alınamaz</b>: gelecek Pazartesi 00:01'de (TSİ) kasa olarak açılır ve payını o hafta talep edersin. Payın seviyene göre belirlenir.`)
+    icerik: ozet + katli('Nasıl işliyor? (ayrıntı)', not(`Oyundaki her harcamanın <b>%6'sı</b> havuzda birikir. Biriken para <b>o hafta alınamaz</b>: gelecek Pazartesi 00:01'de (TSİ) kasa olarak açılır ve payını o hafta talep edersin. Payın seviyene göre belirlenir.`)
       + izgara([
         hucre('Bu hafta birikiyor', `${astra(u.accruingThisWeek)} ASTRA`),
         hucre('Pazartesi tahmini payın', `~${astra(u.nextWeekPayout)} ASTRA`, 'iyi'),
@@ -100,7 +108,8 @@ function ubiKarti(b) {
       + (u.payout <= 0 && !u.alreadyClaimedThisWeek && u.eligible ? not('ℹ️ Şu an açık kasa boş: geçen hafta birikmiş para yoktu ya da alındı. Bu hafta biriken para gelecek Pazartesi açılır.') : '')
       + (u.alreadyClaimedThisWeek
         ? uyari('Bu haftaki temel gelirini aldın. Sonraki dağıtım Pazartesi 00:01 (TSİ).', 'iyi')
-        : dugme({ e: 'ubi', metin: `🏛️ Haftalık temel geliri al (+${astra(u.payout)} ASTRA)`, ton: 'birincil', devreDisi: !u.eligible, genis: true }))
+        : '')
+      , { k: 'ubi-detay' })
   });
 }
 
@@ -175,7 +184,7 @@ const ekran = {
   goruldu: 'profil',
   canliYenile: true,
   baslik: () => ['🧙', 'Karakterim'],
-  govde: (b) => kap([seviyeKarti(b), ubiKarti(b), staminaKarti(b), hammaddeKarti(b), esyaKarti(b), aletKarti(b)].join('')),
+  govde: (b) => kap([seviyeKarti(b), ubiKarti(b), staminaKarti(b), katli('📦 Hammadde, parşömen ve aletler', hammaddeKarti(b) + esyaKarti(b) + aletKarti(b), { k: 'karakter-diger' })].join('')),
 
   eylemler: {
     git(b, el) {

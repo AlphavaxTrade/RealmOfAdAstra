@@ -464,6 +464,11 @@ export const GAME_CONFIG = {
   //   • Asker ASTRA bedeli x5 (SOLDIER_COST_BASE, SOLDIER_18_TARGET_COST); teçhizat parçası bedeli (dövme ve yükseltme) PARCA_CARPANI = x2
   //     (parça arzı düşme şansına ve küçük pazar havuzuna bağlı: x5 pazar fiyatını patlatırdı).
   EQUIPMENT_UPGRADE_GROWTH: 1.55,   // ilk yükseltme basamağı 1,18 (eski), sonrası her basamak x1,55 (1→10 toplam ~x4,8)
+  // TEÇHİZAT YÜKSELTME ASTRA BEDELİ (20 Ekim 2026, kullanıcı kararı: "geliştirmede demir, odun, kömür çok az, parça çok; teçhizat geliştirmek öyle kolay olmasın"):
+  // Ham madde ADETLERİ silo kapasitesine zaten dayalı (ilk basamaklarda bedel kapasitenin 1-2 katı; daha çoğu hiçbir silo almaz), o yüzden zorluk ASTRA tarafından
+  // artar: ASTRA bedeli = hammaddenin pazar değeri x ASTRA_CARPANI(hedef seviye). Hedef sv 2: x3 ... sv 10: x33 (BASE x GROWTH^(sv-2)); bir eşyayı 1→10 yükseltmek
+  // ~320.000 ASTRA (eskiden ~12.700). İlk üç basamak hâlâ ucuz (yeni oyuncu), yük üst basamaklara biner. Harcanan ASTRA her harcama gibi dağılır (yakım, kasalar).
+  EQUIPMENT_UPGRADE_ASTRA: { BASE: 3, GROWTH: 1.35 },
   // HESAP SEVİYESİ HER ŞEYİN ANAHTARI (19 Ekim 2026, kullanıcı kararı: "silonun en yüksek seviyesi hesabın seviyesini geçemesin, oyundaki en pahalı şey hesap
   // yükseltme bedeli olsun, her şey hesap seviyesine bağlı olsun"):
   //   • Silo seviyesi hesap seviyesini geçemez; bu yüzden hesap seviyesi bedeli, O SEVİYEDEKİ silonun kapasitesinin payıdır (siloya sığar, silo ile birlikte büyür).
@@ -1964,7 +1969,9 @@ export const GAME_CONFIG = {
         `Kışla artık tek akışta: üstte ordu özeti ve iki düğme ("Orduyu hazırla", "Yeni asker"), telefonda askerler yatay şeritte. Bir askere dokununca altında o askerin sayfası açılır; bir eşya yuvasına dokununca takılı eşyayı <b>geliştirebilir</b> (eksik malzeme pazardan alınır), çıkarabilir ya da depodan başkasını takabilirsin. Depoda uygun eşya yoksa aynı yuvadan yeni eşya dövebilirsin; Demirhane'ye gitmeye gerek kalmaz. Yaralı askerin yanında "yaralı" rozeti görünür.`,
         `Demirhane'de dövme ve eşya kartları kısaldı: bedel tek satır (eksik kalem kırmızı), tek ana düğme ("Geliştir" ya da "Eksikleri al ve geliştir"), ayrıntılı bedeller katlı.`,
         `Krallık merkezi "✅ Şimdi yapılacaklar" ile açılır: hazır sefer, yaralı asker, onarım bekleyen alet, düşük stamina ve dolan silo için her satırda tek dokunuşluk eylem. Toplu işlemler ve silo bu ekrandan da yapılır.`,
-        `Menü sadeleşti. Krallık: Krallık merkezi, Taverna, Demirhane, Köy ve Konsey, Roket Rampası (8. seviyeden). Savaş: Kışla, Zindan, Arena. Pazar: Meydan pazarı, Karnaval, Sandıklar. "Şifahane", "Silo" ve "Savaş alanı" ayrı girişlerden kalktı (işleri Kışla ve Krallık merkezinde; Ctrl+K ile hâlâ bulunur). "Köy ve Konsey" ile "Arena" tek girişte iki sekmedir. "Ben" menüsünde 6 temel öğe var; Hazine, Ekonomi panosu, Kotalarım, Sürüm geçmişi ve diğerleri "Gelişmiş" katında.`
+        `Menü sadeleşti. Krallık: Krallık merkezi, Taverna, Demirhane, Köy ve Konsey, Roket Rampası (8. seviyeden). Savaş: Kışla, Zindan, Arena. Pazar: Meydan pazarı, Karnaval, Sandıklar. "Şifahane", "Silo" ve "Savaş alanı" ayrı girişlerden kalktı (işleri Kışla ve Krallık merkezinde; Ctrl+K ile hâlâ bulunur). "Köy ve Konsey" ile "Arena" tek girişte iki sekmedir. "Ben" menüsünde 6 temel öğe var; Hazine, Ekonomi panosu, Kotalarım, Sürüm geçmişi ve diğerleri "Gelişmiş" katında.`,
+        `Yoğun ekranlar sadeleşti: Konsey (üstte kısa açıklama, ayrıntılar katlı), Karakterim (seviye atlama + tek düğme; bedeller, haftalık gelir ayrıntısı, hammadde ve aletler katlı), Kotalarım (önce hakkın, yenilenme süreleri katlı), Hazine (kasa özeti + üç katlı bölüm), Roket Rampası, Koleksiyon, Silo, Pazar (Satın al / Sat iki sekme, fiyat grafiği katlı) ve Sürüm geçmişi (yalnız en yeni sürüm açık, her sürümde ilk 3 madde görünür).`,
+        `⚖️ Teçhizat yükseltmesi artık kolay değil: demir, odun, kömür ve taş adetleri silonun alabileceği kadarıyla sınırlı olduğu için zorluk ASTRA bedelinden geldi. Yükseltme ASTRA bedeli = hammaddenin pazar değeri × seviye çarpanı (2. seviyeye ×3, 10. seviyeye ×33). Bir eşyayı 1'den 10'a çıkarmak yaklaşık 320.000 ASTRA (eskiden ~12.700). İlk üç basamak yine ucuz; yük üst seviyelere biner. Parça bedelleri ve onarım bedeli değişmedi.`
       ]
     }
   ],

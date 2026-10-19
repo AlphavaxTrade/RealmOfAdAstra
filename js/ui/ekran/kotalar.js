@@ -112,10 +112,9 @@ const ekran = {
       }),
       sinirSatiri('🎟️', 'Piyango: bugün aldığın bilet', piyango.boughtToday, piyango.maxPerDay),
       sinirSatiri('🏟️', 'Kolezyum maçı', sayaclar.arenaMatches || 0, kolezyumSiniri),
-      sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
+      katli('Zindan ödeme bütçesi ve giriş basamakları', sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
         birim: ' ASTRA', not: `Kasa günde en fazla bakiyesinin %${sayi(((b.GAME_CONFIG.DUNGEON || {}).DAILY_BUDGET_RATE ?? 0.0036) * 100, 2)}'ini öder`
-      }),
-      girisBasamaklari(zindan)
+      }) + girisBasamaklari(zindan), { k: 'kota-zindan-detay' })
     ].join('');
 
     const haftalik = [
@@ -124,12 +123,13 @@ const ekran = {
     ].join('');
 
     return kap([
-      sayaclar3,
+      kart({ icerik: not('Oyunda her şeyin günlük ve haftalık bir sınırı var. Bu ekran bugün ve bu hafta <b>neler kaldığını</b> gösterir: önce hammadde çıkarma hakkın, sonra günlük haklar.') }),
       kart({
         baslik: '🎫 Üretim hakkın (bu hafta)',
         rozet: etiket(`ağırlık ×${agirlik.weight} · kademe ${agirlik.tier.name}`),
         icerik: not('Haftalık hakkın 7 güne bölünür: her gün bir parçası açılır. "Şimdi çıkarabilirsin", açılan parçadan henüz kullanmadığın miktardır; sefer mahsulü en çok bu kadar toplanır. Çubuk, haftalık hakkının ne kadarını çıkardığını gösterir.') + hakSatirlari + katli('Nasıl hesaplanır?', not(nasil), { k: 'kota-nasil' })
       }),
+      katli('⏱️ Yenilenme süreleri', sayaclar3, { k: 'kota-sureler' }),
       katli(`🌍 Sirius kapasitesi (herkes) · ${gunSirasi + 1}. gün / 7`, gunSeridi + siriusSatirlari + not(siriusNotu), { k: 'kota-sirius' }),
       kart({ baslik: '📅 Günlük sınırların (bugün)', icerik: gunluk }),
       katli('🗓️ Haftalık sınırların', haftalik, { k: 'kota-haftalik' })

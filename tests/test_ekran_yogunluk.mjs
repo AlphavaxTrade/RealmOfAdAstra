@@ -16,29 +16,28 @@ const { ammMarket } = await import('../js/ammMarket.js');
 const { treasury } = await import('../js/treasury.js');
 const ekran = await import('../js/ui/ekran/index.js');
 
-// Tavanlar: { harf, dugme, sayi }. Aşama 0 (19 Ekim 2026): mevcut ölçümün biraz üstü. Her aşama bitince ilgili satır düşürülür.
-// Hedef (plan): harf ≤ ~700, düğme ≤ 6, sayı ≤ 15 (tüm ekranlar; sürüm geçmişi ayrı).
+// Tavanlar: { harf, dugme, sayi } = o günkü görünür ölçümün ~%8-10 üstü (20 Ekim 2026, arayüz sadeleştirme aşama 3). Her aşamada düşürülür; hedef: harf ≤ ~700, düğme ≤ 6.
 const TAVAN = {
-  surum: { harf: 6800, dugme: 1, sayi: 70 },
-  konsey: { harf: 2900, dugme: 7, sayi: 53 },
-  hazine: { harf: 1950, dugme: 11, sayi: 49 },
-  karakter: { harf: 1850, dugme: 7, sayi: 59 },
-  kotalar: { harf: 1500, dugme: 1, sayi: 59 },
-  uzay: { harf: 1450, dugme: 1, sayi: 35 },
-  koleksiyon: { harf: 1400, dugme: 5, sayi: 34 },
+  konsey: { harf: 1500, dugme: 7, sayi: 18 },
+  kotalar: { harf: 1400, dugme: 1, sayi: 37 },
   savasalani: { harf: 1200, dugme: 6, sayi: 44 },
+  karakter: { harf: 1100, dugme: 6, sayi: 31 },
   karnaval: { harf: 1100, dugme: 11, sayi: 31 },
-  silo: { harf: 1050, dugme: 3, sayi: 60 },
+  surum: { harf: 1050, dugme: 1, sayi: 8 },
+  uzay: { harf: 1050, dugme: 1, sayi: 29 },
   ekonomi: { harf: 1000, dugme: 5, sayi: 24 },
   demirhane: { harf: 950, dugme: 10, sayi: 62 },
   taverna: { harf: 850, dugme: 8, sayi: 9 },
-  pazar: { harf: 800, dugme: 27, sayi: 38 },
+  koleksiyon: { harf: 800, dugme: 5, sayi: 15 },
+  silo: { harf: 800, dugme: 3, sayi: 58 },
   kolezyum: { harf: 750, dugme: 9, sayi: 33 },
   savashazirlik: { harf: 750, dugme: 10, sayi: 39 },
   kisla: { harf: 750, dugme: 17, sayi: 35 },
   koy: { harf: 650, dugme: 5, sayi: 34 },
   bolge: { harf: 650, dugme: 4, sayi: 22 },
   zindanmod: { harf: 600, dugme: 1, sayi: 17 },
+  pazar: { harf: 550, dugme: 20, sayi: 17 },
+  hazine: { harf: 500, dugme: 1, sayi: 9 },
   merkez: { harf: 500, dugme: 5, sayi: 16 },
   cevrimdisi: { harf: 500, dugme: 3, sayi: 39 },
   hurda: { harf: 450, dugme: 4, sayi: 15 },

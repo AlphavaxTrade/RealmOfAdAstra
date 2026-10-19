@@ -169,7 +169,14 @@ const ekran = {
   baslik: () => ['🏛️', 'Hazine ve gelir'],
 
   govde(b, secenek) {
-    return kap([ozet(b), dagilim(b), kasalar(b), ubiKarti(b), kapiKarti(b), gelirKarti(b), karneKarti(b), sponsorKarti(b, secenek)].join(''));
+    // Sadeleştirme (20 Ekim 2026): üstte tek cümle + kasa özeti; ayrıntılar başlıklı katlarda (yeni oyuncunun ilk bakışta okuması gerekmez)
+    return kap([
+      kart({ icerik: not('Bu ekran oyunun parasının nerede toplandığını ve sana ne düştüğünü gösterir. Oynamak için bakman gerekmez; merak edersen aşağıdaki başlıklara dokun.') }),
+      ozet(b),
+      katli('💰 Parası nereye gider, ödül kasaları', dagilim(b) + kasalar(b), { k: 'hazine-kasalar' }),
+      katli('🤝 Temel gelir ve kapı durumu', ubiKarti(b) + kapiKarti(b), { k: 'hazine-ubi' }),
+      katli('🧾 Gelir motoru, karnem, sponsorluk', gelirKarti(b) + karneKarti(b) + sponsorKarti(b, secenek), { k: 'hazine-gelir' })
+    ].join(''));
   },
 
   async sonra(b, secenek) {

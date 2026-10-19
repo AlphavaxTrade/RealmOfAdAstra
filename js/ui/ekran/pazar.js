@@ -28,7 +28,7 @@ const tahminSatin = (amm, key, qty) => {
 };
 const tahminSat = (amm, key, qty) => (qty > 0 ? `~${sayi(amm.getEstimatedAdAstraForSell(key, qty), 2)} ASTRA` : '~0,00 ASTRA');
 
-function islemKarti(b, key) {
+function islemKarti(b, key, mod = 'al') {
   const gs = b.gameState;
   const amm = b.ammMarket;
   const havuz = amm.pools[key];
@@ -68,7 +68,9 @@ function islemKarti(b, key) {
       ${dugme({ e: 'sat', metin: 'Sat', veri: { kaynak: key }, genis: true })}
       ${hammaddeMi ? dugme({ e: 'hepsiniSat', metin: `Hepsini sat (${tam(hepsi)} adet)`, veri: { kaynak: key }, devreDisi: hepsi <= 0, genis: true }) : ''}
     </div>`;
-  return kart({ icerik: `${baslik}<div class="ek-izgara is-genis">${alKutusu}${satKutusu}</div>` });
+  // Tek seferde tek kutu (20 Ekim 2026): "Satın al" ve "Sat" iki sekme; telefonda iki kutu yan yana kalabalık yapıyordu
+  const modSekmeleri = sekmeler([{ id: 'al', ad: 'Satın al', simge: '🛒' }, { id: 'sat', ad: 'Sat', simge: '💰' }], mod, 'islemSec');
+  return kart({ icerik: `${baslik}${modSekmeleri}${mod === 'sat' ? satKutusu : alKutusu}` });
 }
 
 function alSatBolumu(b, s) {
@@ -77,7 +79,7 @@ function alSatBolumu(b, s) {
     const aktif = k === secili;
     return `<button type="button" class="ek-sekme${aktif ? ' is-aktif' : ''}" role="tab" aria-selected="${aktif}" data-e="kaynakSec" data-kaynak="${esc(k)}">${esc(b.ammMarket.pools[k].name)}</button>`;
   }).join('');
-  return `<div class="ek-sekmeler is-sarar" role="tablist">${cipler}</div>${islemKarti(b, secili)}${fiyatGrafigi(b, s, secili)}`;
+  return `<div class="ek-sekmeler is-sarar" role="tablist">${cipler}</div>${islemKarti(b, secili, s.islem === 'sat' ? 'sat' : 'al')}${katli('📈 Fiyat grafiği', fiyatGrafigi(b, s, secili), { k: 'pazar-grafik' })}`;
 }
 
 // ── Fiyat grafiği (19 Ekim 2026): tek oyunculuda geçmiş tarayıcıdaki pazardan, çevrimiçinde sunucudan (GET /api/pazar/gecmis) gelir ──
@@ -324,6 +326,7 @@ const ekran = {
       if (secenek.bolum === 'ilan') secenek.ilanVeri = null;   // her açılışta taze liste
     },
     kaynakSec(b, el, secenek) { durum(secenek).kaynak = el.dataset.kaynak; },
+    islemSec(b, el, secenek) { durum(secenek).islem = el.dataset.sekme; },
     grafikAralik(b, el, secenek) { durum(secenek).grafikAralik = el.dataset.aralik; },
 
     alHizli(b, el) {

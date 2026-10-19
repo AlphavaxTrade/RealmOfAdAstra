@@ -1,5 +1,5 @@
 // Realm of AdAstra — Silo ve depo ekranı: altı hammaddenin doluluğu ve silo yükseltme.
-import { ekranKaydet, kap, kart, cubuk, dugme, uyari, not, simge, tam, esc } from './cekirdek.js';
+import { ekranKaydet, kap, kart, katli, cubuk, dugme, uyari, not, simge, tam, esc } from './cekirdek.js';
 import { kaynakSimgesi, kaynakAdi, maliyetSatiri, hizliAlKarti, hizliAl } from './bilesik.js';
 
 function yukseltmeBolumu(b) {
@@ -69,7 +69,7 @@ const ekran = {
     return kap([
       kart({
         baslik: `📦 Silo seviye ${gs.state.warehouseLevel}`,
-        icerik: not('Siloyu yükseltince altı hammaddenin ve teçhizat parçasının kapasitesi büyür; pazardan bu sınırın üstünde alım yapılamaz. Yükseltmek için tüm ambarlar en az %70 dolu olmalı; bedel kapasitenin %70\'i kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır. Silo seviyesi hesap seviyeni geçemez: silonu büyütmek için hesabını da yükselt.')
+        icerik: not('Silo, hammaddelerini sakladığın ambardır. Yükseltince kapasite büyür.') + katli('Yükseltme kuralları (ayrıntı)', not('Siloyu yükseltince altı hammaddenin ve teçhizat parçasının kapasitesi büyür; pazardan bu sınırın üstünde alım yapılamaz. Yükseltmek için tüm ambarlar en az %70 dolu olmalı; bedel kapasitenin %70\'i kadar hammadde ile bunların pazar değeri kadar ASTRA\'dır. Silo seviyesi hesap seviyeni geçemez: silonu büyütmek için hesabını da yükselt.'), { k: 'silo-kural' })
       }),
       kart({ baslik: 'Ambarlar', icerik: `<div class="ek-ambarlar">${ambarlar.join('')}</div>` }),
       yukseltmeBolumu(b)
