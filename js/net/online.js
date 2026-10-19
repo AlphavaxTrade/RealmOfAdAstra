@@ -312,6 +312,10 @@ function installProxies() {
     gs.consumeNotices = function (...a) { return bildirimleriSuz(asil.apply(gs, a)); };
     gs.consumeNotices.__suzulu = true;
   }
+  // Haftalık piyango çekilişini YALNIZ sunucu yapar (server/world/haftalik.js). Tarayıcıdaki takvim sahte oyuncularla kendi çekilişini
+  // yapıp "Piyango sana çıktı" gibi sahte bildirimler üretiyordu: sunucudaki dönem sayacı tarayıcıdakinden farklı ilerlediği için her
+  // eşitlemede yeniden tetiklenip bildirimler arka arkaya geliyordu (19 Ekim 2026).
+  gs.processScheduledLottery = () => null;
   for (const name of LOCAL_ONLY) {
     const orig = gs[name];
     if (typeof orig !== 'function') continue;

@@ -273,6 +273,8 @@ tamam('QA-17: THREE.Timer, webp harita resmi');
     cagri: 0,
     notifyListeners() {},
     consumeNotices() { const l = this.state.pendingNotices; this.state.pendingNotices = []; return l; },
+    // Tarayıcının kendi çekiliş takvimi (gerçek oyunda js/gameState/piyango.js): çevrimiçi modda sahte çekiliş yapmamalı
+    processScheduledLottery() { this.state.pendingNotices.push({ message: '👑 Piyango sana çıktı! (sahte yerel çekiliş)', type: 'success', at: 1 }); return { drawn: true }; },
     ogreticiGordu(k) {
       this.cagri++;
       this.state.pendingNotices.push({ message: '🧭 Görev tamamlandı: ' + k, type: 'success', at: 1 });
@@ -309,6 +311,9 @@ tamam('QA-17: THREE.Timer, webp harita resmi');
   assert.equal(gs.state.level, 7, 'hesap yüklendi');
   assert.equal(belge.ov, null, 'kart kapandı');
   assert.ok(toastlar.some(([m]) => /yüklendi/.test(m)));
+  // c2) çevrimiçi modda yerel piyango takvimi çalışmaz: sahte çekiliş ve sahte kazanç bildirimi üretilmez
+  assert.equal(gs.processScheduledLottery(), null, 'çevrimiçi modda tarayıcı çekiliş yapmaz (çekilişi sunucu yapar)');
+  assert.equal(gs.state.pendingNotices.filter((n) => /Piyango sana çıktı/.test(n.message)).length, 0, 'sahte piyango bildirimi yok');
 
   // d) QA-08: bağlantı yokken işlem hiç uygulanmaz (yerel sahte "Görev tamamlandı" bildirimi oluşmaz)
   navigator.onLine = false;

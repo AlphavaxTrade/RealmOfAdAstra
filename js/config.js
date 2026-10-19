@@ -1703,6 +1703,14 @@ export const GAME_CONFIG = {
       changes: [
         `Zindan savaşında düşman yenilince canı sıfır olup kartı soluklaşıyor, sonra can yeniden doluyor ve aynı düşmanı bir kez daha yeniyor gibi görünüyordu. İkinci bir canavar yoktu: çevrimiçi oyunda savaş kaydı arenada baştan sona İKİ KEZ oynatılıyordu (hasar, ölüm ve yetenek satırları iki kez görünüyordu). Düzeltildi: savaş artık tek sefer oynuyor. Sonuç, ödül ve kalan can hesabı zaten tek savaşa göre yapılıyordu, onlar değişmedi.`
       ]
+    },
+    {
+      version: 'v1.72',
+      title: '🎲 Sahte Piyango Bildirimleri Kaldırıldı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Karnaval bildirimlerinde "Haftalık çekiliş yapıldı, bu hafta sana çıkmadı" ile "Piyango sana çıktı!" mesajları arka arkaya, birbiriyle çelişerek geliyordu. Sebep: oyun, tarayıcıda sunucudan bağımsız ikinci bir sahte çekiliş yapıp sahte kazanç bildirimi üretiyordu. Artık çekilişi yalnız sunucu yapıyor; gelen bildirim gerçek çekilişin sonucudur. Gerçek biletlerin, ödülün ve kasanın hesabı hiç değişmedi.`
+      ]
     }
   ],
 
