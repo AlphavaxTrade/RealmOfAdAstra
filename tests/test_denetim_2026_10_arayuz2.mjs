@@ -110,6 +110,21 @@ tamam('E-2: günlük ödeme tavanı cümleleri (önizleme ve sonuç notu)');
     assert.ok(!/NaN|undefined/.test(metin(html)));
   }
 
+  // b2) harçsız girişler bitmiş ve ödeme payı dolmuşsa giriş engellidir: kart tek, tutarlı bir mesaj verir ("deneyim ve ganimet sürer" demez)
+  {
+    depo.clear();
+    const gs = new GameStateManager();
+    const sayac = gs.getDailyCounters();
+    sayac.dungeonRuns = GAME_CONFIG.DUNGEON.DAILY_RUNS;
+    sayac.dungeonBudget = 0;
+    sayac.dungeonPaid = 0;
+    const e = bul('savashazirlik');
+    const yazi = metin(e.govde(baglam(gs), e.ornekSecenekler()[0]));
+    assert.match(yazi, /ödeme payını doldurdun/, 'engel mesajı var');
+    assert.ok(!/deneyim ve ganimet sürer/.test(yazi), 'engelliyken çelişen "ganimet sürer" cümlesi yok');
+    assert.ok(!/ödeme tavanın doldu/.test(yazi), 'aynı şeyi söyleyen ikinci uyarı yok');
+  }
+
   // d) demirhane: cephanelik boşken toplu işlem düğmeleri pasif (eskiden "uygun teçhizat bulunamadı" hatası veriyordu)
   {
     depo.clear();

@@ -80,7 +80,8 @@ function girisKarti(b, m, terms) {
           ? uyari('🏦 Bugünkü zindan ödeme payını doldurdun (bu sınır yalnız senin hesabın için, diğer oyuncuları etkilemez): bugün yeni giriş yapılamaz. Yarın 00:00\'da (TSİ) yenilenir.', 'kotu')
           : `<p class="ek-not"><b>🚪 Kapı harcı: ${esc(astra(ucret))} ASTRA</b><br><small>Savaşa girerken ödenir, ödülle girersin. ${esc(kasayaNot)}</small></p>`)
         : '')
-      + gunlukOdemeNotu(terms, taban.ada)
+      // Harçlı giriş ödeme payı yüzünden ENGELLİYSE yukarıdaki kırmızı not yeter: "deneyim ve ganimet sürer" cümlesi yalnız harçsız giriş hakkı sürerken doğrudur
+      + (terms.nextNeedsFee && terms.budgetBlocked ? '' : gunlukOdemeNotu(terms, taban.ada))
       + katli('Giriş kuralları', kurallar, { k: 'zindan-giris' })
   });
 }

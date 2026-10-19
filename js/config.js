@@ -1719,6 +1719,14 @@ export const GAME_CONFIG = {
       changes: [
         `Piyango kasası 4 milyon ASTRA'ya indirildi. Günlük 100 bilet sınırıyla bile kasa 20 yılda bitmiyordu ve en büyük tek kazanç yaklaşık 1 milyonu geçmiyordu; fazlası boşta duruyordu. Artan ASTRA üçe eşit bölünüp Zindan, Kolezyum ve Dünya Boss kasalarına eklendi. Bu üç kasanın haftalık ödeme payı kasayla birlikte büyür, yani oyunculara bu alanlardan daha çok ödül çıkabilir. Piyango kuralları (1 ASTRA bilet, kazanana 2 katı, günlük 100 bilet) değişmedi.`
       ]
+    },
+    {
+      version: 'v1.74',
+      title: '🏦 Zindan Ödeme Payı Uyarıları Tutarlı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Zindan savaşa hazırlık ekranında ödeme payı dolduğunda iki uyarı birbiriyle çelişiyordu: biri "bugün yeni giriş yapılamaz", diğeri "bu zaferden ASTRA gelmez; deneyim ve ganimet sürer" diyordu. İkincisi yalnız günlük harçsız girişlerin sürdüğü zaman doğrudur. Harçlı giriş ödeme payı yüzünden engelliyken artık yalnızca engel uyarısı gösteriliyor.`
+      ]
     }
   ],
 
