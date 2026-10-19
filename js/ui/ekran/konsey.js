@@ -97,10 +97,12 @@ const ekran = {
     const us = gs.getUretimSummary ? gs.getUretimSummary() : null;
     if (!us) return kap(kart({ icerik: not('Konsey bilgisi şu an alınamıyor.') }));
     const ortakKasa = b.globalPool.getKonseyStock ? b.globalPool.getKonseyStock() : {};
-    return kap([uretimKarti(b, us, ortakKasa), otoriteKarti(b), projeKarti(b)].join(''));
+    return kap([uretimKarti(b, us, ortakKasa), otoriteKarti(b), projeKarti(b), dugme({ e: 'hazine', metin: '🏦 Oyun kasaları (Hazine)', ton: 'hayalet', genis: true })].join(''));
   },
 
   eylemler: {
+    // Haritadaki Konsey binası ve menü aynı ekranı açar (19 Ekim 2026); ASTRA kasaları ayrı ekranda (Hazine)
+    hazine() { return { git: 'hazine' }; },
     katki(b, el) {
       const gs = b.gameState;
       const { hedef, kaynak } = el.dataset;

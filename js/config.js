@@ -1781,6 +1781,15 @@ export const GAME_CONFIG = {
         `Zindanda zaferden sonra deneyim (XP) çubuğun dolduysa ve hesabını yükseltebiliyorsan bildirim geliyor: zafer kartında "🆙 Hesabı yükselt" düğmesiyle Karakterim ekranına gidersin; zindan haritasında da XP dolu kaldıkça ince bir uyarı şeridi duruyor. Hesabı yükseltince askerlerinin biriken XP'si de seviyeye dönüyor (asker seviyesi hesap seviyesini geçemediği için bekleyen XP).`,
         `Zindan savaşa hazırlık ekranında artık "Bugünkü ASTRA kazancın" çubuğu var (ör. 96,8 / 121,5): günlük ödeme tavanından ne kadarını kullandığını ve ne kadar kaldığını gösterir. Tavan, ulaştığın en değerli katın ödülünün 5 katı ya da orduya harcadığının günlük payıdır (hangisi büyükse); yeni bir boss katını açınca tavan yükselir, bu yüzden dolmuş görünen tavan açılınca ödül yeniden gelir.`
       ]
+    },
+    {
+      version: 'v1.78',
+      title: '🏛️ Konsey Binası Tek Ekran, Kasa Bakiyesi Onarımı',
+      date: '19 Ekim 2026',
+      changes: [
+        `Haritada Sirius Konseyi binasına tıklayınca "Hazine" ekranı açılıyor, menüden tıklayınca "Sirius Konseyi" ekranı açılıyordu. Artık ikisi de Sirius Konseyi'ni açar; Konsey ekranının altındaki "Oyun kasaları (Hazine)" düğmesi ASTRA kasalarını gösteren Hazine ekranına götürür.`,
+        `Piyango kasasının küçültülmesinde (v1.73) kasalara yazılamayan ASTRA'nın geri eklenmesi tamamlandı: Zindan, Kolezyum ve Dünya Boss kasalarına toplam 8.000.090 ASTRA eklendi (bir önceki onarım, bu arada bilet satıldığı için eşleşmemişti).`
+      ]
     }
   ],
 

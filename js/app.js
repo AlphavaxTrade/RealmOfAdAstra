@@ -199,7 +199,6 @@ function olaylariBagla() {
     if (zoneId === 'dungeon') zindan.gir();
     else if (zoneId === 'warehouse' || zoneId === 'silo') ekranAc('silo');
     else if (zoneId === 'collection') ekranAc('koleksiyon');
-    else if (zoneId === 'council') ekranAc('hazine');
     else bolgeAc(zoneId);
   });
 

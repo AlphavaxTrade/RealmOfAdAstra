@@ -50,7 +50,8 @@ const hazine = (pools, ekstra = {}) => ({ pools, inflow: {}, outflow: {}, lifeti
   const etkilenen = { dungeon: 12666667, arena: 6666667, worldBoss: 8666666, ammBuyback: 10910000, quest: 8000000, carnival: 6910000, fatih: 20000000, konsey: 10000000, universe: 20000000 };
   const d = kur({ pool: 4000000, amortiPool: 2.02, totalTickets: 94 }, etkilenen);
   const once = Object.values(etkilenen).reduce((s, v) => s + v, 0);
-  assert.deepEqual(gecisleriCalistir(d).uygulanan, [12]);
+  const ile012 = GECISLER.filter((g) => g.surum <= 12);
+  assert.deepEqual(gecisleriCalistir(d, { gecisler: ile012 }).uygulanan, [12]);
   const H = oku(d, 'ls:adastra_treasury_ledger_v4');
   assert.equal(H.pools.dungeon, 15333363.41);
   assert.equal(H.pools.arena, 9333363.41);
@@ -59,16 +60,44 @@ const hazine = (pools, ekstra = {}) => ({ pools, inflow: {}, outflow: {}, lifeti
   const eklenen = Math.round((Object.values(H.pools).reduce((s, v) => s + v, 0) - once) * 100) / 100;
   assert.equal(eklenen, 8000090.23, 'eksik kalan toplam: 16.000.090,23 - 8.000.000');
   assert.equal(Math.round((H.lifetimeDeposited - 5) * 100) / 100, 8000090.23);
-  assert.deepEqual(gecisleriCalistir(d).uygulanan, [], 'tek seferlik');
+  assert.deepEqual(gecisleriCalistir(d, { gecisler: ile012 }).uygulanan, [], 'tek seferlik');
+  // 013 düzeltilmiş dünyada (kasalar zaten 2,67 M yukarıda) hiçbir şey yapmaz
+  assert.deepEqual(gecisleriCalistir(d).uygulanan, [13]);
+  assert.equal(oku(d, 'ls:adastra_treasury_ledger_v4').pools.dungeon, 15333363.41, '013 düzeltilmiş dünyaya dokunmaz');
   // başka dünya: piyango bakiyesi farklı → dokunmaz
   const baska = kur({ pool: 4000000.5, amortiPool: 2.02, totalTickets: 94 }, etkilenen);
-  gecisleriCalistir(baska);
+  gecisleriCalistir(baska, { gecisler: ile012 });
   assert.equal(oku(baska, 'ls:adastra_treasury_ledger_v4').pools.dungeon, 12666667);
   // kayıtsız dünya
   const bos = new DatabaseSync(':memory:');
   gecisleriCalistir(bos);
   assert.deepEqual(gecisleriCalistir(bos).uygulanan, []);
   ok('geçiş 012: yalnız etkilenen dünyada eksik 8.000.090,23 ASTRA tamamlanır; tek seferlik');
+}
+
+// 4) Geçiş 013: 012'nin kaçırdığı gerçek canlı durum (piyango 4.000.097, 193 bilet, kasalarda küçük farklar) onarılır; küçük farklar korunur; tek seferlik
+{
+  const oncekiler13 = GECISLER.filter((g) => g.surum < 13);
+  const d = new DatabaseSync(':memory:');
+  gecisleriCalistir(d, { gecisler: oncekiler13 });
+  const yaz = (k, v) => d.prepare('INSERT OR REPLACE INTO kv (key, value) VALUES (?, ?)').run(k, JSON.stringify(v));
+  yaz('world:lottery', { pool: 4000097.04, amortiPool: 4.02, totalTickets: 193 });
+  yaz('ls:adastra_treasury_ledger_v4', hazine({ dungeon: 12667142, arena: 6666889, worldBoss: 8667062, ammBuyback: 10910489, quest: 8000303, carnival: 6910211, fatih: 20000116, konsey: 10000116, universe: 20000000 }));
+  assert.deepEqual(gecisleriCalistir(d).uygulanan, [13]);
+  const H = JSON.parse(d.prepare('SELECT value FROM kv WHERE key = ?').get('ls:adastra_treasury_ledger_v4').value);
+  assert.equal(H.pools.dungeon, 12667142 + 2666696.41, 'küçük fark korunur, sabit tutar eklenir');
+  assert.equal(H.pools.arena, 6666889 + 2666696.41);
+  assert.equal(H.pools.worldBoss, 8667062 + 2666697.41);
+  assert.equal(H.pools.quest, 8000303, 'diğer kasalara dokunulmaz');
+  assert.deepEqual(gecisleriCalistir(d).uygulanan, [], 'tek seferlik');
+  // bilet sayısı az (etkilenmemiş dünya): dokunmaz
+  const e = new DatabaseSync(':memory:');
+  gecisleriCalistir(e, { gecisler: oncekiler13 });
+  e.prepare('INSERT INTO kv (key, value) VALUES (?, ?)').run('world:lottery', JSON.stringify({ pool: 4000000, amortiPool: 0, totalTickets: 3 }));
+  e.prepare('INSERT INTO kv (key, value) VALUES (?, ?)').run('ls:adastra_treasury_ledger_v4', JSON.stringify(hazine({ dungeon: 12666667, arena: 6666667, worldBoss: 8666666 })));
+  gecisleriCalistir(e);
+  assert.equal(JSON.parse(e.prepare('SELECT value FROM kv WHERE key = ?').get('ls:adastra_treasury_ledger_v4').value).pools.dungeon, 12666667);
+  ok('geçiş 013: canlıdaki gerçek durum (piyango 4.000.097, 193 bilet) onarılır, küçük farklar korunur, etkilenmemiş dünyaya dokunmaz');
 }
 
 console.log(`\n${n} hazine yeniden başlatma kontrolü geçti.`);
