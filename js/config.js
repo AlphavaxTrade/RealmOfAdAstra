@@ -8,17 +8,25 @@
 // başlangıç payı), küçülme yalnız kasa GERÇEKTEN bu yıllık payın altına inince başlar.
 const annualPayout = (seed, weeklyRate) => Math.round(seed * (1 - Math.pow(1 - weeklyRate, 52)));
 
-// Hammadde adedi çarpanı (19 Ekim 2026, kullanıcı kararı): oyundaki HER hammadde miktarı (üretim, silo, gelişim bedelleri, ev, Konsey, başlangıç envanteri,
-// stamina için buğday, ot ile iyileştirme...) bu kat büyüktür; pazar fiyatları (ASTRA/birim) ve havuzlar AYNI kalır. Neden: fiyat etkisini "alınacak miktar ÷
-// havuzdaki miktar" oranı belirler. Hesabı tamamen geliştirmek (seviye 80, silo 49, 11 ev, teçhizat 10) ~3-11 milyon birim istiyordu; havuzlarda 0,2-1,3 MİLYAR birim
-// vardı, 5 balina havuzun %2,5-4'ünü alıp fiyatı %8 oynatıyordu. ×50 ile tam gelişim ~6 dolar, iki balina fiyatı tavana (5x) taşır, üçüncüsü pazarda hammadde bulamaz,
-// ücretsiz oyuncunun sattığı hammaddenin ASTRA değeri 50 katına çıkar. Üretim ve haftalık Üretim Hakkı da ×50'dir (yoksa ücretsiz oyuncu bedelleri hiç karşılayamaz):
-// ücretsiz oyuncunun ilerleme hızı eskisiyle aynı kalır. Gelişim bedellerinin ve katkı puanının ASTRA payı eski ölçekte tutulur (ammMarket.calculateResourcesCostAdAstra).
+// Hammadde TALEBİ ve ARZI (19 Ekim 2026, kullanıcı kararı): oyunun temel mantığı "oyunun istediği hammadde çok fazla, oyuncunun çıkarabildiği çok az".
+//  • TALEP (HAMMADDE_ADEDI_CARPANI = 50): geliştirme bedelleri (seviye atlama, silo, ev, teçhizat yükseltme, Konsey, roket, zindan modu, Genesis) ve en üst
+//    silo kapasiteleri eski değerlerin 50 katıdır. Pazar fiyatları (ASTRA/birim) ve havuzlar AYNI kalır; bu yüzden ASTRA atıp hesabını hemen fullemek isteyen
+//    balinalar hammaddeyi pazardan toplu alınca fiyat gerçekten tırmanır (bir hesabı tam geliştirmek ~6 dolar; iki balina fiyatı tavana taşır, üçüncüsü hammadde bulamaz).
+//  • ARZ (URETIM_CARPANI = 5): oyuncunun çıkarabildiği hammadde (saatlik üretim, haftalık Üretim Hakkı) ve onunla orantılı tekrar eden giderler (stamina için buğday,
+//    onarım, köylü yemi, ot ile iyileştirme, bot önkoşulu, başlangıç envanteri, 1. silo) eski değerin 5 katıdır. Haftalık hak seviyeye, katkı kademesine (ekosisteme
+//    harcanan ASTRA), aktifliğe ve Konsey Otoritesi'ne bağlıdır (globalPool.weeklyRightPerWeight). Ücretsiz oyuncu pazarda sattığı hammaddenin ASTRA değeriyle gelir elde
+//    eder, balinalar fiyatı tırmandırdıkça bu gelir artar; haftalık sınır yüzünden bu para uzun sürede erir.
+//  • TALEP_ORANI = TALEP / ARZ = 10: geliştirme bedelleri düşük seviyelerde ARZ ölçeğinde başlar (yeni oyuncu takılmasın), seviyeyle birlikte TALEP ölçeğine tırmanır
+//    (hesap seviyesi 4→20, ev sayısı 2→12, teçhizat seviyesi 1→10; gameState/ortak.js talepCarpani).
+// Gelişim bedellerinin ASTRA payı ve katkı puanı hammadde değerinin ARZ çarpanına bölünmüşünden hesaplanır (ammMarket.calculateResourcesCostAdAstra).
 export const HAMMADDE_ADEDI_CARPANI = 50;
-const q = (n) => Math.round(n * HAMMADDE_ADEDI_CARPANI * 1e6) / 1e6;
+export const URETIM_CARPANI = 5;
+const q = (n) => Math.round(n * HAMMADDE_ADEDI_CARPANI * 1e6) / 1e6;   // talep ölçeği
+const qU = (n) => Math.round(n * URETIM_CARPANI * 1e6) / 1e6;          // arz ölçeği
 
 export const GAME_CONFIG = {
   GAME_VERSION: '2.0.0-dev',
+  HAMMADDE: { TALEP: HAMMADDE_ADEDI_CARPANI, ARZ: URETIM_CARPANI, ORAN: HAMMADDE_ADEDI_CARPANI / URETIM_CARPANI, SEVIYE_RAMPA_BASLA: 4, SEVIYE_RAMPA_BITIS: 20, EV_RAMPA_SAYISI: 10 },
 
   // ═══════════════════════════════════════════════════════════════════════
   // v2 (7 Ekim 2026) — docs/v2/KARARLAR_KESIN.md: 6 hammadde, ASTRA fiyat ölçeği, Üretim Hakkı, kasalar, kapı
@@ -79,8 +87,8 @@ export const GAME_CONFIG = {
   ],
   // Köy Evleri (R5): köylüler doğar; emek puanı, üretim bonusu, asker kaynağı; kolonist adayı
   KOY: {
-    HOUSE_BASE_COST: { wood: q(400), stone: q(200), iron: q(50) }, HOUSE_COST_MULT: 1.5, MAX_HOUSES: 20,
-    VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: q(2), STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
+    HOUSE_BASE_COST: { wood: qU(400), stone: qU(200), iron: qU(50) }, HOUSE_COST_MULT: 1.5, MAX_HOUSES: 20,
+    VILLAGERS_PER_HOUSE: 10, GROWTH_PER_DAY: 0.02, WHEAT_PER_VILLAGER_DAY: qU(2), STARVE_DAYS: 3, STARVE_LOSS_PER_DAY: 0.05,
     LABOR_PER_VILLAGER_DAY: 1, PROD_BONUS_PER_10: 0.01, PROD_BONUS_MAX: 0.20, VILLAGER_PER_SOLDIER: 1,
     START_HOUSES: 1, START_VILLAGERS: 10
   },
@@ -91,7 +99,7 @@ export const GAME_CONFIG = {
   // 0,45–0,95). Kendiliğinden (24 saat) iyileşme de şifalı otladır ama beş kat ucuzdur (SOLDIER_PASSIVE_HEAL).
   // PARSOMEN_CAN: Ordu İyileştirme Parşömeninin ekrandaki (savaş ölçeği) can iyileştirmesi = 2 şifalı otun karşılığı, ASTRA harcamadan.
   // Pazar fiyatı (0,30) bu iyileştirmeyi ota göre pahalı yapar; amaç hemen iyileştirmenin ana yolunun şifalı ot (yakım) kalması.
-  SIFAHANE: { HP_PER_HERB: 2 / HAMMADDE_ADEDI_CARPANI,   // 19 Ekim 2026: ot da x50 üretilir; 1 can için 50 kat ot ister (1 ot = 0,04 can)
+  SIFAHANE: { HP_PER_HERB: 2 / URETIM_CARPANI,   // 19 Ekim 2026: ot da x5 üretilir; 1 can için 5 kat ot ister (1 ot = 0,4 can)
     ADA_PER_HP: 0.01, PARSOMEN_CAN: 4 },
   // Demirhane geri dönüşümü (R4b): alet/teçhizat → hammaddelerin %70'i geri, ASTRA geri gelmez
   RECYCLE_RETURN_RATE: 0.70,
@@ -150,7 +158,7 @@ export const GAME_CONFIG = {
   STAMINA_MAX_HEADROOM: 6.5,          // en yüksek stamina ≥ 6,5 sefer bedeli (v2: 6 alanı aynı anda başlatabilmek için)
   STAMINA_NATURAL_REGEN_INTERVAL: 150,
   // Stamina artık AdAstra ile doldurulamaz, yalnızca buğday ile doldurulabilir:
-  WHEAT_PER_STAMINA: q(1),             // 1 Stamina = 1 Buğday (v2: üretim ×0,3 ölçeğinde 6 seferin staminası buğday üretiminin ~%40 kadarı)
+  WHEAT_PER_STAMINA: qU(1),             // 1 Stamina = 1 Buğday (v2: üretim ×0,3 ölçeğinde 6 seferin staminası buğday üretiminin ~%40 kadarı)
 
   // Ekonomi kararı (30 Eylül 2026, token modeli: scripts/model/arsiv/token_economy_model.mjs — arşiv, S11):
   // %5 Yakım, %3 Yapımcı/Geliştirici Telifi, %6 Evrensel Temel Gelir (UBI) Seviye Havuzu, %86 Hazine.
@@ -203,19 +211,19 @@ export const GAME_CONFIG = {
   // Seviye arttıkça sadece sefer süresi uzar (Lv 1: 18 dk -> Lv 81: 72 saat).
   // =========================================================================
   // v2: dakikalık üretim ×0,3 (R4 fiyat ölçeğinin miktar payı). Buğday 9, taş 6, odun 5,4, kömür 4,5, demir 3,6, şifalı ot 1,2.
-  BASE_PRODUCTION: {   // x HAMMADDE_ADEDI_CARPANI (19 Ekim 2026; eski değerler: buğday 9, taş 6, odun 5,4, kömür 4,5, demir 3,6, ot 1,2)
-    wheat: q(9),
-    stone: q(6),
-    wood: q(5.4),
-    coal: q(4.5),
-    iron: q(3.6),
-    herb: q(1.2)
+  BASE_PRODUCTION: {   // x URETIM_CARPANI (19 Ekim 2026; eski değerler: buğday 9, taş 6, odun 5,4, kömür 4,5, demir 3,6, ot 1,2)
+    wheat: qU(9),
+    stone: qU(6),
+    wood: qU(5.4),
+    coal: qU(4.5),
+    iron: qU(3.6),
+    herb: qU(1.2)
   },
   TAVERNA_BOT: {
     REQUIRED_PREREQUISITES: {
-      iron: q(50),
-      wood: q(50),
-      wheat: q(50),
+      iron: qU(50),
+      wood: qU(50),
+      wheat: qU(50),
       adAstra: 0.5
     },
     // v1.25: Bot kasadaki ASTRA'nın tamamını silo yükseltmeye gömmez; en az bu kadarını ve
@@ -343,25 +351,25 @@ export const GAME_CONFIG = {
   // Kaynak Alanları (v2: 6 alan). totalCap = tarayıcı (tek oyunculu) modda kişi başı haftalık Üretim Hakkı
   // (taban × 168 saat × QPP_START 0,4); sunucuda dünya kapasitesi aktif oyuncu sayısıyla hesaplanır (server/world.js).
   // v2: totalCap = taban × 60 × 20 saat × 6 gün × 0,40 (kişi başı kota) × ağırlık toplamı 1 — globalPool.computeWeekCapacity ile aynı
-  GLOBAL_RESOURCE_CAPS: {   // adetler x HAMMADDE_ADEDI_CARPANI (19 Ekim 2026)
-    wheat: { id: 'wheat', name: 'Güneş Buğdayı',     icon: '🌾', color: '#facc15', totalCap: q(25920), ratePerMinute: q(9),   baseYieldPerHour: q(540), requiredTool: 'sickle' },
-    stone: { id: 'stone', name: 'Vadi Taşı',          icon: '🪨', color: '#a8a29e', totalCap: q(17280), ratePerMinute: q(6),   baseYieldPerHour: q(360), requiredTool: 'chisel' },
-    wood:  { id: 'wood',  name: 'Zümrüt Meşe Odunu',  icon: '🌲', color: '#4ade80', totalCap: q(15552), ratePerMinute: q(5.4), baseYieldPerHour: q(324), requiredTool: 'axe' },
-    coal:  { id: 'coal',  name: 'Kara Kömür',         icon: '⚫', color: '#64748b', totalCap: q(12960), ratePerMinute: q(4.5), baseYieldPerHour: q(270), requiredTool: 'coalpick' },
-    iron:  { id: 'iron',  name: 'Derin Demir Cevheri', icon: '⛏️', color: '#94a3b8', totalCap: q(10368), ratePerMinute: q(3.6), baseYieldPerHour: q(216), requiredTool: 'pickaxe' },
-    herb:  { id: 'herb',  name: 'Şifalı Ot',          icon: '🌿', color: '#86efac', totalCap: q(3456),  ratePerMinute: q(1.2), baseYieldPerHour: q(72),  requiredTool: 'herbknife' }
+  GLOBAL_RESOURCE_CAPS: {   // adetler x URETIM_CARPANI (19 Ekim 2026)
+    wheat: { id: 'wheat', name: 'Güneş Buğdayı',     icon: '🌾', color: '#facc15', totalCap: qU(25920), ratePerMinute: qU(9),   baseYieldPerHour: qU(540), requiredTool: 'sickle' },
+    stone: { id: 'stone', name: 'Vadi Taşı',          icon: '🪨', color: '#a8a29e', totalCap: qU(17280), ratePerMinute: qU(6),   baseYieldPerHour: qU(360), requiredTool: 'chisel' },
+    wood:  { id: 'wood',  name: 'Zümrüt Meşe Odunu',  icon: '🌲', color: '#4ade80', totalCap: qU(15552), ratePerMinute: qU(5.4), baseYieldPerHour: qU(324), requiredTool: 'axe' },
+    coal:  { id: 'coal',  name: 'Kara Kömür',         icon: '⚫', color: '#64748b', totalCap: qU(12960), ratePerMinute: qU(4.5), baseYieldPerHour: qU(270), requiredTool: 'coalpick' },
+    iron:  { id: 'iron',  name: 'Derin Demir Cevheri', icon: '⛏️', color: '#94a3b8', totalCap: qU(10368), ratePerMinute: qU(3.6), baseYieldPerHour: qU(216), requiredTool: 'pickaxe' },
+    herb:  { id: 'herb',  name: 'Şifalı Ot',          icon: '🌿', color: '#86efac', totalCap: qU(3456),  ratePerMinute: qU(1.2), baseYieldPerHour: qU(72),  requiredTool: 'herbknife' }
   },
 
   // Aletler (v2: 6 alet, ilk sürümde yalnız Acemi kademe; 72 saat = 4320 dakika dayanıklılık, dakikada 1 aşınma)
   // Onarım kuralı: dakikalık odun ve demir üretiminin %25'i alet sayısına bölünür + bu malzemenin pazar değerinin
   // TOOL_REPAIR_ADA_SHARE (%30) kadarı ASTRA (gameState.calculateRepairCost). repairCostPerMinute yalnız bilgi.
   TOOLS: {
-    sickle:    { id: 'sickle',    name: 'Demir Orak',       icon: '🌾', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wheat', repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } },
-    chisel:    { id: 'chisel',    name: 'Taş Keskisi',      icon: '🪨', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'stone', repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } },
-    axe:       { id: 'axe',       name: 'Acemi Baltası',    icon: '🪓', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wood',  repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } },
-    coalpick:  { id: 'coalpick',  name: 'Kömür Kazması',    icon: '⚫', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'coal',  repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } },
-    pickaxe:   { id: 'pickaxe',   name: 'Bronz Kazma',      icon: '⛏️', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'iron',  repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } },
-    herbknife: { id: 'herbknife', name: 'Ot Bıçağı',        icon: '🌿', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'herb',  repairCostPerMinute: { wood: q(0.45), iron: q(0.3), wheat: 0, adAstra: 0.01 } }
+    sickle:    { id: 'sickle',    name: 'Demir Orak',       icon: '🌾', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wheat', repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } },
+    chisel:    { id: 'chisel',    name: 'Taş Keskisi',      icon: '🪨', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'stone', repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } },
+    axe:       { id: 'axe',       name: 'Acemi Baltası',    icon: '🪓', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'wood',  repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } },
+    coalpick:  { id: 'coalpick',  name: 'Kömür Kazması',    icon: '⚫', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'coal',  repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } },
+    pickaxe:   { id: 'pickaxe',   name: 'Bronz Kazma',      icon: '⛏️', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'iron',  repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } },
+    herbknife: { id: 'herbknife', name: 'Ot Bıçağı',        icon: '🌿', maxDurability: 4320, durabilityLossPerMinute: 1, producedResource: 'herb',  repairCostPerMinute: { wood: qU(0.45), iron: qU(0.3), wheat: 0, adAstra: 0.01 } }
   },
 
   // Teçhizat en fazla 10. seviyeye yükseltilir (maliyet: EQUIPMENT_RECIPES ve gameState)
@@ -461,7 +469,7 @@ export const GAME_CONFIG = {
   // Ot ya da ASTRA biterse iyileşme eldekinin yettiği kadar sürer, sonra durur.
   SOLDIER_PASSIVE_HEAL: {
     FULL_HEAL_SECONDS: 86400,     // 0 HP'den %100 cana kadar tam iyileşme süresi (24 saat)
-    herbPerHp: q(0.1),            // ekrandaki 1 can için 0,1 şifalı ot x HAMMADDE_ADEDI_CARPANI = 5 ot (hemen iyileştirmenin beşte biri)
+    herbPerHp: qU(0.1),           // ekrandaki 1 can için 0,1 şifalı ot x URETIM_CARPANI = 0,5 ot (hemen iyileştirmenin beşte biri)
     adaPerHp: 0.002               // ekrandaki 1 can için 0,002 ASTRA (hemen iyileştirmenin beşte biri)
   },
 
@@ -489,13 +497,13 @@ export const GAME_CONFIG = {
     // Seviye atlama bedelinin tavanı hâlâ ESKİ sınır olan 12. silonun kapasitesine göre hesaplanır (Universe aşaması 3'e kadar): silo büyüyünce
     // seviye bedelleri de 5 kata kadar büyümesin, seviye atlama yavaşlamasın. Aşama 3'te tavan en üst siloya geçer (eski davranış).
     levelUpCostGateLevel: 18,
-    initialCapacities: {   // 1 saatlik üretim (x HAMMADDE_ADEDI_CARPANI; parça ayrı bir eşya, ölçeklenmez)
-      wheat: q(540),
-      stone: q(360),
-      wood: q(324),
-      coal: q(270),
-      iron: q(216),
-      herb: q(72),
+    initialCapacities: {   // 1 saatlik üretim (x URETIM_CARPANI; parça ayrı bir eşya, ölçeklenmez). En üst silo x HAMMADDE_ADEDI_CARPANI: kapasite eğrisi ikisi arasında üsteldir
+      wheat: qU(540),
+      stone: qU(360),
+      wood: qU(324),
+      coal: qU(270),
+      iron: qU(216),
+      herb: qU(72),
       fragments: 100
     },
     maxCapacities: {       // x HAMMADDE_ADEDI_CARPANI (eski 18. seviye: buğday 73.500, taş 30.000, odun 27.000, kömür 22.500, demir 19.500, ot 6.000)
@@ -568,7 +576,7 @@ export const GAME_CONFIG = {
       baseAtk: 25,
       baseHp: 0,
       maxDurability: 13,
-      cost: { fragments: 18, iron: q(60), wood: q(40), coal: q(20), adAstra: 0.5 },
+      cost: { fragments: 18, iron: qU(60), wood: qU(40), coal: qU(20), adAstra: 0.5 },
       desc: 'Yüksek hasar veren, demir ve huş odunuyla dövülmüş efsanevi savaş kılıcı (+25 Saldırı, 13/13 Dayanıklılık).'
     },
     helmet: {
@@ -579,7 +587,7 @@ export const GAME_CONFIG = {
       baseAtk: 10,
       baseHp: 30,
       maxDurability: 13,
-      cost: { fragments: 12, iron: q(40), wood: q(20), coal: q(10), adAstra: 0.35 },
+      cost: { fragments: 12, iron: qU(40), wood: qU(20), coal: qU(10), adAstra: 0.35 },
       desc: 'Kritik darbeleri savuşturan dövme çelik miğfer (+10 Saldırı, +30 Can, 13/13 Dayanıklılık).'
     },
     armor: {
@@ -590,7 +598,7 @@ export const GAME_CONFIG = {
       baseAtk: 0,
       baseHp: 60,
       maxDurability: 13,
-      cost: { fragments: 20, iron: q(80), wood: q(30), coal: q(25), adAstra: 0.6 },
+      cost: { fragments: 20, iron: qU(80), wood: qU(30), coal: qU(25), adAstra: 0.6 },
       desc: 'Zindan darbelerini emen kalın demir plaka gövde zırhı (+60 Can, 13/13 Dayanıklılık).'
     },
     legs: {
@@ -601,7 +609,7 @@ export const GAME_CONFIG = {
       baseAtk: 5,
       baseHp: 40,
       maxDurability: 13,
-      cost: { fragments: 14, iron: q(50), wood: q(25), coal: q(12), adAstra: 0.4 },
+      cost: { fragments: 14, iron: qU(50), wood: qU(25), coal: qU(12), adAstra: 0.4 },
       desc: 'Hareket kabiliyeti sağlayan zırh plakalı pantolon (+5 Saldırı, +40 Can, 13/13 Dayanıklılık).'
     },
     boots: {
@@ -612,7 +620,7 @@ export const GAME_CONFIG = {
       baseAtk: 8,
       baseHp: 20,
       maxDurability: 13,
-      cost: { fragments: 10, iron: q(30), wood: q(35), coal: q(8), adAstra: 0.3 },
+      cost: { fragments: 10, iron: qU(30), wood: qU(35), coal: qU(8), adAstra: 0.3 },
       desc: 'Hızlı manevra ve zırh desteği veren çelik burunlu çizmeler (+8 Saldırı, +20 Can, 13/13 Dayanıklılık).'
     }
   },
@@ -668,7 +676,7 @@ export const GAME_CONFIG = {
     UYANDIRMA: {
       BIRIM: { common: 1, rare: 2, epic: 4, legendary: 8 },          // 18 eser: 5×1 + 5×2 + 6×4 + 2×8 = 55 birim
       BIRIM_ASTRA: 2000,                                              // × bedel çarpanı
-      BIRIM_HAMMADDE: { stone: q(500), iron: q(250), coal: q(250), herb: q(50) }, // yakılır; en büyük (8 birim) silo 12'ye sığar
+      BIRIM_HAMMADDE: { stone: qU(2500), iron: qU(1250), coal: qU(1250), herb: qU(250) }, // yakılır (eski 500/250/250/50 x 25); en büyük (8 birim) silo 12'ye sığar
       SURE_SAAT: 72                                                   // aynı anda tek eser; 18 eser en az 54 gün
     },
     MUHUR: { USD: 250, YAKIM_PAYI: 0.5 },     // mühür anındaki ASTRA fiyatından; yarısı yakılır, yarısı her harcama gibi kasalara
@@ -1851,14 +1859,14 @@ export const GAME_CONFIG = {
     },
     {
       version: 'v1.81',
-      title: '📦 Hammadde Adetleri 50 Kat, Konsey 4 Kat Zor',
+      title: '📦 Oyun Çok Hammadde İster, Sen Az Çıkarırsın',
       date: '19 Ekim 2026',
       changes: [
-        `Oyundaki bütün hammadde miktarları 50 kat büyüdü: sefer üretimi, silo kapasiteleri (1. silo buğdayda 540 yerine 27.000), seviye atlama, silo yükseltme, köy evi, Konsey, roket ve zindan modu geçiş bedelleri, başlangıç envanteri, stamina için gereken buğday, ot ile iyileştirme. Pazar fiyatları (ASTRA/birim) ve havuzlar AYNI kaldı. Neden: ASTRA atıp hesabını hemen fullemek isteyenler hammaddeyi pazardan toplu alınca fiyat gerçekten yukarı çıksın; bu parayı seferle hammadde çıkarıp satan oyuncular kazansın.`,
-        `Fiyat koridoru genişledi: taban açılışın yarısı, tavan açılışın 5 katı (eskiden 2,5 kat). İki büyük harcayıcı bir hesabı tamamen geliştirecek kadar hammadde alırsa tüm hammadde fiyatları tavana dayanır; üçüncüsü pazarda neredeyse hiçbir şey bulamaz. Tek bir hesabı tamamen geliştirmek (seviye 80, silo 49, 11 ev, teçhizat 10) yaklaşık 6 dolarlık ASTRA'ya mal oluyor (eskiden yaklaşık 9 sent).`,
-        `Seviye atlama, silo, teçhizat ve alet onarımı bedellerinin ASTRA payı ve katkı puanları eski ölçekte kaldı (yeni oyuncunun ilk adımları aynı); bedelin asıl yükü artık hammaddeyi pazardan almak. Fiyatlar oynadıkça ASTRA payı da aynı oranda oynar.`,
-        `Sirius Konseyi'nde Otorite 1. seviye 2 milyon yerine 8 milyon (×50: 400 milyon) birim, her proje 6 milyon yerine 24 milyon (×50: 1,2 milyar) birim ister. Konsey tek kişinin pazardan alıp bitireceği bir yer değil, herkesin ortak inşaatı.`,
-        `Karnaval çarkındaki "1 ASTRA değerinde stamina" ödülü artık yaklaşık 2 stamina veriyor (stamina için gereken buğday 50 kat; ödül ASTRA değeri üzerinden hesaplanır).`
+        `Oyunun yeni temel mantığı: oyunun istediği hammadde çok fazla, oyuncunun çıkarabildiği çok az. Geliştirme bedelleri (seviye atlama, silo, köy evi, teçhizat yükseltme, Konsey, roket, zindan modu) ve en üst silo kapasiteleri eskisinin 50 katına tırmanıyor; çıkarabildiğin hammadde (sefer üretimi, haftalık hak, başlangıç envanteri, 1. silo) yalnız 5 kat. İlk seviyeler ve ilk evler/yükseltmeler eskisi gibi kolay; zorluk seviyeyle birlikte artıyor (hesap seviyesi 4'ten 20'ye, ev 2'den 12'ye, teçhizat 1'den 10'a).`,
+        `Pazar fiyatları (ASTRA/birim) ve havuzlar AYNI. Neden: ASTRA atıp hesabını hemen fullemek isteyenler hammaddeyi pazardan toplu alınca fiyat gerçekten yukarı çıksın; bu parayı seferle hammadde çıkarıp satan oyuncular kazansın. Fiyat tavanı açılışın 5 katına çıktı (eskiden 2,5), taban yarısı. İki büyük harcayıcı bir hesabı tamamen geliştirecek kadar hammadde alırsa tüm fiyatlar tavana dayanır; üçüncüsü pazarda neredeyse hiçbir şey bulamaz. Tek bir hesabı tamamen geliştirmek yaklaşık 6 dolarlık ASTRA (eskiden yaklaşık 9 sent).`,
+        `Haftalık hammadde çıkarma hakkın hesap seviyene, katkı kademene (oyunda harcadığın ASTRA), aktifliğine ve Konsey Otoritesi'ne bağlı; ne kadar çok katkı yaparsan o kadar çok çıkarırsın. Tekrar eden giderler (stamina için buğday, alet onarımı, köylü yemi, ot ile iyileştirme, bot önkoşulu) çıkardığınla orantılı kaldı.`,
+        `Gelişim bedellerinin ASTRA payı ve katkı puanları eski ölçekte kaldı (hammadde pazar değeri ÷ 5). Sirius Konseyi'nde Otorite 1. seviye 400 milyon, her proje 1,2 milyar birim ister: Konsey tek kişinin pazardan alıp bitireceği bir yer değil, herkesin ortak inşaatı.`,
+        `Karnaval çarkındaki "1 ASTRA değerinde stamina" ödülü artık yaklaşık 22 stamina veriyor (stamina için gereken buğday 5 kat; ödül ASTRA değeri üzerinden hesaplanır).`
       ]
     }
   ],
@@ -1871,12 +1879,12 @@ export const GAME_CONFIG = {
     stamina: 100,
     adAstraBalance: 2.5,
     inventory: {
-      wheat: q(80),
-      stone: q(40),
-      wood: q(60),
-      coal: q(20),
-      iron: q(50),
-      herb: q(10),
+      wheat: qU(80),
+      stone: qU(40),
+      wood: qU(60),
+      coal: qU(20),
+      iron: qU(50),
+      herb: qU(10),
       fragments: 0
     },
     tools: {

@@ -9,6 +9,7 @@
 import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
+import { talepCarpani } from './ortak.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const YUVA_ADLARI = { weapon: 'Silah', helmet: 'Miğfer', armor: 'Gövde Zırhı', legs: 'Pantolon', boots: 'Ayakkabı' };
@@ -94,7 +95,7 @@ export const techizatYontemleri = {
     let komur = 0;
     let tas = 0;
     for (let l = 1; l <= seviye; l++) {
-      const carpan = gercek ? (l <= 1 ? 1 : YUKSELTME_ARTISI * Math.pow(artis, l - 2)) : Math.pow(YUKSELTME_ARTISI, l - 1);   // gercek: upgrade ile aynı basamak çarpanı
+      const carpan = gercek ? (l <= 1 ? 1 : YUKSELTME_ARTISI * Math.pow(artis, l - 2) * talepCarpani((l - 2) / Math.max(1, (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10) - 1))) : Math.pow(YUKSELTME_ARTISI, l - 1);   // gercek: upgrade ile aynı basamak çarpanı (+ talep rampası)
       odun += taban.wood * carpan;
       demir += taban.iron * carpan;
       komur += taban.coal * carpan;       // dövme (l = 1) ve her yükseltme kömür ister
@@ -189,7 +190,7 @@ export const techizatYontemleri = {
     const sonraki = simdiki + 1;
     const kumulatif = this.getCumulativeEquipmentResourceCost(esya);
     // x5 kararı: ilk yükseltme basamağı eski (1,18; yeni oyuncu ilk silosuna sığar), sonraki her basamak EQUIPMENT_UPGRADE_GROWTH katı (onarım 1,18 ölçeğinde kalır)
-    const carpan = YUKSELTME_ARTISI * Math.pow(GAME_CONFIG.EQUIPMENT_UPGRADE_GROWTH ?? YUKSELTME_ARTISI, simdiki - 1);
+    const carpan = YUKSELTME_ARTISI * Math.pow(GAME_CONFIG.EQUIPMENT_UPGRADE_GROWTH ?? YUKSELTME_ARTISI, simdiki - 1) * talepCarpani((simdiki - 1) / Math.max(1, (GAME_CONFIG.EQUIPMENT_MAX_LEVEL || 10) - 1));   // 19 Ekim 2026: talep rampası
     const woodCost = Math.max(15, Math.round(kumulatif.baseWood * carpan));
     const ironCost = Math.max(20, Math.round(kumulatif.baseIron * carpan));
     const coalCost = kumulatif.baseCoal > 0 ? Math.max(10, Math.round(kumulatif.baseCoal * carpan)) : 0;     // ocak

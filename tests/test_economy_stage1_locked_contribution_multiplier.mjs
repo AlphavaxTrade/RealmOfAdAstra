@@ -18,7 +18,7 @@ const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
 
 const fresh = () => {
   localStorage.clear();
@@ -120,12 +120,12 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   const before = gs._contribution().week;
   const sold = gs.marketSell('wood', 500);
   assert.ok(sold.success, sold.message);
-  assert.ok(near(gs._contribution().week - before, sold.adAstraReceived * 0.5 / Q, 1e-6), 'Kendi ürününü satmak ×0,5 puan (adet x50 olduğu için değer eski ölçekte: ÷50)');
+  assert.ok(near(gs._contribution().week - before, sold.adAstraReceived * 0.5 / U, 1e-6), 'Kendi ürününü satmak ×0,5 puan (adet x50 olduğu için değer eski ölçekte: ÷50)');
 
   const price = ammMarket.getPrice('iron');
   const b2 = gs._contribution().week;
   gs.burnResource('iron', 100);
-  assert.ok(near(gs._contribution().week - b2, 100 * price * 0.5 / Q, 1e-6), 'Hammadde yakımı ×0,5 puan (adet x50: değer ÷50)');
+  assert.ok(near(gs._contribution().week - b2, 100 * price * 0.5 / U, 1e-6), 'Hammadde yakımı ×0,5 puan (adet x50: değer ÷50)');
   ok('Katkı puanı: harcama ×1, net satış ve yakım ×0,5, al-sat puansız');
 }
 

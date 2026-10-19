@@ -16,6 +16,13 @@ export const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'whe
 export const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
 export const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
 
+// Geliştirme bedelinin talep çarpanı (19 Ekim 2026): 0 → arz ölçeği (yeni oyuncu takılmasın), 1 → talep ölçeği (config HAMMADDE.ORAN kat). oran 0-1 arası kırpılır.
+export const talepCarpani = (oran) => {
+  const H = GAME_CONFIG.HAMMADDE || {};
+  const o = Math.max(0, Math.min(1, Number(oran) || 0));
+  return 1 + ((H.ORAN || 1) - 1) * o;
+};
+
 // Oyuncuya gösterilen kaynak adı ve simgesi: önce config'teki RESOURCE_META, sonra savaş/ödül kalemleri
 const KALEM_ADLARI = {
   ada: 'ASTRA', adastra: 'ASTRA', ticket: 'Bilet', fragments: 'Teçhizat Parçası', boxes: 'Pandora Kutusu', keys: 'Anahtar',

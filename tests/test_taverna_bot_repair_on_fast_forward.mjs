@@ -3,7 +3,7 @@ import { GameStateManager } from '../js/gameState.js';
 import '../js/ammMarket.js';
 import '../js/globalPool.js';
 import '../js/treasury.js';
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI as Q } from '../js/config.js';
+import { GAME_CONFIG, URETIM_CARPANI as U } from '../js/config.js';
 
 console.log('--- 🤖 TAVERNA BOTU ALETLERİ OTOMATİK ONARMA TESTİ ---');
 
@@ -23,7 +23,7 @@ const gs = new GameStateManager();
 // silmesine güveniyordu. Gerçekçi olsun diye silo Lv.6 (3.966 odun / 2.707 demir) kullanılıyor.
 gs.state.warehouseLevel = 6;
 gs.state.adAstraBalance = 100000;
-gs.state.inventory = { wood: 5000 * Q, iron: 5000 * Q, wheat: 5000 * Q };
+gs.state.inventory = { wood: 5000 * U, iron: 5000 * U, wheat: 5000 * U };
 
 // Bot satın al
 const buyRes = gs.buyTavernaAutomationBot(false);

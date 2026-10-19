@@ -10,7 +10,7 @@
 // hızı 3,3 kat, fiyat listesi 100 kat büyüktü; Otorite "çelik payı" ASTRA ile ödeniyordu; seviye bedeli ve süresi uydurmaydı).
 // Seviye bedeli ve XP, gerçek oyun motorundan (getNextLevelRequirement) çekilir; kural değişince model kendiliğinden güncellenir.
 import fs from 'fs';
-import { GAME_CONFIG as C, HAMMADDE_ADEDI_CARPANI as HAC } from '../../js/config.js';
+import { GAME_CONFIG as C, URETIM_CARPANI as URETIM } from '../../js/config.js';
 const depo = new Map();
 globalThis.localStorage = globalThis.localStorage || { getItem: (k) => (depo.has(k) ? depo.get(k) : null), setItem: (k, v) => { depo.set(k, String(v)); }, removeItem: (k) => { depo.delete(k); } };
 const { GameStateManager } = await import('../../js/gameState.js');
@@ -19,9 +19,7 @@ const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 
 const RES = ['bugday', 'tas', 'odun', 'komur', 'demir', 'ot'];
 const ANAHTAR = { bugday: 'wheat', tas: 'stone', odun: 'wood', komur: 'coal', demir: 'iron', ot: 'herb' };   // model adı -> oyun adı
-// uretim=<k>: oyuncunun çıkarabildiği hammadde (üretim ve haftalık hak) eski değerin k katı; bedeller hep HAMMADDE_ADEDI_CARPANI (50) katı kalır. Varsayılan 50 = üretim ve talep birlikte x50 (hız eskisi gibi); 1 = üretim eskisi gibi, talep x50.
-const URETIM = Number((Object.fromEntries(process.argv.slice(2).map(a => a.split('=')))).uretim ?? HAC);
-const TABAN = Object.fromEntries(RES.map(r => [r, C.BASE_PRODUCTION[ANAHTAR[r]] * 60 * URETIM / HAC]));                  // birim/saat (BASE_PRODUCTION dakika başına)
+const TABAN = Object.fromEntries(RES.map(r => [r, C.BASE_PRODUCTION[ANAHTAR[r]] * 60]));                  // birim/saat (BASE_PRODUCTION dakika başına; x URETIM_CARPANI)
 const P0BASE = Object.fromEntries(RES.map(r => [r, C.AMM_CORRIDORS[ANAHTAR[r]].defaultPriceAda]));       // ASTRA/birim açılış fiyatı (config)
 const TYPES = ['f2p', 'mid', 'whale'];
 const KORIDOR = C.AMM_CORRIDORS.wheat;                                                                     // koridor oranı tüm hammaddelerde aynı (0,5-2,5)
@@ -159,7 +157,12 @@ export function run(P) {
       // seviye
       // seviye: XP altı alan sürekli çalışmaya göre (gerçek tablo); bedel gerçek motordan (silo tavanına kırpılmış hammadde + ASTRA)
       c.xp += 7 * P.act[c.type]; const lv = LEVEL[Math.min(80, c.level)]; const needDays = Math.max(0.1, lv.xp / XP_GUNLUK);
-      if (c.xp >= needDays) { const cost = lv.adAstra * m * P.fiyatOlcek; if (c.bal >= cost) { pay(c, cost); for (const r of RES) need[r] += lv.costs[r]; c.level++; c.xp -= needDays; } }
+      // 19 Ekim 2026: seviye ancak hammadde de varsa atlanır (eldeki + bu haftaki üretim + eksiği pazardan alacak ASTRA); eskiden yalnız XP ve ASTRA bakılıyordu
+      if (c.xp >= needDays) {
+        const cost = lv.adAstra * m * P.fiyatOlcek; let alimMaliyeti = 0, olur = true;
+        for (const r of RES) { const eksik = lv.costs[r] - (pr[r] + c.stock[r]); if (eksik > 0) { if (eksik >= pool[r].R * 0.4) { olur = false; break; } alimMaliyeti += pool[r].A * eksik / (pool[r].R - eksik); } }
+        if (olur && c.bal >= cost + alimMaliyeti) { pay(c, cost); for (const r of RES) need[r] += lv.costs[r]; c.level++; c.xp -= needDays; }
+      }
       // bot ücreti
       if (c.type !== 'f2p') pay(c, RES.reduce((s, r) => s + pr[r] * price(r), 0) * P.botFee);
       // yatırım (dış para)

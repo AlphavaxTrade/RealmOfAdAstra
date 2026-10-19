@@ -2,19 +2,20 @@
 // Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri), Genesis hakları.
 // Oyun çekirdeğine (GameStateManager) ve dünya havuzuna (GlobalResourceManager) karışım olarak eklenir:
 //   Object.assign(GameStateManager.prototype, gameStateV2); Object.assign(GlobalResourceManager.prototype, globalPoolV2);
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI } from '../config.js';
+import { GAME_CONFIG, URETIM_CARPANI } from '../config.js';
 import { globalPool } from '../globalPool.js';
 
 const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
 const zeroRes = () => Object.fromEntries(RES_KEYS().map(k => [k, 0]));
 const round3 = v => Math.round((Number(v) || 0) * 1000) / 1000;
+const talepCarpani = (oran) => { const H = GAME_CONFIG.HAMMADDE || {}; const o = Math.max(0, Math.min(1, Number(oran) || 0)); return 1 + ((H.ORAN || 1) - 1) * o; };   // gameState/ortak.js ile aynı (döngüsel içe aktarımı önlemek için kopya)
 const r2 = v => Math.round((Number(v) || 0) * 100) / 100;
 const resName = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).name || k;
 const resIcon = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).icon || '';
 // Katkı puanı için fiyat: canlı pazar (varsa) yoksa açılış fiyatı (pazar modülü döngüsel içe aktarımı önlemek için küresel nesneden okunur)
 // 19 Ekim 2026: hammadde adedi x50 (HAMMADDE_ADEDI_CARPANI); katkı puanı ve hazırlık değeri eski ölçekte kalsın diye fiyat çarpana bölünür
 const priceOf = k => {
-  const bol = HAMMADDE_ADEDI_CARPANI || 1;
+  const bol = URETIM_CARPANI || 1;
   try { const m = globalThis.ammMarket; const p = m && m.getPrice ? m.getPrice(k) : 0; if (p > 0) return p / bol; } catch (e) { /* pazar yoksa koridor */ }
   return (((GAME_CONFIG.AMM_CORRIDORS || {})[k] || {}).defaultPriceAda || 0) / bol;
 };
@@ -199,7 +200,8 @@ export const gameStateV2 = {
   getHouseCost(n = this._village().houses + 1) {
     const K = GAME_CONFIG.KOY || {};
     const base = K.HOUSE_BASE_COST || { wood: 400, stone: 200, iron: 50 };
-    const mult = Math.pow(K.HOUSE_COST_MULT ?? 1.2, Math.max(0, n - 2));
+    const H = GAME_CONFIG.HAMMADDE || {};
+    const mult = Math.pow(K.HOUSE_COST_MULT ?? 1.2, Math.max(0, n - 2)) * talepCarpani((n - 2) / Math.max(1, H.EV_RAMPA_SAYISI ?? 10));   // 19 Ekim 2026: evler ilerledikçe talep ölçeğine tırmanır
     // Hiçbir ev bedeli en büyük silonun %80'ini geçemez (siloya sığma ilkesi; 19 Ekim 2026 x5 kararı)
     const Wk = GAME_CONFIG.WAREHOUSE || {};
     const kap = this.getWarehouseCapacity(Math.min(this.getWarehouseMaxLevel ? this.getWarehouseMaxLevel() : 18, Wk.levelUpCostGateLevel || 18)) || {};

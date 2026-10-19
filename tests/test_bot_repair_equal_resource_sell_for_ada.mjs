@@ -3,7 +3,7 @@ import { GameStateManager } from '../js/gameState.js';
 import '../js/ammMarket.js';
 import '../js/globalPool.js';
 import '../js/treasury.js';
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI as Q } from '../js/config.js';
+import { GAME_CONFIG, URETIM_CARPANI as U } from '../js/config.js';
 
 console.log('--- 🤖 ALET ONARIMINDA EŞİT KAYNAK SATIŞI İLE ASTRA TEMİNİ TESTİ ---');
 
@@ -25,7 +25,7 @@ gs.state.adAstraBalance = 0;
 // Depoda eşit ve bol kaynak var
 // v1.25: 3.000'er kaynak silo Lv.1'e sığmaz (fazlası eskiden sessizce siliniyordu); silo Lv.8 kullanılıyor.
 gs.state.warehouseLevel = gs.getWarehouseMaxLevel();   // v2: 3.000'er kaynak ancak en üst siloya sığar
-gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 3000 * Q]));
+gs.state.inventory = Object.fromEntries(GAME_CONFIG.RESOURCE_KEYS.map(k => [k, 3000 * U]));
 
 // Bot aktif
 gs.state.tavernaBotActive = true;

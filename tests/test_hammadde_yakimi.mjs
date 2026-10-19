@@ -9,7 +9,7 @@ globalThis.localStorage = {
   setItem: (k, v) => { depo.set(k, String(v)); },
   removeItem: (k) => { depo.delete(k); }
 };
-const { HAMMADDE_ADEDI_CARPANI } = await import('../js/config.js');
+const { URETIM_CARPANI } = await import('../js/config.js');
 const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
@@ -89,7 +89,7 @@ console.log('✅ silo yükseltme hammaddeleri yakar');
   asker.hp = 10;
   asker.maxHp = 100;
   s.soldierUnits = [asker];
-  s.inventory.herb = 500 * HAMMADDE_ADEDI_CARPANI;
+  s.inventory.herb = 500 * URETIM_CARPANI;
   s.adAstraBalance = 5000;
   const bilgi = gs.getHerbHealInfo(0);
   assert.ok(bilgi.herbsNeeded > 0);

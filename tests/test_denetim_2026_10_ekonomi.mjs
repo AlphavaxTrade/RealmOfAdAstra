@@ -12,7 +12,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 const { ammMarket } = await import('../js/ammMarket.js');
@@ -95,9 +95,9 @@ const asker = (gs, n = 1, seviye = 8) => {
   gs.state.warehouseLevel = 1;
   gs.state.adAstraBalance = 1e6;
   const r = gs.getNextLevelRequirement();
-  assert.equal(r.costs.wheat, 972 * Q, 'Sv.2→3 buğday bedeli (x50)');
-  assert.ok(gs.getWarehouseCapacity(1).wheat < 972 * Q, 'silo-1 bu bedeli tutamaz');
-  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < 972 * Q || r.siloLevelNeeded === 1, true);
+  assert.equal(r.costs.wheat, 972 * U, 'Sv.2→3 buğday bedeli (x50)');
+  assert.ok(gs.getWarehouseCapacity(1).wheat < 972 * U, 'silo-1 bu bedeli tutamaz');
+  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < 972 * U || r.siloLevelNeeded === 1, true);
   assert.ok(gs.getWarehouseCapacity(r.siloLevelNeeded).wheat >= 972, 'ipucundaki silo bedeli tutar');
   gs.state.currentXp = r.xp;
   const red = gs.levelUp();

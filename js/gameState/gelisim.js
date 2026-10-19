@@ -5,7 +5,7 @@ import { GAME_CONFIG } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { levelWeight as ubiLevelWeight } from '../economy/ubi.js';
-import { RES_KEYS, round3, kaynakAdi, kaynakSimgesi } from './ortak.js';
+import { RES_KEYS, round3, kaynakAdi, kaynakSimgesi, talepCarpani } from './ortak.js';
 
 // Seviye eğrisi hedeften türetilir: "Seviye 81 yaklaşık 1.100 günde ulaşılabilir olsun"; günlük XP arzı ≈ 3 düğüm x 35 XP/saat x 24
 const GUNLUK_XP_ARZI = 2520;
@@ -103,6 +103,13 @@ export const gelisimYontemleri = {
     return 1 + ((R.MULT || 1) - 1) * oran;
   },
 
+  // Talep çarpanı (19 Ekim 2026): hesap seviyesi SEVIYE_RAMPA_BASLA'ya kadar arz ölçeğinde, SEVIYE_RAMPA_BITIS'te talep ölçeğinde (config HAMMADDE)
+  _seviyeTalepCarpani(seviye) {
+    const H = GAME_CONFIG.HAMMADDE || {};
+    const b = H.SEVIYE_RAMPA_BASLA ?? 4, e = H.SEVIYE_RAMPA_BITIS ?? 20;
+    return talepCarpani(((Number(seviye) || 1) - b) / Math.max(1, e - b));
+  },
+
   getNextLevelRequirement() {
     const enUst = GAME_CONFIG.MAX_PLAYER_LEVEL || 81;
     const simdiki = this.state.level || 1;
@@ -123,7 +130,7 @@ export const gelisimYontemleri = {
     const siloyaSigdirilan = {};                       // bedeli silo tavanına kırpılan hammaddeler (ham bedel burada)
     for (const k of alanlar) {
       kazanilan[k] = dongu * sure * (uretim[k] || 0);
-      const ham = Math.round((kazanilan[k] / 2) * this._seviyeBedeliCarpani(simdiki));
+      const ham = Math.round((kazanilan[k] / 2) * this._seviyeBedeliCarpani(simdiki) * this._seviyeTalepCarpani(simdiki));
       costs[k] = tavan[k] != null ? Math.min(ham, tavan[k]) : ham;
       if (costs[k] < ham) siloyaSigdirilan[k] = ham;
     }

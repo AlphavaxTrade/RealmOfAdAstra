@@ -1,5 +1,5 @@
-// Hammadde adedi x50 (19 Ekim 2026, kullanıcı kararı): pazar fiyatları aynı, oyundaki her hammadde miktarı (üretim, silo, bedeller, ev, Konsey, başlangıç envanteri) 50 kat.
-// Hesabı ASTRA ile hemen fullemek isteyen birkaç balina hammadde fiyatını tavana taşımalı, Konsey'i tek başına bitirememeli; ücretsiz oyuncunun hızı değişmemeli.
+// Hammadde talebi x50, arzı x5 (19 Ekim 2026, kullanıcı kararı): pazar fiyatları aynı; geliştirme bedelleri ve en üst silo 50 kat, oyuncunun çıkardığı hammadde (üretim, başlangıç
+// envanteri, 1. silo, tekrar eden giderler) 5 kat. Hesabı ASTRA ile hemen fullemek isteyen birkaç balina hammadde fiyatını tavana taşımalı, Konsey'i tek başına bitirememeli.
 import assert from 'node:assert/strict';
 
 const depo = new Map();
@@ -8,7 +8,7 @@ globalThis.localStorage = {
   setItem: (k, v) => { depo.set(k, String(v)); },
   removeItem: (k) => { depo.delete(k); }
 };
-const { GAME_CONFIG: C, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG: C, HAMMADDE_ADEDI_CARPANI: Q, URETIM_CARPANI: U } = await import('../js/config.js');
 const { GameStateManager } = await import('../js/gameState.js');
 const { AMMMarketEngine } = await import('../js/ammMarket.js');
 
@@ -18,41 +18,47 @@ const HAM = ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb'];
 const yeniPazar = () => { depo.clear(); return new AMMMarketEngine(); };
 const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
 
-// 1) Çarpan ve ölçeklenen alanlar; fiyatlar ve ASTRA tohumu AYNI
+// 1) Çarpanlar ve ölçeklenen alanlar; fiyatlar ve ASTRA tohumu AYNI
 {
   assert.equal(Q, 50);
+  assert.equal(U, 5);
+  assert.equal(C.HAMMADDE.ORAN, 10);
   const eski = { wheat: 9, stone: 6, wood: 5.4, coal: 4.5, iron: 3.6, herb: 1.2 };
   const fiyat = { wheat: 0.009, stone: 0.012, wood: 0.025, coal: 0.018, iron: 0.04, herb: 0.08 };
   for (const k of HAM) {
-    assert.ok(Math.abs(C.BASE_PRODUCTION[k] - eski[k] * Q) < 1e-9, `${k} üretimi x${Q}`);
-    assert.ok(Math.abs(C.GLOBAL_RESOURCE_CAPS[k].ratePerMinute - eski[k] * Q) < 1e-9, `${k} sefer hızı x${Q}`);
+    assert.ok(Math.abs(C.BASE_PRODUCTION[k] - eski[k] * U) < 1e-9, `${k} üretimi x${U} (arz)`);
+    assert.ok(Math.abs(C.GLOBAL_RESOURCE_CAPS[k].ratePerMinute - eski[k] * U) < 1e-9, `${k} sefer hızı x${U}`);
     const kor = C.AMM_CORRIDORS[k];
     assert.equal(kor.defaultPriceAda, fiyat[k], `${k} pazar fiyatı değişmedi`);
     assert.ok(Math.abs(kor.minPriceAda / kor.defaultPriceAda - 0.5) < 1e-9 && Math.abs(kor.maxPriceAda / kor.defaultPriceAda - 5) < 1e-9, `${k} koridor 0,5x-5x`);
   }
-  assert.equal(C.WAREHOUSE.initialCapacities.wheat, 540 * Q);
-  assert.equal(C.WAREHOUSE.maxCapacities.wheat, 73500 * Q);
-  assert.equal(C.STARTING_PROFILE.inventory.wheat, 80 * Q);
-  assert.equal(C.KOY.HOUSE_BASE_COST.wood, 400 * Q);
-  assert.equal(C.WHEAT_PER_STAMINA, Q);
+  assert.equal(C.WAREHOUSE.initialCapacities.wheat, 540 * U, '1. silo arz ölçeğinde');
+  assert.equal(C.WAREHOUSE.maxCapacities.wheat, 73500 * Q, 'en üst silo talep ölçeğinde');
+  assert.equal(C.STARTING_PROFILE.inventory.wheat, 80 * U);
+  assert.equal(C.KOY.HOUSE_BASE_COST.wood, 400 * U);
+  assert.equal(C.WHEAT_PER_STAMINA, U);
   assert.equal(C.AMM_SEED_ASTRA.raw, 90000000, 'pazar ASTRA tohumu aynı');
   const m = yeniPazar();
   assert.ok(Math.abs(m.getPrice('wheat') - 0.009) < 1e-6, 'buğday pazarda hâlâ 0,009 ASTRA');
   assert.ok(Math.abs(m.pools.wheat.resourceReserve - 90000000 * 0.1330 / 0.009) < 1e8, 'havuzdaki buğday adedi eskisi gibi (~1,3 milyar)');
-  ok('hammadde adetleri x50, fiyatlar ve havuzlar aynı, koridor 0,5x-5x');
+  ok('arz x5, talep x50, fiyatlar ve havuzlar aynı, koridor 0,5x-5x');
 }
 
-// 2) Ücretsiz oyuncunun hızı değişmez: 1->2 seviye bedelinin ASTRA payı eski ölçekte (15,8 ASTRA), hammadde x50, ev/silo oranları aynı
+// 2) Yeni oyuncu takılmaz: 1->2 seviye bedeli arz ölçeğinde (243 x5), ASTRA payı eski ölçekte (15,8 ASTRA), ilk silo bedeli tutar; ileri seviyeler talep ölçeğine tırmanır
 {
   const gs = yeniOyun();
   const r = gs.getNextLevelRequirement();
   assert.ok(Math.abs(r.adAstra - 15.79) < 0.1, `1->2 seviye ASTRA payı eski ölçekte (${r.adAstra})`);
-  assert.equal(r.costs.wheat, 12150, '1->2 buğday bedeli 243 x50');
+  assert.equal(r.costs.wheat, 243 * U, '1->2 buğday bedeli 243 x5');
   const silo1 = gs.getWarehouseCapacity(1);
-  assert.ok(r.costs.wheat <= silo1.wheat && r.costs.iron <= silo1.iron, 'ilk seviye bedeli ilk siloya sığar (oran korunmuş)');
+  assert.ok(r.costs.wheat <= silo1.wheat && r.costs.iron <= silo1.iron, 'ilk seviye bedeli ilk siloya sığar');
   const u = gs.getWarehouseUpgradeCost(1);
   assert.equal(u.costs.wheat, Math.floor(silo1.wheat * 0.7));
-  ok('yeni oyuncunun ilk adımları aynı oranda: seviye bedeli ilk siloya sığar, ASTRA payı eski');
+  gs.state.level = 4; const l4 = gs.getNextLevelRequirement().costs.wheat;
+  gs.state.level = 12; const l12 = gs.getNextLevelRequirement().costs.wheat;
+  gs.state.level = 20; const l20 = gs.getNextLevelRequirement().costs.wheat;
+  assert.ok(l12 > l4 * 20 && l20 > l12, `talep seviyeyle tırmanır (Sv.4 ${l4}, Sv.12 ${l12}, Sv.20 ${l20})`);
+  ok('yeni oyuncunun ilk adımları arz ölçeğinde; ileri seviyeler talep ölçeğine tırmanır');
 }
 
 // 3) Balina senaryosu: bir hesabın tam gelişimi (seviye 80, silo 49, 11 ev, teçhizat 10) kadar hammaddeyi pazardan alan ilk balina yaklaşık 6 dolar öder
@@ -70,7 +76,7 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
       tam.wood += u.woodCost || 0; tam.iron += u.ironCost || 0;
     }
   }
-  assert.ok(tam.wheat > 5e8 && tam.wheat < 6e8, `bir hesabın tam gelişimi ~537 M buğday (${Math.round(tam.wheat)})`);
+  assert.ok(tam.wheat > 1e8, `bir hesabın tam gelişimi yüz milyonlarca buğday (${Math.round(tam.wheat)})`);
 
   const m = yeniPazar();
   const acilis = Object.fromEntries(HAM.map((k) => [k, m.getPrice(k)]));
@@ -119,8 +125,8 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
   const m = yeniPazar();
   const kaynak = { wood: 5000, iron: 2000 };
   const deger = m.calculateResourcesAdAstraValue(kaynak).totalAda;
-  assert.ok(Math.abs(m.calculateResourcesCostAdAstra(kaynak).totalAda - deger / Q) < 0.002);
-  ok('ASTRA payı = pazar değeri ÷ 50');
+  assert.ok(Math.abs(m.calculateResourcesCostAdAstra(kaynak).totalAda - deger / U) < 0.002);
+  ok('ASTRA payı = pazar değeri ÷ 5 (arz çarpanı)');
 }
 
 console.log(`\n${n} hammadde adedi çarpanı kontrolü geçti.`);

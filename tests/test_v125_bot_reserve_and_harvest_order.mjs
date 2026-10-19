@@ -11,7 +11,7 @@ globalThis.localStorage = {
   clear() { this.store = {}; }
 };
 
-const { HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { URETIM_CARPANI: U } = await import('../js/config.js');
 const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
@@ -33,7 +33,7 @@ const botOn = (gs, hours = 24) => {
 {
   const gs = fresh();
   gs.state.adAstraBalance = 5000;
-  gs.state.inventory = { wood: 300 * Q, iron: 40 * Q, wheat: 500 * Q, fragments: 0 };   // v2: Lv.1 silo 324/216/540
+  gs.state.inventory = { wood: 300 * U, iron: 40 * U, wheat: 500 * U, fragments: 0 };   // v2: Lv.1 silo 324/216/540
   botOn(gs);
   gs.startExpedition('iron');
   const exp = gs.state.activeExpeditions.iron;
@@ -53,7 +53,7 @@ const botOn = (gs, hours = 24) => {
 {
   const gs = fresh();
   gs.state.adAstraBalance = 5000;
-  gs.state.inventory = { wood: 300 * Q, iron: 200 * Q, wheat: 500 * Q, stone: 300 * Q, coal: 250 * Q, herb: 60 * Q, fragments: 0 };   // v2: kapasite içinde
+  gs.state.inventory = { wood: 300 * U, iron: 200 * U, wheat: 500 * U, stone: 300 * U, coal: 250 * U, herb: 60 * U, fragments: 0 };   // v2: kapasite içinde
   gs.setBotSiloOption(true);
   gs.buyTavernaAutomationBot(true);
   const level0 = gs.state.warehouseLevel;

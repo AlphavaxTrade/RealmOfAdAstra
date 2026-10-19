@@ -9,7 +9,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG: C, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG: C, URETIM_CARPANI: U } = await import('../js/config.js');
 
 let n = 0;
 const ok = (ad) => { n++; console.log(`✅ ${ad}`); };
@@ -55,11 +55,12 @@ const gs = yeni();
     const c = gs.getHouseCost(h);
     const mult = 1.2 ** (h - 2);
     yeniT += c.wood;
-    eskiT += Math.round(400 * Q * mult);
+    eskiT += Math.round(400 * U * mult);
     for (const k of Object.keys(c)) assert.ok(c[k] <= Math.floor(kap18[k] * C.LEVEL_UP_SILO_SHARE), `${h}. ev ${k} bedeli silo tavanını aşmaz`);
   }
-  assert.ok(yeniT / eskiT >= 3.5 && yeniT / eskiT <= 6, `ev bedelleri eskinin ~4-5 katı (x${(yeniT / eskiT).toFixed(2)})`);
-  assert.equal(gs.getHouseCost(2).wood, 400 * Q, '2. ev (ilk) eski bedelde (x50 adet)');
+  // 19 Ekim 2026: evler talep ölçeğine tırmanır (ev 2: arz ölçeği, ev 12: x10 ve üstel artış)
+  assert.ok(yeniT / eskiT >= 20 && yeniT / eskiT <= 80, `ev bedelleri arz ölçeğindeki üstel artışın 20-80 katı (x${(yeniT / eskiT).toFixed(2)})`);
+  assert.equal(gs.getHouseCost(2).wood, 400 * U, '2. ev (ilk) eski bedelde (x50 adet)');
   ok(`köy evleri x${(yeniT / eskiT).toFixed(1)}; 2. ev eski bedelde; hiçbiri siloyu aşmaz`);
 }
 

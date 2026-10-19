@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 const depo = new Map();
 globalThis.localStorage = { getItem: k => (depo.has(k) ? depo.get(k) : null), setItem: (k, v) => { depo.set(k, String(v)); }, removeItem: k => { depo.delete(k); } };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG: C, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG: C, URETIM_CARPANI: U } = await import('../js/config.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { treasury } = await import('../js/treasury.js');
@@ -43,11 +43,11 @@ const yeni = (dunya = {}) => {
   assert.ok(near(gs.state.genesisKatki.harcananUsd, 1000 * 1e-6), 'harcama: 1.000 ASTRA × 1e-6 $');
   const fiyat = ammMarket.getPrice('stone');
   gs.burnResource('stone', 1000);
-  assert.ok(near(gs.state.genesisKatki.yakilanUsd, 1000 * fiyat / Q * 1e-6), 'hammadde yakımı: pazar değeri (eski ölçekte, adet x50 olduğu için ÷50) × dolar fiyatı');
+  assert.ok(near(gs.state.genesisKatki.yakilanUsd, 1000 * fiyat / U * 1e-6), 'hammadde yakımı: pazar değeri (eski ölçekte, adet x50 olduğu için ÷50) × dolar fiyatı');
   gs.genesisCekimYaz(500, 2e-6);
   assert.ok(near(gs.state.genesisKatki.cekilenUsd, 500 * 2e-6), 'çekim: çekim anındaki fiyatla düşülür');
   const y = gs.getGenesisYolu();
-  assert.ok(near(y.defter.net, 1000 * 1e-6 + 1000 * fiyat / Q * 1e-6 - 500 * 2e-6));
+  assert.ok(near(y.defter.net, 1000 * 1e-6 + 1000 * fiyat / U * 1e-6 - 500 * 2e-6));
   ok('Katkı defteri: harcama + hammadde yakımı (o anki dolar) − çekim');
 }
 

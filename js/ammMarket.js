@@ -12,7 +12,7 @@
 //  • Geri alım: fiyat açılışın TRIGGER_DROP kadar altına inen varlıkları hazine kasasından alıp yakar.
 // ============================================================================
 
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI } from './config.js';
+import { GAME_CONFIG, URETIM_CARPANI } from './config.js';
 import { globalPool } from './globalPool.js';
 import { treasury } from './treasury.js';
 import { readJSON, writeJSON, removeJSON } from './storage.js';
@@ -340,7 +340,7 @@ export class AMMMarketEngine {
   // ama pazar fiyatı oynadıkça (balinalar fiyatı tavana taşıyınca) aynı oranda oynar. Bedelin asıl yükü hammaddeyi pazardan almaktır.
   calculateResourcesCostAdAstra(kaynaklar = {}) {
     const d = this.calculateResourcesAdAstraValue(kaynaklar);
-    const bol = HAMMADDE_ADEDI_CARPANI || 1;
+    const bol = URETIM_CARPANI || 1;
     return { totalAda: Math.max(0, Math.round((d.totalAda / bol) * 1000) / 1000), breakdown: Object.fromEntries(Object.entries(d.breakdown || {}).map(([k, v]) => [k, Math.round((v / bol) * 1000) / 1000])) };
   }
 

@@ -10,7 +10,7 @@ globalThis.localStorage = {
 };
 const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
 
 ammMarket.resetPools();
 const gs = new GameStateManager();
@@ -87,7 +87,7 @@ assert.equal(gs.getQuickBuyPlan('craft:yok').ok, false);
 {
   const siloOnce = s.warehouseLevel;
   s.warehouseLevel = 18; s.adAstraBalance = 1e7;
-  for (const k of ['iron', 'wood', 'coal', 'stone']) s.inventory[k] = 5000 * Q;
+  for (const k of ['iron', 'wood', 'coal', 'stone']) s.inventory[k] = 5000 * U;
   s.inventory.fragments = 5000;
   assert.equal(gs.craftEquipment('helmet').success, true);
   assert.equal(gs.craftEquipment('armor').success, true);

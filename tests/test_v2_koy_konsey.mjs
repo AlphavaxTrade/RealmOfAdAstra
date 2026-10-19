@@ -13,7 +13,7 @@ const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: UR } = await import('../js/config.js');
 
 const K = GAME_CONFIG.KOY, O = GAME_CONFIG.OTORITE, S = GAME_CONFIG.SIFAHANE, U = GAME_CONFIG.UZAY_LIMANI;
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
@@ -39,10 +39,10 @@ const DAY = 86400;
   assert.equal(v0.capacity, K.START_HOUSES * K.VILLAGERS_PER_HOUSE);
   assert.ok(near(v0.bonus, Math.floor(K.START_VILLAGERS / 10) * K.PROD_BONUS_PER_10), 'Her 10 köylü +%1 üretim');
   assert.equal(v0.soldierCap, K.START_VILLAGERS, 'Her asker 1 köylü');
-  gs.state.inventory.wheat = 100 * Q;
+  gs.state.inventory.wheat = 100 * UR;
   const r = gs.processVillage(DAY);
   assert.ok(near(r.eaten, K.START_VILLAGERS * K.WHEAT_PER_VILLAGER_DAY), '10 köylü günde 20 x50 buğday yer');
-  assert.ok(near(gs.state.inventory.wheat, 100 * Q - 20 * Q), 'Buğday depodan düştü');
+  assert.ok(near(gs.state.inventory.wheat, 100 * UR - 20 * UR), 'Buğday depodan düştü');
   assert.ok(near(gs.getVillageInfo().labor, K.START_VILLAGERS * K.LABOR_PER_VILLAGER_DAY, 1), 'Günde köylü başına 1 emek');
   assert.equal(r.grew, 0, 'Kapasite doluyken büyüme yok');
   // Ev: hesap seviyesi sınırı, bedel, kapasite ve büyüme
@@ -50,7 +50,9 @@ const DAY = 86400;
   gs.state.level = 5;
   const cost2 = gs.getHouseCost(2);
   assert.deepEqual(cost2, K.HOUSE_BASE_COST, '2. ev taban bedel');
-  assert.deepEqual(gs.getHouseCost(3), Object.fromEntries(Object.entries(K.HOUSE_BASE_COST).map(([k, v]) => [k, Math.round(v * K.HOUSE_COST_MULT)])), '3. ev ×1,2');
+  // 3. ev: taban x HOUSE_COST_MULT x talep rampası (19 Ekim 2026: evler ilerledikçe talep ölçeğine tırmanır, config HAMMADDE.EV_RAMPA_SAYISI)
+  const ramp3 = 1 + (GAME_CONFIG.HAMMADDE.ORAN - 1) * (1 / GAME_CONFIG.HAMMADDE.EV_RAMPA_SAYISI);
+  assert.deepEqual(gs.getHouseCost(3), Object.fromEntries(Object.entries(K.HOUSE_BASE_COST).map(([k, v]) => [k, Math.round(v * (K.HOUSE_COST_MULT * ramp3))])), '3. ev ×1,5 × talep rampası');
   assert.equal(gs.buildHouse().success, false, 'Malzeme yokken yapılamaz');
   for (const [k, n] of Object.entries(cost2)) gs.state.inventory[k] = n;
   const b = gs.buildHouse();
@@ -58,7 +60,7 @@ const DAY = 86400;
   assert.equal(gs.getVillageInfo().houses, 2);
   assert.equal(gs.getVillageInfo().capacity, 2 * K.VILLAGERS_PER_HOUSE);
   assert.equal(gs.state.inventory.wood, 0, 'Ev bedeli yakıldı');
-  gs.state.inventory.wheat = 1000 * Q;
+  gs.state.inventory.wheat = 1000 * UR;
   const g = gs.processVillage(DAY);
   assert.ok(near(g.grew, K.START_VILLAGERS * K.GROWTH_PER_DAY, 1e-9), 'Yer açılınca günde %2 büyüme');
   // Açlık: 3 gün sonra günde %5 göç
@@ -69,7 +71,7 @@ const DAY = 86400;
   gs.processVillage(2 * DAY);
   gs.processVillage(DAY);
   assert.ok(gs.getVillageInfo().villagersExact < before, '3 günden sonra köylüler göç eder');
-  gs.state.inventory.wheat = 500 * Q;
+  gs.state.inventory.wheat = 500 * UR;
   gs.processVillage(DAY);
   assert.equal(gs.getVillageInfo().starving, false, 'Buğday gelince açlık biter');
   ok('Köy Evleri: beslenme, emek, ev yapımı, büyüme, açlık');
@@ -155,7 +157,7 @@ const DAY = 86400;
 {
   const gs = fresh();
   gs.state.adAstraBalance = 1e6;
-  gs.state.inventory = { ...gs.state.inventory, iron: 3000 * Q, wood: 3000 * Q, coal: 2000 * Q, fragments: 50 };   // silo kapasitesi içinde
+  gs.state.inventory = { ...gs.state.inventory, iron: 3000 * UR, wood: 3000 * UR, coal: 2000 * UR, fragments: 50 };   // silo kapasitesi içinde
   assert.ok(gs.craftEquipment('weapon').success, 'Silah dövülür');
   const item = gs.state.equipment.weapon;
   const val = gs.getRecycleValue(item);
@@ -201,11 +203,11 @@ const DAY = 86400;
   assert.ok(O.MIX.coal >= 0.2, 'çelik payı kömürle ödenir');
   assert.equal(O.STEEL_SHARE, undefined, 'ASTRA ile ödenen çelik payı kalktı');
   const cap0 = globalPool.state.resources.wood.baseCap;
-  gs.state.inventory.stone = 1000 * Q;
-  const c = gs.contributeToOtorite({ stone: 400 * Q });
+  gs.state.inventory.stone = 1000 * UR;
+  const c = gs.contributeToOtorite({ stone: 400 * UR });
   assert.ok(c.success, c.message);
-  assert.equal(gs.state.inventory.stone, 600 * Q, 'Verilen taş depodan düştü');
-  assert.equal(globalPool.getOtoriteStatus().progress.stone, 400 * Q);
+  assert.equal(gs.state.inventory.stone, 600 * UR, 'Verilen taş depodan düştü');
+  assert.equal(globalPool.getOtoriteStatus().progress.stone, 400 * UR);
   assert.ok(gs.getContributionInfo().week > 0, 'Katkı puanı yazıldı');
   const kBefore = treasury.getPool('uoaTohum');
   const r = globalPool.contributeOtorite(st0.need);

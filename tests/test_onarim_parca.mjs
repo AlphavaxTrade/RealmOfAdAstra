@@ -9,7 +9,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
@@ -22,7 +22,7 @@ const yeni = () => {
   treasury.reset();
   const gs = new GameStateManager();
   gs.state.adAstraBalance = 1e6;
-  for (const k of GAME_CONFIG.RESOURCE_KEYS) gs.state.inventory[k] = 20000 * Q;
+  for (const k of GAME_CONFIG.RESOURCE_KEYS) gs.state.inventory[k] = 20000 * U;
   gs.state.inventory.fragments = 0;
   gs.state.warehouseLevel = 8;
   return gs;

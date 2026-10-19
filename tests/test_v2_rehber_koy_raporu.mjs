@@ -13,7 +13,7 @@ const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
-const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
+const { GAME_CONFIG, URETIM_CARPANI: U } = await import('../js/config.js');
 
 let passed = 0;
 const ok = n => { passed++; console.log(`✅ ${n}`); };
@@ -34,7 +34,7 @@ const K = GAME_CONFIG.KOY;
 {
   const gs = fresh();
   gs.state.level = 5;
-  Object.assign(gs.state.inventory, { wood: 5000 * Q, stone: 5000 * Q, iron: 5000 * Q, coal: 5000 * Q, herb: 500 * Q, wheat: 5000 * Q });
+  Object.assign(gs.state.inventory, { wood: 5000 * U, stone: 5000 * U, iron: 5000 * U, coal: 5000 * U, herb: 500 * U, wheat: 5000 * U });
   gs.checkOnboardingProgress();
   assert.equal(done(gs, 'first_house'), false);
   assert.equal(gs.buildHouse().success, true);
@@ -43,7 +43,7 @@ const K = GAME_CONFIG.KOY;
 
   gs.state.soldierUnits = [{ id: 's1', name: 'Er', hp: 10, maxHp: 100, level: 1, equipment: {}, skills: ['shieldWall'] }];
   gs.state.adAstraBalance = 100;
-  gs.state.inventory.herb = 100 * Q;
+  gs.state.inventory.herb = 100 * U;
   const h = gs.healSoldierWithHerb(0);
   assert.equal(h.success, true, h.message);
   gs.checkOnboardingProgress();

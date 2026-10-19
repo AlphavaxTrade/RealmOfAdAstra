@@ -1,5 +1,5 @@
 import { GameStateManager } from '../js/gameState.js';
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI as Q } from '../js/config.js';
+import { GAME_CONFIG, URETIM_CARPANI as U } from '../js/config.js';
 
 console.log('--- 🧪 SİSTEM DENETİMİ DÜZELTMELERİ DOĞRULAMA TESTİ ---');
 
@@ -24,7 +24,7 @@ console.log('✅ 1. Madde Başarılı: Seviye 81 tavanı korundu.');
 const WHEAT_20 = Math.ceil(20 * GAME_CONFIG.WHEAT_PER_STAMINA);
 gm.state.level = 1;
 gm.state.stamina = 50; // max 100
-gm.state.inventory.wheat = 100 * Q;
+gm.state.inventory.wheat = 100 * U;
 const startWheat = gm.state.inventory.wheat;
 
 const refillRes = gm.refillStaminaWithWheat(20);

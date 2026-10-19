@@ -21,7 +21,7 @@ globalThis.sound = {
   playBreakWarning: () => {}
 };
 
-import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI as Q } from '../js/config.js';
+import { GAME_CONFIG, URETIM_CARPANI as U } from '../js/config.js';
 globalThis.GAME_CONFIG = GAME_CONFIG;
 
 import { ammMarket } from '../js/ammMarket.js';
@@ -38,7 +38,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
   await t.test('1. Depoda Odun:0, Demir:0, Buğday:0 iken autoBuyBotResourceDeficit AMM pazarından asgari önkoşul miktarını satın alarak botun durmasını engellemeli', () => {
     const gs = new GameStateManager();
     gs.state.level = 2; // Oyuncu Seviye 2
-    gs.state.inventory = { wood: 0 * Q, iron: 0 * Q, wheat: 0 * Q, fragments: 0 };
+    gs.state.inventory = { wood: 0 * U, iron: 0 * U, wheat: 0 * U, fragments: 0 };
     gs.state.adAstraBalance = 20000;
 
     const buyRes = gs.autoBuyBotResourceDeficit();
@@ -46,10 +46,10 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
     // KULLANICI KURALI: Kasada ASTRA varken botun durmaması için asgari önkoşul satın alınır!
     assert.equal(buyRes.bought, true, 'AMMden asgari satın alım başarıyla yapılmalı');
     assert.ok(buyRes.totalSpentAda > 0 && buyRes.totalSpentAda < 2000, 'Siloyu fullemeden sadece asgari harcama yapılmalı');
-    assert.ok(gs.state.inventory.wood >= 50 * Q, 'Odun en az 50 x Q olmalı');
-    assert.ok(gs.state.inventory.iron >= 50 * Q, 'Demir en az 50 x Q olmalı');
-    assert.ok(gs.state.inventory.wheat >= 50 * Q, 'Buğday en az 50 x Q olmalı');
-    assert.ok(gs.state.inventory.wood < 500 * Q, 'Silo kontrolsüz biçimde doldurulmamalı');
+    assert.ok(gs.state.inventory.wood >= 50 * U, 'Odun en az 50 x U olmalı');
+    assert.ok(gs.state.inventory.iron >= 50 * U, 'Demir en az 50 x U olmalı');
+    assert.ok(gs.state.inventory.wheat >= 50 * U, 'Buğday en az 50 x U olmalı');
+    assert.ok(gs.state.inventory.wood < 500 * U, 'Silo kontrolsüz biçimde doldurulmamalı');
   });
 
   await t.test('2. Silo Seviye Yükseltildiğinde ambarlar sıfırlansa bile bot aktifse bot durmamalı', () => {
@@ -74,7 +74,7 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
     // Yükseltme sonrası depo dolu kalır: bot önkoşulu (6 kaynak 50 üstü) sağlanmalı ve bot durmamalı
     assert.equal(gs.checkBotPrerequisites().isMet, true, 'Yükseltme sonrası botun önkoşulları tamam olmalı');
     for (const k of ['wood', 'iron', 'wheat']) {
-      assert.ok((gs.state.inventory[k] || 0) >= 50 * Q, `Yükseltme sonrası ${k} >= 50 x Q olmalı, ambar: ${gs.state.inventory[k]}`);
+      assert.ok((gs.state.inventory[k] || 0) >= 50 * U, `Yükseltme sonrası ${k} >= 50 x U olmalı, ambar: ${gs.state.inventory[k]}`);
     }
     assert.equal(gs.isBotPaused(), false, 'Bot asla duraklatılmamış olmalı');
   });
@@ -87,10 +87,10 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
     gs.state.tavernaBotExpiresAt = initialExpiry;
     gs.state.botPaused = true;
     gs.state.botPausedRemainingMs = 20 * 3600 * 1000; // 20 saat dondurulmuş
-    gs.state.inventory.wood = 0 * Q;
-    gs.state.inventory.iron = 0 * Q;
-    gs.state.inventory.wheat = 0 * Q;
-    gs.state.inventory.stone = 0 * Q; gs.state.inventory.coal = 0 * Q; gs.state.inventory.herb = 0 * Q;   // 19 Ekim 2026: başlangıç envanteri x50; satılabilecek fazla kalmasın
+    gs.state.inventory.wood = 0 * U;
+    gs.state.inventory.iron = 0 * U;
+    gs.state.inventory.wheat = 0 * U;
+    gs.state.inventory.stone = 0 * U; gs.state.inventory.coal = 0 * U; gs.state.inventory.herb = 0 * U;   // 19 Ekim 2026: başlangıç envanteri x50; satılabilecek fazla kalmasın
     gs.state.adAstraBalance = 0; // ASTRA YOK!
     gs.state.stamina = 100;
     for (const t of Object.values(gs.state.tools)) t.durability = 4320;   // v2: 6 alet, hepsi sağlam
@@ -105,8 +105,8 @@ test('🤖 Bot Çift Yönlü Dengeleme: Eksik Hammadde Oto-Tedarik ve Duraklama 
     const resumeCheck = gs.updateBotPauseState();
     assert.equal(resumeCheck.isPaused, false, 'ADA gelince asgari kaynak alınıp bot uyanmalı');
     assert.equal(gs.isBotPaused(), false, 'Bot artık duraklatılmış olmamalı');
-    assert.ok(gs.state.inventory.wood >= 50 * Q, 'Odun >= 50 x Q olmalı');
-    assert.ok(gs.state.inventory.iron >= 50 * Q, 'Demir >= 50 x Q olmalı');
-    assert.ok(gs.state.inventory.wheat >= 50 * Q, 'Buğday >= 50 x Q olmalı');
+    assert.ok(gs.state.inventory.wood >= 50 * U, 'Odun >= 50 x U olmalı');
+    assert.ok(gs.state.inventory.iron >= 50 * U, 'Demir >= 50 x U olmalı');
+    assert.ok(gs.state.inventory.wheat >= 50 * U, 'Buğday >= 50 x U olmalı');
   });
 });
