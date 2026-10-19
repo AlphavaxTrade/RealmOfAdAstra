@@ -10,7 +10,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG } = await import('../js/config.js');
+const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
@@ -84,7 +84,7 @@ console.log('✅ bot bedeli kişisel Üretim Hakkı\'na göre');
 {
   const gs = yeni();
   const s = gs.state;
-  s.inventory = { ...s.inventory, wood: 500, iron: 500, wheat: 500 };
+  s.inventory = { ...s.inventory, wood: 500 * Q, iron: 500 * Q, wheat: 500 * Q };
   s.adAstraBalance = 0.001;
   const red = gs.buyTavernaAutomationBot(false);
   assert.equal(red.success, false);
@@ -116,16 +116,16 @@ console.log('✅ satın alma, bedel, süre biriktirme');
 {
   const gs = yeni();
   const k = GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES;
-  assert.equal(k.iron, 50);
-  assert.equal(k.wood, 50);
-  assert.equal(k.wheat, 50);
+  assert.equal(k.iron, 50 * Q);
+  assert.equal(k.wood, 50 * Q);
+  assert.equal(k.wheat, 50 * Q);
   assert.equal(k.adAstra, 0.5);
-  gs.state.inventory = { ...gs.state.inventory, iron: 10, wood: 50, wheat: 50 };
+  gs.state.inventory = { ...gs.state.inventory, iron: 10 * Q, wood: 50 * Q, wheat: 50 * Q };
   gs.state.adAstraBalance = 50;
   let r = gs.checkBotPrerequisites();
   assert.equal(r.isMet, false);
   assert.ok(r.missing.some((m) => m.key === 'iron'));
-  gs.state.inventory.iron = 50;
+  gs.state.inventory.iron = 50 * Q;
   r = gs.checkBotPrerequisites();
   assert.equal(r.isMet, true);
   assert.equal(r.missing.length, 0);
@@ -136,14 +136,15 @@ console.log('✅ önkoşul kaynaklar');
 {
   const gs = yeni();
   const s = gs.state;
-  s.inventory = { ...s.inventory, iron: 100, wood: 100, wheat: 100 };
+  s.inventory = { ...s.inventory, iron: 100 * Q, wood: 100 * Q, wheat: 100 * Q };
   s.adAstraBalance = 50000;
   assert.equal(gs.buyTavernaAutomationBot(false).success, true);
   s.botActiveUntil = Date.now() + SAAT;           // 1 saat kaldı
   s.tavernaBotExpiresAt = s.botActiveUntil;
 
   // Satılabilecek fazla da ASTRA da yok: bot durmalı
-  s.inventory.wood = 20; s.inventory.iron = 10; s.inventory.wheat = 52;
+  s.inventory.wood = 20 * Q; s.inventory.iron = 10 * Q; s.inventory.wheat = 52 * Q;
+  s.inventory.stone = 0; s.inventory.coal = 0; s.inventory.herb = 0;   // 19 Ekim 2026: başlangıç envanteri x50; satılabilecek fazla kalmasın
   s.adAstraBalance = 0;
   const durum = gs.updateBotPauseState();
   assert.equal(durum.isPaused, true);
@@ -153,7 +154,7 @@ console.log('✅ önkoşul kaynaklar');
   assert.equal(gs.runTavernaAutomationCycle().active, false, 'duraklatılmış bot sefer başlatmaz');
   assert.equal(s.botPausedRemainingMs, donuk, 'donuk süre sabit');
 
-  s.inventory.wood = 100; s.inventory.iron = 100; s.inventory.wheat = 100;
+  s.inventory.wood = 100 * Q; s.inventory.iron = 100 * Q; s.inventory.wheat = 100 * Q;
   s.adAstraBalance = 50000;
   const uyanis = gs.updateBotPauseState();
   assert.equal(uyanis.isPaused, false);
@@ -216,7 +217,7 @@ console.log('✅ duraklatma ve süre dondurma');
   donmus.state.botPaused = true;
   donmus.state.botPausedRemainingMs = donuk;
   donmus.state.botActiveUntil = 0; donmus.state.tavernaBotExpiresAt = 0;
-  donmus.state.inventory.iron = 10;
+  donmus.state.inventory.iron = 10 * Q;
   const rd = donmus.fastForwardTime(6);
   assert.equal(rd.hasBot, true);
   assert.equal(rd.botExecutionStatus, 'paused');
@@ -238,11 +239,11 @@ console.log('✅ ileri sarma (bot yok / açık / donmuş / süre bitti / oto-yen
   const gs = yeni();
   const s = gs.state;
   botuAc(gs);
-  s.inventory.wheat = 10; s.inventory.iron = 100; s.inventory.wood = 100;
+  s.inventory.wheat = 10 * Q; s.inventory.iron = 100 * Q; s.inventory.wood = 100 * Q;
   s.adAstraBalance = 50000;
   s.activeExpeditions = { wheat: { nodeId: 'wheat', elapsedSeconds: 1080, durationSeconds: 1080, isCompleted: true, startedAt: Date.now() - 1080000 } };
   gs.runTavernaAutomationCycle();
-  assert.ok(s.inventory.wheat > 50, `biten hasat toplanmalı: ${s.inventory.wheat}`);
+  assert.ok(s.inventory.wheat > 50 * Q, `biten hasat toplanmalı: ${s.inventory.wheat}`);
   assert.equal(s.botPaused, false);
 }
 {
@@ -250,7 +251,7 @@ console.log('✅ ileri sarma (bot yok / açık / donmuş / süre bitti / oto-yen
   const s = gs.state;
   botuAc(gs);
   s.stamina = 0;
-  s.inventory.wheat = 150; s.inventory.iron = 100; s.inventory.wood = 100;
+  s.inventory.wheat = 150 * Q; s.inventory.iron = 100 * Q; s.inventory.wood = 100 * Q;
   s.adAstraBalance = 50000;
   s.activeExpeditions = {
     wood: { nodeId: 'wood', elapsedSeconds: 100, durationSeconds: 1080, isCompleted: false },
@@ -259,8 +260,8 @@ console.log('✅ ileri sarma (bot yok / açık / donmuş / süre bitti / oto-yen
   s.tools.sickle = { durability: 4320, maxDurability: 4320 };
   gs.runTavernaAutomationCycle();
   assert.ok(s.activeExpeditions.wheat, 'boşta kalan buğday seferi başlatılmalı');
-  assert.ok(s.inventory.wheat >= 50, `rezerv korunmalı: ${s.inventory.wheat}`);
-  assert.ok(s.inventory.wheat < 150, 'yalnız sefer için gereken buğday harcanmalı');
+  assert.ok(s.inventory.wheat >= 50 * Q, `rezerv korunmalı: ${s.inventory.wheat}`);
+  assert.ok(s.inventory.wheat < 150 * Q, 'yalnız sefer için gereken buğday harcanmalı');
   assert.equal(s.botPaused, false);
 }
 {
@@ -268,7 +269,7 @@ console.log('✅ ileri sarma (bot yok / açık / donmuş / süre bitti / oto-yen
   const s = gs.state;
   botuAc(gs);
   s.adAstraBalance = 50000;
-  s.inventory.wheat = 300; s.inventory.iron = 100;
+  s.inventory.wheat = 300 * Q; s.inventory.iron = 100 * Q;
   s.botSiloAutoUpgrade = false;
   const kapasite = gs.getWarehouseCapacity();
   s.inventory.wood = kapasite.wood - 1;

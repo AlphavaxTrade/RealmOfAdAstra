@@ -10,7 +10,7 @@
 // hızı 3,3 kat, fiyat listesi 100 kat büyüktü; Otorite "çelik payı" ASTRA ile ödeniyordu; seviye bedeli ve süresi uydurmaydı).
 // Seviye bedeli ve XP, gerçek oyun motorundan (getNextLevelRequirement) çekilir; kural değişince model kendiliğinden güncellenir.
 import fs from 'fs';
-import { GAME_CONFIG as C } from '../../js/config.js';
+import { GAME_CONFIG as C, HAMMADDE_ADEDI_CARPANI as HAC } from '../../js/config.js';
 const depo = new Map();
 globalThis.localStorage = globalThis.localStorage || { getItem: (k) => (depo.has(k) ? depo.get(k) : null), setItem: (k, v) => { depo.set(k, String(v)); }, removeItem: (k) => { depo.delete(k); } };
 const { GameStateManager } = await import('../../js/gameState.js');
@@ -19,7 +19,9 @@ const num = (k, d) => (A[k] != null ? Number(A[k]) : d);
 
 const RES = ['bugday', 'tas', 'odun', 'komur', 'demir', 'ot'];
 const ANAHTAR = { bugday: 'wheat', tas: 'stone', odun: 'wood', komur: 'coal', demir: 'iron', ot: 'herb' };   // model adı -> oyun adı
-const TABAN = Object.fromEntries(RES.map(r => [r, C.BASE_PRODUCTION[ANAHTAR[r]] * 60]));                  // birim/saat (BASE_PRODUCTION dakika başına)
+// uretim=<k>: oyuncunun çıkarabildiği hammadde (üretim ve haftalık hak) eski değerin k katı; bedeller hep HAMMADDE_ADEDI_CARPANI (50) katı kalır. Varsayılan 50 = üretim ve talep birlikte x50 (hız eskisi gibi); 1 = üretim eskisi gibi, talep x50.
+const URETIM = Number((Object.fromEntries(process.argv.slice(2).map(a => a.split('=')))).uretim ?? HAC);
+const TABAN = Object.fromEntries(RES.map(r => [r, C.BASE_PRODUCTION[ANAHTAR[r]] * 60 * URETIM / HAC]));                  // birim/saat (BASE_PRODUCTION dakika başına)
 const P0BASE = Object.fromEntries(RES.map(r => [r, C.AMM_CORRIDORS[ANAHTAR[r]].defaultPriceAda]));       // ASTRA/birim açılış fiyatı (config)
 const TYPES = ['f2p', 'mid', 'whale'];
 const KORIDOR = C.AMM_CORRIDORS.wheat;                                                                     // koridor oranı tüm hammaddelerde aynı (0,5-2,5)
@@ -151,8 +153,8 @@ export function run(P) {
       // ihtiyaçlar (hammadde)
       const need = Object.fromEntries(RES.map(r => [r, 0]));
       need.odun += pr.odun * P.toolRes; need.demir += pr.demir * P.toolRes;                           // alet onarımı
-      need.bugday += pr.bugday * P.staminaWheat + c.army * 14;                                        // stamina + asker beslemesi
-      need.ot += c.army * 0.5;
+      need.bugday += pr.bugday * P.staminaWheat + c.army * 14 * URETIM;                                        // stamina + asker beslemesi
+      need.ot += c.army * 0.5 * URETIM;
       pay(c, (pr.odun * P.toolRes * price('odun') + pr.demir * P.toolRes * price('demir')) * P.toolAda);   // onarımın ASTRA kısmı
       // seviye
       // seviye: XP altı alan sürekli çalışmaya göre (gerçek tablo); bedel gerçek motordan (silo tavanına kırpılmış hammadde + ASTRA)

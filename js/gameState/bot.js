@@ -6,7 +6,7 @@ import { ammMarket } from '../ammMarket.js';
 import { RES_KEYS, zeroRes, round3, kaynakAdi } from './ortak.js';
 
 // Botun kesintisiz çalışması için her temel malzemeden depoda bulunması gereken en az miktar
-const ASGARI_STOK = 50;
+const ASGARI_STOK = Math.max(...['iron', 'wood', 'wheat'].map((k) => Number((GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES || {})[k]) || 50));   // config önkoşulu (19 Ekim 2026: 50 x HAMMADDE_ADEDI_CARPANI)
 // Önkoşul listesindeki sıra (eksik metni bu sırayla yazılır)
 const ONKOSUL_MALZEMELERI = [
   { key: 'iron', name: 'Demir', icon: '⛏️' },

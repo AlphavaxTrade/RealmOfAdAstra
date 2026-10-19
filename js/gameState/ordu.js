@@ -7,7 +7,7 @@ import { askerHakki, katOf } from '../economy/ordu-hakki.js';
 
 const YUVALAR = ['weapon', 'helmet', 'armor', 'legs', 'boots'];
 const SET_ESIKLERI = [5, 4, 2];   // kaç parça takılıysa hangi set bonusu (en yüksek eşik önce)
-const OT_YEDEK = 0.10;            // pasif iyileşmede ekrandaki 1 can için şifalı ot
+const OT_YEDEK = 5;               // pasif iyileşmede ekrandaki 1 can için şifalı ot (yedek; asıl değer config SOLDIER_PASSIVE_HEAL.herbPerHp = 0,1 x HAMMADDE_ADEDI_CARPANI)
 const ASTRA_YEDEK = 0.002;        // pasif iyileşmede ekrandaki 1 can için ASTRA
 const TAM_IYILESME_SN = 86400;    // pasif iyileşme: tam can 24 saat
 

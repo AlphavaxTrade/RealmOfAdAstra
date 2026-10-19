@@ -2,7 +2,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { GameStateManager } from '../js/gameState.js';
 import '../js/ammMarket.js';
-import { GAME_CONFIG } from '../js/config.js';
+import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI as Q } from '../js/config.js';
 
 // Mock localStorage for node environment
 const localStorageMock = (function() {
@@ -27,7 +27,7 @@ describe('🤖 Bot Çalışırken ASTRA Yetersizliğinde Depodan Eşit Miktarda 
 
   it('1. Bot çalışırken ASTRA 50 altına düşerse depodan tüm malzemelerden EŞİT MİKTARDA satıp 50 ASTRA temin etmeli', () => {
     // Depoda bol hammadde var, ama ASTRA 5'e düşmüş
-    gameState.state.inventory = { wood: 500, iron: 500, wheat: 500 };
+    gameState.state.inventory = { wood: 500 * Q, iron: 500 * Q, wheat: 500 * Q };
     gameState.state.adAstraBalance = NEED * 0.1;
 
     const res = gameState.autoFundBotAdaDeficit(NEED);
@@ -43,7 +43,7 @@ describe('🤖 Bot Çalışırken ASTRA Yetersizliğinde Depodan Eşit Miktarda 
 
   it('2. updateBotPauseState: ASTRA < 50 olduğunda bot durmak yerine eşit satış yapıp kesintisiz çalışmaya devam etmeli', () => {
     // Bot süresi var
-    gameState.state.inventory = { wood: 300, iron: 300, wheat: 300 };
+    gameState.state.inventory = { wood: 300 * Q, iron: 300 * Q, wheat: 300 * Q };
     gameState.state.adAstraBalance = NEED * 0.3; // önkoşulun altında!
     gameState.state.botActiveUntil = Date.now() + (12 * 3600 * 1000);
     gameState.state.tavernaBotExpiresAt = gameState.state.botActiveUntil;
@@ -59,7 +59,7 @@ describe('🤖 Bot Çalışırken ASTRA Yetersizliğinde Depodan Eşit Miktarda 
 
   it('3. Halihazırda duraklatılmış bot, updateBotPauseState anında depodan eşit satışla anında UYANMALI (Resume)', () => {
     // Kullanıcının ekranındaki durum: Bot 50 ASTRA yok diye duraklatılmıştı
-    gameState.state.inventory = { wood: 250, iron: 250, wheat: 250 };
+    gameState.state.inventory = { wood: 250 * Q, iron: 250 * Q, wheat: 250 * Q };
     gameState.state.adAstraBalance = NEED * 0.16;
     gameState.state.botPaused = true;
     gameState.state.botPausedRemainingMs = 18 * 3600 * 1000;

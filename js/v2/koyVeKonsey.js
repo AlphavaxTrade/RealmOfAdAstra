@@ -2,7 +2,7 @@
 // Sirius Konseyi (ortak kasa, Madencilik Otoritesi inşaatı, Konsey projeleri), Genesis hakları.
 // Oyun çekirdeğine (GameStateManager) ve dünya havuzuna (GlobalResourceManager) karışım olarak eklenir:
 //   Object.assign(GameStateManager.prototype, gameStateV2); Object.assign(GlobalResourceManager.prototype, globalPoolV2);
-import { GAME_CONFIG } from '../config.js';
+import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI } from '../config.js';
 import { globalPool } from '../globalPool.js';
 
 const RES_KEYS = () => GAME_CONFIG.RESOURCE_KEYS || ['wood', 'iron', 'wheat'];
@@ -12,9 +12,11 @@ const r2 = v => Math.round((Number(v) || 0) * 100) / 100;
 const resName = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).name || k;
 const resIcon = k => ((GAME_CONFIG.RESOURCE_META || {})[k] || {}).icon || '';
 // Katkı puanı için fiyat: canlı pazar (varsa) yoksa açılış fiyatı (pazar modülü döngüsel içe aktarımı önlemek için küresel nesneden okunur)
+// 19 Ekim 2026: hammadde adedi x50 (HAMMADDE_ADEDI_CARPANI); katkı puanı ve hazırlık değeri eski ölçekte kalsın diye fiyat çarpana bölünür
 const priceOf = k => {
-  try { const m = globalThis.ammMarket; const p = m && m.getPrice ? m.getPrice(k) : 0; if (p > 0) return p; } catch (e) { /* pazar yoksa koridor */ }
-  return ((GAME_CONFIG.AMM_CORRIDORS || {})[k] || {}).defaultPriceAda || 0;
+  const bol = HAMMADDE_ADEDI_CARPANI || 1;
+  try { const m = globalThis.ammMarket; const p = m && m.getPrice ? m.getPrice(k) : 0; if (p > 0) return p / bol; } catch (e) { /* pazar yoksa koridor */ }
+  return (((GAME_CONFIG.AMM_CORRIDORS || {})[k] || {}).defaultPriceAda || 0) / bol;
 };
 
 // ═══════════════════════════════════════════════════════════════════════

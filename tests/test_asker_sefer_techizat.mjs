@@ -10,7 +10,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG } = await import('../js/config.js');
+const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
@@ -63,7 +63,7 @@ const yakin = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 
   asker.hp = 50;
   gs.state.inventory.wheat = 100;   // silo tavanının altında: kayıt buğdayı kırpmasın
-  gs.state.inventory.herb = 30;
+  gs.state.inventory.herb = 30 * Q;   // 19 Ekim 2026: ot x50 ister (1 ot = 0,04 can)
   gs.state.adAstraBalance = 50000;
   assert.equal(gs.healSoldierInstantly, undefined, 'buğdayla anında iyileştirme yöntemi kaldırıldı');
   const bugdayOnce = gs.state.inventory.wheat;

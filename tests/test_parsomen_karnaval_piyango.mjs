@@ -87,7 +87,7 @@ console.log('✅ parşömenler');
     assert.ok(bi && bi.resource === res);
     assert.equal(bi.amount + bi.soldQty, bedel, 'yakılan + satılan = ödenen');
     assert.equal(bi.soldQty, Math.floor(bedel / 2), 'yarısı pazarda satılır');
-    if (bi.soldQty > 0) assert.ok(bi.carnivalIn > 0, 'satıştan gelen ASTRA karnaval kasasına girer');   // 19 Ekim 2026: pahalı birimde (demir 2 ASTRA) 1 birim ödenir, yarısı satılmaz
+    assert.ok(bi.carnivalIn > 0, 'satıştan gelen ASTRA karnaval kasasına girer');
     assert.equal(s.burnedResources[res] - yakilan, bi.amount, 'kalan yarı yakılır');
   }
 }

@@ -12,7 +12,7 @@ globalThis.localStorage = {
   removeItem: (k) => { depo.delete(k); }
 };
 const { GameStateManager } = await import('../js/gameState.js');
-const { GAME_CONFIG } = await import('../js/config.js');
+const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
 const { globalPool } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 const { ammMarket } = await import('../js/ammMarket.js');
@@ -95,9 +95,9 @@ const asker = (gs, n = 1, seviye = 8) => {
   gs.state.warehouseLevel = 1;
   gs.state.adAstraBalance = 1e6;
   const r = gs.getNextLevelRequirement();
-  assert.equal(r.costs.wheat, 972, 'Sv.2→3 buğday bedeli');
-  assert.ok(gs.getWarehouseCapacity(1).wheat < 972, 'silo-1 bu bedeli tutamaz');
-  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < 972 || r.siloLevelNeeded === 1, true);
+  assert.equal(r.costs.wheat, 972 * Q, 'Sv.2→3 buğday bedeli (x50)');
+  assert.ok(gs.getWarehouseCapacity(1).wheat < 972 * Q, 'silo-1 bu bedeli tutamaz');
+  assert.equal(gs.getWarehouseCapacity(r.siloLevelNeeded - 1).wheat < 972 * Q || r.siloLevelNeeded === 1, true);
   assert.ok(gs.getWarehouseCapacity(r.siloLevelNeeded).wheat >= 972, 'ipucundaki silo bedeli tutar');
   gs.state.currentXp = r.xp;
   const red = gs.levelUp();
@@ -122,8 +122,9 @@ const asker = (gs, n = 1, seviye = 8) => {
   gs.state.lockedAda = 10000;
   const serbest = () => gs.state.adAstraBalance - gs.state.lockedAda;
   const bakiye0 = gs.state.adAstraBalance;
+  gs.state.inventory.wood = 0;   // 19 Ekim 2026: başlangıç envanteri x50 (3.000 odun); kayıp ölçümünü bozmasın
   for (let i = 0; i < 12; i++) {
-    const al = gs.marketBuy('wood', 400);   // 19 Ekim 2026: odun fiyatı x50 (1,25 ASTRA); 400 birim = eski 20.000 birimle aynı ASTRA
+    const al = gs.marketBuy('wood', 20000);
     assert.equal(al.success, true, al.message);
     const sat = gs.marketSell('wood', gs.state.inventory.wood);
     assert.equal(sat.success, true, sat.message);
@@ -131,7 +132,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   const kayip = bakiye0 - gs.state.adAstraBalance;
   assert.ok(kayip > 400, `12 turun kaybı ~481 olmalı: ${kayip}`);
   // Eski kuralda serbest bakiye 0 → 2.401 (kayıp 481: %20 maliyetle kilit açılıyordu). Yenide açılan yalnız komisyon+yakım payı.
-  assert.ok(serbest() < 0.15 * kayip + 1, `al-sat kilidi açmamalı: serbest ${serbest().toFixed(1)}, kayıp ${kayip.toFixed(1)}`);
+  assert.ok(serbest() < 0.12 * kayip + 1, `al-sat kilidi açmamalı: serbest ${serbest().toFixed(1)}, kayıp ${kayip.toFixed(1)}`);
   assert.ok(serbest() < 100, `serbest ${serbest().toFixed(1)} < 100 (eski: 2.401)`);
   ok(`EK-04: 12 tur al-sat: kayıp ${kayip.toFixed(0)}, açılan serbest ${serbest().toFixed(1)} (eski: 2.401)`);
 }
@@ -140,7 +141,7 @@ const asker = (gs, n = 1, seviye = 8) => {
   const gs = yeni();
   gs.state.warehouseLevel = 18;
   gs.state.adAstraBalance = 5000; gs.state.lockedAda = 0;
-  const al = gs.marketBuy('wood', 400);   // 19 Ekim 2026: odun fiyatı x50 (1,25 ASTRA); 400 birim = eski 20.000 birimle aynı ASTRA
+  const al = gs.marketBuy('wood', 20000);
   assert.equal(al.success, true);
   const lockCredit = (gs.state.contribution && gs.state.contribution.lockCredit && gs.state.contribution.lockCredit.wood) || 0;
   assert.equal(lockCredit, 0, 'serbestle alınanda kilit kredisi yok');

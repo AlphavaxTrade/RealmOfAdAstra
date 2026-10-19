@@ -425,7 +425,7 @@ export const zindanYontemleri = {
     const g = this._dungeonGate();
     for (const [k, q] of Object.entries(kabul)) { env[k] = (Number(env[k]) || 0) - q; g.verilen[k] = (Number(g.verilen[k]) || 0) + q; }
     this.burnResources(kabul);
-    const deger = ammMarket.calculateResourcesAdAstraValue(kabul).totalAda;
+    const deger = ammMarket.calculateResourcesCostAdAstra(kabul).totalAda;
     if (deger > 0 && this._addContribution) this._addContribution(round3(deger));
     this.saveState();
     const parca = Object.entries(kabul).map(([k, q]) => `${q} ${k}`).join(', ');

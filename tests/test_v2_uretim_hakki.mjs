@@ -75,7 +75,7 @@ const fresh = () => {
   const gs = fresh();
   const h = gs.getUretimHakki('wood');
   const perWeight = globalPool.weeklyRightPerWeight('wood');
-  assert.equal(h.weekly, Math.floor(perWeight * gs.getUretimWeight().weight), 'Haftalık hak = ağırlık × kişi başı pay');
+  assert.ok(Math.abs(h.weekly - Math.floor(perWeight * gs.getUretimWeight().weight)) <= 1, 'Haftalık hak = ağırlık × kişi başı pay (büyük sayılarda yuvarlama ±1)');
   assert.equal(h.released, Math.floor(h.weekly * (globalPool.getEpochDayIndex() + 1) / 7), 'Bugüne kadar açılan 1/7 adımlarıyla');
   assert.equal(h.used, 0);
   assert.ok(h.canTake <= globalPool.getResourceInfo('wood').availableToday, 'Dünya kapasitesi aşılamaz');

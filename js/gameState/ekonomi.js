@@ -1,6 +1,6 @@
 // Realm of AdAstra — GameStateManager yöntemleri: Kilitli bakiye, katkı puanı, Üretim Hakkı, ASTRA fiyat çarpanı
 // (kurumsal A3.11: js/gameState.js'ten AYNEN taşındı; davranış değişmedi. Karışım olarak GameStateManager.prototype'a eklenir.)
-import { GAME_CONFIG } from '../config.js';
+import { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI } from '../config.js';
 import { globalPool } from '../globalPool.js';
 import { ammMarket } from '../ammMarket.js';
 import { treasury } from '../treasury.js';
@@ -19,8 +19,10 @@ export const ekonomiYontemleri = {
 
     const birimFiyat = Number(ammMarket.getPrice(resourceKey));
     if (isFinite(birimFiyat) && birimFiyat > 0) {
-      this._addContribution(miktar * birimFiyat * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
-      if (this._genesisKatkiYaz) this._genesisKatkiYaz(miktar * birimFiyat, 'yakim');   // Genesis katkı defteri (dolar)
+      // 19 Ekim 2026: hammadde adedi x50 olduğu için katkı puanı değeri eski ölçekte hesaplanır (aynı emek = aynı puan)
+      const deger = miktar * birimFiyat / HAMMADDE_ADEDI_CARPANI;
+      this._addContribution(deger * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
+      if (this._genesisKatkiYaz) this._genesisKatkiYaz(deger, 'yakim');   // Genesis katkı defteri (dolar)
     }
     return miktar;
   },
@@ -102,7 +104,7 @@ export const ekonomiYontemleri = {
         kc[saleOf] -= geri;
         kilitli += geri * serbestPay;
       }
-      this._addContribution((v - fromCredit) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5));
+      this._addContribution(((v - fromCredit) / HAMMADDE_ADEDI_CARPANI) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5));   // satılan adet x50: puan eski ölçekte
     }
     this.state.lockedAda = (Number(this.state.lockedAda) || 0) + kilitli;
   },

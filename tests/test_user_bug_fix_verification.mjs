@@ -24,7 +24,8 @@ console.log('--- 🧪 TEST: Kullanıcının Raporladığı Senaryo ---');
 gs.vanillaReset();
 
 // Kullanıcının ambarı dolu (1080 Odun, 720 Demir, 1800 Buğday)
-gs.state.inventory = { wood: 1080, iron: 720, wheat: 1800, fragments: 0 };
+const hammaddeCarpani = (await import('../js/config.js')).HAMMADDE_ADEDI_CARPANI;   // 19 Ekim 2026: hammadde adetleri x50
+gs.state.inventory = { wood: 1080 * hammaddeCarpani, iron: 720 * hammaddeCarpani, wheat: 1800 * hammaddeCarpani, fragments: 0 };
 gs.state.adAstraBalance = 50000;
 
 console.log('Bot Alımı Öncesi:');

@@ -14,7 +14,7 @@ const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
 const { globalPool, GlobalResourceManager } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
-const { GAME_CONFIG } = await import('../js/config.js');
+const { GAME_CONFIG, HAMMADDE_ADEDI_CARPANI: Q } = await import('../js/config.js');
 
 const fresh = () => {
   localStorage.clear();
@@ -183,7 +183,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
 // 10) Az para + az malzemede sat-al kısır döngüsü yok
 {
   const gs = fresh(); botOn(gs);
-  gs.state.adAstraBalance = 0.4; gs.state.warehouseLevel = 6; gs.state.inventory = { wood: 30, iron: 700, wheat: 1500, fragments: 0 };   // v2: ASTRA da önkoşulun altında
+  gs.state.adAstraBalance = 0.4; gs.state.warehouseLevel = 6; gs.state.inventory = { wood: 30 * Q, iron: 700 * Q, wheat: 1500 * Q, fragments: 0 };   // v2: ASTRA da önkoşulun altında
   let sells = 0, buys = 0, woodSold = 0;
   const s0 = ammMarket.executeSell.bind(ammMarket), b0 = ammMarket.executeBuyAmount.bind(ammMarket);
   ammMarket.executeSell = (k, a) => { sells++; if (k === 'wood') woodSold += a; return s0(k, a); };
@@ -192,7 +192,7 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   ammMarket.executeSell = s0; ammMarket.executeBuyAmount = b0;
   assert.equal(woodSold, 0, 'Eksik olan odun satılmamalı');
   assert.ok(sells + buys <= 6, `600 karede en fazla birkaç işlem olmalı (satış ${sells}, alış ${buys})`);
-  assert.ok(gs.state.inventory.wood >= 50 && gs.state.adAstraBalance >= GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.adAstra, 'Eksikler kalıcı olarak tamamlanmalı');
+  assert.ok(gs.state.inventory.wood >= 50 * Q && gs.state.adAstraBalance >= GAME_CONFIG.TAVERNA_BOT.REQUIRED_PREREQUISITES.adAstra, 'Eksikler kalıcı olarak tamamlanmalı');
   ok(`Bot: sat-al döngüsü yok (satış ${sells}, alış ${buys})`);
 }
 
