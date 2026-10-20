@@ -125,7 +125,7 @@ function carkSekmesi(b, secenek) {
         </div>
         <canvas id="${TUVAL}" class="ek-cark-tuval" width="${cark.TUVAL_BOYUTU}" height="${cark.TUVAL_BOYUTU}" role="img" aria-label="Şans çarkı, ${dilimler(b).length} ödül dilimi"></canvas>
       </div>
-      <p class="ek-cark-durum" id="${DURUM}" role="status">Çevirmek için aşağıdan bir ödeme yolu seç.</p>
+      <p class="ek-cark-durum" id="${DURUM}" role="status">Çevirmek için yukarıdan bir ödeme yolu seç.</p>
     </div>`;
 
   const odulTablosu = dilimler(b).map((r) => {
@@ -146,10 +146,11 @@ function carkSekmesi(b, secenek) {
           + cubukSatiri('🍀 Şans Sayacı (bedelini geri almayan çevirme)', `${sayac.streak}/${sayac.limit}`, (sayac.streak / sayac.limit) * 100, { ton: sayac.streak >= sayac.limit - 1 ? 'dolu' : '' })
           + not(`Art arda ${esc(sayac.limit)} çevirmede bedelini geri alamazsan sonraki çevirme garantili nakittir.`), { k: 'cark-kural' })
     }),
-    sahne,
-    sonucKarti(b, secenek.sonuc),
+    // Düğmeler çarkın ÜSTÜNDE: çevirmek için aşağı kaydırmak gerekmesin; sonuç da düğmelerle çarkın arasında görünür
     durum.open ? '' : uyari(`Karnaval kasası yenileniyor (${esc(astra(durum.balance))} / ${esc(astra(durum.minBalance))} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.`, 'uyari'),
     odemeDugmeleri(b, carpan),
+    sonucKarti(b, secenek.sonuc),
+    sahne,
     katli(`🎪 Günlük hediye${cheerYapildi ? ' (alındı ✅)' : ' (+10 ⚡ stamina)'}`,
       not('Günde bir kez karnavala katılıp +10 ⚡ stamina kazanırsın.')
       + dugme({ e: 'cheer', metin: cheerYapildi ? '✅ Bugün katıldın' : '🎪 Coşkuya katıl (+10 ⚡)', devreDisi: cheerYapildi, genis: true }), { k: 'cark-cosku' }),

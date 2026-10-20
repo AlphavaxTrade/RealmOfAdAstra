@@ -296,3 +296,16 @@
 .zd-katli > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; font-size: 14px; color: var(--zd-yazi, #eceef4); }
 .zd-katli[open] { padding-bottom: 12px; }
 .zd-katli[open] > summary { margin-bottom: 6px; }
+
+/* ---- Tur 2 (20 Ekim 2026): telefonda kat/oda yeniden düzen ---- */
+.zd-daha { flex: 1 0 100%; }
+.zd-daha > summary { list-style: none; display: inline-flex; align-items: center; cursor: pointer; }
+.zd-daha > summary::-webkit-details-marker { display: none; }
+.zd-daha-ic { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.zd-devam { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: left; }
+@media (max-width: 760px) {
+  .zd-sahne { display: none; }              /* harita resmi oda listesiyle aynı işi yapıyordu; liste dokunmaya daha uygun */
+  .zd-baslik h2 { font-size: 16px; }
+  .zd-oda-resim { aspect-ratio: 16 / 7; }   /* savaş düğmesi ve şans ilk bakışta görünsün */
+  .zd-oda-kart { gap: 10px; padding: 12px; }
+}

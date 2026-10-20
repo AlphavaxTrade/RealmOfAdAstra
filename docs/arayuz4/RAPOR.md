@@ -81,3 +81,4 @@ Görünür harf / telefon kaydırma yüksekliği (px), zengin hesap, gerçek tar
 - Zindan: canavar hikâyesi/yetenekleri katlı; "Zindan modu" düğmesi ilk boss (ilerleme > 9) geçilene dek gizli (`scripts/tarayici/zindan-bak.mjs`).
 - Menü seviyeye göre: Taverna, Kotalarım, Sandıklar Sv.3 · Hazine Sv.4 · Ekonomi Sv.5 · Roket Sv.8; Karnaval Kasalar sekmesi Sv.5. Eski kimlikler ve Ctrl+K ile her zaman açılır; oyun içi kilitler (`getFeatureLock`) değişmedi.
 - Testler: yoğunluk tavanları düşürüldü, `test_v3_kabuk.mjs` seviyeye göre menü bloğu eklendi.
+- Tur 2 eki: Karnaval'da çevirme düğmeleri çarkın üstüne alındı, sonuç düğmelerle çark arasında görünür (`scripts/tarayici/karnaval-cevir.mjs`: gerçek çevirme, konsol temiz). Zindan: telefonda harita resmi gizli (oda listesi aynı işi yapıyordu), kat görünümünün başında tek "Sıradaki: Oda N" düğmesi (kat temizse "Kata geç"), şerit düğmeleri "⋯ Daha fazla" altında, oda resmi 16/7'ye alındı (savaş düğmesi ilk ekranda).

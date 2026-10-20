@@ -19,7 +19,7 @@ const bossSeviyesi = (m) => !!(m.isBoss || m.level === 9 || m.level === 18);
 
 export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
   const kok = document.getElementById('zindan-ekrani');
-  const durum = { kat: 1, oda: null, kutuk: false, kutlama: null };
+  const durum = { kat: 1, oda: null, kutuk: false, kutlama: null, dahaAcik: false };
   let sonIlerleme = 1;
   let aralik = null;
 
@@ -112,7 +112,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     const modDugme = !modGorunur ? '' : `<button type="button" class="zd-dugme zd-kucuk${gecisHazir ? ' zd-ana' : ''}" data-e="mod" title="Zindan modu: canavar gücü, ödül çarpanı, asker hakkı ve bir üst moda geçiş">${mb.simge} ${esc(mb.ad)}${gecisHazir ? ` · ${esc(mb.gecis.hedefAd)} moda geç` : ''}</button>`;
     return `<div class="zd-serit" role="status" aria-label="Ordu durumu">
       <div class="zd-serit-bilgi">${parcalar.join('')}</div>
-      <div class="zd-serit-dugme">${asker}${iyilestir}${tekrar}${modDugme}<button type="button" class="zd-dugme zd-kucuk" data-e="kutuk">📖 Kütük</button></div>
+      <div class="zd-serit-dugme">${asker}${iyilestir}<details class="zd-daha"${durum.dahaAcik ? ' open' : ''}><summary class="zd-dugme zd-kucuk">⋯ Daha fazla</summary><div class="zd-daha-ic">${tekrar}${modDugme}<button type="button" class="zd-dugme zd-kucuk" data-e="kutuk">📖 Kütük</button></div></details></div>
     </div>`;
   }
 
@@ -154,9 +154,19 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
           <span class="zd-kart-govde"><b>${durum.kat + 1}. Kata geç</b><small>${esc(KATLAR[durum.kat].ad)}</small></span><span class="zd-kart-ok" aria-hidden="true">›</span></button></li>` : '';
 
     const d = katDurumu(durum.kat, il);
+    // Tek dokunuşla devam: sıradaki oda varsa oraya savaşa, kat bittiyse bir üst kata
+    const siradaki = ozetler.findIndex((oz) => oz.durum === 'siradaki');
+    let devam = '';
+    if (siradaki >= 0) {
+      const oz = ozetler[siradaki];
+      devam = `<button type="button" class="zd-dugme zd-ana zd-devam" data-e="savas" data-oda="${siradaki}"><span>⚔️ Sıradaki: Oda ${siradaki + 1} · ${esc(oz.canavar.name)}</span>${sansCipi(oz)}</button>`;
+    } else if (durum.kat < KAT_SAYISI && ozetler.every((oz) => oz.durum === 'yenildi')) {
+      devam = `<button type="button" class="zd-dugme zd-ana zd-devam" data-e="gecit"><span>🌀 Kat temiz: ${durum.kat + 1}. Kata geç</span></button>`;
+    }
     return `<div class="zd-kat-gorunum">
       <div class="zd-baslik"><h2>${kat.simge} ${kat.kat}. Kat · ${esc(kat.ad)}</h2>
         <p>${esc(kat.alt)}${d.tamam ? ` · 🏅 ${esc(kat.rozet)}` : ` · ${d.temizlenen}/${ODA_SAYISI} oda temizlendi`}</p></div>
+      ${devam}
       <div class="zd-sahne">
         <div class="zd-resim" role="img" aria-label="${esc(kat.ad)} haritası" style="background-image:url('${esc(kat.resim)}')"></div>
         ${plakalar}${gecit}
@@ -287,7 +297,14 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
       const tmp = document.createElement('div');
       tmp.innerHTML = seritHtml();
       const yeni = tmp.firstElementChild;
-      if (yeni && yeni.innerHTML !== eski.innerHTML) eski.innerHTML = yeni.innerHTML;
+      const dahaEski = eski.querySelector('details.zd-daha');
+      if (dahaEski) durum.dahaAcik = dahaEski.open;
+      if (yeni && yeni.innerHTML !== eski.innerHTML) {
+        // Karşılaştırma açık/kapalı durumundan bağımsız; yenilenince "Daha fazla" kapanmasın
+        const dahaYeni = yeni.querySelector('details.zd-daha');
+        if (dahaYeni) dahaYeni.open = !!durum.dahaAcik;
+        eski.innerHTML = yeni.innerHTML;
+      }
     }
     const sans = kok.querySelector('.zd-sanslar');
     if (sans) {
