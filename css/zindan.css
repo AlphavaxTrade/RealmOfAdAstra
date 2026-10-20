@@ -290,3 +290,9 @@
 @media (prefers-reduced-motion: reduce) {
   .zd * { transition: none !important; }
 }
+
+/* Katlı ayrıntı (20 Ekim 2026, arayüz sadeleştirme): canavar hikâyesi ve yetenekler ilk bakışta gizli */
+.zd-katli { border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 0 12px; }
+.zd-katli > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 700; font-size: 14px; color: var(--zd-yazi, #eceef4); }
+.zd-katli[open] { padding-bottom: 12px; }
+.zd-katli[open] > summary { margin-bottom: 6px; }

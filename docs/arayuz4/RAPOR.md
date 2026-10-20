@@ -67,3 +67,17 @@ Ham ölçümler: `olcum-once-zengin.json`, `olcum-sonra-zengin.json`. Yeni hesap
 - Menüde seviyeye göre açılma: yalnız Roket Rampası (8. seviye) ve "Gelişmiş" katı eklendi; var olan özellik kilitleri (Pazar, Demirhane, Kışla, Zindan, Kolezyum, Karnaval) aynen duruyor.
 - Karnaval (977 harf, 14 düğme), Ekonomi (908), Taverna (756), Silo ve Kotalarım'ın kalan kısmı bu turda yeniden düzenlenmedi; sonraki tur adayları.
 - Eski `scripts/tarayici/pazar-grafik.mjs` yeniden doğrulanmadı (sayfa yüklemede zaman aşımı).
+
+## Tur 2 (v1.87, 20 Ekim 2026): kalan yoğun ekranlar, Zindan, Arena, seviyeye göre açılma
+Görünür harf / telefon kaydırma yüksekliği (px), zengin hesap, gerçek tarayıcı 390×844:
+| Ekran | Harf önce → sonra | Yükseklik önce → sonra |
+|---|---|---|
+| Ekonomi | 908 → 278 | 1.210 → 653 |
+| Taverna | 757 → 367 | 1.079 → 653 |
+| Karnaval | 977 → 485 | 1.385 → 1.072 (çarkın kendisi büyük) |
+| Kotalarım | 1.257 → 730 | 1.287 → 928 |
+| Savaş alanı | 906 → 671 | — → 985 |
+| Arena (Kolezyum) | 750 → 542 | — → 921 |
+- Zindan: canavar hikâyesi/yetenekleri katlı; "Zindan modu" düğmesi ilk boss (ilerleme > 9) geçilene dek gizli (`scripts/tarayici/zindan-bak.mjs`).
+- Menü seviyeye göre: Taverna, Kotalarım, Sandıklar Sv.3 · Hazine Sv.4 · Ekonomi Sv.5 · Roket Sv.8; Karnaval Kasalar sekmesi Sv.5. Eski kimlikler ve Ctrl+K ile her zaman açılır; oyun içi kilitler (`getFeatureLock`) değişmedi.
+- Testler: yoğunluk tavanları düşürüldü, `test_v3_kabuk.mjs` seviyeye göre menü bloğu eklendi.

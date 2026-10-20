@@ -90,29 +90,32 @@ function duelloSekmesi(b, secenek) {
     kart({
       baslik: '⚔️ 1v1 Kolezyum düellosu',
       rozet: etiket(`💰 ${astra(giris.fee)} ASTRA / maç`),
-      icerik: not('Şampiyonunu seç ve Kolezyuma çık: kendi ligine uygun rakip bulunur, 1v1 savaş başlar. Şampiyon kolezyumda ölmez ama yaralanabilir; yaralıyı şifalı otla iyileştirirsin.')
+      icerik: not('Şampiyonunu seç, Kolezyuma çık: ligine uygun rakiple 1v1 savaşırsın. Şampiyon ölmez, yaralanabilir.')
         + satir('Liginin kademesi', `${tier.name} · ${tam(istatistik.rating)} puan`, 'iyi')
     }),
     kart({
       baslik: 'Şampiyonun',
       icerik: secim
         + izgara([
-          hucre('Toplam saldırı', `⚔️ ${tam(istat.totalAtk)}`),
+          hucre('Saldırı', `⚔️ ${tam(istat.totalAtk)}`),
           hucre('Can', `❤️ ${tam(savasCani.hp)}/${tam(savasCani.maxHp)}`, can <= 25 ? 'kotu' : ''),
           hucre('Mevzi', arka ? '🏹 Arka saf' : '🛡️ Ön saf')
-        ], { kolon: 2 })
-        + dugme({ e: 'mevzi', metin: arka ? '🛡️ Ön safa al' : '🏹 Arka safa al' })
+        ], { kolon: 3 })
+        + katli(`Mevzi: şu an ${arka ? 'arka' : 'ön'} saf`, dugme({ e: 'mevzi', metin: arka ? '🛡️ Ön safa al' : '🏹 Arka safa al' }), { k: 'kolezyum-mevzi' })
         + (yarali && iyilesme && !iyilesme.isFull
           ? uyari(`Şampiyonun yaralı. Anında iyileştirme: ${esc(tam(otBilgisi.herbsNeeded))} 🌿 şifalı ot + ${esc(astra(otBilgisi.herbAdaCost))} ASTRA${otBilgisi.herbsInStock < otBilgisi.herbsNeeded ? ' (eksik ot pazardan alınır)' : ''}.`, 'uyari')
             + dugme({ e: 'iyilestir', metin: '⚡ Hızlı iyileştir', ton: 'iyi' })
           : '')
     }),
     kart({
-      baslik: 'Giriş bedeli',
+      baslik: 'Maça çık',
       icerik: satir('Bugünkü maç', `${giris.used} / ${giris.cap}`, giris.used >= giris.cap ? 'kotu' : '')
-        + satir('Giriş ücreti', `${astra(giris.fee)} ASTRA (sende ${astra(giris.balance)})`, giris.balance < giris.fee ? 'kotu' : '')
-        + satir('Stamina bedeli', `${giris.staminaCost} ⚡ (sende ${giris.stamina})`, giris.stamina < giris.staminaCost ? 'kotu' : '')
-        + odulTavaniSatirlari(b, giris, tier)
+        + satir('Bedel', `${astra(giris.fee)} ASTRA + ${giris.staminaCost} ⚡`, (giris.balance < giris.fee || giris.stamina < giris.staminaCost) ? 'kotu' : '')
+        + katli('Bedel ve ödül ayrıntısı', satir('Giriş ücreti', `${astra(giris.fee)} ASTRA (sende ${astra(giris.balance)})`, giris.balance < giris.fee ? 'kotu' : '')
+          + satir('Stamina bedeli', `${giris.staminaCost} ⚡ (sende ${giris.stamina})`, giris.stamina < giris.staminaCost ? 'kotu' : '')
+          + odulTavaniSatirlari(b, giris, tier), { k: 'kolezyum-bedel' })
+        // Günlük ödül tavanı dolduysa neden ödül gelmediği ilk bakışta görünür
+        + ((gunlukOdul(b, giris) || { kalan: 1 }).kalan <= 0 ? uyari('Bugünkü ASTRA ödül tavanın doldu: maça çıkabilirsin ama ASTRA ödülü gelmez.', 'uyari') : '')
         + dugme({ e: 'dovus', ton: 'iyi', genis: true, devreDisi: !!engel, metin: engel ? `🔒 ${esc(engel)}` : '⚔️ Kolezyuma çık (1v1)' })
     }),
     katli(`🎯 Taktik: ${esc(taktikAd)}`,

@@ -60,7 +60,7 @@ function odemeDugmeleri(b, carpan) {
     });
   }).join('');
   const carpanSecici = carpanlar.length > 1
-    ? `<p class="ek-kucuk">Çarpan: zaman kazanmak için bedel ve ödemeler aynı oranda büyür (yalnız ASTRA ile).</p>`
+    ? `<p class="ek-kucuk">Çarpan: bedel ve ödül aynı oranda büyür (yalnız ASTRA).</p>`
       + dugmeler(...carpanlar.map((n) => dugme({ e: 'carpan', veri: { carpan: n }, ton: n === carpan ? 'birincil' : 'hayalet', metin: `×${esc(n)} · ${esc(astra(tekBedel * n))} ASTRA` })))
     : '';
 
@@ -135,23 +135,24 @@ function carkSekmesi(b, secenek) {
   });
 
   return [
+    // Üstte tek cümle + çark + çevirme düğmeleri; kurallar, ödül tablosu ve günlük hediye katlı (20 Ekim 2026, arayüz sadeleştirme)
     kart({
-      baslik: `🎡 ${esc(dilimler(b).length)} ödüllü Krallık Çarkı`,
-      rozet: etiket(`Ortalama dönüş ~%${ist.donus}`, ist.donus >= 100 ? 'uyari' : 'vurgu'),
-      icerik: not(`${esc(astra(gs.getWheelCostAda()))} ASTRA, eş değer hammadde ya da 1 piyango bileti ile çevirebilirsin (×2 ve ×10 çarpanı yalnız ASTRA ile). Ödüller Karnaval kasasından ödenir; çevirmelerin yaklaşık %${esc(ist.geri)}'inde en az bedelini geri alırsın. Verilen oran, Şans Sayacı hariç ortalamadır; sayaç dolunca garantili ödül ortalamayı biraz yükseltir.`)
-        + satir('Bilet parçaların', `${parca}/3`)
-        + cubukSatiri('🍀 Şans Sayacı (bedelini geri almayan çevirme)', `${sayac.streak}/${sayac.limit}`, (sayac.streak / sayac.limit) * 100, { ton: sayac.streak >= sayac.limit - 1 ? 'dolu' : '' })
-        + not(`Art arda ${esc(sayac.limit)} çevirmede bedelini (en az 1 ASTRA değeri ya da piyango bileti) geri alamazsan sonraki çevirme garantili nakittir.`)
+      baslik: `🎡 Krallık Çarkı · ${esc(astra(gs.getWheelCostAda()))} ASTRA`,
+      rozet: etiket(`🍀 Şans ${sayac.streak}/${sayac.limit}`, sayac.streak >= sayac.limit - 1 ? 'uyari' : 'vurgu'),
+      icerik: not('Çarkı çevir, ödülü hemen kazan. ASTRA, piyango bileti ya da hammaddeyle çevrilir.')
+        + katli('Kurallar ve şans sayacı (ayrıntı)',
+          not(`Ödüller Karnaval kasasından ödenir; çevirmelerin yaklaşık %${esc(ist.geri)}'inde en az bedelini geri alırsın (ortalama dönüş ~%${esc(ist.donus)}, Şans Sayacı hariç). Çarpan (×2, ×10) yalnız ASTRA ile kullanılır.`)
+          + satir('Bilet parçaların', `${parca}/3`)
+          + cubukSatiri('🍀 Şans Sayacı (bedelini geri almayan çevirme)', `${sayac.streak}/${sayac.limit}`, (sayac.streak / sayac.limit) * 100, { ton: sayac.streak >= sayac.limit - 1 ? 'dolu' : '' })
+          + not(`Art arda ${esc(sayac.limit)} çevirmede bedelini geri alamazsan sonraki çevirme garantili nakittir.`), { k: 'cark-kural' })
     }),
     sahne,
     sonucKarti(b, secenek.sonuc),
     durum.open ? '' : uyari(`Karnaval kasası yenileniyor (${esc(astra(durum.balance))} / ${esc(astra(durum.minBalance))} ASTRA). Kasa en büyük ödülü karşılayacak kadar dolunca çark yeniden açılır.`, 'uyari'),
     odemeDugmeleri(b, carpan),
-    kart({
-      baslik: '🎪 Karnaval coşkusu',
-      icerik: not('Günde bir kez karnavala katılıp +10 ⚡ stamina kazanırsın.')
-        + dugme({ e: 'cheer', metin: cheerYapildi ? '✅ Bugün katıldın' : '🎪 Coşkuya katıl (+10 ⚡)', devreDisi: cheerYapildi, genis: true })
-    }),
+    katli(`🎪 Günlük hediye${cheerYapildi ? ' (alındı ✅)' : ' (+10 ⚡ stamina)'}`,
+      not('Günde bir kez karnavala katılıp +10 ⚡ stamina kazanırsın.')
+      + dugme({ e: 'cheer', metin: cheerYapildi ? '✅ Bugün katıldın' : '🎪 Coşkuya katıl (+10 ⚡)', devreDisi: cheerYapildi, genis: true }), { k: 'cark-cosku' }),
     katli('📋 Çarkın ödülleri ve şansları', izgara(odulTablosu, { genis: true })
       + not('Hammadde, parça ve stamina ödülleri Karnaval kasasının parasıyla pazardan satın alınıp sana verilir (stamina için kasa buğday alıp yakar); pazarda bulunamazsa ödülün ASTRA karşılığı ödenir. Çarpanlı çevirmede her ödül aynı oranda büyür.'), { k: 'cark-odul' })
   ].join('');
@@ -174,8 +175,9 @@ function piyangoSekmesi(b) {
     kart({
       baslik: '🎟️ Haftalık Krallık Piyangosu',
       rozet: etiket('Çekiliş: Pazartesi 00:01 (TSİ)'),
-      icerik: not('Her hafta <b>tek kazanan</b> çıkar; kazanma şansın elindeki bilet sayısıyla orantılıdır. Kazanan, biletlerine ödediğinin <b>2 katını</b> kasadan alır ve ödülü çektiği an <b>elindeki bütün biletler yanar</b>. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder.')
-        + (yerel ? uyari('Tek başına oynama modunda diğer bilet sahipleri temsilidir. Gerçek oyuncularla ortak piyango çevrimiçi modda çalışır.') : '')
+      icerik: not('Her hafta <b>tek kazanan</b> çıkar. Ne kadar çok biletin varsa şansın o kadar yüksek.')
+        + katli('Kurallar (ayrıntı)', not('Kazanan, biletlerine ödediğinin <b>2 katını</b> kasadan alır ve ödülü çektiği an <b>elindeki bütün biletler yanar</b>. Kazanamayanın biletleri yanmaz, sonraki haftaya devreder.')
+          + (yerel ? uyari('Tek başına oynama modunda diğer bilet sahipleri temsilidir. Gerçek oyuncularla ortak piyango çevrimiçi modda çalışır.') : ''), { k: 'piyango-kural' })
     }),
     izgara([
       hucre('Piyango kasası', `${astra(l.pool)} ASTRA`),
@@ -183,12 +185,10 @@ function piyangoSekmesi(b) {
       hucre('Kazanma şansın', `%${sayi(l.chance * 100, 2)}`),
       hucre('Sonraki çekiliş', sure(sonraki - Date.now()))
     ]),
-    kart({
-      baslik: '🛡️ Günlük bilet sınırın',
-      icerik: cubukSatiri('Bugün aldığın', `${tam(l.boughtToday)} / ${tam(l.maxPerDay)}`, l.maxPerDay > 0 ? (l.boughtToday / l.maxPerDay) * 100 : 0, { ton: l.canBuy > 0 ? '' : 'dolu' })
-        + satir('Elindeki bilet (devredenler dahil)', `${tam(l.myTickets)} bilet / toplam ${tam(l.totalTickets)}`)
-        + satir('Bu biletler için ödediğin', `${astra(l.paid)} ASTRA`)
-    }),
+    katli(`🛡️ Günlük bilet sınırın (${tam(l.boughtToday)}/${tam(l.maxPerDay)}) ve biletlerin`,
+      cubukSatiri('Bugün aldığın', `${tam(l.boughtToday)} / ${tam(l.maxPerDay)}`, l.maxPerDay > 0 ? (l.boughtToday / l.maxPerDay) * 100 : 0, { ton: l.canBuy > 0 ? '' : 'dolu' })
+      + satir('Elindeki bilet (devredenler dahil)', `${tam(l.myTickets)} bilet / toplam ${tam(l.totalTickets)}`)
+      + satir('Bu biletler için ödediğin', `${astra(l.paid)} ASTRA`), { k: 'piyango-sinir' }),
     kart({
       baslik: '🎟️ Bilet al',
       icerik: `<div class="ek-alan-satiri"><label class="ek-alan" for="ek-bilet-adet"><span>Bilet adedi</span>
@@ -226,20 +226,15 @@ function kasaSekmesi(b) {
       baslik: '🎪 Karnaval kasası',
       rozet: etiket(durum.open ? 'çark açık' : 'çark kapalı', durum.open ? 'iyi' : 'uyari'),
       icerik: satir('Kasadaki ASTRA', `${astra(durum.balance)} ASTRA`)
-        + satir('Çarkın açık kalması için en az', `${astra(durum.minBalance)} ASTRA`)
-        + not(`Çarkın ASTRA bedelinin %${esc(sayi(b.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100, 0))}'i doğrudan bu kasaya girer; çark ve eşya ödülleri buradan ödenir. Kasa yetmezse ödül yoktan verilmez, çark kapanır.`)
+        + katli('Kasa nasıl çalışır? (ayrıntı)', satir('Çarkın açık kalması için en az', `${astra(durum.minBalance)} ASTRA`) + not(`Çarkın ASTRA bedelinin %${esc(sayi(b.GAME_CONFIG.CARNIVAL.WHEEL_CARNIVAL_SHARE * 100, 0))}'i doğrudan bu kasaya girer; çark ve eşya ödülleri buradan ödenir. Kasa yetmezse ödül yoktan verilmez, çark kapanır.`), { k: 'kasa-nasil' })
     }),
     kart({
-      baslik: '🎟️ Piyango kasaları',
+      baslik: '🎟️ Piyango kasası',
       icerik: satir('Piyango kasası', `${astra(l.pool)} ASTRA`)
-        + satir('Amorti kasası', `${astra(l.amortiPool)} ASTRA`)
-        + satir('Kazananı bekleyen ödül', `${astra(l.pendingPayout)} ASTRA`)
+        + katli('Diğer piyango kasaları', satir('Amorti kasası', `${astra(l.amortiPool)} ASTRA`) + satir('Kazananı bekleyen ödül', `${astra(l.pendingPayout)} ASTRA`), { k: 'kasa-piyango' })
     }),
-    kart({ baslik: '🎁 Haftalık ücretsiz oyuncu payı', icerik: ucretsiz }),
-    dugmeler(
-      dugme({ e: 'git', veri: { hedef: 'hazine' }, metin: '👑 Tüm kasalar (Konsey ve Hazine)' }),
-      dugme({ e: 'git', veri: { hedef: 'ekonomi' }, metin: '📈 Ekonomi panosu' })
-    )
+    katli('🎁 Haftalık ücretsiz oyuncu payı (ayrıntı)', ucretsiz, { k: 'kasa-ucretsiz' }),
+    dugme({ e: 'git', veri: { hedef: 'hazine' }, metin: '👑 Tüm kasalar (Hazine)' })
   ].join('');
 }
 
@@ -252,8 +247,11 @@ const ekran = {
 
   govde(b, secenek) {
     secenek.sekme = secenek.sekme || 'cark';
+    // Kasalar sekmesi yeni oyuncuyu yormasın: 5. seviyeden sonra görünür (doğrudan bağlantıyla yine açılır)
+    const seviye = Number(b.gameState.state.level) || 1;
+    const sekmeListesi = SEKMELER.filter((s) => s.id !== 'havuzlar' || seviye >= 5 || secenek.sekme === 'havuzlar');
     const icerik = secenek.sekme === 'piyango' ? piyangoSekmesi(b) : (secenek.sekme === 'havuzlar' ? kasaSekmesi(b) : carkSekmesi(b, secenek));
-    return kap(sekmeler(SEKMELER, secenek.sekme, 'sekme') + icerik);
+    return kap(sekmeler(sekmeListesi, secenek.sekme, 'sekme') + icerik);
   },
 
   // Tuvali çizer ve son açıya çevirir (govde saf kalır; tuval her çizimde yenidir)

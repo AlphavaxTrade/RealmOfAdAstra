@@ -1973,6 +1973,20 @@ export const GAME_CONFIG = {
         `Yoğun ekranlar sadeleşti: Konsey (üstte kısa açıklama, ayrıntılar katlı), Karakterim (seviye atlama + tek düğme; bedeller, haftalık gelir ayrıntısı, hammadde ve aletler katlı), Kotalarım (önce hakkın, yenilenme süreleri katlı), Hazine (kasa özeti + üç katlı bölüm), Roket Rampası, Koleksiyon, Silo, Pazar (Satın al / Sat iki sekme, fiyat grafiği katlı) ve Sürüm geçmişi (yalnız en yeni sürüm açık, her sürümde ilk 3 madde görünür).`,
         `⚖️ Teçhizat yükseltmesi artık kolay değil: demir, odun, kömür ve taş adetleri silonun alabileceği kadarıyla sınırlı olduğu için zorluk ASTRA bedelinden geldi. Yükseltme ASTRA bedeli = hammaddenin pazar değeri × seviye çarpanı (2. seviyeye ×3, 10. seviyeye ×33). Bir eşyayı 1'den 10'a çıkarmak yaklaşık 320.000 ASTRA (eskiden ~12.700). İlk üç basamak yine ucuz; yük üst seviyelere biner. Parça bedelleri ve onarım bedeli değişmedi.`
       ]
+    },
+    {
+      version: 'v1.87',
+      title: '🧹 Daha sade ekranlar: Karnaval, Ekonomi, Taverna, Kotalarım, Zindan, Arena',
+      date: '20 Ekim 2026',
+      changes: [
+        `Karnaval: çarkın üstünde tek cümle ve çevirme düğmeleri; kurallar, Şans Sayacı, ödül tablosu ve günlük hediye katlı bölümlere taşındı. Piyango'da kurallar ve günlük bilet sınırı, Kasalar'da ayrıntılar katlı.`,
+        `Ekonomi panosu: ilk bakışta yalnız "Ekonomi durumu" kartı; ASTRA akışı, kasalar, hammadde ayrıntıları ve havuzlar katlı.`,
+        `Taverna: botun durumu ve paket düğmeleri üstte; sefer durumu ve bot ayarları katlı. Üretim Hakkı bekleme uyarısı kısaldı.`,
+        `Kotalarım: önce "şimdi ne kadar çıkarabilirsin" çubukları; haftalık hak ve hesap ayrıntıları katlı.`,
+        `Arena: Düello'da giriş bedeli tek satıra indi (ayrıntı katlı), mevzi seçimi katlı; günlük ASTRA ödül tavanı dolduysa bunu açıkça söyler. Savaş alanı: önce ordun ve ödülün, hasar formülü katlı.`,
+        `Zindan: canavarın hikâyesi ve yetenekleri odada katlı; "Zindan modu" düğmesi ilk boss geçilene kadar gizli.`,
+        `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
+      ]
     }
   ],
 

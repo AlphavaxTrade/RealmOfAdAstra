@@ -35,8 +35,8 @@ function botKarti(b) {
     baslik: `<img class="ek-bot-resim" src="${BOT_RESMI}" alt="" draggable="false" data-fb="text:🤖"> Otomasyon botu`,
     rozet: durumEtiketi,
     vurgu: duraklatildi ? 'uyari' : (calisiyor ? 'iyi' : ''),
-    icerik: not('Sen yokken altı alanda (buğday, taş, odun, kömür, demir, şifalı ot) seferleri kendisi başlatır, staminayı buğdayla doldurur ve aletleri onarır. Ücreti, botun sana kazandıracağı <b>günlük net kârın yarısıdır</b>.')
-      + (hakBekliyor ? uyari(`<b>Bot bekliyor: Üretim Hakkın bitti.</b> Altı kaynaktan hiçbirinde şu an çıkarabileceğin hak kalmadığı için bot boşuna çalışmıyor. Kalan süren (${esc(kalanMetin)}) bu sırada <b>azalmaz</b>; yeni hak açıldığında (her gün gece 00:00 TSİ'de günün parçası, hafta başında yeni hak) bot kaldığı yerden devam eder.`, 'uyari') : '')
+    icerik: not('Sen yokken seferleri kendisi başlatır, staminayı doldurur, aletleri onarır. Ücret: botun kazandıracağı <b>günlük net kârın yarısı</b>.')
+      + (hakBekliyor ? uyari(`<b>Bot bekliyor: Üretim Hakkın bitti.</b> Kalan süren (${esc(kalanMetin)}) <b>azalmaz</b>; yeni hak açılınca (her gün 00:00 TSİ) bot kaldığı yerden devam eder.`, 'uyari') : '')
       + (duraklatildi && !hakBekliyor ? uyari(`<b>Bot bekliyor:</b> çalışmak ve aletleri onarmak için deponda en az ${tam(ON.iron)} demir, ${tam(ON.wood)} odun, ${tam(ON.wheat)} buğday ve ${ON.adAstra} ASTRA olmalı. Kalan süren (${esc(kalanMetin)}) bu sırada azalmaz. <b>Eksikler:</b> ${esc(onkosul.missingText)}. Tamamladığın anda bot kaldığı yerden devam eder.`, 'uyari') : '')
       + `<div class="ek-dugmeler">${paketDugmeleri.join('')}</div>`
   });
@@ -50,11 +50,9 @@ function seferDurumu(b) {
     const durum = sefer ? (sefer.isCompleted ? '✅ toplanıyor' : '⏳ sürüyor') : '💤 boşta';
     return `<div class="ek-oge">${simge(kaynakSimgesi(b, k), true)}<div class="ek-oge-govde"><small>${esc(kaynakAdi(b, k))}</small><b>${durum}</b></div></div>`;
   });
-  return kart({
-    baslik: `${calisiyor ? '🟢 Bot çalışıyor' : '⚪ Bot beklemede'} · seferler`,
-    rozet: calisiyor ? dugme({ e: 'dongu', metin: '🚀 Boştakileri şimdi başlat', ton: 'iyi' }) : '',
-    icerik: izgara(hucreler, { kolon: 2 })
-  });
+  const dolu = b.GAME_CONFIG.RESOURCE_KEYS.filter((k) => gs.state.activeExpeditions?.[k]).length;
+  return katli(`${calisiyor ? '🟢 Bot çalışıyor' : '⚪ Bot beklemede'} · seferler (${dolu}/${b.GAME_CONFIG.RESOURCE_KEYS.length})`,
+    (calisiyor ? dugme({ e: 'dongu', metin: '🚀 Boştakileri şimdi başlat', ton: 'iyi' }) : '') + izgara(hucreler, { kolon: 2 }), { k: 'bot-seferler' });
 }
 
 function ayarlar(b) {
@@ -63,16 +61,14 @@ function ayarlar(b) {
   const yenile_ = !!gs.state.botAutoRenew24h;
   const secenek = (deger, etiket, aciklama, secili) => `<button type="button" class="ek-secenek${secili ? ' is-secili' : ''}" data-e="siloSecenegi" data-deger="${deger}" aria-pressed="${secili}">
       <b>${secili ? '◉' : '○'} ${esc(etiket)}</b><small>${esc(aciklama)}</small></button>`;
-  return kart({
-    baslik: '⚙️ Bot ayarları',
-    icerik: `<div class="ek-alt-baslik">Silo dolarsa</div>
+  return katli('⚙️ Bot ayarları (silo dolunca, otomatik yenileme)',
+    `<div class="ek-alt-baslik">Silo dolarsa</div>
       <div class="ek-liste">
         ${secenek('upgrade', 'Siloyu büyüt', "Güvenlik payının üstündeki ASTRA'yı kullanır, yetmezse fazla ürünü satar.", siloBuyut)}
         ${secenek('sell', 'Fazlasını sat', 'Silonun yarısını yedek tutar, fazlasını pazarda satar.', !siloBuyut)}
       </div>
       <button type="button" class="ek-secenek${yenile_ ? ' is-secili' : ''}" data-e="otoYenile" aria-pressed="${yenile_}">
-        <b>${yenile_ ? '☑' : '☐'} Süre bitince otomatik yenile</b><small>Hesabında yeterli ASTRA varsa bot 24 saat daha çalışır.</small></button>`
-  });
+        <b>${yenile_ ? '☑' : '☐'} Süre bitince otomatik yenile</b><small>Hesabında yeterli ASTRA varsa bot 24 saat daha çalışır.</small></button>`, { k: 'bot-ayar' });
 }
 
 function ucretDokumu(b) {

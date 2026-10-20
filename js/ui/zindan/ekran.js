@@ -108,7 +108,8 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     // Zindan modu rozeti: Normal'de de görünür; son boss yenilince ve bir üst mod varsa "geçiş hazır" vurgusu
     const mb = gs.getDungeonModeInfo();
     const gecisHazir = mb.bitti && !mb.enYuksekMod;
-    const modDugme = `<button type="button" class="zd-dugme zd-kucuk${gecisHazir ? ' zd-ana' : ''}" data-e="mod" title="Zindan modu: canavar gücü, ödül çarpanı, asker hakkı ve bir üst moda geçiş">${mb.simge} ${esc(mb.ad)}${gecisHazir ? ` · ${esc(mb.gecis.hedefAd)} moda geç` : ''}</button>`;
+    const modGorunur = gecisHazir || mod() > 0 || ilerleme() > 9;   // yeni oyuncuda gizli: ilk boss geçilince açılır
+    const modDugme = !modGorunur ? '' : `<button type="button" class="zd-dugme zd-kucuk${gecisHazir ? ' zd-ana' : ''}" data-e="mod" title="Zindan modu: canavar gücü, ödül çarpanı, asker hakkı ve bir üst moda geçiş">${mb.simge} ${esc(mb.ad)}${gecisHazir ? ` · ${esc(mb.gecis.hedefAd)} moda geç` : ''}</button>`;
     return `<div class="zd-serit" role="status" aria-label="Ordu durumu">
       <div class="zd-serit-bilgi">${parcalar.join('')}</div>
       <div class="zd-serit-dugme">${asker}${iyilestir}${tekrar}${modDugme}<button type="button" class="zd-dugme zd-kucuk" data-e="kutuk">📖 Kütük</button></div>
@@ -215,14 +216,13 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
           <div><h2>${esc(m.name)}</h2><p>Seviye ${m.level}${boss ? ' · ' + esc(m.bossLabel || 'BOSS') : ''} · ${esc(kat.ad)}</p></div>
           ${durumRozeti}
         </header>
-        ${kilitli ? '' : `<p class="zd-hikaye">${esc(HIKAYE[m.level] || '')}</p>`}
         ${kilitli ? '' : `<div class="zd-istat">
           <div><small>❤️ Can${oz.yaralanmis ? ' (yaralı)' : ''}</small><b>${tam(oz.kalanCan)} / ${tam(m.hp)}</b>
             <span class="zd-cubuk" aria-hidden="true"><i style="width:${canYuzde}%"></i></span></div>
           <div><small>⚔️ Saldırı</small><b>${tam(m.atk)}</b></div>
         </div>`}
         ${sansBlok}
-        ${kilitli || !yet ? '' : `<ul class="zd-yet" aria-label="Yetenekler">${yet}</ul>`}
+        ${kilitli || (!yet && !HIKAYE[m.level]) ? '' : `<details class="zd-katli"><summary>Canavar hakkında${yet ? ' ve yetenekleri' : ''}</summary>${HIKAYE[m.level] ? `<p class="zd-hikaye">${esc(HIKAYE[m.level])}</p>` : ''}${yet ? `<ul class="zd-yet" aria-label="Yetenekler">${yet}</ul>` : ''}</details>`}
         ${odemeNotu ? `<p class="zd-odeme-notu is-${odemeNotu.ton}" role="status">${odemeNotu.ton === 'kotu' ? '⛔' : '⚠️'} ${esc(odemeNotu.metin)}</p>` : ''}
         ${kilitli ? '' : `<ul class="zd-ganimet" aria-label="Ganimet">
           <li>🟣 <b>+${astra(Math.min(taban.ada, butce))} ASTRA</b></li>

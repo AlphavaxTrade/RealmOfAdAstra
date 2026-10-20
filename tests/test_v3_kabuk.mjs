@@ -40,6 +40,19 @@ console.log(`✅ ${anahtarlar.length} öğe, hepsinin eylemi var`);
 }
 console.log('✅ ana liste');
 
+// 3b) Seviyeye göre açılma (20 Ekim 2026): yeni oyuncu ileri ekranları menüde görmez, seviye gelince görünür; eski kimlikler yine açılır
+{
+  const goster = (id, seviye, k) => hubHtml(id, null, false, seviye).includes(`data-v3-git="${k}"`);
+  assert.ok(!goster('kralik', 1, 'taverna') && goster('kralik', 3, 'taverna'), 'Taverna 3. seviyede açılır');
+  assert.ok(!goster('ben', 2, 'kotalar') && goster('ben', 3, 'kotalar'), 'Kotalarım 3. seviyede açılır');
+  assert.ok(!goster('ben', 3, 'hazine') && goster('ben', 4, 'hazine'), 'Hazine 4. seviyede açılır');
+  assert.ok(!goster('ben', 4, 'ekonomi') && goster('ben', 5, 'ekonomi'), 'Ekonomi panosu 5. seviyede açılır');
+  assert.ok(!goster('pazar', 2, 'koleksiyon') && goster('pazar', 3, 'koleksiyon'), 'Koleksiyon 3. seviyede açılır');
+  assert.ok(goster('ben', 1, 'profil') && goster('kralik', 1, 'merkez') && goster('savas', 1, 'kisla'), 'temel ekranlar baştan açık');
+  assert.ok(!hubHtml('ben', null, false, 1).includes('Gelişmiş') || !hubHtml('ben', null, false, 1).includes('data-v3-git="ekonomi"'), 'Gelişmiş katında seviyesi gelmemiş öğe yok');
+}
+console.log('✅ seviyeye göre menü');
+
 // 4) Ortak bileşenler her metni kaçırır
 assert.equal(esc('<a href="x">&'), '&lt;a href=&quot;x&quot;&gt;&amp;');
 assert.match(istatSatiri('A<b>', '1<2', { ipucu: '"q"', ton: 'kotu' }), /v3-ton-kotu.*title="&quot;q&quot;".*A&lt;b&gt;.*1&lt;2/s);

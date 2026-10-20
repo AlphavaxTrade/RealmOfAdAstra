@@ -64,13 +64,15 @@ const ekran = {
       rozet: v.kilitli ? etiket('✅ savaş için kilitli', 'iyi') : etiket('⚠️ ordu kilitli değil', 'uyari'),
       icerik: izgara([
         hucre(v.kilitli ? 'Kilitli asker' : 'Hazır asker', `⚔️ ${tam(v.sayi)}`),
-        hucre('Toplam saldırı (teçhizat dahil)', `💥 ${tam(v.atk)}`),
-        hucre('Toplam can (teçhizat dahil)', `❤️ ${tam(v.hp)}`),
         hucre('Hesaplanan hasar', `🎯 ${tam(v.hasar)}`, 'iyi')
-      ])
-      + `<p class="ek-kucuk">Hasar = saldırı ${esc(tam(v.atkKatki))} (1:1) + can ${esc(tam(v.hp))} × 0,25 = ${esc(tam(v.hpKatki))} → toplam ${esc(tam(v.atkKatki + v.hpKatki))} × yetenek çeşitliliği ${esc(sayi(v.carpan, 2))}</p>`
+      ], { kolon: 2 })
       + satir(v.kilitli ? 'Kilitli ordunun Pazar kazancı' : 'Tahmini Pazar kazancı', `~${astra(v.beklenen)} ASTRA`, 'iyi')
-      + `<p class="ek-kucuk">${esc(tam(v.hasar))} hasar × ${esc(sayi(v.oran, 3))} ASTRA</p>`
+      + katli('Hasar nasıl hesaplanır? (ayrıntı)', izgara([
+        hucre('Toplam saldırı (teçhizat dahil)', `💥 ${tam(v.atk)}`),
+        hucre('Toplam can (teçhizat dahil)', `❤️ ${tam(v.hp)}`)
+      ], { kolon: 2 })
+        + `<p class="ek-kucuk">Hasar = saldırı ${esc(tam(v.atkKatki))} (1:1) + can ${esc(tam(v.hp))} × 0,25 = ${esc(tam(v.hpKatki))} → toplam ${esc(tam(v.atkKatki + v.hpKatki))} × yetenek çeşitliliği ${esc(sayi(v.carpan, 2))}</p>`
+        + `<p class="ek-kucuk">${esc(tam(v.hasar))} hasar × ${esc(sayi(v.oran, 3))} ASTRA</p>`, { k: 'boss-hasar' })
       + dugmeler(
         dugme({ e: 'kilitle', metin: v.kilitli ? '🔄 Kilitli orduyu güncelle' : '🛡️ Tüm ordumu kilitle (Pazar 18:00 için)', ton: v.kilitli ? '' : 'birincil', devreDisi: v.asker.length === 0 }),
         v.kilitli ? dugme({ e: 'erken', metin: `🔓 %${Math.round(cezaOrani * 100)} cezayla erken çek (${astra(Math.max(1, Math.round(v.g.estimatedAda * cezaOrani)))} ASTRA)`, ton: 'tehlike' }) : ''
@@ -82,9 +84,9 @@ const ekran = {
       baslik: `${esc(boss.icon)} ${esc(boss.name)}`,
       rozet: etiket('Pazar 18:00 TSİ otomatik savaş'),
       icerik: cubukSatiri('Boss canı', `${tam(boss.bossHp)} / ${tam(boss.maxBossHp)} (%${Math.floor(bossCan)})`, bossCan, { renk: '#ef4444' })
-        + satir('Hasar başına ASTRA', `1 hasar = ${sayi(v.oran, 3)} ASTRA`)
-        + satir('Önceki savaştaki toplam hasarın', `${tam(boss.userDamage || 0)}`, 'iyi')
-        + satir('Sonraki otomatik savaş', `${kalanMetin} (Pazar 18:00 TSİ)`)
+        + satir('Sonraki otomatik savaş', `${kalanMetin}`)
+        + katli('Ayrıntı', satir('Hasar başına ASTRA', `1 hasar = ${sayi(v.oran, 3)} ASTRA`)
+          + satir('Önceki savaştaki toplam hasarın', `${tam(boss.userDamage || 0)}`, 'iyi'), { k: 'boss-ayrinti' })
     });
 
     const odul = kart({
@@ -97,7 +99,7 @@ const ekran = {
           ton: talep > 0 ? 'birincil' : '', devreDisi: !(talep > 0 || v.kilitli), genis: true
         })
     });
-    return kap([grupSekmeleri('arena', 'savasalani'), aciklama, ordu, bossKarti, odul].join(''));
+    return kap([grupSekmeleri('arena', 'savasalani'), aciklama, ordu, odul, bossKarti].join(''));
   },
 
   eylemler: {

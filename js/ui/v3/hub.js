@@ -14,7 +14,7 @@ export const SEKMELER = [
 export const HUB = {
   kralik: { baslik: ['🏰', 'Krallık'], ogeler: [
     { k: 'merkez', s: '🏰', ad: 'Krallık merkezi', ac: 'Topla, onar, doldur: tek dokunuşla toplu işlemler' },
-    { k: 'taverna', s: '🍺', ad: 'Taverna ve bot', ac: '24 saat kendiliğinden çalışan yardımcı', kilit: 'tavern' },
+    { k: 'taverna', s: '🍺', ad: 'Taverna ve bot', ac: '24 saat kendiliğinden çalışan yardımcı', kilit: 'tavern', minSeviye: 3 },
     { k: 'demirhane', s: '⚒️', ad: 'Demirhane', ac: 'Dövme, onarım, geri dönüşüm', kilit: 'blacksmith' },
     { k: 'koy', s: '🏘️', ad: 'Köy ve Konsey', ac: 'Köylüler, evler, ortak projeler ve katkın' },
     { k: 'uzay', s: '🚀', ad: 'Roket Rampası', ac: 'UOA ya geçiş roketi ve hazırlık deposu', minSeviye: 8 },
@@ -33,7 +33,7 @@ export const HUB = {
   pazar: { baslik: ['🏪', 'Pazar'], ogeler: [
     { k: 'pazar', s: '🏪', ad: 'Meydan pazarı', ac: 'Hammadde al-sat, teçhizat parçası, ilanlar', kilit: 'market' },
     { k: 'karnaval', s: '🎪', ad: 'Karnaval', ac: 'Şans çarkı ve haftalık piyango', kilit: 'carnival' },
-    { k: 'koleksiyon', s: '👑', ad: 'Sandıklar ve koleksiyon', ac: 'Sandıkların, anahtarların, koleksiyonun' }
+    { k: 'koleksiyon', s: '👑', ad: 'Sandıklar ve koleksiyon', ac: 'Sandıkların, anahtarların, koleksiyonun', minSeviye: 3 }
   ] },
   ben: { baslik: ['👤', 'Ben'], ogeler: [
     { k: 'profil', s: '🧙', ad: 'Karakterim', ac: 'Seviye, stamina ve haftalık gelirin' },
@@ -43,9 +43,9 @@ export const HUB = {
     { k: 'ayarlar', s: '⚙️', ad: 'Ayarlar', ac: 'Yazı boyutu, hareket, klavye kısayolları' },
     { k: 'sorunbildir', s: '📮', ad: 'Sorun bildir', ac: 'Hata, öneri ya da soru gönder; ekran görüntüsü ekle' },
     // Gelişmiş: yeni oyuncunun ilk bakışta ihtiyacı olmayan ekranlar tek katlı bölümde
-    { k: 'kotalar', s: '📊', ad: 'Kotalarım', ac: 'Bugün ve bu hafta neler kaldı', gelismis: true },
-    { k: 'hazine', s: '🏛️', ad: 'Hazine ve gelir panosu', ac: 'Kasalar, kapı durumu, katılım karnen', gelismis: true },
-    { k: 'ekonomi', s: '📈', ad: 'Ekonomi panosu', ac: 'Oyunun parası nerede, ne kadar dönüyor', gelismis: true },
+    { k: 'kotalar', s: '📊', ad: 'Kotalarım', ac: 'Bugün ve bu hafta neler kaldı', gelismis: true, minSeviye: 3 },
+    { k: 'hazine', s: '🏛️', ad: 'Hazine ve gelir panosu', ac: 'Kasalar, kapı durumu, katılım karnen', gelismis: true, minSeviye: 4 },
+    { k: 'ekonomi', s: '📈', ad: 'Ekonomi panosu', ac: 'Oyunun parası nerede, ne kadar dönüyor', gelismis: true, minSeviye: 5 },
     { k: 'tur', s: '🎓', ad: 'Oyun turu', ac: 'Oyunu baştan, adım adım tanıt', gelismis: true },
     { k: 'komut', s: '🔎', ad: 'Ara ve git', ac: 'Her yere yazarak git (Ctrl+K)', gelismis: true },
     { k: 'duyurular', s: 'ℹ️', ad: 'Duyurular ve uyarılar', ac: 'Önemli bilgilendirmeler', gelismis: true },

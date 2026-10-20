@@ -26,21 +26,16 @@ function genel(b) {
       icerik: `<p class="ek-not"><b>${esc(m.statusText)}</b></p>`
         + satir('Ödeme gücü (kasalardan çıkan / giren)', `%${sayi(m.payoutRatio * 100, 1)}`, m.payoutRatio > 1 ? 'kotu' : 'iyi')
         + satir('Ortalama kasa sağlığı', `%${sayi(m.treasuryHealth * 100, 0)}`, m.treasuryHealth < 0.4 ? 'kotu' : (m.treasuryHealth < 0.7 ? 'uyari' : 'iyi'))
-        + not('Ödeme gücü 100%\'ün altında kaldıkça kasalar dolu kalır; üstüne çıkarsa ödüller kasaları eritiyor demektir ve ödüller küçülür.')
+        + katli('Bu ne demek? (ayrıntı)', not('Ödeme gücü 100%\'ün altında kaldıkça kasalar dolu kalır; üstüne çıkarsa ödüller kasaları eritiyor demektir ve ödüller küçülür.'), { k: 'eko-anlam' })
     }),
-    kart({
-      baslik: '🔥 ASTRA akışı',
-      icerik: satir('Oyunda harcanan toplam', `${astra(harcanan)} ASTRA`)
+    katli('🔥 ASTRA akışı (harcanan, yakılan, kasalar)',
+      satir('Oyunda harcanan toplam', `${astra(harcanan)} ASTRA`)
         + satir('Kalıcı yakılan', `${astra(gs.totalBurned || 0)} ASTRA${pay(gs.totalBurned || 0)}`, 'uyari')
         + satir('Yapımcı payı (telif)', `${astra(gs.creatorRoyaltyTotal || 0)} ASTRA${pay(gs.creatorRoyaltyTotal || 0)}`)
         + satir('Temel gelir kasasına giren (bu hafta)', `${astra(gs.ubiWeekAccrued || 0)} ASTRA`)
         + satir('Kasalara giren (ömür boyu)', `${astra(t.lifetimeDeposited)} ASTRA`)
-        + satir('Kasalardan çıkan (ömür boyu)', `${astra(t.lifetimeWithdrawn)} ASTRA`)
-    }),
-    kart({
-      baslik: '💎 Kasalar',
-      icerik: izgara(t.pools.map((p) => hucre(p.name, `${astra(p.balance)} ASTRA`, p.health < 0.25 ? 'kotu' : '')), { genis: true })
-    }),
+        + satir('Kasalardan çıkan (ömür boyu)', `${astra(t.lifetimeWithdrawn)} ASTRA`), { k: 'eko-akis' }),
+    katli('💎 Kasalar', izgara(t.pools.map((p) => hucre(p.name, `${astra(p.balance)} ASTRA`, p.health < 0.25 ? 'kotu' : '')), { genis: true }), { k: 'eko-kasalar' }),
     katli('Yakılan hammaddeler (kalıcı)', izgara(b.GAME_CONFIG.RESOURCE_KEYS.map((k) => hucre(kaynakAdi(b, k), tam((gs.totalBurnedResources || {})[k] || 0))), {}), { k: 'yakim' })
   ].join('');
 }
@@ -61,14 +56,16 @@ function kaynakDengesi(b) {
     const durum = r.remaining <= 0 ? ['tükendi', 'kotu'] : (sigma > 1.25 ? ['hızlı tükeniyor', 'uyari'] : (sigma < 0.5 ? ['bol', 'iyi'] : ['dengede', 'iyi']));
     return kart({
       icerik: `<div class="ek-oge">${simge(kaynakSimgesi(b, k))}
-          <div class="ek-oge-govde"><b>${esc(kaynakAdi(b, k))}</b><small>haftalık kota ${esc(tam(bilgi.baseCap))} · bugün alınabilir ${esc(tam(bilgi.availableToday))}</small></div>
+          <div class="ek-oge-govde"><b>${esc(kaynakAdi(b, k))}</b><small>bugün alınabilir ${esc(tam(bilgi.availableToday))}</small></div>
           ${etiket(durum[0], durum[1])}</div>`
-        + cubukSatiri('Bu hafta kullanılan', `${tam(r.harvested || 0)} / ${tam(r.totalCap)} (%${sayi(kullanilan * 100, 0)})`, kullanilan * 100, { ton: kullanilan > 0.9 ? 'dolu' : '' })
-        + satir('Haftalık beklenen ilerleme', `%${sayi(beklenen * 100, 0)}`)
-        + satir('Bu hafta yakılan (kotadan düşen)', `${tam(yakilan)}`)
+        + cubukSatiri('Bu hafta kullanılan', `%${sayi(kullanilan * 100, 0)}`, kullanilan * 100, { ton: kullanilan > 0.9 ? 'dolu' : '' })
+        + katli('Ayrıntı', satir('Haftalık kota', tam(bilgi.baseCap))
+          + satir('Kullanılan', `${tam(r.harvested || 0)} / ${tam(r.totalCap)}`)
+          + satir('Haftalık beklenen ilerleme', `%${sayi(beklenen * 100, 0)}`)
+          + satir('Bu hafta yakılan (kotadan düşen)', `${tam(yakilan)}`), { k: 'eko-kaynak-' + k })
     });
   });
-  return not('Her hammaddenin haftalık dünya kotası var; hafta ilerledikçe kotanın payı açılır. "Dengede" hammaddenin kotanın beklenen hızında kullanıldığını gösterir.')
+  return not('Her hammaddenin haftalık dünya kotası var. "Dengede", kotanın beklenen hızda kullanıldığını gösterir.')
     + izgara(kartlar, { genis: true });
 }
 
@@ -89,7 +86,8 @@ function fiyatlar(b) {
       <b>${esc(fiyatMetni(fiyat))} ASTRA</b>
       <small class="${fark < 0 ? 'ek-kotu' : 'ek-iyi'}">açılışa göre ${fark >= 0 ? '+' : ''}${esc(sayi(Math.abs(fark) < 0.05 ? 0 : fark, 1))}%</small>${konum}</div>`;
   });
-  return not(`Fiyatı takas havuzları belirler: çok alınan pahalanır, çok satılan ucuzlar. Fiyat taban ve tavan koridoru içinde kalır. Havuzlardaki toplam ASTRA: <b>${esc(tam(amm.getTotalAdAstraLiquidity()))}</b>.`)
+  return not('Çok alınan pahalanır, çok satılan ucuzlar. Fiyat taban ve tavan arasında kalır.')
+    + katli('Havuzlar (ayrıntı)', not(`Fiyatı takas havuzları belirler. Havuzlardaki toplam ASTRA: <b>${esc(tam(amm.getTotalAdAstraLiquidity()))}</b>.`), { k: 'eko-havuz' })
     + izgara(satirlar, { genis: true });
 }
 

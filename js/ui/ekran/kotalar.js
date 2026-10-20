@@ -87,7 +87,12 @@ const ekran = {
         `Şimdi çıkarabilirsin: ${tam(hak.canTake)}`,
         oran(hak.used, hak.weekly),
         { renk: m.color || '' }
-      ) + `<div class="ek-kucuk">Bu haftaki hakkın ${tam(hak.weekly)} · çıkardığın ${tam(hak.used)}${hak.canTake < 1 ? ' · bugünlük bitti, yeni parça yarın açılır' : ''}${hak.extra > 0 ? ` · başkalarının boşta kalan hakkından +${tam(hak.extra)}` : ''}</div>`;
+      ) + (hak.canTake < 1 ? '<div class="ek-kucuk">Bugünlük bitti, yeni parça yarın açılır.</div>' : '');
+    }).join('');
+    const hakAyrinti = kaynaklar.map((k) => {
+      const hak = gs.getUretimHakki(k);
+      const m = meta[k] || adlar[k] || {};
+      return satir(`${esc(m.icon || '')} ${esc(m.name || k)}`, `hak ${tam(hak.weekly)} · çıkardığın ${tam(hak.used)}${hak.extra > 0 ? ` · +${tam(hak.extra)} boşta kalandan` : ''}`);
     }).join('');
 
     const nasil = `Haftalık payın = taban üretim × Otorite çalışma süresi (${Math.round(otorite.hours)} sa × ${Math.round(otorite.days)} gün) × sabit kişisel kota × ağırlığın (seviye ×${agirlik.levelFactor} · ev ×${agirlik.houseFactor ?? 1} · katkı kademesi ${esc(agirlik.tier.name)} ×${agirlik.tier.mult} · aktiflik ×${agirlik.activity}). Bu senin kişisel limitindir; ortak havuz kıtsa payın limitinden küçük olur (havuzun %60'ı herkese eşit, %40'ı limiti ve katkısı yüksek olanlara). Her gün 1/7'si açılır; dolunca mahsul seferde bekler. Başkalarının kullanmadığı hak, hakkını aşanlara (en çok 3 katına kadar) akar. Çıkarılanın %5'i Sirius Konseyi ortak kasasına gider.`;
@@ -110,9 +115,8 @@ const ekran = {
       sinirSatiri('💀', 'Zindan: harçsız ödüllü giriş', zindan.freeUsed, zindan.freeTotal, {
         not: zindan.nextNeedsFee ? 'Sonraki girişler harçlı' : (zindan.nextWeaponWear ? 'Her askerin birkaç eşyası girişte birer aşınır (kat ve moda göre artar)' : 'Sıradaki girişte eşyalar aşınmaz')
       }),
-      sinirSatiri('🎟️', 'Piyango: bugün aldığın bilet', piyango.boughtToday, piyango.maxPerDay),
       sinirSatiri('🏟️', 'Kolezyum maçı', sayaclar.arenaMatches || 0, kolezyumSiniri),
-      katli('Zindan ödeme bütçesi ve giriş basamakları', sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
+      katli('Piyango bileti, zindan bütçesi ve giriş basamakları', sinirSatiri('🎟️', 'Piyango: bugün aldığın bilet', piyango.boughtToday, piyango.maxPerDay) + sinirSatiri('🏦', 'Zindan kasasının bugünkü ödeme bütçesi', Math.max(0, (zindan.budget || 0) - (zindan.budgetLeft || 0)), zindan.budget || 0, {
         birim: ' ASTRA', not: `Kasa günde en fazla bakiyesinin %${sayi(((b.GAME_CONFIG.DUNGEON || {}).DAILY_BUDGET_RATE ?? 0.0036) * 100, 2)}'ini öder`
       }) + girisBasamaklari(zindan), { k: 'kota-zindan-detay' })
     ].join('');
@@ -123,11 +127,10 @@ const ekran = {
     ].join('');
 
     return kap([
-      kart({ icerik: not('Oyunda her şeyin günlük ve haftalık bir sınırı var. Bu ekran bugün ve bu hafta <b>neler kaldığını</b> gösterir: önce hammadde çıkarma hakkın, sonra günlük haklar.') }),
       kart({
         baslik: '🎫 Üretim hakkın (bu hafta)',
         rozet: etiket(`ağırlık ×${agirlik.weight} · kademe ${agirlik.tier.name}`),
-        icerik: not('Haftalık hakkın 7 güne bölünür: her gün bir parçası açılır. "Şimdi çıkarabilirsin", açılan parçadan henüz kullanmadığın miktardır; sefer mahsulü en çok bu kadar toplanır. Çubuk, haftalık hakkının ne kadarını çıkardığını gösterir.') + hakSatirlari + katli('Nasıl hesaplanır?', not(nasil), { k: 'kota-nasil' })
+        icerik: not('Bu hafta ne kadar hammadde çıkarabileceğin. Her gün bir parçası açılır; "Şimdi çıkarabilirsin" kadarını toplarsın.') + hakSatirlari + katli('Haftalık hakkın ve nasıl hesaplanır? (ayrıntı)', hakAyrinti + not(nasil), { k: 'kota-nasil' })
       }),
       katli('⏱️ Yenilenme süreleri', sayaclar3, { k: 'kota-sureler' }),
       katli(`🌍 Sirius kapasitesi (herkes) · ${gunSirasi + 1}. gün / 7`, gunSeridi + siriusSatirlari + not(siriusNotu), { k: 'kota-sirius' }),
