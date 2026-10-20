@@ -7,6 +7,9 @@ import { treasury } from '../treasury.js';
 import { RES_KEYS, zeroRes, round3 } from './ortak.js';
 import { oyuncuPayi } from '../economy/uretimDagitimi.js';
 
+// Katkı puanı ağırlığı uygulanan gelişim işleri (config CONTRIBUTION.GELISIM_AGIRLIGI); etiketler katkiKaynaginiKur ile aynıdır
+const GELISIM_ISLERI = new Set(['Hesap yükseltme', 'Silo yükseltme', 'Teçhizat dövme', 'Teçhizat geliştirme', 'Teçhizat onarımı']);
+
 export const ekonomiYontemleri = {
   // Hammadde kalıcı yakımı: harcanan hammadde oyuncunun sayacına yazılır, dünya toplam arzından (haftalık kota)
   // düşer ve pazar değeri kadar katkı puanı kazandırır. Döndürür: yakılan miktar.
@@ -240,12 +243,14 @@ export const ekonomiYontemleri = {
   // Katkı puanı yazar. tur: puanın cinsi ('astra' = harcanan ASTRA, 'yakim' = yakılan hammadde, 'satis' = hammadde satışı, 'katki' = Konsey / zindan kapısı katkısı).
   // etiket: puanı doğuran iş (verilmezse o an çalışan oyun işlemi: katkiKaynaginiKur). 20 Ekim 2026: oyuncu "katkı puanım nereden geliyor" diye sorabilsin.
   _addContribution(points, tur = 'diger', etiket = null) {
-    const p = Number(points) || 0;
+    const ad = etiket || this._katkiBaglami || 'Diğer';
+    // Gelişim işleri (hesap, silo, teçhizat) ağırlıkla çarpılır: bedelleri büyük olduğundan puanı şişirmesin
+    const agirlik = GELISIM_ISLERI.has(ad) ? (GAME_CONFIG.CONTRIBUTION?.GELISIM_AGIRLIGI ?? 1) : 1;
+    const p = (Number(points) || 0) * agirlik;
     if (!(p > 0)) return;
     const c = this._contribution();
     c.total += p;
     c.week += p;
-    const ad = etiket || this._katkiBaglami || 'Diğer';
     if (!c.kaynak || typeof c.kaynak !== 'object') c.kaynak = { hafta: {}, toplam: {} };
     if (!c.kaynak.hafta) c.kaynak.hafta = {};
     if (!c.kaynak.toplam) c.kaynak.toplam = {};

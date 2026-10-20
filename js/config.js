@@ -209,7 +209,10 @@ export const GAME_CONFIG = {
   CONTRIBUTION: {
     ADA_SPEND_WEIGHT: 1.0,          // oyunda harcanan (yakılan/kasaya giden) her ASTRA
     RESOURCE_BURN_WEIGHT: 0.5,      // harcanan/yakılan hammaddenin pazar değeri (ASTRA)
-    RESOURCE_SALE_WEIGHT: 0.5       // pazara net hammadde satışı (aynı hammaddeyi alıp satmak puan getirmez)
+    RESOURCE_SALE_WEIGHT: 0.5,      // pazara net hammadde satışı (aynı hammaddeyi alıp satmak puan getirmez)
+    // 20 Ekim 2026 (sahip kararı): hesap / silo / teçhizat gelişimi pahalı olduğu için (ASTRA bedelleri hammaddenin tam pazar değeri) katkı puanını şişiriyordu;
+    // bu işlerin puanı ağırlıkla çarpılır (hem harcanan ASTRA hem yakılan hammadde). Konsey katkısı ve diğer harcamalar etkilenmez.
+    GELISIM_AGIRLIGI: 0.2
   },
 
   // 💱 ASTRA FİYAT ÇARPANI — oyundaki sabit ASTRA fiyatları ve ödülleri bu çarpanla ölçeklenir.
@@ -1998,6 +2001,7 @@ export const GAME_CONFIG = {
         `Ekonomi panosundaki "Yakılan hammaddeler" listesine teçhizat parçası (ve yakılmışsa Pandora kutusu, anahtar, parşömen) eklendi.`,
         `Düzeltmeler: Hesap yükseltirken eldeki ot tam yetiyorken "1 şifalı ot eksik" yazması giderildi (ot payı yalnız zaten ot alınacaksa eklenir; eldeki miktar artık aşağı yuvarlanarak gösterilir). Köy evi yapabilmek artık yalnız hesap seviyesine bağlı: ev bedeli oyuncunun gerçek siloyuna sığar, silo yükselmeden de ev yapılabilir.`,
         `📊 Sirius Konseyi > Katkı puanın kartında yeni "Katkı puanın nereden geliyor?" bölümü: puanın hangi işten (hesap yükseltme, silo, teçhizat dövme / geliştirme, onarım, zindan, Konsey katkısı...) ve hangi cinsten (harcanan ASTRA, yakılan hammadde, satılan hammadde, doğrudan katkı) geldiği bu hafta ve toplam olarak listelenir. Katkı puanı yalnız Konsey katkısından değil, harcadığın her ASTRA'dan ve yaktığın / sattığın hammaddeden de yazılır. Bu özellikten önce birikmiş puan "Eski kayıtlar" satırında görünür.`,
+        `⚖️ Katkı puanı dengesi: hesap yükseltme, silo yükseltme ve teçhizat dövme / geliştirme / onarım işlerinin puanı %20 ağırlıkla yazılır (bedelleri hammaddenin tam pazar değerine çıkınca katkı puanını şişiriyordu). Konsey katkısı ve diğer harcamalar tam ağırlıktadır. Kademe eşikleri değişmedi.`,
         `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
       ]
     }

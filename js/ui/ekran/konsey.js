@@ -61,7 +61,7 @@ function katkiKaynagiBolumu(s) {
   const kalan = (liste, ust) => (liste.length > ust ? `<small class="ek-kucuk">+ ${esc(tam(liste.length - ust))} küçük kaynak daha</small>` : '');
   const eski = k.eski > 0 ? `<div class="ek-satir"><span>Eski kayıtlar (kaynağı tutulmamış)</span><b>${esc(tam(k.eski))}</b></div>` : '';
   return katli('📊 Katkı puanın nereden geliyor? (ayrıntı)',
-    not('Katkı puanı yalnız Konsey katkısından gelmez: oyunda <b>harcadığın her ASTRA (1 ASTRA = 1 puan)</b>, <b>yaktığın hammaddenin</b> ve <b>sattığın hammaddenin</b> değeri de puan yazar. Hesap / silo yükseltmek, teçhizat dövmek ve geliştirmek, onarım, zindan harcı gibi işler bu yüzden büyük puan getirir.')
+    not('Katkı puanı yalnız Konsey katkısından gelmez: oyunda <b>harcadığın her ASTRA (1 ASTRA = 1 puan)</b>, <b>yaktığın hammaddenin</b> ve <b>sattığın hammaddenin</b> değeri de puan yazar. Hesap / silo yükseltmek ve teçhizat dövmek, geliştirmek, onarmak pahalı olduğu için puanları <b>%20 ağırlıkla</b> yazılır; Konsey katkısı ve diğer harcamalar tam ağırlıktadır.')
     + `<div class="ek-liste"><b>Bu hafta</b>${satirlar(k.hafta, 8) || '<small class="ek-kucuk">Bu hafta henüz puan yazılmadı.</small>'}${kalan(k.hafta, 8)}</div>`
     + `<div class="ek-liste"><b>Toplam</b>${satirlar(k.toplam, 10)}${kalan(k.toplam, 10)}${eski}</div>`
     + (k.toplam.length === 0 && k.eski === 0 ? '' : not('Dökümde puanı yazan işin adı görünür. Eski kayıtlar, bu özellik eklenmeden önce biriken puandır; yeni puanlar işine göre ayrı yazılır.')),

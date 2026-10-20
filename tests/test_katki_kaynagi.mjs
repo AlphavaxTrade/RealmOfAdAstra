@@ -24,7 +24,16 @@ const hesap = k.toplam.find((e) => e.ad === 'Hesap yükseltme');
 assert.ok(hesap && hesap.p > 0, 'hesap yükseltme kaynağı yazıldı: ' + JSON.stringify(k.toplam));
 assert.ok(hesap.astra > 0 && hesap.yakim > 0, 'hem harcanan ASTRA hem yakılan hammadde cinsi var');
 assert.ok(Math.abs(hesap.p - toplam1) < 1, `kaynak toplamı yazılan puanla aynı (${hesap.p} / ${toplam1})`);
-assert.ok(Math.abs(hesap.astra - gerek.adAstra) < 1, 'ASTRA kısmı = harcanan ASTRA (1 ASTRA = 1 puan)');
+const AG = GAME_CONFIG.CONTRIBUTION.GELISIM_AGIRLIGI;
+assert.equal(AG, 0.2, 'gelişim işlerinin puan ağırlığı %20 (sahip kararı)');
+assert.ok(Math.abs(hesap.astra - gerek.adAstra * AG) < 1, 'ASTRA kısmı = harcanan ASTRA × gelişim ağırlığı');
+
+// Gelişim dışı işler tam ağırlıkta: 1 ASTRA = 1 puan
+const oncekiToplam = gs.getContributionInfo().total;
+gs._addContribution(100, 'astra', 'Piyango');
+assert.ok(Math.abs(gs.getContributionInfo().total - oncekiToplam - 100) < 1, 'gelişim dışı işte ağırlık yok');
+gs._katkiBaglami = 'Sirius Konseyi'; gs._addContribution(100, 'katki'); gs._katkiBaglami = undefined;
+assert.ok(Math.abs(gs.getContributionInfo().total - oncekiToplam - 200) < 1, 'Konsey katkısı tam ağırlıkta');
 
 // Başka iş: teçhizat dövme ayrı satır; toplam kaynaklar toplamı genel toplamla eşit (eski kayıt yok)
 gs.state.inventory.fragments = 20;
