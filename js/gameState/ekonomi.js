@@ -22,7 +22,7 @@ export const ekonomiYontemleri = {
     if (isFinite(birimFiyat) && birimFiyat > 0) {
       // 19 Ekim 2026: hammadde adedi x50 olduğu için katkı puanı değeri eski ölçekte hesaplanır (aynı emek = aynı puan)
       const deger = miktar * birimFiyat / URETIM_CARPANI;
-      this._addContribution(deger * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5));
+      this._addContribution(deger * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_BURN_WEIGHT ?? 0.5), 'yakim');
       if (this._genesisKatkiYaz) this._genesisKatkiYaz(deger, 'yakim');   // Genesis katkı defteri (dolar)
     }
     return miktar;
@@ -105,7 +105,7 @@ export const ekonomiYontemleri = {
         kc[saleOf] -= geri;
         kilitli += geri * serbestPay;
       }
-      this._addContribution(((v - fromCredit) / URETIM_CARPANI) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5));   // satılan adet x50: puan eski ölçekte
+      this._addContribution(((v - fromCredit) / URETIM_CARPANI) * (GAME_CONFIG.CONTRIBUTION?.RESOURCE_SALE_WEIGHT ?? 0.5), 'satis');   // satılan adet x50: puan eski ölçekte
     }
     this.state.lockedAda = (Number(this.state.lockedAda) || 0) + kilitli;
   },
@@ -193,7 +193,7 @@ export const ekonomiYontemleri = {
         c.lockCredit[boughtResource] = (c.lockCredit[boughtResource] || 0) + kilitliOdenen;
       }
     } else {
-      this._addContribution(v * (GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
+      this._addContribution(v * (GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1), 'astra');
     }
   },
 
@@ -231,17 +231,39 @@ export const ekonomiYontemleri = {
       c.gecmis = gecmis.slice(-4);
       c.lastWeek = c.epochId === epochId - 1 ? c.week : 0;
       c.week = 0;
+      if (c.kaynak) c.kaynak.hafta = {};   // kaynak dökümünün haftalık kısmı da sıfırlanır
       c.epochId = epochId;
     }
     return c;
   },
 
-  _addContribution(points) {
+  // Katkı puanı yazar. tur: puanın cinsi ('astra' = harcanan ASTRA, 'yakim' = yakılan hammadde, 'satis' = hammadde satışı, 'katki' = Konsey / zindan kapısı katkısı).
+  // etiket: puanı doğuran iş (verilmezse o an çalışan oyun işlemi: katkiKaynaginiKur). 20 Ekim 2026: oyuncu "katkı puanım nereden geliyor" diye sorabilsin.
+  _addContribution(points, tur = 'diger', etiket = null) {
     const p = Number(points) || 0;
     if (!(p > 0)) return;
     const c = this._contribution();
     c.total += p;
     c.week += p;
+    const ad = etiket || this._katkiBaglami || 'Diğer';
+    if (!c.kaynak || typeof c.kaynak !== 'object') c.kaynak = { hafta: {}, toplam: {} };
+    if (!c.kaynak.hafta) c.kaynak.hafta = {};
+    if (!c.kaynak.toplam) c.kaynak.toplam = {};
+    for (const kap of [c.kaynak.hafta, c.kaynak.toplam]) {
+      const e = kap[ad] || (kap[ad] = { p: 0, astra: 0, yakim: 0, satis: 0, katki: 0, diger: 0 });
+      e.p += p;
+      e[tur in e ? tur : 'diger'] += p;
+    }
+  },
+
+  // Katkı puanının kaynak dökümü: [{ ad, p, astra, yakim, satis, katki }] büyükten küçüğe; eski: kaynağı tutulmadan önce yazılmış puan
+  getContributionSources() {
+    const c = this._contribution();
+    const k = c.kaynak || { hafta: {}, toplam: {} };
+    const liste = (kap) => Object.entries(kap || {}).map(([ad, e]) => ({ ad, ...e })).sort((a, b) => b.p - a.p);
+    const toplamListe = liste(k.toplam);
+    const izlenen = toplamListe.reduce((t, e) => t + e.p, 0);
+    return { hafta: liste(k.hafta), toplam: toplamListe, eski: Math.max(0, Math.round((Number(c.total) || 0) - izlenen)) };
   },
 
   // Son katkılar (19 Ekim 2026): Konsey ekranında "ne kazandım" görünsün; en çok 8 kayıt. k: { hedef, puan, ilerleme, tamamlandi, astra, ozet }
@@ -300,6 +322,7 @@ export const ekonomiYontemleri = {
       now: simdi, atWeekEnd: olacak,
       next: siradaki ? { name: siradaki.name, mult: siradaki.mult, need: Math.max(1, Math.ceil((siradaki.min || 0) * mult - info.week)) } : null,
       weekEndsAt: bitis,
+      kaynak: this.getContributionSources(),
       son: Array.isArray(this._contribution().son) ? this._contribution().son : []
     };
   },
@@ -469,3 +492,28 @@ export const ekonomiYontemleri = {
     return miktar;
   },
 };
+
+// Katkı puanı kaynağı etiketi (20 Ekim 2026): puanı doğuran oyun işlemi çalışırken _katkiBaglami o işin adıdır; iç içe çağrılarda en dıştaki işlem geçerlidir.
+// Bulunmayan yöntemler atlanır (bazı sürümlerde yok).
+const KATKI_ETIKETLERI = [
+  ['levelUp', 'Hesap yükseltme'], ['upgradeWarehouse', 'Silo yükseltme'], ['craftEquipment', 'Teçhizat dövme'], ['upgradeEquipment', 'Teçhizat geliştirme'],
+  ['repairEquipment', 'Teçhizat onarımı'], ['repairAllEquipmentInKingdom', 'Teçhizat onarımı'], ['repairTool', 'Alet onarımı'], ['buildHouse', 'Köy evi'],
+  ['processVillage', 'Köylü yemi'], ['buyTavernaAutomationBot', 'Bot ücreti'], ['buyTavernBuff', 'Taverna'], ['buySoldierUnit', 'Asker alımı'],
+  ['processSoldierPassiveHealing', 'Asker iyileştirme'], ['healSoldierWithHerb', 'Asker iyileştirme'],
+  ['refillStaminaWithWheat', 'Stamina doldurma'], ['refillStaminaExact', 'Stamina doldurma'],
+  ['spinCarnivalWheel', 'Karnaval çarkı'], ['buyLotteryTickets', 'Piyango'], ['fightDungeon', 'Zindan'], ['advanceDungeonMode', 'Zindan modu geçişi'],
+  ['contributeToDungeonGate', 'Zindan modu geçişi'], ['settleColosseumFee', 'Kolezyum'], ['mintGenesisNft', 'Genesis'], ['uyandirEser', 'Genesis'],
+  ['contributeToRocket', 'Roket'], ['withdrawFromPrepDepot', 'Roket hazırlık deposu'], ['emergencyUnstakeWorldBossArmy', 'Dünya bossu cezası'],
+  ['contributeToOtorite', 'Sirius Konseyi'], ['contributeToProject', 'Sirius Konseyi'], ['konseyHizliKatki', 'Sirius Konseyi'], ['marketSell', 'Hammadde satışı']
+];
+export function katkiKaynaginiKur(proto) {
+  for (const [yontem, etiket] of KATKI_ETIKETLERI) {
+    const asil = proto[yontem];
+    if (typeof asil !== 'function') continue;
+    proto[yontem] = function (...args) {
+      const onceki = this._katkiBaglami;
+      if (!onceki) this._katkiBaglami = etiket;
+      try { return asil.apply(this, args); } finally { this._katkiBaglami = onceki; }
+    };
+  }
+}

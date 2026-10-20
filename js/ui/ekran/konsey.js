@@ -49,6 +49,25 @@ function girisKarti(b, us) {
 const yuz = (p) => { const n = Number(p) || 0; return n >= 10 ? Math.round(n) : (Math.round(n * 100) / 100).toLocaleString("tr"); };
 
 // Katkı puanın: yatırdıkça ne kazandın, hafta dönümünde kademen ne olacak (kademe GEÇEN haftanın puanına bakar)
+// Katkı puanı nereden geliyor (20 Ekim 2026): puan yalnız Konsey katkısından değil, oyunda harcanan her ASTRA'dan ve yakılan / satılan hammaddeden de yazılır.
+// Her satır bir işin toplamı; altında cinsine göre dökümü. "Eski kayıt": kaynak tutulmaya başlamadan önce yazılmış puan.
+function katkiKaynagiBolumu(s) {
+  const k = s.kaynak || { hafta: [], toplam: [], eski: 0 };
+  const CINS = [['astra', 'harcanan ASTRA'], ['yakim', 'yakılan hammadde'], ['satis', 'satılan hammadde'], ['katki', 'doğrudan katkı']];
+  const satirlar = (liste, ust) => liste.slice(0, ust).map((e) => {
+    const parca = CINS.filter(([c]) => e[c] > 0).map(([c, ad]) => `${esc(tam(e[c]))} ${ad}`).join(' · ');
+    return `<div class="ek-satir"><span>${esc(e.ad)}</span><b class="ek-iyi">${esc(tam(e.p))}</b></div><small class="ek-kucuk">${parca}</small>`;
+  }).join('');
+  const kalan = (liste, ust) => (liste.length > ust ? `<small class="ek-kucuk">+ ${esc(tam(liste.length - ust))} küçük kaynak daha</small>` : '');
+  const eski = k.eski > 0 ? `<div class="ek-satir"><span>Eski kayıtlar (kaynağı tutulmamış)</span><b>${esc(tam(k.eski))}</b></div>` : '';
+  return katli('📊 Katkı puanın nereden geliyor? (ayrıntı)',
+    not('Katkı puanı yalnız Konsey katkısından gelmez: oyunda <b>harcadığın her ASTRA (1 ASTRA = 1 puan)</b>, <b>yaktığın hammaddenin</b> ve <b>sattığın hammaddenin</b> değeri de puan yazar. Hesap / silo yükseltmek, teçhizat dövmek ve geliştirmek, onarım, zindan harcı gibi işler bu yüzden büyük puan getirir.')
+    + `<div class="ek-liste"><b>Bu hafta</b>${satirlar(k.hafta, 8) || '<small class="ek-kucuk">Bu hafta henüz puan yazılmadı.</small>'}${kalan(k.hafta, 8)}</div>`
+    + `<div class="ek-liste"><b>Toplam</b>${satirlar(k.toplam, 10)}${kalan(k.toplam, 10)}${eski}</div>`
+    + (k.toplam.length === 0 && k.eski === 0 ? '' : not('Dökümde puanı yazan işin adı görünür. Eski kayıtlar, bu özellik eklenmeden önce biriken puandır; yeni puanlar işine göre ayrı yazılır.')),
+  { k: 'katki-kaynak' });
+}
+
 function katkiPuaniKarti(b) {
   const gs = b.gameState;
   if (!gs.getContributionStanding) return '';
@@ -77,6 +96,7 @@ function katkiPuaniKarti(b) {
       + not(durum)
       + not(siradaki)
       + (sonSatirlari ? `<div class="ek-liste"><b>Son katkıların</b>${sonSatirlari}</div>` : '')
+      + katkiKaynagiBolumu(s)
       + katli('Neden hemen değişmiyor? (ayrıntı)', not('Katkı kademen <b>geçen haftanın</b> toplam puanına göre belirlenir; bu hafta yazdığın puan hafta dönümünde kademeye dönüşür. Böylece herkes aynı kurala bağlı kalır ve kademe hafta içinde oynamaz. Puan kazanmak için: Konsey\'e hammadde ya da ASTRA katkısı, hammadde yakmak ve oyunda ASTRA harcamak (bazı harcamalar ve pazardan alım tek başına puan getirmez). Her 1.000 ASTRA\'lık Konsey katkısı yaklaşık 290 puan yazar.'), { k: 'konsey-katki-detay' })
   });
 }

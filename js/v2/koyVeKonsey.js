@@ -650,7 +650,7 @@ export const gameStateV2 = {
     let value = 0;
     for (const [k, q] of Object.entries(acc)) { inv[k] = (Number(inv[k]) || 0) - q; value += q * priceOf(k); }
     this.burnResources(acc);
-    if (value > 0 && this._addContribution) this._addContribution(round3(value));
+    if (value > 0 && this._addContribution) this._addContribution(round3(value), 'katki');
     // Yakılan hammaddenin kendi katkı puanı da (burnResources) yazılır; geçmişe ikisinin toplamı konur
     if (!this._hizliKatkiAktif && value > 0) this._katkiGecmisiYaz({ hedef: 'Madencilik Otoritesi', puan: this.getContributionInfo().week - p0, ilerleme: r.completed ? null : r.status.pct - pctOnce, tamamlandi: r.completed, ozet: Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ') });
     this._markFirst('konsey');
@@ -765,7 +765,7 @@ export const gameStateV2 = {
     for (const [k, q] of Object.entries(acc)) { inv[k] = (Number(inv[k]) || 0) - q; value += q * priceOf(k); }
     this.burnResources(acc);
     if (r.acceptedLabor > 0) v.labor = (Number(v.labor) || 0) - r.acceptedLabor;
-    if (value > 0 && this._addContribution) this._addContribution(round3(value));
+    if (value > 0 && this._addContribution) this._addContribution(round3(value), 'katki');
     if (!this._hizliKatkiAktif && (value > 0 || r.acceptedLabor > 0)) this._katkiGecmisiYaz({ hedef: r.completed ? ((r.status.done[r.status.done.length - 1] || {}).name || 'Konsey projesi') : (r.status.active ? r.status.active.name : 'Konsey projesi'), puan: this.getContributionInfo().week - p0, ilerleme: r.completed ? null : r.status.pct - pctOnceP, tamamlandi: r.completed, ozet: Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`).join(', ') });
     this.saveState();
     const parts = Object.entries(acc).map(([k, q]) => `${q} ${resName(k)}`);
@@ -858,7 +858,7 @@ export const gameStateV2Depot = {
     d.value = round3((Number(d.value) || 0) + value);
     if (!d.since) d.since = this._now();
     if (globalPool.addPrepDepotValue) globalPool.addPrepDepotValue(value);
-    if (value > 0 && this._addContribution) this._addContribution(round3(value * 0.5));   // Universe'e hazırlık katkısı: yarım ağırlık
+    if (value > 0 && this._addContribution) this._addContribution(round3(value * 0.5), 'katki');   // Universe'e hazırlık katkısı: yarım ağırlık
     this.saveState();
     return { success: true, message: `📦 Hazırlık Deposu'na kondu: ${Object.entries(put).map(([k, q]) => `${q} ${resName(k)}`).join(', ')} (${value} ASTRA değeri).`, put, value };
   },

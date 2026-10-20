@@ -430,7 +430,7 @@ export const zindanYontemleri = {
     for (const [k, q] of Object.entries(kabul)) { env[k] = (Number(env[k]) || 0) - q; g.verilen[k] = (Number(g.verilen[k]) || 0) + q; }
     this.burnResources(kabul);
     const deger = ammMarket.calculateResourcesCostAdAstra(kabul).totalAda;
-    if (deger > 0 && this._addContribution) this._addContribution(round3(deger));
+    if (deger > 0 && this._addContribution) this._addContribution(round3(deger), 'katki');
     this.saveState();
     const parca = Object.entries(kabul).map(([k, q]) => `${q} ${k}`).join(', ');
     return { success: true, given: kabul, message: `🔥 ${bilgi.gecis.hedefAd} moda geçiş için yakıldı: ${parca}.` };

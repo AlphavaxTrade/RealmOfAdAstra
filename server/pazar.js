@@ -226,7 +226,7 @@ export function createPazar({ db, engine, clock = () => Date.now(), log = consol
         iadeEt(gs, item);
         // Katkı puanı yalnız gerçekten harcanan paya (komisyon: yakım + hazine) verilir; oyuncudan oyuncuya geçen bedel harcama sayılmaz
         // (yoksa iki hesap aralarında al-sat yaparak sahte katkı puanı üretirdi)
-        if (typeof gs._addContribution === 'function') gs._addContribution(fee * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1));
+        if (typeof gs._addContribution === 'function') gs._addContribution(fee * (E.GAME_CONFIG.CONTRIBUTION?.ADA_SPEND_WEIGHT ?? 1), 'astra', 'Pazar ücreti');
         return { success: true };
       });
       // Satıcıda kilitli kalacak pay: en az SELLER_LOCKED_SHARE, ama alıcı kilitli bakiyesinden ödediyse o oran kadar

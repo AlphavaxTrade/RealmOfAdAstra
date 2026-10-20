@@ -14,7 +14,7 @@ import { ammMarket } from './ammMarket.js';
 import { readJSON, writeJSON } from './storage.js';
 import { soldierPortraitFor, zeroRes } from './gameState/ortak.js';
 import { gameStateV2, gameStateV2Depot } from './v2/koyVeKonsey.js';
-import { ekonomiYontemleri } from './gameState/ekonomi.js';
+import { ekonomiYontemleri, katkiKaynaginiKur } from './gameState/ekonomi.js';
 import { orduYontemleri } from './gameState/ordu.js';
 import { seferYontemleri } from './gameState/sefer.js';
 import { botYontemleri } from './gameState/bot.js';
@@ -366,6 +366,7 @@ for (const karisim of [
   Object.assign(GameStateManager.prototype, karisim);
 }
 ogreticiIsaretleriKur(GameStateManager.prototype);
+katkiKaynaginiKur(GameStateManager.prototype);   // katkı puanının hangi işten geldiği (Konsey ekranı)
 telemetriKur(GameStateManager.prototype);   // Denge İzleme kancası (yalnız sunucuda tanımlıdır; tarayıcıda işlemi aynen çalıştırır)
 
 if (typeof globalThis !== 'undefined' && !globalThis.ammMarket) globalThis.ammMarket = ammMarket;
