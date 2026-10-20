@@ -49,6 +49,7 @@ export function kurPencere({ kok, baslik, govde, kapatDugme }) {
     baslik.innerHTML = `<span>${esc(simge)}</span> <span>${esc(ad)}</span>`;
     govde.innerHTML = html;
     ac();
+    if (typeof CustomEvent === 'function' && kok.dispatchEvent) kok.dispatchEvent(new CustomEvent('panel-yazildi'));   // geri yığını (ekran/cekirdek.js) ekran dışı yazımı bundan öğrenir
   };
 
   if (kapatDugme) kapatDugme.addEventListener('click', kapat);

@@ -159,6 +159,42 @@ function onarimOzeti(gs, hasarlilar) {
     + (plan && plan.items.length ? dugme({ e: 'hizliOnarHepsi', metin: `⚡ Eksikleri al ve hepsini onar · ~${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true }) : '');
 }
 
+// Bir eşya kümesini (yuva + seviye süzgeci; null = hepsi) tek tek geliştirir. Eksik hammadde her eşya için o an pazardan alınır; yalnız TEK eşyanın bedeli
+// siloya sığmıyorsa ya da ASTRA bitmişse durur ve nedenini söyler (o zamana kadar yapılanlar korunur).
+async function topluGelistir(b, yuva, seviye) {
+  const gs = b.gameState;
+  const konumlar = gs.getUpgradeSetItems(yuva, seviye).map(ref);   // konumla: alımlar sırasında liste sırası değişse de aynı eşyalar geliştirilir
+  if (!konumlar.length) { b.bildir('Geliştirilecek uygun teçhizat bulunamadı!', 'warning'); return false; }
+  const plan = gs.getQuickBuyPlan(`upgradeset:${yuva || 'all'}:${seviye == null ? '-' : seviye}`);
+  if (plan.items.length) {
+    const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+    const tamam = await onay({
+      baslik: `${konumlar.length} eşya geliştirilsin mi?`,
+      metin: `Eksik hammaddeler eşyalar sırayla geliştirilirken tek tek pazardan alınır (silonun hepsini birden tutması gerekmez).\n${liste}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
+      tamam: 'Al ve geliştir'
+    });
+    if (!tamam) return false;
+  }
+  const ayni = (x, c) => x.source === c.source && x.slotKey === c.slotKey && x.armoryIndex === c.armoryIndex && x.soldierIndex === c.soldierIndex;
+  let yukseltilen = 0;
+  for (const konum of konumlar) {
+    const sira = gs.getAllArmoryEquipmentList().findIndex((g) => ayni(ref(g), konum));
+    const adim = gs.getQuickBuyPlan('upgrade:' + sira);
+    if (adim.items.length) {
+      if (!adim.ok) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${adim.reason}`, yukseltilen ? 'warning' : 'error'); return yukseltilen ? undefined : false; }
+      for (const it of adim.items) {
+        const r = await gs.marketBuy(it.res, it.qty);
+        if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return yukseltilen ? undefined : false; }
+      }
+    }
+    const r = await gs.upgradeAnyEquipment(konum);
+    if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${(r && r.message) || ''}`, yukseltilen ? 'warning' : 'error'); return yukseltilen ? undefined : false; }
+    yukseltilen++;
+  }
+  b.bildir(`✨ ${yukseltilen} adet teçhizat bir sonraki seviyeye yükseltildi!`, 'success');
+  return undefined;
+}
+
 function esyalarSekmesi(b, secenek) {
   const gs = b.gameState;
   const tumu = gs.getAllArmoryEquipmentList();
@@ -184,7 +220,8 @@ function esyalarSekmesi(b, secenek) {
   const topluDugme = (yuva, seviye, genis) => {
     const plan = tumu.length ? gs.getQuickBuyPlan(`upgradeset:${yuva}:${seviye}`) : null;
     if (!plan || !plan.items.length) return '';
-    return dugme({ e: 'hizliToplu', metin: `⚡ Eksikleri al ve geliştir · ${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, veri: { yuva, seviye }, genis });
+    // Düğme her zaman basılabilir (20 Ekim 2026): eşyalar tek tek alınıp geliştirilir; toplam bedel silodan büyük ya da ASTRA hepsine yetmiyor olsa bile yettiği kadarı yapılır
+    return dugme({ e: 'hizliToplu', metin: `⚡ Eksikleri al ve geliştir · ${planBedeli(plan)}`, ton: 'iyi', veri: { yuva, seviye }, genis });
   };
   const ozelGrup = `<div class="ek-alan-satiri">
       <select class="ek-girdi" data-e-degis="grupYuva">${YUVALAR.map((y) => `<option value="${y}"${y === secenek.grupYuva ? ' selected' : ''}>${YUVA_KISA[y]}</option>`).join('')}</select>
@@ -282,40 +319,11 @@ const ekran = {
       return undefined;
     },
 
-    // Toplu "eksikleri al ve geliştir": eşyalar tek tek, sırayla; her birinin eksiği alınır (silo hepsini birden tutmak zorunda kalmaz), sonra yükseltilir.
+    // Toplu geliştirme (20 Ekim 2026): "Hepsini geliştir", "Bu grubu geliştir", "Seviye N ..." ve "Eksikleri al ve geliştir" aynı akışı kullanır.
+    // Eşyalar tek tek, sırayla geliştirilir; her birinin eksiği o an pazardan alınır. Silo bütün eşyaların toplam bedelini aynı anda tutmak zorunda değildir:
+    // tek tek geliştirilebiliyorsa hepsi geliştirilir, oyuncu eksik alıp tek tek uğraşmaz.
     async hizliToplu(b, el) {
-      const gs = b.gameState;
-      const yuva = el.dataset.yuva === 'all' ? null : el.dataset.yuva;
-      const seviye = el.dataset.seviye === '-' ? null : Number(el.dataset.seviye);
-      const kume = `${el.dataset.yuva}:${el.dataset.seviye}`;
-      const plan = gs.getQuickBuyPlan('upgradeset:' + kume);
-      if (!plan.ok) { b.bildir(plan.reason || 'Alım yapılamıyor.', 'error'); return false; }
-      const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
-      const tamam = await onay({
-        baslik: 'Eksikler alınıp eşyalar geliştirilsin mi?',
-        metin: `${liste}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
-        tamam: 'Al ve geliştir'
-      });
-      if (!tamam) return false;
-      const konumlar = gs.getUpgradeSetItems(yuva, seviye).map(ref);   // konumla: alımlar sırasında liste sırası değişse de aynı eşyalar geliştirilir
-      const ayni = (a, c) => a.source === c.source && a.slotKey === c.slotKey && a.armoryIndex === c.armoryIndex && a.soldierIndex === c.soldierIndex;
-      let yukseltilen = 0;
-      for (const konum of konumlar) {
-        const sira = gs.getAllArmoryEquipmentList().findIndex((g) => ayni(ref(g), konum));
-        const adim = gs.getQuickBuyPlan('upgrade:' + sira);
-        if (adim.items.length) {
-          if (!adim.ok) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${adim.reason}`, 'warning'); return false; }
-          for (const it of adim.items) {
-            const r = await gs.marketBuy(it.res, it.qty);
-            if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return false; }
-          }
-        }
-        const r = await gs.upgradeAnyEquipment(konum);
-        if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${(r && r.message) || ''}`, 'error'); return false; }
-        yukseltilen++;
-      }
-      b.bildir(`✨ ${yukseltilen} adet teçhizat eksikleri alınarak bir sonraki seviyeye yükseltildi!`, 'success');
-      return undefined;
+      return topluGelistir(b, el.dataset.yuva === 'all' ? null : el.dataset.yuva, el.dataset.seviye === '-' ? null : Number(el.dataset.seviye));
     },
 
     onarHepsi(b) { sonuc(b, b.gameState.repairAllEquipmentInKingdom()); },
@@ -327,10 +335,10 @@ const ekran = {
     },
     async hizliOnarHepsi(b) { await hizliOnar(b); },
     giydir(b) { sonuc(b, b.gameState.autoEquipBest(), 'success', 'info'); },
-    hepsiniGelistir(b) { sonuc(b, b.gameState.upgradeAllEquipmentInKingdom(), 'success', 'warning'); },
+    async hepsiniGelistir(b) { return topluGelistir(b, null, null); },
     cantayaTopla(b) { sonuc(b, b.gameState.unequipAllSoldiers(), 'success', 'info'); },
-    grup(b, el) { sonuc(b, b.gameState.upgradeEquipmentByTypeAndLevel(el.dataset.yuva, parseInt(el.dataset.seviye, 10)), 'success', 'warning'); },
-    ozelGrup(b, el, secenek) { sonuc(b, b.gameState.upgradeEquipmentByTypeAndLevel(secenek.grupYuva, secenek.grupSeviye), 'success', 'warning'); },
+    async grup(b, el) { return topluGelistir(b, el.dataset.yuva, parseInt(el.dataset.seviye, 10)); },
+    async ozelGrup(b, el, secenek) { return topluGelistir(b, secenek.grupYuva, secenek.grupSeviye); },
 
     gelistir(b, el) {
       const g = b.gameState.getAllArmoryEquipmentList()[Number(el.dataset.sira)];

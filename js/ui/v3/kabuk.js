@@ -8,6 +8,7 @@ import { SOZLUK } from './sozluk.js';
 import { kurTur } from './tur.js';
 import { kurLab } from './lab.js';
 import { komutListesi, kurPalet, kisayolHedefi } from './palet.js';
+import { hubdenGidiyor, hubGeriKur, geriSifirla } from '../ekran/cekirdek.js';
 import { ayarOku, ayarYaz, ayarDogrula, ayarUygula, ayarlarHtml, baglantiDurumu, BAGLANTI_METNI } from './ayarlar.js';
 
 const $ = (id) => document.getElementById(id);
@@ -155,7 +156,9 @@ export function kurV3Kabuk(api) {
     sekmeSec(id);
     if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); return; }
     api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu, Number(gs.state.level) || 1));
+    geriSifirla();   // hub listesi geri yığınının kökü
   };
+  hubGeriKur(hubAc);   // ekranlardaki "‹ Geri" hub listesine de dönebilir
 
   const uyariMetni = () => (api.duyurular() || []).filter((a) => a.active !== false);
   const tur = kurTur({ gameState: gs, isAnyModalOpen: api.isAnyModalOpen, closeModal: api.closeModal, hesapAnahtari: api.hesapAnahtari });
@@ -183,6 +186,8 @@ export function kurV3Kabuk(api) {
     const f = GIT[anahtar];
     if (!f) return;
     const bolum = Object.keys(HUB).find((h) => HUB[h].ogeler.some((o) => o.k === anahtar));
+    // Alt çubuk listesinden bir öğeye dokunulduysa: açılan ekranın "‹ Geri" düğmesi bu listeye döner
+    if (bolum && typeof document !== 'undefined' && document.querySelector('#modal-body .v3-hub')) hubdenGidiyor(bolum, (HUB[bolum].baslik || [])[1] || '');
     if (bolum) sekmeSec(bolum);
     api.closeModal();
     f();

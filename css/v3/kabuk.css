@@ -515,3 +515,11 @@ html.v3 .v3-gelismis > summary::-webkit-details-marker { display: none; }
 html.v3 .v3-gelismis > summary::after { content: '▾'; margin-left: auto; transition: transform .15s; }
 html.v3 .v3-gelismis[open] > summary::after { transform: rotate(180deg); }
 html.v3 .v3-gelismis > .v3-hub { margin-top: var(--v3-gap-2); }
+
+/* Panel başlığında "‹ Geri" (20 Ekim 2026): bir önceki ekrana ya da bölüm listesine döner; yalnız geri gidilecek yer varken görünür */
+html.v3 .rpg-modal-overlay .rpg-modal-geri { flex: none; min-width: var(--v3-tap); height: var(--v3-tap); padding: 0 12px; margin-right: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer;
+  background: var(--v3-yuzey-2, #151a26); border: 1px solid var(--v3-cizgi, rgba(255,255,255,.12)); border-radius: 999px; color: var(--v3-yazi, #eceef4); font: 800 calc(14px * var(--v3-yazi-olcek, 1))/1 var(--font-ui); }
+html.v3 .rpg-modal-overlay .rpg-modal-geri[hidden] { display: none; }
+html.v3 .rpg-modal-overlay .rpg-modal-geri > span:first-child { font-size: calc(22px * var(--v3-yazi-olcek, 1)); line-height: 1; margin-top: -2px; }
+html.v3 .rpg-modal-overlay .rpg-modal-header > .rpg-modal-title { flex: 1; min-width: 0; }
+html.v3 .rpg-modal-overlay .rpg-modal-geri:focus-visible { outline: 2px solid var(--v3-vurgu, #e9b949); outline-offset: 2px; }

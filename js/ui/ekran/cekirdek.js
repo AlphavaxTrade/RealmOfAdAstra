@@ -29,6 +29,15 @@ let aktif = null;                       // { ekran, secenek, sonHtml }
 const acikDetaylar = new Set();         // kullanıcının açtığı <details> bölümleri: "ekranId|anahtar"
 let kokBagli = null;
 
+// ── Geri yığını (20 Ekim 2026): panelde bir ekrandan başka ekrana geçilince önceki ekran hatırlanır; başlıktaki "‹ Geri" düğmesi ona döner ──
+// Girdi: { id, secenek } (bir ekran) ya da { hub, ad } (alt çubuktaki bölüm listesi). Panel kapanınca, hub listesi açılınca ya da panele ekran dışı bir
+// içerik (cüzdan, ayarlar...) yazılınca yığın boşalır. Aynı grubun sekmeleri (Köy ↔ Konsey) geçiş sayılmaz.
+const gecmis = [];
+let bekleyenHub = null;   // hub listesinden bir öğeye dokunuldu: { id, ad, t }; açılan ilk ekran bunu yığına koyar
+let hubAcici = null;      // kabuğun hub listesini açan işlevi (geri hub'a dönecekse)
+let geriModu = false;     // geriGit ekranı açarken yığına yeniden ekleme yapılmaz
+let ciziyor = false;      // ekran kendi içeriğini yazıyor (dış panel yazımlarından ayırt etmek için)
+
 // ── Kayıt ve bağlam ──────────────────────────────────────────────────────
 export function ekranKaydet(ekran) {
   if (!ekran || !ekran.id) throw new Error('ekranın kimliği yok');
@@ -43,6 +52,89 @@ export const ekranVar = (id) => KAYIT.has(id);
 export function baglamKur(b) {
   baglam = b;
   kokBagli = null;
+  geriBagla();
+}
+
+// ── Geri yığını işlevleri ────────────────────────────────────────────────
+const ayniGrup = (a, c) => Object.values(EKRAN_GRUPLARI).some((g) => g.some((x) => x.id === a) && g.some((x) => x.id === c));
+export const geriVar = () => gecmis.length > 0;
+export const geriYigini = () => gecmis.map((e) => (e.hub ? { hub: e.hub } : { id: e.id }));
+export function hubGeriKur(fn) { hubAcici = fn; }
+export function hubdenGidiyor(id, ad = '') { bekleyenHub = { id, ad, t: Date.now() }; }
+export function geriSifirla() {
+  gecmis.length = 0;
+  bekleyenHub = null;
+  geriGoster();
+}
+
+function geriAdi(girdi) {
+  if (girdi.hub) return girdi.ad || 'Liste';
+  const e = KAYIT.get(girdi.id);
+  try { return (e && baglam ? e.baslik(baglam, girdi.secenek)[1] : girdi.id) || girdi.id; } catch { return girdi.id; }
+}
+
+function geriGoster() {
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;   // testlerdeki sahte belge
+  const d = document.getElementById('btn-geri-modal');
+  if (!d) return;
+  const son = gecmis[gecmis.length - 1];
+  d.hidden = !son;
+  if (son) {
+    const ad = geriAdi(son);
+    d.title = `Geri: ${ad}`;
+    d.setAttribute('aria-label', `Geri: ${ad}`);
+  }
+}
+
+// ac() ekranı açmadan önce çağrılır: önceki ekranı (ya da hub listesini) yığına koyar
+function geriKaydet(yeniId) {
+  const b = baglam;
+  if (geriModu) return;
+  const hub = bekleyenHub && Date.now() - bekleyenHub.t < 1500 ? bekleyenHub : null;
+  bekleyenHub = null;
+  if (hub) { gecmis.length = 0; gecmis.push({ hub: hub.id, ad: hub.ad }); return; }
+  const acik = !!(b.panelAcik && b.panelAcik());
+  const kok = b.panelKok ? b.panelKok() : null;
+  const gorunen = acik && aktif && kok && kok.firstElementChild && kok.firstElementChild.dataset.ekran === aktif.ekran.id;
+  if (!gorunen) { gecmis.length = 0; return; }   // panel kapalıydı ya da ekran dışı içerik vardı: yeni başlangıç
+  if (aktif.ekran.id === yeniId || ayniGrup(aktif.ekran.id, yeniId)) return;
+  const son = gecmis[gecmis.length - 1];
+  if (!(son && son.id === aktif.ekran.id)) gecmis.push({ id: aktif.ekran.id, secenek: aktif.secenek });
+  if (gecmis.length > 12) gecmis.shift();
+}
+
+// Başlıktaki "‹ Geri": bir önceki ekrana (ya da hub listesine) döner
+export function geriGit() {
+  const e = gecmis.pop();
+  if (!e) { geriGoster(); return false; }
+  if (e.hub) {
+    aktif = null;
+    geriGoster();
+    if (hubAcici) hubAcici(e.hub);
+    return true;
+  }
+  geriModu = true;
+  try { ac(e.id, e.secenek); } finally { geriModu = false; }
+  geriGoster();
+  return true;
+}
+
+let geriBagliKok = null;
+function geriBagla() {
+  if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;   // testlerdeki sahte belge
+  const d = document.getElementById('btn-geri-modal');
+  if (d && !d.dataset.bagli) {
+    d.dataset.bagli = '1';
+    d.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); geriGit(); });
+  }
+  // Panele ekran dışı bir içerik yazılırsa (cüzdan, ayarlar, hub listesi) geri yığını anlamsızlaşır
+  const kok = baglam && baglam.panelKok ? baglam.panelKok() : null;
+  const pencere = kok && kok.closest ? kok.closest('#rpg-modal') : null;
+  if (pencere && geriBagliKok !== pencere) {
+    geriBagliKok = pencere;
+    pencere.addEventListener('panel-yazildi', () => { if (!ciziyor) geriSifirla(); });
+  }
+  geriGoster();
 }
 export const baglamAl = () => baglam;
 export const aktifEkran = () => (aktif ? aktif.ekran.id : null);
@@ -61,6 +153,7 @@ export function ac(id, secenek = {}) {
     const k = b.kilit(ekran.kilit);
     if (k) { b.bildir(`🔒 ${k.name} henüz kapalı: ${k.reason}`, 'info'); return false; }
   }
+  geriKaydet(id);
   aktif = { ekran, secenek, sonHtml: '' };
   ciz(true);
   return true;
@@ -72,6 +165,7 @@ export function yenile() {
 
 export function kapat() {
   aktif = null;
+  geriSifirla();
 }
 
 // Panelde hâlâ bu ekranın içeriği duruyor mu? (eski açıcılar ya da başka ekranlar paneli değiştirmiş olabilir)
@@ -96,7 +190,9 @@ function ciz(yeniEkran, html = null) {
 
   const govde = html == null ? ekran.govde(b, secenek) : html;
   aktif.sonHtml = govde;
-  b.panelYaz(ekran.baslik(b, secenek), govde);
+  ciziyor = true;
+  try { b.panelYaz(ekran.baslik(b, secenek), govde); } finally { ciziyor = false; }
+  geriGoster();
   if (kok.firstElementChild) kok.firstElementChild.dataset.ekran = ekran.id;   // başka bir açıcı paneli değiştirirse fark edilir
 
   // <details data-k="..."> bölümleri: kullanıcının açtığı açık kalır

@@ -1991,6 +1991,8 @@ export const GAME_CONFIG = {
         `Askerin ya da hesabın seviye atlaması artık canı yenilemez: yalnız azami can büyür, kayıtlı can aynı kalır.`,
         `⚡ "Hızlı al" ile seviye atlama / silo yükseltme için alınan şifalı ot, yaralı askerlerin kendiliğinden iyileşmesi yüzünden arada eriyip 1 adet eksik kalıyordu (ikinci kez Hızlı al gerekiyordu). Yaralı asker varken bu iki işte ot için 1 adetlik pay eklendi; diğer Hızlı al seçeneklerinde alım ile iş aynı anda yapıldığından sorun yoktu.`,
         `💰 Silo yükseltirken ve hesap yükseltirken harcanan bütün hammaddelerin anlık pazar değerinin TAMAMI kadar ASTRA da alınır (eskiden bu değerin beşte biriydi). Örnek: Seviye 1→2 yaklaşık 16 yerine 79 ASTRA, Seviye 9→10 yaklaşık 737 yerine 3.687 ASTRA.`,
+        `⬅️ Panel başlığında "‹ Geri" düğmesi: bir bölüm listesinden ya da başka bir ekrandan bir ekrana geçince, düğme seni bir önceki ekrana (ya da listeye) götürür; sekme durumu korunur. Köy ↔ Konsey, Kolezyum ↔ Dünya bossu gibi aynı ekranın sekmeleri geçiş sayılmaz.`,
+        `⚒️ Demirhane toplu geliştirme: "Hepsini toplu geliştir", "Bu grubu geliştir", "Seviye N ..." ve "Eksikleri al ve geliştir" artık aynı akışı kullanır: eşyalar tek tek, sırayla geliştirilir ve eksik hammadde her eşya için o an pazardan alınır. Silonun bütün eşyaların toplamını birden tutması gerekmez; tek eşya geliştirilebiliyorsa hepsi geliştirilir.`,
         `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
       ]
     }
