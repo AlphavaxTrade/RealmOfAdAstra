@@ -9,6 +9,7 @@ import { seviyeHazir, seviyeHazirYazisi } from '../seviye-hazir.js';
 import { DEFAULT_BOSS_PHASES, PLAYER_SKILLS } from '../../combat.js';
 import { getDungeonEntry } from '../../bestiary.js';
 import { sonSavasiYaz } from '../zindan/son-savas.js';
+import { zayifIpucu } from '../zindan/plan.js';
 import { kazancYazisi, odemeOnizlemeNotu, odemeSinirNotu } from '../kazanc-yazisi.js';
 
 const TAKTIK_SIMGE = { 1: '🛡️', 2: '⚔️', 3: '🏹' };
@@ -66,10 +67,13 @@ function sansSeridi(b, m, secili) {
   const sans = tahmin.winChance;
   const ton = sans >= 75 ? 'iyi' : (sans >= 50 ? 'uyari' : 'kotu');
   const yazi = sans >= 75 ? '🔥 Ordun ezici üstünlüğe sahip.' : (sans >= 50 ? '⚖️ Dengeli bir savaş, yaralanmalar olabilir.' : '⚠️ Yüksek risk: ordun yenilgiye uğrayabilir. Daha çok asker seçmeyi ya da askerleri güçlendirmeyi dene.');
+  // Şans düşükken ve askerlerde boş eşya yuvası varken çıkış yolunu söyle (20 Ekim 2026, yeni oyuncu denemesi: ilk asker eşyasızken %0 şansla odaya giriliyordu)
+  const ip = sans < 50 ? zayifIpucu(b.gameState) : null;
+  const yol = ip ? not(`💡 ${esc(ip.metin)}`) + dugme({ e: 'git', veri: { hedef: 'kisla' }, metin: "⚔️ Kışla'ya git", ton: 'birincil', genis: true }) : '';
   return kart({
     baslik: `🎯 Ordunun kazanma şansı: %${tam(sans)}`,
     rozet: etiket(`${secili.length} asker`, ton),
-    icerik: cubuk(Math.max(0, Math.min(100, sans)), { ton: ton === 'kotu' ? 'kotu' : '' }) + not(`${yazi} (${esc(tahmin.difficulty)})`)
+    icerik: cubuk(Math.max(0, Math.min(100, sans)), { ton: ton === 'kotu' ? 'kotu' : '' }) + not(`${yazi} (${esc(tahmin.difficulty)})`) + yol
   });
 }
 

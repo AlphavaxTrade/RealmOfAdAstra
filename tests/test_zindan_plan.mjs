@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, EN_UST_SEVIYE, katSeviyeleri, katCanavarlari, baslangicKati, odaDurumu, katDurumu,
-  kilitMesaji, sansTonu, sansYorumu, YETENEKLER, yetenekBilgisi, bossKatiMi
+  kilitMesaji, sansTonu, sansYorumu, YETENEKLER, yetenekBilgisi, bossKatiMi, zayifIpucu
 } from '../js/ui/zindan/plan.js';
 import { kutukHtml, HIKAYE } from '../js/ui/zindan/kutuk.js';
 import { DUNGEON_LEVELS } from '../js/bestiary.js';
@@ -87,3 +87,20 @@ console.log('✅ yetenek sözlüğü ve hikâyeler eksiksiz');
   assert.ok(hepsi.html.includes('Kıyamet Ejderhası IGNIS') && !hepsi.html.includes('is-kapali'));
 }
 console.log('✅ canavar kütüğü');
+
+// Şansı düşük oyuncuya ipucu (20 Ekim 2026, yeni oyuncu denemesi): tek eşyasız asker → hem "asker al" hem "eşya tak"; tam ordu ve tam eşya → ipucu yok
+{
+  const bos = { weapon: null, helmet: null, armor: null, legs: null, boots: null };
+  const dolu = { weapon: {}, helmet: {}, armor: {}, legs: {}, boots: {} };
+  const gs = (asker, hak) => ({ state: { soldierUnits: asker }, getAskerHakki: () => ({ hak, acik: true }) });
+  assert.equal(zayifIpucu(gs([], 2)), null, 'askeri olmayana ipucu yok (şerit zaten uyarıyor)');
+  const a = zayifIpucu(gs([{ equipment: bos }], 2));
+  assert.ok(a.asker && a.esya && /2 asker taşıyabilirsin, 1 askerin var/.test(a.metin) && /eşya tak/.test(a.metin), a.metin);
+  const b = zayifIpucu(gs([{ equipment: dolu }], 2));
+  assert.ok(b.asker && !b.esya, 'eşyası tam ama hakkı dolmamış: yalnız asker al');
+  const c = zayifIpucu(gs([{ equipment: bos }, { equipment: dolu }], 2));
+  assert.ok(!c.asker && c.esya, 'hakkı dolu ama boş yuva var: yalnız eşya tak');
+  assert.equal(zayifIpucu(gs([{ equipment: dolu }, { equipment: dolu }], 2)), null, 'her şey tam: ipucu yok');
+  assert.equal(zayifIpucu({ state: { soldierUnits: [{ equipment: dolu }] } }), null, 'asker hakkı bilinmiyorsa ve eşya tam: ipucu yok');
+}
+console.log('✅ şansı düşük oyuncuya ipucu');

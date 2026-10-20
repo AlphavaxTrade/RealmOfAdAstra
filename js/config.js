@@ -1986,6 +1986,7 @@ export const GAME_CONFIG = {
         `Arena: Düello'da giriş bedeli tek satıra indi (ayrıntı katlı), mevzi seçimi katlı; günlük ASTRA ödül tavanı dolduysa bunu açıkça söyler. Savaş alanı: önce ordun ve ödülün, hasar formülü katlı.`,
         `Zindan: canavarın hikâyesi ve yetenekleri odada katlı; "Zindan modu" düğmesi ilk boss geçilene kadar gizli.`,
         `Karnaval'da çevirme düğmeleri artık çarkın üstünde; sonuç düğmelerle çarkın arasında görünür. Zindan'da telefonda harita resmi yerine oda listesi var, en üstte tek "Sıradaki: Oda N" düğmesi (kat temizse "Kata geç") bulunur; Son savaş, Zindan modu ve Kütük "Daha fazla" altında.`,
+        `Yeni oyuncu denemesinde bulunan boşluklar kapandı: Zindan kilidi artık Kışla da kilitliyse yolu tarif ediyor (üç alanda sefer → Kışla → ilk asker). Kazanma şansın düşükse Zindan ve Savaşa hazırlık ekranı sebebini söylüyor (askerin eksik mi, eşyan mı) ve tek dokunuşla Kışla'ya götürüyor.`,
         `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
       ]
     }

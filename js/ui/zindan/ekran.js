@@ -9,7 +9,7 @@ import { odemeOnizlemeNotu } from '../kazanc-yazisi.js';
 import { seviyeHazir } from '../seviye-hazir.js';
 import {
   KATLAR, KAT_SAYISI, ODA_SAYISI, katCanavarlari, katDurumu, baslangicKati, kilitMesaji,
-  sansTonu, sansYorumu, yetenekBilgisi, ganimetSanslari, bossKatiMi
+  sansTonu, sansYorumu, yetenekBilgisi, ganimetSanslari, bossKatiMi, zayifIpucu
 } from './plan.js';
 import { kutukHtml, HIKAYE } from './kutuk.js';
 import { sonSavas } from './son-savas.js';
@@ -116,6 +116,13 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     </div>`;
   }
 
+  // Ordunun şansı düşük ve askerlerde boş eşya yuvası varsa: çıkış yolu (yeni oyuncu ilk askerini eşyasız alıyor)
+  function kislaIpucu() {
+    const ip = zayifIpucu(gs);
+    if (!ip) return '';
+    return `<div class="zd-ipucu" role="note"><span>💡 Şansın düşük. ${esc(ip.metin)}</span><button type="button" class="zd-dugme zd-kucuk zd-ana" data-e="kisla">⚔️ Kışla'ya git</button></div>`;
+  }
+
   // ── KAT görünümü ──
   function katHtml() {
     const kat = KATLAR[durum.kat - 1];
@@ -159,7 +166,8 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
     let devam = '';
     if (siradaki >= 0) {
       const oz = ozetler[siradaki];
-      devam = `<button type="button" class="zd-dugme zd-ana zd-devam" data-e="savas" data-oda="${siradaki}"><span>⚔️ Sıradaki: Oda ${siradaki + 1} · ${esc(oz.canavar.name)}</span>${sansCipi(oz)}</button>`;
+      const zayif = oz.sans != null && oz.sans < 50;
+      devam = `<button type="button" class="zd-dugme zd-ana zd-devam${zayif ? ' is-zayif' : ''}" data-e="savas" data-oda="${siradaki}"><span>⚔️ Sıradaki: Oda ${siradaki + 1} · ${esc(oz.canavar.name)}</span>${sansCipi(oz)}</button>${zayif ? kislaIpucu() : ''}`;
     } else if (durum.kat < KAT_SAYISI && ozetler.every((oz) => oz.durum === 'yenildi')) {
       devam = `<button type="button" class="zd-dugme zd-ana zd-devam" data-e="gecit"><span>🌀 Kat temiz: ${durum.kat + 1}. Kata geç</span></button>`;
     }
@@ -233,6 +241,7 @@ export function kurZindan({ gs, phaser, panelKapat, bildir, ekranAc }) {
         </div>`}
         ${sansBlok}
         ${kilitli || (!yet && !HIKAYE[m.level]) ? '' : `<details class="zd-katli"><summary>Canavar hakkında${yet ? ' ve yetenekleri' : ''}</summary>${HIKAYE[m.level] ? `<p class="zd-hikaye">${esc(HIKAYE[m.level])}</p>` : ''}${yet ? `<ul class="zd-yet" aria-label="Yetenekler">${yet}</ul>` : ''}</details>`}
+        ${!kilitli && oz.sans != null && oz.sans < 50 ? kislaIpucu() : ''}
         ${odemeNotu ? `<p class="zd-odeme-notu is-${odemeNotu.ton}" role="status">${odemeNotu.ton === 'kotu' ? '⛔' : '⚠️'} ${esc(odemeNotu.metin)}</p>` : ''}
         ${kilitli ? '' : `<ul class="zd-ganimet" aria-label="Ganimet">
           <li>🟣 <b>+${astra(Math.min(taban.ada, butce))} ASTRA</b></li>

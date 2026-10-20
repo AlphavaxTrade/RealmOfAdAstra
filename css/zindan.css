@@ -309,3 +309,8 @@
   .zd-oda-resim { aspect-ratio: 16 / 7; }   /* savaş düğmesi ve şans ilk bakışta görünsün */
   .zd-oda-kart { gap: 10px; padding: 12px; }
 }
+
+.zd-devam.is-zayif { background: var(--zd-yuzey-3); color: var(--zd-yazi); border-color: var(--zd-uyari); }
+.zd-ipucu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--zd-uyari); background: var(--zd-yuzey-3); font-size: 13.5px; line-height: 1.4; }
+.zd-ipucu > span { flex: 1 1 200px; }
+.zd-ipucu .zd-dugme { flex: none; white-space: nowrap; }

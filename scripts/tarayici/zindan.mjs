@@ -76,7 +76,8 @@ for (const [ad, w, h, mobil] of BOYUTLAR) {
   else kontrol(`${ad}: geniş ekranda levhalar resmin üstünde, liste gizli`, kat.plakaGorunur && !kat.listeGorunur);
 
   // Oda aç
-  await s.locator('.zd-bolge[data-oda="1"]').click();
+  // 20 Ekim 2026 yeni düzen: telefonda oda liste kartından, geniş ekranda resmin üstündeki bölgeden açılır
+  await s.locator(w <= 760 ? '.zd-liste [data-e="oda"][data-oda="1"]' : '.zd-bolge[data-oda="1"]').click();
   await bekle(500);
   await foto('02_oda');
   const oda = await s.evaluate(() => {
@@ -116,7 +117,9 @@ for (const [ad, w, h, mobil] of BOYUTLAR) {
   await s.locator('[data-e="gecit"]:visible').first().click(); await bekle(400);
   kontrol(`${ad}: geçit sonraki kata ışınlar`, await s.evaluate(() => document.getElementById('zindan-ekrani').dataset.tema === 'kat2'));
 
-  // Kütük
+  // Kütük ("⋯ Daha fazla" katının içinde: önce kapalı olduğu doğrulanır, sonra açılır)
+  kontrol(`${ad}: "Daha fazla" katı başta kapalı, kütük düğmesi gizli`, await s.evaluate(() => { const d = document.querySelector('#zindan-ekrani details.zd-daha'); return !!d && !d.open; }));
+  await s.locator('#zindan-ekrani details.zd-daha > summary').click(); await bekle(200);
   await s.locator('[data-e="kutuk"]').click(); await bekle(400);
   await foto('05_kutuk');
   const kutuk = await s.evaluate(() => ({ acik: !!document.querySelector('.zd-pano'), kartlar: document.querySelectorAll('.zd-kutuk-kart').length, kapali: document.querySelectorAll('.zd-kutuk-kart.is-kapali').length }));
@@ -150,8 +153,10 @@ for (const [ad, w, h, mobil] of BOYUTLAR) {
     window.dispatchEvent(new CustomEvent('enter-dungeon-view'));
   });
   await bekle(700);
-  await s.locator('.zd-bolge[data-oda="2"]').click(); await bekle(300);
-  await s.locator('[data-e="savas"]').click(); await bekle(800);
+  // Yeni düzen: kat görünümünün başındaki tek "Sıradaki" düğmesi doğrudan savaşa hazırlığı açar (oda aç → savaşa hazırlan iki dokunuşu bire indi)
+  const devam = await s.evaluate(() => (document.querySelector('#zindan-ekrani .zd-devam') || {}).textContent || '');
+  kontrol('savaş: kat başında "Sıradaki: Oda 3" düğmesi var', /Sıradaki: Oda 3/.test(devam), devam.replace(/\s+/g, ' '));
+  await s.locator('#zindan-ekrani .zd-devam').click(); await bekle(800);
   await s.evaluate(() => document.querySelector('#modal-body [data-e="basla"]').click());
   await bekle(1500);
   await s.evaluate(() => document.getElementById('aa-skipBtn')?.click());
@@ -171,12 +176,16 @@ for (const [ad, w, h, mobil] of BOYUTLAR) {
   }));
   kontrol('savaş: kat tamamlama kutlaması gösterilir', /1\. Kat tamamlandı/.test(kutlama.bant) && /Mağara Gezgini/.test(kutlama.bant), kutlama.bant.replace(/\s+/g, ' '));
   kontrol('savaş: kat sekmesinde 🏅 rozeti görünür', /🏅/.test(kutlama.rozet) || kutlama.rozet === '', kutlama.rozet);
-  kontrol('savaş: şeritte "Son savaş" düğmesi görünür', kutlama.tekrarDugmesi);
+  kontrol('savaş: "Daha fazla" katında "Son savaş" düğmesi var', kutlama.tekrarDugmesi);
+  // Kat tamamlandı: kat görünümünde "Kata geç" düğmesi çıkar
+  const gecDugme = await s.evaluate(() => (document.querySelector('#zindan-ekrani .zd-devam') || {}).textContent || '');
+  kontrol('savaş: kat temizlenince başta "Kata geç" düğmesi çıkar', /Kata geç/.test(gecDugme), gecDugme.replace(/\s+/g, ' '));
   await s.screenshot({ path: path.join(EKRAN, 'savas_01_kutlama.png') });
   await s.locator('[data-e="kutlama-kapat"]').click(); await bekle(300);
   kontrol('savaş: kutlama bandı kapanır', await s.evaluate(() => !document.querySelector('.zd-kutlama')));
 
   // "Son savaş" düğmesi, aynı canavar ve aynı askerlerle hazırlığı açar
+  await s.locator('#zindan-ekrani details.zd-daha > summary').click(); await bekle(200);
   await s.locator('#zindan-ekrani [data-e="tekrar"]').click(); await bekle(800);
   const hazirlik = await s.evaluate(() => ({
     baslik: document.getElementById('modal-title').innerText.replace(/\s+/g, ' ').trim(),

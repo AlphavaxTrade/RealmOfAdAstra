@@ -48,7 +48,8 @@ export const rehberYontemleri = {
       blacksmith:  { name: 'Demirci',       ok: veteran || done('three_expeditions'),              reason: 'Herhangi üç alanda seferleri aynı anda çalıştırınca açılır.' },
       barracks:    { name: 'Kışla',         ok: veteran || done('three_expeditions'),              reason: 'Herhangi üç alanda seferleri aynı anda çalıştırınca açılır.' },
       carnival:    { name: 'Karnaval',      ok: veteran || lvl >= 2,                               reason: 'Seviye 2\'ye ulaşınca açılır.' },
-      dungeon:     { name: 'Zindan',        ok: soldiers > 0 || lvl >= 3,                          reason: 'Kışladan ilk askerini alınca açılır.' },
+      // Kışla da kilitliyse oyuncu bir döngüde kalmasın: nedeni tam yol tarifiyle söyle (20 Ekim 2026, yeni oyuncu denemesi)
+      dungeon:     { name: 'Zindan',        ok: soldiers > 0 || lvl >= 3,                          reason: (veteran || done('three_expeditions')) ? 'Kışladan ilk askerini alınca açılır.' : 'Önce Kışla\'yı aç (üç alanda aynı anda sefer başlat), sonra Kışladan ilk askerini al.' },
       colosseum:   { name: 'Kolezyum',      ok: dungeonCleared || lvl >= 3,                        reason: 'Zindanda ilk zaferinden sonra açılır.' },
       battlefield: { name: 'Savaş Alanı',   ok: dungeonCleared || lvl >= 3,                        reason: 'Zindanda ilk zaferinden sonra açılır.' }
     };

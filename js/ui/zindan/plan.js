@@ -93,3 +93,23 @@ export function ganimetSanslari(gs, seviye, kat) {
     kutu: { taban: kutuTaban, etkin: kutu, metin: gs.formatDropChance(kutu) }
   };
 }
+
+// ── Şansı düşük oyuncuya çıkış yolu (20 Ekim 2026, yeni oyuncu denemesi) ──
+// Yeni hesapta ilk asker eşyasız ve tek başına: ilk odada kazanma şansı %0. Kat başına asker hakkı (kat + 1) varken ikinci asker şansı %100'e çıkarıyor,
+// tek eşya tek askere yetmiyor. Bu yüzden ipucu, o an gerçekten işe yarayacak şeyi söyler. Hiçbiri geçerli değilse null (ipucu gösterilmez).
+/**
+ * @param {{state: {soldierUnits: Array}, getAskerHakki?: Function}} gs
+ * @returns {{metin: string, asker: boolean, esya: boolean}|null}
+ */
+export function zayifIpucu(gs) {
+  const asker = gs.state.soldierUnits || [];
+  if (!asker.length) return null;
+  const h = typeof gs.getAskerHakki === 'function' ? gs.getAskerHakki() : null;
+  const hakVar = !!(h && h.acik && asker.length < h.hak);
+  const esyaVar = asker.some((a) => Object.values(a.equipment || {}).some((e) => !e));
+  if (!hakVar && !esyaVar) return null;
+  const parcalar = [];
+  if (hakVar) parcalar.push(`Bu katta ${h.hak} asker taşıyabilirsin, ${asker.length} askerin var: Kışla'dan yeni asker al.`);
+  if (esyaVar) parcalar.push('Askerlerinin boş eşya yuvası var: eşya tak.');
+  return { metin: parcalar.join(' '), asker: hakVar, esya: esyaVar };
+}
