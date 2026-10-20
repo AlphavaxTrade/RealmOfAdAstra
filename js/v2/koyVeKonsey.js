@@ -207,9 +207,15 @@ export const gameStateV2 = {
     const evAdimi = Math.max(1, (GAME_CONFIG.HESAP_BAGI || {}).EV_SEVIYE_ADIMI ?? 2);
     const kap = this.getWarehouseCapacity(Math.max(1, Math.min(this.getWarehouseMaxLevel ? this.getWarehouseMaxLevel() : 18, Math.max(Number(this.state.level) || 1, evAdimi * (n - 1))))) || {};   // silo hesabı geçemez: n. ev, yapılabildiği hesap seviyesindeki siloya sığar
     const sigma = ((GAME_CONFIG.HESAP_BAGI || {}).SEVIYE_BEDELI_PAYI || {}).SON ?? 0.9;   // en çok hesap seviyesi bedeli kadar pay (0,9)
+    // Oyuncunun GERÇEK silosu da sınırdır (20 Ekim 2026 hata düzeltmesi): bedel hesap seviyesindeki silo üzerinden hesaplanıp oyuncunun silosundan büyük çıkınca, hesap seviyesi
+    // ev için yetse bile ev ancak silo yükselince yapılabiliyordu ("Silon bu kadar hammadde alamıyor"). Ev hakkı yalnız hesap seviyesine bağlıdır; bedel gerçek siloya sığar.
+    const gercek = (this.getWarehouseCapacity ? this.getWarehouseCapacity() : null) || {};
     return Object.fromEntries(Object.entries(base).map(([k, v]) => {
       const ham = Math.round(v * mult);
-      return [k, kap[k] != null ? Math.min(ham, Math.floor(kap[k] * sigma)) : ham];
+      let tavan = ham;
+      if (kap[k] != null) tavan = Math.min(tavan, Math.floor(kap[k] * sigma));
+      if (gercek[k] != null) tavan = Math.min(tavan, Math.floor(gercek[k] * sigma));
+      return [k, tavan];
     }));
   },
 

@@ -31,7 +31,7 @@ const TAVAN = {
   koleksiyon: { harf: 800, dugme: 5, sayi: 15 },
   silo: { harf: 800, dugme: 3, sayi: 58 },
   kolezyum: { harf: 600, dugme: 7, sayi: 27 },
-  savashazirlik: { harf: 750, dugme: 10, sayi: 39 },
+  savashazirlik: { harf: 810, dugme: 10, sayi: 40 },   // 20 Ekim 2026: Dizilim kartı (otomatik / manuel) eklendi
   kisla: { harf: 750, dugme: 17, sayi: 35 },
   koy: { harf: 650, dugme: 5, sayi: 34 },
   bolge: { harf: 650, dugme: 4, sayi: 22 },

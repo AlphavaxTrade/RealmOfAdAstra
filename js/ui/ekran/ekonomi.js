@@ -36,7 +36,15 @@ function genel(b) {
         + satir('Kasalara giren (ömür boyu)', `${astra(t.lifetimeDeposited)} ASTRA`)
         + satir('Kasalardan çıkan (ömür boyu)', `${astra(t.lifetimeWithdrawn)} ASTRA`), { k: 'eko-akis' }),
     katli('💎 Kasalar', izgara(t.pools.map((p) => hucre(p.name, `${astra(p.balance)} ASTRA`, p.health < 0.25 ? 'kotu' : '')), { genis: true }), { k: 'eko-kasalar' }),
-    katli('Yakılan hammaddeler (kalıcı)', izgara(b.GAME_CONFIG.RESOURCE_KEYS.map((k) => hucre(kaynakAdi(b, k), tam((gs.totalBurnedResources || {})[k] || 0))), {}), { k: 'yakim' })
+    // Teçhizat parçası da yakılır (dövme, geliştirme, onarım) ama hammadde sayılmadığı için ayrı kayıtta (totalBurnedItems) tutulur; burada onunla birlikte gösterilir (20 Ekim 2026).
+    // Pandora kutusu, anahtar ve iyileştirme parşömeni yalnız yakılmışsa görünür.
+    katli('Yakılan hammaddeler ve parçalar (kalıcı)', izgara([
+      ...b.GAME_CONFIG.RESOURCE_KEYS.map((k) => hucre(kaynakAdi(b, k), tam((gs.totalBurnedResources || {})[k] || 0))),
+      hucre('Teçhizat parçası', tam((gs.totalBurnedItems || {}).fragments || 0)),
+      ...[['boxes', 'Pandora kutusu'], ['keys', 'Anahtar'], ['scroll_heal', 'İyileştirme parşömeni']]
+        .filter(([k]) => ((gs.totalBurnedItems || {})[k] || 0) > 0)
+        .map(([k, ad]) => hucre(ad, tam((gs.totalBurnedItems || {})[k])))
+    ], {}), { k: 'yakim' })
   ].join('');
 }
 

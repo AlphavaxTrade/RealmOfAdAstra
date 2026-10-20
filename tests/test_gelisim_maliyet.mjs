@@ -50,6 +50,9 @@ const gs = yeni();
 // 3) Köy evi: 11 evin toplamı ~x4-5; hiçbir ev bedeli, yapılabildiği hesap seviyesindeki (2 x (n-1)) silonun %90'ını aşmaz
 {
   let yeniT = 0, eskiT = 0;
+  // Ev bedeli ayrıca oyuncunun GERÇEK silosuna da sığar (20 Ekim 2026); eğri testi için silo en üstte tutulur
+  const eskiSilo = gs.state.warehouseLevel;
+  gs.state.warehouseLevel = gs.getWarehouseMaxLevel();
   for (let h = 2; h <= 12; h++) {
     const c = gs.getHouseCost(h);
     const mult = 1.2 ** (h - 2);
@@ -61,6 +64,9 @@ const gs = yeni();
   // 19 Ekim 2026: evler talep ölçeğine tırmanır (ev 2: arz ölçeği, ev 12: x10 ve üstel artış)
   assert.ok(yeniT / eskiT >= 20 && yeniT / eskiT <= 80, `ev bedelleri arz ölçeğindeki üstel artışın 20-80 katı (x${(yeniT / eskiT).toFixed(2)})`);
   assert.equal(gs.getHouseCost(2).wood, 400 * U, '2. ev (ilk) eski bedelde (x50 adet)');
+  gs.state.warehouseLevel = eskiSilo;
+  // Yeni oyuncunun 1. silosu 2. evin odununu (2.000) tutamıyordu; bedel gerçek siloya sığar (20 Ekim 2026)
+  assert.ok(gs.getHouseCost(2).wood <= gs.getWarehouseCapacity().wood, '2. ev bedeli oyuncunun silosuna sığar');
   ok(`köy evleri x${(yeniT / eskiT).toFixed(1)}; 2. ev eski bedelde; hiçbiri siloyu aşmaz`);
 }
 

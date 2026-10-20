@@ -225,6 +225,99 @@ export const topluYontemleri = {
     return { allies: muttefikler, enemies: [dusman], bossPhases: DEFAULT_BOSS_PHASES[monster.level] || null, isBoss: boss };
   },
 
+  // ── Otomatik dizilim (20 Ekim 2026) ──────────────────────────────────────────────────────────────────────────────────
+  // Seçili askerlerin ön/arka saf dağılımını savaş motoruyla (combat.js) dener ve o canavara karşı en iyi sonucu vereni bulur. Her aday AYNI rastgele
+  // tohumlarla ölçülür (aralarındaki fark şanstan değil dizilimden gelir); önce kazanma şansı, eşitse daha az kayıp. Asker sayısı en çok 8 ise bütün
+  // dizilimler denenir (2^8 = 256); daha çoğunda birkaç başlangıçtan tek tek asker çevirerek iyileştirilir (zaman sınırlı). Askerin eşyası, canı, atağı
+  // ve yetenekleri savaş kurulumundan (buildDungeonBattleUnits) geldiği için hesaba kendiliğinden girer.
+  _dizilimDegerle(monster, secili, rows, samples, seedBase) {
+    const kur = () => {
+      const k = this.buildDungeonBattleUnits(monster, secili);
+      for (const u of k.allies) u.row = rows[u.sourceIndex] === 'back' ? 'back' : 'front';
+      return k;
+    };
+    const ilk = kur();
+    const r = predictBattle(() => kur().allies, () => kur().enemies, samples, { seedBase, bossPhases: ilk.bossPhases });
+    return { rows, r, puan: r.winChance * 1000 - (Number(r.avgCasualties) || 0) };
+  },
+
+  findBestFormation(monster, selectedIndices, { samples = 30, kesinSamples = 120, sureMs = 1500 } = {}) {
+    const askerler = this.state.soldierUnits || [];
+    const sira = [...new Set((selectedIndices || []).map(Number))].filter((i) => askerler[i] && !this.isSoldierFallen(i));
+    if (!sira.length) return null;
+    const seedBase = 0x5eed2026;
+    const mevcut = Object.fromEntries(sira.map((i) => [i, askerler[i].row === 'back' ? 'back' : 'front']));
+    const baslangic = Date.now();
+    const adaylar = new Map();   // anahtar → { rows, puan }
+    const anahtarOf = (rows) => sira.map((i) => (rows[i] === 'back' ? 'b' : 'f')).join('');
+    const dene = (rows) => {
+      const k = anahtarOf(rows);
+      if (!adaylar.has(k)) adaylar.set(k, this._dizilimDegerle(monster, sira, rows, samples, seedBase));
+      return adaylar.get(k);
+    };
+
+    if (sira.length <= 8) {
+      for (let mask = 0; mask < (1 << sira.length); mask++) {
+        const rows = {};
+        sira.forEach((idx, bit) => { rows[idx] = (mask >> bit) & 1 ? 'back' : 'front'; });
+        dene(rows);
+      }
+    } else {
+      // Başlangıçlar: şimdiki dizilim, hepsi önde, en dayanıklı yarısı önde. Sonra tek tek asker çevirerek iyileştirme
+      const guc = (i) => (this.getSoldierFullStats(i) || {}).totalMaxHp || 0;
+      const dayanikliSirasi = [...sira].sort((x, y) => guc(y) - guc(x));
+      const yarim = Object.fromEntries(dayanikliSirasi.map((idx, n) => [idx, n < Math.ceil(sira.length / 2) ? 'front' : 'back']));
+      const hepsiOn = Object.fromEntries(sira.map((idx) => [idx, 'front']));
+      let en = null;
+      for (const baslat of [mevcut, yarim, hepsiOn]) {
+        let simdiki = dene({ ...baslat });
+        for (let gecis = 0; gecis < 3; gecis++) {
+          let iyilesti = false;
+          for (const idx of sira) {
+            if (Date.now() - baslangic > sureMs) break;
+            const rows = { ...simdiki.rows, [idx]: simdiki.rows[idx] === 'back' ? 'front' : 'back' };
+            const aday = dene(rows);
+            if (aday.puan > simdiki.puan) { simdiki = aday; iyilesti = true; }
+          }
+          if (!iyilesti || Date.now() - baslangic > sureMs) break;
+        }
+        if (!en || simdiki.puan > en.puan) en = simdiki;
+      }
+    }
+
+    // En iyi birkaç aday (ve şimdiki dizilim) daha çok örnekle yeniden ölçülür: az örneğin şansı kazanan seçilmesin
+    const liste = [...adaylar.values()].sort((x, y) => y.puan - x.puan).slice(0, 5).map((a) => a.rows);
+    const kesinler = new Map();
+    for (const rows of [...liste, mevcut]) {
+      const k = anahtarOf(rows);
+      if (!kesinler.has(k)) kesinler.set(k, this._dizilimDegerle(monster, sira, rows, kesinSamples, seedBase));
+    }
+    const siralanmis = [...kesinler.values()].sort((x, y) => y.puan - x.puan);
+    const enIyi = siralanmis[0];
+    const onceki = kesinler.get(anahtarOf(mevcut));
+    // Şimdiki dizilim en iyiyle eşitse (aynı şans, aynı kayıp) değiştirilmez: oyuncunun elle verdiği dizilim korunur
+    const secilen = onceki && onceki.puan >= enIyi.puan ? onceki : enIyi;
+    const degisen = sira.filter((i) => secilen.rows[i] !== mevcut[i]);
+    return {
+      rows: secilen.rows,
+      on: sira.filter((i) => secilen.rows[i] === 'front').length,
+      arka: sira.filter((i) => secilen.rows[i] === 'back').length,
+      winChance: secilen.r.winChance,
+      oncekiSans: onceki ? onceki.r.winChance : null,
+      degisen,
+      denenen: adaylar.size,
+      sureMs: Date.now() - baslangic
+    };
+  },
+
+  // En iyi dizilimi bulup askerlere uygular (yalnız değişen askerler yazılır). Döndürür: findBestFormation sonucu + { uygulandi }
+  autoArrangeFormation(monster, selectedIndices, secenek = {}) {
+    const sonuc = this.findBestFormation(monster, selectedIndices, secenek);
+    if (!sonuc) return null;
+    for (const idx of sonuc.degisen) this.setSoldierRow(idx, sonuc.rows[idx]);
+    return { ...sonuc, uygulandi: sonuc.degisen.length };
+  },
+
   // Gerçek savaş motoruyla (combat.js) Monte Carlo kazanma şansı
   predictDungeonBattle(monster, selectedSoldierIndices, samples = 100) {
     if (!selectedSoldierIndices || selectedSoldierIndices.length === 0) {

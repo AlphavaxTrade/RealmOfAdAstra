@@ -207,7 +207,9 @@ export const pazarYontemleri = {
     let siloYetmiyor = false;
     for (const kaynak of Object.keys(hedef)) {
       const elde = Math.floor(Number(depo[kaynak]) || 0);
-      let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde + (kaynak === 'herb' ? otPayi : 0)));
+      let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde));
+      // Pay yalnız zaten ot alınacaksa eklenir: eldeki ot tam yetiyorsa "1 ot eksik" gösterilmez (20 Ekim 2026 geri bildirimi)
+      if (kaynak === 'herb' && gerekli > 0) gerekli += otPayi;
       const bosYer = kapasite[kaynak] != null ? Math.max(0, Math.floor(kapasite[kaynak] - elde)) : gerekli;
       if (!kapasitesiz && gerekli > bosYer) { gerekli = bosYer; siloYetmiyor = true; }
       if (gerekli <= 0) continue;

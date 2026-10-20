@@ -19,7 +19,9 @@ export const kaynakAdi = (b, key) => {
 export function maliyetSatiri(etiketHtml, sahip, gereken, { astraMi = false } = {}) {
   const yeter = sahip >= gereken;
   const yaz = astraMi ? astra : tam;
-  return `<div class="ek-satir ${yeter ? 'is-iyi' : 'is-kotu'}"><span>${etiketHtml}</span><b>${esc(yaz(sahip))} / ${esc(yaz(gereken))}</b></div>`;
+  // Hammaddede eldeki kesirli miktar yuvarlanıp "7.247 / 7.247" yeşil görünmesin: tam sayıya YUKARI yuvarlanan eksik de eksik olarak görünür (aşağı yuvarla)
+  const gorunenSahip = astraMi || yeter ? sahip : Math.floor(sahip);
+  return `<div class="ek-satir ${yeter ? 'is-iyi' : 'is-kotu'}"><span>${etiketHtml}</span><b>${esc(yaz(gorunenSahip))} / ${esc(yaz(gereken))}</b></div>`;
 }
 
 // Eksik hammaddeleri pazardan alıp bir işlemi mümkün kılan kart (seviye atlama, silo yükseltme)

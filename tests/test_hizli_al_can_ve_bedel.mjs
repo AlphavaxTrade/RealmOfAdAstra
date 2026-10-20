@@ -78,6 +78,19 @@ console.log('✅ hızlı al: silo yükseltme tek seferde');
 }
 console.log('✅ yaralı yokken ek pay yok');
 
+// 1c2) Yaralı asker varken bile eldeki ot tam yetiyorsa "ot eksik" gösterilmez (ot payı yalnız zaten alım varsa eklenir)
+{
+  const g = yeni();
+  g.state.level = 5; g.state.warehouseLevel = 6;
+  yaraliAsker(g);
+  const gerek = g.getNextLevelRequirement();
+  g.state.currentXp = gerek.xp + 5;
+  for (const k of Object.keys(gerek.costs)) g.state.inventory[k] = gerek.costs[k];
+  const plan = g.getQuickBuyPlan('levelup');
+  assert.equal(plan.items.length, 0, 'her şey tam yetiyorsa eksik listesi boş: ' + JSON.stringify(plan.items));
+}
+console.log('✅ ot tam yetiyorsa "1 ot eksik" yazmaz');
+
 // 1d) Anında biten işler (dövme, geliştirme, onarım, ev, alet tamiri): alım ile iş arasında bekleme yok, tek hızlı alımda tamamlanmalı
 {
   const g = yeni();
@@ -187,4 +200,27 @@ console.log('✅ düşmüş asker iyileşmeden zindana giremez');
   }
 }
 console.log('✅ silo ve hesap yükseltme ASTRA bedeli = hammaddelerin anlık pazar değeri');
-console.log('\n5 kontrol bloğu geçti.');
+console.log('\n5 kontrol bloğu geçti.');// 5) Köy evi: ev hakkı yalnız HESAP seviyesine bağlıdır; bedel oyuncunun gerçek siloyuna sığar (eskiden silo hesaptan düşükse ev ancak silo yükselince yapılabiliyordu)
+{
+  for (const [lv, silo, ev] of [[6, 3, 3], [10, 4, 5], [12, 5, 6], [20, 8, 10]]) {
+    const g = yeni();
+    g.state.level = lv; g.state.warehouseLevel = silo;
+    g.state.village = { houses: ev, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 };
+    for (const k of ['wood', 'stone', 'iron']) g.state.inventory[k] = 0;
+    const v = g.getVillageInfo();
+    assert.ok(v.canBuildHouse, `hesap ${lv}: ${ev + 1}. ev için seviye yeterli`);
+    const kap = g.getWarehouseCapacity();
+    for (const [k, n] of Object.entries(v.nextHouseCost)) assert.ok(n <= kap[k], `hesap ${lv} silo ${silo}: ev bedeli (${k} ${n}) gerçek siloya (${kap[k]}) sığar`);
+    const plan = g.getQuickBuyPlan('house');
+    assert.ok(plan.ok, `hesap ${lv} silo ${silo}: Hızlı al ile ev yapılabilir: ${plan.reason}`);
+    for (const it of plan.items) assert.ok(g.marketBuy(it.res, it.qty).success);
+    assert.ok(g.buildHouse().success, 'ev yapıldı');
+  }
+  // Hesap seviyesi yetmiyorsa silo ne kadar büyük olursa olsun ev yapılamaz
+  const g = yeni();
+  g.state.level = 5; g.state.warehouseLevel = 5;
+  g.state.village = { houses: 3, villagers: 10, labor: 0, lastGrowthAt: 0, starvingSince: 0 };
+  assert.equal(g.getVillageInfo().canBuildHouse, false, 'Sv.5: en çok 3 ev (4. ev için Sv.6)');
+}
+console.log('✅ köy evi: hak hesap seviyesine, bedel gerçek siloya bağlı');
+

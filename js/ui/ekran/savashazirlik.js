@@ -20,6 +20,50 @@ const askerler = (b) => b.gameState.state.soldierUnits || [];
 // Sunucu tek savaşa en çok 25 asker kabul eder (server/actions.js idxArr; Cehennem modunda asker hakkı 25'e çıkar); daha fazlası seçilirse işlem reddedilirdi
 const EN_COK_ASKER = 25;
 
+// ── Dizilim (20 Ekim 2026): "Otomatik" modda sistem seçili askerler için o canavara karşı en iyi ön/arka saf dağılımını savaş motoruyla hesaplayıp uygular;
+// "Manuel" modda oyuncu her askerin saf düğmesiyle kendisi dizer. Mod oyun durumunda saklanır (varsayılan: otomatik).
+const dizilimModu = (gs) => (gs.state.dizilimModu === 'manuel' ? 'manuel' : 'oto');
+
+function dizilimiUygula(b, secenek, secili, zorla = false) {
+  const gs = b.gameState;
+  if (!secili.length) { secenek.dizilim = null; secenek.dizilimAnahtar = null; return null; }
+  const imza = secili.map((i) => {
+    const f = gs.getSoldierFullStats(i) || {};
+    const a = gs.state.soldierUnits[i] || {};
+    return `${i}:${Math.round(f.totalAtk || 0)}:${Math.round(f.totalMaxHp || 0)}:${Math.round(a.hp != null ? a.hp : 0)}:${(a.skills || []).join('+')}`;
+  }).join('|');
+  const anahtar = `${secenek.canavar.level}#${gs.getMonsterCurrentHp(secenek.canavar.level, secenek.canavar.hp)}#${imza}`;
+  if (!zorla && secenek.dizilimAnahtar === anahtar && secenek.dizilim) return secenek.dizilim;
+  const sonuc = gs.autoArrangeFormation(secenek.canavar, secili);
+  secenek.dizilimAnahtar = anahtar;
+  secenek.dizilim = sonuc;
+  return sonuc;
+}
+
+function dizilimMetni(d) {
+  if (!d) return '';
+  // Şans yüzdesi üstteki şans şeridinde (ayrı örnekleme, birkaç puan farklı çıkabilir); burada yalnız dizilim ve öncekine göre kazanç yazılır
+  const fark = d.oncekiSans != null && d.winChance > d.oncekiSans ? ` · önceki dizilişten ${tam(d.winChance - d.oncekiSans)} puan daha iyi` : '';
+  return `Ön saf ${tam(d.on)} · arka saf ${tam(d.arka)}${fark}`;
+}
+
+function dizilimKarti(b, secenek, secili) {
+  const gs = b.gameState;
+  const oto = dizilimModu(gs) === 'oto';
+  const d = oto ? secenek.dizilim : null;
+  const ozet = oto
+    ? (d ? `🧠 ${esc(dizilimMetni(d))}` : 'Asker seçince sistem en iyi dizilişi kurar.')
+    : 'Her askerin yanındaki Ön / Arka düğmesiyle kendin diz.';
+  return kart({
+    baslik: '🧭 Dizilim',
+    rozet: etiket(oto ? 'Otomatik' : 'Manuel', oto ? 'iyi' : ''),
+    icerik: `<div class="ek-dugmeler">${dugme({ e: 'dizilimModu', veri: { mod: 'oto' }, ton: oto ? 'birincil' : '', metin: '🧠 Otomatik' })}${dugme({ e: 'dizilimModu', veri: { mod: 'manuel' }, ton: oto ? '' : 'birincil', metin: '✋ Manuel' })}</div>`
+      + not(ozet)
+      + (!oto && secili.length ? dugme({ e: 'otomatikDiz', ton: 'iyi', metin: '🧠 Otomatik diz', ipucu: 'Seçili askerler için bu canavara karşı kazanma şansı en yüksek ön/arka saf dizilişini hesaplar ve uygular', genis: true }) : '')
+      + katli('Dizilim nasıl seçilir? (ayrıntı)', not('Sistem, seçili askerlerin canı, atağı, eşyaları ve yeteneklerine göre ön / arka saf dağılımını bu canavara karşı savaş motoruyla dener ve kazanma şansı en yüksek olanı kurar. Manuel modda dizilimi sen belirlersin; "Otomatik diz" ile istediğin an sisteme kurdurabilirsin.'), { k: 'dizilim-nasil' })
+  });
+}
+
 // Seçili asker sırası: var olmayanlar atılır, boşsa herkes seçilir
 function seciliAskerler(b, secenek) {
   const n = askerler(b).length;
@@ -199,6 +243,7 @@ const ekran = {
     const m = secenek.canavar;
     const gs = b.gameState;
     const secili = seciliAskerler(b, secenek);
+    if (dizilimModu(gs) === 'oto') dizilimiUygula(b, secenek, secili);   // şans şeridi uygulanan dizilimi göstersin
     const terms = gs.getDungeonEntryTerms(m.level, asBoss(m), secili.length);
     const kilitli = gs.isArmyStakedInWorldBoss();
     const yok = askerler(b).length === 0;
@@ -217,6 +262,7 @@ const ekran = {
       sansSeridi(b, m, secili),
       girisKarti(b, m, terms),
       dusmanKarti(b, m, secili, terms),
+      dizilimKarti(b, secenek, secili),
       ordu(b, secenek, secili),
       `<div class="ek-eylem-cubugu">
         ${parsomen > 0 ? dugme({ e: 'parsomen', metin: `📜 Parşömenle iyileştir (${parsomen})`, ipucu: 'Bir askeri +4 can iyileştirir' }) : ''}
@@ -268,6 +314,23 @@ const ekran = {
         : `Bütün ordunla bile kazanma şansı %${sans}. Askerlerini güçlendirmen gerekebilir.`, sans >= 80 ? 'success' : 'info');
     },
 
+    dizilimModu(b, el, secenek) {
+      const oto = el.dataset.mod === 'oto';
+      b.gameState.state.dizilimModu = oto ? 'oto' : 'manuel';
+      b.gameState.saveState();
+      if (oto) { const d = dizilimiUygula(b, secenek, seciliAskerler(b, secenek), true); if (d) b.bildir(`🧠 ${dizilimMetni(d)}`, 'success'); }
+      else b.bildir('✋ Manuel dizilim: ön / arka saf düğmeleriyle kendin dizebilirsin.', 'info');
+    },
+
+    // Seçili askerler için en iyi dizilimi hesaplayıp uygular (hesaplama bir saniye kadar sürebilir)
+    otomatikDiz(b, el, secenek) {
+      b.gameState.state.dizilimModu = 'oto';
+      const d = dizilimiUygula(b, secenek, seciliAskerler(b, secenek), true);
+      if (!d) { b.bildir('Önce savaşa girecek askerleri seç.', 'info'); return false; }
+      b.bildir(`🧠 Otomatik dizildi: ${dizilimMetni(d)}`, 'success');
+      return undefined;
+    },
+
     dusmusBilgi(b) { b.bildir('💀 Düşen asker iyileştirilmeden savaşa katılamaz.', 'info'); return false; },
 
     mevzi(b, el) {
@@ -275,6 +338,7 @@ const ekran = {
       const s = askerler(b)[i];
       if (!s) return false;
       b.gameState.setSoldierRow(i, s.row === 'back' ? 'front' : 'back');
+      if (dizilimModu(b.gameState) === 'oto') { b.gameState.state.dizilimModu = 'manuel'; b.bildir('✋ Manuel dizilime geçtin. Sisteme bıraktırmak için 🧠 Otomatik diz\'e bas.', 'info'); }
       return undefined;
     },
 
@@ -306,6 +370,7 @@ const ekran = {
       const secili = secenek.secili || [];
       if (gs.isArmyStakedInWorldBoss()) { b.bildir('🔒 Ordun World Boss savaşına kilitlidir! Zindanda savaşamazsın.', 'error'); return false; }
       if (!secili.length) { b.bildir('En az 1 asker seçmelisin!', 'error'); return false; }
+      if (dizilimModu(gs) === 'oto') dizilimiUygula(b, secenek, secili);   // otomatik modda savaşa en iyi dizilişle girilir (aynıysa yeniden hesaplanmaz)
       const terms = gs.getDungeonEntryTerms(m.level, asBoss(m), secili.length);
       if (!terms.staminaOk) {
         b.bildir(`⚠️ Yetersiz stamina! ${secili.length} asker için ${terms.staminaCost} ⚡ gerekiyor (mevcut: ${Math.floor(gs.state.stamina || 0)} ⚡).`, 'error');
