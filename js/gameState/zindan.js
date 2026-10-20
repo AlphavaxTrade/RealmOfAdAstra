@@ -179,6 +179,10 @@ export const zindanYontemleri = {
     const sira = [...new Set((Array.isArray(selectedIndices) ? selectedIndices : []).map(Number))]
       .filter((i) => Number.isInteger(i) && askerler[i]);
     if (!sira.length) return { success: false, message: 'Savaşa katılacak geçerli bir asker bulunamadı!' };
+    const dusenler = sira.filter((i) => this.isSoldierFallen(i));
+    if (dusenler.length) {
+      return { success: false, fallen: dusenler, message: `💀 ${dusenler.map((i) => askerler[i].name).join(', ')} düştü (canı sıfır). İyileştirmeden savaşa katılamaz: önce iyileştir ya da başka asker seç.` };
+    }
     if (sira.some((i) => this.isSoldierPvpLocked(i))) {
       return { success: false, message: '🔒 Seçtiğin askerlerden biri Kolezyumda maç arıyor. Önce sıradan çık ya da başka asker seç.' };
     }
@@ -200,7 +204,7 @@ export const zindanYontemleri = {
     const askerler = this.state.soldierUnits || [];
     const muttefikler = Array.isArray(sim.allies) ? sim.allies : [];
     for (const u of muttefikler) {
-      if (askerler[u.sourceIndex]) this.setSoldierHpFromBattle(u.sourceIndex, u.hp);   // savaş ölçeğinden kayıtlı tabana (ordu.js)
+      if (askerler[u.sourceIndex]) this.setSoldierHpFromBattle(u.sourceIndex, u.hp, { dusebilir: true });   // savaş ölçeğinden kayıtlı tabana (ordu.js); canı biten düşer
     }
     const asinan = entry.weaponWear ? this.applyDungeonWeaponWear(muttefikler.map((u) => u.sourceIndex), { level: monster.level, mod: this.state.dungeonMode }) : [];
     const boss = buyukBossMu(monster, monster.level);
@@ -465,7 +469,7 @@ export const zindanYontemleri = {
     if (this.isArmyStakedInWorldBoss()) return [];
     const askerler = this.state.soldierUnits || [];
     return askerler.map((_, i) => i)
-      .filter((i) => !this.isSoldierPvpLocked(i))
+      .filter((i) => !this.isSoldierPvpLocked(i) && !this.isSoldierFallen(i))
       .map((i) => {
         const f = this.getSoldierFullStats(i) || { totalAtk: 0, totalMaxHp: 0 };
         return { i, guc: f.totalAtk * 3 + f.totalMaxHp };
@@ -479,6 +483,7 @@ export const zindanYontemleri = {
   getZindanOrduDurumu() {
     const askerler = this.state.soldierUnits || [];
     let yarali = 0;
+    const dusmus = askerler.filter((_, i) => this.isSoldierFallen(i)).length;
     askerler.forEach((a) => {
       const enFazla = a.maxHp || 0;   // kayıtlı can taban ölçeğinde tutulur (ordu.js getSoldierBattleStart)
       if (a.hp != null && enFazla > 0 && a.hp < enFazla - 0.5) yarali++;
@@ -487,6 +492,7 @@ export const zindanYontemleri = {
     return {
       asker: askerler.length,
       yarali,
+      dusmus,
       kilitli: this.isArmyStakedInWorldBoss(),
       stamina: Math.floor(this.state.stamina || 0),
       enFazlaStamina: this.getMaxStamina(),

@@ -25,7 +25,7 @@ const YETENEK_ROLLERI = {
 };
 
 export const askerGelisimYontemleri = {
-  // Askere XP ekler; gereken XP = seviye × 100. Seviye atlayınca temel değerler ve can yenilenir, yetenekler açılır.
+  // Askere XP ekler; gereken XP = seviye × 100. Seviye atlayınca temel değerler büyür ve yetenekler açılır; can yenilenmez.
   addSoldierXp(soldierIdx, xpAmount) {
     const asker = (this.state.soldierUnits || [])[soldierIdx];
     if (!asker) return { leveledUp: false };
@@ -45,7 +45,8 @@ export const askerGelisimYontemleri = {
       asker.level += 1;
       asker.baseAtk = 25 + (asker.level - 1) * (GAME_CONFIG.SOLDIER_ATK_PER_LEVEL || 6);
       asker.maxHp = 100 + (asker.level - 1) * (GAME_CONFIG.SOLDIER_HP_PER_LEVEL || 25);
-      asker.hp = asker.maxHp;
+      // Seviye atlamak canı YENİLEMEZ (20 Ekim 2026): kayıtlı can aynı kalır, yalnız azami can büyür; düşmüş asker düşmüş kalır
+      asker.hp = Math.min(asker.maxHp, asker.hp != null ? asker.hp : asker.maxHp);
       seviyeAtladi = true;
       yeniSeviye = asker.level;
 

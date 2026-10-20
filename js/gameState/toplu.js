@@ -185,7 +185,7 @@ export const topluYontemleri = {
   // Hem tahmin hem gerçek savaş aynı kurulumu kullanır (tek motor: combat.js)
   buildDungeonBattleUnits(monster, selectedSoldierIndices, monsterHp = null) {
     const askerler = this.state.soldierUnits || [];
-    const muttefikler = (selectedSoldierIndices || []).filter(idx => askerler[idx]).map((idx, i) => {
+    const muttefikler = (selectedSoldierIndices || []).filter(idx => askerler[idx] && !this.isSoldierFallen(idx)).map((idx, i) => {
       const istat = this.getSoldierFullStats(idx) || { totalAtk: 25, totalMaxHp: 100 };
       const asker = askerler[idx];
       return createUnit({

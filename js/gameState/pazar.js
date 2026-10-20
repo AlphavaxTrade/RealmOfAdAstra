@@ -198,12 +198,16 @@ export const pazarYontemleri = {
       return { ok: false, items: [], reason: 'Geçersiz.' };
     }
 
+    // Pasif iyileşme şifalı otu saniye saniye yakar (ordu.js processSoldierPassiveHealing). Hızlı al ile alım ile asıl iş (seviye atla, silo yükselt)
+    // ayrı iki dokunuş olduğundan, tam yetecek kadar alınan ot arada eriyip 1 adet eksik kalıyordu ve ikinci kez "Hızlı al" gerekiyordu (20 Ekim 2026).
+    // Yaralı asker varken bu iki işte ot için 1 adetlik pay eklenir.
+    const otPayi = (kind === 'levelup' || kind === 'warehouse') && (this.state.soldierUnits || []).some((s) => (s.hp != null ? s.hp : s.maxHp) < (s.maxHp || 100)) ? 1 : 0;
     const items = [];
     let toplam = 0;
     let siloYetmiyor = false;
     for (const kaynak of Object.keys(hedef)) {
       const elde = Math.floor(Number(depo[kaynak]) || 0);
-      let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde));
+      let gerekli = Math.max(0, Math.ceil(hedef[kaynak] - elde + (kaynak === 'herb' ? otPayi : 0)));
       const bosYer = kapasite[kaynak] != null ? Math.max(0, Math.floor(kapasite[kaynak] - elde)) : gerekli;
       if (!kapasitesiz && gerekli > bosYer) { gerekli = bosYer; siloYetmiyor = true; }
       if (gerekli <= 0) continue;

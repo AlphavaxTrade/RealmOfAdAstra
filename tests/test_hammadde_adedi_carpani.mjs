@@ -44,11 +44,11 @@ const yeniOyun = () => { depo.clear(); return new GameStateManager(); };
   ok('arz x5, talep x50, fiyatlar ve havuzlar aynı, koridor 0,5x-5x');
 }
 
-// 2) Yeni oyuncu takılmaz: 1->2 seviye bedeli arz ölçeğinde (243 x5), ASTRA payı eski ölçekte (15,8 ASTRA), ilk silo bedeli tutar; ileri seviyeler talep ölçeğine tırmanır
+// 2) Yeni oyuncu takılmaz: 1->2 seviye bedeli arz ölçeğinde (243 x5), ASTRA payı hammaddenin tam pazar değeri (78,95 ASTRA; 20 Ekim 2026 sahip kararı, eskiden ÷5 ile 15,8), ilk silo bedeli tutar; ileri seviyeler talep ölçeğine tırmanır
 {
   const gs = yeniOyun();
   const r = gs.getNextLevelRequirement();
-  assert.ok(Math.abs(r.adAstra - 15.79) < 0.1, `1->2 seviye ASTRA payı eski ölçekte (${r.adAstra})`);
+  assert.ok(Math.abs(r.adAstra - 78.95) < 0.5, `1->2 seviye ASTRA payı hammaddenin tam pazar değeri (${r.adAstra})`);
   assert.equal(r.costs.wheat, 243 * U, '1->2 buğday bedeli 243 x5');
   const silo1 = gs.getWarehouseCapacity(1);
   assert.ok(r.costs.wheat <= silo1.wheat && r.costs.iron <= silo1.iron, 'ilk seviye bedeli ilk siloya sığar');

@@ -23,8 +23,9 @@ const EN_COK_ASKER = 25;
 // Seçili asker sırası: var olmayanlar atılır, boşsa herkes seçilir
 function seciliAskerler(b, secenek) {
   const n = askerler(b).length;
-  let sec = (secenek.secili || []).filter((i) => i < n).slice(0, EN_COK_ASKER);
-  if (!sec.length && n > 0 && !secenek.secimYapildi) sec = Array.from({ length: Math.min(n, EN_COK_ASKER) }, (_, i) => i);
+  const dusmus = (i) => b.gameState.isSoldierFallen(i);   // canı sıfır asker savaşa giremez
+  let sec = (secenek.secili || []).filter((i) => i < n && !dusmus(i)).slice(0, EN_COK_ASKER);
+  if (!sec.length && n > 0 && !secenek.secimYapildi) sec = Array.from({ length: n }, (_, i) => i).filter((i) => !dusmus(i)).slice(0, EN_COK_ASKER);
   secenek.secili = sec;
   return sec;
 }
@@ -150,6 +151,15 @@ function ordu(b, secenek, secili) {
     const seciliMi = secili.includes(idx);
     const arka = s.row === 'back';
     const yetenekler = (s.skills || ['shieldWall']).map((k) => (PLAYER_SKILLS[k] && PLAYER_SKILLS[k].icon) || '⚡').join(' ');
+    if (gs.isSoldierFallen(idx)) {
+      return `<div class="ek-asker is-dusmus">
+        <button type="button" class="ek-asker-sec" data-e="dusmusBilgi" data-idx="${idx}" aria-disabled="true">
+          <span class="ek-asker-isaret" aria-hidden="true">💀</span>
+          <span class="ek-simge is-kucuk"><img src="${esc(soldierPortrait(s, idx))}" alt="" draggable="false" data-fb="text:${esc(s.icon || '⚔️')}"></span>
+          <span class="ek-asker-ad"><b>#${idx + 1} ${esc(s.name)} · düştü</b><small>Canı sıfır: iyileştirmeden savaşa katılamaz</small></span>
+        </button>
+      </div>`;
+    }
     return `<div class="ek-asker${seciliMi ? ' is-secili' : ''}">
         <button type="button" class="ek-asker-sec" data-e="sec" data-idx="${idx}" aria-pressed="${seciliMi}">
           <span class="ek-asker-isaret" aria-hidden="true">${seciliMi ? '✅' : '⬜'}</span>
@@ -227,6 +237,7 @@ const ekran = {
 
     sec(b, el, secenek) {
       const i = parseInt(el.dataset.idx, 10);
+      if (b.gameState.isSoldierFallen(i)) { b.bildir('💀 Bu askerin canı sıfır: önce iyileştir (Kışla ya da aşağıdaki iyileştirme).', 'error'); return false; }
       secenek.secimYapildi = true;
       const liste = secenek.secili || [];
       secenek.secili = liste.includes(i) ? liste.filter((x) => x !== i) : [...liste, i].slice(0, EN_COK_ASKER);
@@ -234,13 +245,13 @@ const ekran = {
 
     hepsi(b, el, secenek) {
       secenek.secimYapildi = true;
-      secenek.secili = askerler(b).map((_, i) => i).slice(0, EN_COK_ASKER);
+      secenek.secili = askerler(b).map((_, i) => i).filter((i) => !b.gameState.isSoldierFallen(i)).slice(0, EN_COK_ASKER);
     },
 
     // En güçlülerden başlayarak kazanma şansı %80'e ulaşana kadar (ulaşamazsa hepsi)
     otomatik(b, el, secenek) {
       const gs = b.gameState;
-      const sira = askerler(b).map((_, i) => {
+      const sira = askerler(b).map((_, i) => i).filter((i) => !gs.isSoldierFallen(i)).map((i) => {
         const f = gs.getSoldierFullStats(i) || { totalAtk: 0, totalMaxHp: 0 };
         return { i, w: f.totalAtk * 3 + f.totalMaxHp };
       }).sort((x, y) => y.w - x.w).map((x) => x.i);
@@ -256,6 +267,8 @@ const ekran = {
         ? `⚡ ${secilen.length} asker yeterli: kazanma şansı %${sans}`
         : `Bütün ordunla bile kazanma şansı %${sans}. Askerlerini güçlendirmen gerekebilir.`, sans >= 80 ? 'success' : 'info');
     },
+
+    dusmusBilgi(b) { b.bildir('💀 Düşen asker iyileştirilmeden savaşa katılamaz.', 'info'); return false; },
 
     mevzi(b, el) {
       const i = parseInt(el.dataset.idx, 10);

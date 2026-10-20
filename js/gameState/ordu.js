@@ -150,13 +150,29 @@ export const orduYontemleri = {
     return { hp: Math.max(1, Math.round(f.totalMaxHp * oran)), maxHp: f.totalMaxHp };
   },
 
-  // Savaş sonu canını (toplam ölçek) kayıtlı tabana çevirip yazar; asker savaşta ölmez, en az 1 canla kalır
-  setSoldierHpFromBattle(soldierIndex, savasCani) {
+  // Savaş sonu canını (toplam ölçek) kayıtlı tabana çevirip yazar. Asker kalıcı ölmez; ama zindanda canı biterse (dusebilir: true) can 0'da kalır,
+  // "düşmüş" sayılır ve iyileştirilmeden savaşa katılamaz (20 Ekim 2026: eskiden en az 1 can yazılıyor, asker ertesi savaşa %1 canla girip
+  // yetenekleriyle kendini toparlıyordu). Kolezyum düellosu eskisi gibi en az 1 canla bırakır.
+  setSoldierHpFromBattle(soldierIndex, savasCani, { dusebilir = false } = {}) {
     const asker = (this.state.soldierUnits || [])[soldierIndex];
     const f = asker ? this.getSoldierFullStats(soldierIndex) : null;
     if (!f) return;
+    this.isSoldierFallen(soldierIndex);   // tam iyileşmiş askerin eski düşüş bayrağı burada temizlenir (Kolezyum sonrası yanlış "düştü" kalmasın)
     const taban = asker.maxHp || 100;
+    if (dusebilir && !((Number(savasCani) || 0) > 0)) { asker.hp = 0; asker.dusmus = true; return; }
     asker.hp = Math.min(taban, Math.max(1, Math.round((Number(savasCani) || 0) / f.totalMaxHp * taban)));
+  },
+
+  // Düşmüş asker (zindanda canı sıfırlanmış): TAM iyileşene kadar zindan savaşına giremez. Pasif iyileşme canı hemen artırmaya başladığı için
+  // yalnız "can > 0" ölçütü bir saniyede geçersiz olurdu; bu yüzden düşüş bayrağı (asker.dusmus) tam cana kadar kalır, tam canda kendiliğinden kalkar.
+  isSoldierFallen(soldierIndex) {
+    const asker = (this.state.soldierUnits || [])[soldierIndex];
+    if (!asker) return false;
+    if (asker.hp != null && !(asker.hp > 0)) return true;   // can sıfır (bayraksız eski kayıt dahil)
+    if (!asker.dusmus) return false;
+    const taban = asker.maxHp || 100;
+    if ((asker.hp != null ? asker.hp : taban) >= taban - 1e-6) { asker.dusmus = false; return false; }   // tam iyileşti: bayrak kalkar
+    return true;
   },
 
   // ── İyileşme ───────────────────────────────────────────────────────────

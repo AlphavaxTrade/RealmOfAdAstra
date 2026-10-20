@@ -30,7 +30,7 @@ export const gelisimYontemleri = {
       };
     }
 
-    const yarali = askerler.find(s => (s.hp || 100) < (s.maxHp || 100));
+    const yarali = askerler.find(s => (s.hp != null ? s.hp : 100) < (s.maxHp || 100));
     if (yarali && (envanter.wheat || 0) >= 10) {
       return {
         icon: '❤️',
@@ -133,7 +133,8 @@ export const gelisimYontemleri = {
     const { wood, iron, wheat } = costs;
     const siloGerek = this.getSiloLevelToHold(costs);
 
-    const deger = ammMarket.calculateResourcesCostAdAstra(costs);
+    // 20 Ekim 2026 (sahip kararı): harcanan hammaddenin TAMAMININ anlık pazar değeri kadar ASTRA da alınır (eskiden değerin ARZ çarpanına bölünmüşüydü)
+    const deger = ammMarket.calculateResourcesAdAstraValue(costs);
     deger.totalAda = round3(deger.totalAda * this._seviyeAstraAsimi(simdiki));
 
     const bugunParca = this.getFragmentDropRate(simdiki);
@@ -431,7 +432,8 @@ export const gelisimYontemleri = {
     const costs = {};
     const pay = (GAME_CONFIG.WAREHOUSE || {}).upgradeCostShare ?? 0.5;   // x5 kararı: kapasitenin %70'i (eskiden %50)
     for (const k of keys) costs[k] = Math.floor(simdiki[k] * pay);
-    const deger = ammMarket.calculateResourcesCostAdAstra(costs);
+    // 20 Ekim 2026 (sahip kararı): silo yükseltirken de harcanan hammaddenin tamamının anlık pazar değeri kadar ASTRA alınır
+    const deger = ammMarket.calculateResourcesAdAstraValue(costs);
 
     const envanter = this.state.inventory || {};
     const fills = {};

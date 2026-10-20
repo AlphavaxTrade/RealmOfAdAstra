@@ -1987,6 +1987,10 @@ export const GAME_CONFIG = {
         `Zindan: canavarın hikâyesi ve yetenekleri odada katlı; "Zindan modu" düğmesi ilk boss geçilene kadar gizli.`,
         `Karnaval'da çevirme düğmeleri artık çarkın üstünde; sonuç düğmelerle çarkın arasında görünür. Zindan'da telefonda harita resmi yerine oda listesi var, en üstte tek "Sıradaki: Oda N" düğmesi (kat temizse "Kata geç") bulunur; Son savaş, Zindan modu ve Kütük "Daha fazla" altında.`,
         `Yeni oyuncu denemesinde bulunan boşluklar kapandı: Zindan kilidi artık Kışla da kilitliyse yolu tarif ediyor (üç alanda sefer → Kışla → ilk asker). Kazanma şansın düşükse Zindan ve Savaşa hazırlık ekranı sebebini söylüyor (askerin eksik mi, eşyan mı) ve tek dokunuşla Kışla'ya götürüyor.`,
+        `⚔️ Zindanda canı sıfırlanan asker artık "düşer": tam iyileşene kadar zindan savaşına katılamaz (savaşa hazırlıkta 💀 ile işaretlenir, "Kazanacak kadar seç" ve "Tümünü seç" onu atlar). Eskiden 1 canla ertesi savaşa girip kendini toparlıyordu.`,
+        `Askerin ya da hesabın seviye atlaması artık canı yenilemez: yalnız azami can büyür, kayıtlı can aynı kalır.`,
+        `⚡ "Hızlı al" ile seviye atlama / silo yükseltme için alınan şifalı ot, yaralı askerlerin kendiliğinden iyileşmesi yüzünden arada eriyip 1 adet eksik kalıyordu (ikinci kez Hızlı al gerekiyordu). Yaralı asker varken bu iki işte ot için 1 adetlik pay eklendi; diğer Hızlı al seçeneklerinde alım ile iş aynı anda yapıldığından sorun yoktu.`,
+        `💰 Silo yükseltirken ve hesap yükseltirken harcanan bütün hammaddelerin anlık pazar değerinin TAMAMI kadar ASTRA da alınır (eskiden bu değerin beşte biriydi). Örnek: Seviye 1→2 yaklaşık 16 yerine 79 ASTRA, Seviye 9→10 yaklaşık 737 yerine 3.687 ASTRA.`,
         `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
       ]
     }
