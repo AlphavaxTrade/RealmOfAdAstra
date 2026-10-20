@@ -159,40 +159,59 @@ function onarimOzeti(gs, hasarlilar) {
     + (plan && plan.items.length ? dugme({ e: 'hizliOnarHepsi', metin: `⚡ Eksikleri al ve hepsini onar · ~${planBedeli(plan)}`, ton: 'iyi', devreDisi: !plan.ok, genis: true }) : '');
 }
 
-// Bir eşya kümesini (yuva + seviye süzgeci; null = hepsi) tek tek geliştirir. Eksik hammadde her eşya için o an pazardan alınır; yalnız TEK eşyanın bedeli
-// siloya sığmıyorsa ya da ASTRA bitmişse durur ve nedenini söyler (o zamana kadar yapılanlar korunur).
+// Bir eşya kümesini (yuva + seviye süzgeci; null = hepsi) tek tek geliştirir. Eksik hammadde her eşya için o an pazardan alınır; silo bütün eşyaların
+// toplamını tutmak zorunda değildir. Tek başına geliştirilemeyen bir eşya (bedeli siloya sığmıyor, hesap seviyesi yetmiyor, ASTRA bitti) ATLANIR ve geri
+// kalanlar geliştirilir (20 Ekim 2026: eskiden ilk sıradaki eşya takılınca "0 eşya geliştirildi" deyip bütün işlemi durduruyordu). Düşük seviyeliler önce gelir.
 async function topluGelistir(b, yuva, seviye) {
   const gs = b.gameState;
-  const konumlar = gs.getUpgradeSetItems(yuva, seviye).map(ref);   // konumla: alımlar sırasında liste sırası değişse de aynı eşyalar geliştirilir
-  if (!konumlar.length) { b.bildir('Geliştirilecek uygun teçhizat bulunamadı!', 'warning'); return false; }
-  const plan = gs.getQuickBuyPlan(`upgradeset:${yuva || 'all'}:${seviye == null ? '-' : seviye}`);
-  if (plan.items.length) {
-    const liste = plan.items.map((i) => `• ${tam(i.qty)} ${i.name} (${astra(i.cost)} ASTRA)`).join('\n');
+  const ayni = (x, c) => x.source === c.source && x.slotKey === c.slotKey && x.armoryIndex === c.armoryIndex && x.soldierIndex === c.soldierIndex;
+  const adimOf = (konum) => gs.getQuickBuyPlan('upgrade:' + gs.getAllArmoryEquipmentList().findIndex((g) => ayni(ref(g), konum)));
+  const kume = gs.getUpgradeSetItems(yuva, seviye).slice().sort((x, c) => (x.item.level || 1) - (c.item.level || 1));
+  if (!kume.length) { b.bildir('Geliştirilecek uygun teçhizat bulunamadı!', 'warning'); return false; }
+  const konumlar = kume.map(ref);   // konumla: alımlar sırasında liste sırası değişse de aynı eşyalar geliştirilir
+
+  // Ön kontrol: hangi eşyalar şu an tek başına geliştirilebilir (eksiği alınabiliyor ya da zaten yeterli)?
+  const yapilir = [];
+  const atlanan = [];
+  for (const konum of konumlar) {
+    const adim = adimOf(konum);
+    if (!adim.items.length || adim.ok) yapilir.push({ konum, adim }); else atlanan.push(adim.reason || 'pazardan eksik alınamıyor');
+  }
+  if (!yapilir.length) { b.bildir(`Hiçbir eşya geliştirilemiyor: ${atlanan[0]}`, 'error'); return false; }
+  const alim = yapilir.reduce((n, d) => n + (Number(d.adim.total) || 0), 0);
+  const gelistirmeAstra = yapilir.reduce((n, d) => n + (Number(d.adim.extraAda) || 0), 0);
+  const eksikVar = yapilir.some((d) => d.adim.items.length);
+  const atlanMetni = atlanan.length ? `\n${atlanan.length} eşya atlanacak (tek başına geliştirilemiyor: ${[...new Set(atlanan)][0]})` : '';
+  if (eksikVar || atlanan.length) {
     const tamam = await onay({
-      baslik: `${konumlar.length} eşya geliştirilsin mi?`,
-      metin: `Eksik hammaddeler eşyalar sırayla geliştirilirken tek tek pazardan alınır (silonun hepsini birden tutması gerekmez).\n${liste}\nAlım ${astra(plan.total)} ASTRA + geliştirme bedeli ${astra(plan.extraAda)} ASTRA`,
+      baslik: `${yapilir.length} eşya geliştirilsin mi?`,
+      metin: `Eşyalar sırayla geliştirilir, eksik hammadde her biri için tek tek pazardan alınır (silonun hepsini birden tutması gerekmez).\nAlım ~${astra(alim)} ASTRA + geliştirme bedeli ~${astra(gelistirmeAstra)} ASTRA${atlanMetni}`,
       tamam: 'Al ve geliştir'
     });
     if (!tamam) return false;
   }
-  const ayni = (x, c) => x.source === c.source && x.slotKey === c.slotKey && x.armoryIndex === c.armoryIndex && x.soldierIndex === c.soldierIndex;
+
   let yukseltilen = 0;
-  for (const konum of konumlar) {
-    const sira = gs.getAllArmoryEquipmentList().findIndex((g) => ayni(ref(g), konum));
-    const adim = gs.getQuickBuyPlan('upgrade:' + sira);
+  const atlandi = [...atlanan];
+  for (const { konum } of yapilir) {
+    const adim = adimOf(konum);   // stok ve ASTRA değişti: yeniden planla
     if (adim.items.length) {
-      if (!adim.ok) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${adim.reason}`, yukseltilen ? 'warning' : 'error'); return yukseltilen ? undefined : false; }
+      if (!adim.ok) { atlandi.push(adim.reason || 'pazardan eksik alınamıyor'); continue; }
+      let alinamadi = false;
       for (const it of adim.items) {
         const r = await gs.marketBuy(it.res, it.qty);
-        if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; ${it.name} alınamadı: ${(r && r.message) || ''}`, 'error'); return yukseltilen ? undefined : false; }
+        if (!r || !r.success) { atlandi.push(`${it.name} alınamadı: ${(r && r.message) || ''}`); alinamadi = true; break; }
       }
+      if (alinamadi) continue;
     }
     const r = await gs.upgradeAnyEquipment(konum);
-    if (!r || !r.success) { b.bildir(`${yukseltilen} eşya geliştirildi; devamı yapılamadı: ${(r && r.message) || ''}`, yukseltilen ? 'warning' : 'error'); return yukseltilen ? undefined : false; }
+    if (!r || !r.success) { atlandi.push((r && r.message) || 'geliştirilemedi'); continue; }
     yukseltilen++;
   }
-  b.bildir(`✨ ${yukseltilen} adet teçhizat bir sonraki seviyeye yükseltildi!`, 'success');
-  return undefined;
+  const neden = atlandi.length ? ` · ${atlandi.length} eşya atlandı: ${[...new Set(atlandi)][0]}` : '';
+  if (yukseltilen) b.bildir(`✨ ${yukseltilen} adet teçhizat bir sonraki seviyeye yükseltildi!${neden}`, atlandi.length ? 'warning' : 'success');
+  else b.bildir(`Hiçbir eşya geliştirilemedi${neden}`, 'error');
+  return yukseltilen ? undefined : false;
 }
 
 function esyalarSekmesi(b, secenek) {

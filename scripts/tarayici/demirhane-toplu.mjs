@@ -12,6 +12,8 @@ const { chromium } = require('playwright');
 const BASE = process.env.OYUN_ADRESI || 'http://127.0.0.1:5180';
 const KLASOR = process.env.EKRAN_KLASORU || path.join(os.tmpdir(), 'demirhane-toplu');
 const SILO = Number(process.env.SILO || 6);
+const SEVIYELER = (process.env.SEVIYELER || '3,3,3,3').split(',').map(Number);   // her zırhın başlangıç seviyesi
+const BEKLENEN = (process.env.BEKLENEN || '').split(',').filter(Boolean).map(Number);   // boşsa hepsi bir üst seviye
 fs.mkdirSync(KLASOR, { recursive: true });
 const bekle = (ms) => new Promise((r) => setTimeout(r, ms));
 const hatalar = [];
@@ -26,15 +28,15 @@ s.on('console', (m) => { if (m.type() === 'error' && !/ERR_NO_BUFFER|Failed to l
 await s.goto(BASE, { waitUntil: 'domcontentloaded' });
 await s.waitForFunction(() => window.__v3 && window.gameState, null, { timeout: 30000 });
 await bekle(1500);
-await s.evaluate((silo) => {
+await s.evaluate(([silo, seviyeler]) => {
   const gs = window.gameState; const st = gs.state;
   st.level = 12; st.warehouseLevel = silo; st.adAstraBalance = 1e9;
   for (const k of ['wheat', 'stone', 'wood', 'coal', 'iron', 'herb']) st.inventory[k] = 0;
   st.inventory.fragments = 200;
   st.armoryInventory = [];
-  for (let i = 0; i < 4; i++) st.armoryInventory.push({ id: 'z' + i, slot: 'armor', name: 'Zırh ' + i, icon: '🛡️', level: 3, atkBonus: 40, hpBonus: 60, durability: 13, maxDurability: 13 });
+  seviyeler.forEach((lv, i) => st.armoryInventory.push({ id: 'z' + i, slot: 'armor', name: 'Zırh ' + i, icon: '🛡️', level: lv, atkBonus: 40, hpBonus: 60, durability: 13, maxDurability: 13 }));
   gs.saveState();
-}, SILO);
+}, [SILO, SEVIYELER]);
 await s.evaluate(() => window.__v3.git('demirhane'));
 await bekle(1000);
 await s.locator('#modal-body [data-e="sekme"][data-sekme="esyalar"], #modal-body [data-sekme="esyalar"]').first().click().catch(() => {});
@@ -56,7 +58,9 @@ if (bilgi.var && !bilgi.pasif) {
   await bekle(4000);
   const sonuc = await s.evaluate(() => ({ seviyeler: window.gameState.state.armoryInventory.map((e) => e.level), bildirimler: [...document.querySelectorAll('[class*=toast]')].map((e) => e.innerText.replace(/\s+/g, ' ')).join(' | ').slice(0, 300) }));
   console.log('Sonuç:', JSON.stringify(sonuc));
-  not('dört zırhın hepsi bir üst seviyeye çıktı', sonuc.seviyeler.every((l) => l === 4), JSON.stringify(sonuc.seviyeler));
+  const beklenen = BEKLENEN.length ? BEKLENEN : SEVIYELER.map((l) => l + 1);
+  not(`zırh seviyeleri ${SEVIYELER} → ${beklenen} (geliştirilemeyen atlanır, kalanlar geliştirilir)`, JSON.stringify(sonuc.seviyeler) === JSON.stringify(beklenen), JSON.stringify(sonuc.seviyeler));
+  console.log('Bildirim:', sonuc.bildirimler.slice(0, 220));
 }
 not('konsolda hata yok', hatalar.length === 0, hatalar.slice(0, 3).join(' | '));
 await tarayici.close();
