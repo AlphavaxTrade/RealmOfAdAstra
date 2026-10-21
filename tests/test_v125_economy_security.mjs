@@ -143,8 +143,10 @@ const ok = (name) => { passed++; console.log(`✅ ${name}`); };
   globalPool.recordResourceBurn('wood', 50000);
   const capAfterBurn = globalPool.state.resources.wood.totalCap;
   const reloaded = new GlobalResourceManager();
-  assert.equal(reloaded.state.resources.wood.totalCap, capAfterBurn, 'Yakılan kota sayfa yenilemede geri gelmemeli');
-  ok('Kota: yakım yenilemede kalıcı');
+  assert.equal(reloaded.state.resources.wood.totalCap, capAfterBurn, 'Kota sayfa yenilemede aynı kalır');
+  assert.equal(reloaded.state.resources.wood.burned, 50000, 'Haftalık yakım istatistiği yenilemede korunur');
+  assert.equal(reloaded.state.totalBurnedResources.wood, globalPool.state.totalBurnedResources.wood, 'Ömür boyu yakım korunur');
+  ok('Kota: yakım kotayı küçültmez, istatistik yenilemede kalıcı');
 }
 
 // 8) Bot 25 saat kapalı kalınca işi kaybolmaz (bot süresi dolana kadar çalışır)

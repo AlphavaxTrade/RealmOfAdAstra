@@ -154,7 +154,8 @@ const fresh = () => {
   assert.equal(after.baseCap, globalPool.computeWeekCapacity('wood'), 'Taban 10 oyuncu ağırlığıyla');
   assert.equal(after.baseCap, baseBefore * 10);
   assert.equal(after.harvested, 1000, 'Çıkarılan korunur');
-  assert.equal(after.totalCap, after.baseCap - 500, 'Yakılan korunur');
+  assert.equal(after.totalCap, after.baseCap, 'Yakım kotayı küçültmez (21 Ekim 2026)');
+  assert.equal(after.burned, 500, 'Yakım istatistiği korunur');
   assert.equal(after.remaining, after.totalCap - 1000);
   ok('Kapasite yeniden hesaplanıyor: ağırlık toplamı ×10 → taban ×10');
 }

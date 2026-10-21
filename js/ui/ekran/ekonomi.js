@@ -60,7 +60,7 @@ function kaynakDengesi(b) {
     const bilgi = gp.getResourceInfo(k);
     const kullanilan = r.totalCap > 0 ? 1 - (r.remaining / r.totalCap) : 0;
     const sigma = beklenen > 0 ? kullanilan / beklenen : 1;
-    const yakilan = Math.max(0, (r.baseCap ?? r.totalCap) - r.totalCap);
+    const yakilan = Math.max(0, Number(r.burned) || 0);
     const durum = r.remaining <= 0 ? ['tükendi', 'kotu'] : (sigma > 1.25 ? ['hızlı tükeniyor', 'uyari'] : (sigma < 0.5 ? ['bol', 'iyi'] : ['dengede', 'iyi']));
     return kart({
       icerik: `<div class="ek-oge">${simge(kaynakSimgesi(b, k))}
@@ -70,7 +70,7 @@ function kaynakDengesi(b) {
         + katli('Ayrıntı', satir('Haftalık kota', tam(bilgi.baseCap))
           + satir('Kullanılan', `${tam(r.harvested || 0)} / ${tam(r.totalCap)}`)
           + satir('Haftalık beklenen ilerleme', `%${sayi(beklenen * 100, 0)}`)
-          + satir('Bu hafta yakılan (kotadan düşen)', `${tam(yakilan)}`), { k: 'eko-kaynak-' + k })
+          + satir('Bu hafta yakılan (kotayı etkilemez)', `${tam(yakilan)}`), { k: 'eko-kaynak-' + k })
     });
   });
   return not('Her hammaddenin haftalık dünya kotası var. "Dengede", kotanın beklenen hızda kullanıldığını gösterir.')

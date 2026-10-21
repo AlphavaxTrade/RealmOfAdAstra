@@ -85,7 +85,7 @@ assert(buyAfterTreasury > buyBeforeTreasury, 'Alış işleminde de ödenen %2 ha
 
 // 🔥 Hammadde Yakımı Doğrulaması (%2):
 assert.equal(buyRes.resourceBurnFee, 20, '1000 demir alımında %2 fee = 20 demir olmalı');
-assert.equal(globalPool.state.resources.iron.totalCap, initialIronCap - 20, 'Demir küresel total arzından 20 adet silinmeli');
+assert.equal(globalPool.state.resources.iron.totalCap, initialIronCap, 'Yakım haftalık çıkarma kotasını küçültmez (21 Ekim 2026)');
 assert.equal(globalPool.state.totalBurnedResources.iron, initialBurnedIron + 20, 'Yakılan demir sayacı 20 artmalı');
 
 console.log(`✅ [5/5] Alış işleminde de %2 harç (${buyRes.fee.toFixed(2)} ASTRA) hazine kasasını büyüttü ve %2 hammadde (${buyRes.resourceBurnFee} Demir) yakılıp total arzdan silindi.`);

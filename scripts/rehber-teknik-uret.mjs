@@ -347,7 +347,7 @@ ${tablo(['Kota katsayısı', ...[0, 5, 10, 15, 20].map((o) => `Otorite ${o}`)], 
   <ul>
     <li><b>Termostat:</b> her hafta bir hammaddenin fiyatı açılış fiyatının <b>üstündeyse</b> o hammaddenin kota katsayısı %${sayi(U.TERMO_STEP * 100)} artar (daha çok çıkarılsın); <b>altındaysa</b> %${sayi(U.TERMO_STEP * 100)} azalır. Böylece fiyat çökmez.</li>
     <li><b>Otorite:</b> Konsey'in ortak inşaatıdır; her seviye herkesin hakkını %${sayi(C.OTORITE.PER_LEVEL_BONUS * 100)} artırır, çalışma süresini uzatır (<a href="#t-otorite">bedelleri</a>).</li>
-    <li><b>Yakım kotayı da düşürür:</b> harcanan (yakılan) hammadde o haftanın dünya kapasitesinden <b>kalıcı olarak</b> düşer; yani çok harcayan herkesin kotasını biraz kısar.</li>
+    <li><b>Yakım kotayı düşürmez:</b> harcanan (yakılan) hammadde ömür boyu yakım sayacına yazılır ama o haftanın çıkarma kotasını küçültmez. Kota yalnız yeni hammaddenin dünyaya girişini sınırlar; bir oyuncunun harcaması başkasının üretimini kapatmaz.</li>
     <li><b>Konsey ortak kasası:</b> çıkardığın miktarın ayrıca %${sayi(C.OTORITE.COMMON_CHEST_RATE * 100)}'i dünya kapasitesinden alınıp Konsey stoğuna girer (senin hakkından da sayılır).</li>
   </ul>
   <h3>Ağırlık: örnek değerler</h3>

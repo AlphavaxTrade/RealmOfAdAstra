@@ -2015,6 +2015,15 @@ export const GAME_CONFIG = {
         `Alt haritada "‹ Ana harita" düğmesi var; alttaki Harita sekmesi de ana haritaya döndürür. Yerlerin adı ve durumu (hazır sefer, yaralı asker...) harita üzerinde görünür.`,
         `Hareketi azalt ayarı açıksa bulutlar kaymaz, yalnız solar.`
       ]
+    },
+    {
+      version: 'v1.89',
+      title: '🌾 Dünya kotası artık yakımla bitmiyor',
+      date: '21 Ekim 2026',
+      changes: [
+        `Haftalık hammadde kotası düzeltildi: hesap, silo, teçhizat gibi işlerde harcadığın (yaktığın) hammadde artık haftalık dünya kotasından düşmüyor. Eskiden çok harcayan bir oyuncu bütün dünyanın o haftaki kotasını bitirebiliyor, herkesin seferleri boş dönüyor ve bot "hak" diye duruyordu. Kota artık yalnız yeni hammaddenin dünyaya girişini sınırlar.`,
+        `Daha önce yakımla tükenmiş görünen haftalık kota yüklemede kendiliğinden tam açılır; bu hafta çıkardığın miktar korunur. Duran bot, kota gelince kendiliğinden devam eder. Ekonomi panosunda "Bu hafta yakılan" yalnız bilgi olarak görünür.`
+      ]
     }
   ],
 

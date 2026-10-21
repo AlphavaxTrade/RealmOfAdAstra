@@ -149,7 +149,7 @@ Ekonomiden kalıcı olarak çıkan pay yalnızca %13, yapımcı payıyla birlikt
 
 - **Dünya kotası:** Haftada odun 180.000, demir 130.000, buğday 490.000; her gün 1/7'si açılır.
 - **Üretim hızı (sabit):** Dakikada odun 18, demir 12, buğday 30. Her seviye üretimi %1,5 artırır.
-- **Yakım:** Harcanan her hammadde kalıcı olarak yakılır ve **o haftanın dünya kotasından da düşülür** (`burnResource` → `recordResourceBurn`).
+- **Yakım:** Harcanan her hammadde kalıcı olarak yakılır (`burnResource` → `recordResourceBurn`). ~~O haftanın dünya kotasından da düşülürdü~~ — 21 Ekim 2026 sahip kararıyla yakım kotayı düşürmez (E2 düzeltildi); haftalık yakım yalnız istatistiktir.
 
 ### Başlıca harcama kalemleri
 

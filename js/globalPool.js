@@ -114,8 +114,9 @@ export class GlobalResourceManager {
       if (!kayit.konsey || !kayit.konsey.stock) kayit.konsey = { stock: sifirHammadde() };
       if (!kayit.hazirlikDepo) kayit.hazirlikDepo = { totalValue: 0 };
 
-      // Kota sınırlarını config ile hizala. Hafta içinde yakılan miktar kotadan kalıcı düşer:
-      // haftanın başındaki taban kota (baseCap) ayrıca saklanır, yakılan = baseCap − totalCap.
+      // Kota sınırlarını config ile hizala. 21 Ekim 2026 (sahip kararı): yakım haftalık çıkarma kotasını DÜŞÜRMEZ; kota yalnız yeni
+      // hammaddenin dünyaya girişini sınırlar (enflasyon aracı). Hafta içi yakılan yalnız istatistiktir (r.burned). Eskiden yakım
+      // kotadan düşüyordu (yakılan = baseCap − totalCap): eski kayıtlar burada bir kez onarılır, kota tam açılır.
       const params = this.uretimParams(kayit.uretim);
       for (const key of kotaAnahtarlari()) {
         const configKota = this.computeWeekCapacity(key, params);
@@ -125,13 +126,12 @@ export class GlobalResourceManager {
           continue;
         }
         const tabanKota = r.baseCap ?? configKota;   // eski kayıtlar: haftanın tabanı config sayılır
-        const yakilan = Math.max(0, tabanKota - (r.totalCap ?? tabanKota));
-        const toplamKota = Math.max(0, configKota - yakilan);
-        const kalan = Math.max(0, Math.min(toplamKota, r.remaining ?? toplamKota));
+        const eskiYakilan = Math.max(0, tabanKota - (r.totalCap ?? tabanKota));
         const cikarilan = r.harvested != null
           ? r.harvested
-          : Math.max(0, (r.baseCap ?? configKota) - (r.remaining ?? configKota) - yakilan);
-        kayit.resources[key] = { remaining: kalan, totalCap: toplamKota, baseCap: configKota, harvested: cikarilan, depleted: kalan <= 0 };
+          : Math.max(0, (r.baseCap ?? configKota) - (r.remaining ?? configKota) - eskiYakilan);
+        const kalan = Math.max(0, configKota - cikarilan);
+        kayit.resources[key] = { remaining: kalan, totalCap: configKota, baseCap: configKota, harvested: cikarilan, burned: r.burned != null ? r.burned : eskiYakilan, depleted: kalan <= 0 };
       }
 
       // UBI haftalık kasa modeli (eski "tohum ÷ 12 hafta" modelinden geçiş; tohum dağıtılmaz)
@@ -366,10 +366,9 @@ export class GlobalResourceManager {
         this.state.resources[key] = { remaining: kota, totalCap: kota, baseCap: kota, harvested: 0, depleted: false };
         continue;
       }
-      const yakilan = Math.max(0, (r.baseCap ?? kota) - (r.totalCap ?? kota));
       const cikarilan = Math.max(0, Number(r.harvested) || 0);
       r.baseCap = kota;
-      r.totalCap = Math.max(0, kota - yakilan);
+      r.totalCap = kota;   // yakım kotayı düşürmez (21 Ekim 2026)
       r.remaining = Math.max(0, r.totalCap - cikarilan);
       r.depleted = r.remaining <= 0;
     }
@@ -405,7 +404,9 @@ export class GlobalResourceManager {
   }
 
   // ── Kalıcı yakım ───────────────────────────────────────────────────────
-  // Harcanan hammadde bu yöntemle yakılır ve haftalık toplam arzdan (totalCap, remaining) kalıcı silinir.
+  // Harcanan hammadde bu yöntemle yakılır: ömür boyu ve haftalık yakım sayaçlarına yazılır. 21 Ekim 2026 (sahip kararı): yakım
+  // haftalık çıkarma kotasını (totalCap, remaining) DÜŞÜRMEZ. Kota yalnız enflasyon aracıdır; bir oyuncunun harcaması (hesap/silo/teçhizat,
+  // pazardan alıp yakmak) herkesin üretimini kapatmamalı (29 Eylül denetimi E2). Fiyat tarafı termostatla ayarlanır.
   recordResourceBurn(key, miktar) {
     const q = Number(miktar) || 0;
     if (q <= 0) return { burned: 0 };
@@ -414,14 +415,7 @@ export class GlobalResourceManager {
     this.state.totalBurnedResources[key] = (this.state.totalBurnedResources[key] || 0) + q;
 
     const r = this.state.resources && this.state.resources[key];
-    if (r) {
-      r.totalCap = Math.max(0, (r.totalCap || 0) - q);
-      r.remaining = Math.max(0, Math.min(r.remaining, r.totalCap));
-      if (r.totalCap <= 0 || r.remaining <= 0) {
-        r.remaining = 0;
-        r.depleted = true;
-      }
-    }
+    if (r) r.burned = (r.burned || 0) + q;   // haftalık yakım istatistiği (hafta dönünce yeni kayıtla sıfırlanır)
 
     this.saveState();
     return { resourceKey: key, amount: q, remainingCap: r ? r.totalCap : 0, remaining: r ? r.remaining : 0 };

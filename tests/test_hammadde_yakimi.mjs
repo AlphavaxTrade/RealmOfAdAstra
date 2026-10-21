@@ -1,5 +1,6 @@
 // Hammadde yakımı: stamina doldurma, alet onarımı, silo yükseltme ve asker iyileştirmede harcanan hammadde
-// oyuncunun yakım sayacına yazılır ve dünya havuzunun toplam arzından düşer.
+// oyuncunun yakım sayacına ve dünya havuzunun yakım sayacına yazılır. 21 Ekim 2026: yakım haftalık çıkarma kotasını DÜŞÜRMEZ
+// (kota yalnız enflasyon aracıdır; bir oyuncunun harcaması herkesin üretimini kapatmasın).
 // 11 Ekim 2026'da test_universal_resource_burn.mjs'ten baştan yazıldı.
 import assert from 'node:assert/strict';
 
@@ -12,7 +13,7 @@ globalThis.localStorage = {
 const { URETIM_CARPANI } = await import('../js/config.js');
 const { GameStateManager } = await import('../js/gameState.js');
 const { ammMarket } = await import('../js/ammMarket.js');
-const { globalPool } = await import('../js/globalPool.js');
+const { globalPool, GlobalResourceManager } = await import('../js/globalPool.js');
 const { treasury } = await import('../js/treasury.js');
 
 const yeni = () => {
@@ -23,6 +24,7 @@ const yeni = () => {
   return new GameStateManager();
 };
 const arz = (k) => globalPool.state.resources[k].totalCap;
+const yak = (k) => globalPool.state.resources[k].burned || 0;
 
 // 1) Buğdayla stamina doldurma
 {
@@ -36,7 +38,8 @@ const arz = (k) => globalPool.state.resources[k].totalCap;
   assert.equal(r.success, true);
   assert.ok(r.wheatUsed > 0);
   assert.equal(s.burnedResources.wheat, yakilmis + r.wheatUsed, 'oyuncunun yakım sayacı artar');
-  assert.equal(arz('wheat'), once - r.wheatUsed, 'dünya toplam arzı azalır');
+  assert.equal(arz('wheat'), once, 'haftalık çıkarma kotası yakımla küçülmez');
+  assert.equal(yak('wheat'), r.wheatUsed, 'haftalık yakım istatistiği artar');
   assert.equal(globalPool.state.totalBurnedResources.wheat, r.wheatUsed, 'küresel yakım sayacı artar');
 }
 console.log('✅ stamina buğdayı yakılır');
@@ -55,8 +58,10 @@ console.log('✅ stamina buğdayı yakılır');
   assert.equal(gs.repairTool('axe').success, true);
   assert.equal(s.burnedResources.wood, maliyet.woodCost);
   assert.equal(s.burnedResources.iron, maliyet.ironCost);
-  assert.equal(arz('wood'), odun - maliyet.woodCost);
-  assert.equal(arz('iron'), demir - maliyet.ironCost);
+  assert.equal(arz('wood'), odun, 'odun kotası küçülmez');
+  assert.equal(arz('iron'), demir, 'demir kotası küçülmez');
+  assert.equal(yak('wood'), maliyet.woodCost);
+  assert.equal(yak('iron'), maliyet.ironCost);
 }
 console.log('✅ alet onarımı odun ve demir yakar');
 
@@ -75,7 +80,8 @@ console.log('✅ alet onarımı odun ve demir yakar');
   assert.equal(r.success, true, r.message);
   for (const k of maliyet.keys) {
     assert.equal(s.burnedResources[k], maliyet.costs[k], `${k} yakımı kaydedilmeli`);
-    assert.equal(arz(k), once[k] - maliyet.costs[k], `${k} arzdan düşmeli`);
+    assert.equal(arz(k), once[k], `${k} kotası küçülmez`);
+    assert.equal(yak(k), maliyet.costs[k], `${k} haftalık yakım istatistiği`);
   }
 }
 console.log('✅ silo yükseltme hammaddeleri yakar');
@@ -95,8 +101,40 @@ console.log('✅ silo yükseltme hammaddeleri yakar');
   assert.ok(bilgi.herbsNeeded > 0);
   assert.equal(gs.healSoldierWithHerb(0).success, true);
   assert.equal(s.burnedResources.herb, bilgi.herbsNeeded);
-  assert.equal(arz('herb'), once - bilgi.herbsNeeded);
+  assert.equal(arz('herb'), once, 'şifalı ot kotası küçülmez');
+  assert.equal(yak('herb'), bilgi.herbsNeeded);
 }
 console.log('✅ asker iyileştirme şifalı otu yakar');
 
-console.log('\n4/4 hammadde yakımı bloğu geçti.');
+// 5) Çok büyük yakım hiçbir hammaddenin haftalık çıkarma kotasını kapatmaz (21 Ekim 2026: tek oyuncu dünyayı kilitlemişti)
+{
+  yeni();
+  for (const k of Object.keys(globalPool.state.resources)) {
+    const kota = arz(k);
+    const bugun = globalPool.getAvailableToday(k);
+    globalPool.recordResourceBurn(k, kota * 100);
+    assert.equal(arz(k), kota, `${k}: 100 katı yakım kotayı küçültmez`);
+    assert.equal(globalPool.state.resources[k].depleted, false, `${k}: kota tükenmiş sayılmaz`);
+    assert.equal(globalPool.getAvailableToday(k), bugun, `${k}: bugün alınabilir miktar değişmez`);
+    assert.ok(globalPool.harvest(k, 1) > 0, `${k}: çıkarma hâlâ çalışır`);
+  }
+}
+console.log('✅ aşırı yakım kotayı kapatmaz');
+
+// 6) Eski kayıt onarımı: yakımla küçülmüş (tükenmiş) kota yüklemede tam açılır, çıkarılan korunur
+{
+  yeni();
+  const r = globalPool.state.resources.wood;
+  r.harvested = 7; r.totalCap = 10; r.remaining = 0; r.depleted = true;   // eski sürümde yakımın bıraktığı durum
+  globalPool.saveState();
+  const yuklenen = new GlobalResourceManager();
+  const w = yuklenen.state.resources.wood;
+  assert.equal(w.totalCap, yuklenen.computeWeekCapacity('wood'), 'kota tam açılır');
+  assert.ok(w.totalCap > 100, 'kota küçük kalmadı');
+  assert.equal(w.harvested, 7, 'çıkarılan korunur');
+  assert.equal(w.remaining, w.totalCap - 7);
+  assert.equal(w.depleted, false);
+}
+console.log('✅ eski tükenmiş kota yüklemede onarılır');
+
+console.log('\n6/6 hammadde yakımı bloğu geçti.');
