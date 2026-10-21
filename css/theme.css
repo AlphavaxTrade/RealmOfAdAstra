@@ -500,3 +500,80 @@ body.modal-open .guide-widget { display: none; }
 
 /* v2 (7 Ekim 2026): yeni hammaddeler — taş, kömür, şifalı ot */
 :root { --c-stone: #b8b2a8; --c-coal: #8b95a5; --c-herb: #86efac; }
+
+/* =========================================================================
+   HARİTA SAHNELERİ (21 Ekim 2026): kapı etiketleri, "Ana harita" çubuğu ve bulut geçiş perdesi
+   ========================================================================= */
+/* Sahne haritalarında her yerin adı görünür (telefonda üzerine gelme olmadığı için): küçük hap biçimli etiket */
+.map-overlay.has-sahne .map-label:not(.is-offscreen) {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute; left: 0; top: 0;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 13px 5px 5px;
+  border-radius: 999px;
+  background: rgba(9, 13, 20, 0.88);
+  border: 1px solid rgba(231, 185, 76, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  color: #f6ead0;
+  font: 700 13px/1.15 var(--font-ui);
+  white-space: nowrap;
+  pointer-events: auto; cursor: pointer;
+  margin-top: -6px;
+}
+.map-overlay.has-sahne .map-label.is-hover { display: none !important; }
+.map-overlay.has-sahne .map-label .ml-icon { width: 28px; height: 28px; font-size: 15px; background: rgba(231, 185, 76, 0.2); }
+.map-overlay.has-sahne .map-label .ml-body { flex-direction: column; gap: 2px; }
+.map-overlay.has-sahne .map-label .ml-name { display: block; }
+.map-overlay.has-sahne .map-label .ml-status { font-size: 10.5px; font-weight: 600; color: #cfd8e6; }
+.map-overlay.has-sahne .map-label .ml-status:empty { display: none; }
+.map-overlay.has-sahne .map-label .ml-body { min-width: 0; }
+.map-overlay.has-sahne .map-label .ml-status { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.map-overlay.has-sahne .map-label[data-tone="ready"] { border-color: rgba(67, 209, 154, 0.75); }
+.map-overlay.has-sahne .map-label[data-tone="ready"] .ml-status { color: #b8f5da; }
+.map-overlay.has-sahne .map-label[data-tone="warn"] { border-color: rgba(251, 191, 36, 0.8); }
+.map-overlay.has-sahne .map-label[data-tone="warn"] .ml-status { color: #ffe1a6; }
+.map-overlay.has-sahne .map-label[data-tone="gift"] { border-color: rgba(231, 185, 76, 0.95); }
+.map-overlay.has-sahne .map-label[data-tone="gift"] .ml-status { color: #ffe7a8; }
+/* Kapı (başka haritaya geçiren yer): daha büyük, rengi kendi rengi, sağında ok */
+.map-overlay.has-sahne .map-label.is-kapi { padding: 6px 15px 6px 6px; font-size: 14.5px; border-width: 2px; border-color: var(--zc); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), 0 0 18px color-mix(in srgb, var(--zc) 45%, transparent); }
+.map-overlay.has-sahne .map-label.is-kapi .ml-icon { width: 34px; height: 34px; font-size: 18px; background: color-mix(in srgb, var(--zc) 28%, transparent); }
+.map-overlay.has-sahne .map-label.is-kapi .ml-name::after { content: ' ›'; opacity: 0.8; }
+/* Dar ekranda durum satırı yalnız önemli durumlarda (hazır / uyarı / hediye) görünür */
+.map-overlay.has-sahne .map-label.is-compact:not([data-tone="ready"]):not([data-tone="warn"]):not([data-tone="gift"]) .ml-status { display: none; }
+.map-overlay.has-sahne .map-label.is-compact { font-size: 12px; }
+.map-overlay.has-sahne .map-label.is-compact.is-kapi { font-size: 13px; }
+
+/* Alt haritada üstteki çubuk: ana haritaya dön + sahne adı */
+.sahne-bar { position: absolute; left: 10px; top: 10px; z-index: 6; display: flex; align-items: center; gap: 10px; pointer-events: none; }
+.sahne-bar[hidden] { display: none; }
+.sahne-geri, .sahne-baslik { pointer-events: auto; border-radius: 999px; background: rgba(9, 13, 20, 0.9); border: 1px solid rgba(231, 185, 76, 0.6); color: #f6ead0; font: 700 14px/1 var(--font-ui); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5); }
+.sahne-geri { padding: 10px 16px; cursor: pointer; min-height: 44px; }
+.sahne-geri:hover { filter: brightness(1.15); }
+.sahne-baslik { padding: 10px 16px; letter-spacing: 0.04em; font-family: var(--font-title, inherit); }
+@media (max-width: 520px) { .sahne-baslik { display: none; } }
+
+/* Bulut geçiş perdesi: sağdan ve soldan bulutlar gelip ekranı kapatır, ortada logo çıkar (js/ui/gecis.js) */
+#gecis-perdesi { position: fixed; inset: 0; z-index: 9500; display: none; overflow: hidden; pointer-events: none; }
+#gecis-perdesi.gp-goster { display: block; pointer-events: auto; }
+#gecis-perdesi .gp-fon { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, #fbfdff 0%, #dcecfa 55%, #b9d6f0 100%); opacity: 0; transition: opacity 0.45s ease 0.3s; }
+#gecis-perdesi.gp-kapali .gp-fon { opacity: 1; }
+#gecis-perdesi:not(.gp-kapali) .gp-fon { transition-delay: 0s; transition-duration: 0.35s; }
+#gecis-perdesi .gp-kume { position: absolute; top: 0; bottom: 0; width: 72%; transition: transform 0.7s cubic-bezier(0.3, 0.7, 0.2, 1); will-change: transform; }
+#gecis-perdesi .gp-sol { left: 0; transform: translateX(-108%); }
+#gecis-perdesi .gp-sag { right: 0; transform: translateX(108%); }
+#gecis-perdesi.gp-kapali .gp-kume { transform: translateX(0); }
+#gecis-perdesi .gp-bulut {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #ffffff 0%, #f4f9ff 42%, #d3e5f7 78%, #b4d0ec 100%);
+  box-shadow: 0 0 5vh 2vh rgba(236, 245, 255, 0.85), inset -1.5vh -2vh 3vh rgba(150, 185, 225, 0.45);
+}
+#gecis-perdesi .gp-logo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; opacity: 0; transform: scale(0.88); transition: opacity 0.4s ease, transform 0.5s ease; text-align: center; }
+#gecis-perdesi.gp-kapali .gp-logo { opacity: 1; transform: scale(1); transition-delay: 0.45s; }
+#gecis-perdesi .gp-logo img { width: min(78vw, 520px); height: auto; filter: drop-shadow(0 6px 14px rgba(20, 40, 80, 0.45)); }
+#gecis-perdesi .gp-logo-yazi { font: 900 clamp(28px, 7vw, 54px)/1.1 'Cinzel', serif; letter-spacing: 0.06em; color: #7a4b08; text-shadow: 0 2px 0 #ffe9a8, 0 6px 14px rgba(20, 40, 80, 0.4); }
+#gecis-perdesi .gp-yukleniyor { font: 700 13px/1 var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; color: #46628a; opacity: 0.85; }
+/* Hareketi azalt: kayma yok, yalnız solma */
+#gecis-perdesi.gp-azalt .gp-kume { transition: none; transform: translateX(0); opacity: 0; }
+#gecis-perdesi.gp-azalt.gp-kapali .gp-kume { opacity: 1; transition: opacity 0.35s ease; }
+

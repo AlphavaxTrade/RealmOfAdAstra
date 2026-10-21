@@ -2004,6 +2004,17 @@ export const GAME_CONFIG = {
         `⚖️ Katkı puanı dengesi: hesap yükseltme, silo yükseltme ve teçhizat dövme / geliştirme / onarım işlerinin puanı %20 ağırlıkla yazılır (bedelleri hammaddenin tam pazar değerine çıkınca katkı puanını şişiriyordu). Konsey katkısı ve diğer harcamalar tam ağırlıktadır. Kademe eşikleri değişmedi.`,
         `Menüler seviyeye göre açılıyor: Taverna, Kotalarım ve Sandıklar 3. seviyede, Hazine 4. seviyede, Ekonomi panosu 5. seviyede görünür (Ctrl+K ve bağlantılarla her zaman açılır). Karnaval'ın Kasalar sekmesi 5. seviyeden sonra görünür.`
       ]
+    },
+    {
+      version: 'v1.88',
+      title: '🗺️ Yeni harita: tek ana harita, kapılardan geçilen alt haritalar',
+      date: '21 Ekim 2026',
+      changes: [
+        `🗺️ Harita yenilendi: ana haritada Madenler ve Orman, Krallık Şehri, Kışla Bölgesi, Savaş Alanı, Zindan Mağarası, Tarlalar ve Roket Rampası var. Birine dokununca bulutlar sağdan ve soldan gelip ekranı kapatır, ortada Realm of AdAstra logosu çıkar, yeni harita yüklenir.`,
+        `Şehir: Pazar, Konsey, Demirhane, Taverna, Karnaval, Köy ve Kolezyum (içi seyirci ve gladyatörlerle dolu). Madenler ve Orman: kömür, demir, taş, odun. Kışla Bölgesi: Kışla ve Şifahane. Savaş Alanı: Dünya Bossu. Zindan Mağarası: zindan girişi. Tarlalar: Güneş Tarlası, Şifalı Ot Bahçesi ve Silo.`,
+        `Alt haritada "‹ Ana harita" düğmesi var; alttaki Harita sekmesi de ana haritaya döndürür. Yerlerin adı ve durumu (hazır sefer, yaralı asker...) harita üzerinde görünür.`,
+        `Hareketi azalt ayarı açıksa bulutlar kaymaz, yalnız solar.`
+      ]
     }
   ],
 

@@ -130,7 +130,7 @@ export function bolgeyiAc(z, gs = gameState) {
 
 // ── Etiket ve bilgi kartı katmanı (iki harita da aynı DOM'u ve CSS'i kullanır) ──
 // Döndürür: { labels: Map, card, hover, durumGuncelle(durumlar), kartiDoldur(zone | null) }
-export function etiketKatmaniKur(kap, { onHover, onLeave, onOpen }) {
+export function etiketKatmaniKur(kap, { onHover, onLeave, onOpen, bolgeler = TOWN_ZONES }) {
   let katman = kap.querySelector('#map-overlay');
   if (!katman) {
     katman = document.createElement('div');
@@ -141,10 +141,10 @@ export function etiketKatmaniKur(kap, { onHover, onLeave, onOpen }) {
   katman.classList.remove('is-hidden');
   katman.innerHTML = '';
   const etiketler = new Map();
-  for (const z of TOWN_ZONES) {
+  for (const z of bolgeler) {
     const d = document.createElement('button');
     d.type = 'button';
-    d.className = 'map-label';
+    d.className = z.gec ? 'map-label is-kapi' : 'map-label';
     d.dataset.zone = z.id;
     d.style.setProperty('--zc', z.color);
     d.innerHTML = `<span class="ml-icon" aria-hidden="true">${z.icon}</span><span class="ml-body"><span class="ml-name">${z.name}</span><span class="ml-status" data-status></span></span>`;
@@ -188,13 +188,13 @@ export function etiketKatmaniKur(kap, { onHover, onLeave, onOpen }) {
       hoverBolge = zone;
       if (!zone) { kart.classList.remove('is-visible'); return false; }
       const bilgi = durumlar[zone.id] || { text: '', tone: '', locked: false };
-      const kilitli = !gameState.isFeatureUnlocked(zone.id);
+      const kilitli = !!bilgi.locked || !gameState.isFeatureUnlocked(zone.id);
       kart.style.setProperty('--zc', zone.color);
       kart.querySelector('.mc-icon').textContent = zone.icon;
       kart.querySelector('.mc-name').textContent = zone.name;
       kart.querySelector('.mc-sub').textContent = zone.sub;
       kart.classList.toggle('is-locked', kilitli);
-      kart.querySelector('.mc-hint-text').textContent = kilitli ? 'Henüz kilitli' : (zone.id === 'dungeon' ? 'Zindana inmek için tıkla' : 'Açmak için tıkla');
+      kart.querySelector('.mc-hint-text').textContent = kilitli ? 'Henüz kilitli' : (zone.gec ? 'Gitmek için tıkla' : (zone.id === 'dungeon' ? 'Zindana inmek için tıkla' : 'Açmak için tıkla'));
       kart.querySelector('.mc-status-text').textContent = bilgi.text;
       kart.querySelector('.mc-status').hidden = !bilgi.text;
       kart.dataset.tone = bilgi.tone;

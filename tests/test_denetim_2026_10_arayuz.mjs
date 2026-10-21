@@ -194,9 +194,16 @@ tamam('QA-15: bildirim eylem çubuğunun üstüne konur ve dokunuşu engellemez'
   assert.ok(boy < 700 * 1024, `harita resmi webp ve 700 KB altında (şimdi ${Math.round(boy / 1024)} KB)`);
   assert.ok(!fs.existsSync(path.join(kok, 'public/assets/adastra_vadisi.jpg')), 'eski 949 KB jpg açılışta indirilmez');
   const sahne = oku('js/grandTownScene.js');
-  assert.ok(sahne.includes('adastra_vadisi.webp') && !sahne.includes('adastra_vadisi.jpg'));
   assert.ok(!/const v = Date\.now\(\)/.test(sahne), 'harita resmi her açılışta yeniden indirilmez (sabit sürüm eki)');
-  assert.match(sahne, /adastra_vadisi\.webp\?v=\d+'/);
+  // 21 Ekim 2026: harita artık sahnelerden oluşur (js/ui/sahneler.js); her sahnenin resmi webp, sabit sürüm ekli ve 700 KB altında
+  const sahneler = oku('js/ui/sahneler.js');
+  assert.ok(!/\.jpg/.test(sahneler), 'sahne resimlerinde jpg yok');
+  const resimler = [...sahneler.matchAll(/resim: '(assets\/[^'?]+\.webp)\?v=\d+'/g)].map((m) => m[1]);
+  assert.ok(resimler.length >= 5, `sahne resimleri sabit sürüm ekli webp (${resimler.length} bulundu)`);
+  for (const r of resimler) {
+    const b = fs.statSync(path.join(kok, 'public', r)).size;
+    assert.ok(b < 700 * 1024, `${r} 700 KB altında (şimdi ${Math.round(b / 1024)} KB)`);
+  }
 }
 tamam('QA-17: THREE.Timer, webp harita resmi');
 

@@ -154,7 +154,8 @@ export function kurV3Kabuk(api) {
   const hubAc = (id) => {
     tepsiAc(false);
     sekmeSec(id);
-    if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); return; }
+    // Harita sekmesi: panel açıksa kapatır; kapalıysa ve alt haritadaysan ana haritaya döner (bulut geçişiyle)
+    if (id === 'harita') { if (api.isAnyModalOpen()) api.closeModal(); else if (window.realmMap && window.realmMap.anaHaritayaDon) window.realmMap.anaHaritayaDon(); return; }
     api.openPanel(HUB[id].baslik, hubHtml(id, gs.getFeatureLock ? (k) => gs.getFeatureLock(k) : null, !!api.testSurumu, Number(gs.state.level) || 1));
     geriSifirla();   // hub listesi geri yığınının kökü
   };
